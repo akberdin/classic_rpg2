@@ -7,7 +7,8 @@ from game.map import GameMap
 from game.character import Player, Guard, Merchant, Bandit
 from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
-from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
+from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS, EquipmentItem
+from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper
 from game.constants import (
     WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TILE_SIZE, COLORS,
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
@@ -61,9 +62,14 @@ class Game:
         self.interaction_menu_open = False
         self.nearby_npc = None
 
-        # Меню инвентаря
+        # UI компоненты
+        self.help_window = HelpWindow(self.screen, self.font, self.info_font)
+        self.inventory_window = InventoryWindow(self.screen, self.font, self.info_font)
+        self.trade_window = TradeWindow(self.screen, self.font, self.info_font)
+
+        # Состояния окон
         self.inventory_menu_open = False
-        self.selected_inventory_index = 0
+        self.trade_menu_open = False
 
         # Создание стражников в городах
         self.guards = []
@@ -299,6 +305,12 @@ class Game:
                     self._handle_inventory_input(event.key)
                 continue
 
+            # Если открыто меню торговли, обрабатываем его
+            if self.trade_menu_open:
+                if event.type == pygame.KEYDOWN:
+                    self._handle_trade_input(event.key)
+                continue
+
             # Обработка нажатий клавиш
             if event.type == pygame.KEYDOWN:
                 self._handle_key_press(event.key)
@@ -351,7 +363,10 @@ class Game:
         elif key == pygame.K_i:
             # Открыть/закрыть инвентарь
             self.inventory_menu_open = not self.inventory_menu_open
-            self.selected_inventory_index = 0
+            return
+        elif key == pygame.K_F1:
+            # Открыть/закрыть окно помощи
+            self.help_window.toggle()
             return
 
         # Попытка переместить игрока
@@ -452,25 +467,39 @@ class Game:
 
         all_items = self.player.inventory.get_all_items()
 
-        if not all_items:
-            return
-
         if key == pygame.K_UP or key == pygame.K_w:
-            self.selected_inventory_index = max(0, self.selected_inventory_index - 1)
+            if all_items:
+                self.inventory_window.selected_inventory_index = max(0, self.inventory_window.selected_inventory_index - 1)
         elif key == pygame.K_DOWN or key == pygame.K_s:
-            self.selected_inventory_index = min(len(all_items) - 1, self.selected_inventory_index + 1)
+            if all_items:
+                self.inventory_window.selected_inventory_index = min(len(all_items) - 1, self.inventory_window.selected_inventory_index + 1)
         elif key == pygame.K_RETURN or key == pygame.K_u:
             # Использовать выбранный предмет
-            if 0 <= self.selected_inventory_index < len(all_items):
-                item, quantity = all_items[self.selected_inventory_index]
+            if all_items and 0 <= self.inventory_window.selected_inventory_index < len(all_items):
+                item, quantity = all_items[self.inventory_window.selected_inventory_index]
                 result = self.player.use_item(item.name)
                 print(result)
                 # Если предметов больше нет, корректируем индекс
                 if self.player.inventory.get_item(item.name) is None:
                     all_items = self.player.inventory.get_all_items()
-                    self.selected_inventory_index = min(self.selected_inventory_index, len(all_items) - 1)
-                    if self.selected_inventory_index < 0:
-                        self.selected_inventory_index = 0
+                    self.inventory_window.selected_inventory_index = min(self.inventory_window.selected_inventory_index, len(all_items) - 1)
+                    if self.inventory_window.selected_inventory_index < 0:
+                        self.inventory_window.selected_inventory_index = 0
+        elif key == pygame.K_e:
+            # Экипировать выбранный предмет
+            if all_items and 0 <= self.inventory_window.selected_inventory_index < len(all_items):
+                item, quantity = all_items[self.inventory_window.selected_inventory_index]
+                if isinstance(item, EquipmentItem):
+                    success, message = self.player.inventory.equip_item(item.name)
+                    print(message)
+                    # Обновляем производные характеристики после экипировки
+                    if success:
+                        self.player.update_derived_stats()
+                else:
+                    print("Этот предмет нельзя экипировать")
+        elif key == pygame.K_q:
+            # Снять экипированный предмет (заглушка - нужно добавить выбор слота)
+            print("Функция снятия предметов будет доступна в следующей версии")
 
     def _handle_interaction_choice(self, key):
         """
@@ -480,10 +509,16 @@ class Game:
             key: Нажатая клавиша
         """
         if key == pygame.K_1:
-            # Торговля (пока не реализована)
-            print("Торговля будет реализована позже!")
+            # Торговля
+            if self.nearby_npc and self.nearby_npc.npc_type == "merchant":
+                self.trade_menu_open = True
+                self.trade_window.mode = "buy"
+                self.trade_window.selected_merchant_index = 0
+                self.trade_window.selected_player_index = 0
+                print(f"Торговля с {self.nearby_npc.name}")
+            else:
+                print(f"{self.nearby_npc.name} не торгует")
             self.interaction_menu_open = False
-            self.nearby_npc = None
         elif key == pygame.K_2:
             # Агрессия - начать бой
             self._start_combat(self.nearby_npc)
@@ -497,6 +532,85 @@ class Game:
             # Также можно закрыть меню через ESC
             self.interaction_menu_open = False
             self.nearby_npc = None
+
+    def _handle_trade_input(self, key):
+        """
+        Обработка ввода в меню торговли
+
+        Args:
+            key: Нажатая клавиша
+        """
+        if key == pygame.K_ESCAPE:
+            self.trade_menu_open = False
+            self.nearby_npc = None
+            return
+        elif key == pygame.K_TAB:
+            # Переключение между покупкой и продажей
+            if self.trade_window.mode == "buy":
+                self.trade_window.mode = "sell"
+            else:
+                self.trade_window.mode = "buy"
+            return
+
+        if self.trade_window.mode == "buy":
+            # Режим покупки
+            if not hasattr(self.nearby_npc, 'inventory'):
+                return
+
+            merchant_items = self.nearby_npc.inventory.get_all_items()
+            if not merchant_items:
+                return
+
+            if key == pygame.K_UP or key == pygame.K_w:
+                self.trade_window.selected_merchant_index = max(0, self.trade_window.selected_merchant_index - 1)
+            elif key == pygame.K_DOWN or key == pygame.K_s:
+                self.trade_window.selected_merchant_index = min(len(merchant_items) - 1, self.trade_window.selected_merchant_index + 1)
+            elif key == pygame.K_RETURN:
+                # Купить выбранный предмет
+                if 0 <= self.trade_window.selected_merchant_index < len(merchant_items):
+                    item, quantity = merchant_items[self.trade_window.selected_merchant_index]
+                    buy_price = int(item.value * 1.5)  # Торговец продает с наценкой 50%
+
+                    if self.player.inventory.gold >= buy_price:
+                        if self.nearby_npc.inventory.remove_item(item.name, 1):
+                            if self.player.inventory.add_item(item, 1):
+                                self.player.inventory.remove_gold(buy_price)
+                                self.nearby_npc.inventory.add_gold(buy_price)
+                                print(f"Вы купили {item.name} за {buy_price} золота")
+                            else:
+                                # Возвращаем предмет торговцу если не поместился в инвентарь
+                                self.nearby_npc.inventory.add_item(item, 1)
+                                print("Ваш инвентарь переполнен!")
+                    else:
+                        print(f"Недостаточно золота! Нужно {buy_price}, у вас {self.player.inventory.gold}")
+        else:
+            # Режим продажи
+            player_items = self.player.inventory.get_all_items()
+            if not player_items:
+                return
+
+            if key == pygame.K_UP or key == pygame.K_w:
+                self.trade_window.selected_player_index = max(0, self.trade_window.selected_player_index - 1)
+            elif key == pygame.K_DOWN or key == pygame.K_s:
+                self.trade_window.selected_player_index = min(len(player_items) - 1, self.trade_window.selected_player_index + 1)
+            elif key == pygame.K_RETURN:
+                # Продать выбранный предмет
+                if 0 <= self.trade_window.selected_player_index < len(player_items):
+                    item, quantity = player_items[self.trade_window.selected_player_index]
+                    sell_price = int(item.value * 0.7)  # Торговец покупает за 70% от стоимости
+
+                    if self.nearby_npc.inventory.gold >= sell_price:
+                        if self.player.inventory.remove_item(item.name, 1):
+                            if self.nearby_npc.inventory.add_item(item, 1):
+                                self.player.inventory.add_gold(sell_price)
+                                self.nearby_npc.inventory.remove_gold(sell_price)
+                                print(f"Вы продали {item.name} за {sell_price} золота")
+                            else:
+                                # Возвращаем предмет игроку если не поместился в инвентарь торговца
+                                self.player.inventory.add_item(item, 1)
+                                print("У торговца нет места для этого предмета!")
+                    else:
+                        print(f"У торговца недостаточно золота! Нужно {sell_price}, у него {self.nearby_npc.inventory.gold}")
 
     def _start_combat(self, enemy):
         """
@@ -553,7 +667,14 @@ class Game:
 
         # Если открыто меню инвентаря, отрисовываем его
         if self.inventory_menu_open:
-            self._render_inventory_menu()
+            self.inventory_window.render(self.player)
+
+        # Если открыто меню торговли, отрисовываем его
+        if self.trade_menu_open and self.nearby_npc:
+            self.trade_window.render(self.player, self.nearby_npc)
+
+        # Отрисовка окна помощи (поверх всего)
+        self.help_window.render()
 
         # Обновление дисплея
         pygame.display.flip()
@@ -857,11 +978,24 @@ class Game:
         # Уровень, ранг и опыт
         player_rank = self.player.get_rank()
         level_text = self.info_font.render(
-            f"Уровень: {self.player.level} ({player_rank}) | Опыт: {self.player.experience}/{self.player.experience_to_next_level}",
+            f"Ур: {self.player.level} ({player_rank}) | Опыт: {self.player.experience}/{self.player.experience_to_next_level}",
             True,
             (255, 215, 0)
         )
         self.screen.blit(level_text, (info_x, info_y + 55))
+
+        # Урон и защита от экипировки
+        equip_bonuses = self.player.inventory.get_total_stats_bonus()
+        damage_bonus = equip_bonuses.get('damage', 0)
+        defense_bonus = equip_bonuses.get('defense', 0)
+
+        if damage_bonus > 0 or defense_bonus > 0:
+            combat_stats = self.info_font.render(
+                f"Урон: +{damage_bonus} | Защита: +{defense_bonus}",
+                True,
+                (255, 150, 100)
+            )
+            self.screen.blit(combat_stats, (info_x, info_y + 75))
 
         # Здоровье, мана и выносливость
         health_text = self.info_font.render(
@@ -888,20 +1022,26 @@ class Game:
         )
         self.screen.blit(stamina_text, (info_x + 400, info_y + 55))
 
-        # Характеристики
+        # Характеристики с бонусами от экипировки
         stats = self.player.get_stats()
-        stats_x = 300
-        stats_text = [
-            f"Сила: {stats['strength']}",
-            f"Ловкость: {stats['dexterity']}",
-            f"Телосложение: {stats['constitution']}",
-            f"Дух: {stats['spirit']}",
-            f"Интеллект: {stats['intelligence']}",
-            f"Удача: {stats['luck']}"
-        ]
+        equip_bonuses = self.player.inventory.get_total_stats_bonus()
 
-        for i, text in enumerate(stats_text):
-            stat_surface = self.info_font.render(text, True, COLORS['text'])
+        stats_x = 300
+        stat_keys = ['strength', 'dexterity', 'constitution', 'spirit', 'intelligence', 'luck']
+        stat_names = ['Сила', 'Ловк', 'Тело', 'Дух', 'Инт', 'Удач']
+
+        for i, (key, name) in enumerate(zip(stat_keys, stat_names)):
+            base_value = stats[key]
+            bonus = equip_bonuses.get(key, 0)
+
+            if bonus > 0:
+                text = f"{name}: {base_value} (+{bonus})"
+                color = (150, 255, 150)  # Зеленый для бонусов
+            else:
+                text = f"{name}: {base_value}"
+                color = COLORS['text']
+
+            stat_surface = self.info_font.render(text, True, color)
             self.screen.blit(stat_surface, (stats_x + (i % 3) * 150, info_y + (i // 3) * 25))
 
         # Информация о локации (перенесена вниз)
@@ -930,13 +1070,13 @@ class Game:
         )
         self.screen.blit(gold_text, (info_x + 900, info_y + 30))
 
-        # Управление
-        controls_text = self.info_font.render(
-            "WASD - движение | R - отдых | T - работа | E - взаимодействие | F - собрать | I - инвентарь | ESC - выход",
+        # Подсказка о помощи
+        help_hint = self.info_font.render(
+            "F1 - Справка",
             True,
-            (180, 180, 180)
+            (255, 215, 0)
         )
-        self.screen.blit(controls_text, (20, info_y + 70))
+        self.screen.blit(help_hint, (info_x + 900, info_y + 55))
 
     def _render_minimap(self):
         """Отрисовка мини-карты"""
@@ -1099,122 +1239,3 @@ class Game:
             action_rect.y = buttons_y + i * 30
             self.screen.blit(action_text, action_rect)
 
-    def _render_inventory_menu(self):
-        """Отрисовка меню инвентаря"""
-        # Затемняем фон
-        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
-        overlay.set_alpha(150)
-        overlay.fill((0, 0, 0))
-        self.screen.blit(overlay, (0, 0))
-
-        # Размеры меню
-        menu_width = 600
-        menu_height = 500
-        menu_x = (WINDOW_WIDTH - menu_width) // 2
-        menu_y = (WINDOW_HEIGHT - menu_height) // 2
-
-        # Фон меню
-        pygame.draw.rect(
-            self.screen,
-            (40, 40, 45),
-            (menu_x, menu_y, menu_width, menu_height)
-        )
-
-        # Рамка меню
-        pygame.draw.rect(
-            self.screen,
-            COLORS['text'],
-            (menu_x, menu_y, menu_width, menu_height),
-            3
-        )
-
-        # Заголовок
-        title_text = self.font.render("Инвентарь", True, (255, 215, 0))
-        title_rect = title_text.get_rect()
-        title_rect.centerx = menu_x + menu_width // 2
-        title_rect.y = menu_y + 10
-        self.screen.blit(title_text, title_rect)
-
-        # Информация о золоте
-        gold_text = self.info_font.render(
-            f"Золото: {self.player.inventory.gold}",
-            True,
-            (255, 215, 0)
-        )
-        gold_rect = gold_text.get_rect()
-        gold_rect.centerx = menu_x + menu_width // 2
-        gold_rect.y = menu_y + 40
-        self.screen.blit(gold_text, gold_rect)
-
-        # Разделительная линия
-        pygame.draw.line(
-            self.screen,
-            COLORS['text'],
-            (menu_x + 10, menu_y + 70),
-            (menu_x + menu_width - 10, menu_y + 70),
-            2
-        )
-
-        # Список предметов
-        all_items = self.player.inventory.get_all_items()
-
-        if not all_items:
-            empty_text = self.info_font.render("Инвентарь пуст", True, (180, 180, 180))
-            empty_rect = empty_text.get_rect()
-            empty_rect.centerx = menu_x + menu_width // 2
-            empty_rect.y = menu_y + 100
-            self.screen.blit(empty_text, empty_rect)
-        else:
-            items_y = menu_y + 90
-            max_visible_items = 12
-            start_index = max(0, self.selected_inventory_index - max_visible_items + 1)
-            end_index = min(len(all_items), start_index + max_visible_items)
-
-            for i in range(start_index, end_index):
-                item, quantity = all_items[i]
-                display_index = i - start_index
-
-                # Цвет фона для выбранного предмета
-                if i == self.selected_inventory_index:
-                    bg_color = (80, 80, 90)
-                    pygame.draw.rect(
-                        self.screen,
-                        bg_color,
-                        (menu_x + 20, items_y + display_index * 30 - 2, menu_width - 40, 28)
-                    )
-
-                # Название и количество
-                item_text = self.info_font.render(
-                    f"{item.name} x{quantity}",
-                    True,
-                    (200, 200, 200) if i != self.selected_inventory_index else (255, 255, 255)
-                )
-                self.screen.blit(item_text, (menu_x + 30, items_y + display_index * 30))
-
-                # Стоимость
-                value_text = self.info_font.render(
-                    f"{item.value}г",
-                    True,
-                    (255, 215, 0)
-                )
-                self.screen.blit(value_text, (menu_x + menu_width - 100, items_y + display_index * 30))
-
-        # Подсказки
-        hints_y = menu_y + menu_height - 60
-        pygame.draw.line(
-            self.screen,
-            COLORS['text'],
-            (menu_x + 10, hints_y - 10),
-            (menu_x + menu_width - 10, hints_y - 10),
-            2
-        )
-
-        hint_text = self.info_font.render(
-            "W/S - выбор | Enter/U - использовать | I/ESC - закрыть",
-            True,
-            (180, 180, 180)
-        )
-        hint_rect = hint_text.get_rect()
-        hint_rect.centerx = menu_x + menu_width // 2
-        hint_rect.y = hints_y
-        self.screen.blit(hint_text, hint_rect)

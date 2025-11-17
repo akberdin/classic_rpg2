@@ -831,6 +831,81 @@ class Merchant(NPC):
         self.threat = None  # Текущая угроза от которой убегаем
         self.detection_range = 8  # Дальность обнаружения угроз
 
+        # Торговая система
+        self._generate_merchant_goods()
+
+    def _generate_merchant_goods(self):
+        """Генерация начальных товаров торговца"""
+        from game.inventory import ItemGenerator, PREDEFINED_ITEMS
+
+        # Увеличиваем инвентарь торговца
+        self.inventory.max_slots = 30
+        self.inventory.max_weight = 200.0
+
+        # Даем торговцу стартовое золото
+        self.inventory.gold = random.randint(200, 500) + self.level * 50
+
+        # Генерируем зелья (5-10 разных видов)
+        potion_types = [
+            "minor_health_potion", "health_potion", "greater_health_potion",
+            "minor_mana_potion", "mana_potion",
+            "minor_stamina_potion", "stamina_potion"
+        ]
+        for potion_type in random.sample(potion_types, random.randint(4, 6)):
+            quantity = random.randint(2, 5)
+            self.inventory.add_item(PREDEFINED_ITEMS[potion_type], quantity)
+
+        # Генерируем оружие (2-4 штуки)
+        for _ in range(random.randint(2, 4)):
+            weapon = ItemGenerator.generate_weapon(self.level)
+            self.inventory.add_item(weapon, 1)
+
+        # Генерируем доспехи (3-6 штук)
+        for _ in range(random.randint(3, 6)):
+            armor = ItemGenerator.generate_armor(self.level)
+            self.inventory.add_item(armor, 1)
+
+        # Генерируем украшения (1-3 штуки)
+        for _ in range(random.randint(1, 3)):
+            jewelry = ItemGenerator.generate_jewelry(self.level)
+            self.inventory.add_item(jewelry, 1)
+
+        # Генерируем ресурсы (2-4 вида)
+        resource_types = ["copper_ore", "iron_ore", "silver_ore", "ancient_coin", "artifact_fragment"]
+        for resource_type in random.sample(resource_types, random.randint(2, 4)):
+            quantity = random.randint(3, 10)
+            self.inventory.add_item(PREDEFINED_ITEMS[resource_type], quantity)
+
+    def restock_goods(self):
+        """Пополнение товаров торговца (вызывается при отдыхе в городе)"""
+        from game.inventory import ItemGenerator, PREDEFINED_ITEMS
+
+        # Добавляем золото
+        self.inventory.gold += random.randint(50, 150)
+
+        # Добавляем случайные новые товары
+        if random.random() < 0.7:  # 70% шанс добавить зелье
+            potion_types = [
+                "minor_health_potion", "health_potion",
+                "minor_mana_potion", "mana_potion",
+                "minor_stamina_potion"
+            ]
+            potion_type = random.choice(potion_types)
+            quantity = random.randint(1, 3)
+            self.inventory.add_item(PREDEFINED_ITEMS[potion_type], quantity)
+
+        if random.random() < 0.5:  # 50% шанс добавить оружие
+            weapon = ItemGenerator.generate_weapon(self.level)
+            self.inventory.add_item(weapon, 1)
+
+        if random.random() < 0.5:  # 50% шанс добавить доспех
+            armor = ItemGenerator.generate_armor(self.level)
+            self.inventory.add_item(armor, 1)
+
+        if random.random() < 0.3:  # 30% шанс добавить украшение
+            jewelry = ItemGenerator.generate_jewelry(self.level)
+            self.inventory.add_item(jewelry, 1)
+
     def set_settlements(self, settlements):
         """
         Установить список населенных пунктов для посещения
@@ -1038,6 +1113,11 @@ class Merchant(NPC):
     def _rest(self):
         """Отдых/торговля в городе"""
         self.rest_counter += 1
+
+        # Пополняем товары каждые 2 часа отдыха
+        if self.rest_counter % 2 == 0:
+            self.restock_goods()
+
         if self.rest_counter >= self.rest_duration:
             # Закончили отдых, выбираем новый город
             self.state = "travel"
