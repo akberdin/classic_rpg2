@@ -3,7 +3,7 @@
 """
 from game.constants import (
     BIOME_WATER, BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST,
-    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MINE, LOCATION_BANDIT_CAMP, LOCATION_RUINS,
+    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MINE, LOCATION_BANDIT_CAMP, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL,
     PASSABLE_BIOMES
 )
 
@@ -74,7 +74,8 @@ class Location:
             LOCATION_VILLAGE: "Деревня",
             LOCATION_MINE: "Шахта",
             LOCATION_BANDIT_CAMP: "Лагерь бандитов",
-            LOCATION_RUINS: "Руины"
+            LOCATION_RUINS: "Руины",
+            LOCATION_MAGIC_SCHOOL: "Школа магов"
         }
         return names.get(self.location_type, "Неизвестное место")
 
@@ -85,6 +86,7 @@ class Location:
             LOCATION_VILLAGE: "Небольшая деревня с простыми домами",
             LOCATION_MINE: "Заброшенная шахта, говорят там водятся монстры",
             LOCATION_BANDIT_CAMP: "Лагерь опасных бандитов",
-            LOCATION_RUINS: "Древние руины, полные тайн и сокровищ"
+            LOCATION_RUINS: "Древние руины, полные тайн и сокровищ",
+            LOCATION_MAGIC_SCHOOL: "Школа магов, где обучают искусству волшебства"
         }
         return descriptions.get(self.location_type, "Неизвестное место")

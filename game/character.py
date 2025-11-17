@@ -23,6 +23,7 @@ class Character:
         # Характеристики
         self.strength = 0      # Сила
         self.dexterity = 0     # Ловкость
+        self.constitution = 0  # Телосложение
         self.spirit = 0        # Дух
         self.intelligence = 0  # Интеллект
         self.luck = 0          # Удача
@@ -37,6 +38,7 @@ class Character:
         """
         self.strength = random.randint(min_val, max_val)
         self.dexterity = random.randint(min_val, max_val)
+        self.constitution = random.randint(min_val, max_val)
         self.spirit = random.randint(min_val, max_val)
         self.intelligence = random.randint(min_val, max_val)
         self.luck = random.randint(min_val, max_val)
@@ -46,6 +48,7 @@ class Character:
         return {
             'strength': self.strength,
             'dexterity': self.dexterity,
+            'constitution': self.constitution,
             'spirit': self.spirit,
             'intelligence': self.intelligence,
             'luck': self.luck
@@ -80,6 +83,7 @@ class Player(Character):
         # Устанавливаем базовые характеристики игрока
         self.strength = 1
         self.dexterity = 1
+        self.constitution = 1
         self.spirit = 1
         self.intelligence = 1
         self.luck = 1
@@ -87,10 +91,18 @@ class Player(Character):
         # Дополнительные параметры игрока
         self.level = 1
         self.experience = 0
-        self.health = 100
-        self.max_health = 100
-        self.mana = 50
-        self.max_mana = 50
+        self.experience_to_next_level = 100  # Опыт для следующего уровня
+
+        # Параметр маг (по умолчанию - нет)
+        self.is_mage = False
+
+        # Здоровье зависит от телосложения (1 телосложение = 20 здоровья)
+        self.max_health = self.constitution * 20
+        self.health = self.max_health
+
+        # Мана зависит от духа (1 дух = 10 маны)
+        self.max_mana = self.spirit * 10
+        self.mana = self.max_mana
 
     def can_move_to(self, x, y, game_map):
         """
@@ -129,6 +141,50 @@ class Player(Character):
             self.y = y
             return True
         return False
+
+    def add_experience(self, amount):
+        """
+        Добавить опыт игроку
+
+        Args:
+            amount: Количество опыта
+
+        Returns:
+            bool: True если произошло повышение уровня
+        """
+        self.experience += amount
+        leveled_up = False
+
+        # Проверяем, достаточно ли опыта для повышения уровня
+        while self.experience >= self.experience_to_next_level:
+            leveled_up = True
+            self.level_up()
+
+        return leveled_up
+
+    def level_up(self):
+        """Повысить уровень игрока"""
+        self.experience -= self.experience_to_next_level
+        self.level += 1
+
+        # Увеличиваем требуемый опыт для следующего уровня
+        self.experience_to_next_level = int(self.experience_to_next_level * 1.5)
+
+        # Повышаем характеристики
+        self.strength += 1
+        self.dexterity += 1
+        self.constitution += 1
+        self.spirit += 1
+        self.intelligence += 1
+        self.luck += 1
+
+        # Обновляем максимальное здоровье и ману
+        self.max_health = self.constitution * 20
+        self.health = self.max_health
+        self.max_mana = self.spirit * 10
+        self.mana = self.max_mana
+
+        print(f"Поздравляем! Вы достигли {self.level} уровня!")
 
 
 class NPC(Character):
