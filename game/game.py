@@ -196,6 +196,9 @@ class Game:
 
         # Обновляем AI всех NPC при изменении времени
         for _ in range(hours):
+            # Восстанавливаем выносливость игрока
+            self.player.recover_stamina()
+
             # Собираем всех NPC для проверки взаимодействий
             all_npcs = self.guards + self.merchants + self.bandits
 
@@ -280,6 +283,15 @@ class Game:
 
         # Попытка переместить игрока
         if moved:
+            # Проверяем выносливость перед движением
+            if self.player.is_resting:
+                print("Вы слишком устали и должны отдохнуть!")
+                return
+
+            if not self.player.consume_stamina():
+                print("У вас недостаточно выносливости! Нажмите R для отдыха.")
+                return
+
             if self.player.move_to(new_x, new_y, self.game_map):
                 # Продвигаем время на 1 час за перемещение
                 self.advance_time(1)
@@ -577,20 +589,30 @@ class Game:
         )
         self.screen.blit(level_text, (info_x, info_y + 55))
 
-        # Здоровье и мана
+        # Здоровье, мана и выносливость
         health_text = self.info_font.render(
             f"Здоровье: {self.player.health}/{self.player.max_health}",
             True,
             (255, 100, 100)
         )
-        self.screen.blit(health_text, (info_x + 400, info_y + 55))
+        self.screen.blit(health_text, (info_x + 400, info_y + 30))
 
         mana_text = self.info_font.render(
             f"Мана: {self.player.mana}/{self.player.max_mana}",
             True,
             (100, 150, 255)
         )
-        self.screen.blit(mana_text, (info_x + 650, info_y + 55))
+        self.screen.blit(mana_text, (info_x + 650, info_y + 30))
+
+        # Выносливость с индикатором состояния отдыха
+        stamina_color = (255, 165, 0) if not self.player.is_resting else (255, 69, 0)
+        stamina_status = " [ОТДЫХ]" if self.player.is_resting else ""
+        stamina_text = self.info_font.render(
+            f"Выносливость: {self.player.stamina}/{self.player.max_stamina}{stamina_status}",
+            True,
+            stamina_color
+        )
+        self.screen.blit(stamina_text, (info_x + 400, info_y + 55))
 
         # Характеристики
         stats = self.player.get_stats()
