@@ -4,10 +4,10 @@
 import pygame
 import random
 from game.map import GameMap
-from game.character import Player, Guard
+from game.character import Player, Guard, Merchant
 from game.fog_of_war import FogOfWar
 from game.constants import (
-    WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TILE_SIZE, COLORS, LOCATION_CITY
+    WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TILE_SIZE, COLORS, LOCATION_CITY, LOCATION_VILLAGE
 )
 
 
@@ -53,8 +53,13 @@ class Game:
         self.guards = []
         self._spawn_guards()
 
+        # Создание торговцев
+        self.merchants = []
+        self._spawn_merchants()
+
         print(f"Игрок создан на позиции ({self.player.x}, {self.player.y})")
         print(f"Создано {len(self.guards)} стражников")
+        print(f"Создано {len(self.merchants)} торговцев")
         print("Игра готова к запуску!")
 
     def _spawn_guards(self):
@@ -108,6 +113,41 @@ class Game:
         ]
         return route
 
+    def _spawn_merchants(self):
+        """Создание торговцев, курсирующих между населенными пунктами"""
+        # Находим все города и деревни на карте
+        settlements = [loc for loc in self.game_map.locations
+                      if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]]
+
+        if len(settlements) < 2:
+            # Нужно как минимум 2 населенных пункта для торговцев
+            return
+
+        # Создаем 3-5 торговцев
+        num_merchants = random.randint(3, 5)
+
+        for i in range(num_merchants):
+            # Выбираем случайный стартовый населенный пункт
+            start_settlement = random.choice(settlements)
+
+            # Находим позицию рядом с населенным пунктом
+            merchant_pos = self._find_guard_position(start_settlement.x, start_settlement.y)
+
+            if merchant_pos:
+                mx, my = merchant_pos
+                merchant_level = random.randint(3, 8)
+                merchant_names = [
+                    "Торговец Иван", "Купец Петр", "Торговка Мария",
+                    "Купец Василий", "Торговец Николай", "Купчиха Анна",
+                    "Странствующий торговец", "Заезжий купец"
+                ]
+                merchant_name = random.choice(merchant_names)
+
+                merchant = Merchant(merchant_name, mx, my, merchant_level)
+                merchant.set_settlements(settlements)
+
+                self.merchants.append(merchant)
+
     def advance_time(self, hours=1):
         """
         Продвинуть игровое время на указанное количество часов
@@ -126,6 +166,8 @@ class Game:
         for _ in range(hours):
             for guard in self.guards:
                 guard.update_ai(self.game_map)
+            for merchant in self.merchants:
+                merchant.update_ai(self.game_map)
 
     def get_time_string(self):
         """
@@ -361,6 +403,34 @@ class Game:
                         guard_color,
                         (guard_screen_x + TILE_SIZE // 2, guard_screen_y + TILE_SIZE // 2),
                         TILE_SIZE // 3
+                    )
+
+        # Отрисовка торговцев
+        for merchant in self.merchants:
+            # Проверяем, находится ли торговец в зоне видимости камеры
+            if (self.camera_x <= merchant.x < self.camera_x + tiles_x and
+                self.camera_y <= merchant.y < self.camera_y + tiles_y):
+
+                # Проверяем, видим ли мы торговца (туман войны)
+                tile = self.game_map.get_tile(merchant.x, merchant.y)
+                if tile.explored and self.fog_of_war.is_visible(merchant.x, merchant.y, self.player.x, self.player.y):
+                    merchant_screen_x = (merchant.x - self.camera_x) * TILE_SIZE
+                    merchant_screen_y = (merchant.y - self.camera_y) * TILE_SIZE
+
+                    # Цвет зависит от состояния торговца
+                    if merchant.state == "rest":
+                        merchant_color = (150, 100, 50)  # Коричневый для отдыха/торговли
+                    else:
+                        merchant_color = (200, 150, 50)  # Оранжево-коричневый для путешествия
+
+                    # Отрисовка торговца (квадрат для отличия от стражников)
+                    pygame.draw.rect(
+                        self.screen,
+                        merchant_color,
+                        (merchant_screen_x + TILE_SIZE // 4,
+                         merchant_screen_y + TILE_SIZE // 4,
+                         TILE_SIZE // 2,
+                         TILE_SIZE // 2)
                     )
 
         # Отрисовка игрока (поверх всего остального)

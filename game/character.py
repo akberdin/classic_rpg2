@@ -276,9 +276,10 @@ class Guard(NPC):
         self.patrol_points = []  # Точки патрулирования
         self.current_patrol_index = 0
         self.rest_counter = 0
-        self.rest_duration = 50  # Длительность отдыха в тиках
+        self.rest_duration = 3  # Длительность отдыха в часах
         self.patrol_home_x = x  # Домашняя точка патруля
         self.patrol_home_y = y
+        self.steps_per_hour = 8  # Количество шагов за 1 час игрового времени
 
     def set_patrol_route(self, points):
         """
@@ -292,22 +293,27 @@ class Guard(NPC):
 
     def update_ai(self, game_map):
         """
-        Обновление AI стражника
+        Обновление AI стражника за 1 час игрового времени
+        Стражник делает несколько шагов за час
 
         Args:
             game_map: Объект карты игры
         """
         if self.state == "patrol":
-            self._patrol(game_map)
+            # Делаем несколько шагов за 1 час
+            for _ in range(self.steps_per_hour):
+                self._patrol_step(game_map)
+                if self.state == "rest":
+                    break
         elif self.state == "rest":
             self._rest()
 
-    def _patrol(self, game_map):
-        """Патрулирование"""
+    def _patrol_step(self, game_map):
+        """Один шаг патрулирования"""
         if not self.patrol_points:
             # Если нет маршрута, стоим на месте
             # Периодически переходим в режим отдыха
-            if random.random() < 0.02:  # 2% шанс каждый тик
+            if random.random() < 0.1:  # 10% шанс каждый шаг
                 self.state = "rest"
                 self.rest_counter = 0
             return
@@ -360,7 +366,7 @@ class Guard(NPC):
                 self.rest_counter = 0
 
     def _rest(self):
-        """Отдых"""
+        """Отдых - обновляется каждый игровой час"""
         self.rest_counter += 1
         if self.rest_counter >= self.rest_duration:
             self.state = "patrol"
@@ -369,6 +375,198 @@ class Guard(NPC):
     def _can_move(self, x, y, game_map):
         """
         Проверить, может ли стражник двигаться на клетку
+
+        Args:
+            x: Координата X
+            y: Координата Y
+            game_map: Объект карты
+
+        Returns:
+            bool: True если можно двигаться
+        """
+        if not game_map.is_valid_position(x, y):
+            return False
+
+        tile = game_map.get_tile(x, y)
+        return tile.is_passable()
+
+
+class Merchant(NPC):
+    """Класс Торговца с AI перемещения между городами"""
+
+    def __init__(self, name, x=0, y=0, level=3):
+        """
+        Инициализация Торговца
+
+        Args:
+            name: Имя торговца
+            x: Позиция X
+            y: Позиция Y
+            level: Уровень торговца
+        """
+        super().__init__(name, x, y, npc_type="merchant", level=level)
+
+        # AI параметры
+        self.state = "travel"  # travel, rest, trade
+        self.target_location = None  # Целевая локация (город/деревня)
+        self.rest_counter = 0
+        self.rest_duration = random.randint(5, 8)  # Отдых 5-8 часов в городе
+        self.steps_per_hour = random.randint(10, 15)  # Торговцы быстрее стражников
+        self.settlements = []  # Список всех населенных пунктов
+        self.stuck_counter = 0  # Счетчик для определения застревания
+        self.last_position = (x, y)
+
+    def set_settlements(self, settlements):
+        """
+        Установить список населенных пунктов для посещения
+
+        Args:
+            settlements: Список локаций (Location объектов)
+        """
+        self.settlements = settlements
+        if settlements and not self.target_location:
+            self._choose_new_destination()
+
+    def update_ai(self, game_map):
+        """
+        Обновление AI торговца за 1 час игрового времени
+
+        Args:
+            game_map: Объект карты игры
+        """
+        if self.state == "travel":
+            # Делаем несколько шагов за 1 час
+            for _ in range(self.steps_per_hour):
+                if not self._travel_step(game_map):
+                    break
+        elif self.state == "rest":
+            self._rest()
+
+    def _choose_new_destination(self):
+        """Выбрать новую цель для путешествия"""
+        if not self.settlements:
+            return
+
+        # Исключаем текущую позицию из выбора
+        available = [s for s in self.settlements
+                    if abs(s.x - self.x) > 5 or abs(s.y - self.y) > 5]
+
+        if available:
+            self.target_location = random.choice(available)
+        elif self.settlements:
+            self.target_location = random.choice(self.settlements)
+
+        self.stuck_counter = 0
+
+    def _travel_step(self, game_map):
+        """
+        Один шаг путешествия к цели
+
+        Returns:
+            bool: True если торговец продолжает движение
+        """
+        if not self.target_location:
+            self._choose_new_destination()
+            return False
+
+        target_x = self.target_location.x
+        target_y = self.target_location.y
+
+        # Проверяем, достигли ли цели (в пределах 2 клеток)
+        distance = abs(self.x - target_x) + abs(self.y - target_y)
+        if distance <= 2:
+            # Достигли города, переходим в режим отдыха/торговли
+            self.state = "rest"
+            self.rest_counter = 0
+            self.rest_duration = random.randint(5, 8)
+            return False
+
+        # Определяем направление движения (8 направлений)
+        dx = 0
+        dy = 0
+
+        if self.x < target_x:
+            dx = 1
+        elif self.x > target_x:
+            dx = -1
+
+        if self.y < target_y:
+            dy = 1
+        elif self.y > target_y:
+            dy = -1
+
+        # Сохраняем текущую позицию для проверки застревания
+        old_x, old_y = self.x, self.y
+
+        # Пытаемся двигаться
+        moved = False
+
+        # Приоритет 1: Диагональное движение
+        if dx != 0 and dy != 0:
+            if self._can_move(self.x + dx, self.y + dy, game_map):
+                self.x += dx
+                self.y += dy
+                moved = True
+            # Приоритет 2: Движение по оси X
+            elif self._can_move(self.x + dx, self.y, game_map):
+                self.x += dx
+                moved = True
+            # Приоритет 3: Движение по оси Y
+            elif self._can_move(self.x, self.y + dy, game_map):
+                self.y += dy
+                moved = True
+        # Движение только по одной оси
+        elif dx != 0:
+            if self._can_move(self.x + dx, self.y, game_map):
+                self.x += dx
+                moved = True
+            # Попытка обойти препятствие
+            elif self._can_move(self.x + dx, self.y + 1, game_map):
+                self.x += dx
+                self.y += 1
+                moved = True
+            elif self._can_move(self.x + dx, self.y - 1, game_map):
+                self.x += dx
+                self.y -= 1
+                moved = True
+        elif dy != 0:
+            if self._can_move(self.x, self.y + dy, game_map):
+                self.y += dy
+                moved = True
+            # Попытка обойти препятствие
+            elif self._can_move(self.x + 1, self.y + dy, game_map):
+                self.x += 1
+                self.y += dy
+                moved = True
+            elif self._can_move(self.x - 1, self.y + dy, game_map):
+                self.x -= 1
+                self.y += dy
+                moved = True
+
+        # Проверка застревания
+        if not moved or (self.x == old_x and self.y == old_y):
+            self.stuck_counter += 1
+            if self.stuck_counter > 20:
+                # Если застряли, выбираем новую цель
+                self._choose_new_destination()
+                self.stuck_counter = 0
+                return False
+        else:
+            self.stuck_counter = 0
+
+        return True
+
+    def _rest(self):
+        """Отдых/торговля в городе"""
+        self.rest_counter += 1
+        if self.rest_counter >= self.rest_duration:
+            # Закончили отдых, выбираем новый город
+            self.state = "travel"
+            self._choose_new_destination()
+
+    def _can_move(self, x, y, game_map):
+        """
+        Проверить, может ли торговец двигаться на клетку
 
         Args:
             x: Координата X
