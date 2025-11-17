@@ -240,12 +240,36 @@ class Game:
         )
         self.screen.blit(pos_text, (info_x, info_y + 30))
 
+        # Уровень и опыт
+        level_text = self.info_font.render(
+            f"Уровень: {self.player.level} | Опыт: {self.player.experience}/{self.player.experience_to_next_level}",
+            True,
+            (255, 215, 0)
+        )
+        self.screen.blit(level_text, (info_x, info_y + 55))
+
+        # Здоровье и мана
+        health_text = self.info_font.render(
+            f"Здоровье: {self.player.health}/{self.player.max_health}",
+            True,
+            (255, 100, 100)
+        )
+        self.screen.blit(health_text, (info_x + 400, info_y + 55))
+
+        mana_text = self.info_font.render(
+            f"Мана: {self.player.mana}/{self.player.max_mana}",
+            True,
+            (100, 150, 255)
+        )
+        self.screen.blit(mana_text, (info_x + 650, info_y + 55))
+
         # Характеристики
         stats = self.player.get_stats()
         stats_x = 300
         stats_text = [
             f"Сила: {stats['strength']}",
             f"Ловкость: {stats['dexterity']}",
+            f"Телосложение: {stats['constitution']}",
             f"Дух: {stats['spirit']}",
             f"Интеллект: {stats['intelligence']}",
             f"Удача: {stats['luck']}"

@@ -7,8 +7,9 @@ from game.tile import Tile, Location
 from game.constants import (
     MAP_WIDTH, MAP_HEIGHT,
     BIOME_WATER, BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST,
-    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MINE, LOCATION_BANDIT_CAMP, LOCATION_RUINS,
-    PASSABLE_BIOMES
+    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MINE, LOCATION_BANDIT_CAMP, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL,
+    PASSABLE_BIOMES,
+    CITY_NAMES, VILLAGE_NAMES, MAGIC_SCHOOL_NAMES, MINE_NAMES, BANDIT_CAMP_NAMES, RUIN_NAMES
 )
 
 
@@ -82,38 +83,133 @@ class GameMap:
             return BIOME_FOREST
 
     def _generate_locations(self):
-        """Генерация локаций на карте"""
-        location_types = [
-            (LOCATION_CITY, 3, "Города"),          # 3 города
-            (LOCATION_VILLAGE, 10, "Деревни"),     # 10 деревень
-            (LOCATION_MINE, 8, "Шахты"),           # 8 шахт
-            (LOCATION_BANDIT_CAMP, 6, "Лагеря"),   # 6 лагерей бандитов
-            (LOCATION_RUINS, 12, "Руины")          # 12 руин
-        ]
+        """Генерация локаций на карте с компактным размещением"""
+        # Генерация школы магов и деревень рядом с ней
+        self._generate_magic_school_cluster()
 
-        for location_type, count, prefix in location_types:
-            for i in range(count):
-                # Ищем подходящее место для локации
-                placed = False
-                attempts = 0
-                max_attempts = 1000
+        # Генерация компактных кластеров городов
+        self._generate_compact_locations(LOCATION_CITY, 3, CITY_NAMES, min_distance=5, max_distance=15)
 
-                while not placed and attempts < max_attempts:
-                    x = random.randint(0, self.width - 1)
-                    y = random.randint(0, self.height - 1)
+        # Генерация компактных кластеров деревень
+        self._generate_compact_locations(LOCATION_VILLAGE, 8, VILLAGE_NAMES, min_distance=5, max_distance=15)
 
-                    tile = self.tiles[y][x]
+        # Генерация компактных кластеров шахт
+        self._generate_compact_locations(LOCATION_MINE, 8, MINE_NAMES, min_distance=5, max_distance=15)
 
-                    # Проверяем, что тайл проходим и на нем нет другой локации
-                    if tile.is_passable() and not tile.has_location():
-                        # Создаем локацию с уникальным именем
-                        name = f"{prefix} #{i + 1}"
-                        location = Location(x, y, location_type, name)
-                        tile.set_location(location)
-                        self.locations.append(location)
-                        placed = True
+        # Генерация лагерей бандитов
+        self._generate_compact_locations(LOCATION_BANDIT_CAMP, 6, BANDIT_CAMP_NAMES, min_distance=5, max_distance=15)
 
-                    attempts += 1
+        # Генерация руин
+        self._generate_compact_locations(LOCATION_RUINS, 12, RUIN_NAMES, min_distance=5, max_distance=15)
+
+    def _generate_magic_school_cluster(self):
+        """Генерация школы магов с двумя деревнями рядом"""
+        # Находим место для школы магов
+        school_x, school_y = self._find_random_passable_position()
+        if school_x is None:
+            return
+
+        # Создаем школу магов
+        school_name = random.choice(MAGIC_SCHOOL_NAMES)
+        school = Location(school_x, school_y, LOCATION_MAGIC_SCHOOL, school_name)
+        self.tiles[school_y][school_x].set_location(school)
+        self.locations.append(school)
+
+        # Генерируем две деревни рядом (5-10 клеток)
+        village_names_copy = VILLAGE_NAMES.copy()
+        random.shuffle(village_names_copy)
+
+        for i in range(2):
+            village_pos = self._find_nearby_position(school_x, school_y, min_distance=5, max_distance=10)
+            if village_pos:
+                vx, vy = village_pos
+                village_name = village_names_copy[i] if i < len(village_names_copy) else f"Деревня #{i+1}"
+                village = Location(vx, vy, LOCATION_VILLAGE, village_name)
+                self.tiles[vy][vx].set_location(village)
+                self.locations.append(village)
+
+    def _generate_compact_locations(self, location_type, count, name_list, min_distance=5, max_distance=15):
+        """
+        Генерация компактных кластеров локаций
+
+        Args:
+            location_type: Тип локации
+            count: Количество локаций
+            name_list: Список имен
+            min_distance: Минимальное расстояние между локациями
+            max_distance: Максимальное расстояние между локациями
+        """
+        names_copy = name_list.copy()
+        random.shuffle(names_copy)
+
+        for i in range(count):
+            if i == 0 or len(self.locations) == 0:
+                # Первая локация или если нет других локаций - размещаем случайно
+                x, y = self._find_random_passable_position()
+            else:
+                # Последующие локации размещаем рядом с уже размещенными
+                # Выбираем случайную локацию того же типа как якорь
+                same_type_locations = [loc for loc in self.locations if loc.location_type == location_type]
+                if same_type_locations:
+                    anchor = random.choice(same_type_locations)
+                    pos = self._find_nearby_position(anchor.x, anchor.y, min_distance, max_distance)
+                    if pos:
+                        x, y = pos
+                    else:
+                        x, y = self._find_random_passable_position()
+                else:
+                    x, y = self._find_random_passable_position()
+
+            if x is not None:
+                # Выбираем имя из списка или генерируем если список закончился
+                name = names_copy[i] if i < len(names_copy) else f"{location_type} #{i+1}"
+                location = Location(x, y, location_type, name)
+                self.tiles[y][x].set_location(location)
+                self.locations.append(location)
+
+    def _find_random_passable_position(self):
+        """Найти случайную проходимую позицию на карте"""
+        max_attempts = 1000
+        for _ in range(max_attempts):
+            x = random.randint(0, self.width - 1)
+            y = random.randint(0, self.height - 1)
+            tile = self.tiles[y][x]
+            if tile.is_passable() and not tile.has_location():
+                return x, y
+        return None, None
+
+    def _find_nearby_position(self, center_x, center_y, min_distance, max_distance):
+        """
+        Найти позицию рядом с указанной точкой
+
+        Args:
+            center_x: Центральная координата X
+            center_y: Центральная координата Y
+            min_distance: Минимальное расстояние
+            max_distance: Максимальное расстояние
+
+        Returns:
+            tuple: (x, y) или None
+        """
+        max_attempts = 100
+        for _ in range(max_attempts):
+            # Генерируем случайное смещение
+            distance = random.randint(min_distance, max_distance)
+            angle = random.uniform(0, 2 * 3.14159)
+
+            # Вычисляем новые координаты
+            x = int(center_x + distance * random.choice([-1, 1]) * abs(random.random()))
+            y = int(center_y + distance * random.choice([-1, 1]) * abs(random.random()))
+
+            # Проверяем валидность
+            if self.is_valid_position(x, y):
+                tile = self.tiles[y][x]
+                if tile.is_passable() and not tile.has_location():
+                    # Проверяем расстояние
+                    actual_distance = ((x - center_x) ** 2 + (y - center_y) ** 2) ** 0.5
+                    if min_distance <= actual_distance <= max_distance:
+                        return x, y
+        return None
 
     def get_tile(self, x, y):
         """
