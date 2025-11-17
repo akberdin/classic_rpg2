@@ -215,8 +215,8 @@ class Character:
         crit_roll = random.uniform(0, 100)
         is_critical = crit_roll < crit_chance
 
-        # Расчет урона
-        base_damage = self.strength
+        # Расчет урона с учетом оружия
+        base_damage = self.get_total_damage()
         bonus_damage = random.randint(0, self.dexterity // 2)
         total_damage = base_damage + bonus_damage
 
@@ -224,18 +224,23 @@ class Character:
         if is_critical:
             total_damage *= 2
 
+        # Учитываем защиту цели
+        target_defense = target.get_total_defense()
+        # Защита снижает урон, но не может снизить его до нуля (минимум 1)
+        actual_damage = max(1, total_damage - target_defense)
+
         # Применяем урон
-        target.take_damage(total_damage)
+        target.take_damage(actual_damage)
 
         return {
-            'damage': total_damage,
+            'damage': actual_damage,
             'dodged': False,
             'critical': is_critical,
             'hit': True
         }
 
-    def get_stats(self):
-        """Получить все характеристики в виде словаря"""
+    def get_base_stats(self):
+        """Получить базовые характеристики без учета экипировки"""
         return {
             'strength': self.strength,
             'dexterity': self.dexterity,
@@ -244,6 +249,46 @@ class Character:
             'intelligence': self.intelligence,
             'luck': self.luck
         }
+
+    def get_stats(self):
+        """Получить все характеристики с учетом экипировки (для Player)"""
+        base_stats = self.get_base_stats()
+
+        # Если есть инвентарь с экипировкой, добавляем бонусы
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+
+            for stat, bonus in equipment_bonus.items():
+                if stat in base_stats:
+                    base_stats[stat] += bonus
+
+        return base_stats
+
+    def get_total_damage(self):
+        """Получить общий урон с учетом оружия"""
+        base_damage = self.strength
+
+        # Если есть экипированное оружие
+        if hasattr(self, 'inventory'):
+            from game.inventory import EquipmentSlot, WeaponItem
+            weapon = self.inventory.get_equipped_item(EquipmentSlot.WEAPON)
+            if weapon and isinstance(weapon, WeaponItem):
+                return weapon.damage + self.strength
+
+        return base_damage
+
+    def get_total_defense(self):
+        """Получить общую защиту с учетом доспехов"""
+        total_defense = 0
+
+        # Если есть экипированные доспехи
+        if hasattr(self, 'inventory'):
+            from game.inventory import ArmorItem
+            for item in self.inventory.equipment.values():
+                if item and isinstance(item, ArmorItem):
+                    total_defense += item.defense
+
+        return total_defense
 
     def move(self, dx, dy):
         """
@@ -480,6 +525,24 @@ class NPC(Character):
         self.level = level
         self.relationship = RELATIONSHIP_NEUTRAL  # Отношение к игроку по умолчанию
         self.generate_random_stats()
+
+        # Инвентарь для NPC
+        self.inventory = Inventory(max_slots=10, max_weight=50.0)
+
+        # Генерируем и экипируем начальную экипировку
+        self._generate_initial_equipment()
+
+    def _generate_initial_equipment(self):
+        """Генерация и автоматическая экипировка начального снаряжения"""
+        from game.inventory import ItemGenerator
+
+        equipment_items = ItemGenerator.generate_npc_equipment(self.npc_type, self.level)
+
+        for item in equipment_items:
+            # Добавляем в инвентарь
+            if self.inventory.add_item(item, 1):
+                # Пытаемся сразу экипировать
+                self.inventory.equip_item(item.name)
 
     def _find_next_step(self, target_x, target_y, game_map, max_search_distance=50):
         """
