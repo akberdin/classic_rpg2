@@ -251,7 +251,6 @@ class GameMap:
         for _ in range(max_attempts):
             # Генерируем случайное смещение
             distance = random.randint(min_distance, max_distance)
-            angle = random.uniform(0, 2 * 3.14159)
 
             # Вычисляем новые координаты
             x = int(center_x + distance * random.choice([-1, 1]) * abs(random.random()))

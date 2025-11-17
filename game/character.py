@@ -3,6 +3,7 @@
 """
 import random
 from collections import deque
+from game.inventory import Inventory
 from game.constants import (
     MAX_LEVEL, RANKS, RELATIONSHIP_NEUTRAL, RELATIONSHIP_HOSTILE, RELATIONSHIP_UNFRIENDLY,
     NPC_RELATIONSHIPS, NPC_TYPE_GUARD, NPC_TYPE_MERCHANT, NPC_TYPE_BANDIT,
@@ -306,6 +307,9 @@ class Player(Character):
         # Обновляем производные характеристики (здоровье, выносливость)
         self.update_derived_stats()
 
+        # Инвентарь
+        self.inventory = Inventory(max_slots=20)
+
     def can_move_to(self, x, y, game_map):
         """
         Проверить, может ли игрок переместиться на данную клетку
@@ -426,8 +430,35 @@ class Player(Character):
         """
         # Получаем опыт в зависимости от уровня
         exp_gained = 10 + self.level * 2
+        gold_gained = 5 + self.level
         self.add_experience(exp_gained)
-        print(f"Вы поработали и получили {exp_gained} опыта")
+        self.inventory.add_gold(gold_gained)
+        print(f"Вы поработали и получили {exp_gained} опыта и {gold_gained} золота")
+
+    def use_item(self, item_name):
+        """
+        Использовать предмет из инвентаря
+
+        Args:
+            item_name: Название предмета
+
+        Returns:
+            str: Сообщение о результате
+        """
+        item_data = self.inventory.get_item(item_name)
+        if not item_data:
+            return "Предмет не найден в инвентаре"
+
+        item, quantity = item_data
+
+        # Проверяем тип предмета
+        if item.item_type == "potion":
+            # Используем зелье
+            result = item.use(self)
+            self.inventory.remove_item(item_name, 1)
+            return result
+        else:
+            return "Этот предмет нельзя использовать"
 
 
 class NPC(Character):
