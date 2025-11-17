@@ -24,6 +24,10 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
 
+        # Игровое время (часы и дни)
+        self.game_hour = 6  # Начало игры в 6 утра
+        self.game_day = 1
+
         # Генерация карты
         print("Генерация карты...")
         self.game_map = GameMap()
@@ -104,6 +108,34 @@ class Game:
         ]
         return route
 
+    def advance_time(self, hours=1):
+        """
+        Продвинуть игровое время на указанное количество часов
+
+        Args:
+            hours: Количество часов для продвижения
+        """
+        self.game_hour += hours
+
+        # Если прошло 24 часа, начинается новый день
+        while self.game_hour >= 24:
+            self.game_hour -= 24
+            self.game_day += 1
+
+        # Обновляем AI всех NPC при изменении времени
+        for _ in range(hours):
+            for guard in self.guards:
+                guard.update_ai(self.game_map)
+
+    def get_time_string(self):
+        """
+        Получить строковое представление времени
+
+        Returns:
+            str: Время в формате "День X, ЧЧ:00"
+        """
+        return f"День {self.game_day}, {self.game_hour:02d}:00"
+
     def run(self):
         """Главный игровой цикл"""
         while self.running:
@@ -152,12 +184,27 @@ class Game:
         elif key == pygame.K_RIGHT or key == pygame.K_d:
             new_x += 1
             moved = True
+        elif key == pygame.K_r:
+            # Отдых - восстанавливает здоровье и ману, занимает 1 час
+            self.player.rest()
+            self.advance_time(1)
+            print(f"Вы отдохнули. {self.get_time_string()}")
+            return
+        elif key == pygame.K_t:
+            # Работа - получение опыта и золота, занимает 1 час
+            self.player.work()
+            self.advance_time(1)
+            print(f"Вы поработали. {self.get_time_string()}")
+            return
         elif key == pygame.K_ESCAPE:
             self.running = False
 
         # Попытка переместить игрока
         if moved:
             if self.player.move_to(new_x, new_y, self.game_map):
+                # Продвигаем время на 1 час за перемещение
+                self.advance_time(1)
+
                 # Обновляем туман войны
                 self.fog_of_war.update_vision(self.player.x, self.player.y)
                 # Обновляем камеру
@@ -168,12 +215,12 @@ class Game:
                 if tile.has_location():
                     print(f"Вы прибыли в: {tile.location.name}")
                     print(f"  {tile.location.get_description()}")
+                    print(f"Время: {self.get_time_string()}")
 
     def _update(self):
         """Обновление состояния игры"""
-        # Обновляем AI всех стражников
-        for guard in self.guards:
-            guard.update_ai(self.game_map)
+        # AI стражников обновляется в методе advance_time
+        pass
 
     def _update_camera(self):
         """Обновление позиции камеры, чтобы следить за игроком"""
@@ -414,10 +461,18 @@ class Game:
             )
             self.screen.blit(location_text, (info_x, info_y + 75))
 
+        # Игровое время
+        time_text = self.font.render(
+            self.get_time_string(),
+            True,
+            (255, 215, 0)
+        )
+        self.screen.blit(time_text, (info_x + 900, info_y))
+
         # Управление
         controls_text = self.info_font.render(
-            "Управление: Стрелки или WASD | ESC - выход",
+            "WASD - движение | R - отдых | T - работа | ESC - выход",
             True,
             (180, 180, 180)
         )
-        self.screen.blit(controls_text, (WINDOW_WIDTH - 400, info_y + 70))
+        self.screen.blit(controls_text, (WINDOW_WIDTH - 500, info_y + 70))

@@ -208,6 +208,32 @@ class Player(Character):
         rank = self.get_rank()
         print(f"Поздравляем! Вы достигли {self.level} уровня! Ранг: {rank}")
 
+    def rest(self):
+        """
+        Отдых - восстанавливает здоровье и ману
+        Занимает 1 час игрового времени
+        """
+        # Восстанавливаем 30% от максимального здоровья
+        health_restored = int(self.max_health * 0.3)
+        self.health = min(self.max_health, self.health + health_restored)
+
+        # Восстанавливаем 50% от максимальной маны
+        mana_restored = int(self.max_mana * 0.5)
+        self.mana = min(self.max_mana, self.mana + mana_restored)
+
+        print(f"Здоровье восстановлено: +{health_restored} ({self.health}/{self.max_health})")
+        print(f"Мана восстановлена: +{mana_restored} ({self.mana}/{self.max_mana})")
+
+    def work(self):
+        """
+        Работа - получение опыта и золота
+        Занимает 1 час игрового времени
+        """
+        # Получаем опыт в зависимости от уровня
+        exp_gained = 10 + self.level * 2
+        self.add_experience(exp_gained)
+        print(f"Вы поработали и получили {exp_gained} опыта")
+
 
 class NPC(Character):
     """Класс NPC (неигровых персонажей)"""
@@ -289,15 +315,39 @@ class Guard(NPC):
         # Получаем целевую точку
         target_x, target_y = self.patrol_points[self.current_patrol_index]
 
-        # Двигаемся к цели
-        if self.x < target_x and self._can_move(self.x + 1, self.y, game_map):
-            self.x += 1
-        elif self.x > target_x and self._can_move(self.x - 1, self.y, game_map):
-            self.x -= 1
-        elif self.y < target_y and self._can_move(self.x, self.y + 1, game_map):
-            self.y += 1
-        elif self.y > target_y and self._can_move(self.x, self.y - 1, game_map):
-            self.y -= 1
+        # Вычисляем направление движения (8 направлений)
+        dx = 0
+        dy = 0
+
+        if self.x < target_x:
+            dx = 1
+        elif self.x > target_x:
+            dx = -1
+
+        if self.y < target_y:
+            dy = 1
+        elif self.y > target_y:
+            dy = -1
+
+        # Пытаемся двигаться по диагонали, если это возможно
+        if dx != 0 and dy != 0:
+            # Диагональное движение
+            if self._can_move(self.x + dx, self.y + dy, game_map):
+                self.x += dx
+                self.y += dy
+            # Если по диагонали нельзя, пробуем по оси X
+            elif self._can_move(self.x + dx, self.y, game_map):
+                self.x += dx
+            # Если по X нельзя, пробуем по оси Y
+            elif self._can_move(self.x, self.y + dy, game_map):
+                self.y += dy
+        # Движение только по одной оси
+        elif dx != 0:
+            if self._can_move(self.x + dx, self.y, game_map):
+                self.x += dx
+        elif dy != 0:
+            if self._can_move(self.x, self.y + dy, game_map):
+                self.y += dy
 
         # Проверяем, достигли ли цели
         if self.x == target_x and self.y == target_y:
