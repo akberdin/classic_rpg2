@@ -2,7 +2,7 @@
 Класс карты игры с генерацией биомов и локаций
 """
 import random
-import noise
+from perlin_noise import PerlinNoise
 from game.tile import Tile, Location
 from game.constants import (
     MAP_WIDTH, MAP_HEIGHT,
@@ -39,27 +39,19 @@ class GameMap:
         # Параметры для шума Перлина
         scale = 100.0
         octaves = 6
-        persistence = 0.5
-        lacunarity = 2.0
         seed = random.randint(0, 10000)
+
+        # Создаем генератор шума Перлина
+        noise_generator = PerlinNoise(octaves=octaves, seed=seed)
 
         # Генерация биомов с помощью шума Перлина
         for y in range(self.height):
             for x in range(self.width):
                 # Получаем значение шума для данной точки
-                noise_val = noise.pnoise2(
-                    x / scale,
-                    y / scale,
-                    octaves=octaves,
-                    persistence=persistence,
-                    lacunarity=lacunarity,
-                    repeatx=self.width,
-                    repeaty=self.height,
-                    base=seed
-                )
+                noise_val = noise_generator([x / scale, y / scale])
 
-                # Нормализуем значение от -1..1 до 0..1
-                noise_val = (noise_val + 1) / 2
+                # Нормализуем значение от -0.5..0.5 до 0..1
+                noise_val = noise_val + 0.5
 
                 # Определяем биом на основе значения шума
                 biome = self._determine_biome(noise_val)
