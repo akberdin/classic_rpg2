@@ -6,9 +6,11 @@ import random
 from game.map import GameMap
 from game.character import Player, Guard, Merchant, Bandit
 from game.fog_of_war import FogOfWar
+from game.combat import CombatSystem
 from game.constants import (
     WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TILE_SIZE, COLORS,
-    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP
+    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
+    INTERACTION_TRADE, INTERACTION_ATTACK, INTERACTION_LEAVE
 )
 
 
@@ -49,6 +51,14 @@ class Game:
         # Шрифт для текста
         self.font = pygame.font.Font(None, 24)
         self.info_font = pygame.font.Font(None, 20)
+
+        # Система боя
+        self.combat_system = None
+        self.in_combat = False
+
+        # Система взаимодействия с NPC
+        self.interaction_menu_open = False
+        self.nearby_npc = None
 
         # Создание стражников в городах
         self.guards = []
@@ -239,6 +249,30 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
 
+            # Если идет бой, передаем управление боевой системе
+            if self.in_combat and self.combat_system:
+                result = self.combat_system.handle_input(event)
+                if result == "victory":
+                    self.in_combat = False
+                    self.combat_system = None
+                    print("Победа в бою!")
+                elif result == "defeat":
+                    self.in_combat = False
+                    self.combat_system = None
+                    print("Поражение в бою! Игра окончена.")
+                    self.running = False
+                elif result == "fled":
+                    self.in_combat = False
+                    self.combat_system = None
+                    print("Вы сбежали из боя!")
+                continue
+
+            # Если открыто меню взаимодействия, обрабатываем выбор
+            if self.interaction_menu_open:
+                if event.type == pygame.KEYDOWN:
+                    self._handle_interaction_choice(event.key)
+                continue
+
             # Обработка нажатий клавиш
             if event.type == pygame.KEYDOWN:
                 self._handle_key_press(event.key)
@@ -280,6 +314,10 @@ class Game:
             return
         elif key == pygame.K_ESCAPE:
             self.running = False
+        elif key == pygame.K_e:
+            # Взаимодействие с NPC
+            self._check_npc_nearby()
+            return
 
         # Попытка переместить игрока
         if moved:
@@ -307,6 +345,63 @@ class Game:
                     print(f"Вы прибыли в: {tile.location.name}")
                     print(f"  {tile.location.get_description()}")
                     print(f"Время: {self.get_time_string()}")
+
+    def _check_npc_nearby(self):
+        """Проверить наличие NPC рядом с игроком и открыть меню взаимодействия"""
+        # Собираем всех NPC
+        all_npcs = self.guards + self.merchants + self.bandits
+
+        # Ищем NPC рядом с игроком (в соседних клетках)
+        for npc in all_npcs:
+            if not npc.is_alive:
+                continue
+
+            distance = abs(self.player.x - npc.x) + abs(self.player.y - npc.y)
+            if distance <= 1:  # Соседняя клетка
+                self.nearby_npc = npc
+                self.interaction_menu_open = True
+                print(f"Вы встретили: {npc.name}")
+                return
+
+        print("Рядом нет NPC для взаимодействия!")
+
+    def _handle_interaction_choice(self, key):
+        """
+        Обработка выбора в меню взаимодействия
+
+        Args:
+            key: Нажатая клавиша
+        """
+        if key == pygame.K_1:
+            # Торговля (пока не реализована)
+            print("Торговля будет реализована позже!")
+            self.interaction_menu_open = False
+            self.nearby_npc = None
+        elif key == pygame.K_2:
+            # Агрессия - начать бой
+            self._start_combat(self.nearby_npc)
+            self.interaction_menu_open = False
+        elif key == pygame.K_3:
+            # Уйти
+            print("Вы ушли от разговора.")
+            self.interaction_menu_open = False
+            self.nearby_npc = None
+        elif key == pygame.K_ESCAPE:
+            # Также можно закрыть меню через ESC
+            self.interaction_menu_open = False
+            self.nearby_npc = None
+
+    def _start_combat(self, enemy):
+        """
+        Начать бой с NPC
+
+        Args:
+            enemy: Враг для боя
+        """
+        print(f"Бой начался с {enemy.name}!")
+        self.combat_system = CombatSystem(self.player, enemy, self.screen, self.font)
+        self.in_combat = True
+        self.nearby_npc = None
 
     def _update(self):
         """Обновление состояния игры"""
@@ -337,6 +432,14 @@ class Game:
 
         # Отрисовка UI
         self._render_ui()
+
+        # Если идет бой, отрисовываем окно боя
+        if self.in_combat and self.combat_system:
+            self.combat_system.render()
+
+        # Если открыто меню взаимодействия, отрисовываем его
+        if self.interaction_menu_open and self.nearby_npc:
+            self._render_interaction_menu()
 
         # Обновление дисплея
         pygame.display.flip()
@@ -650,8 +753,95 @@ class Game:
 
         # Управление
         controls_text = self.info_font.render(
-            "WASD - движение | R - отдых | T - работа | ESC - выход",
+            "WASD - движение | R - отдых | T - работа | E - взаимодействие | ESC - выход",
             True,
             (180, 180, 180)
         )
-        self.screen.blit(controls_text, (WINDOW_WIDTH - 500, info_y + 70))
+        self.screen.blit(controls_text, (WINDOW_WIDTH - 650, info_y + 70))
+
+    def _render_interaction_menu(self):
+        """Отрисовка меню взаимодействия с NPC"""
+        # Затемняем фон
+        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+        overlay.set_alpha(150)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, (0, 0))
+
+        # Размеры меню
+        menu_width = 500
+        menu_height = 300
+        menu_x = (WINDOW_WIDTH - menu_width) // 2
+        menu_y = (WINDOW_HEIGHT - menu_height) // 2
+
+        # Фон меню
+        pygame.draw.rect(
+            self.screen,
+            (40, 40, 45),
+            (menu_x, menu_y, menu_width, menu_height)
+        )
+
+        # Рамка меню
+        pygame.draw.rect(
+            self.screen,
+            COLORS['text'],
+            (menu_x, menu_y, menu_width, menu_height),
+            3
+        )
+
+        # Заголовок
+        title_text = self.font.render(
+            f"Взаимодействие: {self.nearby_npc.name}",
+            True,
+            (255, 215, 0)
+        )
+        title_rect = title_text.get_rect()
+        title_rect.centerx = menu_x + menu_width // 2
+        title_rect.y = menu_y + 20
+        self.screen.blit(title_text, title_rect)
+
+        # Информация о NPC
+        npc_info = [
+            f"Уровень: {self.nearby_npc.level}",
+            f"Здоровье: {self.nearby_npc.health}/{self.nearby_npc.max_health}",
+            f"Тип: {self.nearby_npc.npc_type}"
+        ]
+
+        info_y = menu_y + 70
+        for i, info in enumerate(npc_info):
+            info_text = self.info_font.render(info, True, (200, 200, 200))
+            info_rect = info_text.get_rect()
+            info_rect.centerx = menu_x + menu_width // 2
+            info_rect.y = info_y + i * 25
+            self.screen.blit(info_text, info_rect)
+
+        # Разделительная линия
+        pygame.draw.line(
+            self.screen,
+            COLORS['text'],
+            (menu_x + 20, menu_y + 160),
+            (menu_x + menu_width - 20, menu_y + 160),
+            2
+        )
+
+        # Варианты действий
+        actions_y = menu_y + 180
+        actions_title = self.font.render("Выберите действие:", True, COLORS['text'])
+        actions_title_rect = actions_title.get_rect()
+        actions_title_rect.centerx = menu_x + menu_width // 2
+        actions_title_rect.y = actions_y
+        self.screen.blit(actions_title, actions_title_rect)
+
+        # Кнопки действий
+        actions = [
+            "[1] Торговля (скоро)",
+            "[2] Агрессия",
+            "[3] Уйти"
+        ]
+
+        buttons_y = actions_y + 40
+        for i, action in enumerate(actions):
+            action_text = self.info_font.render(action, True, (150, 255, 150))
+            action_rect = action_text.get_rect()
+            action_rect.centerx = menu_x + menu_width // 2
+            action_rect.y = buttons_y + i * 30
+            self.screen.blit(action_text, action_rect)

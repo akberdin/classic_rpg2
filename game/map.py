@@ -96,8 +96,8 @@ class GameMap:
         # Генерация компактных кластеров шахт
         self._generate_compact_locations(LOCATION_MINE, 8, MINE_NAMES, min_distance=5, max_distance=15)
 
-        # Генерация лагерей бандитов
-        self._generate_compact_locations(LOCATION_BANDIT_CAMP, 6, BANDIT_CAMP_NAMES, min_distance=5, max_distance=15)
+        # Генерация лагерей бандитов (только в лесах, на расстоянии >= 50 от городов)
+        self._generate_bandit_camps()
 
         # Генерация руин
         self._generate_compact_locations(LOCATION_RUINS, 12, RUIN_NAMES, min_distance=5, max_distance=15)
@@ -166,6 +166,62 @@ class GameMap:
                 location = Location(x, y, location_type, name)
                 self.tiles[y][x].set_location(location)
                 self.locations.append(location)
+
+    def _generate_bandit_camps(self):
+        """
+        Генерация лагерей бандитов только в лесах и на расстоянии >= 50 клеток от городов
+        """
+        # Получаем список всех городов для проверки расстояния
+        cities = [loc for loc in self.locations if loc.location_type == LOCATION_CITY]
+
+        names_copy = BANDIT_CAMP_NAMES.copy()
+        random.shuffle(names_copy)
+
+        count = 6  # Количество лагерей бандитов
+        created = 0
+        max_attempts = 2000  # Увеличиваем количество попыток
+
+        for attempt in range(max_attempts):
+            if created >= count:
+                break
+
+            # Находим случайную позицию в лесу
+            x = random.randint(0, self.width - 1)
+            y = random.randint(0, self.height - 1)
+            tile = self.tiles[y][x]
+
+            # Проверяем, что это лес и там нет локации
+            if tile.biome != BIOME_FOREST or tile.has_location() or not tile.is_passable():
+                continue
+
+            # Проверяем расстояние до всех городов (должно быть >= 50)
+            min_distance_to_city = float('inf')
+            for city in cities:
+                distance = abs(x - city.x) + abs(y - city.y)
+                min_distance_to_city = min(min_distance_to_city, distance)
+
+            # Если слишком близко к городу, пропускаем
+            if min_distance_to_city < 50:
+                continue
+
+            # Проверяем расстояние до других лагерей бандитов (минимум 10 клеток)
+            too_close_to_other_camp = False
+            for loc in self.locations:
+                if loc.location_type == LOCATION_BANDIT_CAMP:
+                    distance = abs(x - loc.x) + abs(y - loc.y)
+                    if distance < 10:
+                        too_close_to_other_camp = True
+                        break
+
+            if too_close_to_other_camp:
+                continue
+
+            # Создаем лагерь бандитов
+            name = names_copy[created] if created < len(names_copy) else f"Лагерь бандитов #{created+1}"
+            location = Location(x, y, LOCATION_BANDIT_CAMP, name)
+            self.tiles[y][x].set_location(location)
+            self.locations.append(location)
+            created += 1
 
     def _find_random_passable_position(self):
         """Найти случайную проходимую позицию на карте"""
