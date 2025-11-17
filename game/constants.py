@@ -73,6 +73,50 @@ RELATIONSHIP_NEUTRAL = "neutral"      # Нейтральный
 RELATIONSHIP_FRIENDLY = "friendly"    # Дружелюбный
 RELATIONSHIP_ALLIED = "allied"        # Союзный
 
+# Типы NPC
+NPC_TYPE_GUARD = "guard"
+NPC_TYPE_MERCHANT = "merchant"
+NPC_TYPE_BANDIT = "bandit"
+NPC_TYPE_NEUTRAL = "neutral"
+
+# Матрица отношений между типами NPC
+# Ключ - (тип1, тип2), значение - отношение типа1 к типу2
+NPC_RELATIONSHIPS = {
+    # Бандиты
+    (NPC_TYPE_BANDIT, NPC_TYPE_GUARD): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_BANDIT, NPC_TYPE_MERCHANT): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_BANDIT, NPC_TYPE_NEUTRAL): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_BANDIT, NPC_TYPE_BANDIT): RELATIONSHIP_FRIENDLY,
+
+    # Стражники
+    (NPC_TYPE_GUARD, NPC_TYPE_BANDIT): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_GUARD, NPC_TYPE_GUARD): RELATIONSHIP_FRIENDLY,
+    (NPC_TYPE_GUARD, NPC_TYPE_MERCHANT): RELATIONSHIP_FRIENDLY,
+    (NPC_TYPE_GUARD, NPC_TYPE_NEUTRAL): RELATIONSHIP_NEUTRAL,
+
+    # Торговцы
+    (NPC_TYPE_MERCHANT, NPC_TYPE_BANDIT): RELATIONSHIP_UNFRIENDLY,
+    (NPC_TYPE_MERCHANT, NPC_TYPE_GUARD): RELATIONSHIP_FRIENDLY,
+    (NPC_TYPE_MERCHANT, NPC_TYPE_MERCHANT): RELATIONSHIP_FRIENDLY,
+    (NPC_TYPE_MERCHANT, NPC_TYPE_NEUTRAL): RELATIONSHIP_NEUTRAL,
+
+    # Нейтральные
+    (NPC_TYPE_NEUTRAL, NPC_TYPE_BANDIT): RELATIONSHIP_UNFRIENDLY,
+    (NPC_TYPE_NEUTRAL, NPC_TYPE_GUARD): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_NEUTRAL, NPC_TYPE_MERCHANT): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_NEUTRAL, NPC_TYPE_NEUTRAL): RELATIONSHIP_NEUTRAL,
+}
+
+# Параметры выносливости
+STAMINA_PER_STAT_POINT = 10  # Каждая единица силы/телосложения дает 10 выносливости
+STAMINA_COST_PER_MOVE = 2    # Стоимость перемещения
+STAMINA_REST_MIN = 0.6       # Минимальный % для окончания отдыха (60%)
+STAMINA_REST_MAX = 0.8       # Максимальный % для окончания отдыха (80%)
+
+# Параметры боя
+COMBAT_RANGE = 1  # Дальность атаки (в клетках)
+BANDIT_CAMP_RADIUS = 40  # Радиус движения бандитов от лагеря
+
 # Имена для локаций
 CITY_NAMES = [
     "Златоград", "Каменск", "Серебряный Град", "Королевская Гавань",

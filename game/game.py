@@ -4,10 +4,11 @@
 import pygame
 import random
 from game.map import GameMap
-from game.character import Player, Guard, Merchant
+from game.character import Player, Guard, Merchant, Bandit
 from game.fog_of_war import FogOfWar
 from game.constants import (
-    WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TILE_SIZE, COLORS, LOCATION_CITY, LOCATION_VILLAGE
+    WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TILE_SIZE, COLORS,
+    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP
 )
 
 
@@ -57,9 +58,14 @@ class Game:
         self.merchants = []
         self._spawn_merchants()
 
+        # Создание бандитов в лагерях
+        self.bandits = []
+        self._spawn_bandits()
+
         print(f"Игрок создан на позиции ({self.player.x}, {self.player.y})")
         print(f"Создано {len(self.guards)} стражников")
         print(f"Создано {len(self.merchants)} торговцев")
+        print(f"Создано {len(self.bandits)} бандитов")
         print("Игра готова к запуску!")
 
     def _spawn_guards(self):
@@ -148,6 +154,32 @@ class Game:
 
                 self.merchants.append(merchant)
 
+    def _spawn_bandits(self):
+        """Создание бандитов в лагерях"""
+        # Находим все бандитские лагеря на карте
+        bandit_camps = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_BANDIT_CAMP]
+
+        for camp in bandit_camps:
+            # Создаем 3-5 бандитов возле каждого лагеря
+            num_bandits = random.randint(3, 5)
+
+            for i in range(num_bandits):
+                # Находим позицию рядом с лагерем
+                bandit_pos = self._find_guard_position(camp.x, camp.y)
+                if bandit_pos:
+                    bx, by = bandit_pos
+                    bandit_level = random.randint(4, 12)
+                    bandit_names = [
+                        "Бандит", "Разбойник", "Головорез", "Грабитель",
+                        "Налетчик", "Лихой человек", "Бандюган", "Воришка"
+                    ]
+                    bandit_name = f"{random.choice(bandit_names)} {camp.name}"
+
+                    # Создаем бандита с привязкой к лагерю
+                    bandit = Bandit(bandit_name, bx, by, bandit_level, camp.x, camp.y)
+
+                    self.bandits.append(bandit)
+
     def advance_time(self, hours=1):
         """
         Продвинуть игровое время на указанное количество часов
@@ -164,10 +196,15 @@ class Game:
 
         # Обновляем AI всех NPC при изменении времени
         for _ in range(hours):
+            # Собираем всех NPC для проверки взаимодействий
+            all_npcs = self.guards + self.merchants + self.bandits
+
             for guard in self.guards:
-                guard.update_ai(self.game_map)
+                guard.update_ai(self.game_map, all_npcs)
             for merchant in self.merchants:
-                merchant.update_ai(self.game_map)
+                merchant.update_ai(self.game_map, all_npcs)
+            for bandit in self.bandits:
+                bandit.update_ai(self.game_map, all_npcs)
 
     def get_time_string(self):
         """
@@ -388,12 +425,17 @@ class Game:
                 # Проверяем, видим ли мы стражника (туман войны)
                 tile = self.game_map.get_tile(guard.x, guard.y)
                 if tile.explored and self.fog_of_war.is_visible(guard.x, guard.y, self.player.x, self.player.y):
+                    if not guard.is_alive:
+                        continue
+
                     guard_screen_x = (guard.x - self.camera_x) * TILE_SIZE
                     guard_screen_y = (guard.y - self.camera_y) * TILE_SIZE
 
                     # Цвет зависит от состояния стражника
                     if guard.state == "rest":
                         guard_color = (100, 100, 200)  # Синий оттенок для отдыха
+                    elif guard.state == "combat":
+                        guard_color = (50, 150, 255)   # Ярко-синий для боя
                     else:
                         guard_color = (0, 100, 200)    # Темно-синий для патруля
 
@@ -414,12 +456,17 @@ class Game:
                 # Проверяем, видим ли мы торговца (туман войны)
                 tile = self.game_map.get_tile(merchant.x, merchant.y)
                 if tile.explored and self.fog_of_war.is_visible(merchant.x, merchant.y, self.player.x, self.player.y):
+                    if not merchant.is_alive:
+                        continue
+
                     merchant_screen_x = (merchant.x - self.camera_x) * TILE_SIZE
                     merchant_screen_y = (merchant.y - self.camera_y) * TILE_SIZE
 
                     # Цвет зависит от состояния торговца
                     if merchant.state == "rest":
                         merchant_color = (150, 100, 50)  # Коричневый для отдыха/торговли
+                    elif merchant.state == "flee":
+                        merchant_color = (255, 200, 100)  # Светлый для побега
                     else:
                         merchant_color = (200, 150, 50)  # Оранжево-коричневый для путешествия
 
@@ -431,6 +478,46 @@ class Game:
                          merchant_screen_y + TILE_SIZE // 4,
                          TILE_SIZE // 2,
                          TILE_SIZE // 2)
+                    )
+
+        # Отрисовка бандитов
+        for bandit in self.bandits:
+            # Проверяем, находится ли бандит в зоне видимости камеры
+            if (self.camera_x <= bandit.x < self.camera_x + tiles_x and
+                self.camera_y <= bandit.y < self.camera_y + tiles_y):
+
+                # Проверяем, видим ли мы бандита (туман войны)
+                tile = self.game_map.get_tile(bandit.x, bandit.y)
+                if tile.explored and self.fog_of_war.is_visible(bandit.x, bandit.y, self.player.x, self.player.y):
+                    if not bandit.is_alive:
+                        continue
+
+                    bandit_screen_x = (bandit.x - self.camera_x) * TILE_SIZE
+                    bandit_screen_y = (bandit.y - self.camera_y) * TILE_SIZE
+
+                    # Цвет зависит от состояния бандита
+                    if bandit.state == "rest":
+                        bandit_color = (150, 0, 0)  # Темно-красный для отдыха
+                    elif bandit.state == "combat":
+                        bandit_color = (255, 50, 50)  # Ярко-красный для боя
+                    else:
+                        bandit_color = (200, 0, 0)  # Красный для патруля
+
+                    # Отрисовка бандита (треугольник для отличия от других)
+                    center_x = bandit_screen_x + TILE_SIZE // 2
+                    center_y = bandit_screen_y + TILE_SIZE // 2
+                    size = TILE_SIZE // 3
+
+                    points = [
+                        (center_x, center_y - size),  # Верх
+                        (center_x - size, center_y + size),  # Левый низ
+                        (center_x + size, center_y + size)   # Правый низ
+                    ]
+
+                    pygame.draw.polygon(
+                        self.screen,
+                        bandit_color,
+                        points
                     )
 
         # Отрисовка игрока (поверх всего остального)
