@@ -339,7 +339,7 @@ class Player(Character):
 
     def rest(self):
         """
-        Отдых - восстанавливает здоровье и ману
+        Отдых - восстанавливает здоровье, ману и выносливость
         Занимает 1 час игрового времени
         """
         # Восстанавливаем 30% от максимального здоровья
@@ -350,8 +350,15 @@ class Player(Character):
         mana_restored = int(self.max_mana * 0.5)
         self.mana = min(self.max_mana, self.mana + mana_restored)
 
+        # Восстанавливаем выносливость (дополнительно к обычному восстановлению)
+        old_stamina = self.stamina
+        stamina_boost = (self.strength + self.constitution) * 2  # Двойная скорость при отдыхе
+        self.stamina = min(self.max_stamina, self.stamina + stamina_boost)
+        stamina_restored = self.stamina - old_stamina
+
         print(f"Здоровье восстановлено: +{health_restored} ({self.health}/{self.max_health})")
         print(f"Мана восстановлена: +{mana_restored} ({self.mana}/{self.max_mana})")
+        print(f"Выносливость восстановлена: +{stamina_restored} ({self.stamina}/{self.max_stamina})")
 
     def work(self):
         """
