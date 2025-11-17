@@ -1,0 +1,282 @@
+"""
+Основной класс игры
+"""
+import pygame
+from game.map import GameMap
+from game.character import Player
+from game.fog_of_war import FogOfWar
+from game.constants import (
+    WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TILE_SIZE, COLORS
+)
+
+
+class Game:
+    """Главный класс игры"""
+
+    def __init__(self):
+        """Инициализация игры"""
+        # Окно игры
+        self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+        pygame.display.set_caption("Classic RPG")
+
+        # Часы для контроля FPS
+        self.clock = pygame.time.Clock()
+        self.running = True
+
+        # Генерация карты
+        print("Генерация карты...")
+        self.game_map = GameMap()
+
+        # Создание игрока
+        spawn_x, spawn_y = self.game_map.find_spawn_point()
+        self.player = Player("Герой", spawn_x, spawn_y)
+
+        # Система тумана войны
+        self.fog_of_war = FogOfWar(self.game_map)
+        self.fog_of_war.update_vision(self.player.x, self.player.y)
+
+        # Камера (смещение для отображения карты)
+        self.camera_x = 0
+        self.camera_y = 0
+        self._update_camera()
+
+        # Шрифт для текста
+        self.font = pygame.font.Font(None, 24)
+        self.info_font = pygame.font.Font(None, 20)
+
+        print(f"Игрок создан на позиции ({self.player.x}, {self.player.y})")
+        print("Игра готова к запуску!")
+
+    def run(self):
+        """Главный игровой цикл"""
+        while self.running:
+            # Обработка событий
+            self._handle_events()
+
+            # Обновление состояния игры
+            self._update()
+
+            # Отрисовка
+            self._render()
+
+            # Ограничение FPS
+            self.clock.tick(FPS)
+
+    def _handle_events(self):
+        """Обработка событий ввода"""
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
+            # Обработка нажатий клавиш
+            if event.type == pygame.KEYDOWN:
+                self._handle_key_press(event.key)
+
+    def _handle_key_press(self, key):
+        """
+        Обработка нажатия клавиш
+
+        Args:
+            key: Код нажатой клавиши
+        """
+        # Движение игрока (стрелки или WASD)
+        moved = False
+        new_x, new_y = self.player.x, self.player.y
+
+        if key == pygame.K_UP or key == pygame.K_w:
+            new_y -= 1
+            moved = True
+        elif key == pygame.K_DOWN or key == pygame.K_s:
+            new_y += 1
+            moved = True
+        elif key == pygame.K_LEFT or key == pygame.K_a:
+            new_x -= 1
+            moved = True
+        elif key == pygame.K_RIGHT or key == pygame.K_d:
+            new_x += 1
+            moved = True
+        elif key == pygame.K_ESCAPE:
+            self.running = False
+
+        # Попытка переместить игрока
+        if moved:
+            if self.player.move_to(new_x, new_y, self.game_map):
+                # Обновляем туман войны
+                self.fog_of_war.update_vision(self.player.x, self.player.y)
+                # Обновляем камеру
+                self._update_camera()
+
+                # Проверяем, есть ли локация на новой позиции
+                tile = self.game_map.get_tile(self.player.x, self.player.y)
+                if tile.has_location():
+                    print(f"Вы прибыли в: {tile.location.name}")
+                    print(f"  {tile.location.get_description()}")
+
+    def _update(self):
+        """Обновление состояния игры"""
+        pass
+
+    def _update_camera(self):
+        """Обновление позиции камеры, чтобы следить за игроком"""
+        # Вычисляем размер видимой области в тайлах
+        tiles_x = WINDOW_WIDTH // TILE_SIZE
+        tiles_y = (WINDOW_HEIGHT - 100) // TILE_SIZE  # -100 для UI панели
+
+        # Центрируем камеру на игроке
+        self.camera_x = self.player.x - tiles_x // 2
+        self.camera_y = self.player.y - tiles_y // 2
+
+        # Ограничиваем камеру границами карты
+        self.camera_x = max(0, min(self.camera_x, self.game_map.width - tiles_x))
+        self.camera_y = max(0, min(self.camera_y, self.game_map.height - tiles_y))
+
+    def _render(self):
+        """Отрисовка игры"""
+        # Очистка экрана
+        self.screen.fill(COLORS['background'])
+
+        # Отрисовка карты
+        self._render_map()
+
+        # Отрисовка UI
+        self._render_ui()
+
+        # Обновление дисплея
+        pygame.display.flip()
+
+    def _render_map(self):
+        """Отрисовка карты с учетом камеры и тумана войны"""
+        # Вычисляем видимую область
+        tiles_x = WINDOW_WIDTH // TILE_SIZE + 1
+        tiles_y = (WINDOW_HEIGHT - 100) // TILE_SIZE + 1
+
+        for dy in range(tiles_y):
+            for dx in range(tiles_x):
+                # Координаты тайла на карте
+                map_x = self.camera_x + dx
+                map_y = self.camera_y + dy
+
+                # Проверяем валидность координат
+                if not self.game_map.is_valid_position(map_x, map_y):
+                    continue
+
+                tile = self.game_map.get_tile(map_x, map_y)
+
+                # Координаты на экране
+                screen_x = dx * TILE_SIZE
+                screen_y = dy * TILE_SIZE
+
+                # Проверяем, исследован ли тайл
+                if tile.explored:
+                    # Определяем цвет тайла
+                    if tile.has_location():
+                        color = COLORS.get(tile.location.location_type, COLORS['background'])
+                    else:
+                        color = COLORS.get(tile.biome, COLORS['background'])
+
+                    # Если тайл не в текущей видимости, затемняем его
+                    if not self.fog_of_war.is_visible(map_x, map_y, self.player.x, self.player.y):
+                        color = tuple(c // 2 for c in color)  # Затемняем цвет
+
+                    # Отрисовка тайла
+                    pygame.draw.rect(
+                        self.screen,
+                        color,
+                        (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
+                    )
+
+                    # Отрисовка границ тайла (сетка)
+                    pygame.draw.rect(
+                        self.screen,
+                        (64, 64, 64),
+                        (screen_x, screen_y, TILE_SIZE, TILE_SIZE),
+                        1
+                    )
+                else:
+                    # Неисследованная область - туман войны
+                    pygame.draw.rect(
+                        self.screen,
+                        COLORS['fog'],
+                        (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
+                    )
+
+        # Отрисовка игрока
+        player_screen_x = (self.player.x - self.camera_x) * TILE_SIZE
+        player_screen_y = (self.player.y - self.camera_y) * TILE_SIZE
+
+        pygame.draw.circle(
+            self.screen,
+            COLORS['player'],
+            (player_screen_x + TILE_SIZE // 2, player_screen_y + TILE_SIZE // 2),
+            TILE_SIZE // 3
+        )
+
+    def _render_ui(self):
+        """Отрисовка пользовательского интерфейса"""
+        # Панель внизу экрана
+        ui_height = 100
+        ui_y = WINDOW_HEIGHT - ui_height
+
+        # Фон панели
+        pygame.draw.rect(
+            self.screen,
+            (32, 32, 32),
+            (0, ui_y, WINDOW_WIDTH, ui_height)
+        )
+
+        # Разделительная линия
+        pygame.draw.line(
+            self.screen,
+            COLORS['text'],
+            (0, ui_y),
+            (WINDOW_WIDTH, ui_y),
+            2
+        )
+
+        # Информация об игроке
+        info_x = 20
+        info_y = ui_y + 10
+
+        # Имя и позиция
+        name_text = self.font.render(f"{self.player.name}", True, COLORS['text'])
+        self.screen.blit(name_text, (info_x, info_y))
+
+        pos_text = self.info_font.render(
+            f"Позиция: ({self.player.x}, {self.player.y})",
+            True,
+            COLORS['text']
+        )
+        self.screen.blit(pos_text, (info_x, info_y + 30))
+
+        # Характеристики
+        stats = self.player.get_stats()
+        stats_x = 300
+        stats_text = [
+            f"Сила: {stats['strength']}",
+            f"Ловкость: {stats['dexterity']}",
+            f"Дух: {stats['spirit']}",
+            f"Интеллект: {stats['intelligence']}",
+            f"Удача: {stats['luck']}"
+        ]
+
+        for i, text in enumerate(stats_text):
+            stat_surface = self.info_font.render(text, True, COLORS['text'])
+            self.screen.blit(stat_surface, (stats_x + (i % 3) * 150, info_y + (i // 3) * 25))
+
+        # Информация о локации
+        tile = self.game_map.get_tile(self.player.x, self.player.y)
+        if tile.has_location():
+            location_text = self.info_font.render(
+                f"Локация: {tile.location.name}",
+                True,
+                (255, 255, 0)
+            )
+            self.screen.blit(location_text, (info_x, info_y + 55))
+
+        # Управление
+        controls_text = self.info_font.render(
+            "Управление: Стрелки или WASD | ESC - выход",
+            True,
+            (180, 180, 180)
+        )
+        self.screen.blit(controls_text, (WINDOW_WIDTH - 400, info_y + 70))
