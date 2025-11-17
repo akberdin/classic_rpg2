@@ -7,7 +7,7 @@ from game.constants import (
     MAX_LEVEL, RANKS, RELATIONSHIP_NEUTRAL, RELATIONSHIP_HOSTILE, RELATIONSHIP_UNFRIENDLY,
     NPC_RELATIONSHIPS, NPC_TYPE_GUARD, NPC_TYPE_MERCHANT, NPC_TYPE_BANDIT,
     STAMINA_PER_STAT_POINT, STAMINA_COST_PER_MOVE, STAMINA_REST_MIN, STAMINA_REST_MAX,
-    COMBAT_RANGE, BANDIT_CAMP_RADIUS
+    COMBAT_RANGE, BANDIT_CAMP_RADIUS, DODGE_BASE_CHANCE, CRIT_BASE_CHANCE
 )
 
 
@@ -150,28 +150,78 @@ class Character:
         distance = abs(self.x - target.x) + abs(self.y - target.y)
         return distance <= COMBAT_RANGE
 
+    def calculate_dodge_chance(self):
+        """
+        Рассчитать шанс уворота на основе ловкости
+
+        Returns:
+            float: Шанс уворота (0-100)
+        """
+        return self.dexterity * DODGE_BASE_CHANCE
+
+    def calculate_crit_chance(self):
+        """
+        Рассчитать шанс критического удара на основе удачи
+
+        Returns:
+            float: Шанс крита (0-100)
+        """
+        return self.luck * CRIT_BASE_CHANCE
+
     def attack(self, target):
         """
-        Атаковать цель
+        Атаковать цель с учетом механики уворота и крита
 
         Args:
             target: Целевой персонаж
 
         Returns:
-            int: Нанесенный урон
+            dict: Результат атаки с информацией об уроне, увороте и крите
         """
         if not self.can_attack(target):
-            return 0
+            return {
+                'damage': 0,
+                'dodged': False,
+                'critical': False,
+                'hit': False
+            }
 
-        # Простая формула урона: сила + случайность от ловкости
+        # Проверка уворота
+        dodge_chance = target.calculate_dodge_chance()
+        dodge_roll = random.uniform(0, 100)
+
+        if dodge_roll < dodge_chance:
+            # Цель увернулась
+            return {
+                'damage': 0,
+                'dodged': True,
+                'critical': False,
+                'hit': False
+            }
+
+        # Проверка критического удара
+        crit_chance = self.calculate_crit_chance()
+        crit_roll = random.uniform(0, 100)
+        is_critical = crit_roll < crit_chance
+
+        # Расчет урона
         base_damage = self.strength
         bonus_damage = random.randint(0, self.dexterity // 2)
         total_damage = base_damage + bonus_damage
 
+        # Удваиваем урон при крите
+        if is_critical:
+            total_damage *= 2
+
         # Применяем урон
         target.take_damage(total_damage)
 
-        return total_damage
+        return {
+            'damage': total_damage,
+            'dodged': False,
+            'critical': is_critical,
+            'hit': True
+        }
 
     def get_stats(self):
         """Получить все характеристики в виде словаря"""
@@ -574,9 +624,13 @@ class Guard(NPC):
 
         # Проверяем, можем ли атаковать
         if self.can_attack(self.target_enemy):
-            damage = self.attack(self.target_enemy)
-            if damage > 0:
-                print(f"{self.name} атакует {self.target_enemy.name} и наносит {damage} урона!")
+            attack_result = self.attack(self.target_enemy)
+
+            if attack_result['dodged']:
+                print(f"{self.target_enemy.name} увернулся от атаки {self.name}!")
+            elif attack_result['hit']:
+                crit_msg = " КРИТИЧЕСКИЙ УДАР!" if attack_result['critical'] else ""
+                print(f"{self.name} атакует {self.target_enemy.name} и наносит {attack_result['damage']} урона!{crit_msg}")
                 if not self.target_enemy.is_alive:
                     print(f"{self.target_enemy.name} повержен!")
                     self.target_enemy = None
@@ -1028,9 +1082,13 @@ class Bandit(NPC):
 
         # Проверяем, можем ли атаковать
         if self.can_attack(self.target_enemy):
-            damage = self.attack(self.target_enemy)
-            if damage > 0:
-                print(f"{self.name} атакует {self.target_enemy.name} и наносит {damage} урона!")
+            attack_result = self.attack(self.target_enemy)
+
+            if attack_result['dodged']:
+                print(f"{self.target_enemy.name} увернулся от атаки {self.name}!")
+            elif attack_result['hit']:
+                crit_msg = " КРИТИЧЕСКИЙ УДАР!" if attack_result['critical'] else ""
+                print(f"{self.name} атакует {self.target_enemy.name} и наносит {attack_result['damage']} урона!{crit_msg}")
                 if not self.target_enemy.is_alive:
                     print(f"{self.target_enemy.name} повержен!")
                     self.target_enemy = None
