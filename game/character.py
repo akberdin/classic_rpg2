@@ -279,7 +279,7 @@ class Guard(NPC):
         self.rest_duration = 3  # Длительность отдыха в часах
         self.patrol_home_x = x  # Домашняя точка патруля
         self.patrol_home_y = y
-        self.steps_per_hour = 8  # Количество шагов за 1 час игрового времени
+        self.steps_per_hour = 1  # Количество шагов за 1 час игрового времени (только соседние клетки)
 
     def set_patrol_route(self, points):
         """
@@ -411,7 +411,7 @@ class Merchant(NPC):
         self.target_location = None  # Целевая локация (город/деревня)
         self.rest_counter = 0
         self.rest_duration = random.randint(5, 8)  # Отдых 5-8 часов в городе
-        self.steps_per_hour = random.randint(10, 15)  # Торговцы быстрее стражников
+        self.steps_per_hour = 1  # Количество шагов за 1 час игрового времени (только соседние клетки)
         self.settlements = []  # Список всех населенных пунктов
         self.stuck_counter = 0  # Счетчик для определения застревания
         self.last_position = (x, y)
