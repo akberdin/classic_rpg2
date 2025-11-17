@@ -7,6 +7,7 @@ from game.inventory import Inventory
 from game.constants import (
     MAX_LEVEL, RANKS, RELATIONSHIP_NEUTRAL, RELATIONSHIP_HOSTILE, RELATIONSHIP_UNFRIENDLY,
     NPC_RELATIONSHIPS, NPC_TYPE_GUARD, NPC_TYPE_MERCHANT, NPC_TYPE_BANDIT,
+    NPC_TYPE_MINER, NPC_TYPE_UNDEAD,
     STAMINA_PER_STAT_POINT, STAMINA_COST_PER_MOVE, STAMINA_REST_MIN, STAMINA_REST_MAX,
     COMBAT_RANGE, BANDIT_CAMP_RADIUS, DODGE_BASE_CHANCE, CRIT_BASE_CHANCE
 )
@@ -341,6 +342,7 @@ class Player(Character):
         self.level = 1
         self.experience = 0
         self.experience_to_next_level = 100  # Опыт для следующего уровня
+        self.stat_points = 0  # Нераспределенные очки характеристик
 
         # Параметр маг (по умолчанию - нет)
         self.is_mage = False
@@ -427,13 +429,8 @@ class Player(Character):
         # Увеличиваем требуемый опыт для следующего уровня
         self.experience_to_next_level = int(self.experience_to_next_level * 1.5)
 
-        # Повышаем характеристики
-        self.strength += 1
-        self.dexterity += 1
-        self.constitution += 1
-        self.spirit += 1
-        self.intelligence += 1
-        self.luck += 1
+        # Даем игроку 3 очка характеристик для распределения
+        self.stat_points += 3
 
         # Обновляем производные характеристики
         self.update_derived_stats()
@@ -445,6 +442,45 @@ class Player(Character):
         # Получаем ранг
         rank = self.get_rank()
         print(f"Поздравляем! Вы достигли {self.level} уровня! Ранг: {rank}")
+        print(f"Вы получили 3 очка характеристик! Нажмите C для их распределения.")
+
+    def add_stat_point(self, stat_name):
+        """
+        Распределить очко характеристики
+
+        Args:
+            stat_name: Название характеристики
+
+        Returns:
+            bool: True если удалось распределить
+        """
+        if self.stat_points <= 0:
+            return False
+
+        stat_map = {
+            'strength': 'strength',
+            'dexterity': 'dexterity',
+            'constitution': 'constitution',
+            'spirit': 'spirit',
+            'intelligence': 'intelligence',
+            'luck': 'luck'
+        }
+
+        if stat_name in stat_map:
+            setattr(self, stat_map[stat_name], getattr(self, stat_map[stat_name]) + 1)
+            self.stat_points -= 1
+
+            # Обновляем производные характеристики
+            self.update_derived_stats()
+
+            # Обновляем максимальную ману если изменился дух
+            if stat_name == 'spirit':
+                self.max_mana = self.spirit * 10
+                self.mana = self.max_mana
+
+            return True
+
+        return False
 
     def rest(self):
         """
@@ -470,15 +506,13 @@ class Player(Character):
 
     def work(self):
         """
-        Работа - получение опыта и золота
+        Работа - получение золота
         Занимает 1 час игрового времени
         """
-        # Получаем опыт в зависимости от уровня
-        exp_gained = 10 + self.level * 2
+        # Получаем только золото
         gold_gained = 5 + self.level
-        self.add_experience(exp_gained)
         self.inventory.add_gold(gold_gained)
-        print(f"Вы поработали и получили {exp_gained} опыта и {gold_gained} золота")
+        print(f"Вы поработали и получили {gold_gained} золота")
 
     def use_item(self, item_name):
         """
@@ -1171,13 +1205,14 @@ class Bandit(NPC):
         self.detection_range = 10  # Дальность обнаружения врагов
         self.wander_target = None  # Целевая точка для блуждания
 
-    def update_ai(self, game_map, all_npcs=None):
+    def update_ai(self, game_map, all_npcs=None, player=None):
         """
         Обновление AI бандита за 1 час игрового времени
 
         Args:
             game_map: Объект карты игры
             all_npcs: Список всех NPC для поиска врагов
+            player: Объект игрока (бандиты агрессивны к игроку)
         """
         if not self.is_alive:
             return
@@ -1189,9 +1224,9 @@ class Bandit(NPC):
         if self.is_resting:
             return
 
-        # Проверяем наличие врагов поблизости
-        if all_npcs:
-            self._check_for_enemies(all_npcs)
+        # Проверяем наличие врагов поблизости (включая игрока)
+        if all_npcs or player:
+            self._check_for_enemies(all_npcs, player)
 
         if self.state == "combat":
             self._combat_step(game_map)
@@ -1206,31 +1241,41 @@ class Bandit(NPC):
         elif self.state == "rest":
             self._rest()
 
-    def _check_for_enemies(self, all_npcs):
+    def _check_for_enemies(self, all_npcs, player=None):
         """
-        Проверить наличие врагов поблизости
+        Проверить наличие врагов поблизости (включая игрока)
 
         Args:
             all_npcs: Список всех NPC
+            player: Объект игрока
         """
         # Ищем ближайшего живого врага
         closest_enemy = None
         closest_distance = float('inf')
 
-        for npc in all_npcs:
-            if not npc.is_alive:
-                continue
+        # Проверяем игрока (бандиты ВСЕГДА агрессивны к игроку)
+        if player and player.is_alive:
+            distance = abs(self.x - player.x) + abs(self.y - player.y)
+            if distance <= self.detection_range:
+                closest_enemy = player
+                closest_distance = distance
 
-            # Проверяем отношение к этому NPC
-            relationship = NPC_RELATIONSHIPS.get((self.npc_type, npc.npc_type), RELATIONSHIP_NEUTRAL)
+        # Проверяем других NPC
+        if all_npcs:
+            for npc in all_npcs:
+                if not npc.is_alive:
+                    continue
 
-            if relationship == RELATIONSHIP_HOSTILE:
-                distance = abs(self.x - npc.x) + abs(self.y - npc.y)
+                # Проверяем отношение к этому NPC
+                relationship = NPC_RELATIONSHIPS.get((self.npc_type, npc.npc_type), RELATIONSHIP_NEUTRAL)
 
-                # Если враг в зоне обнаружения
-                if distance <= self.detection_range and distance < closest_distance:
-                    closest_enemy = npc
-                    closest_distance = distance
+                if relationship == RELATIONSHIP_HOSTILE:
+                    distance = abs(self.x - npc.x) + abs(self.y - npc.y)
+
+                    # Если враг в зоне обнаружения
+                    if distance <= self.detection_range and distance < closest_distance:
+                        closest_enemy = npc
+                        closest_distance = distance
 
         # Если нашли врага, переходим в боевой режим
         if closest_enemy:
@@ -1346,6 +1391,460 @@ class Bandit(NPC):
     def _can_move(self, x, y, game_map):
         """
         Проверить, может ли бандит двигаться на клетку
+
+        Args:
+            x: Координата X
+            y: Координата Y
+            game_map: Объект карты
+
+        Returns:
+            bool: True если можно двигаться
+        """
+        if not game_map.is_valid_position(x, y):
+            return False
+
+        tile = game_map.get_tile(x, y)
+        return tile.is_passable()
+
+
+class Miner(NPC):
+    """Класс Шахтера с AI работы и побега от опасности"""
+
+    def __init__(self, name, x=0, y=0, level=3, mine_x=None, mine_y=None):
+        """
+        Инициализация Шахтера
+
+        Args:
+            name: Имя шахтера
+            x: Позиция X
+            y: Позиция Y
+            level: Уровень шахтера
+            mine_x: Координата X шахты (центр территории)
+            mine_y: Координата Y шахты (центр территории)
+        """
+        super().__init__(name, x, y, npc_type=NPC_TYPE_MINER, level=level)
+
+        # AI параметры
+        self.state = "work"  # work, rest, flee
+        self.mine_x = mine_x if mine_x is not None else x  # Центр шахты
+        self.mine_y = mine_y if mine_y is not None else y
+        self.max_distance_from_mine = 20  # Максимальная дистанция от шахты
+        self.rest_counter = 0
+        self.rest_duration = random.randint(3, 5)  # Отдых 3-5 часов
+        self.steps_per_hour = 1  # Шагов за час
+        self.threat = None  # Текущая угроза от которой убегаем
+        self.detection_range = 8  # Дальность обнаружения угроз
+        self.wander_target = None  # Целевая точка для блуждания
+
+    def update_ai(self, game_map, all_npcs=None):
+        """
+        Обновление AI шахтера за 1 час игрового времени
+
+        Args:
+            game_map: Объект карты игры
+            all_npcs: Список всех NPC для обнаружения угроз
+        """
+        if not self.is_alive:
+            return
+
+        # Восстанавливаем выносливость
+        self.recover_stamina()
+
+        # Если отдыхаем из-за выносливости, ничего не делаем
+        if self.is_resting:
+            return
+
+        # Проверяем наличие угроз поблизости
+        if all_npcs:
+            self._check_for_threats(all_npcs)
+
+        if self.state == "flee":
+            self._flee_step(game_map)
+        elif self.state == "work":
+            # Делаем несколько шагов за 1 час
+            for _ in range(self.steps_per_hour):
+                if not self.consume_stamina():
+                    break
+                self._work_step(game_map)
+                if self.state == "rest":
+                    break
+        elif self.state == "rest":
+            self._rest()
+
+    def _check_for_threats(self, all_npcs):
+        """
+        Проверить наличие угроз поблизости
+
+        Args:
+            all_npcs: Список всех NPC
+        """
+        # Ищем ближайшую угрозу
+        closest_threat = None
+        closest_distance = float('inf')
+
+        for npc in all_npcs:
+            if not npc.is_alive:
+                continue
+
+            # Проверяем отношение к этому NPC
+            relationship = NPC_RELATIONSHIPS.get((self.npc_type, npc.npc_type), RELATIONSHIP_NEUTRAL)
+
+            if relationship in [RELATIONSHIP_HOSTILE, RELATIONSHIP_UNFRIENDLY]:
+                distance = abs(self.x - npc.x) + abs(self.y - npc.y)
+
+                # Если враг в зоне обнаружения
+                if distance <= self.detection_range and distance < closest_distance:
+                    closest_threat = npc
+                    closest_distance = distance
+
+        # Если есть угроза, убегаем
+        if closest_threat:
+            self.threat = closest_threat
+            self.state = "flee"
+        elif self.state == "flee":
+            # Если угрозы больше нет, возвращаемся к работе
+            self.threat = None
+            self.state = "work"
+
+    def _flee_step(self, game_map):
+        """
+        Один шаг побега от угрозы
+
+        Args:
+            game_map: Объект карты игры
+        """
+        # Если угроза исчезла или мертва, возвращаемся к работе
+        if not self.threat or not self.threat.is_alive:
+            self.threat = None
+            self.state = "work"
+            return
+
+        # Убегаем в противоположную от угрозы сторону
+        dx_away = self.x - self.threat.x
+        dy_away = self.y - self.threat.y
+
+        # Нормализуем направление
+        if dx_away > 0:
+            dx = 1
+        elif dx_away < 0:
+            dx = -1
+        else:
+            dx = 0
+
+        if dy_away > 0:
+            dy = 1
+        elif dy_away < 0:
+            dy = -1
+        else:
+            dy = 0
+
+        # Если оба направления 0, выбираем случайное
+        if dx == 0 and dy == 0:
+            dx = random.choice([-1, 0, 1])
+            dy = random.choice([-1, 0, 1])
+
+        # Пытаемся двигаться
+        if self.consume_stamina():
+            new_x = self.x + dx
+            new_y = self.y + dy
+
+            if self._can_move(new_x, new_y, game_map):
+                self.x = new_x
+                self.y = new_y
+            else:
+                # Если не можем идти прямо, пробуем другие направления
+                directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+                random.shuffle(directions)
+                for alt_dx, alt_dy in directions:
+                    new_x = self.x + alt_dx
+                    new_y = self.y + alt_dy
+                    if self._can_move(new_x, new_y, game_map):
+                        self.x = new_x
+                        self.y = new_y
+                        break
+
+    def _work_step(self, game_map):
+        """Один шаг работы - патрулирование территории шахты"""
+        # Проверяем расстояние до шахты
+        distance_to_mine = abs(self.x - self.mine_x) + abs(self.y - self.mine_y)
+
+        # Если слишком далеко от шахты, возвращаемся
+        if distance_to_mine > self.max_distance_from_mine:
+            # Идем в сторону шахты
+            dx, dy = self._find_next_step(self.mine_x, self.mine_y, game_map, max_search_distance=50)
+            if dx != 0 or dy != 0:
+                if self._can_move(self.x + dx, self.y + dy, game_map):
+                    self.x += dx
+                    self.y += dy
+            return
+
+        # Если достигли цели блуждания или цели нет, выбираем новую
+        if not self.wander_target or (self.x == self.wander_target[0] and self.y == self.wander_target[1]):
+            self._choose_wander_target()
+
+        # Идем к цели блуждания
+        if self.wander_target:
+            dx, dy = self._find_next_step(self.wander_target[0], self.wander_target[1], game_map, max_search_distance=30)
+            if dx != 0 or dy != 0:
+                if self._can_move(self.x + dx, self.y + dy, game_map):
+                    self.x += dx
+                    self.y += dy
+
+        # Случайный отдых
+        if random.random() < 0.08:  # 8% шанс отдохнуть
+            self.state = "rest"
+            self.rest_counter = 0
+
+    def _choose_wander_target(self):
+        """Выбрать случайную точку для блуждания в пределах территории шахты"""
+        # Выбираем случайную точку в пределах радиуса от шахты
+        max_offset = min(self.max_distance_from_mine, 15)  # Ограничиваем для производительности
+
+        target_x = self.mine_x + random.randint(-max_offset, max_offset)
+        target_y = self.mine_y + random.randint(-max_offset, max_offset)
+
+        self.wander_target = (target_x, target_y)
+
+    def _rest(self):
+        """Отдых - обновляется каждый игровой час"""
+        self.rest_counter += 1
+        if self.rest_counter >= self.rest_duration:
+            self.state = "work"
+            self.rest_counter = 0
+
+    def _can_move(self, x, y, game_map):
+        """
+        Проверить, может ли шахтер двигаться на клетку
+
+        Args:
+            x: Координата X
+            y: Координата Y
+            game_map: Объект карты
+
+        Returns:
+            bool: True если можно двигаться
+        """
+        if not game_map.is_valid_position(x, y):
+            return False
+
+        tile = game_map.get_tile(x, y)
+        return tile.is_passable()
+
+
+class Undead(NPC):
+    """Класс Нежити с агрессивным AI и привязкой к руинам"""
+
+    def __init__(self, name, x=0, y=0, level=1, ruins_x=None, ruins_y=None):
+        """
+        Инициализация Нежити
+
+        Args:
+            name: Имя нежити
+            x: Позиция X
+            y: Позиция Y
+            level: Уровень нежити (определяет ранг)
+            ruins_x: Координата X руин
+            ruins_y: Координата Y руин
+        """
+        super().__init__(name, x, y, npc_type=NPC_TYPE_UNDEAD, level=level)
+
+        # AI параметры
+        self.state = "patrol"  # patrol, rest, combat
+        self.ruins_x = ruins_x if ruins_x is not None else x  # Центр руин
+        self.ruins_y = ruins_y if ruins_y is not None else y
+        self.max_distance_from_ruins = 7  # Максимальная дистанция от руин
+        self.rest_counter = 0
+        self.rest_duration = random.randint(2, 3)  # Отдых 2-3 часа
+        self.steps_per_hour = 1  # Шагов за час
+        self.target_enemy = None  # Текущая цель для атаки
+        self.detection_range = 12  # Дальность обнаружения врагов
+        self.wander_target = None  # Целевая точка для патруля
+
+    def update_ai(self, game_map, all_npcs=None, player=None):
+        """
+        Обновление AI нежити за 1 час игрового времени
+        Нежита агрессивна ко ВСЕМ!
+
+        Args:
+            game_map: Объект карты игры
+            all_npcs: Список всех NPC для обнаружения врагов
+            player: Объект игрока (нежита также агрессивна к игроку)
+        """
+        if not self.is_alive:
+            return
+
+        # Восстанавливаем выносливость
+        self.recover_stamina()
+
+        # Если отдыхаем из-за выносливости, ничего не делаем
+        if self.is_resting:
+            return
+
+        # Проверяем наличие врагов поблизости (включая игрока)
+        if all_npcs or player:
+            self._check_for_enemies(all_npcs, player)
+
+        if self.state == "combat":
+            self._combat_step(game_map)
+        elif self.state == "patrol":
+            # Делаем несколько шагов за 1 час
+            for _ in range(self.steps_per_hour):
+                if not self.consume_stamina():
+                    break
+                self._patrol_step(game_map)
+                if self.state == "rest":
+                    break
+        elif self.state == "rest":
+            self._rest()
+
+    def _check_for_enemies(self, all_npcs, player=None):
+        """
+        Проверить наличие врагов поблизости
+        Нежита агрессивна ко ВСЕМ!
+
+        Args:
+            all_npcs: Список всех NPC
+            player: Объект игрока
+        """
+        # Ищем ближайшего живого врага
+        closest_enemy = None
+        closest_distance = float('inf')
+
+        # Проверяем игрока (нежита ВСЕГДА агрессивна к игроку)
+        if player and player.is_alive:
+            distance = abs(self.x - player.x) + abs(self.y - player.y)
+            if distance <= self.detection_range:
+                closest_enemy = player
+                closest_distance = distance
+
+        # Проверяем других NPC (нежита агрессивна ко ВСЕМ!)
+        if all_npcs:
+            for npc in all_npcs:
+                if not npc.is_alive:
+                    continue
+
+                # Нежита враждебна ко всем живым существам
+                distance = abs(self.x - npc.x) + abs(self.y - npc.y)
+
+                # Если враг в зоне обнаружения
+                if distance <= self.detection_range and distance < closest_distance:
+                    closest_enemy = npc
+                    closest_distance = distance
+
+        # Если нашли врага, переходим в боевой режим
+        if closest_enemy:
+            self.target_enemy = closest_enemy
+            self.state = "combat"
+        elif self.state == "combat":
+            # Если враг исчез, возвращаемся к патрулю
+            self.target_enemy = None
+            self.state = "patrol"
+
+    def _combat_step(self, game_map):
+        """
+        Один шаг боевого поведения
+
+        Args:
+            game_map: Объект карты игры
+        """
+        # Если нет цели или цель мертва, возвращаемся к патрулю
+        if not self.target_enemy or not self.target_enemy.is_alive:
+            self.target_enemy = None
+            self.state = "patrol"
+            return
+
+        # Проверяем расстояние до руин
+        distance_to_ruins = abs(self.x - self.ruins_x) + abs(self.y - self.ruins_y)
+
+        # Если слишком далеко от руин, возвращаемся
+        if distance_to_ruins > self.max_distance_from_ruins:
+            self.target_enemy = None
+            self.state = "patrol"
+            return
+
+        # Проверяем, можем ли атаковать
+        if self.can_attack(self.target_enemy):
+            attack_result = self.attack(self.target_enemy)
+
+            if attack_result['dodged']:
+                print(f"{self.target_enemy.name} увернулся от атаки {self.name}!")
+            elif attack_result['hit']:
+                crit_msg = " КРИТИЧЕСКИЙ УДАР!" if attack_result['critical'] else ""
+                print(f"{self.name} атакует {self.target_enemy.name} и наносит {attack_result['damage']} урона!{crit_msg}")
+                if not self.target_enemy.is_alive:
+                    print(f"{self.target_enemy.name} повержен!")
+                    self.target_enemy = None
+                    self.state = "patrol"
+        else:
+            # Двигаемся к цели
+            dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=30)
+            if (dx != 0 or dy != 0) and self.consume_stamina():
+                new_x = self.x + dx
+                new_y = self.y + dy
+
+                # Проверяем, не выходим ли за пределы территории
+                distance_to_ruins_new = abs(new_x - self.ruins_x) + abs(new_y - self.ruins_y)
+                if distance_to_ruins_new <= self.max_distance_from_ruins:
+                    if self._can_move(new_x, new_y, game_map):
+                        self.x = new_x
+                        self.y = new_y
+                else:
+                    # Слишком далеко, прекращаем преследование
+                    self.target_enemy = None
+                    self.state = "patrol"
+
+    def _patrol_step(self, game_map):
+        """Один шаг патрулирования территории руин"""
+        # Проверяем расстояние до руин
+        distance_to_ruins = abs(self.x - self.ruins_x) + abs(self.y - self.ruins_y)
+
+        # Если слишком далеко от руин, возвращаемся
+        if distance_to_ruins > self.max_distance_from_ruins:
+            # Идем в сторону руин
+            dx, dy = self._find_next_step(self.ruins_x, self.ruins_y, game_map, max_search_distance=20)
+            if dx != 0 or dy != 0:
+                if self._can_move(self.x + dx, self.y + dy, game_map):
+                    self.x += dx
+                    self.y += dy
+            return
+
+        # Если достигли цели патруля или цели нет, выбираем новую
+        if not self.wander_target or (self.x == self.wander_target[0] and self.y == self.wander_target[1]):
+            self._choose_patrol_target()
+
+        # Идем к цели патруля
+        if self.wander_target:
+            dx, dy = self._find_next_step(self.wander_target[0], self.wander_target[1], game_map, max_search_distance=20)
+            if dx != 0 or dy != 0:
+                if self._can_move(self.x + dx, self.y + dy, game_map):
+                    self.x += dx
+                    self.y += dy
+
+        # Случайный отдых
+        if random.random() < 0.1:  # 10% шанс отдохнуть
+            self.state = "rest"
+            self.rest_counter = 0
+
+    def _choose_patrol_target(self):
+        """Выбрать случайную точку для патруля в пределах территории руин"""
+        # Выбираем случайную точку в пределах радиуса от руин
+        max_offset = min(self.max_distance_from_ruins, 7)
+
+        target_x = self.ruins_x + random.randint(-max_offset, max_offset)
+        target_y = self.ruins_y + random.randint(-max_offset, max_offset)
+
+        self.wander_target = (target_x, target_y)
+
+    def _rest(self):
+        """Отдых - обновляется каждый игровой час"""
+        self.rest_counter += 1
+        if self.rest_counter >= self.rest_duration:
+            self.state = "patrol"
+            self.rest_counter = 0
+
+    def _can_move(self, x, y, game_map):
+        """
+        Проверить, может ли нежить двигаться на клетку
 
         Args:
             x: Координата X
