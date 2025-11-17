@@ -7,10 +7,11 @@ from game.map import GameMap
 from game.character import Player, Guard, Merchant, Bandit
 from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
+from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
 from game.constants import (
     WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TILE_SIZE, COLORS,
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
-    INTERACTION_TRADE, INTERACTION_ATTACK, INTERACTION_LEAVE
+    LOCATION_MINE, LOCATION_RUINS
 )
 
 
@@ -60,6 +61,10 @@ class Game:
         self.interaction_menu_open = False
         self.nearby_npc = None
 
+        # Меню инвентаря
+        self.inventory_menu_open = False
+        self.selected_inventory_index = 0
+
         # Создание стражников в городах
         self.guards = []
         self._spawn_guards()
@@ -76,7 +81,20 @@ class Game:
         print(f"Создано {len(self.guards)} стражников")
         print(f"Создано {len(self.merchants)} торговцев")
         print(f"Создано {len(self.bandits)} бандитов")
+
+        # Даем игроку стартовые предметы
+        self._give_starting_items()
+
         print("Игра готова к запуску!")
+
+    def _give_starting_items(self):
+        """Дать игроку стартовые предметы"""
+        # Начальное золото
+        self.player.inventory.add_gold(100)
+
+        # Стартовые зелья
+        self.player.inventory.add_item(PREDEFINED_ITEMS["minor_health_potion"], 3)
+        self.player.inventory.add_item(PREDEFINED_ITEMS["minor_stamina_potion"], 2)
 
     def _spawn_guards(self):
         """Создание стражников в городах"""
@@ -275,6 +293,12 @@ class Game:
                     self._handle_interaction_choice(event.key)
                 continue
 
+            # Если открыто меню инвентаря, обрабатываем его
+            if self.inventory_menu_open:
+                if event.type == pygame.KEYDOWN:
+                    self._handle_inventory_input(event.key)
+                continue
+
             # Обработка нажатий клавиш
             if event.type == pygame.KEYDOWN:
                 self._handle_key_press(event.key)
@@ -319,6 +343,15 @@ class Game:
         elif key == pygame.K_e:
             # Взаимодействие с NPC
             self._check_npc_nearby()
+            return
+        elif key == pygame.K_f:
+            # Сбор ресурсов с локации
+            self._collect_resources()
+            return
+        elif key == pygame.K_i:
+            # Открыть/закрыть инвентарь
+            self.inventory_menu_open = not self.inventory_menu_open
+            self.selected_inventory_index = 0
             return
 
         # Попытка переместить игрока
@@ -366,6 +399,78 @@ class Game:
                 return
 
         print("Рядом нет NPC для взаимодействия!")
+
+    def _collect_resources(self):
+        """Собрать ресурсы с текущей локации"""
+        tile = self.game_map.get_tile(self.player.x, self.player.y)
+
+        if not tile.has_location():
+            print("Здесь нечего собирать!")
+            return
+
+        location = tile.location
+
+        if not location.can_collect_loot:
+            print(f"{location.name} не содержит ресурсов для сбора.")
+            return
+
+        if location.loot_collected:
+            print(f"Вы уже собрали ресурсы с {location.name}.")
+            return
+
+        # Получаем лут с локации
+        loot = get_random_loot_from_location(location.location_type)
+
+        if not loot:
+            print("Ничего не найдено!")
+            return
+
+        # Добавляем лут в инвентарь
+        for item, quantity in loot:
+            if self.player.inventory.add_item(item, quantity):
+                print(f"Найдено: {item.name} x{quantity}")
+            else:
+                print(f"Инвентарь полон! Не удалось подобрать {item.name}")
+
+        # Помечаем локацию как обыскованную
+        location.loot_collected = True
+
+        # Продвигаем время на 1 час
+        self.advance_time(1)
+        print(f"Время: {self.get_time_string()}")
+
+    def _handle_inventory_input(self, key):
+        """
+        Обработка ввода в меню инвентаря
+
+        Args:
+            key: Нажатая клавиша
+        """
+        if key == pygame.K_ESCAPE or key == pygame.K_i:
+            self.inventory_menu_open = False
+            return
+
+        all_items = self.player.inventory.get_all_items()
+
+        if not all_items:
+            return
+
+        if key == pygame.K_UP or key == pygame.K_w:
+            self.selected_inventory_index = max(0, self.selected_inventory_index - 1)
+        elif key == pygame.K_DOWN or key == pygame.K_s:
+            self.selected_inventory_index = min(len(all_items) - 1, self.selected_inventory_index + 1)
+        elif key == pygame.K_RETURN or key == pygame.K_u:
+            # Использовать выбранный предмет
+            if 0 <= self.selected_inventory_index < len(all_items):
+                item, quantity = all_items[self.selected_inventory_index]
+                result = self.player.use_item(item.name)
+                print(result)
+                # Если предметов больше нет, корректируем индекс
+                if self.player.inventory.get_item(item.name) is None:
+                    all_items = self.player.inventory.get_all_items()
+                    self.selected_inventory_index = min(self.selected_inventory_index, len(all_items) - 1)
+                    if self.selected_inventory_index < 0:
+                        self.selected_inventory_index = 0
 
     def _handle_interaction_choice(self, key):
         """
@@ -435,6 +540,9 @@ class Game:
         # Отрисовка UI
         self._render_ui()
 
+        # Отрисовка мини-карты
+        self._render_minimap()
+
         # Если идет бой, отрисовываем окно боя
         if self.in_combat and self.combat_system:
             self.combat_system.render()
@@ -443,8 +551,66 @@ class Game:
         if self.interaction_menu_open and self.nearby_npc:
             self._render_interaction_menu()
 
+        # Если открыто меню инвентаря, отрисовываем его
+        if self.inventory_menu_open:
+            self._render_inventory_menu()
+
         # Обновление дисплея
         pygame.display.flip()
+
+    def _get_time_of_day_tint(self):
+        """
+        Получить цветовой оттенок в зависимости от времени суток
+
+        Returns:
+            tuple: (r, g, b) - компонент затемнения (0-255)
+        """
+        # Ночь: 0-5 часов и 22-23 часа
+        # Рассвет: 6-7 часов
+        # День: 8-17 часов
+        # Закат: 18-21 часов
+
+        hour = self.game_hour
+
+        if 0 <= hour < 6 or hour >= 22:
+            # Ночь - очень темно (синеватый оттенок)
+            return (50, 50, 80)
+        elif 6 <= hour < 8:
+            # Рассвет - постепенное осветление (оранжевый оттенок)
+            progress = (hour - 6) / 2.0  # 0.0 to 1.0
+            r = int(50 + progress * 150)
+            g = int(50 + progress * 150)
+            b = int(80 + progress * 120)
+            return (r, g, b)
+        elif 8 <= hour < 18:
+            # День - полная яркость
+            return (255, 255, 255)
+        elif 18 <= hour < 22:
+            # Закат - постепенное затемнение (красноватый оттенок)
+            progress = (hour - 18) / 4.0  # 0.0 to 1.0
+            r = int(255 - progress * 155)
+            g = int(255 - progress * 155)
+            b = int(255 - progress * 125)
+            return (r, g, b)
+
+        return (255, 255, 255)  # По умолчанию - день
+
+    def _apply_time_of_day_tint(self, color):
+        """
+        Применить оттенок времени суток к цвету
+
+        Args:
+            color: Исходный цвет (r, g, b)
+
+        Returns:
+            tuple: Модифицированный цвет
+        """
+        tint = self._get_time_of_day_tint()
+        return (
+            int(color[0] * tint[0] / 255),
+            int(color[1] * tint[1] / 255),
+            int(color[2] * tint[2] / 255)
+        )
 
     def _render_map(self):
         """Отрисовка карты с учетом камеры и тумана войны"""
@@ -479,6 +645,9 @@ class Game:
                     # Если тайл не в текущей видимости, затемняем его
                     if not self.fog_of_war.is_visible(map_x, map_y, self.player.x, self.player.y):
                         color = tuple(c // 2 for c in color)  # Затемняем цвет
+                    else:
+                        # Применяем оттенок времени суток только к видимым тайлам
+                        color = self._apply_time_of_day_tint(color)
 
                     # Отрисовка тайла
                     pygame.draw.rect(
@@ -753,13 +922,95 @@ class Game:
         )
         self.screen.blit(time_text, (info_x + 900, info_y))
 
+        # Золото
+        gold_text = self.info_font.render(
+            f"Золото: {self.player.inventory.gold}",
+            True,
+            (255, 215, 0)
+        )
+        self.screen.blit(gold_text, (info_x + 900, info_y + 30))
+
         # Управление
         controls_text = self.info_font.render(
-            "WASD - движение | R - отдых | T - работа | E - взаимодействие | ESC - выход",
+            "WASD - движение | R - отдых | T - работа | E - взаимодействие | F - собрать | I - инвентарь | ESC - выход",
             True,
             (180, 180, 180)
         )
-        self.screen.blit(controls_text, (WINDOW_WIDTH - 650, info_y + 70))
+        self.screen.blit(controls_text, (20, info_y + 70))
+
+    def _render_minimap(self):
+        """Отрисовка мини-карты"""
+        # Размеры мини-карты
+        minimap_size = 150
+        minimap_x = WINDOW_WIDTH - minimap_size - 10
+        minimap_y = 10
+        pixel_per_tile = 1.5  # Размер одного тайла на мини-карте
+
+        # Фон мини-карты
+        pygame.draw.rect(
+            self.screen,
+            (20, 20, 25),
+            (minimap_x, minimap_y, minimap_size, minimap_size)
+        )
+
+        # Рамка мини-карты
+        pygame.draw.rect(
+            self.screen,
+            COLORS['text'],
+            (minimap_x, minimap_y, minimap_size, minimap_size),
+            2
+        )
+
+        # Вычисляем область карты для отображения (вокруг игрока)
+        map_view_radius = int(minimap_size / pixel_per_tile / 2)
+
+        for dy in range(-map_view_radius, map_view_radius):
+            for dx in range(-map_view_radius, map_view_radius):
+                map_x = self.player.x + dx
+                map_y = self.player.y + dy
+
+                if not self.game_map.is_valid_position(map_x, map_y):
+                    continue
+
+                tile = self.game_map.get_tile(map_x, map_y)
+
+                # Отображаем только исследованные тайлы
+                if tile.explored:
+                    # Позиция на мини-карте
+                    minimap_px = minimap_x + int((dx + map_view_radius) * pixel_per_tile)
+                    minimap_py = minimap_y + int((dy + map_view_radius) * pixel_per_tile)
+
+                    # Определяем цвет
+                    if tile.has_location():
+                        color = COLORS.get(tile.location.location_type, COLORS['background'])
+                    else:
+                        color = COLORS.get(tile.biome, COLORS['background'])
+
+                    # Затемняем цвет для мини-карты
+                    color = tuple(c // 2 for c in color)
+
+                    # Отрисовка пикселя тайла
+                    pygame.draw.rect(
+                        self.screen,
+                        color,
+                        (minimap_px, minimap_py, int(pixel_per_tile), int(pixel_per_tile))
+                    )
+
+        # Отметка игрока на мини-карте (в центре)
+        player_minimap_x = minimap_x + minimap_size // 2
+        player_minimap_y = minimap_y + minimap_size // 2
+
+        pygame.draw.circle(
+            self.screen,
+            COLORS['player'],
+            (player_minimap_x, player_minimap_y),
+            3
+        )
+
+        # Заголовок мини-карты
+        minimap_font = pygame.font.Font(None, 16)
+        minimap_title = minimap_font.render("Карта", True, COLORS['text'])
+        self.screen.blit(minimap_title, (minimap_x + 5, minimap_y - 18))
 
     def _render_interaction_menu(self):
         """Отрисовка меню взаимодействия с NPC"""
@@ -847,3 +1098,123 @@ class Game:
             action_rect.centerx = menu_x + menu_width // 2
             action_rect.y = buttons_y + i * 30
             self.screen.blit(action_text, action_rect)
+
+    def _render_inventory_menu(self):
+        """Отрисовка меню инвентаря"""
+        # Затемняем фон
+        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+        overlay.set_alpha(150)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, (0, 0))
+
+        # Размеры меню
+        menu_width = 600
+        menu_height = 500
+        menu_x = (WINDOW_WIDTH - menu_width) // 2
+        menu_y = (WINDOW_HEIGHT - menu_height) // 2
+
+        # Фон меню
+        pygame.draw.rect(
+            self.screen,
+            (40, 40, 45),
+            (menu_x, menu_y, menu_width, menu_height)
+        )
+
+        # Рамка меню
+        pygame.draw.rect(
+            self.screen,
+            COLORS['text'],
+            (menu_x, menu_y, menu_width, menu_height),
+            3
+        )
+
+        # Заголовок
+        title_text = self.font.render("Инвентарь", True, (255, 215, 0))
+        title_rect = title_text.get_rect()
+        title_rect.centerx = menu_x + menu_width // 2
+        title_rect.y = menu_y + 10
+        self.screen.blit(title_text, title_rect)
+
+        # Информация о золоте
+        gold_text = self.info_font.render(
+            f"Золото: {self.player.inventory.gold}",
+            True,
+            (255, 215, 0)
+        )
+        gold_rect = gold_text.get_rect()
+        gold_rect.centerx = menu_x + menu_width // 2
+        gold_rect.y = menu_y + 40
+        self.screen.blit(gold_text, gold_rect)
+
+        # Разделительная линия
+        pygame.draw.line(
+            self.screen,
+            COLORS['text'],
+            (menu_x + 10, menu_y + 70),
+            (menu_x + menu_width - 10, menu_y + 70),
+            2
+        )
+
+        # Список предметов
+        all_items = self.player.inventory.get_all_items()
+
+        if not all_items:
+            empty_text = self.info_font.render("Инвентарь пуст", True, (180, 180, 180))
+            empty_rect = empty_text.get_rect()
+            empty_rect.centerx = menu_x + menu_width // 2
+            empty_rect.y = menu_y + 100
+            self.screen.blit(empty_text, empty_rect)
+        else:
+            items_y = menu_y + 90
+            max_visible_items = 12
+            start_index = max(0, self.selected_inventory_index - max_visible_items + 1)
+            end_index = min(len(all_items), start_index + max_visible_items)
+
+            for i in range(start_index, end_index):
+                item, quantity = all_items[i]
+                display_index = i - start_index
+
+                # Цвет фона для выбранного предмета
+                if i == self.selected_inventory_index:
+                    bg_color = (80, 80, 90)
+                    pygame.draw.rect(
+                        self.screen,
+                        bg_color,
+                        (menu_x + 20, items_y + display_index * 30 - 2, menu_width - 40, 28)
+                    )
+
+                # Название и количество
+                item_text = self.info_font.render(
+                    f"{item.name} x{quantity}",
+                    True,
+                    (200, 200, 200) if i != self.selected_inventory_index else (255, 255, 255)
+                )
+                self.screen.blit(item_text, (menu_x + 30, items_y + display_index * 30))
+
+                # Стоимость
+                value_text = self.info_font.render(
+                    f"{item.value}г",
+                    True,
+                    (255, 215, 0)
+                )
+                self.screen.blit(value_text, (menu_x + menu_width - 100, items_y + display_index * 30))
+
+        # Подсказки
+        hints_y = menu_y + menu_height - 60
+        pygame.draw.line(
+            self.screen,
+            COLORS['text'],
+            (menu_x + 10, hints_y - 10),
+            (menu_x + menu_width - 10, hints_y - 10),
+            2
+        )
+
+        hint_text = self.info_font.render(
+            "W/S - выбор | Enter/U - использовать | I/ESC - закрыть",
+            True,
+            (180, 180, 180)
+        )
+        hint_rect = hint_text.get_rect()
+        hint_rect.centerx = menu_x + menu_width // 2
+        hint_rect.y = hints_y
+        self.screen.blit(hint_text, hint_rect)

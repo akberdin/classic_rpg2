@@ -2,6 +2,7 @@
 Система боя с пошаговым управлением
 """
 import pygame
+import random
 from game.constants import WINDOW_WIDTH, WINDOW_HEIGHT, COLORS
 
 
@@ -122,7 +123,6 @@ class CombatSystem:
 
         elif action_type == "flee":
             # Попытка побега (50% шанс)
-            import random
             if random.random() < 0.5:
                 self.add_to_log("Вы успешно сбежали из боя!")
                 return "fled"

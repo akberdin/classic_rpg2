@@ -67,6 +67,10 @@ class Location:
         self.location_type = location_type
         self.name = name or self._generate_default_name()
 
+        # Для шахт и руин - отслеживаем был ли собран лут
+        self.loot_collected = False
+        self.can_collect_loot = location_type in [LOCATION_MINE, LOCATION_RUINS]
+
     def _generate_default_name(self):
         """Генерация названия по умолчанию"""
         names = {
