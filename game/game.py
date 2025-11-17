@@ -184,14 +184,6 @@ class Game:
                         color,
                         (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
                     )
-
-                    # Отрисовка границ тайла (сетка)
-                    pygame.draw.rect(
-                        self.screen,
-                        (64, 64, 64),
-                        (screen_x, screen_y, TILE_SIZE, TILE_SIZE),
-                        1
-                    )
                 else:
                     # Неисследованная область - туман войны
                     pygame.draw.rect(
