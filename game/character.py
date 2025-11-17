@@ -3,7 +3,12 @@
 """
 import random
 from collections import deque
-from game.constants import MAX_LEVEL, RANKS, RELATIONSHIP_NEUTRAL
+from game.constants import (
+    MAX_LEVEL, RANKS, RELATIONSHIP_NEUTRAL, RELATIONSHIP_HOSTILE,
+    NPC_RELATIONSHIPS, NPC_TYPE_GUARD, NPC_TYPE_MERCHANT, NPC_TYPE_BANDIT,
+    STAMINA_PER_STAT_POINT, STAMINA_COST_PER_MOVE, STAMINA_REST_MIN, STAMINA_REST_MAX,
+    COMBAT_RANGE, BANDIT_CAMP_RADIUS
+)
 
 
 class Character:
@@ -30,6 +35,17 @@ class Character:
         self.intelligence = 0  # Интеллект
         self.luck = 0          # Удача
 
+        # Система выносливости
+        self.max_stamina = 0
+        self.stamina = 0
+        self.is_resting = False
+        self.rest_threshold = 0  # Порог для окончания отдыха (случайный от 60% до 80%)
+
+        # Боевая система
+        self.max_health = 0
+        self.health = 0
+        self.is_alive = True
+
     def generate_random_stats(self, min_val=5, max_val=15):
         """
         Генерация случайных характеристик
@@ -44,6 +60,118 @@ class Character:
         self.spirit = random.randint(min_val, max_val)
         self.intelligence = random.randint(min_val, max_val)
         self.luck = random.randint(min_val, max_val)
+
+        # Обновляем выносливость и здоровье на основе характеристик
+        self.update_derived_stats()
+
+    def update_derived_stats(self):
+        """Обновить производные характеристики (выносливость, здоровье)"""
+        # Выносливость = (сила + телосложение) * 10
+        self.max_stamina = (self.strength + self.constitution) * STAMINA_PER_STAT_POINT
+        self.stamina = self.max_stamina
+
+        # Устанавливаем порог отдыха (60-80% от максимальной выносливости)
+        rest_percent = random.uniform(STAMINA_REST_MIN, STAMINA_REST_MAX)
+        self.rest_threshold = int(self.max_stamina * rest_percent)
+
+        # Здоровье = телосложение * 20
+        old_max_health = self.max_health
+        self.max_health = self.constitution * 20
+
+        # Если здоровье увеличилось, добавляем разницу к текущему здоровью
+        if old_max_health > 0:
+            health_diff = self.max_health - old_max_health
+            self.health = min(self.max_health, self.health + health_diff)
+        else:
+            self.health = self.max_health
+
+    def consume_stamina(self, amount=STAMINA_COST_PER_MOVE):
+        """
+        Потратить выносливость
+
+        Args:
+            amount: Количество выносливости
+
+        Returns:
+            bool: True если удалось потратить
+        """
+        if self.stamina >= amount:
+            self.stamina -= amount
+
+            # Если выносливость закончилась, начинаем отдых
+            if self.stamina <= 0:
+                self.stamina = 0
+                self.is_resting = True
+
+            return True
+        return False
+
+    def recover_stamina(self):
+        """Восстановить выносливость (вызывается каждый игровой час)"""
+        if self.is_resting or self.stamina < self.max_stamina:
+            # Скорость восстановления = сила + телосложение
+            recovery = self.strength + self.constitution
+            self.stamina = min(self.max_stamina, self.stamina + recovery)
+
+            # Проверяем, достаточно ли восстановились для окончания отдыха
+            if self.is_resting and self.stamina >= self.rest_threshold:
+                self.is_resting = False
+
+    def take_damage(self, damage):
+        """
+        Получить урон
+
+        Args:
+            damage: Количество урона
+
+        Returns:
+            bool: True если персонаж жив
+        """
+        self.health -= damage
+        if self.health <= 0:
+            self.health = 0
+            self.is_alive = False
+        return self.is_alive
+
+    def can_attack(self, target):
+        """
+        Проверить, может ли персонаж атаковать цель
+
+        Args:
+            target: Целевой персонаж
+
+        Returns:
+            bool: True если может атаковать
+        """
+        if not self.is_alive or not target.is_alive:
+            return False
+
+        # Проверяем дистанцию
+        distance = abs(self.x - target.x) + abs(self.y - target.y)
+        return distance <= COMBAT_RANGE
+
+    def attack(self, target):
+        """
+        Атаковать цель
+
+        Args:
+            target: Целевой персонаж
+
+        Returns:
+            int: Нанесенный урон
+        """
+        if not self.can_attack(target):
+            return 0
+
+        # Простая формула урона: сила + случайность от ловкости
+        base_damage = self.strength
+        bonus_damage = random.randint(0, self.dexterity // 2)
+        total_damage = base_damage + bonus_damage
+
+        # Применяем урон
+        target.take_damage(total_damage)
+
+        return total_damage
 
     def get_stats(self):
         """Получить все характеристики в виде словаря"""
@@ -111,13 +239,12 @@ class Player(Character):
         # Параметр маг (по умолчанию - нет)
         self.is_mage = False
 
-        # Здоровье зависит от телосложения (1 телосложение = 20 здоровья)
-        self.max_health = self.constitution * 20
-        self.health = self.max_health
-
         # Мана зависит от духа (1 дух = 10 маны)
         self.max_mana = self.spirit * 10
         self.mana = self.max_mana
+
+        # Обновляем производные характеристики (здоровье, выносливость)
+        self.update_derived_stats()
 
     def can_move_to(self, x, y, game_map):
         """
@@ -199,9 +326,10 @@ class Player(Character):
         self.intelligence += 1
         self.luck += 1
 
-        # Обновляем максимальное здоровье и ману
-        self.max_health = self.constitution * 20
-        self.health = self.max_health
+        # Обновляем производные характеристики
+        self.update_derived_stats()
+
+        # Обновляем максимальную ману
         self.max_mana = self.spirit * 10
         self.mana = self.max_mana
 
@@ -317,7 +445,7 @@ class NPC(Character):
 
 
 class Guard(NPC):
-    """Класс Стражника с AI патрулирования"""
+    """Класс Стражника с AI патрулирования и боевым поведением"""
 
     def __init__(self, name, x=0, y=0, level=5):
         """
@@ -329,10 +457,10 @@ class Guard(NPC):
             y: Позиция Y
             level: Уровень стражника
         """
-        super().__init__(name, x, y, npc_type="guard", level=level)
+        super().__init__(name, x, y, npc_type=NPC_TYPE_GUARD, level=level)
 
         # AI параметры
-        self.state = "patrol"  # patrol, rest, alert
+        self.state = "patrol"  # patrol, rest, combat
         self.patrol_points = []  # Точки патрулирования
         self.current_patrol_index = 0
         self.rest_counter = 0
@@ -340,6 +468,8 @@ class Guard(NPC):
         self.patrol_home_x = x  # Домашняя точка патруля
         self.patrol_home_y = y
         self.steps_per_hour = 1  # Количество шагов за 1 час игрового времени (только соседние клетки)
+        self.target_enemy = None  # Текущий враг для атаки
+        self.detection_range = 10  # Дальность обнаружения врагов
 
     def set_patrol_route(self, points):
         """
@@ -351,22 +481,106 @@ class Guard(NPC):
         self.patrol_points = points
         self.current_patrol_index = 0
 
-    def update_ai(self, game_map):
+    def update_ai(self, game_map, all_npcs=None):
         """
         Обновление AI стражника за 1 час игрового времени
         Стражник делает несколько шагов за час
 
         Args:
             game_map: Объект карты игры
+            all_npcs: Список всех NPC для поиска врагов
         """
-        if self.state == "patrol":
+        if not self.is_alive:
+            return
+
+        # Восстанавливаем выносливость
+        self.recover_stamina()
+
+        # Если отдыхаем из-за выносливости, ничего не делаем
+        if self.is_resting:
+            return
+
+        # Проверяем наличие врагов поблизости
+        if all_npcs:
+            self._check_for_enemies(all_npcs)
+
+        if self.state == "combat":
+            self._combat_step(game_map)
+        elif self.state == "patrol":
             # Делаем несколько шагов за 1 час
             for _ in range(self.steps_per_hour):
+                if not self.consume_stamina():
+                    break
                 self._patrol_step(game_map)
                 if self.state == "rest":
                     break
         elif self.state == "rest":
             self._rest()
+
+    def _check_for_enemies(self, all_npcs):
+        """
+        Проверить наличие врагов поблизости
+
+        Args:
+            all_npcs: Список всех NPC
+        """
+        # Ищем ближайшего живого врага
+        closest_enemy = None
+        closest_distance = float('inf')
+
+        for npc in all_npcs:
+            if not npc.is_alive:
+                continue
+
+            # Проверяем отношение к этому NPC
+            relationship = NPC_RELATIONSHIPS.get((self.npc_type, npc.npc_type), RELATIONSHIP_NEUTRAL)
+
+            if relationship == RELATIONSHIP_HOSTILE:
+                distance = abs(self.x - npc.x) + abs(self.y - npc.y)
+
+                # Если враг в зоне обнаружения
+                if distance <= self.detection_range and distance < closest_distance:
+                    closest_enemy = npc
+                    closest_distance = distance
+
+        # Если нашли врага, переходим в боевой режим
+        if closest_enemy:
+            self.target_enemy = closest_enemy
+            self.state = "combat"
+        elif self.state == "combat":
+            # Если враг исчез, возвращаемся к патрулю
+            self.target_enemy = None
+            self.state = "patrol"
+
+    def _combat_step(self, game_map):
+        """
+        Один шаг боевого поведения
+
+        Args:
+            game_map: Объект карты игры
+        """
+        # Если нет цели или цель мертва, возвращаемся к патрулю
+        if not self.target_enemy or not self.target_enemy.is_alive:
+            self.target_enemy = None
+            self.state = "patrol"
+            return
+
+        # Проверяем, можем ли атаковать
+        if self.can_attack(self.target_enemy):
+            damage = self.attack(self.target_enemy)
+            if damage > 0:
+                print(f"{self.name} атакует {self.target_enemy.name} и наносит {damage} урона!")
+                if not self.target_enemy.is_alive:
+                    print(f"{self.target_enemy.name} повержен!")
+                    self.target_enemy = None
+                    self.state = "patrol"
+        else:
+            # Двигаемся к цели
+            dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=30)
+            if (dx != 0 or dy != 0) and self.consume_stamina():
+                if self._can_move(self.x + dx, self.y + dy, game_map):
+                    self.x += dx
+                    self.y += dy
 
     def _patrol_step(self, game_map):
         """Один шаг патрулирования"""
@@ -427,7 +641,7 @@ class Guard(NPC):
 
 
 class Merchant(NPC):
-    """Класс Торговца с AI перемещения между городами"""
+    """Класс Торговца с AI перемещения между городами и побега от опасности"""
 
     def __init__(self, name, x=0, y=0, level=3):
         """
@@ -439,10 +653,10 @@ class Merchant(NPC):
             y: Позиция Y
             level: Уровень торговца
         """
-        super().__init__(name, x, y, npc_type="merchant", level=level)
+        super().__init__(name, x, y, npc_type=NPC_TYPE_MERCHANT, level=level)
 
         # AI параметры
-        self.state = "travel"  # travel, rest, trade
+        self.state = "travel"  # travel, rest, flee
         self.target_location = None  # Целевая локация (город/деревня)
         self.rest_counter = 0
         self.rest_duration = random.randint(5, 8)  # Отдых 5-8 часов в городе
@@ -450,6 +664,8 @@ class Merchant(NPC):
         self.settlements = []  # Список всех населенных пунктов
         self.stuck_counter = 0  # Счетчик для определения застревания
         self.last_position = (x, y)
+        self.threat = None  # Текущая угроза от которой убегаем
+        self.detection_range = 8  # Дальность обнаружения угроз
 
     def set_settlements(self, settlements):
         """
@@ -462,20 +678,131 @@ class Merchant(NPC):
         if settlements and not self.target_location:
             self._choose_new_destination()
 
-    def update_ai(self, game_map):
+    def update_ai(self, game_map, all_npcs=None):
         """
         Обновление AI торговца за 1 час игрового времени
 
         Args:
             game_map: Объект карты игры
+            all_npcs: Список всех NPC для обнаружения угроз
         """
-        if self.state == "travel":
+        if not self.is_alive:
+            return
+
+        # Восстанавливаем выносливость
+        self.recover_stamina()
+
+        # Если отдыхаем из-за выносливости, ничего не делаем
+        if self.is_resting:
+            return
+
+        # Проверяем наличие угроз поблизости
+        if all_npcs:
+            self._check_for_threats(all_npcs)
+
+        if self.state == "flee":
+            self._flee_step(game_map)
+        elif self.state == "travel":
             # Делаем несколько шагов за 1 час
             for _ in range(self.steps_per_hour):
+                if not self.consume_stamina():
+                    break
                 if not self._travel_step(game_map):
                     break
         elif self.state == "rest":
             self._rest()
+
+    def _check_for_threats(self, all_npcs):
+        """
+        Проверить наличие угроз поблизости
+
+        Args:
+            all_npcs: Список всех NPC
+        """
+        # Ищем ближайшую угрозу
+        closest_threat = None
+        closest_distance = float('inf')
+
+        for npc in all_npcs:
+            if not npc.is_alive:
+                continue
+
+            # Проверяем отношение к этому NPC
+            relationship = NPC_RELATIONSHIPS.get((self.npc_type, npc.npc_type), RELATIONSHIP_NEUTRAL)
+
+            if relationship in [RELATIONSHIP_HOSTILE, RELATIONSHIP_UNFRIENDLY]:
+                distance = abs(self.x - npc.x) + abs(self.y - npc.y)
+
+                # Если враг в зоне обнаружения
+                if distance <= self.detection_range and distance < closest_distance:
+                    closest_threat = npc
+                    closest_distance = distance
+
+        # Если есть угроза, убегаем
+        if closest_threat:
+            self.threat = closest_threat
+            self.state = "flee"
+        elif self.state == "flee":
+            # Если угрозы больше нет, возвращаемся к путешествию
+            self.threat = None
+            self.state = "travel"
+
+    def _flee_step(self, game_map):
+        """
+        Один шаг побега от угрозы
+
+        Args:
+            game_map: Объект карты игры
+        """
+        # Если угроза исчезла или мертва, возвращаемся к путешествию
+        if not self.threat or not self.threat.is_alive:
+            self.threat = None
+            self.state = "travel"
+            return
+
+        # Убегаем в противоположную от угрозы сторону
+        dx_away = self.x - self.threat.x
+        dy_away = self.y - self.threat.y
+
+        # Нормализуем направление
+        if dx_away > 0:
+            dx = 1
+        elif dx_away < 0:
+            dx = -1
+        else:
+            dx = 0
+
+        if dy_away > 0:
+            dy = 1
+        elif dy_away < 0:
+            dy = -1
+        else:
+            dy = 0
+
+        # Если оба направления 0, выбираем случайное
+        if dx == 0 and dy == 0:
+            dx = random.choice([-1, 0, 1])
+            dy = random.choice([-1, 0, 1])
+
+        # Пытаемся двигаться
+        if self.consume_stamina():
+            new_x = self.x + dx
+            new_y = self.y + dy
+
+            if self._can_move(new_x, new_y, game_map):
+                self.x = new_x
+                self.y = new_y
+            else:
+                # Если не можем идти прямо, пробуем другие направления
+                directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+                random.shuffle(directions)
+                for alt_dx, alt_dy in directions:
+                    new_x = self.x + alt_dx
+                    new_y = self.y + alt_dy
+                    if self._can_move(new_x, new_y, game_map):
+                        self.x = new_x
+                        self.y = new_y
+                        break
 
     def _choose_new_destination(self):
         """Выбрать новую цель для путешествия"""
@@ -555,6 +882,222 @@ class Merchant(NPC):
     def _can_move(self, x, y, game_map):
         """
         Проверить, может ли торговец двигаться на клетку
+
+        Args:
+            x: Координата X
+            y: Координата Y
+            game_map: Объект карты
+
+        Returns:
+            bool: True если можно двигаться
+        """
+        if not game_map.is_valid_position(x, y):
+            return False
+
+        tile = game_map.get_tile(x, y)
+        return tile.is_passable()
+
+
+class Bandit(NPC):
+    """Класс Бандита с AI патрулирования территории лагеря"""
+
+    def __init__(self, name, x=0, y=0, level=4, camp_x=None, camp_y=None):
+        """
+        Инициализация Бандита
+
+        Args:
+            name: Имя бандита
+            x: Позиция X
+            y: Позиция Y
+            level: Уровень бандита
+            camp_x: Координата X лагеря
+            camp_y: Координата Y лагеря
+        """
+        super().__init__(name, x, y, npc_type=NPC_TYPE_BANDIT, level=level)
+
+        # AI параметры
+        self.state = "patrol"  # patrol, rest, combat
+        self.camp_x = camp_x if camp_x is not None else x  # Позиция лагеря
+        self.camp_y = camp_y if camp_y is not None else y
+        self.max_distance_from_camp = BANDIT_CAMP_RADIUS  # Максимальная дистанция от лагеря
+        self.rest_counter = 0
+        self.rest_duration = random.randint(2, 4)  # Отдых 2-4 часа
+        self.steps_per_hour = 1  # Шагов за час
+        self.target_enemy = None  # Текущий враг для атаки
+        self.detection_range = 10  # Дальность обнаружения врагов
+        self.wander_target = None  # Целевая точка для блуждания
+
+    def update_ai(self, game_map, all_npcs=None):
+        """
+        Обновление AI бандита за 1 час игрового времени
+
+        Args:
+            game_map: Объект карты игры
+            all_npcs: Список всех NPC для поиска врагов
+        """
+        if not self.is_alive:
+            return
+
+        # Восстанавливаем выносливость
+        self.recover_stamina()
+
+        # Если отдыхаем из-за выносливости, ничего не делаем
+        if self.is_resting:
+            return
+
+        # Проверяем наличие врагов поблизости
+        if all_npcs:
+            self._check_for_enemies(all_npcs)
+
+        if self.state == "combat":
+            self._combat_step(game_map)
+        elif self.state == "patrol":
+            # Делаем несколько шагов за 1 час
+            for _ in range(self.steps_per_hour):
+                if not self.consume_stamina():
+                    break
+                self._patrol_step(game_map)
+                if self.state == "rest":
+                    break
+        elif self.state == "rest":
+            self._rest()
+
+    def _check_for_enemies(self, all_npcs):
+        """
+        Проверить наличие врагов поблизости
+
+        Args:
+            all_npcs: Список всех NPC
+        """
+        # Ищем ближайшего живого врага
+        closest_enemy = None
+        closest_distance = float('inf')
+
+        for npc in all_npcs:
+            if not npc.is_alive:
+                continue
+
+            # Проверяем отношение к этому NPC
+            relationship = NPC_RELATIONSHIPS.get((self.npc_type, npc.npc_type), RELATIONSHIP_NEUTRAL)
+
+            if relationship == RELATIONSHIP_HOSTILE:
+                distance = abs(self.x - npc.x) + abs(self.y - npc.y)
+
+                # Если враг в зоне обнаружения
+                if distance <= self.detection_range and distance < closest_distance:
+                    closest_enemy = npc
+                    closest_distance = distance
+
+        # Если нашли врага, переходим в боевой режим
+        if closest_enemy:
+            self.target_enemy = closest_enemy
+            self.state = "combat"
+        elif self.state == "combat":
+            # Если враг исчез, возвращаемся к патрулю
+            self.target_enemy = None
+            self.state = "patrol"
+
+    def _combat_step(self, game_map):
+        """
+        Один шаг боевого поведения
+
+        Args:
+            game_map: Объект карты игры
+        """
+        # Если нет цели или цель мертва, возвращаемся к патрулю
+        if not self.target_enemy or not self.target_enemy.is_alive:
+            self.target_enemy = None
+            self.state = "patrol"
+            return
+
+        # Проверяем расстояние до лагеря
+        distance_to_camp = abs(self.x - self.camp_x) + abs(self.y - self.camp_y)
+
+        # Если слишком далеко от лагеря, возвращаемся
+        if distance_to_camp > self.max_distance_from_camp:
+            self.target_enemy = None
+            self.state = "patrol"
+            return
+
+        # Проверяем, можем ли атаковать
+        if self.can_attack(self.target_enemy):
+            damage = self.attack(self.target_enemy)
+            if damage > 0:
+                print(f"{self.name} атакует {self.target_enemy.name} и наносит {damage} урона!")
+                if not self.target_enemy.is_alive:
+                    print(f"{self.target_enemy.name} повержен!")
+                    self.target_enemy = None
+                    self.state = "patrol"
+        else:
+            # Двигаемся к цели
+            dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=30)
+            if (dx != 0 or dy != 0) and self.consume_stamina():
+                new_x = self.x + dx
+                new_y = self.y + dy
+
+                # Проверяем, не выходим ли за пределы территории
+                distance_to_camp_new = abs(new_x - self.camp_x) + abs(new_y - self.camp_y)
+                if distance_to_camp_new <= self.max_distance_from_camp:
+                    if self._can_move(new_x, new_y, game_map):
+                        self.x = new_x
+                        self.y = new_y
+                else:
+                    # Слишком далеко, прекращаем преследование
+                    self.target_enemy = None
+                    self.state = "patrol"
+
+    def _patrol_step(self, game_map):
+        """Один шаг патрулирования территории"""
+        # Проверяем расстояние до лагеря
+        distance_to_camp = abs(self.x - self.camp_x) + abs(self.y - self.camp_y)
+
+        # Если слишком далеко от лагеря, возвращаемся
+        if distance_to_camp > self.max_distance_from_camp:
+            # Идем в сторону лагеря
+            dx, dy = self._find_next_step(self.camp_x, self.camp_y, game_map, max_search_distance=50)
+            if dx != 0 or dy != 0:
+                if self._can_move(self.x + dx, self.y + dy, game_map):
+                    self.x += dx
+                    self.y += dy
+            return
+
+        # Если достигли цели блуждания или цели нет, выбираем новую
+        if not self.wander_target or (self.x == self.wander_target[0] and self.y == self.wander_target[1]):
+            self._choose_wander_target()
+
+        # Идем к цели блуждания
+        if self.wander_target:
+            dx, dy = self._find_next_step(self.wander_target[0], self.wander_target[1], game_map, max_search_distance=30)
+            if dx != 0 or dy != 0:
+                if self._can_move(self.x + dx, self.y + dy, game_map):
+                    self.x += dx
+                    self.y += dy
+
+        # Случайный отдых
+        if random.random() < 0.05:  # 5% шанс отдохнуть
+            self.state = "rest"
+            self.rest_counter = 0
+
+    def _choose_wander_target(self):
+        """Выбрать случайную точку для блуждания в пределах территории"""
+        # Выбираем случайную точку в пределах радиуса от лагеря
+        max_offset = min(self.max_distance_from_camp, 15)  # Ограничиваем для производительности
+
+        target_x = self.camp_x + random.randint(-max_offset, max_offset)
+        target_y = self.camp_y + random.randint(-max_offset, max_offset)
+
+        self.wander_target = (target_x, target_y)
+
+    def _rest(self):
+        """Отдых - обновляется каждый игровой час"""
+        self.rest_counter += 1
+        if self.rest_counter >= self.rest_duration:
+            self.state = "patrol"
+            self.rest_counter = 0
+
+    def _can_move(self, x, y, game_map):
+        """
+        Проверить, может ли бандит двигаться на клетку
 
         Args:
             x: Координата X
