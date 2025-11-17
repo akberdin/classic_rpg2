@@ -190,12 +190,13 @@ class Game:
 
                     self.bandits.append(bandit)
 
-    def advance_time(self, hours=1):
+    def advance_time(self, hours=1, skip_player_recovery=False):
         """
         Продвинуть игровое время на указанное количество часов
 
         Args:
             hours: Количество часов для продвижения
+            skip_player_recovery: Не восстанавливать выносливость игрока (используется при отдыхе)
         """
         self.game_hour += hours
 
@@ -206,8 +207,9 @@ class Game:
 
         # Обновляем AI всех NPC при изменении времени
         for _ in range(hours):
-            # Восстанавливаем выносливость игрока
-            self.player.recover_stamina()
+            # Восстанавливаем выносливость игрока (если не пропускаем)
+            if not skip_player_recovery:
+                self.player.recover_stamina()
 
             # Собираем всех NPC для проверки взаимодействий
             all_npcs = self.guards + self.merchants + self.bandits
@@ -303,7 +305,7 @@ class Game:
         elif key == pygame.K_r:
             # Отдых - восстанавливает здоровье и ману, занимает 1 час
             self.player.rest()
-            self.advance_time(1)
+            self.advance_time(1, skip_player_recovery=True)
             print(f"Вы отдохнули. {self.get_time_string()}")
             return
         elif key == pygame.K_t:

@@ -106,11 +106,21 @@ class Character:
             return True
         return False
 
-    def recover_stamina(self):
-        """Восстановить выносливость (вызывается каждый игровой час)"""
-        if self.is_resting or self.stamina < self.max_stamina:
-            # Скорость восстановления = сила + телосложение
-            recovery = self.strength + self.constitution
+    def recover_stamina(self, is_active_rest=False):
+        """
+        Восстановить выносливость (вызывается каждый игровой час)
+
+        Args:
+            is_active_rest: True если это активный отдых (команда R)
+        """
+        if self.stamina < self.max_stamina:
+            # При активном отдыхе или принудительном отдыхе восстанавливаем больше
+            if is_active_rest or self.is_resting:
+                recovery = (self.strength + self.constitution) * 2
+            else:
+                # При обычном движении восстанавливаем только 25% от нормы
+                recovery = max(1, (self.strength + self.constitution) // 4)
+
             self.stamina = min(self.max_stamina, self.stamina + recovery)
 
             # Проверяем, достаточно ли восстановились для окончания отдыха
@@ -400,10 +410,9 @@ class Player(Character):
         mana_restored = int(self.max_mana * 0.5)
         self.mana = min(self.max_mana, self.mana + mana_restored)
 
-        # Восстанавливаем выносливость (дополнительно к обычному восстановлению)
+        # Восстанавливаем выносливость (используя активный отдых)
         old_stamina = self.stamina
-        stamina_boost = (self.strength + self.constitution) * 2  # Двойная скорость при отдыхе
-        self.stamina = min(self.max_stamina, self.stamina + stamina_boost)
+        self.recover_stamina(is_active_rest=True)
         stamina_restored = self.stamina - old_stamina
 
         print(f"Здоровье восстановлено: +{health_restored} ({self.health}/{self.max_health})")
