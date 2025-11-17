@@ -2,6 +2,7 @@
 Классы персонажей (игрок и NPC)
 """
 import random
+from collections import deque
 from game.constants import MAX_LEVEL, RANKS, RELATIONSHIP_NEUTRAL
 
 
@@ -255,6 +256,65 @@ class NPC(Character):
         self.relationship = RELATIONSHIP_NEUTRAL  # Отношение к игроку по умолчанию
         self.generate_random_stats()
 
+    def _find_next_step(self, target_x, target_y, game_map, max_search_distance=50):
+        """
+        Найти следующий шаг к цели используя BFS (поиск в ширину)
+
+        Args:
+            target_x: Целевая X координата
+            target_y: Целевая Y координата
+            game_map: Объект карты игры
+            max_search_distance: Максимальная дистанция поиска в клетках
+
+        Returns:
+            tuple: (dx, dy) - направление следующего шага, или (0, 0) если путь не найден
+        """
+        # Если уже на месте
+        if self.x == target_x and self.y == target_y:
+            return (0, 0)
+
+        # BFS для поиска кратчайшего пути
+        queue = deque([(self.x, self.y, None)])  # (x, y, first_step)
+        visited = {(self.x, self.y)}
+
+        # 8 направлений движения
+        directions = [
+            (-1, -1), (-1, 0), (-1, 1),
+            (0, -1),           (0, 1),
+            (1, -1),  (1, 0),  (1, 1)
+        ]
+
+        while queue:
+            x, y, first_step = queue.popleft()
+
+            # Проверяем все 8 направлений
+            for dx, dy in directions:
+                nx, ny = x + dx, y + dy
+
+                # Достигли цели
+                if nx == target_x and ny == target_y:
+                    # Возвращаем первый шаг из найденного пути
+                    if first_step:
+                        return first_step
+                    else:
+                        return (dx, dy)
+
+                # Проверяем валидность и проходимость
+                if (nx, ny) not in visited:
+                    if game_map.is_valid_position(nx, ny):
+                        tile = game_map.get_tile(nx, ny)
+                        if tile.is_passable():
+                            # Ограничиваем дистанцию поиска
+                            distance = abs(nx - self.x) + abs(ny - self.y)
+                            if distance <= max_search_distance:
+                                visited.add((nx, ny))
+                                # Сохраняем первый шаг (если это первый шаг из начальной позиции)
+                                next_first_step = first_step if first_step else (dx, dy)
+                                queue.append((nx, ny, next_first_step))
+
+        # Путь не найден - возвращаем (0, 0)
+        return (0, 0)
+
 
 class Guard(NPC):
     """Класс Стражника с AI патрулирования"""
@@ -321,38 +381,13 @@ class Guard(NPC):
         # Получаем целевую точку
         target_x, target_y = self.patrol_points[self.current_patrol_index]
 
-        # Вычисляем направление движения (8 направлений)
-        dx = 0
-        dy = 0
+        # Используем алгоритм поиска пути для определения следующего шага
+        dx, dy = self._find_next_step(target_x, target_y, game_map, max_search_distance=30)
 
-        if self.x < target_x:
-            dx = 1
-        elif self.x > target_x:
-            dx = -1
-
-        if self.y < target_y:
-            dy = 1
-        elif self.y > target_y:
-            dy = -1
-
-        # Пытаемся двигаться по диагонали, если это возможно
-        if dx != 0 and dy != 0:
-            # Диагональное движение
+        # Если нашли направление и можем двигаться
+        if dx != 0 or dy != 0:
             if self._can_move(self.x + dx, self.y + dy, game_map):
                 self.x += dx
-                self.y += dy
-            # Если по диагонали нельзя, пробуем по оси X
-            elif self._can_move(self.x + dx, self.y, game_map):
-                self.x += dx
-            # Если по X нельзя, пробуем по оси Y
-            elif self._can_move(self.x, self.y + dy, game_map):
-                self.y += dy
-        # Движение только по одной оси
-        elif dx != 0:
-            if self._can_move(self.x + dx, self.y, game_map):
-                self.x += dx
-        elif dy != 0:
-            if self._can_move(self.x, self.y + dy, game_map):
                 self.y += dy
 
         # Проверяем, достигли ли цели
@@ -481,65 +516,18 @@ class Merchant(NPC):
             self.rest_duration = random.randint(5, 8)
             return False
 
-        # Определяем направление движения (8 направлений)
-        dx = 0
-        dy = 0
-
-        if self.x < target_x:
-            dx = 1
-        elif self.x > target_x:
-            dx = -1
-
-        if self.y < target_y:
-            dy = 1
-        elif self.y > target_y:
-            dy = -1
+        # Используем алгоритм поиска пути для определения следующего шага
+        # Торговцы ищут путь на большие расстояния
+        dx, dy = self._find_next_step(target_x, target_y, game_map, max_search_distance=100)
 
         # Сохраняем текущую позицию для проверки застревания
         old_x, old_y = self.x, self.y
 
         # Пытаемся двигаться
         moved = False
-
-        # Приоритет 1: Диагональное движение
-        if dx != 0 and dy != 0:
+        if dx != 0 or dy != 0:
             if self._can_move(self.x + dx, self.y + dy, game_map):
                 self.x += dx
-                self.y += dy
-                moved = True
-            # Приоритет 2: Движение по оси X
-            elif self._can_move(self.x + dx, self.y, game_map):
-                self.x += dx
-                moved = True
-            # Приоритет 3: Движение по оси Y
-            elif self._can_move(self.x, self.y + dy, game_map):
-                self.y += dy
-                moved = True
-        # Движение только по одной оси
-        elif dx != 0:
-            if self._can_move(self.x + dx, self.y, game_map):
-                self.x += dx
-                moved = True
-            # Попытка обойти препятствие
-            elif self._can_move(self.x + dx, self.y + 1, game_map):
-                self.x += dx
-                self.y += 1
-                moved = True
-            elif self._can_move(self.x + dx, self.y - 1, game_map):
-                self.x += dx
-                self.y -= 1
-                moved = True
-        elif dy != 0:
-            if self._can_move(self.x, self.y + dy, game_map):
-                self.y += dy
-                moved = True
-            # Попытка обойти препятствие
-            elif self._can_move(self.x + 1, self.y + dy, game_map):
-                self.x += 1
-                self.y += dy
-                moved = True
-            elif self._can_move(self.x - 1, self.y + dy, game_map):
-                self.x -= 1
                 self.y += dy
                 moved = True
 
