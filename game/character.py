@@ -77,8 +77,12 @@ class Player(Character):
         """
         super().__init__(name, x, y)
 
-        # Генерируем характеристики игрока
-        self.generate_random_stats(min_val=8, max_val=12)
+        # Устанавливаем базовые характеристики игрока
+        self.strength = 1
+        self.dexterity = 1
+        self.spirit = 1
+        self.intelligence = 1
+        self.luck = 1
 
         # Дополнительные параметры игрока
         self.level = 1
