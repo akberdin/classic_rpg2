@@ -2,6 +2,7 @@
 Классы персонажей (игрок и NPC)
 """
 import random
+from game.constants import MAX_LEVEL, RANKS, RELATIONSHIP_NEUTRAL
 
 
 class Character:
@@ -64,6 +65,19 @@ class Character:
         """
         self.x += dx
         self.y += dy
+
+    def get_rank(self):
+        """
+        Получить ранг персонажа на основе уровня
+
+        Returns:
+            str: Название ранга
+        """
+        level = getattr(self, 'level', 1)
+        for (min_level, max_level), rank_name in RANKS.items():
+            if min_level <= level <= max_level:
+                return rank_name
+        return "Новичок"
 
 
 class Player(Character):
@@ -164,6 +178,12 @@ class Player(Character):
 
     def level_up(self):
         """Повысить уровень игрока"""
+        # Проверяем, не достигнут ли максимальный уровень
+        if self.level >= MAX_LEVEL:
+            print(f"Вы достигли максимального уровня {MAX_LEVEL}!")
+            self.experience = 0
+            return
+
         self.experience -= self.experience_to_next_level
         self.level += 1
 
@@ -184,13 +204,15 @@ class Player(Character):
         self.max_mana = self.spirit * 10
         self.mana = self.max_mana
 
-        print(f"Поздравляем! Вы достигли {self.level} уровня!")
+        # Получаем ранг
+        rank = self.get_rank()
+        print(f"Поздравляем! Вы достигли {self.level} уровня! Ранг: {rank}")
 
 
 class NPC(Character):
     """Класс NPC (неигровых персонажей)"""
 
-    def __init__(self, name, x=0, y=0, npc_type="neutral"):
+    def __init__(self, name, x=0, y=0, npc_type="neutral", level=1):
         """
         Инициализация NPC
 
@@ -199,7 +221,115 @@ class NPC(Character):
             x: Позиция X
             y: Позиция Y
             npc_type: Тип NPC (neutral, enemy, friendly)
+            level: Уровень NPC
         """
         super().__init__(name, x, y)
         self.npc_type = npc_type
+        self.level = level
+        self.relationship = RELATIONSHIP_NEUTRAL  # Отношение к игроку по умолчанию
         self.generate_random_stats()
+
+
+class Guard(NPC):
+    """Класс Стражника с AI патрулирования"""
+
+    def __init__(self, name, x=0, y=0, level=5):
+        """
+        Инициализация Стражника
+
+        Args:
+            name: Имя стражника
+            x: Позиция X
+            y: Позиция Y
+            level: Уровень стражника
+        """
+        super().__init__(name, x, y, npc_type="guard", level=level)
+
+        # AI параметры
+        self.state = "patrol"  # patrol, rest, alert
+        self.patrol_points = []  # Точки патрулирования
+        self.current_patrol_index = 0
+        self.rest_counter = 0
+        self.rest_duration = 50  # Длительность отдыха в тиках
+        self.patrol_home_x = x  # Домашняя точка патруля
+        self.patrol_home_y = y
+
+    def set_patrol_route(self, points):
+        """
+        Установить маршрут патрулирования
+
+        Args:
+            points: Список точек (x, y) для патрулирования
+        """
+        self.patrol_points = points
+        self.current_patrol_index = 0
+
+    def update_ai(self, game_map):
+        """
+        Обновление AI стражника
+
+        Args:
+            game_map: Объект карты игры
+        """
+        if self.state == "patrol":
+            self._patrol(game_map)
+        elif self.state == "rest":
+            self._rest()
+
+    def _patrol(self, game_map):
+        """Патрулирование"""
+        if not self.patrol_points:
+            # Если нет маршрута, стоим на месте
+            # Периодически переходим в режим отдыха
+            if random.random() < 0.02:  # 2% шанс каждый тик
+                self.state = "rest"
+                self.rest_counter = 0
+            return
+
+        # Получаем целевую точку
+        target_x, target_y = self.patrol_points[self.current_patrol_index]
+
+        # Двигаемся к цели
+        if self.x < target_x and self._can_move(self.x + 1, self.y, game_map):
+            self.x += 1
+        elif self.x > target_x and self._can_move(self.x - 1, self.y, game_map):
+            self.x -= 1
+        elif self.y < target_y and self._can_move(self.x, self.y + 1, game_map):
+            self.y += 1
+        elif self.y > target_y and self._can_move(self.x, self.y - 1, game_map):
+            self.y -= 1
+
+        # Проверяем, достигли ли цели
+        if self.x == target_x and self.y == target_y:
+            # Переходим к следующей точке
+            self.current_patrol_index = (self.current_patrol_index + 1) % len(self.patrol_points)
+
+            # Случайный отдых в точке патруля
+            if random.random() < 0.3:  # 30% шанс отдохнуть
+                self.state = "rest"
+                self.rest_counter = 0
+
+    def _rest(self):
+        """Отдых"""
+        self.rest_counter += 1
+        if self.rest_counter >= self.rest_duration:
+            self.state = "patrol"
+            self.rest_counter = 0
+
+    def _can_move(self, x, y, game_map):
+        """
+        Проверить, может ли стражник двигаться на клетку
+
+        Args:
+            x: Координата X
+            y: Координата Y
+            game_map: Объект карты
+
+        Returns:
+            bool: True если можно двигаться
+        """
+        if not game_map.is_valid_position(x, y):
+            return False
+
+        tile = game_map.get_tile(x, y)
+        return tile.is_passable()

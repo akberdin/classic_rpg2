@@ -2,11 +2,12 @@
 Основной класс игры
 """
 import pygame
+import random
 from game.map import GameMap
-from game.character import Player
+from game.character import Player, Guard
 from game.fog_of_war import FogOfWar
 from game.constants import (
-    WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TILE_SIZE, COLORS
+    WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TILE_SIZE, COLORS, LOCATION_CITY
 )
 
 
@@ -44,8 +45,64 @@ class Game:
         self.font = pygame.font.Font(None, 24)
         self.info_font = pygame.font.Font(None, 20)
 
+        # Создание стражников в городах
+        self.guards = []
+        self._spawn_guards()
+
         print(f"Игрок создан на позиции ({self.player.x}, {self.player.y})")
+        print(f"Создано {len(self.guards)} стражников")
         print("Игра готова к запуску!")
+
+    def _spawn_guards(self):
+        """Создание стражников в городах"""
+        # Находим все города на карте
+        cities = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_CITY]
+
+        for city in cities:
+            # Создаем 2-3 стражников возле каждого города
+            num_guards = random.randint(2, 3)
+
+            for i in range(num_guards):
+                # Находим позицию рядом с городом
+                guard_pos = self._find_guard_position(city.x, city.y)
+                if guard_pos:
+                    gx, gy = guard_pos
+                    guard_level = random.randint(5, 15)
+                    guard = Guard(f"Стражник {city.name}", gx, gy, guard_level)
+
+                    # Создаем маршрут патрулирования вокруг города
+                    patrol_route = self._create_patrol_route(gx, gy, radius=5)
+                    guard.set_patrol_route(patrol_route)
+
+                    self.guards.append(guard)
+
+    def _find_guard_position(self, center_x, center_y):
+        """Найти позицию для стражника рядом с городом"""
+        for radius in range(1, 5):
+            for dx in range(-radius, radius + 1):
+                for dy in range(-radius, radius + 1):
+                    x = center_x + dx
+                    y = center_y + dy
+
+                    if self.game_map.is_valid_position(x, y):
+                        tile = self.game_map.get_tile(x, y)
+                        if tile.is_passable() and not tile.has_location():
+                            return (x, y)
+        return None
+
+    def _create_patrol_route(self, center_x, center_y, radius=5):
+        """Создать маршрут патрулирования вокруг точки"""
+        route = [
+            (center_x + radius, center_y),
+            (center_x + radius, center_y + radius),
+            (center_x, center_y + radius),
+            (center_x - radius, center_y + radius),
+            (center_x - radius, center_y),
+            (center_x - radius, center_y - radius),
+            (center_x, center_y - radius),
+            (center_x + radius, center_y - radius),
+        ]
+        return route
 
     def run(self):
         """Главный игровой цикл"""
@@ -114,7 +171,9 @@ class Game:
 
     def _update(self):
         """Обновление состояния игры"""
-        pass
+        # Обновляем AI всех стражников
+        for guard in self.guards:
+            guard.update_ai(self.game_map)
 
     def _update_camera(self):
         """Обновление позиции камеры, чтобы следить за игроком"""
@@ -192,7 +251,72 @@ class Game:
                         (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
                     )
 
-        # Отрисовка игрока
+        # Отрисовка надписей над локациями
+        label_font = pygame.font.Font(None, 16)
+        for dy in range(tiles_y):
+            for dx in range(tiles_x):
+                map_x = self.camera_x + dx
+                map_y = self.camera_y + dy
+
+                if not self.game_map.is_valid_position(map_x, map_y):
+                    continue
+
+                tile = self.game_map.get_tile(map_x, map_y)
+
+                # Отрисовываем название локации, если она видима и исследована
+                if tile.explored and tile.has_location():
+                    if self.fog_of_war.is_visible(map_x, map_y, self.player.x, self.player.y):
+                        screen_x = dx * TILE_SIZE
+                        screen_y = dy * TILE_SIZE
+
+                        # Создаем надпись
+                        location_label = label_font.render(
+                            tile.location.name,
+                            True,
+                            (255, 255, 255)
+                        )
+
+                        # Фон для надписи
+                        label_rect = location_label.get_rect()
+                        label_rect.centerx = screen_x + TILE_SIZE // 2
+                        label_rect.bottom = screen_y - 2
+
+                        # Полупрозрачный фон
+                        background_surface = pygame.Surface((label_rect.width + 4, label_rect.height + 2))
+                        background_surface.set_alpha(180)
+                        background_surface.fill((0, 0, 0))
+                        self.screen.blit(background_surface, (label_rect.x - 2, label_rect.y - 1))
+
+                        # Отрисовка надписи
+                        self.screen.blit(location_label, label_rect)
+
+        # Отрисовка стражников
+        for guard in self.guards:
+            # Проверяем, находится ли стражник в зоне видимости камеры
+            if (self.camera_x <= guard.x < self.camera_x + tiles_x and
+                self.camera_y <= guard.y < self.camera_y + tiles_y):
+
+                # Проверяем, видим ли мы стражника (туман войны)
+                tile = self.game_map.get_tile(guard.x, guard.y)
+                if tile.explored and self.fog_of_war.is_visible(guard.x, guard.y, self.player.x, self.player.y):
+                    guard_screen_x = (guard.x - self.camera_x) * TILE_SIZE
+                    guard_screen_y = (guard.y - self.camera_y) * TILE_SIZE
+
+                    # Цвет зависит от состояния стражника
+                    if guard.state == "rest":
+                        guard_color = (100, 100, 200)  # Синий оттенок для отдыха
+                    else:
+                        guard_color = (0, 100, 200)    # Темно-синий для патруля
+
+                    # Отрисовка стражника
+                    pygame.draw.circle(
+                        self.screen,
+                        guard_color,
+                        (guard_screen_x + TILE_SIZE // 2, guard_screen_y + TILE_SIZE // 2),
+                        TILE_SIZE // 3
+                    )
+
+        # Отрисовка игрока (поверх всего остального)
         player_screen_x = (self.player.x - self.camera_x) * TILE_SIZE
         player_screen_y = (self.player.y - self.camera_y) * TILE_SIZE
 
@@ -240,9 +364,10 @@ class Game:
         )
         self.screen.blit(pos_text, (info_x, info_y + 30))
 
-        # Уровень и опыт
+        # Уровень, ранг и опыт
+        player_rank = self.player.get_rank()
         level_text = self.info_font.render(
-            f"Уровень: {self.player.level} | Опыт: {self.player.experience}/{self.player.experience_to_next_level}",
+            f"Уровень: {self.player.level} ({player_rank}) | Опыт: {self.player.experience}/{self.player.experience_to_next_level}",
             True,
             (255, 215, 0)
         )
@@ -279,7 +404,7 @@ class Game:
             stat_surface = self.info_font.render(text, True, COLORS['text'])
             self.screen.blit(stat_surface, (stats_x + (i % 3) * 150, info_y + (i // 3) * 25))
 
-        # Информация о локации
+        # Информация о локации (перенесена вниз)
         tile = self.game_map.get_tile(self.player.x, self.player.y)
         if tile.has_location():
             location_text = self.info_font.render(
@@ -287,7 +412,7 @@ class Game:
                 True,
                 (255, 255, 0)
             )
-            self.screen.blit(location_text, (info_x, info_y + 55))
+            self.screen.blit(location_text, (info_x, info_y + 75))
 
         # Управление
         controls_text = self.info_font.render(
