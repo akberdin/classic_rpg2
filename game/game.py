@@ -530,6 +530,9 @@ class Game:
             if self.skill_book_menu_open:
                 if event.type == pygame.KEYDOWN:
                     self._handle_skill_book_input(event.key)
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    # Обработка событий мыши в книге умений
+                    self.skill_book_window.handle_mouse_event(event, self.player)
                 continue
 
             # Если открыто окно лута, обрабатываем его
@@ -570,12 +573,6 @@ class Game:
             self.player.rest()
             self.advance_time(1, skip_player_recovery=True)
             print(f"Вы отдохнули. {self.get_time_string()}")
-            return
-        elif key == pygame.K_t:
-            # Работа - сбор ресурсов или получение золота, занимает 1 час
-            self.player.work(self.game_map)
-            self.advance_time(1)
-            print(f"Вы поработали. {self.get_time_string()}")
             return
         elif key == pygame.K_ESCAPE:
             self.running = False
@@ -1701,29 +1698,50 @@ class Game:
         self._render_skill_panel()
 
     def _render_skill_panel(self):
-        """Отрисовка панели умений внизу экрана"""
+        """Отрисовка панели умений над панелью параметров"""
         # Размеры и позиция
         slot_size = 48
         slot_spacing = 8
         panel_x = (self.window_width - (slot_size + slot_spacing) * 8) // 2
-        panel_y = self.window_height - slot_size - 10
+        # Поднимаем над панелью параметров (ui_height = 100)
+        ui_height = 100
+        ui_y = self.window_height - ui_height
+        panel_y = ui_y - slot_size - 15
 
         # Отрисовываем 8 слотов
         for i in range(8):
             slot_x = panel_x + i * (slot_size + slot_spacing)
             skill = self.player.skill_manager.get_slot_skill(i)
 
+            # Проверяем, доступно ли умение для использования
+            is_usable = False
+            if skill:
+                can_use, reason = skill.can_use(self.player)
+                is_usable = can_use
+
             # Фон слота
             if skill:
-                # Цвет фона зависит от категории умения
-                if skill.category.value == 'combat':
-                    bg_color = (60, 40, 40)
-                elif skill.category.value == 'magic':
-                    bg_color = (40, 40, 60)
-                elif skill.category.value == 'crafting':
-                    bg_color = (50, 50, 40)
+                # Цвет фона зависит от категории умения и доступности
+                if is_usable:
+                    # Яркие цвета для доступных умений
+                    if skill.category.value == 'combat':
+                        bg_color = (80, 50, 50)
+                    elif skill.category.value == 'magic':
+                        bg_color = (50, 50, 80)
+                    elif skill.category.value == 'crafting':
+                        bg_color = (70, 70, 50)
+                    else:
+                        bg_color = (60, 60, 60)
                 else:
-                    bg_color = (40, 40, 40)
+                    # Темные цвета для недоступных умений
+                    if skill.category.value == 'combat':
+                        bg_color = (40, 25, 25)
+                    elif skill.category.value == 'magic':
+                        bg_color = (25, 25, 40)
+                    elif skill.category.value == 'crafting':
+                        bg_color = (35, 35, 25)
+                    else:
+                        bg_color = (30, 30, 30)
             else:
                 bg_color = (30, 30, 30)
 
@@ -1733,8 +1751,14 @@ class Game:
                 (slot_x, panel_y, slot_size, slot_size)
             )
 
-            # Рамка слота
-            border_color = (100, 100, 100) if not skill else (150, 150, 150)
+            # Рамка слота (ярче для доступных умений)
+            if skill and is_usable:
+                border_color = (200, 200, 100)  # Яркая желтая рамка для доступных
+            elif skill:
+                border_color = (80, 80, 80)  # Темная рамка для недоступных
+            else:
+                border_color = (100, 100, 100)  # Обычная рамка для пустых
+
             pygame.draw.rect(
                 self.screen,
                 border_color,
