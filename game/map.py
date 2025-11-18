@@ -99,8 +99,8 @@ class GameMap:
         # Генерация лагерей бандитов (только в лесах, на расстоянии >= 50 от городов)
         self._generate_bandit_camps()
 
-        # Генерация руин (увеличено с 20 до 30)
-        self._generate_compact_locations(LOCATION_RUINS, 30, RUIN_NAMES, min_distance=5, max_distance=15)
+        # Генерация руин (увеличено до 40, более разнесенные)
+        self._generate_compact_locations(LOCATION_RUINS, 40, RUIN_NAMES, min_distance=10, max_distance=25)
 
     def _generate_magic_school_cluster(self):
         """Генерация школы магов с двумя деревнями рядом"""
