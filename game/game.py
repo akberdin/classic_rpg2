@@ -1794,6 +1794,76 @@ class Game:
                         draw_undead_default, undead_npc.level
                     )
 
+        # Отрисовка магов
+        for mage in self.mages:
+            # Проверяем, находится ли маг в зоне видимости камеры
+            if (self.camera_x <= mage.x < self.camera_x + tiles_x and
+                self.camera_y <= mage.y < self.camera_y + tiles_y):
+
+                # Проверяем, видим ли мы мага (туман войны)
+                tile = self.game_map.get_tile(mage.x, mage.y)
+                if tile.explored and self.fog_of_war.is_visible(mage.x, mage.y, self.player.x, self.player.y):
+                    if not mage.is_alive:
+                        continue
+
+                    mage_screen_x = (mage.x - self.camera_x) * TILE_SIZE
+                    mage_screen_y = (mage.y - self.camera_y) * TILE_SIZE
+
+                    # Цвет зависит от уровня мага
+                    if mage.level <= 10:
+                        base_color = (100, 100, 200)  # Светло-синий для адептов
+                    elif mage.level <= 15:
+                        base_color = (80, 80, 220)  # Синий для чародеев
+                    else:
+                        base_color = (138, 43, 226)  # Фиолетовый для магистров
+
+                    # Модификация цвета в зависимости от состояния
+                    if mage.state == "rest":
+                        mage_color = tuple(max(0, c - 30) for c in base_color)
+                    elif mage.state == "combat":
+                        mage_color = tuple(min(255, c + 50) for c in base_color)
+                    else:
+                        mage_color = base_color
+
+                    # Функция отрисовки по умолчанию (звезда для мага)
+                    def draw_mage_default():
+                        center_x = mage_screen_x + TILE_SIZE // 2
+                        center_y = mage_screen_y + TILE_SIZE // 2
+                        size = TILE_SIZE // 3
+
+                        # Рисуем звезду (магический символ)
+                        points = [
+                            (center_x, center_y - size),  # Верх
+                            (center_x + size // 3, center_y - size // 3),
+                            (center_x + size, center_y),  # Право
+                            (center_x + size // 3, center_y + size // 3),
+                            (center_x, center_y + size),  # Низ
+                            (center_x - size // 3, center_y + size // 3),
+                            (center_x - size, center_y),  # Лево
+                            (center_x - size // 3, center_y - size // 3)
+                        ]
+
+                        pygame.draw.polygon(
+                            self.screen,
+                            mage_color,
+                            points
+                        )
+
+                        # Обводка для высокоуровневых магов
+                        if mage.level > 15:
+                            pygame.draw.polygon(
+                                self.screen,
+                                (200, 150, 255),
+                                points,
+                                2
+                            )
+
+                    # Отрисовка мага (спрайт или геометрическая фигура)
+                    self.sprite_manager.render_npc(
+                        self.screen, 'mage', mage_screen_x, mage_screen_y,
+                        draw_mage_default, mage.level
+                    )
+
         # Отрисовка игрока (поверх всего остального)
         player_screen_x = (self.player.x - self.camera_x) * TILE_SIZE
         player_screen_y = (self.player.y - self.camera_y) * TILE_SIZE
