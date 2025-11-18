@@ -4,7 +4,7 @@
 import pygame
 import random
 from game.map import GameMap
-from game.character import Player, Guard, Merchant, Bandit, Miner, Undead
+from game.character import Player, Guard, Merchant, MagicMerchant, Bandit, Miner, Undead
 from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS, EquipmentItem
@@ -106,6 +106,9 @@ class Game:
         # Создание торговцев
         self.merchants = []
         self._spawn_merchants()
+
+        # Создание магического торговца в академии магии
+        self._spawn_magic_merchant()
 
         # Создание бандитов в лагерях
         self.bandits = []
@@ -276,6 +279,33 @@ class Game:
                 merchant.set_settlements(settlements)
 
                 self.merchants.append(merchant)
+
+    def _spawn_magic_merchant(self):
+        """Создание магического торговца в академии магии"""
+        # Находим академию магии
+        magic_school = None
+        for loc in self.game_map.locations:
+            if loc.location_type == LOCATION_MAGIC_SCHOOL:
+                magic_school = loc
+                break
+
+        if not magic_school:
+            return
+
+        # Находим позицию рядом с академией
+        merchant_pos = self._find_guard_position(magic_school.x, magic_school.y)
+
+        if merchant_pos:
+            mx, my = merchant_pos
+            merchant_names = [
+                "Архимаг Мерлин", "Чародей Гендальф", "Волшебница Моргана",
+                "Мудрец Альбус", "Маг Радагаст", "Колдунья Цирцея"
+            ]
+            merchant_name = random.choice(merchant_names)
+
+            magic_merchant = MagicMerchant(merchant_name, mx, my, level=8)
+            self.merchants.append(magic_merchant)
+            print(f"Создан магический торговец '{merchant_name}' в академии магии")
 
     def _spawn_bandits(self):
         """Создание бандитов в лагерях"""
@@ -1453,17 +1483,17 @@ class Game:
                     guard_screen_y = (guard.y - self.camera_y) * TILE_SIZE
 
                     # Цвет зависит от уровня стражника (4 варианта)
-                    if guard.level <= 7:
+                    if guard.level <= 10:
                         # Новичок - светло-синий
                         base_color = (100, 150, 255)
-                    elif guard.level <= 12:
-                        # Опытный - синий
+                    elif guard.level <= 20:
+                        # Обычный - синий
                         base_color = (50, 100, 220)
-                    elif guard.level <= 17:
-                        # Ветеран - темно-синий
+                    elif guard.level <= 30:
+                        # Опытный - темно-синий
                         base_color = (30, 70, 180)
                     else:
-                        # Элита - фиолетово-синий
+                        # Эксперт - фиолетово-синий
                         base_color = (80, 50, 200)
 
                     # Модификация цвета в зависимости от состояния
@@ -1474,23 +1504,29 @@ class Game:
                     else:
                         guard_color = base_color
 
-                    # Отрисовка стражника (круг с обводкой для элиты)
-                    pygame.draw.circle(
-                        self.screen,
-                        guard_color,
-                        (guard_screen_x + TILE_SIZE // 2, guard_screen_y + TILE_SIZE // 2),
-                        TILE_SIZE // 3
-                    )
-
-                    # Обводка для элитных стражников
-                    if guard.level > 17:
+                    # Функция отрисовки по умолчанию (геометрическая фигура)
+                    def draw_guard_default():
                         pygame.draw.circle(
                             self.screen,
-                            (200, 200, 50),
+                            guard_color,
                             (guard_screen_x + TILE_SIZE // 2, guard_screen_y + TILE_SIZE // 2),
-                            TILE_SIZE // 3,
-                            2
+                            TILE_SIZE // 3
                         )
+                        # Обводка для эксперт стражников
+                        if guard.level > 30:
+                            pygame.draw.circle(
+                                self.screen,
+                                (200, 200, 50),
+                                (guard_screen_x + TILE_SIZE // 2, guard_screen_y + TILE_SIZE // 2),
+                                TILE_SIZE // 3,
+                                2
+                            )
+
+                    # Отрисовка стражника (спрайт или геометрическая фигура)
+                    self.sprite_manager.render_npc(
+                        self.screen, 'guard', guard_screen_x, guard_screen_y,
+                        draw_guard_default, guard.level
+                    )
 
         # Отрисовка торговцев
         for merchant in self.merchants:
@@ -1515,14 +1551,21 @@ class Game:
                     else:
                         merchant_color = (200, 150, 50)  # Оранжево-коричневый для путешествия
 
-                    # Отрисовка торговца (квадрат для отличия от стражников)
-                    pygame.draw.rect(
-                        self.screen,
-                        merchant_color,
-                        (merchant_screen_x + TILE_SIZE // 4,
-                         merchant_screen_y + TILE_SIZE // 4,
-                         TILE_SIZE // 2,
-                         TILE_SIZE // 2)
+                    # Функция отрисовки по умолчанию (геометрическая фигура)
+                    def draw_merchant_default():
+                        pygame.draw.rect(
+                            self.screen,
+                            merchant_color,
+                            (merchant_screen_x + TILE_SIZE // 4,
+                             merchant_screen_y + TILE_SIZE // 4,
+                             TILE_SIZE // 2,
+                             TILE_SIZE // 2)
+                        )
+
+                    # Отрисовка торговца (спрайт или геометрическая фигура)
+                    self.sprite_manager.render_npc(
+                        self.screen, 'merchant', merchant_screen_x, merchant_screen_y,
+                        draw_merchant_default, merchant.level
                     )
 
         # Отрисовка бандитов
@@ -1548,21 +1591,28 @@ class Game:
                     else:
                         bandit_color = (200, 0, 0)  # Красный для патруля
 
-                    # Отрисовка бандита (треугольник для отличия от других)
-                    center_x = bandit_screen_x + TILE_SIZE // 2
-                    center_y = bandit_screen_y + TILE_SIZE // 2
-                    size = TILE_SIZE // 3
+                    # Функция отрисовки по умолчанию (геометрическая фигура)
+                    def draw_bandit_default():
+                        center_x = bandit_screen_x + TILE_SIZE // 2
+                        center_y = bandit_screen_y + TILE_SIZE // 2
+                        size = TILE_SIZE // 3
 
-                    points = [
-                        (center_x, center_y - size),  # Верх
-                        (center_x - size, center_y + size),  # Левый низ
-                        (center_x + size, center_y + size)   # Правый низ
-                    ]
+                        points = [
+                            (center_x, center_y - size),  # Верх
+                            (center_x - size, center_y + size),  # Левый низ
+                            (center_x + size, center_y + size)   # Правый низ
+                        ]
 
-                    pygame.draw.polygon(
-                        self.screen,
-                        bandit_color,
-                        points
+                        pygame.draw.polygon(
+                            self.screen,
+                            bandit_color,
+                            points
+                        )
+
+                    # Отрисовка бандита (спрайт или геометрическая фигура)
+                    self.sprite_manager.render_npc(
+                        self.screen, 'bandit', bandit_screen_x, bandit_screen_y,
+                        draw_bandit_default, bandit.level
                     )
 
         # Отрисовка шахтеров
@@ -1588,12 +1638,19 @@ class Game:
                     else:
                         miner_color = (150, 100, 50)  # Темно-коричневый для работы
 
-                    # Отрисовка шахтера (квадрат)
-                    pygame.draw.rect(
-                        self.screen,
-                        miner_color,
-                        (miner_screen_x + TILE_SIZE // 4, miner_screen_y + TILE_SIZE // 4,
-                         TILE_SIZE // 2, TILE_SIZE // 2)
+                    # Функция отрисовки по умолчанию (геометрическая фигура)
+                    def draw_miner_default():
+                        pygame.draw.rect(
+                            self.screen,
+                            miner_color,
+                            (miner_screen_x + TILE_SIZE // 4, miner_screen_y + TILE_SIZE // 4,
+                             TILE_SIZE // 2, TILE_SIZE // 2)
+                        )
+
+                    # Отрисовка шахтера (спрайт или геометрическая фигура)
+                    self.sprite_manager.render_npc(
+                        self.screen, 'miner', miner_screen_x, miner_screen_y,
+                        draw_miner_default, miner.level
                     )
 
         # Отрисовка нежити
@@ -1633,32 +1690,39 @@ class Game:
                     else:
                         undead_color = base_color
 
-                    # Отрисовка нежити (ромб)
-                    center_x = undead_screen_x + TILE_SIZE // 2
-                    center_y = undead_screen_y + TILE_SIZE // 2
-                    size = TILE_SIZE // 3
+                    # Функция отрисовки по умолчанию (геометрическая фигура)
+                    def draw_undead_default():
+                        center_x = undead_screen_x + TILE_SIZE // 2
+                        center_y = undead_screen_y + TILE_SIZE // 2
+                        size = TILE_SIZE // 3
 
-                    points = [
-                        (center_x, center_y - size),  # Верх
-                        (center_x + size, center_y),  # Право
-                        (center_x, center_y + size),  # Низ
-                        (center_x - size, center_y)   # Лево
-                    ]
+                        points = [
+                            (center_x, center_y - size),  # Верх
+                            (center_x + size, center_y),  # Право
+                            (center_x, center_y + size),  # Низ
+                            (center_x - size, center_y)   # Лево
+                        ]
 
-                    pygame.draw.polygon(
-                        self.screen,
-                        undead_color,
-                        points
-                    )
-
-                    # Обводка для элитной нежити
-                    if undead_npc.level > 30:
                         pygame.draw.polygon(
                             self.screen,
-                            (255, 0, 255),
-                            points,
-                            2
+                            undead_color,
+                            points
                         )
+
+                        # Обводка для элитной нежити
+                        if undead_npc.level > 30:
+                            pygame.draw.polygon(
+                                self.screen,
+                                (255, 0, 255),
+                                points,
+                                2
+                            )
+
+                    # Отрисовка нежити (спрайт или геометрическая фигура)
+                    self.sprite_manager.render_npc(
+                        self.screen, 'undead', undead_screen_x, undead_screen_y,
+                        draw_undead_default, undead_npc.level
+                    )
 
         # Отрисовка игрока (поверх всего остального)
         player_screen_x = (self.player.x - self.camera_x) * TILE_SIZE

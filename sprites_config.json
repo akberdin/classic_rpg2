@@ -1,10 +1,35 @@
 {
   "npcs": {
     "guard": "assets/sprites/npcs/guard.png",
+    "guard_novice": "assets/sprites/npcs/guard_novice.png",
+    "guard_regular": "assets/sprites/npcs/guard_regular.png",
+    "guard_veteran": "assets/sprites/npcs/guard_veteran.png",
+    "guard_expert": "assets/sprites/npcs/guard_expert.png",
+
     "merchant": "assets/sprites/npcs/merchant.png",
+    "merchant_novice": "assets/sprites/npcs/merchant_novice.png",
+    "merchant_regular": "assets/sprites/npcs/merchant_regular.png",
+    "merchant_veteran": "assets/sprites/npcs/merchant_veteran.png",
+    "merchant_expert": "assets/sprites/npcs/merchant_expert.png",
+
     "bandit": "assets/sprites/npcs/bandit.png",
+    "bandit_novice": "assets/sprites/npcs/bandit_novice.png",
+    "bandit_regular": "assets/sprites/npcs/bandit_regular.png",
+    "bandit_veteran": "assets/sprites/npcs/bandit_veteran.png",
+    "bandit_expert": "assets/sprites/npcs/bandit_expert.png",
+
     "miner": "assets/sprites/npcs/miner.png",
+    "miner_novice": "assets/sprites/npcs/miner_novice.png",
+    "miner_regular": "assets/sprites/npcs/miner_regular.png",
+    "miner_veteran": "assets/sprites/npcs/miner_veteran.png",
+    "miner_expert": "assets/sprites/npcs/miner_expert.png",
+
     "undead": "assets/sprites/npcs/undead.png",
+    "undead_novice": "assets/sprites/npcs/undead_novice.png",
+    "undead_regular": "assets/sprites/npcs/undead_regular.png",
+    "undead_veteran": "assets/sprites/npcs/undead_veteran.png",
+    "undead_expert": "assets/sprites/npcs/undead_expert.png",
+
     "player": "assets/sprites/player.png"
   },
   "locations": {
