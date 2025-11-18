@@ -91,9 +91,31 @@ class CombatSystem:
 
         # Обработка клавиатуры
         if event.type == pygame.KEYDOWN:
-            # Обработка выбора действия
+            # Обработка использования умений (клавиши 1-8)
+            if event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4,
+                            pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8]:
+                slot_index = event.key - pygame.K_1  # 0-7
+                skill = self.player.skill_manager.get_slot_skill(slot_index)
+
+                if skill:
+                    # Проверяем, является ли умение боевым или магическим
+                    from game.skills import SkillCategory
+                    if skill.category in [SkillCategory.COMBAT, SkillCategory.MAGIC]:
+                        return self.execute_skill_action(skill)
+                    else:
+                        self.add_to_log(f"{skill.name} нельзя использовать в бою!")
+                else:
+                    self.add_to_log(f"Слот {slot_index + 1} пуст!")
+
+                return "continue"
+
+            # Обработка выбора действия (оставляем для совместимости, но теперь атака через слот 1)
             for action in self.actions:
                 if event.key == getattr(pygame, f"K_{action['key']}"):
+                    if action['action'] == 'attack':
+                        # Теперь используем базовую атаку через слот 1
+                        self.add_to_log("Используйте клавиши 1-8 для умений!")
+                        return "continue"
                     return self.execute_player_action(action['action'])
 
         return "continue"
@@ -169,6 +191,58 @@ class CombatSystem:
                 return self.execute_enemy_turn()
 
         return "continue"
+
+    def execute_skill_action(self, skill):
+        """
+        Выполнить использование умения
+
+        Args:
+            skill: Объект умения для использования
+
+        Returns:
+            str: Результат боя
+        """
+        # Используем умение
+        result = self.player.skill_manager.use_skill(skill, self.enemy)
+
+        if result['success']:
+            self.add_to_log(result['message'])
+
+            # Обрабатываем результаты в зависимости от типа умения
+            if 'damage' in result:
+                # Боевое умение с уроном
+                if result.get('killed'):
+                    self.add_to_log(f"Вы победили {self.enemy.name}!")
+
+                    # Увеличиваем счетчик убитых врагов
+                    if hasattr(self.player, 'enemies_killed'):
+                        self.player.enemies_killed += 1
+
+                    # Даем опыт за победу
+                    exp_gained = self.enemy.level * 20
+                    self.player.add_experience(exp_gained)
+                    self.add_to_log(f"Получено {exp_gained} опыта!")
+                    return "victory"
+
+            if 'heal' in result:
+                # Лечение
+                pass  # Сообщение уже добавлено
+
+            if 'poison_applied' in result:
+                # Яд наложен
+                pass  # Сообщение уже добавлено
+
+            if 'stunned' in result and result['stunned']:
+                # Оглушение
+                pass  # Сообщение уже добавлено
+
+            # Переход хода к врагу
+            self.turn = "enemy"
+            return self.execute_enemy_turn()
+        else:
+            # Умение не удалось использовать
+            self.add_to_log(result['message'])
+            return "continue"
 
     def execute_enemy_turn(self):
         """

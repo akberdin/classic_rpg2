@@ -1295,3 +1295,474 @@ class CharacterWindow:
         hint_rect.centerx = window_x + window_width // 2
         hint_rect.y = hints_y
         self.screen.blit(hint_text, hint_rect)
+
+
+class SkillBookWindow:
+    """Окно книги умений для управления изученными умениями и их назначением в слоты"""
+
+    def __init__(self, screen, font, info_font, ui_scaler=None):
+        """
+        Инициализация окна книги умений
+
+        Args:
+            screen: Поверхность pygame для отрисовки
+            font: Основной шрифт
+            info_font: Шрифт для информации
+            ui_scaler: Масштабировщик UI (опционально)
+        """
+        self.screen = screen
+        self.font = font
+        self.info_font = info_font
+        self.ui_scaler = ui_scaler
+
+        # Индексы для навигации
+        self.selected_skill_index = 0
+        self.selected_slot_index = 0
+        self.selected_tab = 0  # 0 - Боевые, 1 - Магические, 2 - Ремесленные
+
+    def render(self, player):
+        """
+        Отрисовать окно книги умений
+
+        Args:
+            player: Объект игрока
+        """
+        import pygame
+        from game.skills import SkillCategory
+
+        # Затемняем фон
+        overlay = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
+        overlay.set_alpha(150)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, (0, 0))
+
+        # Размеры окна (адаптивные)
+        screen_width = self.screen.get_width()
+        screen_height = self.screen.get_height()
+
+        if self.ui_scaler:
+            window_width = self.ui_scaler.scale_width(1000)
+            window_height = self.ui_scaler.scale_height(700)
+        else:
+            window_width = min(1000, int(screen_width * 0.85))
+            window_height = min(700, int(screen_height * 0.8))
+
+        window_x = (screen_width - window_width) // 2
+        window_y = (screen_height - window_height) // 2
+
+        # Фон окна
+        pygame.draw.rect(
+            self.screen,
+            (40, 40, 45),
+            (window_x, window_y, window_width, window_height)
+        )
+
+        # Рамка окна
+        pygame.draw.rect(
+            self.screen,
+            (200, 200, 200),
+            (window_x, window_y, window_width, window_height),
+            3
+        )
+
+        # Заголовок
+        title_text = self.font.render(
+            "КНИГА УМЕНИЙ",
+            True,
+            (255, 215, 0)
+        )
+        title_rect = title_text.get_rect()
+        title_rect.centerx = window_x + window_width // 2
+        title_rect.y = window_y + 15
+        self.screen.blit(title_text, title_rect)
+
+        # Вкладки категорий
+        tabs = ["БОЕВЫЕ", "МАГИЧЕСКИЕ", "РЕМЕСЛЕННЫЕ"]
+        tab_width = window_width // 3
+        tab_height = 40
+        tab_y = window_y + 60
+
+        for i, tab_name in enumerate(tabs):
+            tab_x = window_x + i * tab_width
+
+            # Цвет вкладки
+            if i == self.selected_tab:
+                tab_color = (60, 60, 80)
+                text_color = (255, 255, 100)
+            else:
+                tab_color = (30, 30, 35)
+                text_color = (180, 180, 180)
+
+            # Фон вкладки
+            pygame.draw.rect(
+                self.screen,
+                tab_color,
+                (tab_x, tab_y, tab_width, tab_height)
+            )
+
+            # Рамка вкладки
+            pygame.draw.rect(
+                self.screen,
+                (100, 100, 100),
+                (tab_x, tab_y, tab_width, tab_height),
+                2
+            )
+
+            # Текст вкладки
+            tab_text = self.font.render(tab_name, True, text_color)
+            tab_text_rect = tab_text.get_rect()
+            tab_text_rect.center = (tab_x + tab_width // 2, tab_y + tab_height // 2)
+            self.screen.blit(tab_text, tab_text_rect)
+
+        # Получаем умения текущей категории
+        categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+        current_category = categories[self.selected_tab]
+        skills_dict = player.skill_manager.get_all_skills()
+        skills = [skill for skill in skills_dict.values() if skill.category == current_category]
+
+        # Область списка умений
+        skills_list_y = tab_y + tab_height + 20
+        skills_list_height = window_height - 250
+
+        # Отрисовка списка умений
+        if skills:
+            for idx, skill in enumerate(skills):
+                if idx >= 6:  # Ограничиваем количество отображаемых умений
+                    break
+
+                skill_y = skills_list_y + idx * 70
+                skill_x = window_x + 20
+
+                # Фон умения
+                if idx == self.selected_skill_index:
+                    bg_color = (60, 60, 80)
+                else:
+                    bg_color = (45, 45, 50)
+
+                pygame.draw.rect(
+                    self.screen,
+                    bg_color,
+                    (skill_x, skill_y, window_width - 40, 65)
+                )
+
+                # Рамка умения
+                pygame.draw.rect(
+                    self.screen,
+                    (100, 100, 100),
+                    (skill_x, skill_y, window_width - 40, 65),
+                    2
+                )
+
+                # Название умения и ранг
+                skill_name_text = self.font.render(
+                    f"{skill.name} [Ранг {skill.rank}/{skill.max_rank}]",
+                    True,
+                    (255, 255, 255)
+                )
+                self.screen.blit(skill_name_text, (skill_x + 10, skill_y + 5))
+
+                # Описание умения
+                skill_desc_text = self.info_font.render(
+                    skill.base_description[:80],
+                    True,
+                    (180, 180, 180)
+                )
+                self.screen.blit(skill_desc_text, (skill_x + 10, skill_y + 30))
+
+                # Прогресс до следующего ранга
+                if skill.rank < skill.max_rank:
+                    progress_text = self.info_font.render(
+                        f"Опыт: {skill.experience}/{skill.experience_to_next_rank}",
+                        True,
+                        (100, 255, 100)
+                    )
+                    self.screen.blit(progress_text, (skill_x + 10, skill_y + 50))
+                else:
+                    max_rank_text = self.info_font.render(
+                        "МАКСИМАЛЬНЫЙ РАНГ",
+                        True,
+                        (255, 215, 0)
+                    )
+                    self.screen.blit(max_rank_text, (skill_x + 10, skill_y + 50))
+
+                # Стоимость и перезарядка
+                cost_parts = []
+                if skill.mana_cost > 0:
+                    cost_parts.append(f"MP:{skill.mana_cost}")
+                if skill.stamina_cost > 0:
+                    cost_parts.append(f"ST:{skill.stamina_cost}")
+                if skill.cooldown > 0:
+                    cost_parts.append(f"CD:{skill.cooldown}")
+
+                if cost_parts:
+                    cost_text = " ".join(cost_parts)
+                    cost_render = self.info_font.render(cost_text, True, (150, 150, 200))
+                    self.screen.blit(cost_render, (skill_x + window_width - 250, skill_y + 50))
+        else:
+            # Нет умений в этой категории
+            no_skills_text = self.font.render(
+                "Нет изученных умений в этой категории",
+                True,
+                (150, 150, 150)
+            )
+            no_skills_rect = no_skills_text.get_rect()
+            no_skills_rect.center = (window_x + window_width // 2, skills_list_y + 100)
+            self.screen.blit(no_skills_text, no_skills_rect)
+
+        # Панель слотов быстрого доступа внизу
+        slots_panel_y = window_y + window_height - 100
+        slot_size = 60
+        slot_spacing = 10
+        slots_start_x = window_x + (window_width - (slot_size + slot_spacing) * 8) // 2
+
+        # Заголовок слотов
+        slots_title = self.font.render("СЛОТЫ БЫСТРОГО ДОСТУПА (1-8)", True, (200, 200, 200))
+        slots_title_rect = slots_title.get_rect()
+        slots_title_rect.centerx = window_x + window_width // 2
+        slots_title_rect.y = slots_panel_y - 30
+        self.screen.blit(slots_title, slots_title_rect)
+
+        # Отрисовка слотов
+        for i in range(8):
+            slot_x = slots_start_x + i * (slot_size + slot_spacing)
+            slot_skill = player.skill_manager.get_slot_skill(i)
+
+            # Фон слота
+            if i == self.selected_slot_index:
+                bg_color = (80, 80, 100)
+            elif slot_skill:
+                if slot_skill.category == SkillCategory.COMBAT:
+                    bg_color = (60, 40, 40)
+                elif slot_skill.category == SkillCategory.MAGIC:
+                    bg_color = (40, 40, 60)
+                elif slot_skill.category == SkillCategory.CRAFTING:
+                    bg_color = (50, 50, 40)
+                else:
+                    bg_color = (40, 40, 40)
+            else:
+                bg_color = (30, 30, 30)
+
+            pygame.draw.rect(
+                self.screen,
+                bg_color,
+                (slot_x, slots_panel_y, slot_size, slot_size)
+            )
+
+            # Рамка слота
+            pygame.draw.rect(
+                self.screen,
+                (150, 150, 150) if i == self.selected_slot_index else (100, 100, 100),
+                (slot_x, slots_panel_y, slot_size, slot_size),
+                3 if i == self.selected_slot_index else 2
+            )
+
+            # Номер слота
+            slot_num_text = self.font.render(str(i + 1), True, (200, 200, 200))
+            self.screen.blit(slot_num_text, (slot_x + 5, slots_panel_y + 5))
+
+            # Если в слоте есть умение
+            if slot_skill:
+                icon_font = pygame.font.Font(None, 36)
+                icon_text = icon_font.render(slot_skill.name[0], True, (255, 255, 255))
+                icon_rect = icon_text.get_rect()
+                icon_rect.center = (slot_x + slot_size // 2, slots_panel_y + slot_size // 2)
+                self.screen.blit(icon_text, icon_rect)
+
+        # Подсказки
+        hints_y = window_y + window_height - 30
+        hint_text = self.info_font.render(
+            "TAB - вкладки | W/S - умение | A/D - слот | Enter - назначить | Del - убрать | K/ESC - закрыть",
+            True,
+            (180, 180, 180)
+        )
+        hint_rect = hint_text.get_rect()
+        hint_rect.centerx = window_x + window_width // 2
+        hint_rect.y = hints_y
+        self.screen.blit(hint_text, hint_rect)
+
+
+class LootWindow:
+    """Окно лута после победы над врагом"""
+
+    def __init__(self, screen, font, info_font, ui_scaler=None):
+        """
+        Инициализация окна лута
+
+        Args:
+            screen: Поверхность pygame для отрисовки
+            font: Основной шрифт
+            info_font: Шрифт для информации
+            ui_scaler: Масштабировщик UI (опционально)
+        """
+        self.screen = screen
+        self.font = font
+        self.info_font = info_font
+        self.ui_scaler = ui_scaler
+        
+        # Данные лута
+        self.loot_items = []  # Список (item, quantity)
+        self.loot_gold = 0
+        self.enemy_name = ""
+
+    def set_loot(self, items, gold, enemy_name):
+        """
+        Установить лут для отображения
+
+        Args:
+            items: Список кортежей (item, quantity)
+            gold: Количество золота
+            enemy_name: Имя поверженного врага
+        """
+        self.loot_items = items
+        self.loot_gold = gold
+        self.enemy_name = enemy_name
+
+    def render(self):
+        """Отрисовать окно лута"""
+        import pygame
+
+        # Затемняем фон
+        overlay = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
+        overlay.set_alpha(180)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, (0, 0))
+
+        # Размеры окна (адаптивные)
+        screen_width = self.screen.get_width()
+        screen_height = self.screen.get_height()
+
+        if self.ui_scaler:
+            window_width = self.ui_scaler.scale_width(600)
+            window_height = self.ui_scaler.scale_height(500)
+        else:
+            window_width = min(600, int(screen_width * 0.7))
+            window_height = min(500, int(screen_height * 0.6))
+
+        window_x = (screen_width - window_width) // 2
+        window_y = (screen_height - window_height) // 2
+
+        # Фон окна
+        pygame.draw.rect(
+            self.screen,
+            (40, 40, 45),
+            (window_x, window_y, window_width, window_height)
+        )
+
+        # Рамка окна (золотая - победа!)
+        pygame.draw.rect(
+            self.screen,
+            (255, 215, 0),
+            (window_x, window_y, window_width, window_height),
+            4
+        )
+
+        # Заголовок
+        title_text = self.font.render(
+            "ПОБЕДА!",
+            True,
+            (255, 215, 0)
+        )
+        title_rect = title_text.get_rect()
+        title_rect.centerx = window_x + window_width // 2
+        title_rect.y = window_y + 15
+        self.screen.blit(title_text, title_rect)
+
+        # Имя врага
+        enemy_text = self.info_font.render(
+            f"Вы победили: {self.enemy_name}",
+            True,
+            (200, 200, 200)
+        )
+        enemy_rect = enemy_text.get_rect()
+        enemy_rect.centerx = window_x + window_width // 2
+        enemy_rect.y = window_y + 55
+        self.screen.blit(enemy_text, enemy_rect)
+
+        # Линия разделения
+        pygame.draw.line(
+            self.screen,
+            (100, 100, 100),
+            (window_x + 20, window_y + 90),
+            (window_x + window_width - 20, window_y + 90),
+            2
+        )
+
+        # Заголовок лута
+        loot_title_text = self.font.render(
+            "ПОЛУЧЕННЫЙ ЛУТ:",
+            True,
+            (255, 255, 255)
+        )
+        loot_title_rect = loot_title_text.get_rect()
+        loot_title_rect.centerx = window_x + window_width // 2
+        loot_title_rect.y = window_y + 105
+        self.screen.blit(loot_title_text, loot_title_rect)
+
+        # Золото
+        gold_text = self.font.render(
+            f"Золото: {self.loot_gold}",
+            True,
+            (255, 215, 0)
+        )
+        gold_rect = gold_text.get_rect()
+        gold_rect.centerx = window_x + window_width // 2
+        gold_rect.y = window_y + 145
+        self.screen.blit(gold_text, gold_rect)
+
+        # Список предметов
+        items_y = window_y + 190
+        if self.loot_items:
+            for idx, (item, quantity) in enumerate(self.loot_items):
+                item_y = items_y + idx * 40
+
+                # Фон предмета
+                pygame.draw.rect(
+                    self.screen,
+                    (50, 50, 55),
+                    (window_x + 30, item_y, window_width - 60, 35)
+                )
+
+                # Рамка предмета
+                pygame.draw.rect(
+                    self.screen,
+                    (100, 100, 100),
+                    (window_x + 30, item_y, window_width - 60, 35),
+                    1
+                )
+
+                # Название предмета и количество
+                item_text = self.info_font.render(
+                    f"{item.name} x{quantity}",
+                    True,
+                    (200, 200, 200)
+                )
+                self.screen.blit(item_text, (window_x + 40, item_y + 8))
+
+                # Стоимость предмета (справа)
+                value_text = self.info_font.render(
+                    f"{item.value}g",
+                    True,
+                    (255, 215, 0)
+                )
+                self.screen.blit(value_text, (window_x + window_width - 100, item_y + 8))
+        else:
+            no_items_text = self.info_font.render(
+                "Предметов не найдено",
+                True,
+                (150, 150, 150)
+            )
+            no_items_rect = no_items_text.get_rect()
+            no_items_rect.centerx = window_x + window_width // 2
+            no_items_rect.y = items_y + 20
+            self.screen.blit(no_items_text, no_items_rect)
+
+        # Подсказка внизу
+        hint_text = self.info_font.render(
+            "Нажмите любую клавишу для продолжения...",
+            True,
+            (180, 180, 180)
+        )
+        hint_rect = hint_text.get_rect()
+        hint_rect.centerx = window_x + window_width // 2
+        hint_rect.y = window_y + window_height - 40
+        self.screen.blit(hint_text, hint_rect)

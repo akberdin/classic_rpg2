@@ -83,11 +83,16 @@ class Game:
         self.inventory_window = InventoryWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.trade_window = TradeWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.character_window = CharacterWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        from game.ui import SkillBookWindow, LootWindow
+        self.skill_book_window = SkillBookWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.loot_window = LootWindow(self.screen, self.font, self.info_font, self.ui_scaler)
 
         # Состояния окон
         self.inventory_menu_open = False
         self.trade_menu_open = False
         self.character_menu_open = False
+        self.skill_book_menu_open = False
+        self.loot_window_open = False
 
         # Менеджер спрайтов
         from game.sprite_manager import SpriteManager
@@ -136,9 +141,18 @@ class Game:
         # Инициализация менеджера достижений
         self.achievement_manager = AchievementManager()
 
-        # Даем игроку стартовые навыки
-        self.player.skill_manager.learn_skill(PowerStrike)
-        self.player.skill_manager.learn_skill(Heal)
+        # Даем игроку стартовые умения
+        from game.skills import BasicAttack, Mining, Lumberjacking
+        self.player.skill_manager.learn_skill('basic_attack')  # Базовая атака
+        self.player.skill_manager.learn_skill('mining')  # Рудокоп ранг 1
+        self.player.skill_manager.learn_skill('lumberjacking')  # Лесоруб ранг 1
+        self.player.skill_manager.learn_skill('heal')  # Лечение (магия)
+
+        # Назначаем умения в слоты
+        self.player.skill_manager.assign_to_slot('basic_attack', 0)  # Слот 1
+        self.player.skill_manager.assign_to_slot('mining', 1)  # Слот 2
+        self.player.skill_manager.assign_to_slot('lumberjacking', 2)  # Слот 3
+        self.player.skill_manager.assign_to_slot('heal', 3)  # Слот 4
 
         # Перестраиваем spatial grid для NPC
         all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead
@@ -458,6 +472,19 @@ class Game:
             if self.in_combat and self.combat_system:
                 result = self.combat_system.handle_input(event)
                 if result == "victory":
+                    # Генерируем лут
+                    defeated_enemy = self.combat_system.enemy
+                    loot_items, loot_gold = self._generate_loot(defeated_enemy)
+
+                    # Добавляем лут в инвентарь игрока
+                    self.player.inventory.add_gold(loot_gold)
+                    for item, quantity in loot_items:
+                        self.player.inventory.add_item(item, quantity)
+
+                    # Показываем окно лута
+                    self.loot_window.set_loot(loot_items, loot_gold, defeated_enemy.name)
+                    self.loot_window_open = True
+
                     self.in_combat = False
                     self.combat_system = None
                     print("Победа в бою!")
@@ -497,6 +524,18 @@ class Game:
             if self.character_menu_open:
                 if event.type == pygame.KEYDOWN:
                     self._handle_character_input(event.key)
+                continue
+
+            # Если открыто окно книги умений, обрабатываем его
+            if self.skill_book_menu_open:
+                if event.type == pygame.KEYDOWN:
+                    self._handle_skill_book_input(event.key)
+                continue
+
+            # Если открыто окно лута, обрабатываем его
+            if self.loot_window_open:
+                if event.type == pygame.KEYDOWN:
+                    self.loot_window_open = False
                 continue
 
             # Обработка нажатий клавиш
@@ -556,6 +595,25 @@ class Game:
         elif key == pygame.K_F9:
             # Быстрая загрузка (не реализована в этой версии - требует рестарта)
             print("Для загрузки используйте параметр при запуске игры")
+            return
+        elif key == pygame.K_k:
+            # Открыть/закрыть книгу умений
+            self.skill_book_menu_open = not getattr(self, 'skill_book_menu_open', False)
+            return
+        elif key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4,
+                     pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8]:
+            # Использовать умение из слота (клавиши 1-8)
+            slot_index = key - pygame.K_1  # Преобразуем код клавиши в индекс слота (0-7)
+            skill = self.player.skill_manager.get_slot_skill(slot_index)
+            if skill:
+                # Используем умение вне боя (применяется только к ремесленным умениям)
+                if skill.category.value == 'crafting':
+                    result = self.player.skill_manager.use_skill_from_slot(slot_index)
+                    print(result['message'])
+                else:
+                    print(f"{skill.name} можно использовать только в бою!")
+            else:
+                print(f"Слот {slot_index + 1} пуст!")
             return
         elif key == pygame.K_i:
             # Открыть/закрыть инвентарь
@@ -975,6 +1033,78 @@ class Game:
                 if self.player.add_stat_point(stat_key):
                     print(f"{stat_name} увеличена! Осталось очков: {self.player.stat_points}")
 
+    def _handle_skill_book_input(self, key):
+        """
+        Обработка ввода в окне книги умений
+
+        Args:
+            key: Нажатая клавиша
+        """
+        from game.skills import SkillCategory
+
+        if key == pygame.K_ESCAPE or key == pygame.K_k:
+            self.skill_book_menu_open = False
+            return
+
+        # Переключение между вкладками (TAB)
+        if key == pygame.K_TAB:
+            self.skill_book_window.selected_tab = (self.skill_book_window.selected_tab + 1) % 3
+            self.skill_book_window.selected_skill_index = 0
+            return
+
+        # Навигация по умениям (W/S)
+        if key == pygame.K_UP or key == pygame.K_w:
+            categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+            current_category = categories[self.skill_book_window.selected_tab]
+            skills_dict = self.player.skill_manager.get_all_skills()
+            skills = [skill for skill in skills_dict.values() if skill.category == current_category]
+            if skills:
+                self.skill_book_window.selected_skill_index = max(0, self.skill_book_window.selected_skill_index - 1)
+        elif key == pygame.K_DOWN or key == pygame.K_s:
+            categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+            current_category = categories[self.skill_book_window.selected_tab]
+            skills_dict = self.player.skill_manager.get_all_skills()
+            skills = [skill for skill in skills_dict.values() if skill.category == current_category]
+            if skills:
+                self.skill_book_window.selected_skill_index = min(len(skills) - 1, self.skill_book_window.selected_skill_index + 1)
+
+        # Навигация по слотам (A/D)
+        elif key == pygame.K_LEFT or key == pygame.K_a:
+            self.skill_book_window.selected_slot_index = max(0, self.skill_book_window.selected_slot_index - 1)
+        elif key == pygame.K_RIGHT or key == pygame.K_d:
+            self.skill_book_window.selected_slot_index = min(7, self.skill_book_window.selected_slot_index + 1)
+
+        # Назначить умение в слот (Enter)
+        elif key == pygame.K_RETURN:
+            categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+            current_category = categories[self.skill_book_window.selected_tab]
+            skills_dict = self.player.skill_manager.get_all_skills()
+            skills = [skill for skill in skills_dict.values() if skill.category == current_category]
+
+            if skills and self.skill_book_window.selected_skill_index < len(skills):
+                # Найдем ID умения
+                selected_skill = skills[self.skill_book_window.selected_skill_index]
+                skill_id = None
+                for sid, skill in skills_dict.items():
+                    if skill == selected_skill:
+                        skill_id = sid
+                        break
+
+                if skill_id:
+                    success = self.player.skill_manager.assign_to_slot(
+                        skill_id,
+                        self.skill_book_window.selected_slot_index
+                    )
+                    if success:
+                        print(f"{selected_skill.name} назначено в слот {self.skill_book_window.selected_slot_index + 1}")
+                    else:
+                        print("Не удалось назначить умение в слот")
+
+        # Убрать умение из слота (Delete)
+        elif key == pygame.K_DELETE:
+            self.player.skill_manager.unassign_from_slot(self.skill_book_window.selected_slot_index)
+            print(f"Слот {self.skill_book_window.selected_slot_index + 1} очищен")
+
     def _start_combat(self, enemy):
         """
         Начать бой с NPC
@@ -1045,6 +1175,14 @@ class Game:
         # Если открыто окно характеристик, отрисовываем его
         if self.character_menu_open:
             self.character_window.render(self.player)
+
+        # Если открыто окно книги умений, отрисовываем его
+        if self.skill_book_menu_open:
+            self.skill_book_window.render(self.player)
+
+        # Если открыто окно лута, отрисовываем его
+        if self.loot_window_open:
+            self.loot_window.render()
 
         # Отрисовка окна помощи (поверх всего)
         self.help_window.render()
@@ -1553,11 +1691,96 @@ class Game:
 
         # Подсказка о помощи
         help_hint = self.info_font.render(
-            "F1 - Справка | C - Характеристики | I - Инвентарь",
+            "F1 - Справка | C - Характеристики | I - Инвентарь | K - Книга умений",
             True,
             (180, 180, 180)
         )
-        self.screen.blit(help_hint, (info_x + 900, info_y + 55))
+        self.screen.blit(help_hint, (info_x + 800, info_y + 55))
+
+        # Панель умений (8 слотов)
+        self._render_skill_panel()
+
+    def _render_skill_panel(self):
+        """Отрисовка панели умений внизу экрана"""
+        # Размеры и позиция
+        slot_size = 48
+        slot_spacing = 8
+        panel_x = (self.window_width - (slot_size + slot_spacing) * 8) // 2
+        panel_y = self.window_height - slot_size - 10
+
+        # Отрисовываем 8 слотов
+        for i in range(8):
+            slot_x = panel_x + i * (slot_size + slot_spacing)
+            skill = self.player.skill_manager.get_slot_skill(i)
+
+            # Фон слота
+            if skill:
+                # Цвет фона зависит от категории умения
+                if skill.category.value == 'combat':
+                    bg_color = (60, 40, 40)
+                elif skill.category.value == 'magic':
+                    bg_color = (40, 40, 60)
+                elif skill.category.value == 'crafting':
+                    bg_color = (50, 50, 40)
+                else:
+                    bg_color = (40, 40, 40)
+            else:
+                bg_color = (30, 30, 30)
+
+            pygame.draw.rect(
+                self.screen,
+                bg_color,
+                (slot_x, panel_y, slot_size, slot_size)
+            )
+
+            # Рамка слота
+            border_color = (100, 100, 100) if not skill else (150, 150, 150)
+            pygame.draw.rect(
+                self.screen,
+                border_color,
+                (slot_x, panel_y, slot_size, slot_size),
+                2
+            )
+
+            # Номер слота (клавиша)
+            key_text = self.info_font.render(
+                str(i + 1),
+                True,
+                (200, 200, 200)
+            )
+            self.screen.blit(key_text, (slot_x + 4, panel_y + 4))
+
+            # Если есть умение, показываем его информацию
+            if skill:
+                # Иконка умения (первая буква названия)
+                icon_font = pygame.font.Font(None, 32)
+                icon_text = icon_font.render(
+                    skill.name[0],
+                    True,
+                    (255, 255, 255)
+                )
+                icon_rect = icon_text.get_rect()
+                icon_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2 + 4)
+                self.screen.blit(icon_text, icon_rect)
+
+                # Ранг умения (маленькими цифрами в углу)
+                rank_text = self.info_font.render(
+                    f"R{skill.rank}",
+                    True,
+                    (255, 215, 0)
+                )
+                self.screen.blit(rank_text, (slot_x + slot_size - 22, panel_y + slot_size - 18))
+
+                # Перезарядка (если есть)
+                if skill.current_cooldown > 0:
+                    cooldown_text = self.info_font.render(
+                        str(skill.current_cooldown),
+                        True,
+                        (255, 100, 100)
+                    )
+                    cooldown_rect = cooldown_text.get_rect()
+                    cooldown_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2)
+                    self.screen.blit(cooldown_text, cooldown_rect)
 
     def _render_minimap(self):
         """Отрисовка мини-карты"""
@@ -1632,6 +1855,63 @@ class Game:
         minimap_font = pygame.font.Font(None, 16)
         minimap_title = minimap_font.render("Карта", True, COLORS['text'])
         self.screen.blit(minimap_title, (minimap_x + 5, minimap_y - 18))
+
+    def _generate_loot(self, enemy):
+        """
+        Генерировать лут с поверженного врага
+
+        Args:
+            enemy: Поверженный враг
+
+        Returns:
+            tuple: (список предметов [(item, quantity)], количество золота)
+        """
+        from game.inventory import ItemGenerator, ItemQuality, PREDEFINED_ITEMS
+        import random
+
+        loot_items = []
+        loot_gold = 0
+
+        # Золото зависит от уровня врага
+        base_gold = enemy.level * 5
+        loot_gold = random.randint(base_gold, base_gold * 2)
+
+        # Шанс выпадения предметов зависит от уровня врага
+        drop_chance = min(0.3 + enemy.level * 0.02, 0.8)  # От 30% до 80%
+
+        # Количество предметов (1-3)
+        num_items = random.randint(1, 3)
+
+        for _ in range(num_items):
+            if random.random() < drop_chance:
+                # Определяем тип предмета
+                item_type = random.choice(['equipment', 'potion', 'equipment', 'potion'])
+
+                if item_type == 'equipment':
+                    # Генерируем экипировку
+                    item_level = max(1, enemy.level + random.randint(-2, 2))
+                    quality = ItemGenerator.random_quality_by_level(item_level)
+
+                    if random.random() < 0.5:
+                        item = ItemGenerator.generate_weapon(item_level, quality)
+                    else:
+                        item = ItemGenerator.generate_armor(item_level, quality)
+
+                    loot_items.append((item, 1))
+
+                elif item_type == 'potion':
+                    # Зелья
+                    potion_choices = ['minor_health_potion', 'minor_stamina_potion', 'minor_mana_potion']
+                    if enemy.level >= 10:
+                        potion_choices.extend(['health_potion', 'stamina_potion', 'mana_potion'])
+
+                    potion_name = random.choice(potion_choices)
+                    if potion_name in PREDEFINED_ITEMS:
+                        potion = PREDEFINED_ITEMS[potion_name]
+                        quantity = random.randint(1, 2)
+                        loot_items.append((potion, quantity))
+
+        return loot_items, loot_gold
 
     def _render_interaction_menu(self):
         """Отрисовка меню взаимодействия с NPC"""
