@@ -98,6 +98,11 @@ class CombatSystem:
 
                 if not self.enemy.is_alive:
                     self.add_to_log(f"Вы победили {self.enemy.name}!")
+
+                    # Увеличиваем счетчик убитых врагов
+                    if hasattr(self.player, 'enemies_killed'):
+                        self.player.enemies_killed += 1
+
                     # Даем опыт за победу
                     exp_gained = self.enemy.level * 20
                     self.player.add_experience(exp_gained)

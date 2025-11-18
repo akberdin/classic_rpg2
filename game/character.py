@@ -266,15 +266,19 @@ class Character:
         return base_stats
 
     def get_total_damage(self):
-        """Получить общий урон с учетом оружия"""
+        """Получить общий урон с учетом оружия и временных бонусов"""
         base_damage = self.strength
+
+        # Добавляем временный бонус к силе
+        if hasattr(self, 'temp_strength_boost'):
+            base_damage += self.temp_strength_boost
 
         # Если есть экипированное оружие
         if hasattr(self, 'inventory'):
             from game.inventory import EquipmentSlot, WeaponItem
             weapon = self.inventory.get_equipped_item(EquipmentSlot.WEAPON)
             if weapon and isinstance(weapon, WeaponItem):
-                return weapon.damage + self.strength
+                return weapon.damage + base_damage
 
         return base_damage
 
@@ -356,6 +360,22 @@ class Player(Character):
 
         # Инвентарь
         self.inventory = Inventory(max_slots=20)
+
+        # Менеджер навыков
+        from game.skills import SkillManager
+        self.skill_manager = SkillManager(self)
+
+        # Атрибуты для достижений
+        self.enemies_killed = 0
+        self.visited_location_types = set()
+        self.items_sold = 0
+        self.resources_collected = 0
+
+        # Флаг оглушения
+        self.stunned = False
+
+        # Временный бонус к силе (от навыков)
+        self.temp_strength_boost = 0
 
     def can_move_to(self, x, y, game_map):
         """
