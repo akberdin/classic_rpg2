@@ -240,13 +240,15 @@ class CombatSystem:
         )
 
         # Лог боя
-        log_y = combat_y + 200
+        log_y = combat_y + int(200 * scale_h)
         log_title = self.font.render("Журнал боя:", True, COLORS['text'])
-        self.screen.blit(log_title, (combat_x + 20, log_y))
+        self.screen.blit(log_title, (combat_x + int(20 * scale_w), log_y))
 
+        # Увеличенный интервал между логами для предотвращения наложения
+        log_line_height = max(28, int(32 * scale_h))
         for i, log_entry in enumerate(self.combat_log):
             log_text = self.info_font.render(log_entry, True, (200, 200, 200))
-            self.screen.blit(log_text, (combat_x + 30, log_y + 30 + i * 25))
+            self.screen.blit(log_text, (combat_x + int(30 * scale_w), log_y + int(35 * scale_h) + i * log_line_height))
 
         # Действия игрока
         actions_y = combat_y + combat_height - 80
