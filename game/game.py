@@ -173,8 +173,8 @@ class Game:
         cities = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_CITY]
 
         for city in cities:
-            # Создаем 2-3 стражников возле каждого города
-            num_guards = random.randint(2, 3)
+            # Создаем 3-5 стражников возле каждого города (увеличено с 2-3)
+            num_guards = random.randint(3, 5)
 
             for i in range(num_guards):
                 # Находим позицию рядом с городом
@@ -228,8 +228,8 @@ class Game:
             # Нужно как минимум 2 населенных пункта для торговцев
             return
 
-        # Создаем 3-5 торговцев
-        num_merchants = random.randint(3, 5)
+        # Создаем 5-8 торговцев (увеличено с 3-5)
+        num_merchants = random.randint(5, 8)
 
         for i in range(num_merchants):
             # Выбираем случайный стартовый населенный пункт
@@ -259,8 +259,8 @@ class Game:
         bandit_camps = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_BANDIT_CAMP]
 
         for camp in bandit_camps:
-            # Создаем 3-5 бандитов возле каждого лагеря
-            num_bandits = random.randint(3, 5)
+            # Создаем 4-7 бандитов возле каждого лагеря (увеличено с 3-5)
+            num_bandits = random.randint(4, 7)
 
             for i in range(num_bandits):
                 # Находим позицию рядом с лагерем
@@ -285,8 +285,8 @@ class Game:
         mines = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_MINE]
 
         for mine in mines:
-            # Создаем 2-3 шахтера возле каждой шахты
-            num_miners = random.randint(2, 3)
+            # Создаем 3-5 шахтеров возле каждой шахты (увеличено с 2-3)
+            num_miners = random.randint(3, 5)
 
             for i in range(num_miners):
                 # Находим позицию рядом с шахтой
@@ -310,8 +310,8 @@ class Game:
         ruins = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_RUINS]
 
         for ruin in ruins:
-            # Создаем 2-4 нежити возле каждых руин
-            num_undead = random.randint(2, 4)
+            # Создаем 3-6 нежити возле каждых руин (увеличено с 2-4)
+            num_undead = random.randint(3, 6)
 
             for i in range(num_undead):
                 # Находим позицию рядом с руинами (в пределах 7 клеток)
@@ -584,8 +584,8 @@ class Game:
 
     def _check_npc_nearby(self):
         """Проверить наличие NPC рядом с игроком и открыть меню взаимодействия"""
-        # Собираем всех NPC
-        all_npcs = self.guards + self.merchants + self.bandits
+        # Собираем всех NPC (включая miners и undead)
+        all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead
 
         # Ищем NPC рядом с игроком (в соседних клетках)
         for npc in all_npcs:
@@ -1493,7 +1493,7 @@ class Game:
 
         # Кнопки действий
         actions = [
-            "[1] Торговля (скоро)",
+            "[1] Торговля",
             "[2] Агрессия",
             "[3] Уйти"
         ]
