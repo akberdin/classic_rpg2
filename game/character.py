@@ -311,8 +311,13 @@ class Character:
         return base_stats
 
     def get_total_damage(self):
-        """Получить общий урон с учетом оружия и временных бонусов"""
+        """Получить общий урон с учетом оружия, экипировки и временных бонусов"""
         base_damage = self.strength
+
+        # Добавляем бонусы к силе от экипировки (украшения и т.д.)
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            base_damage += equipment_bonus.get('strength', 0)
 
         # Добавляем временный бонус к силе
         if hasattr(self, 'temp_strength_boost'):
@@ -328,8 +333,14 @@ class Character:
         return base_damage
 
     def get_total_defense(self):
-        """Получить общую защиту с учетом доспехов"""
+        """Получить общую защиту с учетом доспехов и бонусов от экипировки"""
         total_defense = 0
+
+        # Добавляем бонусы к защите от телосложения (constitution) от экипировки
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            # Constitution даёт бонус к защите
+            total_defense += equipment_bonus.get('constitution', 0)
 
         # Если есть экипированные доспехи
         if hasattr(self, 'inventory'):
@@ -669,6 +680,13 @@ class Player(Character):
             # Используем зелье
             result = item.use(self)
             self.inventory.remove_item(item_name, 1)
+            return result
+        elif item.item_type == "skill_book":
+            # Используем книгу умения
+            result = item.use(self)
+            # Удаляем книгу только если умение было успешно изучено
+            if "Изучено умение" in result:
+                self.inventory.remove_item(item_name, 1)
             return result
         else:
             return "Этот предмет нельзя использовать"
@@ -1057,6 +1075,10 @@ class Merchant(NPC):
             quantity = random.randint(2, 5)
             self.inventory.add_item(PREDEFINED_ITEMS[potion_type], quantity)
 
+        # Всегда добавляем инструменты (кирки и топоры)
+        self.inventory.add_item(PREDEFINED_ITEMS["basic_pickaxe"], random.randint(1, 3))
+        self.inventory.add_item(PREDEFINED_ITEMS["basic_axe"], random.randint(1, 3))
+
         # Генерируем оружие (2-4 штуки)
         for _ in range(random.randint(2, 4)):
             weapon = ItemGenerator.generate_weapon(self.level)
@@ -1095,6 +1117,11 @@ class Merchant(NPC):
             potion_type = random.choice(potion_types)
             quantity = random.randint(1, 3)
             self.inventory.add_item(PREDEFINED_ITEMS[potion_type], quantity)
+
+        # Пополняем инструменты если их мало (кирки и топоры)
+        if random.random() < 0.6:  # 60% шанс пополнить инструменты
+            self.inventory.add_item(PREDEFINED_ITEMS["basic_pickaxe"], 1)
+            self.inventory.add_item(PREDEFINED_ITEMS["basic_axe"], 1)
 
         if random.random() < 0.5:  # 50% шанс добавить оружие
             weapon = ItemGenerator.generate_weapon(self.level)
@@ -1342,6 +1369,90 @@ class Merchant(NPC):
 
         tile = game_map.get_tile(x, y)
         return tile.is_passable()
+
+
+class MagicMerchant(Merchant):
+    """Класс Торговца магическими книгами для академии магии"""
+
+    def __init__(self, name, x=0, y=0, level=5):
+        """
+        Инициализация Торговца книгами магии
+
+        Args:
+            name: Имя торговца
+            x: Позиция X
+            y: Позиция Y
+            level: Уровень торговца
+        """
+        super().__init__(name, x, y, level)
+        # Торговец магией не путешествует
+        self.state = "rest"
+        self.settlements = []
+        # Перегенерируем товары для магического торговца
+        self._generate_magic_goods()
+
+    def _generate_magic_goods(self):
+        """Генерация товаров магического торговца (только книги и магические предметы)"""
+        from game.inventory import PREDEFINED_ITEMS, ItemGenerator
+
+        # Очищаем стандартные товары
+        self.inventory.items.clear()
+
+        # Увеличенное золото для скупки
+        self.inventory.gold = random.randint(500, 1000) + self.level * 100
+
+        # Книги магических умений (всегда в наличии)
+        magic_books = ["book_heal", "book_regeneration"]
+        for book_id in magic_books:
+            if book_id in PREDEFINED_ITEMS:
+                self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
+
+        # Книги боевых умений (1-2 случайных)
+        combat_books = ["book_power_strike", "book_poison_strike", "book_stun_strike", "book_battle_cry"]
+        for book_id in random.sample(combat_books, random.randint(1, 2)):
+            if book_id in PREDEFINED_ITEMS:
+                self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
+
+        # Зелья маны (много)
+        self.inventory.add_item(PREDEFINED_ITEMS["minor_mana_potion"], random.randint(5, 10))
+        self.inventory.add_item(PREDEFINED_ITEMS["mana_potion"], random.randint(3, 6))
+
+        # Магические кристаллы
+        self.inventory.add_item(PREDEFINED_ITEMS["magic_crystal"], random.randint(2, 5))
+
+        # Магические украшения (1-3 штуки)
+        for _ in range(random.randint(1, 3)):
+            jewelry = ItemGenerator.generate_jewelry(self.level + 2)
+            self.inventory.add_item(jewelry, 1)
+
+    def restock_goods(self):
+        """Пополнение товаров магического торговца"""
+        from game.inventory import PREDEFINED_ITEMS, ItemGenerator
+
+        # Добавляем золото
+        self.inventory.gold += random.randint(100, 300)
+
+        # 50% шанс добавить книгу умения
+        if random.random() < 0.5:
+            all_books = ["book_heal", "book_regeneration", "book_power_strike",
+                        "book_poison_strike", "book_stun_strike", "book_battle_cry"]
+            book_id = random.choice(all_books)
+            if book_id in PREDEFINED_ITEMS:
+                self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
+
+        # Всегда добавляем зелья маны
+        self.inventory.add_item(PREDEFINED_ITEMS["minor_mana_potion"], random.randint(2, 4))
+
+        # 40% шанс добавить украшение
+        if random.random() < 0.4:
+            jewelry = ItemGenerator.generate_jewelry(self.level + 2)
+            self.inventory.add_item(jewelry, 1)
+
+    def update_ai(self, game_map, all_npcs=None):
+        """Магический торговец не перемещается"""
+        # Восстанавливаем энергию стоя на месте
+        if self.stamina < self.max_stamina:
+            self.stamina = min(self.max_stamina, self.stamina + 2)
 
 
 class Bandit(NPC):

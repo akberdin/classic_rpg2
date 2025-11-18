@@ -166,6 +166,47 @@ class PotionItem(Item):
         return "Эффект не применен"
 
 
+class SkillBookItem(Item):
+    """Класс для книг умений"""
+
+    def __init__(self, name, skill_id, value=100, weight=0.5, quality=ItemQuality.COMMON):
+        """
+        Инициализация книги умения
+
+        Args:
+            name: Название книги
+            skill_id: ID умения для изучения
+            value: Стоимость книги
+            weight: Вес книги
+            quality: Качество книги
+        """
+        super().__init__(name, "skill_book", value, weight, quality, f"Книга умения: {name}")
+        self.skill_id = skill_id
+
+    def use(self, character):
+        """
+        Использовать книгу для изучения умения
+
+        Args:
+            character: Персонаж для изучения умения
+
+        Returns:
+            str: Сообщение о результате
+        """
+        if not hasattr(character, 'skill_manager'):
+            return "Этот персонаж не может изучать умения"
+
+        # Проверяем, изучено ли уже умение
+        if self.skill_id in character.skill_manager.learned_skills:
+            return f"Умение '{self.name}' уже изучено"
+
+        # Пытаемся изучить умение
+        if character.skill_manager.learn_skill(self.skill_id):
+            return f"Изучено умение: {self.name}"
+        else:
+            return f"Не удалось изучить умение: {self.name}"
+
+
 class EquipmentItem(Item):
     """Базовый класс для экипируемых предметов"""
 
@@ -1024,6 +1065,16 @@ PREDEFINED_ITEMS = {
     # Инструменты
     "basic_axe": WeaponItem("Базовый топор", WeaponType.AXE, 15, ItemQuality.COMMON),
     "basic_pickaxe": WeaponItem("Базовая кирка", WeaponType.PICKAXE, 12, ItemQuality.COMMON),
+
+    # Книги магических умений
+    "book_heal": SkillBookItem("Книга Лечения", "heal", 150, 0.5, ItemQuality.UNCOMMON),
+    "book_regeneration": SkillBookItem("Книга Регенерации", "regeneration", 250, 0.5, ItemQuality.RARE),
+
+    # Книги боевых умений
+    "book_power_strike": SkillBookItem("Книга Мощного Удара", "power_strike", 200, 0.5, ItemQuality.UNCOMMON),
+    "book_poison_strike": SkillBookItem("Книга Отравленного Удара", "poison_strike", 300, 0.5, ItemQuality.RARE),
+    "book_stun_strike": SkillBookItem("Книга Оглушающего Удара", "stun_strike", 350, 0.5, ItemQuality.RARE),
+    "book_battle_cry": SkillBookItem("Книга Боевого Клича", "battle_cry", 400, 0.5, ItemQuality.EPIC),
 }
 
 

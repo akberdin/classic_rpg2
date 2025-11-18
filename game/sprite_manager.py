@@ -109,6 +109,47 @@ class SpriteManager:
         key = f"{category}_{sprite_type}"
         return self.sprites.get(key)
 
+    def get_rank_suffix(self, level):
+        """
+        Получить суффикс ранга на основе уровня
+
+        Args:
+            level: Уровень персонажа
+
+        Returns:
+            str: Суффикс ранга (_novice, _regular, _veteran, _expert)
+        """
+        if level <= 10:
+            return "_novice"
+        elif level <= 20:
+            return "_regular"
+        elif level <= 30:
+            return "_veteran"
+        else:
+            return "_expert"
+
+    def get_npc_sprite_with_rank(self, npc_type, level):
+        """
+        Получить спрайт NPC с учетом ранга
+
+        Args:
+            npc_type: Тип NPC (guard, bandit, etc.)
+            level: Уровень NPC
+
+        Returns:
+            pygame.Surface или None если спрайт не найден
+        """
+        # Сначала пробуем получить спрайт с рангом
+        rank_suffix = self.get_rank_suffix(level)
+        ranked_key = f"npc_{npc_type}{rank_suffix}"
+
+        if ranked_key in self.sprites:
+            return self.sprites[ranked_key]
+
+        # Если не найден, используем базовый спрайт
+        base_key = f"npc_{npc_type}"
+        return self.sprites.get(base_key)
+
     def has_sprite(self, sprite_type, category):
         """
         Проверить, есть ли спрайт
@@ -123,7 +164,7 @@ class SpriteManager:
         key = f"{category}_{sprite_type}"
         return key in self.sprites
 
-    def render_npc(self, screen, npc_type, x, y, default_renderer):
+    def render_npc(self, screen, npc_type, x, y, default_renderer, level=None):
         """
         Отрисовка NPC (спрайт или геометрическая фигура)
 
@@ -133,8 +174,16 @@ class SpriteManager:
             x: X координата на экране
             y: Y координата на экране
             default_renderer: Функция для отрисовки по умолчанию
+            level: Уровень NPC для выбора спрайта по рангу (опционально)
         """
-        sprite = self.get_sprite(npc_type, 'npc')
+        sprite = None
+
+        # Если указан уровень, пробуем получить спрайт с рангом
+        if level is not None:
+            sprite = self.get_npc_sprite_with_rank(npc_type, level)
+        else:
+            sprite = self.get_sprite(npc_type, 'npc')
+
         if sprite:
             screen.blit(sprite, (x, y))
         else:

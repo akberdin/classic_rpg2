@@ -222,9 +222,9 @@ class SaveSystem:
             'inventory': SaveSystem._serialize_inventory(player.inventory),
         }
 
-        # Сохраняем навыки если есть
+        # Сохраняем навыки если есть (сохраняем ID умений)
         if hasattr(player, 'skill_manager'):
-            data['skills'] = [skill.name for skill in player.skill_manager.learned_skills.values()]
+            data['skills'] = list(player.skill_manager.learned_skills.keys())
 
         # Сохраняем дополнительные атрибуты
         if hasattr(player, 'enemies_killed'):
