@@ -262,22 +262,26 @@ class SaveSystem:
 
     @staticmethod
     def _serialize_map(game_map):
-        """Сериализовать карту (только важные данные)"""
-        # Сохраняем только собранные локации
-        collected_locations = []
+        """Сериализовать карту (сохраняем все локации и биомы)"""
+        # Сохраняем ВСЕ локации
+        all_locations = []
         for location in game_map.locations:
-            if location.loot_collected:
-                collected_locations.append({
-                    'x': location.x,
-                    'y': location.y,
-                    'name': location.name,
-                })
+            all_locations.append({
+                'x': location.x,
+                'y': location.y,
+                'name': location.name,
+                'location_type': location.location_type,
+                'loot_collected': location.loot_collected,
+            })
+
+        # Сохраняем seed для воспроизводимости карты
+        seed = getattr(game_map, 'seed', None)
 
         return {
-            'seed': game_map.seed,
+            'seed': seed,
             'width': game_map.width,
             'height': game_map.height,
-            'collected_locations': collected_locations,
+            'locations': all_locations,  # Сохраняем ВСЕ локации
         }
 
     @staticmethod

@@ -3,6 +3,7 @@
 """
 import random
 from game.inventory import PREDEFINED_ITEMS, WeaponType, EquipmentSlot
+from game.constants import BIOME_FOREST, LOCATION_MINE
 
 
 class Profession:
@@ -81,7 +82,7 @@ class Mining(Profession):
             tuple: (bool, str) - можно ли использовать и сообщение
         """
         # Проверяем, что игрок в шахте
-        if not location or location.location_type != 'mine':
+        if not location or location.location_type != LOCATION_MINE:
             return False, "Вы должны находиться в шахте!"
 
         # Проверяем, есть ли кирка
@@ -145,7 +146,7 @@ class Lumberjacking(Profession):
             tuple: (bool, str) - можно ли использовать и сообщение
         """
         # Проверяем, что игрок в лесу
-        if biome != 'forest':
+        if biome != BIOME_FOREST:
             return False, "Вы должны находиться в лесу!"
 
         # Проверяем, есть ли топор

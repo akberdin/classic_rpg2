@@ -160,6 +160,7 @@ class Game:
 
         # Чит-режим (отключен по умолчанию)
         self.cheat_mode_active = False
+        self.cheat_gold_given = False  # Флаг для выдачи золота один раз
 
         print("Игра готова к запуску!")
 
@@ -624,11 +625,25 @@ class Game:
             self.help_window.toggle()
             return
         elif key == pygame.K_F2:
-            # Включить/выключить чит-мод (бесконечное здоровье и выносливость)
+            # Включить/выключить чит-мод
             self.cheat_mode_active = not self.cheat_mode_active
             self.player.godmode = self.cheat_mode_active  # Устанавливаем режим бессмертия
             if self.cheat_mode_active:
-                print("ЧИТ-МОД АКТИВИРОВАН: Бесконечное здоровье и выносливость!")
+                print("ЧИТ-МОД АКТИВИРОВАН:")
+                print("- Бесконечное здоровье и выносливость")
+                print("- Вся карта открыта")
+                print("- Туман войны отключен")
+
+                # Выдаем золото один раз при активации
+                if not self.cheat_gold_given:
+                    self.player.inventory.add_gold(5000)
+                    print("- Получено 5000 золота")
+                    self.cheat_gold_given = True
+
+                # Открываем всю карту
+                for x in range(self.game_map.width):
+                    for y in range(self.game_map.height):
+                        self.fog_of_war.explored[x][y] = True
             else:
                 print("ЧИТ-МОД ОТКЛЮЧЕН")
             return
@@ -719,8 +734,8 @@ class Game:
             print(f"Вы уже собрали ресурсы с {location.name}.")
             return
 
-        # Получаем лут с локации
-        loot = get_random_loot_from_location(location.location_type)
+        # Получаем лут с локации (передаем уровень игрока для более интересного лута)
+        loot = get_random_loot_from_location(location.location_type, self.player.level)
 
         if not loot:
             print("Ничего не найдено!")
@@ -1271,7 +1286,8 @@ class Game:
                         color = COLORS.get(tile.biome, COLORS['background'])
 
                     # Если тайл не в текущей видимости, затемняем его
-                    is_visible = self.fog_of_war.is_visible(map_x, map_y, self.player.x, self.player.y)
+                    # В чит-режиме все тайлы видимы
+                    is_visible = self.cheat_mode_active or self.fog_of_war.is_visible(map_x, map_y, self.player.x, self.player.y)
                     if not is_visible:
                         color = tuple(c // 2 for c in color)  # Затемняем цвет
                     else:
