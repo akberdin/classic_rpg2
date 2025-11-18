@@ -296,26 +296,36 @@ class GameMap:
 
     def find_spawn_point(self):
         """
-        Найти подходящую точку спавна игрока
+        Найти подходящую точку спавна игрока возле случайного города или деревни
 
         Returns:
             tuple: (x, y) координаты точки спавна
         """
-        # Ищем проходимый тайл без локаций в центре карты
-        center_x = self.width // 2
-        center_y = self.height // 2
-        search_radius = 20
+        # Ищем все города и деревни
+        settlements = [loc for loc in self.locations
+                      if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]]
 
-        for radius in range(0, search_radius):
+        if not settlements:
+            # Если нет поселений, спавним в центре карты
+            center_x = self.width // 2
+            center_y = self.height // 2
+            return (center_x, center_y)
+
+        # Выбираем случайное поселение
+        settlement = random.choice(settlements)
+
+        # Ищем проходимое место рядом с поселением (в радиусе 3-7 клеток)
+        search_radius = 7
+        for radius in range(3, search_radius + 1):
             for dx in range(-radius, radius + 1):
                 for dy in range(-radius, radius + 1):
-                    x = center_x + dx
-                    y = center_y + dy
+                    x = settlement.x + dx
+                    y = settlement.y + dy
 
                     if self.is_valid_position(x, y):
                         tile = self.get_tile(x, y)
                         if tile.is_passable() and not tile.has_location():
                             return (x, y)
 
-        # Если не нашли, возвращаем центр карты
-        return (center_x, center_y)
+        # Если не нашли рядом с поселением, возвращаем координаты поселения
+        return (settlement.x, settlement.y)

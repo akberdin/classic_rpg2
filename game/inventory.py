@@ -553,6 +553,23 @@ class Inventory:
         # Определяем слот
         slot = item.slot
 
+        # Для колец ищем первый свободный слот среди всех 4 слотов
+        if slot in [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]:
+            ring_slots = [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]
+            # Ищем первый пустой слот
+            empty_slot = None
+            for ring_slot in ring_slots:
+                if not self.equipment[ring_slot]:
+                    empty_slot = ring_slot
+                    break
+
+            # Если нашли пустой слот, используем его
+            if empty_slot:
+                slot = empty_slot
+            # Если все слоты заняты, используем первый слот (RING_1)
+            else:
+                slot = EquipmentSlot.RING_1
+
         # Если слот занят, снимаем старый предмет
         old_item = self.equipment[slot]
         if old_item:
