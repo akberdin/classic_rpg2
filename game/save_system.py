@@ -293,6 +293,7 @@ class SaveSystem:
             'bandits': [],
             'miners': [],
             'undead': [],
+            'mages': [],
         }
 
         # Сериализуем каждый тип NPC
@@ -352,6 +353,18 @@ class SaveSystem:
                     'health': undead.health,
                     'ruins_x': undead.ruins_x,
                     'ruins_y': undead.ruins_y,
+                })
+
+        for mage in game.mages:
+            if mage.is_alive:
+                npcs_data['mages'].append({
+                    'name': mage.name,
+                    'x': mage.x,
+                    'y': mage.y,
+                    'level': mage.level,
+                    'health': mage.health,
+                    'academy_x': mage.academy_x,
+                    'academy_y': mage.academy_y,
                 })
 
         return npcs_data

@@ -30,6 +30,12 @@
     "undead_veteran": "assets/sprites/npcs/undead_veteran.png",
     "undead_expert": "assets/sprites/npcs/undead_expert.png",
 
+    "mage": "assets/sprites/npcs/mage.png",
+    "mage_novice": "assets/sprites/npcs/mage_novice.png",
+    "mage_regular": "assets/sprites/npcs/mage_regular.png",
+    "mage_veteran": "assets/sprites/npcs/mage_veteran.png",
+    "mage_expert": "assets/sprites/npcs/mage_expert.png",
+
     "player": "assets/sprites/player.png"
   },
   "locations": {
@@ -55,6 +61,10 @@
     "battle_cry": "assets/sprites/skills/battle_cry.png",
     "heal": "assets/sprites/skills/heal.png",
     "regeneration": "assets/sprites/skills/regeneration.png",
+    "fireball": "assets/sprites/skills/fireball.png",
+    "ice_bolt": "assets/sprites/skills/ice_bolt.png",
+    "lightning": "assets/sprites/skills/lightning.png",
+    "magic_missile": "assets/sprites/skills/magic_missile.png",
     "mining": "assets/sprites/skills/mining.png",
     "lumberjacking": "assets/sprites/skills/lumberjacking.png"
   },
