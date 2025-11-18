@@ -335,7 +335,7 @@ class InventoryWindow:
 
         # Слоты экипировки
         slot_y = y + 40
-        slot_height = 35
+        slot_height = 28
 
         # Группировка слотов
         slot_groups = [

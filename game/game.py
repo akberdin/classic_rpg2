@@ -386,6 +386,14 @@ class Game:
                 if self.performance_optimizer.should_update_ai(undead_npc, self.player.x, self.player.y):
                     undead_npc.update_ai(self.game_map, all_npcs, self.player)
 
+        # Проверяем, атаковал ли кто-то игрока (принудительное открытие окна боя)
+        if self.player.attacked_by_npc and not self.in_combat:
+            attacker = self.player.attacked_by_npc
+            self.player.attacked_by_npc = None  # Сбрасываем флаг
+            if attacker.is_alive:  # Проверяем что атакующий еще жив
+                self._start_combat(attacker)
+                print(f"{attacker.name} напал на вас!")
+
         # Проверяем достижения
         unlocked = self.achievement_manager.check_achievements(self.player)
         for achievement in unlocked:
@@ -498,8 +506,8 @@ class Game:
             print(f"Вы отдохнули. {self.get_time_string()}")
             return
         elif key == pygame.K_t:
-            # Работа - получение опыта и золота, занимает 1 час
-            self.player.work()
+            # Работа - сбор ресурсов или получение золота, занимает 1 час
+            self.player.work(self.game_map)
             self.advance_time(1)
             print(f"Вы поработали. {self.get_time_string()}")
             return

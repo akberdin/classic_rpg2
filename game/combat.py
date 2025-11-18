@@ -29,13 +29,12 @@ class CombatSystem:
         self.active = True
         self.turn = "player"  # player или enemy
         self.combat_log = []  # Лог боевых событий
-        self.max_log_entries = 8
+        self.max_log_entries = 5
 
         # Варианты действий игрока
         self.actions = [
             {"name": "Атака", "key": "1", "action": "attack"},
-            {"name": "Отдых (+30% HP)", "key": "2", "action": "heal"},
-            {"name": "Убежать", "key": "3", "action": "flee"}
+            {"name": "Убежать", "key": "2", "action": "flee"}
         ]
         self.selected_action = None
 
