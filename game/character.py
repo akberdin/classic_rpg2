@@ -50,22 +50,35 @@ class Character:
 
     def generate_random_stats(self, level=1):
         """
-        Генерация характеристик на основе уровня
+        Генерация сбалансированных характеристик на основе уровня
 
         Args:
             level: Уровень персонажа (влияет на силу характеристик)
         """
-        # Базовое значение характеристики: 3 + уровень
-        # С вариацией ±20% для разнообразия
-        base_stat = 3 + level
-        variation = max(1, int(base_stat * 0.2))  # 20% вариация, минимум 1
+        # Сбалансированная формула для разных уровней
+        if level <= 5:
+            # Низкие уровни (1-5): слабые характеристики
+            base_stat = 2 + level * 0.8  # Уровень 1: 2.8, Уровень 5: 6
+        elif level <= 15:
+            # Средние уровни (6-15): умеренный рост
+            base_stat = 5 + level * 0.6  # Уровень 6: 8.6, Уровень 15: 14
+        elif level <= 30:
+            # Высокие уровни (16-30): сильные характеристики
+            base_stat = 8 + level * 0.7  # Уровень 16: 19.2, Уровень 30: 29
+        else:
+            # Очень высокие уровни (31-40): элитные характеристики
+            base_stat = 12 + level * 0.8  # Уровень 31: 36.8, Уровень 40: 44
 
-        self.strength = random.randint(base_stat - variation, base_stat + variation)
-        self.dexterity = random.randint(base_stat - variation, base_stat + variation)
-        self.constitution = random.randint(base_stat - variation, base_stat + variation)
-        self.spirit = random.randint(base_stat - variation, base_stat + variation)
-        self.intelligence = random.randint(base_stat - variation, base_stat + variation)
-        self.luck = random.randint(base_stat - variation, base_stat + variation)
+        # Вариация ±15% для разнообразия
+        variation = max(1, int(base_stat * 0.15))
+
+        # Генерируем характеристики с округлением
+        self.strength = max(1, int(random.uniform(base_stat - variation, base_stat + variation)))
+        self.dexterity = max(1, int(random.uniform(base_stat - variation, base_stat + variation)))
+        self.constitution = max(1, int(random.uniform(base_stat - variation, base_stat + variation)))
+        self.spirit = max(1, int(random.uniform(base_stat - variation, base_stat + variation)))
+        self.intelligence = max(1, int(random.uniform(base_stat - variation, base_stat + variation)))
+        self.luck = max(1, int(random.uniform(base_stat - variation, base_stat + variation)))
 
         # Обновляем выносливость и здоровье на основе характеристик
         self.update_derived_stats()
@@ -189,20 +202,24 @@ class Character:
     def calculate_dodge_chance(self):
         """
         Рассчитать шанс уворота на основе ловкости
+        Максимум 85%
 
         Returns:
-            float: Шанс уворота (0-100)
+            float: Шанс уворота (0-85)
         """
-        return self.dexterity * DODGE_BASE_CHANCE
+        dodge_chance = self.dexterity * DODGE_BASE_CHANCE
+        return min(85.0, dodge_chance)  # Максимум 85%
 
     def calculate_crit_chance(self):
         """
         Рассчитать шанс критического удара на основе удачи
+        Максимум 85%
 
         Returns:
-            float: Шанс крита (0-100)
+            float: Шанс крита (0-85)
         """
-        return self.luck * CRIT_BASE_CHANCE
+        crit_chance = self.luck * CRIT_BASE_CHANCE
+        return min(85.0, crit_chance)  # Максимум 85%
 
     def attack(self, target):
         """
@@ -1826,15 +1843,15 @@ class Undead(NPC):
         self.state = "patrol"  # patrol, rest, combat
         self.ruins_x = ruins_x if ruins_x is not None else x  # Центр руин
         self.ruins_y = ruins_y if ruins_y is not None else y
-        self.max_distance_from_ruins = 7  # Максимальная дистанция от руин
+        self.max_distance_from_ruins = 15  # Увеличено с 7 до 15 - больше радиус патруля
         self.rest_counter = 0
         self.rest_duration = random.randint(2, 3)  # Отдых 2-3 часа
-        self.steps_per_hour = 1  # Шагов за час
+        self.steps_per_hour = 2  # Увеличено с 1 до 2 - нежить быстрее передвигается
         self.target_enemy = None  # Текущая цель для атаки
-        self.detection_range = 12  # Дальность обнаружения врагов
+        self.detection_range = 15  # Увеличено с 12 до 15 - лучше видят врагов
         self.wander_target = None  # Целевая точка для патруля
         self.pursuit_counter = 0  # Счетчик ходов преследования
-        self.max_pursuit_steps = 8  # Максимальное количество ходов преследования
+        self.max_pursuit_steps = 10  # Увеличено с 8 до 10 - дольше преследуют
 
     def update_ai(self, game_map, all_npcs=None, player=None):
         """
