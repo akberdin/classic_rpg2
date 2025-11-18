@@ -4,7 +4,7 @@
 import pygame
 import random
 from game.map import GameMap
-from game.character import Player, Guard, Merchant, MagicMerchant, Bandit, Miner, Undead
+from game.character import Player, Guard, Merchant, MagicMerchant, MagePatrol, Bandit, Miner, Undead
 from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS, EquipmentItem
@@ -110,6 +110,10 @@ class Game:
         # Создание магического торговца в академии магии
         self._spawn_magic_merchant()
 
+        # Создание магов-патрульных у академии магии
+        self.mages = []
+        self._spawn_mages()
+
         # Создание бандитов в лагерях
         self.bandits = []
         self._spawn_bandits()
@@ -125,6 +129,7 @@ class Game:
         print(f"Игрок создан на позиции ({self.player.x}, {self.player.y})")
         print(f"Создано {len(self.guards)} стражников")
         print(f"Создано {len(self.merchants)} торговцев")
+        print(f"Создано {len(self.mages)} магов-патрульных")
         print(f"Создано {len(self.bandits)} бандитов")
         print(f"Создано {len(self.miners)} шахтеров")
         print(f"Создано {len(self.undead)} нежити")
@@ -158,7 +163,7 @@ class Game:
         self.player.skill_manager.assign_to_slot('heal', 3)  # Слот 4
 
         # Перестраиваем spatial grid для NPC
-        all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead
+        all_npcs = self.guards + self.merchants + self.mages + self.bandits + self.miners + self.undead
         self.performance_optimizer.rebuild_spatial_grid(all_npcs)
 
         # Чит-режим (отключен по умолчанию)
@@ -307,6 +312,53 @@ class Game:
             self.merchants.append(magic_merchant)
             print(f"Создан магический торговец '{merchant_name}' в академии магии")
 
+    def _spawn_mages(self):
+        """Создание магов-патрульных в академии магии"""
+        # Находим академию магии
+        magic_school = None
+        for loc in self.game_map.locations:
+            if loc.location_type == LOCATION_MAGIC_SCHOOL:
+                magic_school = loc
+                break
+
+        if not magic_school:
+            return
+
+        # Создаем 3-5 магов-патрульных возле академии
+        num_mages = random.randint(3, 5)
+
+        for i in range(num_mages):
+            # Находим позицию рядом с академией (в пределах 10 клеток)
+            mage_pos = None
+            for attempt in range(20):
+                offset_x = random.randint(-10, 10)
+                offset_y = random.randint(-10, 10)
+                mx = magic_school.x + offset_x
+                my = magic_school.y + offset_y
+
+                if self.game_map.is_valid_position(mx, my):
+                    tile = self.game_map.get_tile(mx, my)
+                    if tile.is_passable():
+                        mage_pos = (mx, my)
+                        break
+
+            if mage_pos:
+                mx, my = mage_pos
+                # Уровень магов от 8 до 20
+                mage_level = random.randint(8, 20)
+                mage_names = [
+                    "Адепт", "Чародей", "Волшебник", "Маг",
+                    "Заклинатель", "Колдун", "Ученик мага", "Магистр"
+                ]
+                mage_name = f"{random.choice(mage_names)} {magic_school.name}"
+
+                # Создаем мага с привязкой к академии
+                mage = MagePatrol(mage_name, mx, my, mage_level, magic_school.x, magic_school.y)
+
+                self.mages.append(mage)
+
+        print(f"Создано {len(self.mages)} магов-патрульных в академии магии")
+
     def _spawn_bandits(self):
         """Создание бандитов в лагерях"""
         # Находим все бандитские лагеря на карте
@@ -427,7 +479,7 @@ class Game:
                 print(msg)
 
             # Перестраиваем spatial grid для оптимизации
-            all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead
+            all_npcs = self.guards + self.merchants + self.mages + self.bandits + self.miners + self.undead
             self.performance_optimizer.rebuild_spatial_grid(all_npcs)
 
             # Увеличиваем счетчик для оптимизации AI
@@ -441,6 +493,10 @@ class Game:
             for merchant in self.merchants:
                 if self.performance_optimizer.should_update_ai(merchant, self.player.x, self.player.y):
                     merchant.update_ai(self.game_map, all_npcs)
+
+            for mage in self.mages:
+                if self.performance_optimizer.should_update_ai(mage, self.player.x, self.player.y):
+                    mage.update_ai(self.game_map, all_npcs, self.player)
 
             for bandit in self.bandits:
                 if self.performance_optimizer.should_update_ai(bandit, self.player.x, self.player.y):

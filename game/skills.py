@@ -586,6 +586,209 @@ class Regeneration(Skill):
         return result
 
 
+# ==================== АТАКУЮЩИЕ МАГИЧЕСКИЕ УМЕНИЯ ====================
+
+class Fireball(Skill):
+    """Огненный шар - мощная магическая атака огнем"""
+
+    def __init__(self):
+        super().__init__(
+            name="Огненный шар",
+            description="Мощная огненная атака. Игнорирует броню, но снижается магической защитой. Урон растет с рангом",
+            category=SkillCategory.MAGIC,
+            mana_cost=35,
+            cooldown=3
+        )
+
+    def use(self, user, target=None):
+        """Использовать огненный шар"""
+        result = super().use(user, target)
+
+        if target and user.can_attack(target):
+            # Базовый урон зависит от интеллекта и духа
+            intelligence = getattr(user, 'intelligence', 1)
+            spirit = getattr(user, 'spirit', 1)
+
+            # Урон: 15 + интеллект*2 + дух*0.5, с множителем от ранга
+            base_damage = 15 + intelligence * 2 + spirit * 0.5
+            damage_multiplier = 1.0 + (self.rank - 1) * 0.25  # +25% за ранг
+            total_damage = int(base_damage * damage_multiplier)
+
+            # ИГНОРИРУЕМ БРОНЮ, но учитываем магическую защиту
+            magic_defense = target.get_magic_defense() if hasattr(target, 'get_magic_defense') else 0
+            actual_damage = max(1, total_damage - magic_defense)
+
+            # Применяем урон
+            target.take_damage(actual_damage)
+
+            result['damage'] = actual_damage
+            result['ignored_armor'] = True
+            result['magic_blocked'] = max(0, total_damage - actual_damage)
+            result['message'] = f"{user.name} запускает огненный шар в {target.name} и наносит {actual_damage} магического урона!"
+
+            if magic_defense > 0:
+                result['message'] += f" (магическая защита поглотила {result['magic_blocked']} урона)"
+
+            if not target.is_alive:
+                result['killed'] = True
+                result['message'] += f" {target.name} повержен!"
+
+        return result
+
+
+class IceBolt(Skill):
+    """Ледяная стрела - магическая атака льдом с замедлением"""
+
+    def __init__(self):
+        super().__init__(
+            name="Ледяная стрела",
+            description="Ледяная атака с шансом замедления. Игнорирует броню, снижается магической защитой",
+            category=SkillCategory.MAGIC,
+            mana_cost=25,
+            cooldown=2
+        )
+
+    def use(self, user, target=None):
+        """Использовать ледяную стрелу"""
+        result = super().use(user, target)
+
+        if target and user.can_attack(target):
+            # Урон немного меньше чем у огненного шара, но меньше кулдаун
+            intelligence = getattr(user, 'intelligence', 1)
+            spirit = getattr(user, 'spirit', 1)
+
+            # Урон: 10 + интеллект*1.5 + дух*0.5
+            base_damage = 10 + intelligence * 1.5 + spirit * 0.5
+            damage_multiplier = 1.0 + (self.rank - 1) * 0.2  # +20% за ранг
+            total_damage = int(base_damage * damage_multiplier)
+
+            # ИГНОРИРУЕМ БРОНЮ, но учитываем магическую защиту
+            magic_defense = target.get_magic_defense() if hasattr(target, 'get_magic_defense') else 0
+            actual_damage = max(1, total_damage - magic_defense)
+
+            # Применяем урон
+            target.take_damage(actual_damage)
+
+            # Шанс наложить замедление (эффект оглушения на 1 ход)
+            slow_chance = 0.3 + (self.rank - 1) * 0.05  # 30% + 5% за ранг
+            slowed = False
+            if random.random() < slow_chance:
+                slow = StunEffect(duration=1)
+                slow.name = "Обморожение"
+                if not hasattr(target, 'status_effects'):
+                    target.status_effects = []
+                target.status_effects.append(slow)
+                slowed = True
+
+            result['damage'] = actual_damage
+            result['ignored_armor'] = True
+            result['magic_blocked'] = max(0, total_damage - actual_damage)
+            result['slowed'] = slowed
+            result['message'] = f"{user.name} запускает ледяную стрелу в {target.name} и наносит {actual_damage} магического урона!"
+
+            if slowed:
+                result['message'] += f" {target.name} заморожен!"
+
+            if not target.is_alive:
+                result['killed'] = True
+                result['message'] += f" {target.name} повержен!"
+
+        return result
+
+
+class Lightning(Skill):
+    """Молния - быстрая магическая атака с высоким уроном"""
+
+    def __init__(self):
+        super().__init__(
+            name="Молния",
+            description="Мощнейшая атака молнией. Высокий урон, игнорирует броню, снижается магической защитой",
+            category=SkillCategory.MAGIC,
+            mana_cost=50,
+            cooldown=4
+        )
+
+    def use(self, user, target=None):
+        """Использовать молнию"""
+        result = super().use(user, target)
+
+        if target and user.can_attack(target):
+            # Самый высокий урон среди магических атак
+            intelligence = getattr(user, 'intelligence', 1)
+            spirit = getattr(user, 'spirit', 1)
+
+            # Урон: 25 + интеллект*3 + дух*1
+            base_damage = 25 + intelligence * 3 + spirit * 1
+            damage_multiplier = 1.0 + (self.rank - 1) * 0.3  # +30% за ранг
+            total_damage = int(base_damage * damage_multiplier)
+
+            # ИГНОРИРУЕМ БРОНЮ, но учитываем магическую защиту
+            magic_defense = target.get_magic_defense() if hasattr(target, 'get_magic_defense') else 0
+            actual_damage = max(1, total_damage - magic_defense)
+
+            # Применяем урон
+            target.take_damage(actual_damage)
+
+            result['damage'] = actual_damage
+            result['ignored_armor'] = True
+            result['magic_blocked'] = max(0, total_damage - actual_damage)
+            result['message'] = f"{user.name} поражает {target.name} молнией и наносит {actual_damage} магического урона!"
+
+            if magic_defense > 0:
+                result['message'] += f" (магическая защита поглотила {result['magic_blocked']} урона)"
+
+            if not target.is_alive:
+                result['killed'] = True
+                result['message'] += f" {target.name} повержен!"
+
+        return result
+
+
+class MagicMissile(Skill):
+    """Магическая стрела - базовая магическая атака"""
+
+    def __init__(self):
+        super().__init__(
+            name="Магическая стрела",
+            description="Базовая магическая атака. Низкая стоимость, игнорирует броню, снижается магической защитой",
+            category=SkillCategory.MAGIC,
+            mana_cost=15,
+            cooldown=1
+        )
+
+    def use(self, user, target=None):
+        """Использовать магическую стрелу"""
+        result = super().use(user, target)
+
+        if target and user.can_attack(target):
+            # Базовая магическая атака с низкой стоимостью
+            intelligence = getattr(user, 'intelligence', 1)
+            spirit = getattr(user, 'spirit', 1)
+
+            # Урон: 8 + интеллект*1.2 + дух*0.3
+            base_damage = 8 + intelligence * 1.2 + spirit * 0.3
+            damage_multiplier = 1.0 + (self.rank - 1) * 0.15  # +15% за ранг
+            total_damage = int(base_damage * damage_multiplier)
+
+            # ИГНОРИРУЕМ БРОНЮ, но учитываем магическую защиту
+            magic_defense = target.get_magic_defense() if hasattr(target, 'get_magic_defense') else 0
+            actual_damage = max(1, total_damage - magic_defense)
+
+            # Применяем урон
+            target.take_damage(actual_damage)
+
+            result['damage'] = actual_damage
+            result['ignored_armor'] = True
+            result['magic_blocked'] = max(0, total_damage - actual_damage)
+            result['message'] = f"{user.name} запускает магическую стрелу в {target.name} и наносит {actual_damage} магического урона!"
+
+            if not target.is_alive:
+                result['killed'] = True
+                result['message'] += f" {target.name} повержен!"
+
+        return result
+
+
 # ==================== РЕМЕСЛЕННЫЕ УМЕНИЯ ====================
 
 class Mining(Skill):
@@ -710,9 +913,14 @@ AVAILABLE_SKILLS = {
     'poison_strike': PoisonStrike,
     'stun_strike': StunStrike,
     'battle_cry': BattleCry,
-    # Магические
+    # Магические (поддерживающие)
     'heal': Heal,
     'regeneration': Regeneration,
+    # Магические (атакующие)
+    'fireball': Fireball,
+    'ice_bolt': IceBolt,
+    'lightning': Lightning,
+    'magic_missile': MagicMissile,
     # Ремесленные
     'mining': Mining,
     'lumberjacking': Lumberjacking,
