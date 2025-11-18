@@ -3,7 +3,7 @@
 Содержит все интерфейсные окна и элементы
 """
 import pygame
-from game.constants import COLORS, WINDOW_WIDTH, WINDOW_HEIGHT, BASE_WIDTH, BASE_HEIGHT
+from game.constants import COLORS, BASE_WIDTH, BASE_HEIGHT
 from game.inventory import EquipmentSlot, EquipmentItem
 
 
