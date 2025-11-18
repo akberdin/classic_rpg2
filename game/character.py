@@ -48,20 +48,24 @@ class Character:
         self.health = 0
         self.is_alive = True
 
-    def generate_random_stats(self, min_val=5, max_val=15):
+    def generate_random_stats(self, level=1):
         """
-        Генерация случайных характеристик
+        Генерация характеристик на основе уровня
 
         Args:
-            min_val: Минимальное значение характеристики
-            max_val: Максимальное значение характеристики
+            level: Уровень персонажа (влияет на силу характеристик)
         """
-        self.strength = random.randint(min_val, max_val)
-        self.dexterity = random.randint(min_val, max_val)
-        self.constitution = random.randint(min_val, max_val)
-        self.spirit = random.randint(min_val, max_val)
-        self.intelligence = random.randint(min_val, max_val)
-        self.luck = random.randint(min_val, max_val)
+        # Базовое значение характеристики: 3 + уровень
+        # С вариацией ±20% для разнообразия
+        base_stat = 3 + level
+        variation = max(1, int(base_stat * 0.2))  # 20% вариация, минимум 1
+
+        self.strength = random.randint(base_stat - variation, base_stat + variation)
+        self.dexterity = random.randint(base_stat - variation, base_stat + variation)
+        self.constitution = random.randint(base_stat - variation, base_stat + variation)
+        self.spirit = random.randint(base_stat - variation, base_stat + variation)
+        self.intelligence = random.randint(base_stat - variation, base_stat + variation)
+        self.luck = random.randint(base_stat - variation, base_stat + variation)
 
         # Обновляем выносливость и здоровье на основе характеристик
         self.update_derived_stats()
@@ -644,7 +648,9 @@ class NPC(Character):
         self.npc_type = npc_type
         self.level = level
         self.relationship = RELATIONSHIP_NEUTRAL  # Отношение к игроку по умолчанию
-        self.generate_random_stats()
+
+        # Генерируем характеристики на основе уровня
+        self.generate_random_stats(level=self.level)
 
         # Инвентарь для NPC
         self.inventory = Inventory(max_slots=10, max_weight=50.0)
