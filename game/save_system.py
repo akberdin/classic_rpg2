@@ -360,9 +360,12 @@ class SaveSystem:
     def _serialize_fog(fog_of_war):
         """Сериализовать туман войны"""
         explored = []
-        for x in range(len(fog_of_war.explored)):
-            for y in range(len(fog_of_war.explored[x])):
-                if fog_of_war.explored[x][y]:
+        # Состояние explored хранится в тайлах карты
+        game_map = fog_of_war.game_map
+        for x in range(game_map.width):
+            for y in range(game_map.height):
+                tile = game_map.get_tile(x, y)
+                if tile and tile.explored:
                     explored.append((x, y))
 
         return {'explored': explored}
