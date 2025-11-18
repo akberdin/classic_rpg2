@@ -723,6 +723,24 @@ class NPC(Character):
         # Путь не найден - возвращаем (0, 0)
         return (0, 0)
 
+    def _can_move(self, x, y, game_map):
+        """
+        Проверить, может ли NPC двигаться на клетку (базовый метод)
+
+        Args:
+            x: Координата X
+            y: Координата Y
+            game_map: Объект карты
+
+        Returns:
+            bool: True если можно двигаться
+        """
+        if not game_map.is_valid_position(x, y):
+            return False
+
+        tile = game_map.get_tile(x, y)
+        return tile.is_passable()
+
 
 class Guard(NPC):
     """Класс Стражника с AI патрулирования и боевым поведением"""
