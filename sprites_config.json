@@ -13,7 +13,7 @@
     "mine": "assets/objects/mines/mine.png",
     "bandit_camp": "assets/objects/camps/bandit.png",
     "ruins": "assets/objects/ruins/ruins.png",
-    "magic_school": "assets/sprites/locations/magic_school.png"
+    "magic_school": "assets/objects/magic_school/magic_school.png"
   },
   "biomes": {
     "water": "assets/sprites/biomes/water.png",
