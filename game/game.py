@@ -178,15 +178,16 @@ class Game:
         cities = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_CITY]
 
         for city in cities:
-            # Создаем 3-5 стражников возле каждого города (увеличено с 2-3)
-            num_guards = random.randint(3, 5)
+            # Создаем 6-10 стражников возле каждого города (увеличено с 3-5)
+            num_guards = random.randint(6, 10)
 
             for i in range(num_guards):
                 # Находим позицию рядом с городом
                 guard_pos = self._find_guard_position(city.x, city.y)
                 if guard_pos:
                     gx, gy = guard_pos
-                    guard_level = random.randint(5, 15)
+                    # Уровень стражников от 5 до 20
+                    guard_level = random.randint(5, 20)
                     guard = Guard(f"Стражник {city.name}", gx, gy, guard_level)
 
                     # Создаем маршрут патрулирования вокруг города
@@ -233,8 +234,8 @@ class Game:
             # Нужно как минимум 2 населенных пункта для торговцев
             return
 
-        # Создаем 5-8 торговцев (увеличено с 3-5)
-        num_merchants = random.randint(5, 8)
+        # Создаем 10-15 торговцев (увеличено с 5-8)
+        num_merchants = random.randint(10, 15)
 
         for i in range(num_merchants):
             # Выбираем случайный стартовый населенный пункт
@@ -245,7 +246,8 @@ class Game:
 
             if merchant_pos:
                 mx, my = merchant_pos
-                merchant_level = random.randint(3, 8)
+                # Уровень торговцев от 2 до 8
+                merchant_level = random.randint(2, 8)
                 merchant_names = [
                     "Торговец Иван", "Купец Петр", "Торговка Мария",
                     "Купец Василий", "Торговец Николай", "Купчиха Анна",
@@ -264,15 +266,16 @@ class Game:
         bandit_camps = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_BANDIT_CAMP]
 
         for camp in bandit_camps:
-            # Создаем 4-7 бандитов возле каждого лагеря (увеличено с 3-5)
-            num_bandits = random.randint(4, 7)
+            # Создаем 7-12 бандитов возле каждого лагеря (увеличено с 4-7)
+            num_bandits = random.randint(7, 12)
 
             for i in range(num_bandits):
                 # Находим позицию рядом с лагерем
                 bandit_pos = self._find_guard_position(camp.x, camp.y)
                 if bandit_pos:
                     bx, by = bandit_pos
-                    bandit_level = random.randint(4, 12)
+                    # Уровень бандитов от 3 до 15
+                    bandit_level = random.randint(3, 15)
                     bandit_names = [
                         "Бандит", "Разбойник", "Головорез", "Грабитель",
                         "Налетчик", "Лихой человек", "Бандюган", "Воришка"
@@ -290,15 +293,16 @@ class Game:
         mines = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_MINE]
 
         for mine in mines:
-            # Создаем 3-5 шахтеров возле каждой шахты (увеличено с 2-3)
-            num_miners = random.randint(3, 5)
+            # Создаем 5-8 шахтеров возле каждой шахты (увеличено с 3-5)
+            num_miners = random.randint(5, 8)
 
             for i in range(num_miners):
                 # Находим позицию рядом с шахтой
                 miner_pos = self._find_guard_position(mine.x, mine.y)
                 if miner_pos:
                     mx, my = miner_pos
-                    miner_level = random.randint(3, 10)
+                    # Уровень шахтеров от 2 до 8
+                    miner_level = random.randint(2, 8)
                     miner_names = [
                         "Шахтер", "Рудокоп", "Горняк", "Копатель"
                     ]
@@ -315,8 +319,8 @@ class Game:
         ruins = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_RUINS]
 
         for ruin in ruins:
-            # Создаем 3-6 нежити возле каждых руин (увеличено с 2-4)
-            num_undead = random.randint(3, 6)
+            # Создаем 5-10 нежити возле каждых руин (увеличено с 3-6)
+            num_undead = random.randint(5, 10)
 
             for i in range(num_undead):
                 # Находим позицию рядом с руинами (в пределах 7 клеток)

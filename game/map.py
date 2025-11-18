@@ -87,20 +87,20 @@ class GameMap:
         # Генерация школы магов и деревень рядом с ней
         self._generate_magic_school_cluster()
 
-        # Генерация компактных кластеров городов (увеличено с 3 до 10)
-        self._generate_compact_locations(LOCATION_CITY, 10, CITY_NAMES, min_distance=5, max_distance=15)
+        # Генерация компактных кластеров городов (увеличено с 10 до 15)
+        self._generate_compact_locations(LOCATION_CITY, 15, CITY_NAMES, min_distance=5, max_distance=15)
 
-        # Генерация компактных кластеров деревень (увеличено с 8 до 25)
-        self._generate_compact_locations(LOCATION_VILLAGE, 25, VILLAGE_NAMES, min_distance=5, max_distance=15)
+        # Генерация компактных кластеров деревень (увеличено с 25 до 35)
+        self._generate_compact_locations(LOCATION_VILLAGE, 35, VILLAGE_NAMES, min_distance=5, max_distance=15)
 
-        # Генерация компактных кластеров шахт (увеличено с 8 до 15)
-        self._generate_compact_locations(LOCATION_MINE, 15, MINE_NAMES, min_distance=5, max_distance=15)
+        # Генерация компактных кластеров шахт (увеличено с 15 до 20)
+        self._generate_compact_locations(LOCATION_MINE, 20, MINE_NAMES, min_distance=5, max_distance=15)
 
         # Генерация лагерей бандитов (только в лесах, на расстоянии >= 50 от городов)
         self._generate_bandit_camps()
 
-        # Генерация руин (увеличено с 12 до 20)
-        self._generate_compact_locations(LOCATION_RUINS, 20, RUIN_NAMES, min_distance=5, max_distance=15)
+        # Генерация руин (увеличено с 20 до 30)
+        self._generate_compact_locations(LOCATION_RUINS, 30, RUIN_NAMES, min_distance=5, max_distance=15)
 
     def _generate_magic_school_cluster(self):
         """Генерация школы магов с двумя деревнями рядом"""
@@ -177,9 +177,9 @@ class GameMap:
         names_copy = BANDIT_CAMP_NAMES.copy()
         random.shuffle(names_copy)
 
-        count = 10  # Количество лагерей бандитов (увеличено с 6 до 10)
+        count = 15  # Количество лагерей бандитов (увеличено с 10 до 15)
         created = 0
-        max_attempts = 3000  # Увеличиваем количество попыток
+        max_attempts = 5000  # Увеличиваем количество попыток для размещения большего количества лагерей
 
         for attempt in range(max_attempts):
             if created >= count:
