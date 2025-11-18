@@ -25,6 +25,7 @@ class Tile:
         self.biome = biome
         self.location = None  # Объект на этом тайле (город, деревня и т.д.)
         self.explored = False  # Был ли тайл исследован (для тумана войны)
+        self.loot = None  # Лут, оставленный на тайле (от убитых NPC)
 
     def is_passable(self):
         """
@@ -47,6 +48,23 @@ class Tile:
     def has_location(self):
         """Проверить, есть ли локация на этом тайле"""
         return self.location is not None
+
+    def set_loot(self, inventory):
+        """
+        Установить лут на тайле
+
+        Args:
+            inventory: Инвентарь с предметами для лута
+        """
+        self.loot = inventory
+
+    def has_loot(self):
+        """Проверить, есть ли лут на этом тайле"""
+        return self.loot is not None
+
+    def clear_loot(self):
+        """Очистить лут с тайла"""
+        self.loot = None
 
 
 class Location:

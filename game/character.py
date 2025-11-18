@@ -801,6 +801,8 @@ class Guard(NPC):
         self.steps_per_hour = 1  # Количество шагов за 1 час игрового времени (только соседние клетки)
         self.target_enemy = None  # Текущий враг для атаки
         self.detection_range = 10  # Дальность обнаружения врагов
+        self.pursuit_counter = 0  # Счетчик ходов преследования
+        self.max_pursuit_steps = 8  # Максимальное количество ходов преследования
 
     def set_patrol_route(self, points):
         """
@@ -878,14 +880,16 @@ class Guard(NPC):
         if closest_enemy:
             self.target_enemy = closest_enemy
             self.state = "combat"
+            self.pursuit_counter = 0  # Сбрасываем счетчик преследования
         elif self.state == "combat":
             # Если враг исчез, возвращаемся к патрулю
             self.target_enemy = None
             self.state = "patrol"
+            self.pursuit_counter = 0
 
     def _combat_step(self, game_map):
         """
-        Один шаг боевого поведения
+        Один шаг боевого поведения с ограничением преследования
 
         Args:
             game_map: Объект карты игры
@@ -894,6 +898,14 @@ class Guard(NPC):
         if not self.target_enemy or not self.target_enemy.is_alive:
             self.target_enemy = None
             self.state = "patrol"
+            self.pursuit_counter = 0
+            return
+
+        # Проверяем лимит преследования (8 ходов)
+        if self.pursuit_counter >= self.max_pursuit_steps:
+            self.target_enemy = None
+            self.state = "patrol"
+            self.pursuit_counter = 0
             return
 
         # Проверяем, можем ли атаковать
@@ -909,13 +921,15 @@ class Guard(NPC):
                     print(f"{self.target_enemy.name} повержен!")
                     self.target_enemy = None
                     self.state = "patrol"
+                    self.pursuit_counter = 0
         else:
-            # Двигаемся к цели
+            # Двигаемся к цели и увеличиваем счетчик преследования
             dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=30)
             if (dx != 0 or dy != 0) and self.consume_stamina():
                 if self._can_move(self.x + dx, self.y + dy, game_map):
                     self.x += dx
                     self.y += dy
+                    self.pursuit_counter += 1  # Увеличиваем счетчик преследования
 
     def _patrol_step(self, game_map):
         """Один шаг патрулирования"""
@@ -1341,6 +1355,8 @@ class Bandit(NPC):
         self.target_enemy = None  # Текущий враг для атаки
         self.detection_range = 10  # Дальность обнаружения врагов
         self.wander_target = None  # Целевая точка для блуждания
+        self.pursuit_counter = 0  # Счетчик ходов преследования
+        self.max_pursuit_steps = 8  # Максимальное количество ходов преследования
 
     def update_ai(self, game_map, all_npcs=None, player=None):
         """
@@ -1418,14 +1434,16 @@ class Bandit(NPC):
         if closest_enemy:
             self.target_enemy = closest_enemy
             self.state = "combat"
+            self.pursuit_counter = 0  # Сбрасываем счетчик преследования
         elif self.state == "combat":
             # Если враг исчез, возвращаемся к патрулю
             self.target_enemy = None
             self.state = "patrol"
+            self.pursuit_counter = 0
 
     def _combat_step(self, game_map):
         """
-        Один шаг боевого поведения
+        Один шаг боевого поведения с ограничением преследования
 
         Args:
             game_map: Объект карты игры
@@ -1434,6 +1452,14 @@ class Bandit(NPC):
         if not self.target_enemy or not self.target_enemy.is_alive:
             self.target_enemy = None
             self.state = "patrol"
+            self.pursuit_counter = 0
+            return
+
+        # Проверяем лимит преследования (8 ходов)
+        if self.pursuit_counter >= self.max_pursuit_steps:
+            self.target_enemy = None
+            self.state = "patrol"
+            self.pursuit_counter = 0
             return
 
         # Проверяем расстояние до лагеря
@@ -1443,6 +1469,7 @@ class Bandit(NPC):
         if distance_to_camp > self.max_distance_from_camp:
             self.target_enemy = None
             self.state = "patrol"
+            self.pursuit_counter = 0
             return
 
         # Проверяем, можем ли атаковать
@@ -1465,8 +1492,9 @@ class Bandit(NPC):
                     print(f"{self.target_enemy.name} повержен!")
                     self.target_enemy = None
                     self.state = "patrol"
+                    self.pursuit_counter = 0
         else:
-            # Двигаемся к цели
+            # Двигаемся к цели и увеличиваем счетчик преследования
             dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=30)
             if (dx != 0 or dy != 0) and self.consume_stamina():
                 new_x = self.x + dx
@@ -1478,10 +1506,12 @@ class Bandit(NPC):
                     if self._can_move(new_x, new_y, game_map):
                         self.x = new_x
                         self.y = new_y
+                        self.pursuit_counter += 1  # Увеличиваем счетчик преследования
                 else:
                     # Слишком далеко, прекращаем преследование
                     self.target_enemy = None
                     self.state = "patrol"
+                    self.pursuit_counter = 0
 
     def _patrol_step(self, game_map):
         """Один шаг патрулирования территории"""
@@ -1803,11 +1833,13 @@ class Undead(NPC):
         self.target_enemy = None  # Текущая цель для атаки
         self.detection_range = 12  # Дальность обнаружения врагов
         self.wander_target = None  # Целевая точка для патруля
+        self.pursuit_counter = 0  # Счетчик ходов преследования
+        self.max_pursuit_steps = 8  # Максимальное количество ходов преследования
 
     def update_ai(self, game_map, all_npcs=None, player=None):
         """
         Обновление AI нежити за 1 час игрового времени
-        ОТКЛЮЧЕНО: Нежить не перемещается и не атакует
+        АКТИВИРОВАНА система патруля и агрессии
 
         Args:
             game_map: Объект карты игры
@@ -1817,33 +1849,29 @@ class Undead(NPC):
         if not self.is_alive:
             return
 
-        # ОТКЛЮЧЕНО: Нежить больше не перемещается и не атакует
         # Восстанавливаем выносливость
         self.recover_stamina()
 
-        # Просто стоим на месте, ничего не делаем
-        return
+        # Если отдыхаем из-за выносливости, ничего не делаем
+        if self.is_resting:
+            return
 
-        # # Если отдыхаем из-за выносливости, ничего не делаем
-        # if self.is_resting:
-        #     return
+        # Проверяем наличие врагов поблизости (включая игрока)
+        if all_npcs or player:
+            self._check_for_enemies(all_npcs, player)
 
-        # # Проверяем наличие врагов поблизости (включая игрока)
-        # if all_npcs or player:
-        #     self._check_for_enemies(all_npcs, player)
-
-        # if self.state == "combat":
-        #     self._combat_step(game_map)
-        # elif self.state == "patrol":
-        #     # Делаем несколько шагов за 1 час
-        #     for _ in range(self.steps_per_hour):
-        #         if not self.consume_stamina():
-        #             break
-        #         self._patrol_step(game_map)
-        #         if self.state == "rest":
-        #             break
-        # elif self.state == "rest":
-        #     self._rest()
+        if self.state == "combat":
+            self._combat_step(game_map)
+        elif self.state == "patrol":
+            # Делаем несколько шагов за 1 час
+            for _ in range(self.steps_per_hour):
+                if not self.consume_stamina():
+                    break
+                self._patrol_step(game_map)
+                if self.state == "rest":
+                    break
+        elif self.state == "rest":
+            self._rest()
 
     def _check_for_enemies(self, all_npcs, player=None):
         """
@@ -1883,14 +1911,16 @@ class Undead(NPC):
         if closest_enemy:
             self.target_enemy = closest_enemy
             self.state = "combat"
+            self.pursuit_counter = 0  # Сбрасываем счетчик преследования
         elif self.state == "combat":
             # Если враг исчез, возвращаемся к патрулю
             self.target_enemy = None
             self.state = "patrol"
+            self.pursuit_counter = 0
 
     def _combat_step(self, game_map):
         """
-        Один шаг боевого поведения
+        Один шаг боевого поведения с ограничением преследования
 
         Args:
             game_map: Объект карты игры
@@ -1899,6 +1929,14 @@ class Undead(NPC):
         if not self.target_enemy or not self.target_enemy.is_alive:
             self.target_enemy = None
             self.state = "patrol"
+            self.pursuit_counter = 0
+            return
+
+        # Проверяем лимит преследования (8 ходов)
+        if self.pursuit_counter >= self.max_pursuit_steps:
+            self.target_enemy = None
+            self.state = "patrol"
+            self.pursuit_counter = 0
             return
 
         # Проверяем расстояние до руин
@@ -1908,6 +1946,7 @@ class Undead(NPC):
         if distance_to_ruins > self.max_distance_from_ruins:
             self.target_enemy = None
             self.state = "patrol"
+            self.pursuit_counter = 0
             return
 
         # Проверяем, можем ли атаковать
@@ -1930,8 +1969,9 @@ class Undead(NPC):
                     print(f"{self.target_enemy.name} повержен!")
                     self.target_enemy = None
                     self.state = "patrol"
+                    self.pursuit_counter = 0
         else:
-            # Двигаемся к цели
+            # Двигаемся к цели и увеличиваем счетчик преследования
             dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=30)
             if (dx != 0 or dy != 0) and self.consume_stamina():
                 new_x = self.x + dx
@@ -1943,10 +1983,12 @@ class Undead(NPC):
                     if self._can_move(new_x, new_y, game_map):
                         self.x = new_x
                         self.y = new_y
+                        self.pursuit_counter += 1  # Увеличиваем счетчик преследования
                 else:
                     # Слишком далеко, прекращаем преследование
                     self.target_enemy = None
                     self.state = "patrol"
+                    self.pursuit_counter = 0
 
     def _patrol_step(self, game_map):
         """Один шаг патрулирования территории руин"""
