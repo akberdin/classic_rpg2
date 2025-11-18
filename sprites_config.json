@@ -8,11 +8,11 @@
     "player": "assets/sprites/player.png"
   },
   "locations": {
-    "city": "assets/sprites/locations/city.png",
-    "village": "assets/sprites/locations/village.png",
-    "mine": "assets/sprites/locations/mine.png",
-    "bandit_camp": "assets/sprites/locations/bandit_camp.png",
-    "ruins": "assets/sprites/locations/ruins.png",
+    "city": "assets/objects/citys/city.png",
+    "village": "assets/objects/villages/village.png",
+    "mine": "assets/objects/mines/mine.png",
+    "bandit_camp": "assets/objects/camps/bandit.png",
+    "ruins": "assets/objects/ruins/ruins.png",
     "magic_school": "assets/sprites/locations/magic_school.png"
   },
   "biomes": {

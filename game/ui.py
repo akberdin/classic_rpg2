@@ -952,13 +952,20 @@ class TradeWindow:
             self.screen.blit(no_goods, (x + width // 2 - 100, y + height // 2))
             return
 
-        # Список товаров
+        # Список товаров с прокруткой
         items_y = y + 35
         item_height = 28
-        max_visible = 14
+        max_visible = int(height / item_height) - 1  # Вычисляем максимум видимых элементов
 
-        start_index = max(0, self.selected_merchant_index - max_visible + 1)
-        end_index = min(len(items), start_index + max_visible)
+        # Умная прокрутка: держим выбранный элемент в видимой области
+        if len(items) <= max_visible:
+            start_index = 0
+            end_index = len(items)
+        else:
+            # Центрируем выбранный элемент, если возможно
+            half_visible = max_visible // 2
+            start_index = max(0, min(self.selected_merchant_index - half_visible, len(items) - max_visible))
+            end_index = min(len(items), start_index + max_visible)
 
         for i in range(start_index, end_index):
             item, quantity = items[i]
@@ -998,6 +1005,14 @@ class TradeWindow:
             )
             self.screen.blit(price_text, (x + width - 80, items_y + display_index * item_height + 5))
 
+        # Индикаторы прокрутки
+        if start_index > 0:
+            scroll_up = self.info_font.render("▲ Еще товары выше", True, (150, 200, 255))
+            self.screen.blit(scroll_up, (x + width // 2 - 70, y + 10))
+        if end_index < len(items):
+            scroll_down = self.info_font.render("▼ Еще товары ниже", True, (150, 200, 255))
+            self.screen.blit(scroll_down, (x + width // 2 - 70, y + height - 25))
+
     def _render_player_goods(self, player, x, y, width, height):
         """Отрисовка товаров игрока для продажи"""
         # Заголовок
@@ -1011,13 +1026,20 @@ class TradeWindow:
             self.screen.blit(no_goods, (x + width // 2 - 120, y + height // 2))
             return
 
-        # Список товаров
+        # Список товаров с прокруткой
         items_y = y + 35
         item_height = 28
-        max_visible = 14
+        max_visible = int(height / item_height) - 1  # Вычисляем максимум видимых элементов
 
-        start_index = max(0, self.selected_player_index - max_visible + 1)
-        end_index = min(len(items), start_index + max_visible)
+        # Умная прокрутка: держим выбранный элемент в видимой области
+        if len(items) <= max_visible:
+            start_index = 0
+            end_index = len(items)
+        else:
+            # Центрируем выбранный элемент, если возможно
+            half_visible = max_visible // 2
+            start_index = max(0, min(self.selected_player_index - half_visible, len(items) - max_visible))
+            end_index = min(len(items), start_index + max_visible)
 
         for i in range(start_index, end_index):
             item, quantity = items[i]
@@ -1056,6 +1078,14 @@ class TradeWindow:
                 (255, 215, 0)
             )
             self.screen.blit(price_text, (x + width - 80, items_y + display_index * item_height + 5))
+
+        # Индикаторы прокрутки
+        if start_index > 0:
+            scroll_up = self.info_font.render("▲ Еще товары выше", True, (200, 150, 150))
+            self.screen.blit(scroll_up, (x + width // 2 - 70, y + 10))
+        if end_index < len(items):
+            scroll_down = self.info_font.render("▼ Еще товары ниже", True, (200, 150, 150))
+            self.screen.blit(scroll_down, (x + width // 2 - 70, y + height - 25))
 
 
 class CharacterWindow:

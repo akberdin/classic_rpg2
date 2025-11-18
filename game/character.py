@@ -141,13 +141,33 @@ class Character:
             damage: Количество урона
 
         Returns:
-            bool: True если персонаж жив
+            dict: Информация о полученном уроне
+                - damage: Итоговый урон
+                - blocked: Урон, заблокированный броней
+                - godmode: True если сработал режим бессмертия
         """
+        # Проверяем режим бессмертия (только для игрока)
+        if hasattr(self, 'godmode') and self.godmode:
+            # В режиме бессмертия урон не наносится
+            return {
+                'damage': 0,
+                'blocked': damage,
+                'godmode': True,
+                'alive': True
+            }
+
+        # Применяем урон
         self.health -= damage
         if self.health <= 0:
             self.health = 0
             self.is_alive = False
-        return self.is_alive
+
+        return {
+            'damage': damage,
+            'blocked': 0,
+            'godmode': False,
+            'alive': self.is_alive
+        }
 
     def can_attack(self, target):
         """
@@ -233,12 +253,16 @@ class Character:
         target_defense = target.get_total_defense()
         # Защита снижает урон, но не может снизить его до нуля (минимум 1)
         actual_damage = max(1, total_damage - target_defense)
+        blocked_by_armor = max(0, total_damage - actual_damage)
 
         # Применяем урон
-        target.take_damage(actual_damage)
+        damage_result = target.take_damage(actual_damage)
 
         return {
-            'damage': actual_damage,
+            'damage': damage_result['damage'],
+            'blocked_by_armor': blocked_by_armor,
+            'blocked_by_godmode': damage_result['blocked'] if damage_result['godmode'] else 0,
+            'godmode': damage_result['godmode'],
             'dodged': False,
             'critical': is_critical,
             'hit': True
@@ -374,6 +398,9 @@ class Player(Character):
         # Менеджер профессий
         from game.professions import ProfessionManager
         self.profession_manager = ProfessionManager()
+
+        # Чит-мод (бессмертие)
+        self.godmode = False
 
         # Атрибуты для достижений
         self.enemies_killed = 0
