@@ -61,6 +61,8 @@ class WeaponType(Enum):
     BOW = ("Лук", 1.3, 1.5)
     STAFF = ("Посох", 1.1, 2.0)
     WAND = ("Жезл", 1.0, 0.8)
+    AXE = ("Топор", 1.4, 2.8)
+    PICKAXE = ("Кирка", 1.1, 2.5)
 
     def __init__(self, rus_name, damage_multiplier, weight):
         self.rus_name = rus_name
@@ -387,6 +389,16 @@ class Inventory:
 
         # Слоты экипировки
         self.equipment = {slot: None for slot in EquipmentSlot}
+
+    def update_max_weight(self, strength):
+        """
+        Обновить максимальный вес на основе силы персонажа
+        Формула: 30 + сила * 10
+
+        Args:
+            strength: Значение силы персонажа
+        """
+        self.max_weight = 30 + strength * 10
 
     @property
     def current_weight(self):
@@ -970,6 +982,9 @@ PREDEFINED_ITEMS = {
     "gold_ore": ResourceItem("Золотая руда", 100),
     "mithril_ore": ResourceItem("Мифриловая руда", 200),
 
+    # Древесина
+    "wood": ResourceItem("Древесина", 5, 1.0),
+
     # Ресурсы из руин
     "ancient_coin": ResourceItem("Древняя монета", 30),
     "artifact_fragment": ResourceItem("Фрагмент артефакта", 80),
@@ -986,6 +1001,10 @@ PREDEFINED_ITEMS = {
 
     "minor_stamina_potion": PotionItem("Малое зелье выносливости", "stamina", 50, 20),
     "stamina_potion": PotionItem("Зелье выносливости", "stamina", 100, 40),
+
+    # Инструменты
+    "basic_axe": WeaponItem("Базовый топор", WeaponType.AXE, 15, ItemQuality.COMMON),
+    "basic_pickaxe": WeaponItem("Базовая кирка", WeaponType.PICKAXE, 12, ItemQuality.COMMON),
 }
 
 

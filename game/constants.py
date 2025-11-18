@@ -3,8 +3,8 @@
 """
 
 # Размеры окна
-WINDOW_WIDTH = 1280
-WINDOW_HEIGHT = 720
+WINDOW_WIDTH = 1920
+WINDOW_HEIGHT = 1200
 FPS = 60
 
 # Размеры тайлов и карты

@@ -360,10 +360,16 @@ class Player(Character):
 
         # Инвентарь
         self.inventory = Inventory(max_slots=20)
+        # Обновляем грузоподъемность на основе силы
+        self.inventory.update_max_weight(self.strength)
 
         # Менеджер навыков
         from game.skills import SkillManager
         self.skill_manager = SkillManager(self)
+
+        # Менеджер профессий
+        from game.professions import ProfessionManager
+        self.profession_manager = ProfessionManager()
 
         # Атрибуты для достижений
         self.enemies_killed = 0
@@ -376,6 +382,9 @@ class Player(Character):
 
         # Временный бонус к силе (от навыков)
         self.temp_strength_boost = 0
+
+        # Флаг атаки от NPC (для принудительного открытия окна боя)
+        self.attacked_by_npc = None
 
     def can_move_to(self, x, y, game_map):
         """
@@ -498,6 +507,10 @@ class Player(Character):
                 self.max_mana = self.spirit * 10
                 self.mana = self.max_mana
 
+            # Обновляем грузоподъемность если изменилась сила
+            if stat_name == 'strength':
+                self.inventory.update_max_weight(self.strength)
+
             return True
 
         return False
@@ -524,15 +537,68 @@ class Player(Character):
         print(f"Мана восстановлена: +{mana_restored} ({self.mana}/{self.max_mana})")
         print(f"Выносливость восстановлена: +{stamina_restored} ({self.stamina}/{self.max_stamina})")
 
-    def work(self):
+    def work(self, game_map=None):
         """
-        Работа - получение золота
+        Работа - сбор ресурсов с использованием профессий или получение золота
         Занимает 1 час игрового времени
+
+        Args:
+            game_map: Карта игры (для определения биома и локации)
         """
-        # Получаем только золото
-        gold_gained = 5 + self.level
-        self.inventory.add_gold(gold_gained)
-        print(f"Вы поработали и получили {gold_gained} золота")
+        if not game_map:
+            # Простая работа за золото
+            gold_gained = 5 + self.level
+            self.inventory.add_gold(gold_gained)
+            print(f"Вы поработали и получили {gold_gained} золота")
+            return
+
+        # Получаем текущий тайл
+        tile = game_map.get_tile(self.x, self.y)
+        biome = tile.biome
+        location = tile.location if tile.has_location() else None
+
+        # Попытка использовать профессии
+        resources_gathered = False
+
+        # Проверяем рудокопство
+        mining = self.profession_manager.get_profession('mining')
+        can_mine, mine_msg = mining.can_use(self, location)
+        if can_mine:
+            resources = mining.gather(self)
+            if resources:
+                for item, quantity in resources:
+                    if self.inventory.add_item(item, quantity):
+                        print(f"Добыто: {item.name} x{quantity}")
+                        self.resources_collected += 1
+                    else:
+                        print(f"Инвентарь полон! Не удалось добавить {item.name}")
+                resources_gathered = True
+            else:
+                print("Вам не удалось ничего добыть в этот раз.")
+                resources_gathered = True
+
+        # Проверяем лесорубство
+        lumberjacking = self.profession_manager.get_profession('lumberjacking')
+        can_lumber, lumber_msg = lumberjacking.can_use(self, biome)
+        if can_lumber and not resources_gathered:
+            resources = lumberjacking.gather(self)
+            if resources:
+                for item, quantity in resources:
+                    if self.inventory.add_item(item, quantity):
+                        print(f"Срублено: {item.name} x{quantity}")
+                        self.resources_collected += 1
+                    else:
+                        print(f"Инвентарь полон! Не удалось добавить {item.name}")
+                resources_gathered = True
+            else:
+                print("Вам не удалось ничего добыть в этот раз.")
+                resources_gathered = True
+
+        # Если не удалось использовать профессии, работаем за золото
+        if not resources_gathered:
+            gold_gained = 5 + self.level
+            self.inventory.add_gold(gold_gained)
+            print(f"Вы поработали и получили {gold_gained} золота")
 
     def use_item(self, item_name):
         """
@@ -1330,6 +1396,10 @@ class Bandit(NPC):
 
         # Проверяем, можем ли атаковать
         if self.can_attack(self.target_enemy):
+            # Устанавливаем флаг что атаковали игрока (для принудительного открытия окна боя)
+            if hasattr(self.target_enemy, 'attacked_by_npc'):
+                self.target_enemy.attacked_by_npc = self
+
             attack_result = self.attack(self.target_enemy)
 
             if attack_result['dodged']:
@@ -1784,6 +1854,10 @@ class Undead(NPC):
 
         # Проверяем, можем ли атаковать
         if self.can_attack(self.target_enemy):
+            # Устанавливаем флаг что атаковали игрока (для принудительного открытия окна боя)
+            if hasattr(self.target_enemy, 'attacked_by_npc'):
+                self.target_enemy.attacked_by_npc = self
+
             attack_result = self.attack(self.target_enemy)
 
             if attack_result['dodged']:
