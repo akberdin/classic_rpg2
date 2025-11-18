@@ -55,19 +55,19 @@ class Character:
         Args:
             level: Уровень персонажа (влияет на силу характеристик)
         """
-        # Сбалансированная формула для разных уровней
+        # Сбалансированная формула с плавным ростом для всех уровней
         if level <= 5:
-            # Низкие уровни (1-5): слабые характеристики
+            # Низкие уровни (1-5): начальные характеристики
             base_stat = 2 + level * 0.8  # Уровень 1: 2.8, Уровень 5: 6
         elif level <= 15:
-            # Средние уровни (6-15): умеренный рост
-            base_stat = 5 + level * 0.6  # Уровень 6: 8.6, Уровень 15: 14
+            # Средние уровни (6-15): улучшенный рост (исправлено)
+            base_stat = 6 + level * 0.7  # Уровень 6: 10.2, Уровень 15: 16.5
         elif level <= 30:
             # Высокие уровни (16-30): сильные характеристики
-            base_stat = 8 + level * 0.7  # Уровень 16: 19.2, Уровень 30: 29
+            base_stat = 10 + level * 0.7  # Уровень 16: 21.2, Уровень 30: 31
         else:
             # Очень высокие уровни (31-40): элитные характеристики
-            base_stat = 12 + level * 0.8  # Уровень 31: 36.8, Уровень 40: 44
+            base_stat = 14 + level * 0.75  # Уровень 31: 37.25, Уровень 40: 44
 
         # Вариация ±15% для разнообразия
         variation = max(1, int(base_stat * 0.15))
@@ -319,10 +319,18 @@ class Character:
         if is_critical:
             total_damage *= 2
 
-        # Учитываем защиту цели
+        # Учитываем защиту цели с diminishing returns
         target_defense = target.get_total_defense()
+
+        # Diminishing returns: после soft cap (50) защита работает на 50%
+        defense_soft_cap = 50
+        if target_defense > defense_soft_cap:
+            effective_defense = defense_soft_cap + (target_defense - defense_soft_cap) * 0.5
+        else:
+            effective_defense = target_defense
+
         # Защита снижает урон, но не может снизить его до нуля (минимум 1)
-        actual_damage = max(1, total_damage - target_defense)
+        actual_damage = max(1, total_damage - effective_defense)
         blocked_by_armor = max(0, total_damage - actual_damage)
 
         # Применяем урон
@@ -605,8 +613,8 @@ class Player(Character):
         self.experience -= self.experience_to_next_level
         self.level += 1
 
-        # Увеличиваем требуемый опыт для следующего уровня
-        self.experience_to_next_level = int(self.experience_to_next_level * 1.5)
+        # Увеличиваем требуемый опыт для следующего уровня (менее агрессивный рост)
+        self.experience_to_next_level = int(self.experience_to_next_level * 1.35)
 
         # Даем игроку 3 очка характеристик для распределения
         self.stat_points += 3
