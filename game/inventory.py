@@ -1022,8 +1022,8 @@ PREDEFINED_ITEMS = {
     "stamina_potion": PotionItem("Зелье выносливости", "stamina", 100, 40),
 
     # Инструменты
-    "basic_axe": WeaponItem("Базовый топор", WeaponType.AXE, 15, ItemQuality.COMMON),
-    "basic_pickaxe": WeaponItem("Базовая кирка", WeaponType.PICKAXE, 12, ItemQuality.COMMON),
+    "basic_axe": WeaponItem("Базовый топор", WeaponType.AXE, 15, 100, ItemQuality.COMMON),
+    "basic_pickaxe": WeaponItem("Базовая кирка", WeaponType.PICKAXE, 12, 100, ItemQuality.COMMON),
 }
 
 

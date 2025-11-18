@@ -518,6 +518,9 @@ class Game:
             if self.trade_menu_open:
                 if event.type == pygame.KEYDOWN:
                     self._handle_trade_input(event.key)
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 3:  # ПКМ
+                        self._handle_trade_right_click(event.pos)
                 continue
 
             # Если открыто окно характеристик, обрабатываем его
@@ -1023,6 +1026,73 @@ class Game:
                     else:
                         print(f"У торговца недостаточно золота! Нужно {sell_price}, у него {self.nearby_npc.inventory.gold}")
 
+    def _handle_trade_right_click(self, pos):
+        """
+        Обработка правого клика мыши в окне торговли
+
+        Args:
+            pos: Позиция клика (x, y)
+        """
+        mouse_x, mouse_y = pos
+
+        # Получаем индекс предмета под курсором
+        item_index = self.trade_window.get_item_index_at_mouse(mouse_x, mouse_y)
+
+        if item_index is None:
+            return
+
+        if self.trade_window.mode == "buy":
+            # Режим покупки
+            if not hasattr(self.nearby_npc, 'inventory'):
+                return
+
+            merchant_items = self.nearby_npc.inventory.get_all_items()
+            if not merchant_items or item_index >= len(merchant_items):
+                return
+
+            # Выбираем предмет и покупаем
+            self.trade_window.selected_merchant_index = item_index
+            item, quantity = merchant_items[item_index]
+            buy_price = int(item.value * 1.5)
+
+            if self.player.inventory.gold >= buy_price:
+                if self.nearby_npc.inventory.remove_item(item.name, 1):
+                    if self.player.inventory.add_item(item, 1):
+                        self.player.inventory.remove_gold(buy_price)
+                        self.nearby_npc.inventory.add_gold(buy_price)
+                        print(f"Вы купили {item.name} за {buy_price} золота")
+                    else:
+                        self.nearby_npc.inventory.add_item(item, 1)
+                        print("Ваш инвентарь переполнен!")
+            else:
+                print(f"Недостаточно золота! Нужно {buy_price}, у вас {self.player.inventory.gold}")
+        else:
+            # Режим продажи
+            player_items = self.player.inventory.get_all_items()
+            if not player_items or item_index >= len(player_items):
+                return
+
+            # Выбираем предмет и продаем
+            self.trade_window.selected_player_index = item_index
+            item, quantity = player_items[item_index]
+            sell_price = int(item.value * 0.7)
+
+            if self.nearby_npc.inventory.gold >= sell_price:
+                if self.player.inventory.remove_item(item.name, 1):
+                    if self.nearby_npc.inventory.add_item(item, 1):
+                        self.player.inventory.add_gold(sell_price)
+                        self.nearby_npc.inventory.remove_gold(sell_price)
+                        print(f"Вы продали {item.name} за {sell_price} золота")
+
+                        # Обновляем прогресс квеста "Начинающий торговец"
+                        self.player.items_sold += 1
+                        self.quest_manager.update_quest_progress("merchant", 0, 1)
+                    else:
+                        self.player.inventory.add_item(item, 1)
+                        print("У торговца нет места для этого предмета!")
+            else:
+                print(f"У торговца недостаточно золота! Нужно {sell_price}, у него {self.nearby_npc.inventory.gold}")
+
     def _handle_character_input(self, key):
         """
         Обработка ввода в окне характеристик
@@ -1183,7 +1253,8 @@ class Game:
 
         # Если открыто меню торговли, отрисовываем его
         if self.trade_menu_open and self.nearby_npc:
-            self.trade_window.render(self.player, self.nearby_npc)
+            trade_mouse_pos = pygame.mouse.get_pos()
+            self.trade_window.render(self.player, self.nearby_npc, trade_mouse_pos)
 
         # Если открыто окно характеристик, отрисовываем его
         if self.character_menu_open:

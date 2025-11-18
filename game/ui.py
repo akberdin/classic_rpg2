@@ -834,14 +834,21 @@ class TradeWindow:
         self.selected_player_index = 0
         self.mode = "buy"  # "buy" или "sell"
 
-    def render(self, player, merchant):
+        # Хранение координат элементов для обработки мыши
+        self.item_rects = []  # Список прямоугольников предметов
+        self.goods_area = None  # Область списка товаров
+
+    def render(self, player, merchant, mouse_pos=None):
         """
         Отрисовка окна торговли
 
         Args:
             player: Объект игрока
             merchant: Объект торговца
+            mouse_pos: Позиция мыши для tooltip
         """
+        # Очищаем список rect'ов
+        self.item_rects = []
         # Получаем размеры экрана
         screen_width = self.screen.get_width()
         screen_height = self.screen.get_height()
@@ -935,15 +942,22 @@ class TradeWindow:
         # Подсказки
         hints_y = window_y + window_height - int(35 * scale_h)
         if self.mode == "buy":
-            hint = "W/S - выбор | Enter - купить | Tab - режим продажи | ESC - закрыть"
+            hint = "W/S - выбор | Enter/ПКМ - купить | Tab - режим продажи | ESC - закрыть"
         else:
-            hint = "W/S - выбор | Enter - продать | Tab - режим покупки | ESC - закрыть"
+            hint = "W/S - выбор | Enter/ПКМ - продать | Tab - режим покупки | ESC - закрыть"
 
         hint_text = self.info_font.render(hint, True, (180, 180, 180))
         hint_rect = hint_text.get_rect()
         hint_rect.centerx = window_x + window_width // 2
         hint_rect.y = hints_y
         self.screen.blit(hint_text, hint_rect)
+
+        # Отрисовка tooltip при наведении мыши
+        if mouse_pos:
+            mouse_x, mouse_y = mouse_pos
+            item = self.get_item_at_mouse(player, merchant, mouse_x, mouse_y)
+            if item:
+                self.render_item_tooltip(item, mouse_x, mouse_y)
 
     def _render_merchant_goods(self, merchant, x, y, width, height):
         """Отрисовка товаров торговца"""
@@ -983,17 +997,21 @@ class TradeWindow:
             item, quantity = items[i]
             display_index = i - start_index
 
+            # Сохраняем прямоугольник предмета для обработки мыши
+            item_rect = pygame.Rect(x, items_y + display_index * item_height, width, item_height - 2)
+            self.item_rects.append((item_rect, item, i))
+
             # Фон выбранного предмета
             if i == self.selected_merchant_index:
                 pygame.draw.rect(
                     self.screen,
                     (80, 100, 80),
-                    (x, items_y + display_index * item_height, width, item_height - 2)
+                    item_rect
                 )
                 pygame.draw.rect(
                     self.screen,
                     (120, 200, 120),
-                    (x, items_y + display_index * item_height, width, item_height - 2),
+                    item_rect,
                     2
                 )
 
@@ -1057,17 +1075,21 @@ class TradeWindow:
             item, quantity = items[i]
             display_index = i - start_index
 
+            # Сохраняем прямоугольник предмета для обработки мыши
+            item_rect = pygame.Rect(x, items_y + display_index * item_height, width, item_height - 2)
+            self.item_rects.append((item_rect, item, i))
+
             # Фон выбранного предмета
             if i == self.selected_player_index:
                 pygame.draw.rect(
                     self.screen,
                     (100, 80, 80),
-                    (x, items_y + display_index * item_height, width, item_height - 2)
+                    item_rect
                 )
                 pygame.draw.rect(
                     self.screen,
                     (200, 120, 120),
-                    (x, items_y + display_index * item_height, width, item_height - 2),
+                    item_rect,
                     2
                 )
 
@@ -1098,6 +1120,165 @@ class TradeWindow:
         if end_index < len(items):
             scroll_down = self.info_font.render("▼ Еще товары ниже", True, (200, 150, 150))
             self.screen.blit(scroll_down, (x + width // 2 - 70, y + height - 25))
+
+    def get_item_at_mouse(self, player, merchant, mouse_x, mouse_y):
+        """
+        Получить предмет под курсором мыши
+
+        Args:
+            player: Объект игрока
+            merchant: Объект торговца
+            mouse_x: X координата мыши
+            mouse_y: Y координата мыши
+
+        Returns:
+            Item или None
+        """
+        for rect, item, index in self.item_rects:
+            if rect.collidepoint(mouse_x, mouse_y):
+                return item
+        return None
+
+    def get_item_index_at_mouse(self, mouse_x, mouse_y):
+        """
+        Получить индекс предмета под курсором мыши
+
+        Args:
+            mouse_x: X координата мыши
+            mouse_y: Y координата мыши
+
+        Returns:
+            int или None: Индекс предмета в списке
+        """
+        for rect, item, index in self.item_rects:
+            if rect.collidepoint(mouse_x, mouse_y):
+                return index
+        return None
+
+    def render_item_tooltip(self, item, mouse_x, mouse_y):
+        """
+        Отрисовка всплывающей подсказки для предмета в торговом окне
+
+        Args:
+            item: Предмет для отображения
+            mouse_x: X координата мыши
+            mouse_y: Y координата мыши
+        """
+        from game.inventory import EquipmentItem, WeaponItem, ArmorItem, JewelryItem, PotionItem
+
+        # Размеры подсказки
+        tooltip_width = 320
+        tooltip_padding = 12
+        line_height = 22
+
+        # Собираем информацию о предмете
+        lines = []
+
+        # Название предмета
+        item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
+        item_color = item.quality.color if hasattr(item, 'quality') else (200, 200, 200)
+        lines.append((item_name, item_color, True))  # True = жирный шрифт
+
+        # Тип предмета
+        if isinstance(item, WeaponItem):
+            lines.append((f"Тип: {item.weapon_type.rus_name}", (180, 180, 180), False))
+        elif isinstance(item, ArmorItem):
+            lines.append((f"Тип: {item.armor_type.rus_name}", (180, 180, 180), False))
+        elif isinstance(item, JewelryItem):
+            from game.inventory import EquipmentSlot
+            jewelry_types = {
+                EquipmentSlot.RING_1: "Кольцо", EquipmentSlot.RING_2: "Кольцо",
+                EquipmentSlot.RING_3: "Кольцо", EquipmentSlot.RING_4: "Кольцо",
+                EquipmentSlot.AMULET: "Амулет",
+                EquipmentSlot.BRACELET_1: "Браслет", EquipmentSlot.BRACELET_2: "Браслет",
+            }
+            jewelry_type = jewelry_types.get(item.slot, "Украшение")
+            lines.append((f"Тип: {jewelry_type}", (180, 180, 180), False))
+        elif isinstance(item, PotionItem):
+            lines.append(("Тип: Зелье", (180, 180, 180), False))
+
+        # Характеристики экипировки
+        if isinstance(item, EquipmentItem):
+            lines.append(("", (0, 0, 0), False))  # Пустая строка
+
+            if hasattr(item, 'damage') and item.damage > 0:
+                lines.append((f"Урон: +{item.damage}", (255, 100, 100), False))
+            if hasattr(item, 'defense') and item.defense > 0:
+                lines.append((f"Защита: +{item.defense}", (100, 150, 255), False))
+
+            # Бонусы к характеристикам
+            if item.stats_bonus:
+                stat_names = {
+                    'strength': 'Сила', 'dexterity': 'Ловкость',
+                    'constitution': 'Телосложение', 'spirit': 'Дух',
+                    'intelligence': 'Интеллект', 'luck': 'Удача',
+                    'damage': 'Урон', 'defense': 'Защита'
+                }
+                for stat, bonus in item.stats_bonus.items():
+                    actual_bonus = item.get_stat_bonus(stat)
+                    stat_name = stat_names.get(stat, stat)
+                    if stat not in ['damage', 'defense']:  # Урон и защита уже показаны выше
+                        lines.append((f"{stat_name}: +{actual_bonus}", (150, 255, 150), False))
+
+        # Эффекты зелья
+        if isinstance(item, PotionItem):
+            lines.append(("", (0, 0, 0), False))
+            effect_names = {'health': 'Здоровье', 'mana': 'Мана', 'stamina': 'Выносливость'}
+            effect_name = effect_names.get(item.effect_type, item.effect_type)
+            lines.append((f"Восстановление: +{item.effect_value} {effect_name}", (100, 255, 100), False))
+
+        # Вес и стоимость
+        lines.append(("", (0, 0, 0), False))
+        lines.append((f"Вес: {item.weight:.1f} кг", (200, 200, 200), False))
+
+        # Показываем цену покупки/продажи
+        if self.mode == "buy":
+            buy_price = int(item.value * 1.5)
+            lines.append((f"Цена покупки: {buy_price} золота", (255, 215, 0), False))
+        else:
+            sell_price = int(item.value * 0.7)
+            lines.append((f"Цена продажи: {sell_price} золота", (255, 215, 0), False))
+
+        # Вычисляем высоту подсказки
+        tooltip_height = tooltip_padding * 2 + len(lines) * line_height
+
+        # Позиция подсказки (справа от курсора, но в пределах экрана)
+        tooltip_x = mouse_x + 15
+        tooltip_y = mouse_y + 15
+
+        screen_width = self.screen.get_width()
+        screen_height = self.screen.get_height()
+
+        if tooltip_x + tooltip_width > screen_width:
+            tooltip_x = mouse_x - tooltip_width - 15
+        if tooltip_y + tooltip_height > screen_height:
+            tooltip_y = screen_height - tooltip_height - 5
+
+        # Фон подсказки с градиентом
+        UIHelper.draw_gradient_rect(
+            self.screen, tooltip_x, tooltip_y, tooltip_width, tooltip_height,
+            (40, 40, 50), (60, 60, 75)
+        )
+
+        # Рамка
+        pygame.draw.rect(
+            self.screen,
+            (150, 150, 200),
+            (tooltip_x, tooltip_y, tooltip_width, tooltip_height),
+            2
+        )
+
+        # Отрисовка текста
+        text_y = tooltip_y + tooltip_padding
+        for line_text, line_color, is_bold in lines:
+            if line_text == "":  # Пустая строка
+                text_y += line_height // 2
+                continue
+
+            font_to_use = self.font if is_bold else self.info_font
+            text_surface = font_to_use.render(line_text, True, line_color)
+            self.screen.blit(text_surface, (tooltip_x + tooltip_padding, text_y))
+            text_y += line_height
 
 
 class CharacterWindow:
