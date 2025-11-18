@@ -640,10 +640,12 @@ class Game:
                     print("- Получено 5000 золота")
                     self.cheat_gold_given = True
 
-                # Открываем всю карту
+                # Открываем всю карту (устанавливаем explored для всех тайлов)
                 for x in range(self.game_map.width):
                     for y in range(self.game_map.height):
-                        self.fog_of_war.explored[x][y] = True
+                        tile = self.game_map.get_tile(x, y)
+                        if tile:
+                            tile.explored = True
             else:
                 print("ЧИТ-МОД ОТКЛЮЧЕН")
             return
