@@ -42,6 +42,8 @@ class CombatSystem:
             {"name": "Убежать", "key": "2", "action": "flee"}
         ]
         self.selected_action = None
+        self.hovered_action = None  # Действие под курсором мыши
+        self.action_buttons = []  # Список прямоугольников кнопок для обработки мыши
 
         # Добавляем начальное сообщение в лог
         self.add_to_log(f"Бой начался! Противник: {enemy.name} (Уровень {enemy.level})")
@@ -59,7 +61,7 @@ class CombatSystem:
 
     def handle_input(self, event):
         """
-        Обработка ввода игрока
+        Обработка ввода игрока (клавиатура и мышь)
 
         Args:
             event: Pygame событие
@@ -67,16 +69,32 @@ class CombatSystem:
         Returns:
             str: Результат боя ("continue", "victory", "defeat", "fled")
         """
-        if event.type != pygame.KEYDOWN:
-            return "continue"
-
         if self.turn != "player":
             return "continue"
 
-        # Обработка выбора действия
-        for action in self.actions:
-            if event.key == getattr(pygame, f"K_{action['key']}"):
-                return self.execute_player_action(action['action'])
+        # Обработка клика мыши
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # ЛКМ
+            mouse_pos = event.pos
+            # Проверяем клик по кнопкам действий
+            for i, button_rect in enumerate(self.action_buttons):
+                if button_rect.collidepoint(mouse_pos):
+                    return self.execute_player_action(self.actions[i]['action'])
+
+        # Обработка движения мыши для подсветки
+        if event.type == pygame.MOUSEMOTION:
+            mouse_pos = event.pos
+            self.hovered_action = None
+            for i, button_rect in enumerate(self.action_buttons):
+                if button_rect.collidepoint(mouse_pos):
+                    self.hovered_action = i
+                    break
+
+        # Обработка клавиатуры
+        if event.type == pygame.KEYDOWN:
+            # Обработка выбора действия
+            for action in self.actions:
+                if event.key == getattr(pygame, f"K_{action['key']}"):
+                    return self.execute_player_action(action['action'])
 
         return "continue"
 
@@ -196,18 +214,14 @@ class CombatSystem:
 
         # Размеры окна боя (увеличены для лога)
         if self.scaler:
-            combat_width = self.scaler.scale_width(1000)
-            combat_height = self.scaler.scale_height(700)
+            combat_width = self.scaler.scale_width(1100)
+            combat_height = self.scaler.scale_height(750)
         else:
-            combat_width = min(1000, int(screen_width * 0.85))
-            combat_height = min(700, int(screen_height * 0.75))
+            combat_width = min(1100, int(screen_width * 0.85))
+            combat_height = min(750, int(screen_height * 0.8))
 
         combat_x = (screen_width - combat_width) // 2
         combat_y = (screen_height - combat_height) // 2
-
-        # Коэффициенты масштабирования
-        scale_w = combat_width / 1000
-        scale_h = combat_height / 700
 
         # Фон окна боя с градиентом
         from game.ui import UIHelper
@@ -240,29 +254,29 @@ class CombatSystem:
             2
         )
 
-        # Отрисовка статистики игрока (слева)
+        # Отрисовка статистики игрока (слева, компактнее)
         self._render_character_stats(
             self.player,
             combat_x + 30,
-            combat_y + 70,
+            combat_y + 65,
             "Игрок",
             True
         )
 
-        # Отрисовка статистики врага (справа)
+        # Отрисовка статистики врага (справа, компактнее)
         self._render_character_stats(
             self.enemy,
             combat_x + combat_width - 350,
-            combat_y + 70,
+            combat_y + 65,
             "Противник",
             False
         )
 
-        # ОТДЕЛЬНЫЙ БЛОК ЛОГА БОЯ (центр экрана)
+        # ОТДЕЛЬНЫЙ БЛОК ЛОГА БОЯ (ниже статистики персонажей)
         log_block_x = combat_x + 30
-        log_block_y = combat_y + 280
+        log_block_y = combat_y + 240  # Опустили ниже чтобы не накладывался
         log_block_width = combat_width - 60
-        log_block_height = 280
+        log_block_height = 330  # Увеличили высоту
 
         # Фон блока лога
         pygame.draw.rect(
@@ -280,22 +294,22 @@ class CombatSystem:
         )
 
         # Заголовок лога
-        log_title = self.font.render("📜 Журнал боевых действий", True, (150, 200, 255))
+        log_title = self.info_font.render("📜 Журнал боевых действий", True, (150, 200, 255))
         self.screen.blit(log_title, (log_block_x + 15, log_block_y + 10))
 
         # Линия под заголовком лога
         pygame.draw.line(
             self.screen,
             (80, 80, 120),
-            (log_block_x + 10, log_block_y + 40),
-            (log_block_x + log_block_width - 10, log_block_y + 40),
+            (log_block_x + 10, log_block_y + 38),
+            (log_block_x + log_block_width - 10, log_block_y + 38),
             1
         )
 
         # Отрисовка логов с прокруткой
         log_line_height = 24
-        max_visible_logs = 9
-        log_start_y = log_block_y + 50
+        max_visible_logs = 11  # Увеличено с 9 до 11
+        log_start_y = log_block_y + 48
 
         # Показываем последние записи
         visible_logs = self.combat_log[-max_visible_logs:] if len(self.combat_log) > max_visible_logs else self.combat_log
@@ -316,8 +330,8 @@ class CombatSystem:
             log_text = self.info_font.render(log_entry, True, log_color)
             self.screen.blit(log_text, (log_block_x + 15, log_start_y + i * log_line_height))
 
-        # Действия игрока
-        actions_y = combat_y + combat_height - 80
+        # Действия игрока (кнопки)
+        actions_y = combat_y + combat_height - 110
         if self.turn == "player":
             actions_title = self.font.render("⚡ Ваш ход! Выберите действие:", True, (100, 255, 100))
         else:
@@ -325,37 +339,60 @@ class CombatSystem:
 
         self.screen.blit(actions_title, (combat_x + 30, actions_y))
 
-        # Отрисовка кнопок действий с рамками
+        # Очищаем список кнопок и отрисовываем их заново
+        self.action_buttons.clear()
+
+        # Отрисовка интерактивных кнопок действий
         if self.turn == "player":
+            button_y = actions_y + 35
+            button_width = 280
+            button_height = 45
+            button_spacing = 20
+
             for i, action in enumerate(self.actions):
-                action_x = combat_x + 30 + i * 280
-                action_y = actions_y + 35
+                action_x = combat_x + 40 + i * (button_width + button_spacing)
+
+                # Создаем rect для обработки мыши
+                button_rect = pygame.Rect(action_x, button_y, button_width, button_height)
+                self.action_buttons.append(button_rect)
+
+                # Определяем цвет кнопки (подсветка при наведении)
+                is_hovered = (self.hovered_action == i)
+                bg_color = (70, 90, 70) if is_hovered else (50, 70, 50)
+                border_color = (150, 255, 150) if is_hovered else (100, 200, 100)
+                border_width = 3 if is_hovered else 2
 
                 # Фон кнопки
-                pygame.draw.rect(
-                    self.screen,
-                    (50, 70, 50),
-                    (action_x, action_y, 250, 35)
-                )
+                pygame.draw.rect(self.screen, bg_color, button_rect)
 
                 # Рамка кнопки
-                pygame.draw.rect(
-                    self.screen,
-                    (100, 200, 100),
-                    (action_x, action_y, 250, 35),
-                    2
-                )
+                pygame.draw.rect(self.screen, border_color, button_rect, border_width)
 
+                # Текст кнопки
                 action_text = self.info_font.render(
-                    f"[{action['key']}] {action['name']}",
+                    f"{action['name']} [{action['key']}]",
                     True,
-                    (200, 255, 200)
+                    (220, 255, 220) if is_hovered else (200, 255, 200)
                 )
-                self.screen.blit(action_text, (action_x + 10, action_y + 8))
+                text_rect = action_text.get_rect()
+                text_rect.center = button_rect.center
+                self.screen.blit(action_text, text_rect)
+
+        # Подсказка внизу
+        hint_y = combat_y + combat_height - 35
+        hint_text = self.info_font.render(
+            "Используйте ЛКМ для клика по кнопкам или клавиши [1], [2]",
+            True,
+            (180, 180, 200)
+        )
+        hint_rect = hint_text.get_rect()
+        hint_rect.centerx = combat_x + combat_width // 2
+        hint_rect.y = hint_y
+        self.screen.blit(hint_text, hint_rect)
 
     def _render_character_stats(self, character, x, y, label, is_player):
         """
-        Отрисовка улучшенной статистики персонажа
+        Отрисовка компактной статистики персонажа
 
         Args:
             character: Персонаж
@@ -364,9 +401,9 @@ class CombatSystem:
             label: Название (Игрок/Противник)
             is_player: True если это игрок
         """
-        # Фон панели статистики
+        # Фон панели статистики (компактный)
         panel_width = 320
-        panel_height = 190
+        panel_height = 160  # Уменьшено с 190 до 160
         pygame.draw.rect(
             self.screen,
             (45, 45, 60),
@@ -384,34 +421,34 @@ class CombatSystem:
 
         # Имя и иконка
         icon = "🛡" if is_player else "⚔"
-        name_text = self.font.render(f"{icon} {label}: {character.name}", True, (255, 255, 255))
+        name_text = self.info_font.render(f"{icon} {label}: {character.name}", True, (255, 255, 255))
         self.screen.blit(name_text, (x, y))
 
         # Уровень и ранг
         rank = character.get_rank() if hasattr(character, 'get_rank') else ""
         level_text = self.info_font.render(
-            f"Уровень: {character.level} ({rank})",
+            f"Ур. {character.level} ({rank})",
             True,
             (255, 215, 0)
         )
-        self.screen.blit(level_text, (x, y + 30))
+        self.screen.blit(level_text, (x, y + 24))
 
         # Здоровье с процентами
         health_percent = (character.health / character.max_health) * 100
         health_color = (255, 100, 100) if health_percent < 30 else (255, 165, 0) if health_percent < 60 else (100, 255, 100)
 
         health_text = self.info_font.render(
-            f"❤ HP: {character.health}/{character.max_health} ({health_percent:.0f}%)",
+            f"❤ {character.health}/{character.max_health} ({health_percent:.0f}%)",
             True,
             health_color
         )
-        self.screen.blit(health_text, (x, y + 55))
+        self.screen.blit(health_text, (x, y + 48))
 
-        # Улучшенная полоса здоровья с градиентом
+        # Улучшенная полоса здоровья с градиентом (компактнее)
         bar_width = 280
-        bar_height = 20
+        bar_height = 18  # Уменьшено с 20 до 18
         bar_x = x
-        bar_y = y + 80
+        bar_y = y + 72
 
         # Фон полосы
         pygame.draw.rect(
@@ -437,8 +474,8 @@ class CombatSystem:
             2
         )
 
-        # Расширенные характеристики
-        stats_y = y + 110
+        # Компактные характеристики
+        stats_y = y + 100
         stats = [
             f"⚔ Урон: {character.get_total_damage()}",
             f"🛡 Защита: {character.get_total_defense()}",
@@ -450,5 +487,5 @@ class CombatSystem:
             stat_text = self.info_font.render(stat, True, (200, 200, 220))
             # Размещаем в два столбца
             stat_x = x if i < 2 else x + 140
-            stat_y_offset = stats_y + (i % 2) * 25
+            stat_y_offset = stats_y + (i % 2) * 22  # Уменьшено с 25 до 22
             self.screen.blit(stat_text, (stat_x, stat_y_offset))
