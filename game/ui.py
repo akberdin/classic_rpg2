@@ -1373,7 +1373,7 @@ class SkillBookWindow:
 
                     # Правая кнопка мыши - убрать умение из слота
                     if event.button == 3:
-                        player.skill_manager.remove_from_slot(i)
+                        player.skill_manager.unassign_from_slot(i)
                     return True
 
         return False
