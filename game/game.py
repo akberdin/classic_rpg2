@@ -9,6 +9,10 @@ from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS, EquipmentItem
 from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow
+from game.optimization import PerformanceOptimizer, RenderCache
+from game.quests import QuestManager, AchievementManager, create_starter_quests
+from game.save_system import SaveSystem
+from game.skills import PowerStrike, Heal
 from game.constants import (
     WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TILE_SIZE, COLORS,
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
@@ -102,6 +106,26 @@ class Game:
 
         # Даем игроку стартовые предметы
         self._give_starting_items()
+
+        # Инициализация оптимизатора производительности
+        self.performance_optimizer = PerformanceOptimizer()
+        self.render_cache = RenderCache()
+
+        # Инициализация менеджера квестов
+        self.quest_manager = QuestManager()
+        for quest in create_starter_quests():
+            self.quest_manager.add_available_quest(quest)
+
+        # Инициализация менеджера достижений
+        self.achievement_manager = AchievementManager()
+
+        # Даем игроку стартовые навыки
+        self.player.skill_manager.learn_skill(PowerStrike)
+        self.player.skill_manager.learn_skill(Heal)
+
+        # Перестраиваем spatial grid для NPC
+        all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead
+        self.performance_optimizer.rebuild_spatial_grid(all_npcs)
 
         print("Игра готова к запуску!")
 
@@ -328,19 +352,45 @@ class Game:
             if not skip_player_recovery:
                 self.player.recover_stamina()
 
-            # Собираем всех NPC для проверки взаимодействий
-            all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead
+            # Обновляем перезарядки навыков и статус-эффекты игрока
+            self.player.skill_manager.tick_cooldowns()
+            effect_messages = self.player.skill_manager.tick_status_effects()
+            for msg in effect_messages:
+                print(msg)
 
+            # Перестраиваем spatial grid для оптимизации
+            all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead
+            self.performance_optimizer.rebuild_spatial_grid(all_npcs)
+
+            # Увеличиваем счетчик для оптимизации AI
+            self.performance_optimizer.increment_counter()
+
+            # Обновляем AI только тех NPC, которых нужно обновлять в этом кадре
             for guard in self.guards:
-                guard.update_ai(self.game_map, all_npcs)
+                if self.performance_optimizer.should_update_ai(guard, self.player.x, self.player.y):
+                    guard.update_ai(self.game_map, all_npcs)
+
             for merchant in self.merchants:
-                merchant.update_ai(self.game_map, all_npcs)
+                if self.performance_optimizer.should_update_ai(merchant, self.player.x, self.player.y):
+                    merchant.update_ai(self.game_map, all_npcs)
+
             for bandit in self.bandits:
-                bandit.update_ai(self.game_map, all_npcs, self.player)
+                if self.performance_optimizer.should_update_ai(bandit, self.player.x, self.player.y):
+                    bandit.update_ai(self.game_map, all_npcs, self.player)
+
             for miner in self.miners:
-                miner.update_ai(self.game_map, all_npcs)
+                if self.performance_optimizer.should_update_ai(miner, self.player.x, self.player.y):
+                    miner.update_ai(self.game_map, all_npcs)
+
             for undead_npc in self.undead:
-                undead_npc.update_ai(self.game_map, all_npcs, self.player)
+                if self.performance_optimizer.should_update_ai(undead_npc, self.player.x, self.player.y):
+                    undead_npc.update_ai(self.game_map, all_npcs, self.player)
+
+        # Проверяем достижения
+        unlocked = self.achievement_manager.check_achievements(self.player)
+        for achievement in unlocked:
+            print(f"🏆 Достижение разблокировано: {achievement.name}!")
+            print(f"   {achievement.description}")
 
     def get_time_string(self):
         """
@@ -463,6 +513,15 @@ class Game:
             # Сбор ресурсов с локации
             self._collect_resources()
             return
+        elif key == pygame.K_F5:
+            # Быстрое сохранение
+            SaveSystem.save_game(self, "autosave")
+            print("Игра сохранена!")
+            return
+        elif key == pygame.K_F9:
+            # Быстрая загрузка (не реализована в этой версии - требует рестарта)
+            print("Для загрузки используйте параметр при запуске игры")
+            return
         elif key == pygame.K_i:
             # Открыть/закрыть инвентарь
             self.inventory_menu_open = not self.inventory_menu_open
@@ -556,6 +615,13 @@ class Game:
 
         # Помечаем локацию как обыскованную
         location.loot_collected = True
+
+        # Обновляем прогресс квеста "Охотник за сокровищами"
+        self.player.resources_collected += 1
+        self.quest_manager.update_quest_progress("treasure_hunter", 0, 1)
+
+        # Добавляем тип локации в посещенные
+        self.player.visited_location_types.add(location.location_type)
 
         # Продвигаем время на 1 час
         self.advance_time(1)
@@ -712,6 +778,10 @@ class Game:
                                 self.player.inventory.add_gold(sell_price)
                                 self.nearby_npc.inventory.remove_gold(sell_price)
                                 print(f"Вы продали {item.name} за {sell_price} золота")
+
+                                # Обновляем прогресс квеста "Начинающий торговец"
+                                self.player.items_sold += 1
+                                self.quest_manager.update_quest_progress("merchant", 0, 1)
                             else:
                                 # Возвращаем предмет игроку если не поместился в инвентарь торговца
                                 self.player.inventory.add_item(item, 1)
