@@ -174,11 +174,10 @@ class Game:
         self.player.inventory.add_item(PREDEFINED_ITEMS["minor_health_potion"], 2)
         self.player.inventory.add_item(PREDEFINED_ITEMS["minor_stamina_potion"], 1)
 
-        # Стартовое снаряжение низкого качества (уровень 1)
-        # Генерируем простое оружие
-        starter_weapon = ItemGenerator.generate_weapon(level=1, quality=ItemQuality.COMMON)
-        self.player.inventory.add_item(starter_weapon, 1)
-        self.player.inventory.equip_item(starter_weapon.name)
+        # Стартовое оружие - топор для рубки леса
+        starter_axe = PREDEFINED_ITEMS["basic_axe"]
+        self.player.inventory.add_item(starter_axe, 1)
+        self.player.inventory.equip_item(starter_axe.name)
 
         # Генерируем простой доспех для торса
         starter_chest = ItemGenerator.generate_armor(level=1, quality=ItemQuality.COMMON)
@@ -1914,7 +1913,7 @@ class Game:
                 if item_type == 'equipment':
                     # Генерируем экипировку
                     item_level = max(1, enemy.level + random.randint(-2, 2))
-                    quality = ItemGenerator.random_quality_by_level(item_level)
+                    quality = ItemGenerator.generate_quality()
 
                     if random.random() < 0.5:
                         item = ItemGenerator.generate_weapon(item_level, quality)
