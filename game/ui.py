@@ -673,8 +673,8 @@ class InventoryWindow:
                 lines.append((f"Защита: +{item.defense}", (100, 150, 255), False))
 
             # Бонусы к характеристикам
-            if item.stat_bonuses:
-                for stat, bonus in item.stat_bonuses.items():
+            if item.stats_bonus:
+                for stat, bonus in item.stats_bonus.items():
                     stat_names = {
                         'strength': 'Сила',
                         'dexterity': 'Ловкость',
