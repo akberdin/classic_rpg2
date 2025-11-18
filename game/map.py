@@ -130,35 +130,49 @@ class GameMap:
 
     def _generate_compact_locations(self, location_type, count, name_list, min_distance=5, max_distance=15):
         """
-        Генерация компактных кластеров локаций
+        Генерация локаций с равномерным распределением по карте
 
         Args:
             location_type: Тип локации
             count: Количество локаций
             name_list: Список имен
-            min_distance: Минимальное расстояние между локациями
-            max_distance: Максимальное расстояние между локациями
+            min_distance: Минимальное расстояние между локациями одного типа
+            max_distance: Максимальное расстояние при поиске позиции рядом с якорем
         """
         names_copy = name_list.copy()
         random.shuffle(names_copy)
 
+        # Минимальное расстояние до любой другой локации
+        min_distance_to_any = max(3, min_distance // 2)
+
         for i in range(count):
-            if i == 0 or len(self.locations) == 0:
-                # Первая локация или если нет других локаций - размещаем случайно
-                x, y = self._find_random_passable_position()
-            else:
-                # Последующие локации размещаем рядом с уже размещенными
-                # Выбираем случайную локацию того же типа как якорь
-                same_type_locations = [loc for loc in self.locations if loc.location_type == location_type]
-                if same_type_locations:
-                    anchor = random.choice(same_type_locations)
-                    pos = self._find_nearby_position(anchor.x, anchor.y, min_distance, max_distance)
-                    if pos:
-                        x, y = pos
-                    else:
-                        x, y = self._find_random_passable_position()
+            x, y = None, None
+
+            # Пробуем несколько стратегий размещения
+            for attempt in range(50):
+                if attempt < 25:
+                    # Первые попытки - случайное размещение по всей карте
+                    candidate_x, candidate_y = self._find_random_passable_position()
                 else:
-                    x, y = self._find_random_passable_position()
+                    # Если не получается - пробуем рядом с существующими локациями того же типа
+                    same_type_locations = [loc for loc in self.locations if loc.location_type == location_type]
+                    if same_type_locations:
+                        anchor = random.choice(same_type_locations)
+                        pos = self._find_nearby_position(anchor.x, anchor.y, min_distance, max_distance, check_all_locations=False)
+                        if pos:
+                            candidate_x, candidate_y = pos
+                        else:
+                            continue
+                    else:
+                        continue
+
+                if candidate_x is None:
+                    continue
+
+                # Проверяем минимальное расстояние до всех существующих локаций
+                if self._check_min_distance_to_all_locations(candidate_x, candidate_y, min_distance_to_any):
+                    x, y = candidate_x, candidate_y
+                    break
 
             if x is not None:
                 # Выбираем имя из списка или генерируем если список закончился
@@ -166,6 +180,24 @@ class GameMap:
                 location = Location(x, y, location_type, name)
                 self.tiles[y][x].set_location(location)
                 self.locations.append(location)
+
+    def _check_min_distance_to_all_locations(self, x, y, min_distance):
+        """
+        Проверить, что позиция находится на минимальном расстоянии от всех существующих локаций
+
+        Args:
+            x: Координата X
+            y: Координата Y
+            min_distance: Минимальное расстояние
+
+        Returns:
+            bool: True если расстояние достаточное
+        """
+        for loc in self.locations:
+            distance = abs(x - loc.x) + abs(y - loc.y)
+            if distance < min_distance:
+                return False
+        return True
 
     def _generate_bandit_camps(self):
         """
@@ -234,36 +266,45 @@ class GameMap:
                 return x, y
         return None, None
 
-    def _find_nearby_position(self, center_x, center_y, min_distance, max_distance):
+    def _find_nearby_position(self, center_x, center_y, min_distance, max_distance, check_all_locations=True):
         """
         Найти позицию рядом с указанной точкой
 
         Args:
             center_x: Центральная координата X
             center_y: Центральная координата Y
-            min_distance: Минимальное расстояние
-            max_distance: Максимальное расстояние
+            min_distance: Минимальное расстояние от центра
+            max_distance: Максимальное расстояние от центра
+            check_all_locations: Проверять ли расстояние до всех существующих локаций
 
         Returns:
             tuple: (x, y) или None
         """
         max_attempts = 100
+        min_distance_to_any = 3  # Минимальное расстояние до любой локации
+
         for _ in range(max_attempts):
             # Генерируем случайное смещение
             distance = random.randint(min_distance, max_distance)
 
             # Вычисляем новые координаты
-            x = int(center_x + distance * random.choice([-1, 1]) * abs(random.random()))
-            y = int(center_y + distance * random.choice([-1, 1]) * abs(random.random()))
+            angle = random.random() * 2 * 3.14159  # Случайный угол
+            x = int(center_x + distance * (random.random() * 2 - 1))
+            y = int(center_y + distance * (random.random() * 2 - 1))
 
             # Проверяем валидность
             if self.is_valid_position(x, y):
                 tile = self.tiles[y][x]
                 if tile.is_passable() and not tile.has_location():
-                    # Проверяем расстояние
+                    # Проверяем расстояние от центра
                     actual_distance = ((x - center_x) ** 2 + (y - center_y) ** 2) ** 0.5
                     if min_distance <= actual_distance <= max_distance:
-                        return x, y
+                        # Проверяем расстояние до всех локаций, если требуется
+                        if check_all_locations:
+                            if self._check_min_distance_to_all_locations(x, y, min_distance_to_any):
+                                return x, y
+                        else:
+                            return x, y
         return None
 
     def get_tile(self, x, y):
