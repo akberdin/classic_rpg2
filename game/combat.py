@@ -72,25 +72,12 @@ class CombatSystem:
         if self.turn != "player":
             return "continue"
 
-        # Обработка клика мыши
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # ЛКМ
-            mouse_pos = event.pos
-            # Проверяем клик по кнопкам действий
-            for i, button_rect in enumerate(self.action_buttons):
-                if button_rect.collidepoint(mouse_pos):
-                    return self.execute_player_action(self.actions[i]['action'])
-
-        # Обработка движения мыши для подсветки
-        if event.type == pygame.MOUSEMOTION:
-            mouse_pos = event.pos
-            self.hovered_action = None
-            for i, button_rect in enumerate(self.action_buttons):
-                if button_rect.collidepoint(mouse_pos):
-                    self.hovered_action = i
-                    break
-
         # Обработка клавиатуры
         if event.type == pygame.KEYDOWN:
+            # ESC - попытка сбежать из боя
+            if event.key == pygame.K_ESCAPE:
+                return self.execute_player_action("flee")
+
             # Обработка использования умений (клавиши 1-8)
             if event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4,
                             pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8]:
@@ -108,15 +95,6 @@ class CombatSystem:
                     self.add_to_log(f"Слот {slot_index + 1} пуст!")
 
                 return "continue"
-
-            # Обработка выбора действия (оставляем для совместимости, но теперь атака через слот 1)
-            for action in self.actions:
-                if event.key == getattr(pygame, f"K_{action['key']}"):
-                    if action['action'] == 'attack':
-                        # Теперь используем базовую атаку через слот 1
-                        self.add_to_log("Используйте клавиши 1-8 для умений!")
-                        return "continue"
-                    return self.execute_player_action(action['action'])
 
         return "continue"
 
@@ -404,58 +382,84 @@ class CombatSystem:
             log_text = self.info_font.render(log_entry, True, log_color)
             self.screen.blit(log_text, (log_block_x + 15, log_start_y + i * log_line_height))
 
-        # Действия игрока (кнопки)
+        # Действия игрока - отображение слотов умений
         actions_y = combat_y + combat_height - 110
         if self.turn == "player":
-            actions_title = self.font.render("⚡ Ваш ход! Выберите действие:", True, (100, 255, 100))
+            actions_title = self.font.render("⚡ Ваш ход! Используйте умения (клавиши 1-8):", True, (100, 255, 100))
         else:
             actions_title = self.font.render("⏳ Ход противника...", True, (255, 150, 150))
 
         self.screen.blit(actions_title, (combat_x + 30, actions_y))
 
-        # Очищаем список кнопок и отрисовываем их заново
-        self.action_buttons.clear()
+        # Отрисовка слотов умений с подсветкой
+        slot_size = 48
+        slot_spacing = 8
+        slots_start_x = combat_x + (combat_width - (slot_size + slot_spacing) * 8) // 2
+        slots_y = actions_y + 35
 
-        # Отрисовка интерактивных кнопок действий
-        if self.turn == "player":
-            button_y = actions_y + 35
-            button_width = 280
-            button_height = 45
-            button_spacing = 20
+        for i in range(8):
+            slot_x = slots_start_x + i * (slot_size + slot_spacing)
+            skill = self.player.skill_manager.get_slot_skill(i)
 
-            for i, action in enumerate(self.actions):
-                action_x = combat_x + 40 + i * (button_width + button_spacing)
+            # Проверяем, доступно ли умение для использования в бою
+            is_usable = False
+            if skill:
+                from game.skills import SkillCategory
+                can_use, reason = skill.can_use(self.player)
+                is_usable = can_use and skill.category in [SkillCategory.COMBAT, SkillCategory.MAGIC]
 
-                # Создаем rect для обработки мыши
-                button_rect = pygame.Rect(action_x, button_y, button_width, button_height)
-                self.action_buttons.append(button_rect)
+            # Фон слота
+            if skill:
+                if is_usable:
+                    # Яркие цвета для доступных умений
+                    if skill.category.value == 'combat':
+                        bg_color = (80, 50, 50)
+                    elif skill.category.value == 'magic':
+                        bg_color = (50, 50, 80)
+                    else:
+                        bg_color = (40, 40, 40)
+                else:
+                    # Темные цвета для недоступных умений
+                    bg_color = (30, 30, 30)
+            else:
+                bg_color = (30, 30, 30)
 
-                # Определяем цвет кнопки (подсветка при наведении)
-                is_hovered = (self.hovered_action == i)
-                bg_color = (70, 90, 70) if is_hovered else (50, 70, 50)
-                border_color = (150, 255, 150) if is_hovered else (100, 200, 100)
-                border_width = 3 if is_hovered else 2
+            pygame.draw.rect(self.screen, bg_color, (slot_x, slots_y, slot_size, slot_size))
 
-                # Фон кнопки
-                pygame.draw.rect(self.screen, bg_color, button_rect)
+            # Рамка слота
+            if skill and is_usable:
+                border_color = (200, 200, 100)  # Яркая желтая рамка для доступных
+            elif skill:
+                border_color = (80, 80, 80)  # Темная рамка для недоступных
+            else:
+                border_color = (100, 100, 100)
 
-                # Рамка кнопки
-                pygame.draw.rect(self.screen, border_color, button_rect, border_width)
+            pygame.draw.rect(self.screen, border_color, (slot_x, slots_y, slot_size, slot_size), 2)
 
-                # Текст кнопки
-                action_text = self.info_font.render(
-                    f"{action['name']} [{action['key']}]",
-                    True,
-                    (220, 255, 220) if is_hovered else (200, 255, 200)
-                )
-                text_rect = action_text.get_rect()
-                text_rect.center = button_rect.center
-                self.screen.blit(action_text, text_rect)
+            # Номер слота
+            key_text = self.info_font.render(str(i + 1), True, (200, 200, 200))
+            self.screen.blit(key_text, (slot_x + 4, slots_y + 4))
+
+            # Если есть умение, показываем его
+            if skill:
+                # Иконка умения (первая буква названия)
+                icon_font = pygame.font.Font(None, 32)
+                icon_text = icon_font.render(skill.name[0], True, (255, 255, 255))
+                icon_rect = icon_text.get_rect()
+                icon_rect.center = (slot_x + slot_size // 2, slots_y + slot_size // 2 + 4)
+                self.screen.blit(icon_text, icon_rect)
+
+                # Перезарядка (если есть)
+                if skill.current_cooldown > 0:
+                    cooldown_text = self.info_font.render(str(skill.current_cooldown), True, (255, 100, 100))
+                    cooldown_rect = cooldown_text.get_rect()
+                    cooldown_rect.center = (slot_x + slot_size // 2, slots_y + slot_size // 2)
+                    self.screen.blit(cooldown_text, cooldown_rect)
 
         # Подсказка внизу
         hint_y = combat_y + combat_height - 35
         hint_text = self.info_font.render(
-            "Используйте ЛКМ для клика по кнопкам или клавиши [1], [2]",
+            "Клавиши 1-8 - использовать умение | ESC - сбежать",
             True,
             (180, 180, 200)
         )

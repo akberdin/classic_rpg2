@@ -1320,6 +1320,64 @@ class SkillBookWindow:
         self.selected_slot_index = 0
         self.selected_tab = 0  # 0 - Боевые, 1 - Магические, 2 - Ремесленные
 
+        # Для хранения координат элементов при рендеринге
+        self.skill_rects = []  # Список прямоугольников умений
+        self.slot_rects = []   # Список прямоугольников слотов
+
+    def handle_mouse_event(self, event, player):
+        """
+        Обработка событий мыши в окне книги умений
+
+        Args:
+            event: Событие pygame
+            player: Объект игрока
+
+        Returns:
+            bool: True если событие обработано
+        """
+        import pygame
+        from game.skills import SkillCategory
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_pos = event.pos
+
+            # Проверяем клик по умениям
+            for i, rect in enumerate(self.skill_rects):
+                if rect.collidepoint(mouse_pos):
+                    self.selected_skill_index = i
+
+                    # Левая кнопка мыши - назначить умение в выбранный слот
+                    if event.button == 1:
+                        categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+                        current_category = categories[self.selected_tab]
+                        skills_dict = player.skill_manager.get_all_skills()
+                        skills = [skill for skill in skills_dict.values() if skill.category == current_category]
+
+                        if i < len(skills):
+                            selected_skill = skills[i]
+                            # Найдем ID умения
+                            skill_id = None
+                            for sid, skill in skills_dict.items():
+                                if skill == selected_skill:
+                                    skill_id = sid
+                                    break
+
+                            if skill_id:
+                                player.skill_manager.assign_to_slot(skill_id, self.selected_slot_index)
+                    return True
+
+            # Проверяем клик по слотам
+            for i, rect in enumerate(self.slot_rects):
+                if rect.collidepoint(mouse_pos):
+                    self.selected_slot_index = i
+
+                    # Правая кнопка мыши - убрать умение из слота
+                    if event.button == 3:
+                        player.skill_manager.remove_from_slot(i)
+                    return True
+
+        return False
+
     def render(self, player):
         """
         Отрисовать окно книги умений
@@ -1424,6 +1482,9 @@ class SkillBookWindow:
         skills_list_y = tab_y + tab_height + 20
         skills_list_height = window_height - 250
 
+        # Очищаем списки rect'ов
+        self.skill_rects.clear()
+
         # Отрисовка списка умений
         if skills:
             for idx, skill in enumerate(skills):
@@ -1432,6 +1493,10 @@ class SkillBookWindow:
 
                 skill_y = skills_list_y + idx * 70
                 skill_x = window_x + 20
+
+                # Сохраняем прямоугольник умения для обработки мыши
+                skill_rect = pygame.Rect(skill_x, skill_y, window_width - 40, 65)
+                self.skill_rects.append(skill_rect)
 
                 # Фон умения
                 if idx == self.selected_skill_index:
@@ -1442,14 +1507,14 @@ class SkillBookWindow:
                 pygame.draw.rect(
                     self.screen,
                     bg_color,
-                    (skill_x, skill_y, window_width - 40, 65)
+                    skill_rect
                 )
 
                 # Рамка умения
                 pygame.draw.rect(
                     self.screen,
                     (100, 100, 100),
-                    (skill_x, skill_y, window_width - 40, 65),
+                    skill_rect,
                     2
                 )
 
@@ -1522,10 +1587,17 @@ class SkillBookWindow:
         slots_title_rect.y = slots_panel_y - 30
         self.screen.blit(slots_title, slots_title_rect)
 
+        # Очищаем список rect'ов слотов
+        self.slot_rects.clear()
+
         # Отрисовка слотов
         for i in range(8):
             slot_x = slots_start_x + i * (slot_size + slot_spacing)
             slot_skill = player.skill_manager.get_slot_skill(i)
+
+            # Сохраняем прямоугольник слота для обработки мыши
+            slot_rect = pygame.Rect(slot_x, slots_panel_y, slot_size, slot_size)
+            self.slot_rects.append(slot_rect)
 
             # Фон слота
             if i == self.selected_slot_index:
@@ -1545,14 +1617,14 @@ class SkillBookWindow:
             pygame.draw.rect(
                 self.screen,
                 bg_color,
-                (slot_x, slots_panel_y, slot_size, slot_size)
+                slot_rect
             )
 
             # Рамка слота
             pygame.draw.rect(
                 self.screen,
                 (150, 150, 150) if i == self.selected_slot_index else (100, 100, 100),
-                (slot_x, slots_panel_y, slot_size, slot_size),
+                slot_rect,
                 3 if i == self.selected_slot_index else 2
             )
 
