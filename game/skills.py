@@ -412,9 +412,9 @@ class PoisonStrike(Skill):
 
             target.take_damage(actual_damage)
 
-            # Длительность и сила яда растут с рангом
-            poison_duration = 2 + self.rank
-            poison_damage = 3 + self.rank * 2
+            # Длительность и сила яда растут с рангом (сбалансированное масштабирование)
+            poison_duration = 2 + (self.rank - 1)  # 2-6 ходов
+            poison_damage = 3 + (self.rank - 1) * 2  # 3-11 урона/ход
 
             # Накладываем отравление
             poison = PoisonEffect(duration=poison_duration, damage_per_turn=poison_damage)
@@ -450,15 +450,18 @@ class StunStrike(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Наносим урон
+            # Наносим урон с небольшим множителем (1.2x + 0.1x за ранг)
+            damage_multiplier = 1.2 + (self.rank - 1) * 0.1
             base_damage = user.get_total_damage()
+            total_damage = int(base_damage * damage_multiplier)
+
             target_defense = target.get_total_defense()
-            actual_damage = max(1, base_damage - target_defense)
+            actual_damage = max(1, total_damage - target_defense)
 
             target.take_damage(actual_damage)
 
-            # Шанс оглушения растет с рангом (40% + 10% за ранг)
-            stun_chance = 0.4 + (self.rank - 1) * 0.1
+            # Шанс оглушения растет с рангом (40% + 8% за ранг, max 72%)
+            stun_chance = min(0.72, 0.4 + (self.rank - 1) * 0.08)
             stunned = False
             if random.random() < stun_chance:
                 stun = StunEffect(duration=1)

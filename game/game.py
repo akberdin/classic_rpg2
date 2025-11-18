@@ -671,6 +671,19 @@ class Game:
                 if not self.cheat_gold_given:
                     self.player.inventory.add_gold(5000)
                     print("- Получено 5000 золота")
+
+                    # Выдаем все книги умений
+                    from game.inventory import PREDEFINED_ITEMS
+                    skill_books = [
+                        "book_heal", "book_regeneration",
+                        "book_power_strike", "book_poison_strike",
+                        "book_stun_strike", "book_battle_cry"
+                    ]
+                    for book_id in skill_books:
+                        if book_id in PREDEFINED_ITEMS:
+                            self.player.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
+                    print("- Получены книги всех умений")
+
                     self.cheat_gold_given = True
 
                 # Открываем всю карту (устанавливаем explored для всех тайлов)
@@ -1234,10 +1247,11 @@ class Game:
         """Обновление состояния игры"""
         # AI стражников обновляется в методе advance_time
 
-        # Чит-мод: восстанавливаем здоровье и выносливость
+        # Чит-мод: восстанавливаем здоровье, ману и выносливость (с учетом бонусов от экипировки)
         if self.cheat_mode_active:
-            self.player.health = self.player.max_health
-            self.player.stamina = self.player.max_stamina
+            self.player.health = self.player.get_effective_max_health()
+            self.player.stamina = self.player.get_effective_max_stamina()
+            self.player.mana = self.player.get_effective_max_mana()
             self.player.is_resting = False
 
     def _update_camera(self):

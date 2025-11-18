@@ -725,7 +725,23 @@ class ItemGenerator:
         return random.choices(qualities, weights=weights)[0]
 
     @staticmethod
-    def generate_weapon(level=1, quality=None):
+    def generate_quality_for_shop():
+        """
+        Генерация качества предмета для магазина (ограничено до RARE)
+
+        Returns:
+            ItemQuality: Качество не выше RARE
+        """
+        shop_quality_weights = {
+            ItemQuality.POOR: 0.05,
+            ItemQuality.COMMON: 0.55,
+            ItemQuality.UNCOMMON: 0.28,
+            ItemQuality.RARE: 0.12
+        }
+        return ItemGenerator.generate_quality(shop_quality_weights)
+
+    @staticmethod
+    def generate_weapon(level=1, quality=None, max_quality=None):
         """
         Генерация случайного оружия
 

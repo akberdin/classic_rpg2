@@ -1446,10 +1446,15 @@ class CharacterWindow:
         # Дополнительная информация
         additional_y = stats_y + len(self.stats_list) * stat_line_height + int(10 * scale_h)
 
+        # Используем эффективные значения с учетом бонусов от экипировки
+        effective_max_health = player.get_effective_max_health()
+        effective_max_mana = player.get_effective_max_mana()
+        effective_max_stamina = player.get_effective_max_stamina()
+
         additional_info = [
-            f"Здоровье: {player.health}/{player.max_health}",
-            f"Мана: {player.mana}/{player.max_mana}",
-            f"Выносливость: {player.stamina}/{player.max_stamina}",
+            f"Здоровье: {player.health}/{effective_max_health}",
+            f"Мана: {player.mana}/{effective_max_mana}",
+            f"Выносливость: {player.stamina}/{effective_max_stamina}",
             f"Урон: {player.get_total_damage()}",
             f"Защита: {player.get_total_defense()}",
         ]
