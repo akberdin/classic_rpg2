@@ -1414,10 +1414,13 @@ class Bandit(NPC):
 
         # Проверяем, можем ли атаковать
         if self.can_attack(self.target_enemy):
-            # Устанавливаем флаг что атаковали игрока (для принудительного открытия окна боя)
+            # Если цель - игрок, устанавливаем флаг для открытия интерфейса боя вместо прямой атаки
             if hasattr(self.target_enemy, 'attacked_by_npc'):
                 self.target_enemy.attacked_by_npc = self
+                # Не атакуем игрока напрямую, ждем открытия интерфейса боя
+                return
 
+            # Атакуем только NPC
             attack_result = self.attack(self.target_enemy)
 
             if attack_result['dodged']:
@@ -1872,10 +1875,13 @@ class Undead(NPC):
 
         # Проверяем, можем ли атаковать
         if self.can_attack(self.target_enemy):
-            # Устанавливаем флаг что атаковали игрока (для принудительного открытия окна боя)
+            # Если цель - игрок, устанавливаем флаг для открытия интерфейса боя вместо прямой атаки
             if hasattr(self.target_enemy, 'attacked_by_npc'):
                 self.target_enemy.attacked_by_npc = self
+                # Не атакуем игрока напрямую, ждем открытия интерфейса боя
+                return
 
+            # Атакуем только NPC
             attack_result = self.attack(self.target_enemy)
 
             if attack_result['dodged']:

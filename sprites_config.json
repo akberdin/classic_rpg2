@@ -1,0 +1,27 @@
+{
+  "npcs": {
+    "guard": "assets/sprites/npcs/guard.png",
+    "merchant": "assets/sprites/npcs/merchant.png",
+    "bandit": "assets/sprites/npcs/bandit.png",
+    "miner": "assets/sprites/npcs/miner.png",
+    "undead": "assets/sprites/npcs/undead.png",
+    "player": "assets/sprites/player.png"
+  },
+  "locations": {
+    "city": "assets/sprites/locations/city.png",
+    "village": "assets/sprites/locations/village.png",
+    "mine": "assets/sprites/locations/mine.png",
+    "bandit_camp": "assets/sprites/locations/bandit_camp.png",
+    "ruins": "assets/sprites/locations/ruins.png",
+    "magic_school": "assets/sprites/locations/magic_school.png"
+  },
+  "biomes": {
+    "water": "assets/sprites/biomes/water.png",
+    "sand": "assets/sprites/biomes/sand.png",
+    "plains": "assets/sprites/biomes/plains.png",
+    "hills": "assets/sprites/biomes/hills.png",
+    "forest": "assets/sprites/biomes/forest.png"
+  },
+  "sprite_size": 64,
+  "description": "Все спрайты должны быть размером 64x64 пикселя. Если файл не найден, используется геометрическая фигура."
+}

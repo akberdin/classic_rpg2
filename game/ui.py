@@ -169,6 +169,7 @@ class HelpWindow:
             ("Взаимодействие:", "E - разговор с NPC"),
             ("Сбор ресурсов:", "F - собрать лут с локации"),
             ("Инвентарь:", "I - открыть/закрыть"),
+            ("Характеристики:", "C - открыть окно персонажа"),
             ("Помощь:", "F1 - открыть/закрыть это окно"),
             ("Выход:", "ESC - выйти из игры"),
             ("", None),
@@ -176,15 +177,24 @@ class HelpWindow:
             ("Навигация:", "W/S - выбор предмета"),
             ("Использовать:", "Enter/U - использовать предмет"),
             ("Экипировать:", "E - экипировать предмет"),
-            ("Снять:", "Q - снять выбранный предмет"),
+            ("Снять предмет:", "ПКМ - снять экипированный предмет"),
+            ("Надеть предмет:", "ПКМ - экипировать из инвентаря"),
+            ("Информация:", "Наведите мышь на предмет"),
             ("Закрыть:", "I/ESC - закрыть инвентарь"),
+            ("", None),
+            ("=== ВЗАИМОДЕЙСТВИЕ С NPC ===", None),
+            ("Меню выбора:", "[1] Торговля, [2] Агрессия, [3] Уйти"),
+            ("", None),
+            ("=== ТОРГОВЛЯ ===", None),
+            ("Режим покупки:", "Tab - переключить на продажу"),
+            ("Режим продажи:", "Tab - переключить на покупку"),
+            ("Навигация:", "W/S - выбор товара"),
+            ("Подтвердить:", "Enter - купить/продать"),
+            ("Закрыть:", "ESC - закрыть окно торговли"),
             ("", None),
             ("=== БОЙ ===", None),
             ("Атака:", "1 - обычная атака"),
-            ("Сильная атака:", "2 - мощная атака (-10 выносл.)"),
-            ("Защита:", "3 - защититься на ход"),
-            ("Магия:", "4 - магическая атака (-20 маны)"),
-            ("Побег:", "5 - попытка сбежать"),
+            ("Побег:", "2 - попытка сбежать"),
         ]
 
     def toggle(self):
@@ -299,12 +309,13 @@ class InventoryWindow:
         self.selected_equipment_slot = None
         self.mode = "inventory"  # "inventory" или "equipment"
 
-    def render(self, player):
+    def render(self, player, mouse_pos=None):
         """
         Отрисовка окна инвентаря
 
         Args:
             player: Объект игрока
+            mouse_pos: Позиция мыши (x, y) для tooltip
         """
         # Получаем размеры экрана
         screen_width = self.screen.get_width()
@@ -402,7 +413,7 @@ class InventoryWindow:
         # Подсказки внизу
         hints_y = window_y + window_height - int(40 * (window_height / 650))
         hint_text = self.info_font.render(
-            "W/S - выбор | E - экипировать | Q - снять | U - использовать | I/ESC - закрыть",
+            "W/S - выбор | E - экипировать | ПКМ - снять/надеть | U - использовать | I/ESC - закрыть",
             True,
             (180, 180, 180)
         )
@@ -410,6 +421,13 @@ class InventoryWindow:
         hint_rect.centerx = window_x + window_width // 2
         hint_rect.y = hints_y
         self.screen.blit(hint_text, hint_rect)
+
+        # Отрисовка tooltip при наведении мыши
+        if mouse_pos:
+            mouse_x, mouse_y = mouse_pos
+            item = self.get_item_at_mouse(player, mouse_x, mouse_y)
+            if item:
+                self.render_item_tooltip(item, mouse_x, mouse_y)
 
     def _render_equipment_panel(self, player, x, y, width, height):
         """Отрисовка панели экипировки"""
@@ -590,6 +608,186 @@ class InventoryWindow:
                     (255, 215, 0)
                 )
                 self.screen.blit(value_text, (x + width - value_offset, items_y + display_index * item_height + int(7 * (height / 500))))
+
+    def render_item_tooltip(self, item, mouse_x, mouse_y):
+        """
+        Отрисовка всплывающей подсказки для предмета
+
+        Args:
+            item: Предмет для отображения
+            mouse_x: X координата мыши
+            mouse_y: Y координата мыши
+        """
+        from game.inventory import EquipmentItem, WeaponItem, ArmorItem, JewelryItem, PotionItem
+
+        # Размеры подсказки
+        tooltip_width = 320
+        tooltip_padding = 12
+        line_height = 22
+
+        # Собираем информацию о предмете
+        lines = []
+
+        # Название предмета
+        item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
+        item_color = item.quality.color if hasattr(item, 'quality') else (200, 200, 200)
+        lines.append((item_name, item_color, True))  # True = жирный шрифт
+
+        # Тип предмета
+        if isinstance(item, WeaponItem):
+            lines.append((f"Тип: {item.weapon_type}", (180, 180, 180), False))
+        elif isinstance(item, ArmorItem):
+            lines.append((f"Тип: {item.armor_type}", (180, 180, 180), False))
+        elif isinstance(item, JewelryItem):
+            lines.append((f"Тип: {item.jewelry_type}", (180, 180, 180), False))
+        elif isinstance(item, PotionItem):
+            lines.append(("Тип: Зелье", (180, 180, 180), False))
+
+        # Характеристики экипировки
+        if isinstance(item, EquipmentItem):
+            lines.append(("", (0, 0, 0), False))  # Пустая строка
+
+            if hasattr(item, 'attack') and item.attack > 0:
+                lines.append((f"Атака: +{item.attack}", (255, 100, 100), False))
+            if hasattr(item, 'defense') and item.defense > 0:
+                lines.append((f"Защита: +{item.defense}", (100, 150, 255), False))
+
+            # Бонусы к характеристикам
+            if item.stat_bonuses:
+                for stat, bonus in item.stat_bonuses.items():
+                    stat_names = {
+                        'strength': 'Сила',
+                        'dexterity': 'Ловкость',
+                        'intelligence': 'Интеллект',
+                        'vitality': 'Телосложение',
+                        'luck': 'Удача'
+                    }
+                    stat_name = stat_names.get(stat, stat)
+                    lines.append((f"{stat_name}: +{bonus}", (150, 255, 150), False))
+
+        # Эффекты зелья
+        if isinstance(item, PotionItem):
+            lines.append(("", (0, 0, 0), False))
+            if hasattr(item, 'health_restore') and item.health_restore > 0:
+                lines.append((f"Восстановление HP: +{item.health_restore}", (100, 255, 100), False))
+            if hasattr(item, 'mana_restore') and item.mana_restore > 0:
+                lines.append((f"Восстановление маны: +{item.mana_restore}", (100, 150, 255), False))
+            if hasattr(item, 'stamina_restore') and item.stamina_restore > 0:
+                lines.append((f"Восстановление выносливости: +{item.stamina_restore}", (255, 255, 100), False))
+
+        # Вес и стоимость
+        lines.append(("", (0, 0, 0), False))
+        lines.append((f"Вес: {item.weight:.1f} кг", (200, 200, 200), False))
+        lines.append((f"Стоимость: {item.value} золота", (255, 215, 0), False))
+
+        # Описание
+        if hasattr(item, 'description') and item.description:
+            lines.append(("", (0, 0, 0), False))
+            lines.append((item.description, (150, 150, 150), False))
+
+        # Вычисляем высоту подсказки
+        tooltip_height = tooltip_padding * 2 + len(lines) * line_height
+
+        # Позиция подсказки (справа от курсора, но в пределах экрана)
+        tooltip_x = mouse_x + 15
+        tooltip_y = mouse_y + 15
+
+        screen_width = self.screen.get_width()
+        screen_height = self.screen.get_height()
+
+        if tooltip_x + tooltip_width > screen_width:
+            tooltip_x = mouse_x - tooltip_width - 15
+        if tooltip_y + tooltip_height > screen_height:
+            tooltip_y = screen_height - tooltip_height - 5
+
+        # Фон подсказки с градиентом
+        UIHelper.draw_gradient_rect(
+            self.screen, tooltip_x, tooltip_y, tooltip_width, tooltip_height,
+            (40, 40, 50), (60, 60, 75)
+        )
+
+        # Рамка
+        pygame.draw.rect(
+            self.screen,
+            (150, 150, 200),
+            (tooltip_x, tooltip_y, tooltip_width, tooltip_height),
+            2
+        )
+
+        # Отрисовка текста
+        text_y = tooltip_y + tooltip_padding
+        for line_text, line_color, is_bold in lines:
+            if line_text == "":  # Пустая строка
+                text_y += line_height // 2
+                continue
+
+            font_to_use = self.font if is_bold else self.info_font
+            text_surface = font_to_use.render(line_text, True, line_color)
+            self.screen.blit(text_surface, (tooltip_x + tooltip_padding, text_y))
+            text_y += line_height
+
+    def get_item_at_mouse(self, player, mouse_x, mouse_y):
+        """
+        Получить предмет под курсором мыши
+
+        Args:
+            player: Объект игрока
+            mouse_x: X координата мыши
+            mouse_y: Y координата мыши
+
+        Returns:
+            Item или None
+        """
+        # Получаем размеры экрана
+        screen_width = self.screen.get_width()
+        screen_height = self.screen.get_height()
+
+        # Размеры окна (адаптивные)
+        if self.scaler:
+            window_width = self.scaler.scale_width(900)
+            window_height = self.scaler.scale_height(650)
+        else:
+            window_width = min(900, int(screen_width * 0.85))
+            window_height = min(650, int(screen_height * 0.75))
+
+        window_x = (screen_width - window_width) // 2
+        window_y = (screen_height - window_height) // 2
+
+        # Правая панель - предметы
+        margin = int(20 * (window_width / 900))
+        panel_y_offset = int(85 * (window_height / 650))
+        inventory_panel_x = window_x + int(440 * (window_width / 900))
+        inventory_panel_y = window_y + panel_y_offset
+        inventory_panel_width = int(440 * (window_width / 900))
+        inventory_panel_height = int(500 * (window_height / 650))
+
+        # Проверяем, находится ли курсор в области предметов
+        if not (inventory_panel_x <= mouse_x <= inventory_panel_x + inventory_panel_width and
+                inventory_panel_y <= mouse_y <= inventory_panel_y + inventory_panel_height):
+            return None
+
+        # Вычисляем индекс предмета
+        all_items = player.inventory.get_all_items()
+        if not all_items:
+            return None
+
+        items_y = inventory_panel_y + int(40 * (inventory_panel_height / 500))
+        item_height = max(24, int(30 * (inventory_panel_height / 500)))
+        max_visible_items = max(10, int(14 * (inventory_panel_height / 500)))
+
+        relative_y = mouse_y - items_y
+        if relative_y < 0:
+            return None
+
+        item_index = int(relative_y / item_height)
+        start_index = max(0, self.selected_inventory_index - max_visible_items + 1)
+        actual_index = start_index + item_index
+
+        if 0 <= actual_index < len(all_items):
+            item, quantity = all_items[actual_index]
+            return item
+
+        return None
 
 
 class TradeWindow:
