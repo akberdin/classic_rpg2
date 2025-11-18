@@ -3,7 +3,7 @@
 """
 import pygame
 import random
-from game.constants import WINDOW_WIDTH, WINDOW_HEIGHT, COLORS
+from game.constants import COLORS
 
 
 class CombatSystem:

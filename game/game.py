@@ -14,7 +14,7 @@ from game.quests import QuestManager, AchievementManager, create_starter_quests
 from game.save_system import SaveSystem
 from game.skills import PowerStrike, Heal
 from game.constants import (
-    WINDOW_WIDTH, WINDOW_HEIGHT, FPS, TILE_SIZE, COLORS,
+    FPS, TILE_SIZE, COLORS,
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
     LOCATION_MINE, LOCATION_RUINS
 )
@@ -27,22 +27,17 @@ class Game:
         """Инициализация игры"""
         # Получаем информацию о дисплее
         display_info = pygame.display.Info()
-        actual_width = display_info.current_w
-        actual_height = display_info.current_h
-
-        # Обновляем глобальные константы разрешения
-        import game.constants as constants
-        constants.WINDOW_WIDTH = actual_width
-        constants.WINDOW_HEIGHT = actual_height
+        self.window_width = display_info.current_w
+        self.window_height = display_info.current_h
 
         # Окно игры в полноэкранном режиме с реальным разрешением
-        self.screen = pygame.display.set_mode((actual_width, actual_height), pygame.FULLSCREEN)
+        self.screen = pygame.display.set_mode((self.window_width, self.window_height), pygame.FULLSCREEN)
         pygame.display.set_caption("Classic RPG")
 
         # Создаем масштабировщик UI для адаптивности
-        self.ui_scaler = UIScaler(actual_width, actual_height)
+        self.ui_scaler = UIScaler(self.window_width, self.window_height)
 
-        print(f"Инициализация игры с разрешением: {actual_width}x{actual_height}")
+        print(f"Инициализация игры с разрешением: {self.window_width}x{self.window_height}")
 
         # Часы для контроля FPS
         self.clock = pygame.time.Clock()
@@ -857,8 +852,8 @@ class Game:
     def _update_camera(self):
         """Обновление позиции камеры, чтобы следить за игроком"""
         # Вычисляем размер видимой области в тайлах
-        tiles_x = WINDOW_WIDTH // TILE_SIZE
-        tiles_y = (WINDOW_HEIGHT - 100) // TILE_SIZE  # -100 для UI панели
+        tiles_x = self.window_width // TILE_SIZE
+        tiles_y = (self.window_height - 100) // TILE_SIZE  # -100 для UI панели
 
         # Центрируем камеру на игроке
         self.camera_x = self.player.x - tiles_x // 2
@@ -965,8 +960,8 @@ class Game:
     def _render_map(self):
         """Отрисовка карты с учетом камеры и тумана войны"""
         # Вычисляем видимую область
-        tiles_x = WINDOW_WIDTH // TILE_SIZE + 1
-        tiles_y = (WINDOW_HEIGHT - 100) // TILE_SIZE + 1
+        tiles_x = self.window_width // TILE_SIZE + 1
+        tiles_y = (self.window_height - 100) // TILE_SIZE + 1
 
         for dy in range(tiles_y):
             for dx in range(tiles_x):
@@ -1243,13 +1238,13 @@ class Game:
         """Отрисовка пользовательского интерфейса"""
         # Панель внизу экрана
         ui_height = 100
-        ui_y = WINDOW_HEIGHT - ui_height
+        ui_y = self.window_height - ui_height
 
         # Фон панели
         pygame.draw.rect(
             self.screen,
             (32, 32, 32),
-            (0, ui_y, WINDOW_WIDTH, ui_height)
+            (0, ui_y, self.window_width, ui_height)
         )
 
         # Разделительная линия
@@ -1257,7 +1252,7 @@ class Game:
             self.screen,
             COLORS['text'],
             (0, ui_y),
-            (WINDOW_WIDTH, ui_y),
+            (self.window_width, ui_y),
             2
         )
 
@@ -1280,7 +1275,7 @@ class Game:
             True,
             (255, 215, 0)
         )
-        self.screen.blit(time_gold_text, (WINDOW_WIDTH - 350, info_y + 5))
+        self.screen.blit(time_gold_text, (self.window_width - 350, info_y + 5))
 
         # Прогресс-бары
         bar_y = info_y + 35
@@ -1354,7 +1349,7 @@ class Game:
         """Отрисовка мини-карты"""
         # Размеры мини-карты
         minimap_size = 150
-        minimap_x = WINDOW_WIDTH - minimap_size - 10
+        minimap_x = self.window_width - minimap_size - 10
         minimap_y = 10
         pixel_per_tile = 1.5  # Размер одного тайла на мини-карте
 
@@ -1427,7 +1422,7 @@ class Game:
     def _render_interaction_menu(self):
         """Отрисовка меню взаимодействия с NPC"""
         # Затемняем фон
-        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+        overlay = pygame.Surface((self.window_width, self.window_height))
         overlay.set_alpha(150)
         overlay.fill((0, 0, 0))
         self.screen.blit(overlay, (0, 0))
@@ -1435,8 +1430,8 @@ class Game:
         # Размеры меню
         menu_width = 500
         menu_height = 300
-        menu_x = (WINDOW_WIDTH - menu_width) // 2
-        menu_y = (WINDOW_HEIGHT - menu_height) // 2
+        menu_x = (self.window_width - menu_width) // 2
+        menu_y = (self.window_height - menu_height) // 2
 
         # Фон меню
         pygame.draw.rect(
