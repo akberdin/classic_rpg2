@@ -659,7 +659,19 @@ class InventoryWindow:
         elif isinstance(item, ArmorItem):
             lines.append((f"Тип: {item.armor_type}", (180, 180, 180), False))
         elif isinstance(item, JewelryItem):
-            lines.append((f"Тип: {item.jewelry_type}", (180, 180, 180), False))
+            # Определяем тип украшения по слоту
+            from game.inventory import EquipmentSlot
+            jewelry_types = {
+                EquipmentSlot.RING_1: "Кольцо",
+                EquipmentSlot.RING_2: "Кольцо",
+                EquipmentSlot.RING_3: "Кольцо",
+                EquipmentSlot.RING_4: "Кольцо",
+                EquipmentSlot.AMULET: "Амулет",
+                EquipmentSlot.BRACELET_1: "Браслет",
+                EquipmentSlot.BRACELET_2: "Браслет",
+            }
+            jewelry_type = jewelry_types.get(item.slot, "Украшение")
+            lines.append((f"Тип: {jewelry_type}", (180, 180, 180), False))
         elif isinstance(item, PotionItem):
             lines.append(("Тип: Зелье", (180, 180, 180), False))
 
