@@ -40,10 +40,10 @@ class GameMap:
         # Параметры для шума Перлина
         scale = 100.0
         octaves = 6
-        seed = random.randint(0, 10000)
+        self.seed = random.randint(0, 10000)  # Сохраняем seed для воспроизводимости
 
         # Создаем генератор шума Перлина
-        noise_generator = PerlinNoise(octaves=octaves, seed=seed)
+        noise_generator = PerlinNoise(octaves=octaves, seed=self.seed)
 
         # Генерация биомов с помощью шума Перлина
         for y in range(self.height):

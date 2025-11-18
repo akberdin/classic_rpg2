@@ -868,7 +868,9 @@ class ItemGenerator:
         """
         loot = []
 
-        if location_type == "mine":
+        from game.constants import LOCATION_MINE, LOCATION_RUINS, LOCATION_BANDIT_CAMP
+
+        if location_type == LOCATION_MINE:
             # Руда из шахт
             ores = ["copper_ore", "iron_ore", "silver_ore", "gold_ore", "mithril_ore"]
             weights = [0.5, 0.3, 0.12, 0.06, 0.02]
@@ -876,7 +878,7 @@ class ItemGenerator:
             quantity = random.randint(1, 3)
             loot.append((PREDEFINED_ITEMS[ore_type], quantity))
 
-        elif location_type == "ruins":
+        elif location_type == LOCATION_RUINS:
             # Артефакты из руин
             artifacts = ["ancient_coin", "artifact_fragment", "magic_crystal", "old_scroll"]
             weights = [0.5, 0.3, 0.1, 0.1]
@@ -900,7 +902,7 @@ class ItemGenerator:
                 potion_type = random.choice(potions)
                 loot.append((PREDEFINED_ITEMS[potion_type], 1))
 
-        elif location_type == "bandit_camp":
+        elif location_type == LOCATION_BANDIT_CAMP:
             # Бандиты могут иметь разное снаряжение
             if random.random() < 0.3:  # 30% шанс оружия
                 loot.append((ItemGenerator.generate_weapon(level), 1))
