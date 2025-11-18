@@ -224,7 +224,7 @@ class SaveSystem:
 
         # Сохраняем навыки если есть
         if hasattr(player, 'skill_manager'):
-            data['skills'] = [skill.name for skill in player.skill_manager.learned_skills]
+            data['skills'] = [skill.name for skill in player.skill_manager.learned_skills.values()]
 
         # Сохраняем дополнительные атрибуты
         if hasattr(player, 'enemies_killed'):
