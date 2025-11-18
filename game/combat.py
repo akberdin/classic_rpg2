@@ -9,7 +9,7 @@ from game.constants import WINDOW_WIDTH, WINDOW_HEIGHT, COLORS
 class CombatSystem:
     """Класс управления боевой системой"""
 
-    def __init__(self, player, enemy, screen, font):
+    def __init__(self, player, enemy, screen, font, scaler=None):
         """
         Инициализация боевой системы
 
@@ -18,12 +18,15 @@ class CombatSystem:
             enemy: Враг
             screen: Pygame экран
             font: Шрифт для отображения текста
+            scaler: UIScaler для адаптивного масштабирования (опционально)
         """
         self.player = player
         self.enemy = enemy
         self.screen = screen
         self.font = font
-        self.info_font = pygame.font.Font(None, 20)
+        self.scaler = scaler
+        info_font_size = scaler.scale_font_size(20) if scaler else 20
+        self.info_font = pygame.font.Font(None, info_font_size)
 
         # Состояние боя
         self.active = True
@@ -164,17 +167,30 @@ class CombatSystem:
 
     def render(self):
         """Отрисовка окна боя"""
+        # Получаем размеры экрана
+        screen_width = self.screen.get_width()
+        screen_height = self.screen.get_height()
+
         # Затемняем фон
-        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+        overlay = pygame.Surface((screen_width, screen_height))
         overlay.set_alpha(200)
         overlay.fill((0, 0, 0))
         self.screen.blit(overlay, (0, 0))
 
-        # Размеры окна боя
-        combat_width = 800
-        combat_height = 500
-        combat_x = (WINDOW_WIDTH - combat_width) // 2
-        combat_y = (WINDOW_HEIGHT - combat_height) // 2
+        # Размеры окна боя (адаптивные)
+        if self.scaler:
+            combat_width = self.scaler.scale_width(800)
+            combat_height = self.scaler.scale_height(500)
+        else:
+            combat_width = min(800, int(screen_width * 0.8))
+            combat_height = min(500, int(screen_height * 0.6))
+
+        combat_x = (screen_width - combat_width) // 2
+        combat_y = (screen_height - combat_height) // 2
+
+        # Коэффициенты масштабирования
+        scale_w = combat_width / 800
+        scale_h = combat_height / 500
 
         # Фон окна боя
         pygame.draw.rect(

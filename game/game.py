@@ -8,7 +8,7 @@ from game.character import Player, Guard, Merchant, Bandit, Miner, Undead
 from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS, EquipmentItem
-from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow
+from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quests import QuestManager, AchievementManager, create_starter_quests
 from game.save_system import SaveSystem
@@ -25,9 +25,24 @@ class Game:
 
     def __init__(self):
         """Инициализация игры"""
-        # Окно игры в полноэкранном режиме
-        self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.FULLSCREEN)
+        # Получаем информацию о дисплее
+        display_info = pygame.display.Info()
+        actual_width = display_info.current_w
+        actual_height = display_info.current_h
+
+        # Обновляем глобальные константы разрешения
+        import game.constants as constants
+        constants.WINDOW_WIDTH = actual_width
+        constants.WINDOW_HEIGHT = actual_height
+
+        # Окно игры в полноэкранном режиме с реальным разрешением
+        self.screen = pygame.display.set_mode((actual_width, actual_height), pygame.FULLSCREEN)
         pygame.display.set_caption("Classic RPG")
+
+        # Создаем масштабировщик UI для адаптивности
+        self.ui_scaler = UIScaler(actual_width, actual_height)
+
+        print(f"Инициализация игры с разрешением: {actual_width}x{actual_height}")
 
         # Часы для контроля FPS
         self.clock = pygame.time.Clock()
@@ -54,9 +69,11 @@ class Game:
         self.camera_y = 0
         self._update_camera()
 
-        # Шрифт для текста
-        self.font = pygame.font.Font(None, 24)
-        self.info_font = pygame.font.Font(None, 20)
+        # Шрифт для текста (адаптивные размеры)
+        font_size = self.ui_scaler.scale_font_size(24)
+        info_font_size = self.ui_scaler.scale_font_size(20)
+        self.font = pygame.font.Font(None, font_size)
+        self.info_font = pygame.font.Font(None, info_font_size)
 
         # Система боя
         self.combat_system = None
@@ -66,11 +83,11 @@ class Game:
         self.interaction_menu_open = False
         self.nearby_npc = None
 
-        # UI компоненты
-        self.help_window = HelpWindow(self.screen, self.font, self.info_font)
-        self.inventory_window = InventoryWindow(self.screen, self.font, self.info_font)
-        self.trade_window = TradeWindow(self.screen, self.font, self.info_font)
-        self.character_window = CharacterWindow(self.screen, self.font, self.info_font)
+        # UI компоненты (с передачей scaler для адаптивности)
+        self.help_window = HelpWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.inventory_window = InventoryWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.trade_window = TradeWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.character_window = CharacterWindow(self.screen, self.font, self.info_font, self.ui_scaler)
 
         # Состояния окон
         self.inventory_menu_open = False
@@ -828,7 +845,7 @@ class Game:
             enemy: Враг для боя
         """
         print(f"Бой начался с {enemy.name}!")
-        self.combat_system = CombatSystem(self.player, enemy, self.screen, self.font)
+        self.combat_system = CombatSystem(self.player, enemy, self.screen, self.font, self.ui_scaler)
         self.in_combat = True
         self.nearby_npc = None
 
