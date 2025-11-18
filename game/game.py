@@ -89,6 +89,11 @@ class Game:
         self.trade_menu_open = False
         self.character_menu_open = False
 
+        # Менеджер спрайтов
+        from game.sprite_manager import SpriteManager
+        self.sprite_manager = SpriteManager(tile_size=TILE_SIZE)
+        print(f"Менеджер спрайтов инициализирован")
+
         # Создание стражников в городах
         self.guards = []
         self._spawn_guards()
@@ -470,6 +475,9 @@ class Game:
             if self.inventory_menu_open:
                 if event.type == pygame.KEYDOWN:
                     self._handle_inventory_input(event.key)
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 3:  # ПКМ
+                        self._handle_inventory_right_click(event.pos)
                 continue
 
             # Если открыто меню торговли, обрабатываем его
@@ -691,8 +699,105 @@ class Game:
                 else:
                     print("Этот предмет нельзя экипировать")
         elif key == pygame.K_q:
-            # Снять экипированный предмет (заглушка - нужно добавить выбор слота)
-            print("Функция снятия предметов будет доступна в следующей версии")
+            # Снять экипированный предмет через выбранный слот
+            if self.inventory_window.selected_equipment_slot:
+                slot = self.inventory_window.selected_equipment_slot
+                item = self.player.inventory.get_equipped_item(slot)
+                if item:
+                    success, message = self.player.inventory.unequip_item(slot)
+                    print(message)
+                    if success:
+                        self.player.update_derived_stats()
+                else:
+                    print("В этом слоте нет предмета")
+            else:
+                print("Выберите слот экипировки для снятия предмета")
+
+    def _handle_inventory_right_click(self, mouse_pos):
+        """
+        Обработка правого клика мыши в инвентаре
+
+        Args:
+            mouse_pos: Позиция мыши (x, y)
+        """
+        from game.inventory import EquipmentItem
+
+        mouse_x, mouse_y = mouse_pos
+
+        # Проверяем клик по предмету в инвентаре
+        item = self.inventory_window.get_item_at_mouse(self.player, mouse_x, mouse_y)
+        if item:
+            # Клик по предмету в инвентаре - экипировать его
+            if isinstance(item, EquipmentItem):
+                success, message = self.player.inventory.equip_item(item.name)
+                print(message)
+                if success:
+                    self.player.update_derived_stats()
+            else:
+                print("Этот предмет нельзя экипировать")
+            return
+
+        # Проверяем клик по экипированному предмету
+        # Получаем размеры экрана
+        screen_width = self.screen.get_width()
+        screen_height = self.screen.get_height()
+
+        # Размеры окна (адаптивные)
+        if self.ui_scaler:
+            window_width = self.ui_scaler.scale_width(900)
+            window_height = self.ui_scaler.scale_height(650)
+        else:
+            window_width = min(900, int(screen_width * 0.85))
+            window_height = min(650, int(screen_height * 0.75))
+
+        window_x = (screen_width - window_width) // 2
+        window_y = (screen_height - window_height) // 2
+
+        # Левая панель - экипировка
+        margin = int(20 * (window_width / 900))
+        panel_y_offset = int(85 * (window_height / 650))
+        equipment_panel_x = window_x + margin
+        equipment_panel_y = window_y + panel_y_offset
+        equipment_panel_width = int(400 * (window_width / 900))
+
+        # Проверяем, находится ли курсор в области экипировки
+        if equipment_panel_x <= mouse_x <= equipment_panel_x + equipment_panel_width:
+            # Вычисляем на какой слот кликнули
+            from game.inventory import EquipmentSlot
+
+            slot_y_start = equipment_panel_y + int(40 * (window_height / 650))
+            slot_height = max(22, int(28 * (window_height / 650)))
+
+            # Группировка слотов (такая же как в ui.py)
+            slot_groups = [
+                ("Оружие", [EquipmentSlot.WEAPON]),
+                ("Доспехи", [EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET]),
+                ("Кольца", [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]),
+                ("Украшения", [EquipmentSlot.AMULET, EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]),
+            ]
+
+            current_y = slot_y_start
+            for group_name, slots in slot_groups:
+                # Пропускаем заголовок группы
+                current_y += max(20, int(25 * (window_height / 650)))
+
+                for slot in slots:
+                    # Проверяем клик по этому слоту
+                    if current_y <= mouse_y <= current_y + slot_height:
+                        item = self.player.inventory.get_equipped_item(slot)
+                        if item:
+                            success, message = self.player.inventory.unequip_item(slot)
+                            print(message)
+                            if success:
+                                self.player.update_derived_stats()
+                        else:
+                            print(f"Слот {group_name} пуст")
+                        return
+
+                    current_y += slot_height
+
+                # Пропускаем отступ между группами
+                current_y += max(8, int(10 * (window_height / 650)))
 
     def _handle_interaction_choice(self, key):
         """
@@ -887,7 +992,8 @@ class Game:
 
         # Если открыто меню инвентаря, отрисовываем его
         if self.inventory_menu_open:
-            self.inventory_window.render(self.player)
+            mouse_pos = pygame.mouse.get_pos()
+            self.inventory_window.render(self.player, mouse_pos)
 
         # Если открыто меню торговли, отрисовываем его
         if self.trade_menu_open and self.nearby_npc:
