@@ -1780,7 +1780,7 @@ class Undead(NPC):
     def update_ai(self, game_map, all_npcs=None, player=None):
         """
         Обновление AI нежити за 1 час игрового времени
-        Нежита агрессивна ко ВСЕМ!
+        ОТКЛЮЧЕНО: Нежить не перемещается и не атакует
 
         Args:
             game_map: Объект карты игры
@@ -1790,29 +1790,33 @@ class Undead(NPC):
         if not self.is_alive:
             return
 
+        # ОТКЛЮЧЕНО: Нежить больше не перемещается и не атакует
         # Восстанавливаем выносливость
         self.recover_stamina()
 
-        # Если отдыхаем из-за выносливости, ничего не делаем
-        if self.is_resting:
-            return
+        # Просто стоим на месте, ничего не делаем
+        return
 
-        # Проверяем наличие врагов поблизости (включая игрока)
-        if all_npcs or player:
-            self._check_for_enemies(all_npcs, player)
+        # # Если отдыхаем из-за выносливости, ничего не делаем
+        # if self.is_resting:
+        #     return
 
-        if self.state == "combat":
-            self._combat_step(game_map)
-        elif self.state == "patrol":
-            # Делаем несколько шагов за 1 час
-            for _ in range(self.steps_per_hour):
-                if not self.consume_stamina():
-                    break
-                self._patrol_step(game_map)
-                if self.state == "rest":
-                    break
-        elif self.state == "rest":
-            self._rest()
+        # # Проверяем наличие врагов поблизости (включая игрока)
+        # if all_npcs or player:
+        #     self._check_for_enemies(all_npcs, player)
+
+        # if self.state == "combat":
+        #     self._combat_step(game_map)
+        # elif self.state == "patrol":
+        #     # Делаем несколько шагов за 1 час
+        #     for _ in range(self.steps_per_hour):
+        #         if not self.consume_stamina():
+        #             break
+        #         self._patrol_step(game_map)
+        #         if self.state == "rest":
+        #             break
+        # elif self.state == "rest":
+        #     self._rest()
 
     def _check_for_enemies(self, all_npcs, player=None):
         """

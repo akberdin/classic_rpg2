@@ -265,36 +265,56 @@ class HelpWindow:
             2
         )
 
-        # Содержимое
-        content_y = window_y + int(85 * (window_height / 600))
-        line_height = max(18, int(22 * (window_height / 600)))
+        # Содержимое в двух столбцах
+        content_y_left = window_y + int(85 * (window_height / 600))
+        content_y_right = content_y_left
+        line_height = max(16, int(18 * (window_height / 600)))
 
-        margin_left = int(30 * (window_width / 700))
-        margin_left_text = int(50 * (window_width / 700))
-        value_offset = int(250 * (window_width / 700))
+        margin_left = int(20 * (window_width / 700))
+        margin_left_text = int(35 * (window_width / 700))
+        value_offset = int(180 * (window_width / 700))
 
-        for label, value in self.help_data:
+        # Разделяем данные на два столбца
+        column_width = (window_width - int(60 * (window_width / 700))) // 2
+        right_column_x = window_x + column_width + int(40 * (window_width / 700))
+
+        # Определяем точку разделения (половина данных в каждом столбце)
+        split_index = len(self.help_data) // 2
+        left_data = self.help_data[:split_index]
+        right_data = self.help_data[split_index:]
+
+        # Отрисовка левого столбца
+        for label, value in left_data:
             if label.startswith("==="):
-                # Заголовок раздела
                 section_text = self.font.render(label, True, (100, 200, 255))
-                section_rect = section_text.get_rect()
-                section_rect.x = window_x + margin_left
-                section_rect.y = content_y
-                self.screen.blit(section_text, section_rect)
-                content_y += line_height + int(5 * (window_height / 600))
+                self.screen.blit(section_text, (window_x + margin_left, content_y_left))
+                content_y_left += line_height + int(4 * (window_height / 600))
             elif label == "":
-                # Пустая строка
-                content_y += int(10 * (window_height / 600))
+                content_y_left += int(8 * (window_height / 600))
             else:
-                # Обычная строка
                 label_text = self.info_font.render(label, True, (200, 200, 200))
-                self.screen.blit(label_text, (window_x + margin_left_text, content_y))
-
+                self.screen.blit(label_text, (window_x + margin_left_text, content_y_left))
                 if value:
                     value_text = self.info_font.render(value, True, (150, 255, 150))
-                    self.screen.blit(value_text, (window_x + value_offset, content_y))
+                    self.screen.blit(value_text, (window_x + value_offset, content_y_left))
+                content_y_left += line_height
 
-                content_y += line_height
+        # Отрисовка правого столбца
+        for label, value in right_data:
+            if label.startswith("==="):
+                section_text = self.font.render(label, True, (100, 200, 255))
+                self.screen.blit(section_text, (right_column_x, content_y_right))
+                content_y_right += line_height + int(4 * (window_height / 600))
+            elif label == "":
+                content_y_right += int(8 * (window_height / 600))
+            else:
+                label_text = self.info_font.render(label, True, (200, 200, 200))
+                self.screen.blit(label_text, (right_column_x + int(15 * (window_width / 700)), content_y_right))
+                if value:
+                    value_text = self.info_font.render(value, True, (150, 255, 150))
+                    # Уменьшаем смещение для правого столбца
+                    self.screen.blit(value_text, (right_column_x + int(160 * (window_width / 700)), content_y_right))
+                content_y_right += line_height
 
 
 class InventoryWindow:
@@ -440,7 +460,7 @@ class InventoryWindow:
 
         # Слоты экипировки (адаптивные размеры)
         slot_y = y + int(40 * (height / 500))
-        slot_height = max(22, int(28 * (height / 500)))
+        slot_height = max(18, int(22 * (height / 500)))
 
         # Группировка слотов
         slot_groups = [
@@ -475,7 +495,7 @@ class InventoryWindow:
             # Название группы
             group_text = self.info_font.render(f"[{group_name}]", True, (180, 180, 200))
             self.screen.blit(group_text, (x + margin_left, slot_y))
-            slot_y += max(20, int(25 * (height / 500)))
+            slot_y += max(16, int(20 * (height / 500)))
 
             for slot in slots:
                 item = player.inventory.get_equipped_item(slot)
@@ -520,7 +540,7 @@ class InventoryWindow:
 
                 slot_y += slot_height
 
-            slot_y += max(8, int(10 * (height / 500)))
+            slot_y += max(6, int(8 * (height / 500)))
 
     def _render_inventory_panel(self, player, x, y, width, height):
         """Отрисовка панели предметов"""
@@ -1154,7 +1174,7 @@ class CharacterWindow:
             self.screen.blit(points_text, points_rect)
 
         # Отображение характеристик
-        stat_line_height = max(35, int(40 * scale_h))
+        stat_line_height = max(28, int(32 * scale_h))
         for i, (stat_key, stat_name) in enumerate(self.stats_list):
             display_y = stats_y + i * stat_line_height
 
@@ -1201,7 +1221,7 @@ class CharacterWindow:
                 self.screen.blit(plus_text, (window_x + window_width - int(120 * scale_w), display_y))
 
         # Дополнительная информация
-        additional_y = stats_y + len(self.stats_list) * stat_line_height + int(20 * scale_h)
+        additional_y = stats_y + len(self.stats_list) * stat_line_height + int(10 * scale_h)
 
         additional_info = [
             f"Здоровье: {player.health}/{player.max_health}",

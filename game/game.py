@@ -144,6 +144,9 @@ class Game:
         all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead
         self.performance_optimizer.rebuild_spatial_grid(all_npcs)
 
+        # Чит-режим (отключен по умолчанию)
+        self.cheat_mode_active = False
+
         print("Игра готова к запуску!")
 
     def _give_starting_items(self):
@@ -566,6 +569,14 @@ class Game:
             # Открыть/закрыть окно помощи
             self.help_window.toggle()
             return
+        elif key == pygame.K_F2:
+            # Включить/выключить чит-мод (бесконечное здоровье и выносливость)
+            self.cheat_mode_active = not self.cheat_mode_active
+            if self.cheat_mode_active:
+                print("ЧИТ-МОД АКТИВИРОВАН: Бесконечное здоровье и выносливость!")
+            else:
+                print("ЧИТ-МОД ОТКЛЮЧЕН")
+            return
 
         # Попытка переместить игрока
         if moved:
@@ -596,6 +607,28 @@ class Game:
 
     def _check_npc_nearby(self):
         """Проверить наличие NPC рядом с игроком и открыть меню взаимодействия"""
+        # Сначала проверяем, находимся ли мы в городе или деревне
+        tile = self.game_map.get_tile(self.player.x, self.player.y)
+        if tile.has_location():
+            location = tile.location
+            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
+                # Открываем торговое окно для города/деревни
+                # Создаем временного торговца для этой локации
+                if not hasattr(location, 'merchant_npc'):
+                    # Создаем постоянного торговца для этой локации
+                    merchant_level = 10 if location.location_type == LOCATION_CITY else 5
+                    location.merchant_npc = Merchant(f"Торговец {location.name}", self.player.x, self.player.y, merchant_level)
+                    # Пополняем товары
+                    location.merchant_npc.restock_goods()
+
+                self.nearby_npc = location.merchant_npc
+                self.trade_menu_open = True
+                self.trade_window.mode = "buy"
+                self.trade_window.selected_merchant_index = 0
+                self.trade_window.selected_player_index = 0
+                print(f"Добро пожаловать в {location.name}! Вы можете торговать здесь.")
+                return
+
         # Собираем всех NPC (включая miners и undead)
         all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead
 
@@ -611,7 +644,7 @@ class Game:
                 print(f"Вы встретили: {npc.name}")
                 return
 
-        print("Рядом нет NPC для взаимодействия!")
+        print("Рядом нет NPC для взаимодействия и вы не находитесь в городе/деревне!")
 
     def _collect_resources(self):
         """Собрать ресурсы с текущей локации"""
@@ -956,7 +989,12 @@ class Game:
     def _update(self):
         """Обновление состояния игры"""
         # AI стражников обновляется в методе advance_time
-        pass
+
+        # Чит-мод: восстанавливаем здоровье и выносливость
+        if self.cheat_mode_active:
+            self.player.health = self.player.max_health
+            self.player.stamina = self.player.max_stamina
+            self.player.is_resting = False
 
     def _update_camera(self):
         """Обновление позиции камеры, чтобы следить за игроком"""
@@ -1172,21 +1210,45 @@ class Game:
                     guard_screen_x = (guard.x - self.camera_x) * TILE_SIZE
                     guard_screen_y = (guard.y - self.camera_y) * TILE_SIZE
 
-                    # Цвет зависит от состояния стражника
-                    if guard.state == "rest":
-                        guard_color = (100, 100, 200)  # Синий оттенок для отдыха
-                    elif guard.state == "combat":
-                        guard_color = (50, 150, 255)   # Ярко-синий для боя
+                    # Цвет зависит от уровня стражника (4 варианта)
+                    if guard.level <= 7:
+                        # Новичок - светло-синий
+                        base_color = (100, 150, 255)
+                    elif guard.level <= 12:
+                        # Опытный - синий
+                        base_color = (50, 100, 220)
+                    elif guard.level <= 17:
+                        # Ветеран - темно-синий
+                        base_color = (30, 70, 180)
                     else:
-                        guard_color = (0, 100, 200)    # Темно-синий для патруля
+                        # Элита - фиолетово-синий
+                        base_color = (80, 50, 200)
 
-                    # Отрисовка стражника
+                    # Модификация цвета в зависимости от состояния
+                    if guard.state == "rest":
+                        guard_color = tuple(max(0, c - 40) for c in base_color)
+                    elif guard.state == "combat":
+                        guard_color = tuple(min(255, c + 40) for c in base_color)
+                    else:
+                        guard_color = base_color
+
+                    # Отрисовка стражника (круг с обводкой для элиты)
                     pygame.draw.circle(
                         self.screen,
                         guard_color,
                         (guard_screen_x + TILE_SIZE // 2, guard_screen_y + TILE_SIZE // 2),
                         TILE_SIZE // 3
                     )
+
+                    # Обводка для элитных стражников
+                    if guard.level > 17:
+                        pygame.draw.circle(
+                            self.screen,
+                            (200, 200, 50),
+                            (guard_screen_x + TILE_SIZE // 2, guard_screen_y + TILE_SIZE // 2),
+                            TILE_SIZE // 3,
+                            2
+                        )
 
         # Отрисовка торговцев
         for merchant in self.merchants:
@@ -1307,13 +1369,27 @@ class Game:
                     undead_screen_x = (undead_npc.x - self.camera_x) * TILE_SIZE
                     undead_screen_y = (undead_npc.y - self.camera_y) * TILE_SIZE
 
-                    # Цвет зависит от состояния нежити
-                    if undead_npc.state == "rest":
-                        undead_color = (80, 0, 80)  # Темно-фиолетовый для отдыха
-                    elif undead_npc.state == "combat":
-                        undead_color = (150, 0, 150)  # Ярко-фиолетовый для боя
+                    # Цвет зависит от уровня нежити (4 ранга)
+                    if undead_npc.level <= 10:
+                        # Зомби - серо-зеленый
+                        base_color = (80, 100, 80)
+                    elif undead_npc.level <= 20:
+                        # Скелет - серо-фиолетовый
+                        base_color = (120, 80, 120)
+                    elif undead_npc.level <= 30:
+                        # Мертвец - темно-фиолетовый
+                        base_color = (100, 0, 100)
                     else:
-                        undead_color = (100, 0, 100)  # Фиолетовый для патруля
+                        # Призрак - ярко-фиолетовый
+                        base_color = (150, 0, 150)
+
+                    # Модификация цвета в зависимости от состояния
+                    if undead_npc.state == "rest":
+                        undead_color = tuple(max(0, c - 30) for c in base_color)
+                    elif undead_npc.state == "combat":
+                        undead_color = tuple(min(255, c + 50) for c in base_color)
+                    else:
+                        undead_color = base_color
 
                     # Отрисовка нежити (ромб)
                     center_x = undead_screen_x + TILE_SIZE // 2
@@ -1332,6 +1408,15 @@ class Game:
                         undead_color,
                         points
                     )
+
+                    # Обводка для элитной нежити
+                    if undead_npc.level > 30:
+                        pygame.draw.polygon(
+                            self.screen,
+                            (255, 0, 255),
+                            points,
+                            2
+                        )
 
         # Отрисовка игрока (поверх всего остального)
         player_screen_x = (self.player.x - self.camera_x) * TILE_SIZE
