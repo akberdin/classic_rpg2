@@ -724,3 +724,185 @@ class TradeWindow:
                 (255, 215, 0)
             )
             self.screen.blit(price_text, (x + width - 80, items_y + display_index * item_height + 5))
+
+
+class CharacterWindow:
+    """Окно характеристик персонажа"""
+
+    def __init__(self, screen, font, info_font):
+        self.screen = screen
+        self.font = font
+        self.info_font = info_font
+        self.selected_stat_index = 0
+
+        # Список характеристик для навигации
+        self.stats_list = [
+            ('strength', 'Сила'),
+            ('dexterity', 'Ловкость'),
+            ('constitution', 'Телосложение'),
+            ('spirit', 'Дух'),
+            ('intelligence', 'Интеллект'),
+            ('luck', 'Удача')
+        ]
+
+    def render(self, player):
+        """
+        Отрисовка окна характеристик
+
+        Args:
+            player: Объект игрока
+        """
+        # Затемнение фона
+        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+        overlay.set_alpha(150)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, (0, 0))
+
+        # Размеры окна
+        window_width = 700
+        window_height = 600
+        window_x = (WINDOW_WIDTH - window_width) // 2
+        window_y = (WINDOW_HEIGHT - window_height) // 2
+
+        # Фон окна с градиентом
+        UIHelper.draw_gradient_rect(
+            self.screen, window_x, window_y, window_width, window_height,
+            (35, 35, 45), (55, 55, 70)
+        )
+
+        # Рамка
+        pygame.draw.rect(
+            self.screen,
+            (120, 120, 150),
+            (window_x, window_y, window_width, window_height),
+            3
+        )
+
+        # Заголовок
+        title_text = self.font.render("ХАРАКТЕРИСТИКИ ПЕРСОНАЖА", True, (255, 215, 0))
+        title_rect = title_text.get_rect()
+        title_rect.centerx = window_x + window_width // 2
+        title_rect.y = window_y + 10
+        self.screen.blit(title_text, title_rect)
+
+        # Информация о персонаже
+        info_y = window_y + 50
+        player_rank = player.get_rank()
+
+        info_lines = [
+            f"Имя: {player.name}",
+            f"Уровень: {player.level} ({player_rank})",
+            f"Опыт: {player.experience}/{player.experience_to_next_level}",
+            f"Золото: {player.inventory.gold}",
+        ]
+
+        for i, line in enumerate(info_lines):
+            info_text = self.info_font.render(line, True, (200, 200, 200))
+            self.screen.blit(info_text, (window_x + 50, info_y + i * 25))
+
+        # Разделитель
+        pygame.draw.line(
+            self.screen,
+            (100, 100, 120),
+            (window_x + 20, window_y + 180),
+            (window_x + window_width - 20, window_y + 180),
+            2
+        )
+
+        # Характеристики
+        stats_y = window_y + 200
+        stats = player.get_stats()
+        base_stats = player.get_base_stats()
+        equip_bonuses = player.inventory.get_total_stats_bonus()
+
+        # Свободные очки
+        if player.stat_points > 0:
+            points_text = self.font.render(
+                f"Свободных очков: {player.stat_points}",
+                True,
+                (100, 255, 100)
+            )
+            points_rect = points_text.get_rect()
+            points_rect.centerx = window_x + window_width // 2
+            points_rect.y = stats_y - 30
+            self.screen.blit(points_text, points_rect)
+
+        # Отображение характеристик
+        for i, (stat_key, stat_name) in enumerate(self.stats_list):
+            display_y = stats_y + i * 40
+
+            # Подсветка выбранной характеристики
+            if i == self.selected_stat_index:
+                pygame.draw.rect(
+                    self.screen,
+                    (80, 80, 100),
+                    (window_x + 40, display_y - 5, window_width - 80, 35)
+                )
+                pygame.draw.rect(
+                    self.screen,
+                    (120, 150, 200),
+                    (window_x + 40, display_y - 5, window_width - 80, 35),
+                    2
+                )
+
+            # Название характеристики
+            name_text = self.info_font.render(
+                f"{stat_name}:",
+                True,
+                (220, 220, 220)
+            )
+            self.screen.blit(name_text, (window_x + 60, display_y))
+
+            # Значение
+            base_value = base_stats[stat_key]
+            bonus = equip_bonuses.get(stat_key, 0)
+            total_value = stats[stat_key]
+
+            if bonus > 0:
+                value_str = f"{base_value} (+{bonus}) = {total_value}"
+                value_color = (150, 255, 150)
+            else:
+                value_str = f"{total_value}"
+                value_color = (200, 200, 200)
+
+            value_text = self.info_font.render(value_str, True, value_color)
+            self.screen.blit(value_text, (window_x + 300, display_y))
+
+            # Кнопка + для добавления очка
+            if player.stat_points > 0 and i == self.selected_stat_index:
+                plus_text = self.info_font.render("[+]", True, (100, 255, 100))
+                self.screen.blit(plus_text, (window_x + window_width - 120, display_y))
+
+        # Дополнительная информация
+        additional_y = stats_y + len(self.stats_list) * 40 + 20
+
+        additional_info = [
+            f"Здоровье: {player.health}/{player.max_health}",
+            f"Мана: {player.mana}/{player.max_mana}",
+            f"Выносливость: {player.stamina}/{player.max_stamina}",
+            f"Урон: {player.get_total_damage()}",
+            f"Защита: {player.get_total_defense()}",
+        ]
+
+        for i, line in enumerate(additional_info):
+            info_text = self.info_font.render(line, True, (180, 180, 200))
+            self.screen.blit(info_text, (window_x + 60, additional_y + i * 25))
+
+        # Подсказки внизу
+        hints_y = window_y + window_height - 40
+        if player.stat_points > 0:
+            hint_text = self.info_font.render(
+                "W/S - выбор | Enter - добавить очко | C/ESC - закрыть",
+                True,
+                (180, 180, 180)
+            )
+        else:
+            hint_text = self.info_font.render(
+                "C/ESC - закрыть",
+                True,
+                (180, 180, 180)
+            )
+        hint_rect = hint_text.get_rect()
+        hint_rect.centerx = window_x + window_width // 2
+        hint_rect.y = hints_y
+        self.screen.blit(hint_text, hint_rect)
