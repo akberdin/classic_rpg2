@@ -104,6 +104,59 @@ class Character:
         else:
             self.health = self.max_health
 
+    def get_effective_max_health(self):
+        """
+        Получить эффективное максимальное здоровье с учетом бонусов от экипировки
+
+        Returns:
+            int: Эффективное максимальное здоровье
+        """
+        base_max_health = self.constitution * 20
+
+        # Добавляем бонусы от экипировки
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            # Бонус к телосложению увеличивает здоровье
+            constitution_bonus = equipment_bonus.get('constitution', 0)
+            base_max_health += constitution_bonus * 20
+
+        return base_max_health
+
+    def get_effective_max_stamina(self):
+        """
+        Получить эффективную максимальную выносливость с учетом бонусов от экипировки
+
+        Returns:
+            int: Эффективная максимальная выносливость
+        """
+        base_strength = self.strength
+        base_constitution = self.constitution
+
+        # Добавляем бонусы от экипировки
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            base_strength += equipment_bonus.get('strength', 0)
+            base_constitution += equipment_bonus.get('constitution', 0)
+
+        return (base_strength + base_constitution) * STAMINA_PER_STAT_POINT
+
+    def get_effective_max_weight(self):
+        """
+        Получить эффективную максимальную грузоподъемность с учетом бонусов от экипировки
+
+        Returns:
+            int: Эффективная максимальная грузоподъемность
+        """
+        base_strength = self.strength
+
+        # Добавляем бонусы от экипировки
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            base_strength += equipment_bonus.get('strength', 0)
+
+        # Грузоподъемность = 50 + сила * 5
+        return 50 + base_strength * 5
+
     def consume_stamina(self, amount=STAMINA_COST_PER_MOVE):
         """
         Потратить выносливость
@@ -315,7 +368,7 @@ class Character:
         base_damage = self.strength
 
         # Добавляем бонусы к силе от экипировки (украшения и т.д.)
-        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+        if hasattr(self, 'inventory') and self.inventory and hasattr(self.inventory, 'get_total_stats_bonus'):
             equipment_bonus = self.inventory.get_total_stats_bonus()
             base_damage += equipment_bonus.get('strength', 0)
 
@@ -324,7 +377,7 @@ class Character:
             base_damage += self.temp_strength_boost
 
         # Если есть экипированное оружие
-        if hasattr(self, 'inventory'):
+        if hasattr(self, 'inventory') and self.inventory:
             from game.inventory import EquipmentSlot, WeaponItem
             weapon = self.inventory.get_equipped_item(EquipmentSlot.WEAPON)
             if weapon and isinstance(weapon, WeaponItem):
@@ -337,13 +390,13 @@ class Character:
         total_defense = 0
 
         # Добавляем бонусы к защите от телосложения (constitution) от экипировки
-        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+        if hasattr(self, 'inventory') and self.inventory and hasattr(self.inventory, 'get_total_stats_bonus'):
             equipment_bonus = self.inventory.get_total_stats_bonus()
             # Constitution даёт бонус к защите
             total_defense += equipment_bonus.get('constitution', 0)
 
         # Если есть экипированные доспехи
-        if hasattr(self, 'inventory'):
+        if hasattr(self, 'inventory') and self.inventory:
             from game.inventory import ArmorItem
             for item in self.inventory.equipment.values():
                 if item and isinstance(item, ArmorItem):
@@ -444,6 +497,22 @@ class Player(Character):
 
         # Флаг атаки от NPC (для принудительного открытия окна боя)
         self.attacked_by_npc = None
+
+    def get_effective_max_mana(self):
+        """
+        Получить эффективную максимальную ману с учетом бонусов от экипировки
+
+        Returns:
+            int: Эффективная максимальная мана
+        """
+        base_spirit = self.spirit
+
+        # Добавляем бонусы от экипировки
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            base_spirit += equipment_bonus.get('spirit', 0)
+
+        return base_spirit * 10
 
     def can_move_to(self, x, y, game_map):
         """
@@ -579,22 +648,31 @@ class Player(Character):
         Отдых - восстанавливает здоровье, ману и выносливость
         Занимает 1 час игрового времени
         """
-        # Восстанавливаем 30% от максимального здоровья
-        health_restored = int(self.max_health * 0.3)
-        self.health = min(self.max_health, self.health + health_restored)
+        # Используем эффективные значения с учетом бонусов от экипировки
+        effective_max_health = self.get_effective_max_health()
+        effective_max_mana = self.get_effective_max_mana()
+        effective_max_stamina = self.get_effective_max_stamina()
 
-        # Восстанавливаем 50% от максимальной маны
-        mana_restored = int(self.max_mana * 0.5)
-        self.mana = min(self.max_mana, self.mana + mana_restored)
+        # Восстанавливаем 30% от эффективного максимального здоровья
+        health_restored = int(effective_max_health * 0.3)
+        self.health = min(effective_max_health, self.health + health_restored)
+
+        # Восстанавливаем 50% от эффективной максимальной маны
+        mana_restored = int(effective_max_mana * 0.5)
+        self.mana = min(effective_max_mana, self.mana + mana_restored)
 
         # Восстанавливаем выносливость (используя активный отдых)
         old_stamina = self.stamina
+        # Временно устанавливаем max_stamina на эффективное значение
+        original_max_stamina = self.max_stamina
+        self.max_stamina = effective_max_stamina
         self.recover_stamina(is_active_rest=True)
+        self.max_stamina = original_max_stamina
         stamina_restored = self.stamina - old_stamina
 
-        print(f"Здоровье восстановлено: +{health_restored} ({self.health}/{self.max_health})")
-        print(f"Мана восстановлена: +{mana_restored} ({self.mana}/{self.max_mana})")
-        print(f"Выносливость восстановлена: +{stamina_restored} ({self.stamina}/{self.max_stamina})")
+        print(f"Здоровье восстановлено: +{health_restored} ({self.health}/{effective_max_health})")
+        print(f"Мана восстановлена: +{mana_restored} ({self.mana}/{effective_max_mana})")
+        print(f"Выносливость восстановлена: +{stamina_restored} ({self.stamina}/{effective_max_stamina})")
 
     def work(self, game_map=None):
         """
@@ -1079,19 +1157,22 @@ class Merchant(NPC):
         self.inventory.add_item(PREDEFINED_ITEMS["basic_pickaxe"], random.randint(1, 3))
         self.inventory.add_item(PREDEFINED_ITEMS["basic_axe"], random.randint(1, 3))
 
-        # Генерируем оружие (2-4 штуки)
+        # Генерируем оружие (2-4 штуки) с ограничением качества для магазина
         for _ in range(random.randint(2, 4)):
-            weapon = ItemGenerator.generate_weapon(self.level)
+            quality = ItemGenerator.generate_quality_for_shop()
+            weapon = ItemGenerator.generate_weapon(self.level, quality=quality)
             self.inventory.add_item(weapon, 1)
 
-        # Генерируем доспехи (3-6 штук)
+        # Генерируем доспехи (3-6 штук) с ограничением качества для магазина
         for _ in range(random.randint(3, 6)):
-            armor = ItemGenerator.generate_armor(self.level)
+            quality = ItemGenerator.generate_quality_for_shop()
+            armor = ItemGenerator.generate_armor(self.level, quality=quality)
             self.inventory.add_item(armor, 1)
 
-        # Генерируем украшения (1-3 штуки)
+        # Генерируем украшения (1-3 штуки) с ограничением качества для магазина
         for _ in range(random.randint(1, 3)):
-            jewelry = ItemGenerator.generate_jewelry(self.level)
+            quality = ItemGenerator.generate_quality_for_shop()
+            jewelry = ItemGenerator.generate_jewelry(self.level, quality=quality)
             self.inventory.add_item(jewelry, 1)
 
         # Генерируем ресурсы (2-4 вида)
@@ -1124,15 +1205,18 @@ class Merchant(NPC):
             self.inventory.add_item(PREDEFINED_ITEMS["basic_axe"], 1)
 
         if random.random() < 0.5:  # 50% шанс добавить оружие
-            weapon = ItemGenerator.generate_weapon(self.level)
+            quality = ItemGenerator.generate_quality_for_shop()
+            weapon = ItemGenerator.generate_weapon(self.level, quality=quality)
             self.inventory.add_item(weapon, 1)
 
         if random.random() < 0.5:  # 50% шанс добавить доспех
-            armor = ItemGenerator.generate_armor(self.level)
+            quality = ItemGenerator.generate_quality_for_shop()
+            armor = ItemGenerator.generate_armor(self.level, quality=quality)
             self.inventory.add_item(armor, 1)
 
         if random.random() < 0.3:  # 30% шанс добавить украшение
-            jewelry = ItemGenerator.generate_jewelry(self.level)
+            quality = ItemGenerator.generate_quality_for_shop()
+            jewelry = ItemGenerator.generate_jewelry(self.level, quality=quality)
             self.inventory.add_item(jewelry, 1)
 
     def set_settlements(self, settlements):
@@ -1420,9 +1504,10 @@ class MagicMerchant(Merchant):
         # Магические кристаллы
         self.inventory.add_item(PREDEFINED_ITEMS["magic_crystal"], random.randint(2, 5))
 
-        # Магические украшения (1-3 штуки)
+        # Магические украшения (1-3 штуки) с ограничением качества для магазина
         for _ in range(random.randint(1, 3)):
-            jewelry = ItemGenerator.generate_jewelry(self.level + 2)
+            quality = ItemGenerator.generate_quality_for_shop()
+            jewelry = ItemGenerator.generate_jewelry(self.level + 2, quality=quality)
             self.inventory.add_item(jewelry, 1)
 
     def restock_goods(self):
@@ -1443,9 +1528,10 @@ class MagicMerchant(Merchant):
         # Всегда добавляем зелья маны
         self.inventory.add_item(PREDEFINED_ITEMS["minor_mana_potion"], random.randint(2, 4))
 
-        # 40% шанс добавить украшение
+        # 40% шанс добавить украшение с ограничением качества для магазина
         if random.random() < 0.4:
-            jewelry = ItemGenerator.generate_jewelry(self.level + 2)
+            quality = ItemGenerator.generate_quality_for_shop()
+            jewelry = ItemGenerator.generate_jewelry(self.level + 2, quality=quality)
             self.inventory.add_item(jewelry, 1)
 
     def update_ai(self, game_map, all_npcs=None):

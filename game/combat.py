@@ -229,6 +229,42 @@ class CombatSystem:
         Returns:
             str: Результат боя
         """
+        # Обрабатываем статус-эффекты врага (яд, оглушение и т.д.)
+        if hasattr(self.enemy, 'status_effects'):
+            for effect in self.enemy.status_effects[:]:
+                message = effect.tick(self.enemy)
+                if message:
+                    self.add_to_log(message)
+                if effect.is_expired():
+                    remove_msg = effect.remove(self.enemy)
+                    if remove_msg:
+                        self.add_to_log(remove_msg)
+                    self.enemy.status_effects.remove(effect)
+
+            # Проверяем, не умер ли враг от яда
+            if not self.enemy.is_alive:
+                self.add_to_log(f"{self.enemy.name} погиб от эффектов!")
+
+                # Увеличиваем счетчик убитых врагов
+                if hasattr(self.player, 'enemies_killed'):
+                    self.player.enemies_killed += 1
+
+                # Даем опыт за победу
+                exp_gained = self.enemy.level * 20
+                self.player.add_experience(exp_gained)
+                self.add_to_log(f"Получено {exp_gained} опыта!")
+                return "victory"
+
+            # Проверяем оглушение врага
+            if hasattr(self.enemy, 'stunned') and self.enemy.stunned:
+                self.add_to_log(f"{self.enemy.name} оглушен и пропускает ход!")
+                # Снимаем оглушение
+                self.enemy.stunned = False
+                # Уменьшаем перезарядку умений игрока
+                self.player.skill_manager.tick_cooldowns()
+                self.turn = "player"
+                return "continue"
+
         # Враг всегда атакует
         attack_result = self.enemy.attack(self.player)
 
@@ -247,6 +283,15 @@ class CombatSystem:
                 if not self.player.is_alive:
                     self.add_to_log("Вы погибли!")
                     return "defeat"
+
+        # Уменьшаем перезарядку умений игрока после полного хода
+        self.player.skill_manager.tick_cooldowns()
+
+        # Обрабатываем статус-эффекты игрока (регенерация и т.д.)
+        if hasattr(self.player, 'skill_manager'):
+            effect_messages = self.player.skill_manager.tick_status_effects()
+            for msg in effect_messages:
+                self.add_to_log(msg)
 
         # Возвращаем ход игроку
         self.turn = "player"

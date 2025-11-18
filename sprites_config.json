@@ -47,6 +47,17 @@
     "hills": "assets/sprites/biomes/hills.png",
     "forest": "assets/sprites/biomes/forest.png"
   },
+  "skills": {
+    "basic_attack": "assets/sprites/skills/basic_attack.png",
+    "power_strike": "assets/sprites/skills/power_strike.png",
+    "poison_strike": "assets/sprites/skills/poison_strike.png",
+    "stun_strike": "assets/sprites/skills/stun_strike.png",
+    "battle_cry": "assets/sprites/skills/battle_cry.png",
+    "heal": "assets/sprites/skills/heal.png",
+    "regeneration": "assets/sprites/skills/regeneration.png",
+    "mining": "assets/sprites/skills/mining.png",
+    "lumberjacking": "assets/sprites/skills/lumberjacking.png"
+  },
   "sprite_size": 64,
-  "description": "Все спрайты должны быть размером 64x64 пикселя. Если файл не найден, используется геометрическая фигура."
+  "description": "Все спрайты должны быть размером 64x64 пикселя. Если файл не найден, используется геометрическая фигура или текст."
 }
