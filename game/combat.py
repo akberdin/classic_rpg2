@@ -96,7 +96,8 @@ class CombatSystem:
                 self.add_to_log(f"{self.enemy.name} увернулся от вашей атаки!")
             elif attack_result['hit']:
                 crit_msg = " КРИТИЧЕСКИЙ УДАР!" if attack_result['critical'] else ""
-                self.add_to_log(f"Вы атакуете {self.enemy.name} и наносите {attack_result['damage']} урона!{crit_msg}")
+                armor_msg = f" (броня заблокировала {attack_result['blocked_by_armor']} урона)" if attack_result['blocked_by_armor'] > 0 else ""
+                self.add_to_log(f"Вы атакуете {self.enemy.name} и наносите {attack_result['damage']} урона!{crit_msg}{armor_msg}")
 
                 if not self.enemy.is_alive:
                     self.add_to_log(f"Вы победили {self.enemy.name}!")
@@ -155,11 +156,17 @@ class CombatSystem:
             self.add_to_log(f"Вы увернулись от атаки {self.enemy.name}!")
         elif attack_result['hit']:
             crit_msg = " КРИТИЧЕСКИЙ УДАР!" if attack_result['critical'] else ""
-            self.add_to_log(f"{self.enemy.name} атакует вас и наносит {attack_result['damage']} урона!{crit_msg}")
 
-            if not self.player.is_alive:
-                self.add_to_log("Вы погибли!")
-                return "defeat"
+            # Проверяем режим бессмертия
+            if attack_result.get('godmode', False):
+                self.add_to_log(f"{self.enemy.name} атакует вас, но ЧИТ-МОД блокирует весь урон!")
+            else:
+                armor_msg = f" (ваша броня заблокировала {attack_result['blocked_by_armor']} урона)" if attack_result.get('blocked_by_armor', 0) > 0 else ""
+                self.add_to_log(f"{self.enemy.name} атакует вас и наносит {attack_result['damage']} урона!{crit_msg}{armor_msg}")
+
+                if not self.player.is_alive:
+                    self.add_to_log("Вы погибли!")
+                    return "defeat"
 
         # Возвращаем ход игроку
         self.turn = "player"

@@ -572,6 +572,7 @@ class Game:
         elif key == pygame.K_F2:
             # Включить/выключить чит-мод (бесконечное здоровье и выносливость)
             self.cheat_mode_active = not self.cheat_mode_active
+            self.player.godmode = self.cheat_mode_active  # Устанавливаем режим бессмертия
             if self.cheat_mode_active:
                 print("ЧИТ-МОД АКТИВИРОВАН: Бесконечное здоровье и выносливость!")
             else:
@@ -1136,18 +1137,36 @@ class Game:
                         color = COLORS.get(tile.biome, COLORS['background'])
 
                     # Если тайл не в текущей видимости, затемняем его
-                    if not self.fog_of_war.is_visible(map_x, map_y, self.player.x, self.player.y):
+                    is_visible = self.fog_of_war.is_visible(map_x, map_y, self.player.x, self.player.y)
+                    if not is_visible:
                         color = tuple(c // 2 for c in color)  # Затемняем цвет
                     else:
                         # Применяем оттенок времени суток только к видимым тайлам
                         color = self._apply_time_of_day_tint(color)
 
                     # Отрисовка тайла
-                    pygame.draw.rect(
-                        self.screen,
-                        color,
-                        (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
-                    )
+                    if tile.has_location() and is_visible:
+                        # Используем спрайт для видимой локации
+                        def draw_default():
+                            pygame.draw.rect(
+                                self.screen,
+                                color,
+                                (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
+                            )
+                        self.sprite_manager.render_location(
+                            self.screen,
+                            tile.location.location_type,
+                            screen_x,
+                            screen_y,
+                            draw_default
+                        )
+                    else:
+                        # Обычная отрисовка для биомов и невидимых локаций
+                        pygame.draw.rect(
+                            self.screen,
+                            color,
+                            (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
+                        )
                 else:
                     # Неисследованная область - туман войны
                     pygame.draw.rect(
