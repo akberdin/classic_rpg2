@@ -533,11 +533,19 @@ class WorldRenderer:
         player_screen_x = (self.game.player.x - camera_x) * TILE_SIZE
         player_screen_y = (self.game.player.y - camera_y) * TILE_SIZE
 
-        pygame.draw.circle(
-            self.game.screen,
-            COLORS['player'],
-            (player_screen_x + TILE_SIZE // 2, player_screen_y + TILE_SIZE // 2),
-            TILE_SIZE // 3
+        # Функция отрисовки по умолчанию (геометрическая фигура)
+        def draw_player_default():
+            pygame.draw.circle(
+                self.game.screen,
+                COLORS['player'],
+                (player_screen_x + TILE_SIZE // 2, player_screen_y + TILE_SIZE // 2),
+                TILE_SIZE // 3
+            )
+
+        # Отрисовка игрока (спрайт или геометрическая фигура)
+        self.game.sprite_manager.render_npc(
+            self.game.screen, 'player', player_screen_x, player_screen_y,
+            draw_player_default, self.game.player.level
         )
 
     def render_minimap(self):
