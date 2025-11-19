@@ -731,9 +731,14 @@ class Game:
                     # Выдаем все книги умений
                     from game.inventory import PREDEFINED_ITEMS
                     skill_books = [
+                        # Магические книги лечения
                         "book_heal", "book_regeneration",
+                        # Боевые умения
                         "book_power_strike", "book_poison_strike",
-                        "book_stun_strike", "book_battle_cry"
+                        "book_stun_strike", "book_battle_cry",
+                        # Атакующие магические умения
+                        "book_magic_missile", "book_fireball",
+                        "book_ice_bolt", "book_lightning"
                     ]
                     for book_id in skill_books:
                         if book_id in PREDEFINED_ITEMS:
@@ -931,21 +936,29 @@ class Game:
         Args:
             mouse_pos: Позиция мыши (x, y)
         """
-        from game.inventory import EquipmentItem
+        from game.inventory import EquipmentItem, SkillBookItem
 
         mouse_x, mouse_y = mouse_pos
 
         # Проверяем клик по предмету в инвентаре
         item = self.inventory_window.get_item_at_mouse(self.player, mouse_x, mouse_y)
         if item:
-            # Клик по предмету в инвентаре - экипировать его
+            # Клик по предмету в инвентаре
             if isinstance(item, EquipmentItem):
+                # Экипировать предмет
                 success, message = self.player.inventory.equip_item(item.name)
                 print(message)
                 if success:
                     self.player.update_derived_stats()
+            elif isinstance(item, SkillBookItem):
+                # Изучить умение из книги
+                result = item.use(self.player)
+                print(result)
+                # Если умение успешно изучено, удаляем книгу из инвентаря
+                if "Изучено умение" in result:
+                    self.player.inventory.remove_item(item.name, 1)
             else:
-                print("Этот предмет нельзя экипировать")
+                print("Этот предмет нельзя использовать таким образом")
             return
 
         # Проверяем клик по экипированному предмету

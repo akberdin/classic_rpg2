@@ -30,7 +30,7 @@ class SaveSystem:
         Returns:
             dict: Сериализованные данные предмета
         """
-        from game.inventory import EquipmentItem, WeaponItem, ArmorItem
+        from game.inventory import EquipmentItem, WeaponItem, ArmorItem, JewelryItem, ArtifactItem
 
         data = {
             'name': item.name,
@@ -43,19 +43,25 @@ class SaveSystem:
         if isinstance(item, EquipmentItem):
             data['is_equipment'] = True
             data['slot'] = item.slot.value
-            data['required_level'] = item.required_level
-            data['quality'] = item.quality.value
+            data['quality'] = item.quality.name  # Используем name для enum
             data['stats_bonus'] = item.stats_bonus
 
             if isinstance(item, WeaponItem):
                 data['weapon'] = True
-                data['damage'] = item.damage
-                data['weapon_type'] = item.weapon_type
+                data['base_damage'] = item.base_damage
+                data['weapon_type'] = item.weapon_type.name  # Сохраняем имя enum
 
-            if isinstance(item, ArmorItem):
+            elif isinstance(item, ArmorItem):
                 data['armor'] = True
-                data['defense'] = item.defense
-                data['armor_type'] = item.armor_type
+                data['base_defense'] = item.base_defense
+                data['armor_type'] = item.armor_type.name  # Сохраняем имя enum
+
+            elif isinstance(item, JewelryItem):
+                data['jewelry'] = True
+
+            elif isinstance(item, ArtifactItem):
+                data['artifact'] = True
+                data['special_effect'] = getattr(item, 'special_effect', None)
 
         # Для зелий и других простых предметов
         if hasattr(item, 'effect_type'):
@@ -77,48 +83,79 @@ class SaveSystem:
             Item: Восстановленный предмет
         """
         from game.inventory import (
-            Item, WeaponItem, ArmorItem, EquipmentItem,
-            EquipmentSlot, ItemQuality
+            Item, WeaponItem, ArmorItem, JewelryItem, ArtifactItem, EquipmentItem,
+            EquipmentSlot, ItemQuality, WeaponType, ArmorType
         )
 
         # Если это снаряжение
         if data.get('is_equipment', False):
             slot = EquipmentSlot(data['slot'])
-            quality = ItemQuality(data['quality'])
+            # Поддержка как name (новый формат), так и value (старый формат) для quality
+            quality_data = data['quality']
+            if isinstance(quality_data, str):
+                quality = ItemQuality[quality_data]  # По имени (новый формат)
+            else:
+                quality = ItemQuality(quality_data)  # По значению (старый формат)
 
             if data.get('weapon', False):
+                # Восстанавливаем WeaponType из имени
+                weapon_type_name = data.get('weapon_type', 'SWORD')
+                if isinstance(weapon_type_name, str):
+                    weapon_type = WeaponType[weapon_type_name]
+                else:
+                    weapon_type = WeaponType.SWORD  # Fallback
+
                 item = WeaponItem(
-                    name=data['name'],
-                    value=data['value'],
-                    weight=data['weight'],
-                    slot=slot,
-                    damage=data['damage'],
-                    required_level=data['required_level'],
-                    quality=quality,
-                    stats_bonus=data.get('stats_bonus', {}),
-                    weapon_type=data.get('weapon_type', 'Оружие')
+                    data['name'],
+                    weapon_type,
+                    data.get('base_damage', data.get('damage', 10)),  # Поддержка старого формата
+                    data['value'],
+                    quality,
+                    data.get('stats_bonus', {})
                 )
             elif data.get('armor', False):
+                # Восстанавливаем ArmorType из имени
+                armor_type_name = data.get('armor_type', 'MEDIUM')
+                if isinstance(armor_type_name, str):
+                    armor_type = ArmorType[armor_type_name]
+                else:
+                    armor_type = ArmorType.MEDIUM  # Fallback
+
                 item = ArmorItem(
-                    name=data['name'],
-                    value=data['value'],
-                    weight=data['weight'],
-                    slot=slot,
-                    defense=data['defense'],
-                    required_level=data['required_level'],
-                    quality=quality,
-                    stats_bonus=data.get('stats_bonus', {}),
-                    armor_type=data.get('armor_type', 'Доспех')
+                    data['name'],
+                    slot,
+                    armor_type,
+                    data.get('base_defense', data.get('defense', 5)),  # Поддержка старого формата
+                    data['value'],
+                    quality,
+                    data.get('stats_bonus', {})
+                )
+            elif data.get('jewelry', False):
+                item = JewelryItem(
+                    data['name'],
+                    slot,
+                    data['value'],
+                    quality,
+                    data.get('stats_bonus', {})
+                )
+            elif data.get('artifact', False):
+                item = ArtifactItem(
+                    data['name'],
+                    slot,
+                    data['value'],
+                    data.get('stats_bonus', {}),
+                    data.get('special_effect')
                 )
             else:
+                # Базовый EquipmentItem (для обратной совместимости)
                 item = EquipmentItem(
-                    name=data['name'],
-                    value=data['value'],
-                    weight=data['weight'],
-                    slot=slot,
-                    required_level=data['required_level'],
-                    quality=quality,
-                    stats_bonus=data.get('stats_bonus', {})
+                    data['name'],
+                    slot,
+                    data['value'],
+                    data.get('weight', 1.0),
+                    quality,
+                    data.get('stats_bonus', {}),
+                    data.get('description', '')
                 )
         else:
             # Обычный предмет

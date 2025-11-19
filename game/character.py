@@ -2398,10 +2398,14 @@ class Undead(NPC):
                 closest_enemy = player
                 closest_distance = distance
 
-        # Проверяем других NPC (нежита агрессивна ко ВСЕМ!)
+        # Проверяем других NPC (нежита агрессивна ко всем, кроме другой нежити!)
         if all_npcs:
             for npc in all_npcs:
                 if not npc.is_alive:
+                    continue
+
+                # Нежита не атакует другую нежить
+                if npc.npc_type == NPC_TYPE_UNDEAD:
                     continue
 
                 # Нежита враждебна ко всем живым существам
