@@ -26,6 +26,7 @@ from game.input_handler import InputHandler
 from game.world_renderer import WorldRenderer
 from game.game_time import GameTime
 from game.camera import Camera
+from game.respawn_manager import RespawnManager
 
 
 class Game:
@@ -141,6 +142,9 @@ class Game:
         print(f"Создано {len(self.bandits)} бандитов")
         print(f"Создано {len(self.miners)} шахтеров")
         print(f"Создано {len(self.undead)} нежити")
+
+        # Инициализация менеджера респавна
+        self.respawn_manager = RespawnManager(self.game_map)
 
         # Даем игроку стартовые предметы
         give_starting_items(self.player)
@@ -381,7 +385,7 @@ class Game:
             enemy: Враг для боя
         """
         print(f"Бой начался с {enemy.name}!")
-        self.combat_system = CombatSystem(self.player, enemy, self.screen, self.font, self.ui_scaler)
+        self.combat_system = CombatSystem(self.player, enemy, self.screen, self.font, self.ui_scaler, self.game_map, self.respawn_manager)
         self.in_combat = True
         self.nearby_npc = None
 

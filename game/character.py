@@ -321,18 +321,22 @@ class Character:
         if is_critical:
             total_damage *= 2
 
-        # Учитываем защиту цели с diminishing returns
+        # Учитываем защиту цели с улучшенными diminishing returns
         target_defense = target.get_total_defense()
 
-        # Diminishing returns: после soft cap (50) защита работает на 50%
-        defense_soft_cap = 50
+        # Улучшенные diminishing returns для баланса:
+        # - Soft cap снижен до 30 для раннего ограничения
+        # - После soft cap защита работает на 40%
+        # - Это предотвращает ситуации когда броня полностью блокирует урон
+        defense_soft_cap = 30
         if target_defense > defense_soft_cap:
-            effective_defense = defense_soft_cap + (target_defense - defense_soft_cap) * 0.5
+            effective_defense = defense_soft_cap + (target_defense - defense_soft_cap) * 0.4
         else:
             effective_defense = target_defense
 
-        # Защита снижает урон, но не может снизить его до нуля (минимум 1)
-        actual_damage = max(1, total_damage - effective_defense)
+        # Защита снижает урон, но не может снизить его ниже 15% от базового урона
+        min_damage = max(1, int(total_damage * 0.15))
+        actual_damage = max(min_damage, total_damage - int(effective_defense))
         blocked_by_armor = max(0, total_damage - actual_damage)
 
         # Применяем урон
@@ -624,9 +628,14 @@ class Player(Character):
         # Обновляем производные характеристики
         self.update_derived_stats()
 
-        # Обновляем максимальную ману
+        # Обновляем максимальную ману (пропорционально увеличиваем текущую)
+        old_max_mana = getattr(self, 'max_mana', 0)
         self.max_mana = self.spirit * 10
-        self.mana = self.max_mana
+        if old_max_mana > 0:
+            mana_diff = self.max_mana - old_max_mana
+            self.mana = min(self.max_mana, self.mana + mana_diff)
+        else:
+            self.mana = self.max_mana
 
         # Получаем ранг
         rank = self.get_rank()
@@ -662,10 +671,12 @@ class Player(Character):
             # Обновляем производные характеристики
             self.update_derived_stats()
 
-            # Обновляем максимальную ману если изменился дух
+            # Обновляем максимальную ману если изменился дух (пропорционально)
             if stat_name == 'spirit':
+                old_max_mana = self.max_mana
                 self.max_mana = self.spirit * 10
-                self.mana = self.max_mana
+                mana_diff = self.max_mana - old_max_mana
+                self.mana = min(self.max_mana, self.mana + mana_diff)
 
             # Обновляем грузоподъемность если изменилась сила
             if stat_name == 'strength':

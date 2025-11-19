@@ -40,7 +40,7 @@ def calculate_combat_exp(player_level, enemy_level, base_exp_per_level=20):
 class CombatSystem:
     """Класс управления боевой системой"""
 
-    def __init__(self, player, enemy, screen, font, scaler=None, game_map=None):
+    def __init__(self, player, enemy, screen, font, scaler=None, game_map=None, respawn_manager=None):
         """
         Инициализация боевой системы
 
@@ -51,6 +51,7 @@ class CombatSystem:
             font: Шрифт для отображения текста
             scaler: UIScaler для адаптивного масштабирования (опционально)
             game_map: Карта игры (для размещения лута)
+            respawn_manager: Менеджер респавна NPC
         """
         self.player = player
         self.enemy = enemy
@@ -58,6 +59,7 @@ class CombatSystem:
         self.font = font
         self.scaler = scaler
         self.game_map = game_map
+        self.respawn_manager = respawn_manager
         info_font_size = scaler.scale_font_size(20) if scaler else 20
         self.info_font = pygame.font.Font(None, info_font_size)
 
@@ -157,6 +159,10 @@ class CombatSystem:
                     if hasattr(self.player, 'enemies_killed'):
                         self.player.enemies_killed += 1
 
+                    # Регистрируем смерть NPC для респавна
+                    if self.respawn_manager:
+                        self.respawn_manager.register_death(self.enemy)
+
                     # Оставляем лут на тайле (если есть карта и у врага есть предметы)
                     if self.game_map and hasattr(self.enemy, 'inventory'):
                         if len(self.enemy.inventory.items) > 0 or self.enemy.inventory.gold > 0:
@@ -227,6 +233,10 @@ class CombatSystem:
                     if hasattr(self.player, 'enemies_killed'):
                         self.player.enemies_killed += 1
 
+                    # Регистрируем смерть NPC для респавна
+                    if self.respawn_manager:
+                        self.respawn_manager.register_death(self.enemy)
+
                     # Даем опыт за победу (с учётом разницы уровней)
                     exp_gained = calculate_combat_exp(self.player.level, self.enemy.level)
                     self.player.add_experience(exp_gained)
@@ -279,6 +289,10 @@ class CombatSystem:
                 # Увеличиваем счетчик убитых врагов
                 if hasattr(self.player, 'enemies_killed'):
                     self.player.enemies_killed += 1
+
+                # Регистрируем смерть NPC для респавна
+                if self.respawn_manager:
+                    self.respawn_manager.register_death(self.enemy)
 
                 # Даем опыт за победу (с учётом разницы уровней)
                 exp_gained = calculate_combat_exp(self.player.level, self.enemy.level)
