@@ -25,10 +25,10 @@
     "miner_expert": "assets/sprites/npcs/miner_expert.png",
 
     "undead": "assets/sprites/npcs/undead.png",
-    "undead_novice": "assets/sprites/npcs/undead_novice.png",
-    "undead_regular": "assets/sprites/npcs/undead_regular.png",
-    "undead_veteran": "assets/sprites/npcs/undead_veteran.png",
-    "undead_expert": "assets/sprites/npcs/undead_expert.png",
+    "undead_novice": "assets/actors/skeletons/skeleton1.png",
+    "undead_regular": "assets/actors/skeletons/skeleton2.png",
+    "undead_veteran": "assets/actors/skeletons/skeleton3.png",
+    "undead_expert": "assets/actors/skeletons/skeleton4.png",
 
     "mage": "assets/sprites/npcs/mage.png",
     "mage_novice": "assets/sprites/npcs/mage_novice.png",
