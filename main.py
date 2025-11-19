@@ -4,7 +4,7 @@
 """
 import pygame
 import sys
-from game.game import Game
+from game.engine import Game
 
 
 def main():
