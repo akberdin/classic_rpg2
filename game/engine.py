@@ -40,31 +40,23 @@ class Game:
             except Exception:
                 pass  # Игнорируем ошибки на не-Windows системах
 
-        # Получаем актуальное разрешение рабочего стола
-        desktop_sizes = pygame.display.get_desktop_sizes()
-        if desktop_sizes:
-            actual_width, actual_height = desktop_sizes[0]
-        else:
-            # Fallback на Info() если get_desktop_sizes() не сработал
-            display_info = pygame.display.Info()
-            actual_width = display_info.current_w
-            actual_height = display_info.current_h
+        # Создаем полноэкранное окно с нативным разрешением рабочего стола
+        # Передаем (0, 0) чтобы pygame использовал текущее разрешение без смены видеорежима
+        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 
-        # Используем фактическое разрешение экрана (не больше максимального из констант)
-        requested_width = min(actual_width, WINDOW_WIDTH)
-        requested_height = min(actual_height, WINDOW_HEIGHT)
-
-        # Создаем полноэкранное окно с определенным разрешением
-        # Используем pygame.SCALED для лучшего контроля над разрешением
-        self.screen = pygame.display.set_mode(
-            (requested_width, requested_height),
-            pygame.FULLSCREEN | pygame.SCALED
-        )
-
-        # ВАЖНО: Получаем ФАКТИЧЕСКИЕ размеры экрана после создания окна
-        # pygame.FULLSCREEN может изменить разрешение на поддерживаемое
+        # Получаем фактические размеры созданного окна
         self.window_width = self.screen.get_width()
         self.window_height = self.screen.get_height()
+
+        # Ограничиваем максимальными значениями из констант (на случай очень больших мониторов)
+        if self.window_width > WINDOW_WIDTH or self.window_height > WINDOW_HEIGHT:
+            self.window_width = min(self.window_width, WINDOW_WIDTH)
+            self.window_height = min(self.window_height, WINDOW_HEIGHT)
+            # Пересоздаём окно с ограниченным разрешением
+            self.screen = pygame.display.set_mode(
+                (self.window_width, self.window_height),
+                pygame.FULLSCREEN
+            )
 
         pygame.display.set_caption("Classic RPG")
 
