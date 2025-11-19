@@ -6,20 +6,25 @@ import random
 import ctypes
 import platform
 from game.map import GameMap
-from game.character import Player, Guard, Merchant, MagicMerchant, MagePatrol, Bandit, Miner, Undead
+from game.character import Player, Merchant
 from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
-from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS, EquipmentItem
+from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
 from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quests import QuestManager, AchievementManager, create_starter_quests
 from game.save_system import SaveSystem
-from game.skills import PowerStrike, Heal
 from game.constants import (
     FPS, TILE_SIZE, COLORS, WINDOW_WIDTH, WINDOW_HEIGHT,
-    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
-    LOCATION_MINE, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL
+    LOCATION_CITY, LOCATION_VILLAGE
 )
+
+# Импорт новых модулей
+from game.npc_spawner import NPCSpawner, give_starting_items
+from game.input_handler import InputHandler
+from game.world_renderer import WorldRenderer
+from game.game_time import GameTime
+from game.camera import Camera
 
 
 class Game:
@@ -54,7 +59,6 @@ class Game:
         pygame.display.set_caption("Classic RPG")
 
         # Создаем масштабировщик UI для адаптивности
-        # Масштабирует элементы от базового разрешения (BASE_WIDTH x BASE_HEIGHT) к фактическому
         self.ui_scaler = UIScaler(self.window_width, self.window_height)
 
         print(f"Инициализация игры с разрешением: {self.window_width}x{self.window_height}")
@@ -62,10 +66,6 @@ class Game:
         # Часы для контроля FPS
         self.clock = pygame.time.Clock()
         self.running = True
-
-        # Игровое время (часы и дни)
-        self.game_hour = 6  # Начало игры в 6 утра
-        self.game_day = 1
 
         # Генерация карты
         print("Генерация карты...")
@@ -79,10 +79,12 @@ class Game:
         self.fog_of_war = FogOfWar(self.game_map)
         self.fog_of_war.update_vision(self.player.x, self.player.y)
 
-        # Камера (смещение для отображения карты)
-        self.camera_x = 0
-        self.camera_y = 0
-        self._update_camera()
+        # Инициализация игрового времени
+        self.game_time = GameTime(self)
+
+        # Инициализация камеры
+        self.camera = Camera(self)
+        self.camera.update()
 
         # Шрифт для текста (адаптивные размеры)
         font_size = self.ui_scaler.scale_font_size(24)
@@ -119,32 +121,16 @@ class Game:
         self.sprite_manager = SpriteManager(tile_size=TILE_SIZE)
         print(f"Менеджер спрайтов инициализирован")
 
-        # Создание стражников в городах
-        self.guards = []
-        self._spawn_guards()
+        # Создание NPC с помощью спавнера
+        npc_spawner = NPCSpawner(self.game_map)
+        npcs = npc_spawner.spawn_all_npcs()
 
-        # Создание торговцев
-        self.merchants = []
-        self._spawn_merchants()
-
-        # Создание магического торговца в академии магии
-        self._spawn_magic_merchant()
-
-        # Создание магов-патрульных у академии магии
-        self.mages = []
-        self._spawn_mages()
-
-        # Создание бандитов в лагерях
-        self.bandits = []
-        self._spawn_bandits()
-
-        # Создание шахтеров в шахтах
-        self.miners = []
-        self._spawn_miners()
-
-        # Создание нежити в руинах
-        self.undead = []
-        self._spawn_undead()
+        self.guards = npcs['guards']
+        self.merchants = npcs['merchants']
+        self.mages = npcs['mages']
+        self.bandits = npcs['bandits']
+        self.miners = npcs['miners']
+        self.undead = npcs['undead']
 
         print(f"Игрок создан на позиции ({self.player.x}, {self.player.y})")
         print(f"Создано {len(self.guards)} стражников")
@@ -155,7 +141,7 @@ class Game:
         print(f"Создано {len(self.undead)} нежити")
 
         # Даем игроку стартовые предметы
-        self._give_starting_items()
+        give_starting_items(self.player)
 
         # Инициализация оптимизатора производительности
         self.performance_optimizer = PerformanceOptimizer()
@@ -170,7 +156,6 @@ class Game:
         self.achievement_manager = AchievementManager()
 
         # Даем игроку стартовые умения
-        from game.skills import BasicAttack, Mining, Lumberjacking
         self.player.skill_manager.learn_skill('basic_attack')  # Базовая атака
         self.player.skill_manager.learn_skill('mining')  # Рудокоп ранг 1
         self.player.skill_manager.learn_skill('lumberjacking')  # Лесоруб ранг 1
@@ -190,368 +175,13 @@ class Game:
         self.cheat_mode_active = False
         self.cheat_gold_given = False  # Флаг для выдачи золота один раз
 
+        # Инициализация обработчика ввода
+        self.input_handler = InputHandler(self)
+
+        # Инициализация рендерера мира
+        self.world_renderer = WorldRenderer(self)
+
         print("Игра готова к запуску!")
-
-    def _give_starting_items(self):
-        """Дать игроку стартовые предметы"""
-        from game.inventory import ItemGenerator, ItemQuality
-
-        # Начальное золото
-        self.player.inventory.add_gold(50)
-
-        # Стартовые зелья
-        self.player.inventory.add_item(PREDEFINED_ITEMS["minor_health_potion"], 2)
-        self.player.inventory.add_item(PREDEFINED_ITEMS["minor_stamina_potion"], 1)
-
-        # Стартовое оружие - топор для рубки леса
-        starter_axe = PREDEFINED_ITEMS["basic_axe"]
-        self.player.inventory.add_item(starter_axe, 1)
-        self.player.inventory.equip_item(starter_axe.name)
-
-        # Генерируем простой доспех для торса
-        starter_chest = ItemGenerator.generate_armor(level=1, quality=ItemQuality.COMMON)
-        self.player.inventory.add_item(starter_chest, 1)
-        if starter_chest.slot.value == "chest":
-            self.player.inventory.equip_item(starter_chest.name)
-
-        # Обновляем производные характеристики после экипировки
-        self.player.update_derived_stats()
-
-    def _spawn_guards(self):
-        """Создание стражников в городах"""
-        # Находим все города на карте
-        cities = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_CITY]
-
-        for city in cities:
-            # Создаем 6-10 стражников возле каждого города (увеличено с 3-5)
-            num_guards = random.randint(6, 10)
-
-            for i in range(num_guards):
-                # Находим позицию рядом с городом
-                guard_pos = self._find_guard_position(city.x, city.y)
-                if guard_pos:
-                    gx, gy = guard_pos
-                    # Уровень стражников от 5 до 20
-                    guard_level = random.randint(5, 20)
-                    guard = Guard(f"Стражник {city.name}", gx, gy, guard_level)
-
-                    # Создаем маршрут патрулирования вокруг города
-                    patrol_route = self._create_patrol_route(gx, gy, radius=5)
-                    guard.set_patrol_route(patrol_route)
-
-                    self.guards.append(guard)
-
-    def _find_guard_position(self, center_x, center_y):
-        """Найти позицию для стражника рядом с городом"""
-        for radius in range(1, 5):
-            for dx in range(-radius, radius + 1):
-                for dy in range(-radius, radius + 1):
-                    x = center_x + dx
-                    y = center_y + dy
-
-                    if self.game_map.is_valid_position(x, y):
-                        tile = self.game_map.get_tile(x, y)
-                        if tile.is_passable() and not tile.has_location():
-                            return (x, y)
-        return None
-
-    def _create_patrol_route(self, center_x, center_y, radius=5):
-        """Создать маршрут патрулирования вокруг точки"""
-        route = [
-            (center_x + radius, center_y),
-            (center_x + radius, center_y + radius),
-            (center_x, center_y + radius),
-            (center_x - radius, center_y + radius),
-            (center_x - radius, center_y),
-            (center_x - radius, center_y - radius),
-            (center_x, center_y - radius),
-            (center_x + radius, center_y - radius),
-        ]
-        return route
-
-    def _spawn_merchants(self):
-        """Создание торговцев, курсирующих между населенными пунктами"""
-        # Находим все города и деревни на карте
-        settlements = [loc for loc in self.game_map.locations
-                      if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]]
-
-        if len(settlements) < 2:
-            # Нужно как минимум 2 населенных пункта для торговцев
-            return
-
-        # Создаем 10-15 торговцев (увеличено с 5-8)
-        num_merchants = random.randint(10, 15)
-
-        for i in range(num_merchants):
-            # Выбираем случайный стартовый населенный пункт
-            start_settlement = random.choice(settlements)
-
-            # Находим позицию рядом с населенным пунктом
-            merchant_pos = self._find_guard_position(start_settlement.x, start_settlement.y)
-
-            if merchant_pos:
-                mx, my = merchant_pos
-                # Уровень торговцев от 2 до 8
-                merchant_level = random.randint(2, 8)
-                merchant_names = [
-                    "Торговец Иван", "Купец Петр", "Торговка Мария",
-                    "Купец Василий", "Торговец Николай", "Купчиха Анна",
-                    "Странствующий торговец", "Заезжий купец"
-                ]
-                merchant_name = random.choice(merchant_names)
-
-                merchant = Merchant(merchant_name, mx, my, merchant_level)
-                merchant.set_settlements(settlements)
-
-                self.merchants.append(merchant)
-
-    def _spawn_magic_merchant(self):
-        """Создание магического торговца в академии магии"""
-        # Находим академию магии
-        magic_school = None
-        for loc in self.game_map.locations:
-            if loc.location_type == LOCATION_MAGIC_SCHOOL:
-                magic_school = loc
-                break
-
-        if not magic_school:
-            return
-
-        # Находим позицию рядом с академией
-        merchant_pos = self._find_guard_position(magic_school.x, magic_school.y)
-
-        if merchant_pos:
-            mx, my = merchant_pos
-            merchant_names = [
-                "Архимаг Мерлин", "Чародей Гендальф", "Волшебница Моргана",
-                "Мудрец Альбус", "Маг Радагаст", "Колдунья Цирцея"
-            ]
-            merchant_name = random.choice(merchant_names)
-
-            magic_merchant = MagicMerchant(merchant_name, mx, my, level=8)
-            self.merchants.append(magic_merchant)
-            print(f"Создан магический торговец '{merchant_name}' в академии магии")
-
-    def _spawn_mages(self):
-        """Создание магов-патрульных в академии магии"""
-        # Находим академию магии
-        magic_school = None
-        for loc in self.game_map.locations:
-            if loc.location_type == LOCATION_MAGIC_SCHOOL:
-                magic_school = loc
-                break
-
-        if not magic_school:
-            return
-
-        # Создаем 3-5 магов-патрульных возле академии
-        num_mages = random.randint(3, 5)
-
-        for i in range(num_mages):
-            # Находим позицию рядом с академией (в пределах 10 клеток)
-            mage_pos = None
-            for attempt in range(20):
-                offset_x = random.randint(-10, 10)
-                offset_y = random.randint(-10, 10)
-                mx = magic_school.x + offset_x
-                my = magic_school.y + offset_y
-
-                if self.game_map.is_valid_position(mx, my):
-                    tile = self.game_map.get_tile(mx, my)
-                    if tile.is_passable():
-                        mage_pos = (mx, my)
-                        break
-
-            if mage_pos:
-                mx, my = mage_pos
-                # Уровень магов от 8 до 20
-                mage_level = random.randint(8, 20)
-                mage_names = [
-                    "Адепт", "Чародей", "Волшебник", "Маг",
-                    "Заклинатель", "Колдун", "Ученик мага", "Магистр"
-                ]
-                mage_name = f"{random.choice(mage_names)} {magic_school.name}"
-
-                # Создаем мага с привязкой к академии
-                mage = MagePatrol(mage_name, mx, my, mage_level, magic_school.x, magic_school.y)
-
-                self.mages.append(mage)
-
-        print(f"Создано {len(self.mages)} магов-патрульных в академии магии")
-
-    def _spawn_bandits(self):
-        """Создание бандитов в лагерях"""
-        # Находим все бандитские лагеря на карте
-        bandit_camps = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_BANDIT_CAMP]
-
-        for camp in bandit_camps:
-            # Создаем 7-12 бандитов возле каждого лагеря (увеличено с 4-7)
-            num_bandits = random.randint(7, 12)
-
-            for i in range(num_bandits):
-                # Находим позицию рядом с лагерем
-                bandit_pos = self._find_guard_position(camp.x, camp.y)
-                if bandit_pos:
-                    bx, by = bandit_pos
-                    # Уровень бандитов от 3 до 15
-                    bandit_level = random.randint(3, 15)
-                    bandit_names = [
-                        "Бандит", "Разбойник", "Головорез", "Грабитель",
-                        "Налетчик", "Лихой человек", "Бандюган", "Воришка"
-                    ]
-                    bandit_name = f"{random.choice(bandit_names)} {camp.name}"
-
-                    # Создаем бандита с привязкой к лагерю
-                    bandit = Bandit(bandit_name, bx, by, bandit_level, camp.x, camp.y)
-
-                    self.bandits.append(bandit)
-
-    def _spawn_miners(self):
-        """Создание шахтеров в шахтах"""
-        # Находим все шахты на карте
-        mines = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_MINE]
-
-        for mine in mines:
-            # Создаем 5-8 шахтеров возле каждой шахты (увеличено с 3-5)
-            num_miners = random.randint(5, 8)
-
-            for i in range(num_miners):
-                # Находим позицию рядом с шахтой
-                miner_pos = self._find_guard_position(mine.x, mine.y)
-                if miner_pos:
-                    mx, my = miner_pos
-                    # Уровень шахтеров от 2 до 8
-                    miner_level = random.randint(2, 8)
-                    miner_names = [
-                        "Шахтер", "Рудокоп", "Горняк", "Копатель"
-                    ]
-                    miner_name = f"{random.choice(miner_names)} {mine.name}"
-
-                    # Создаем шахтера с привязкой к шахте
-                    miner = Miner(miner_name, mx, my, miner_level, mine.x, mine.y)
-
-                    self.miners.append(miner)
-
-    def _spawn_undead(self):
-        """Создание нежити в руинах"""
-        # Находим все руины на карте
-        ruins = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_RUINS]
-
-        for ruin in ruins:
-            # Создаем 5-10 нежити возле каждых руин (увеличено с 3-6)
-            num_undead = random.randint(5, 10)
-
-            for i in range(num_undead):
-                # Находим позицию рядом с руинами (в пределах 7 клеток)
-                undead_pos = None
-                for attempt in range(20):
-                    offset_x = random.randint(-7, 7)
-                    offset_y = random.randint(-7, 7)
-                    ux = ruin.x + offset_x
-                    uy = ruin.y + offset_y
-
-                    if self.game_map.is_valid_position(ux, uy):
-                        tile = self.game_map.get_tile(ux, uy)
-                        if tile.is_passable():
-                            undead_pos = (ux, uy)
-                            break
-
-                if undead_pos:
-                    ux, uy = undead_pos
-                    # 4 ранга нежити (уровни распределяем от 1 до 40)
-                    undead_level = random.randint(1, 40)
-                    undead_names = [
-                        "Зомби", "Скелет", "Мертвец", "Призрак",
-                        "Нежить", "Упырь", "Костяк", "Тень"
-                    ]
-                    undead_name = f"{random.choice(undead_names)} {ruin.name}"
-
-                    # Создаем нежить с привязкой к руинам
-                    undead = Undead(undead_name, ux, uy, undead_level, ruin.x, ruin.y)
-
-                    self.undead.append(undead)
-
-    def advance_time(self, hours=1, skip_player_recovery=False):
-        """
-        Продвинуть игровое время на указанное количество часов
-
-        Args:
-            hours: Количество часов для продвижения
-            skip_player_recovery: Не восстанавливать выносливость игрока (используется при отдыхе)
-        """
-        self.game_hour += hours
-
-        # Если прошло 24 часа, начинается новый день
-        while self.game_hour >= 24:
-            self.game_hour -= 24
-            self.game_day += 1
-
-        # Обновляем AI всех NPC при изменении времени
-        for _ in range(hours):
-            # Восстанавливаем выносливость игрока (если не пропускаем)
-            if not skip_player_recovery:
-                self.player.recover_stamina()
-
-            # Обновляем перезарядки навыков и статус-эффекты игрока
-            self.player.skill_manager.tick_cooldowns()
-            effect_messages = self.player.skill_manager.tick_status_effects()
-            for msg in effect_messages:
-                print(msg)
-
-            # Перестраиваем spatial grid для оптимизации
-            all_npcs = self.guards + self.merchants + self.mages + self.bandits + self.miners + self.undead
-            self.performance_optimizer.rebuild_spatial_grid(all_npcs)
-
-            # Увеличиваем счетчик для оптимизации AI
-            self.performance_optimizer.increment_counter()
-
-            # Обновляем AI только тех NPC, которых нужно обновлять в этом кадре
-            for guard in self.guards:
-                if self.performance_optimizer.should_update_ai(guard, self.player.x, self.player.y):
-                    guard.update_ai(self.game_map, all_npcs)
-
-            for merchant in self.merchants:
-                if self.performance_optimizer.should_update_ai(merchant, self.player.x, self.player.y):
-                    merchant.update_ai(self.game_map, all_npcs)
-
-            for mage in self.mages:
-                if self.performance_optimizer.should_update_ai(mage, self.player.x, self.player.y):
-                    mage.update_ai(self.game_map, all_npcs, self.player)
-
-            for bandit in self.bandits:
-                if self.performance_optimizer.should_update_ai(bandit, self.player.x, self.player.y):
-                    bandit.update_ai(self.game_map, all_npcs, self.player)
-
-            for miner in self.miners:
-                if self.performance_optimizer.should_update_ai(miner, self.player.x, self.player.y):
-                    miner.update_ai(self.game_map, all_npcs)
-
-            for undead_npc in self.undead:
-                if self.performance_optimizer.should_update_ai(undead_npc, self.player.x, self.player.y):
-                    undead_npc.update_ai(self.game_map, all_npcs, self.player)
-
-        # Проверяем, атаковал ли кто-то игрока (принудительное открытие окна боя)
-        if self.player.attacked_by_npc and not self.in_combat:
-            attacker = self.player.attacked_by_npc
-            self.player.attacked_by_npc = None  # Сбрасываем флаг
-            if attacker.is_alive:  # Проверяем что атакующий еще жив
-                self._start_combat(attacker)
-                print(f"{attacker.name} напал на вас!")
-
-        # Проверяем достижения
-        unlocked = self.achievement_manager.check_achievements(self.player)
-        for achievement in unlocked:
-            print(f"🏆 Достижение разблокировано: {achievement.name}!")
-            print(f"   {achievement.description}")
-
-    def get_time_string(self):
-        """
-        Получить строковое представление времени
-
-        Returns:
-            str: Время в формате "День X, ЧЧ:00"
-        """
-        return f"День {self.game_day}, {self.game_hour:02d}:00"
 
     def run(self):
         """Главный игровой цикл"""
@@ -608,37 +238,37 @@ class Game:
             # Если открыто меню взаимодействия, обрабатываем выбор
             if self.interaction_menu_open:
                 if event.type == pygame.KEYDOWN:
-                    self._handle_interaction_choice(event.key)
+                    self.input_handler.handle_interaction_choice(event.key)
                 continue
 
             # Если открыто меню инвентаря, обрабатываем его
             if self.inventory_menu_open:
                 if event.type == pygame.KEYDOWN:
-                    self._handle_inventory_input(event.key)
+                    self.input_handler.handle_inventory_input(event.key)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 3:  # ПКМ
-                        self._handle_inventory_right_click(event.pos)
+                        self.input_handler.handle_inventory_right_click(event.pos)
                 continue
 
             # Если открыто меню торговли, обрабатываем его
             if self.trade_menu_open:
                 if event.type == pygame.KEYDOWN:
-                    self._handle_trade_input(event.key)
+                    self.input_handler.handle_trade_input(event.key)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 3:  # ПКМ
-                        self._handle_trade_right_click(event.pos)
+                        self.input_handler.handle_trade_right_click(event.pos)
                 continue
 
             # Если открыто окно характеристик, обрабатываем его
             if self.character_menu_open:
                 if event.type == pygame.KEYDOWN:
-                    self._handle_character_input(event.key)
+                    self.input_handler.handle_character_input(event.key)
                 continue
 
             # Если открыто окно книги умений, обрабатываем его
             if self.skill_book_menu_open:
                 if event.type == pygame.KEYDOWN:
-                    self._handle_skill_book_input(event.key)
+                    self.input_handler.handle_skill_book_input(event.key)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     # Обработка событий мыши в книге умений
                     self.skill_book_window.handle_mouse_event(event, self.player)
@@ -652,180 +282,7 @@ class Game:
 
             # Обработка нажатий клавиш
             if event.type == pygame.KEYDOWN:
-                self._handle_key_press(event.key)
-
-    def _handle_key_press(self, key):
-        """
-        Обработка нажатия клавиш
-
-        Args:
-            key: Код нажатой клавиши
-        """
-        # Движение игрока (стрелки или WASD)
-        moved = False
-        new_x, new_y = self.player.x, self.player.y
-
-        if key == pygame.K_UP or key == pygame.K_w:
-            new_y -= 1
-            moved = True
-        elif key == pygame.K_DOWN or key == pygame.K_s:
-            new_y += 1
-            moved = True
-        elif key == pygame.K_LEFT or key == pygame.K_a:
-            new_x -= 1
-            moved = True
-        elif key == pygame.K_RIGHT or key == pygame.K_d:
-            new_x += 1
-            moved = True
-        elif key == pygame.K_r:
-            # Отдых - восстанавливает здоровье и ману, занимает 1 час
-            self.player.rest()
-            self.advance_time(1, skip_player_recovery=True)
-            print(f"Вы отдохнули. {self.get_time_string()}")
-            return
-        elif key == pygame.K_ESCAPE:
-            self.running = False
-        elif key == pygame.K_e:
-            # Взаимодействие с NPC
-            self._check_npc_nearby()
-            return
-        elif key == pygame.K_f:
-            # Сбор ресурсов с локации
-            self._collect_resources()
-            return
-        elif key == pygame.K_F5:
-            # Быстрое сохранение
-            SaveSystem.save_game(self, "autosave")
-            print("Игра сохранена!")
-            return
-        elif key == pygame.K_F9:
-            # Быстрая загрузка (не реализована в этой версии - требует рестарта)
-            print("Для загрузки используйте параметр при запуске игры")
-            return
-        elif key == pygame.K_k:
-            # Открыть/закрыть книгу умений
-            self.skill_book_menu_open = not getattr(self, 'skill_book_menu_open', False)
-            return
-        elif key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4,
-                     pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8]:
-            # Использовать умение из слота (клавиши 1-8)
-            slot_index = key - pygame.K_1  # Преобразуем код клавиши в индекс слота (0-7)
-            skill = self.player.skill_manager.get_slot_skill(slot_index)
-            if skill:
-                # Используем умение вне боя (применяется только к ремесленным умениям)
-                if skill.category.value == 'crafting':
-                    # Проверяем требования к местности для ремесленных умений
-                    tile = self.game_map.get_tile(self.player.x, self.player.y)
-                    biome = tile.biome
-                    location = tile.location if tile.has_location() else None
-
-                    skill_id = self.player.skill_manager.skill_slots[slot_index]
-
-                    # Проверяем рудокопство
-                    if skill_id == 'mining':
-                        mining = self.player.profession_manager.get_profession('mining')
-                        can_use, msg = mining.can_use(self.player, location)
-                        if not can_use:
-                            print(msg)
-                            return
-
-                    # Проверяем лесорубство
-                    elif skill_id == 'lumberjacking':
-                        lumberjacking = self.player.profession_manager.get_profession('lumberjacking')
-                        can_use, msg = lumberjacking.can_use(self.player, biome)
-                        if not can_use:
-                            print(msg)
-                            return
-
-                    result = self.player.skill_manager.use_skill_from_slot(slot_index)
-                    print(result['message'])
-                else:
-                    print(f"{skill.name} можно использовать только в бою!")
-            else:
-                print(f"Слот {slot_index + 1} пуст!")
-            return
-        elif key == pygame.K_i:
-            # Открыть/закрыть инвентарь
-            self.inventory_menu_open = not self.inventory_menu_open
-            return
-        elif key == pygame.K_c:
-            # Открыть/закрыть окно характеристик
-            self.character_menu_open = not self.character_menu_open
-            return
-        elif key == pygame.K_F1:
-            # Открыть/закрыть окно помощи
-            self.help_window.toggle()
-            return
-        elif key == pygame.K_F2:
-            # Включить/выключить чит-мод
-            self.cheat_mode_active = not self.cheat_mode_active
-            self.player.godmode = self.cheat_mode_active  # Устанавливаем режим бессмертия
-            if self.cheat_mode_active:
-                print("ЧИТ-МОД АКТИВИРОВАН:")
-                print("- Бесконечное здоровье и выносливость")
-                print("- Вся карта открыта")
-                print("- Туман войны отключен")
-
-                # Выдаем золото один раз при активации
-                if not self.cheat_gold_given:
-                    self.player.inventory.add_gold(5000)
-                    print("- Получено 5000 золота")
-
-                    # Выдаем все книги умений
-                    from game.inventory import PREDEFINED_ITEMS
-                    skill_books = [
-                        # Магические книги лечения
-                        "book_heal", "book_regeneration",
-                        # Боевые умения
-                        "book_power_strike", "book_poison_strike",
-                        "book_stun_strike", "book_battle_cry",
-                        # Атакующие магические умения
-                        "book_magic_missile", "book_fireball",
-                        "book_ice_bolt", "book_lightning"
-                    ]
-                    for book_id in skill_books:
-                        if book_id in PREDEFINED_ITEMS:
-                            self.player.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
-                    print("- Получены книги всех умений")
-
-                    self.cheat_gold_given = True
-
-                # Открываем всю карту (устанавливаем explored для всех тайлов)
-                for x in range(self.game_map.width):
-                    for y in range(self.game_map.height):
-                        tile = self.game_map.get_tile(x, y)
-                        if tile:
-                            tile.explored = True
-            else:
-                print("ЧИТ-МОД ОТКЛЮЧЕН")
-            return
-
-        # Попытка переместить игрока
-        if moved:
-            # Проверяем выносливость перед движением
-            if self.player.is_resting:
-                print("Вы слишком устали и должны отдохнуть!")
-                return
-
-            if not self.player.consume_stamina():
-                print("У вас недостаточно выносливости! Нажмите R для отдыха.")
-                return
-
-            if self.player.move_to(new_x, new_y, self.game_map):
-                # Продвигаем время на 1 час за перемещение
-                self.advance_time(1)
-
-                # Обновляем туман войны
-                self.fog_of_war.update_vision(self.player.x, self.player.y)
-                # Обновляем камеру
-                self._update_camera()
-
-                # Проверяем, есть ли локация на новой позиции
-                tile = self.game_map.get_tile(self.player.x, self.player.y)
-                if tile.has_location():
-                    print(f"Вы прибыли в: {tile.location.name}")
-                    print(f"  {tile.location.get_description()}")
-                    print(f"Время: {self.get_time_string()}")
+                self.input_handler.handle_key_press(event.key)
 
     def _check_npc_nearby(self):
         """Проверить наличие NPC рядом с игроком и открыть меню взаимодействия"""
@@ -911,495 +368,8 @@ class Game:
         self.player.visited_location_types.add(location.location_type)
 
         # Продвигаем время на 1 час
-        self.advance_time(1)
-        print(f"Время: {self.get_time_string()}")
-
-    def _handle_inventory_input(self, key):
-        """
-        Обработка ввода в меню инвентаря
-
-        Args:
-            key: Нажатая клавиша
-        """
-        if key == pygame.K_ESCAPE or key == pygame.K_i:
-            self.inventory_menu_open = False
-            return
-
-        all_items = self.player.inventory.get_all_items()
-
-        if key == pygame.K_UP or key == pygame.K_w:
-            if all_items:
-                self.inventory_window.selected_inventory_index = max(0, self.inventory_window.selected_inventory_index - 1)
-        elif key == pygame.K_DOWN or key == pygame.K_s:
-            if all_items:
-                self.inventory_window.selected_inventory_index = min(len(all_items) - 1, self.inventory_window.selected_inventory_index + 1)
-        elif key == pygame.K_RETURN or key == pygame.K_u:
-            # Использовать выбранный предмет
-            if all_items and 0 <= self.inventory_window.selected_inventory_index < len(all_items):
-                item, quantity = all_items[self.inventory_window.selected_inventory_index]
-                result = self.player.use_item(item.name)
-                print(result)
-                # Если предметов больше нет, корректируем индекс
-                if self.player.inventory.get_item(item.name) is None:
-                    all_items = self.player.inventory.get_all_items()
-                    self.inventory_window.selected_inventory_index = min(self.inventory_window.selected_inventory_index, len(all_items) - 1)
-                    if self.inventory_window.selected_inventory_index < 0:
-                        self.inventory_window.selected_inventory_index = 0
-        elif key == pygame.K_e:
-            # Экипировать выбранный предмет
-            if all_items and 0 <= self.inventory_window.selected_inventory_index < len(all_items):
-                item, quantity = all_items[self.inventory_window.selected_inventory_index]
-                if isinstance(item, EquipmentItem):
-                    success, message = self.player.inventory.equip_item(item.name)
-                    print(message)
-                    # Обновляем производные характеристики после экипировки
-                    if success:
-                        self.player.update_derived_stats()
-                else:
-                    print("Этот предмет нельзя экипировать")
-        elif key == pygame.K_q:
-            # Снять экипированный предмет через выбранный слот
-            if self.inventory_window.selected_equipment_slot:
-                slot = self.inventory_window.selected_equipment_slot
-                item = self.player.inventory.get_equipped_item(slot)
-                if item:
-                    success, message = self.player.inventory.unequip_item(slot)
-                    print(message)
-                    if success:
-                        self.player.update_derived_stats()
-                else:
-                    print("В этом слоте нет предмета")
-            else:
-                print("Выберите слот экипировки для снятия предмета")
-
-    def _handle_inventory_right_click(self, mouse_pos):
-        """
-        Обработка правого клика мыши в инвентаре
-
-        Args:
-            mouse_pos: Позиция мыши (x, y)
-        """
-        from game.inventory import EquipmentItem, SkillBookItem
-
-        mouse_x, mouse_y = mouse_pos
-
-        # Проверяем клик по предмету в инвентаре
-        item = self.inventory_window.get_item_at_mouse(self.player, mouse_x, mouse_y)
-        if item:
-            # Клик по предмету в инвентаре
-            if isinstance(item, EquipmentItem):
-                # Экипировать предмет
-                success, message = self.player.inventory.equip_item(item.name)
-                print(message)
-                if success:
-                    self.player.update_derived_stats()
-            elif isinstance(item, SkillBookItem):
-                # Изучить умение из книги
-                result = item.use(self.player)
-                print(result)
-                # Если умение успешно изучено, удаляем книгу из инвентаря
-                if "Изучено умение" in result:
-                    self.player.inventory.remove_item(item.name, 1)
-            else:
-                print("Этот предмет нельзя использовать таким образом")
-            return
-
-        # Проверяем клик по экипированному предмету
-        # Получаем размеры экрана
-        screen_width = self.screen.get_width()
-        screen_height = self.screen.get_height()
-
-        # Размеры окна (адаптивные)
-        if self.ui_scaler:
-            window_width = self.ui_scaler.scale_width(900)
-            window_height = self.ui_scaler.scale_height(650)
-        else:
-            window_width = min(900, int(screen_width * 0.85))
-            window_height = min(650, int(screen_height * 0.75))
-
-        window_x = (screen_width - window_width) // 2
-        window_y = (screen_height - window_height) // 2
-
-        # Левая панель - экипировка
-        margin = int(20 * (window_width / 900))
-        panel_y_offset = int(85 * (window_height / 650))
-        equipment_panel_x = window_x + margin
-        equipment_panel_y = window_y + panel_y_offset
-        equipment_panel_width = int(400 * (window_width / 900))
-
-        # Проверяем, находится ли курсор в области экипировки
-        if equipment_panel_x <= mouse_x <= equipment_panel_x + equipment_panel_width:
-            # Вычисляем на какой слот кликнули
-            from game.inventory import EquipmentSlot
-
-            slot_y_start = equipment_panel_y + int(40 * (window_height / 650))
-            slot_height = max(22, int(28 * (window_height / 650)))
-
-            # Группировка слотов (такая же как в ui.py)
-            slot_groups = [
-                ("Оружие", [EquipmentSlot.WEAPON]),
-                ("Доспехи", [EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET]),
-                ("Кольца", [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]),
-                ("Украшения", [EquipmentSlot.AMULET, EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]),
-            ]
-
-            current_y = slot_y_start
-            for group_name, slots in slot_groups:
-                # Пропускаем заголовок группы
-                current_y += max(20, int(25 * (window_height / 650)))
-
-                for slot in slots:
-                    # Проверяем клик по этому слоту
-                    if current_y <= mouse_y <= current_y + slot_height:
-                        item = self.player.inventory.get_equipped_item(slot)
-                        if item:
-                            success, message = self.player.inventory.unequip_item(slot)
-                            print(message)
-                            if success:
-                                self.player.update_derived_stats()
-                        else:
-                            print(f"Слот {group_name} пуст")
-                        return
-
-                    current_y += slot_height
-
-                # Пропускаем отступ между группами
-                current_y += max(8, int(10 * (window_height / 650)))
-
-    def _handle_interaction_choice(self, key):
-        """
-        Обработка выбора в меню взаимодействия
-
-        Args:
-            key: Нажатая клавиша
-        """
-        if key == pygame.K_1:
-            # Торговля / Магия
-            if self.nearby_npc and self.nearby_npc.npc_type == "merchant":
-                self.trade_menu_open = True
-                self.trade_window.mode = "buy"
-                self.trade_window.selected_merchant_index = 0
-                self.trade_window.selected_player_index = 0
-                print(f"Торговля с {self.nearby_npc.name}")
-            elif self.nearby_npc and self.nearby_npc.npc_type == "mage":
-                # Маг продает магические предметы
-                self.trade_menu_open = True
-                self.trade_window.mode = "buy"
-                self.trade_window.selected_merchant_index = 0
-                self.trade_window.selected_player_index = 0
-                print(f"Магическая торговля с {self.nearby_npc.name}")
-            else:
-                print(f"{self.nearby_npc.name} не торгует")
-            self.interaction_menu_open = False
-        elif key == pygame.K_2:
-            # Обучение / Агрессия
-            if self.nearby_npc and self.nearby_npc.npc_type == "mage":
-                # Обучение магии - дает бонус к магическим навыкам
-                self._handle_magic_training()
-            else:
-                # Агрессия - начать бой
-                self._start_combat(self.nearby_npc)
-            self.interaction_menu_open = False
-        elif key == pygame.K_3:
-            # Агрессия для магов / Уйти для остальных
-            if self.nearby_npc and self.nearby_npc.npc_type == "mage":
-                self._start_combat(self.nearby_npc)
-            else:
-                print("Вы ушли от разговора.")
-                self.nearby_npc = None
-            self.interaction_menu_open = False
-        elif key == pygame.K_4:
-            # Уйти (для магов)
-            if self.nearby_npc and self.nearby_npc.npc_type == "mage":
-                print("Вы ушли от разговора.")
-                self.nearby_npc = None
-            self.interaction_menu_open = False
-        elif key == pygame.K_ESCAPE:
-            # Также можно закрыть меню через ESC
-            self.interaction_menu_open = False
-            self.nearby_npc = None
-
-    def _handle_magic_training(self):
-        """Обработка магического обучения от мага"""
-        if not self.nearby_npc:
-            return
-
-        training_cost = 50 * self.nearby_npc.level
-
-        if self.player.inventory.gold < training_cost:
-            print(f"Недостаточно золота! Нужно {training_cost} золота для обучения.")
-            return
-
-        # Забираем золото
-        self.player.inventory.remove_gold(training_cost)
-
-        # Даем опыт магическим навыкам
-        exp_bonus = 20 * self.nearby_npc.level
-
-        # Находим магические навыки и даем им опыт
-        magic_skills_trained = []
-        for skill_id, skill in self.player.skill_manager.learned_skills.items():
-            if skill.category.value == 'magic':
-                old_rank = skill.rank
-                if skill.add_experience(exp_bonus):
-                    magic_skills_trained.append(f"{skill.name} повышен до ранга {skill.rank}")
-                else:
-                    magic_skills_trained.append(f"{skill.name} +{exp_bonus} опыта")
-
-        if magic_skills_trained:
-            print(f"Обучение завершено за {training_cost} золота!")
-            for msg in magic_skills_trained:
-                print(f"  - {msg}")
-        else:
-            # Если нет магических навыков, повышаем дух
-            self.player.spirit += 1
-            self.player.update_derived_stats()
-            print(f"Обучение завершено за {training_cost} золота! Ваш Дух повышен на 1.")
-
-    def _handle_trade_input(self, key):
-        """
-        Обработка ввода в меню торговли
-
-        Args:
-            key: Нажатая клавиша
-        """
-        if key == pygame.K_ESCAPE:
-            self.trade_menu_open = False
-            self.nearby_npc = None
-            return
-        elif key == pygame.K_TAB:
-            # Переключение между покупкой и продажей
-            if self.trade_window.mode == "buy":
-                self.trade_window.mode = "sell"
-            else:
-                self.trade_window.mode = "buy"
-            return
-
-        if self.trade_window.mode == "buy":
-            # Режим покупки
-            if not hasattr(self.nearby_npc, 'inventory'):
-                return
-
-            merchant_items = self.nearby_npc.inventory.get_all_items()
-            if not merchant_items:
-                return
-
-            if key == pygame.K_UP or key == pygame.K_w:
-                self.trade_window.selected_merchant_index = max(0, self.trade_window.selected_merchant_index - 1)
-            elif key == pygame.K_DOWN or key == pygame.K_s:
-                self.trade_window.selected_merchant_index = min(len(merchant_items) - 1, self.trade_window.selected_merchant_index + 1)
-            elif key == pygame.K_RETURN:
-                # Купить выбранный предмет
-                if 0 <= self.trade_window.selected_merchant_index < len(merchant_items):
-                    item, quantity = merchant_items[self.trade_window.selected_merchant_index]
-                    buy_price = int(item.value * 1.5)  # Торговец продает с наценкой 50%
-
-                    if self.player.inventory.gold >= buy_price:
-                        if self.nearby_npc.inventory.remove_item(item.name, 1):
-                            if self.player.inventory.add_item(item, 1):
-                                self.player.inventory.remove_gold(buy_price)
-                                self.nearby_npc.inventory.add_gold(buy_price)
-                                print(f"Вы купили {item.name} за {buy_price} золота")
-                            else:
-                                # Возвращаем предмет торговцу если не поместился в инвентарь
-                                self.nearby_npc.inventory.add_item(item, 1)
-                                print("Ваш инвентарь переполнен!")
-                    else:
-                        print(f"Недостаточно золота! Нужно {buy_price}, у вас {self.player.inventory.gold}")
-        else:
-            # Режим продажи
-            player_items = self.player.inventory.get_all_items()
-            if not player_items:
-                return
-
-            if key == pygame.K_UP or key == pygame.K_w:
-                self.trade_window.selected_player_index = max(0, self.trade_window.selected_player_index - 1)
-            elif key == pygame.K_DOWN or key == pygame.K_s:
-                self.trade_window.selected_player_index = min(len(player_items) - 1, self.trade_window.selected_player_index + 1)
-            elif key == pygame.K_RETURN:
-                # Продать выбранный предмет
-                if 0 <= self.trade_window.selected_player_index < len(player_items):
-                    item, quantity = player_items[self.trade_window.selected_player_index]
-                    sell_price = int(item.value * 0.7)  # Торговец покупает за 70% от стоимости
-
-                    if self.nearby_npc.inventory.gold >= sell_price:
-                        if self.player.inventory.remove_item(item.name, 1):
-                            if self.nearby_npc.inventory.add_item(item, 1):
-                                self.player.inventory.add_gold(sell_price)
-                                self.nearby_npc.inventory.remove_gold(sell_price)
-                                print(f"Вы продали {item.name} за {sell_price} золота")
-
-                                # Обновляем прогресс квеста "Начинающий торговец"
-                                self.player.items_sold += 1
-                                self.quest_manager.update_quest_progress("merchant", 0, 1)
-                            else:
-                                # Возвращаем предмет игроку если не поместился в инвентарь торговца
-                                self.player.inventory.add_item(item, 1)
-                                print("У торговца нет места для этого предмета!")
-                    else:
-                        print(f"У торговца недостаточно золота! Нужно {sell_price}, у него {self.nearby_npc.inventory.gold}")
-
-    def _handle_trade_right_click(self, pos):
-        """
-        Обработка правого клика мыши в окне торговли
-
-        Args:
-            pos: Позиция клика (x, y)
-        """
-        mouse_x, mouse_y = pos
-
-        # Получаем индекс предмета под курсором
-        item_index = self.trade_window.get_item_index_at_mouse(mouse_x, mouse_y)
-
-        if item_index is None:
-            return
-
-        if self.trade_window.mode == "buy":
-            # Режим покупки
-            if not hasattr(self.nearby_npc, 'inventory'):
-                return
-
-            merchant_items = self.nearby_npc.inventory.get_all_items()
-            if not merchant_items or item_index >= len(merchant_items):
-                return
-
-            # Выбираем предмет и покупаем
-            self.trade_window.selected_merchant_index = item_index
-            item, quantity = merchant_items[item_index]
-            buy_price = int(item.value * 1.5)
-
-            if self.player.inventory.gold >= buy_price:
-                if self.nearby_npc.inventory.remove_item(item.name, 1):
-                    if self.player.inventory.add_item(item, 1):
-                        self.player.inventory.remove_gold(buy_price)
-                        self.nearby_npc.inventory.add_gold(buy_price)
-                        print(f"Вы купили {item.name} за {buy_price} золота")
-                    else:
-                        self.nearby_npc.inventory.add_item(item, 1)
-                        print("Ваш инвентарь переполнен!")
-            else:
-                print(f"Недостаточно золота! Нужно {buy_price}, у вас {self.player.inventory.gold}")
-        else:
-            # Режим продажи
-            player_items = self.player.inventory.get_all_items()
-            if not player_items or item_index >= len(player_items):
-                return
-
-            # Выбираем предмет и продаем
-            self.trade_window.selected_player_index = item_index
-            item, quantity = player_items[item_index]
-            sell_price = int(item.value * 0.7)
-
-            if self.nearby_npc.inventory.gold >= sell_price:
-                if self.player.inventory.remove_item(item.name, 1):
-                    if self.nearby_npc.inventory.add_item(item, 1):
-                        self.player.inventory.add_gold(sell_price)
-                        self.nearby_npc.inventory.remove_gold(sell_price)
-                        print(f"Вы продали {item.name} за {sell_price} золота")
-
-                        # Обновляем прогресс квеста "Начинающий торговец"
-                        self.player.items_sold += 1
-                        self.quest_manager.update_quest_progress("merchant", 0, 1)
-                    else:
-                        self.player.inventory.add_item(item, 1)
-                        print("У торговца нет места для этого предмета!")
-            else:
-                print(f"У торговца недостаточно золота! Нужно {sell_price}, у него {self.nearby_npc.inventory.gold}")
-
-    def _handle_character_input(self, key):
-        """
-        Обработка ввода в окне характеристик
-
-        Args:
-            key: Нажатая клавиша
-        """
-        if key == pygame.K_ESCAPE or key == pygame.K_c:
-            self.character_menu_open = False
-            return
-
-        # Навигация по характеристикам
-        if key == pygame.K_UP or key == pygame.K_w:
-            self.character_window.selected_stat_index = max(0, self.character_window.selected_stat_index - 1)
-        elif key == pygame.K_DOWN or key == pygame.K_s:
-            self.character_window.selected_stat_index = min(5, self.character_window.selected_stat_index + 1)
-        elif key == pygame.K_RETURN:
-            # Добавить очко к выбранной характеристике
-            if self.player.stat_points > 0:
-                stat_key, stat_name = self.character_window.stats_list[self.character_window.selected_stat_index]
-                if self.player.add_stat_point(stat_key):
-                    print(f"{stat_name} увеличена! Осталось очков: {self.player.stat_points}")
-
-    def _handle_skill_book_input(self, key):
-        """
-        Обработка ввода в окне книги умений
-
-        Args:
-            key: Нажатая клавиша
-        """
-        from game.skills import SkillCategory
-
-        if key == pygame.K_ESCAPE or key == pygame.K_k:
-            self.skill_book_menu_open = False
-            return
-
-        # Переключение между вкладками (TAB)
-        if key == pygame.K_TAB:
-            self.skill_book_window.selected_tab = (self.skill_book_window.selected_tab + 1) % 3
-            self.skill_book_window.selected_skill_index = 0
-            return
-
-        # Навигация по умениям (W/S)
-        if key == pygame.K_UP or key == pygame.K_w:
-            categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
-            current_category = categories[self.skill_book_window.selected_tab]
-            skills_dict = self.player.skill_manager.get_all_skills()
-            skills = [skill for skill in skills_dict.values() if skill.category == current_category]
-            if skills:
-                self.skill_book_window.selected_skill_index = max(0, self.skill_book_window.selected_skill_index - 1)
-        elif key == pygame.K_DOWN or key == pygame.K_s:
-            categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
-            current_category = categories[self.skill_book_window.selected_tab]
-            skills_dict = self.player.skill_manager.get_all_skills()
-            skills = [skill for skill in skills_dict.values() if skill.category == current_category]
-            if skills:
-                self.skill_book_window.selected_skill_index = min(len(skills) - 1, self.skill_book_window.selected_skill_index + 1)
-
-        # Навигация по слотам (A/D)
-        elif key == pygame.K_LEFT or key == pygame.K_a:
-            self.skill_book_window.selected_slot_index = max(0, self.skill_book_window.selected_slot_index - 1)
-        elif key == pygame.K_RIGHT or key == pygame.K_d:
-            self.skill_book_window.selected_slot_index = min(7, self.skill_book_window.selected_slot_index + 1)
-
-        # Назначить умение в слот (Enter)
-        elif key == pygame.K_RETURN:
-            categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
-            current_category = categories[self.skill_book_window.selected_tab]
-            skills_dict = self.player.skill_manager.get_all_skills()
-            skills = [skill for skill in skills_dict.values() if skill.category == current_category]
-
-            if skills and self.skill_book_window.selected_skill_index < len(skills):
-                # Найдем ID умения
-                selected_skill = skills[self.skill_book_window.selected_skill_index]
-                skill_id = None
-                for sid, skill in skills_dict.items():
-                    if skill == selected_skill:
-                        skill_id = sid
-                        break
-
-                if skill_id:
-                    success = self.player.skill_manager.assign_to_slot(
-                        skill_id,
-                        self.skill_book_window.selected_slot_index
-                    )
-                    if success:
-                        print(f"{selected_skill.name} назначено в слот {self.skill_book_window.selected_slot_index + 1}")
-                    else:
-                        print("Не удалось назначить умение в слот")
-
-        # Убрать умение из слота (Delete)
-        elif key == pygame.K_DELETE:
-            self.player.skill_manager.unassign_from_slot(self.skill_book_window.selected_slot_index)
-            print(f"Слот {self.skill_book_window.selected_slot_index + 1} очищен")
+        self.game_time.advance_time(1)
+        print(f"Время: {self.game_time.get_time_string()}")
 
     def _start_combat(self, enemy):
         """
@@ -1424,33 +394,19 @@ class Game:
             self.player.mana = self.player.get_effective_max_mana()
             self.player.is_resting = False
 
-    def _update_camera(self):
-        """Обновление позиции камеры, чтобы следить за игроком"""
-        # Вычисляем размер видимой области в тайлах
-        tiles_x = self.window_width // TILE_SIZE
-        tiles_y = (self.window_height - 100) // TILE_SIZE  # -100 для UI панели
-
-        # Центрируем камеру на игроке
-        self.camera_x = self.player.x - tiles_x // 2
-        self.camera_y = self.player.y - tiles_y // 2
-
-        # Ограничиваем камеру границами карты
-        self.camera_x = max(0, min(self.camera_x, self.game_map.width - tiles_x))
-        self.camera_y = max(0, min(self.camera_y, self.game_map.height - tiles_y))
-
     def _render(self):
         """Отрисовка игры"""
         # Очистка экрана
         self.screen.fill(COLORS['background'])
 
         # Отрисовка карты
-        self._render_map()
+        self.world_renderer.render_map()
 
         # Отрисовка UI
         self._render_ui()
 
         # Отрисовка мини-карты
-        self._render_minimap()
+        self.world_renderer.render_minimap()
 
         # Если идет бой, отрисовываем окно боя
         if self.in_combat and self.combat_system:
@@ -1487,507 +443,6 @@ class Game:
 
         # Обновление дисплея
         pygame.display.flip()
-
-    def _get_time_of_day_tint(self):
-        """
-        Получить цветовой оттенок в зависимости от времени суток
-
-        Returns:
-            tuple: (r, g, b) - компонент затемнения (0-255)
-        """
-        # Ночь: 0-5 часов и 22-23 часа
-        # Рассвет: 6-7 часов
-        # День: 8-17 часов
-        # Закат: 18-21 часов
-
-        hour = self.game_hour
-
-        if 0 <= hour < 6 or hour >= 22:
-            # Ночь - очень темно (синеватый оттенок)
-            return (50, 50, 80)
-        elif 6 <= hour < 8:
-            # Рассвет - постепенное осветление (оранжевый оттенок)
-            progress = (hour - 6) / 2.0  # 0.0 to 1.0
-            r = int(50 + progress * 150)
-            g = int(50 + progress * 150)
-            b = int(80 + progress * 120)
-            return (r, g, b)
-        elif 8 <= hour < 18:
-            # День - полная яркость
-            return (255, 255, 255)
-        elif 18 <= hour < 22:
-            # Закат - постепенное затемнение (красноватый оттенок)
-            progress = (hour - 18) / 4.0  # 0.0 to 1.0
-            r = int(255 - progress * 155)
-            g = int(255 - progress * 155)
-            b = int(255 - progress * 125)
-            return (r, g, b)
-
-        return (255, 255, 255)  # По умолчанию - день
-
-    def _apply_time_of_day_tint(self, color):
-        """
-        Применить оттенок времени суток к цвету
-
-        Args:
-            color: Исходный цвет (r, g, b)
-
-        Returns:
-            tuple: Модифицированный цвет
-        """
-        tint = self._get_time_of_day_tint()
-        return (
-            int(color[0] * tint[0] / 255),
-            int(color[1] * tint[1] / 255),
-            int(color[2] * tint[2] / 255)
-        )
-
-    def _render_map(self):
-        """Отрисовка карты с учетом камеры и тумана войны"""
-        # Вычисляем видимую область
-        tiles_x = self.window_width // TILE_SIZE + 1
-        tiles_y = (self.window_height - 100) // TILE_SIZE + 1
-
-        for dy in range(tiles_y):
-            for dx in range(tiles_x):
-                # Координаты тайла на карте
-                map_x = self.camera_x + dx
-                map_y = self.camera_y + dy
-
-                # Проверяем валидность координат
-                if not self.game_map.is_valid_position(map_x, map_y):
-                    continue
-
-                tile = self.game_map.get_tile(map_x, map_y)
-
-                # Координаты на экране
-                screen_x = dx * TILE_SIZE
-                screen_y = dy * TILE_SIZE
-
-                # Проверяем, исследован ли тайл
-                if tile.explored:
-                    # Определяем цвет тайла
-                    if tile.has_location():
-                        color = COLORS.get(tile.location.location_type, COLORS['background'])
-                    else:
-                        color = COLORS.get(tile.biome, COLORS['background'])
-
-                    # Если тайл не в текущей видимости, затемняем его
-                    # В чит-режиме все тайлы видимы
-                    is_visible = self.cheat_mode_active or self.fog_of_war.is_visible(map_x, map_y, self.player.x, self.player.y)
-                    if not is_visible:
-                        color = tuple(c // 2 for c in color)  # Затемняем цвет
-                    else:
-                        # Применяем оттенок времени суток только к видимым тайлам
-                        color = self._apply_time_of_day_tint(color)
-
-                    # Отрисовка тайла
-                    if tile.has_location() and is_visible:
-                        # Используем спрайт для видимой локации
-                        def draw_default():
-                            pygame.draw.rect(
-                                self.screen,
-                                color,
-                                (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
-                            )
-                        self.sprite_manager.render_location(
-                            self.screen,
-                            tile.location.location_type,
-                            screen_x,
-                            screen_y,
-                            draw_default
-                        )
-                    else:
-                        # Обычная отрисовка для биомов и невидимых локаций
-                        pygame.draw.rect(
-                            self.screen,
-                            color,
-                            (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
-                        )
-                else:
-                    # Неисследованная область - туман войны
-                    pygame.draw.rect(
-                        self.screen,
-                        COLORS['fog'],
-                        (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
-                    )
-
-        # Отрисовка надписей над локациями
-        label_font = pygame.font.Font(None, 16)
-        for dy in range(tiles_y):
-            for dx in range(tiles_x):
-                map_x = self.camera_x + dx
-                map_y = self.camera_y + dy
-
-                if not self.game_map.is_valid_position(map_x, map_y):
-                    continue
-
-                tile = self.game_map.get_tile(map_x, map_y)
-
-                # Отрисовываем название локации, если она видима и исследована
-                if tile.explored and tile.has_location():
-                    if self.fog_of_war.is_visible(map_x, map_y, self.player.x, self.player.y):
-                        screen_x = dx * TILE_SIZE
-                        screen_y = dy * TILE_SIZE
-
-                        # Создаем надпись
-                        location_label = label_font.render(
-                            tile.location.name,
-                            True,
-                            (255, 255, 255)
-                        )
-
-                        # Фон для надписи
-                        label_rect = location_label.get_rect()
-                        label_rect.centerx = screen_x + TILE_SIZE // 2
-                        label_rect.bottom = screen_y - 2
-
-                        # Полупрозрачный фон
-                        background_surface = pygame.Surface((label_rect.width + 4, label_rect.height + 2))
-                        background_surface.set_alpha(180)
-                        background_surface.fill((0, 0, 0))
-                        self.screen.blit(background_surface, (label_rect.x - 2, label_rect.y - 1))
-
-                        # Отрисовка надписи
-                        self.screen.blit(location_label, label_rect)
-
-        # Отрисовка стражников
-        for guard in self.guards:
-            # Проверяем, находится ли стражник в зоне видимости камеры
-            if (self.camera_x <= guard.x < self.camera_x + tiles_x and
-                self.camera_y <= guard.y < self.camera_y + tiles_y):
-
-                # Проверяем, видим ли мы стражника (туман войны)
-                tile = self.game_map.get_tile(guard.x, guard.y)
-                if tile.explored and self.fog_of_war.is_visible(guard.x, guard.y, self.player.x, self.player.y):
-                    if not guard.is_alive:
-                        continue
-
-                    guard_screen_x = (guard.x - self.camera_x) * TILE_SIZE
-                    guard_screen_y = (guard.y - self.camera_y) * TILE_SIZE
-
-                    # Цвет зависит от уровня стражника (4 варианта)
-                    if guard.level <= 10:
-                        # Новичок - светло-синий
-                        base_color = (100, 150, 255)
-                    elif guard.level <= 20:
-                        # Обычный - синий
-                        base_color = (50, 100, 220)
-                    elif guard.level <= 30:
-                        # Опытный - темно-синий
-                        base_color = (30, 70, 180)
-                    else:
-                        # Эксперт - фиолетово-синий
-                        base_color = (80, 50, 200)
-
-                    # Модификация цвета в зависимости от состояния
-                    if guard.state == "rest":
-                        guard_color = tuple(max(0, c - 40) for c in base_color)
-                    elif guard.state == "combat":
-                        guard_color = tuple(min(255, c + 40) for c in base_color)
-                    else:
-                        guard_color = base_color
-
-                    # Функция отрисовки по умолчанию (геометрическая фигура)
-                    def draw_guard_default():
-                        pygame.draw.circle(
-                            self.screen,
-                            guard_color,
-                            (guard_screen_x + TILE_SIZE // 2, guard_screen_y + TILE_SIZE // 2),
-                            TILE_SIZE // 3
-                        )
-                        # Обводка для эксперт стражников
-                        if guard.level > 30:
-                            pygame.draw.circle(
-                                self.screen,
-                                (200, 200, 50),
-                                (guard_screen_x + TILE_SIZE // 2, guard_screen_y + TILE_SIZE // 2),
-                                TILE_SIZE // 3,
-                                2
-                            )
-
-                    # Отрисовка стражника (спрайт или геометрическая фигура)
-                    self.sprite_manager.render_npc(
-                        self.screen, 'guard', guard_screen_x, guard_screen_y,
-                        draw_guard_default, guard.level
-                    )
-
-        # Отрисовка торговцев
-        for merchant in self.merchants:
-            # Проверяем, находится ли торговец в зоне видимости камеры
-            if (self.camera_x <= merchant.x < self.camera_x + tiles_x and
-                self.camera_y <= merchant.y < self.camera_y + tiles_y):
-
-                # Проверяем, видим ли мы торговца (туман войны)
-                tile = self.game_map.get_tile(merchant.x, merchant.y)
-                if tile.explored and self.fog_of_war.is_visible(merchant.x, merchant.y, self.player.x, self.player.y):
-                    if not merchant.is_alive:
-                        continue
-
-                    merchant_screen_x = (merchant.x - self.camera_x) * TILE_SIZE
-                    merchant_screen_y = (merchant.y - self.camera_y) * TILE_SIZE
-
-                    # Цвет зависит от состояния торговца
-                    if merchant.state == "rest":
-                        merchant_color = (150, 100, 50)  # Коричневый для отдыха/торговли
-                    elif merchant.state == "flee":
-                        merchant_color = (255, 200, 100)  # Светлый для побега
-                    else:
-                        merchant_color = (200, 150, 50)  # Оранжево-коричневый для путешествия
-
-                    # Функция отрисовки по умолчанию (геометрическая фигура)
-                    def draw_merchant_default():
-                        pygame.draw.rect(
-                            self.screen,
-                            merchant_color,
-                            (merchant_screen_x + TILE_SIZE // 4,
-                             merchant_screen_y + TILE_SIZE // 4,
-                             TILE_SIZE // 2,
-                             TILE_SIZE // 2)
-                        )
-
-                    # Отрисовка торговца (спрайт или геометрическая фигура)
-                    self.sprite_manager.render_npc(
-                        self.screen, 'merchant', merchant_screen_x, merchant_screen_y,
-                        draw_merchant_default, merchant.level
-                    )
-
-        # Отрисовка бандитов
-        for bandit in self.bandits:
-            # Проверяем, находится ли бандит в зоне видимости камеры
-            if (self.camera_x <= bandit.x < self.camera_x + tiles_x and
-                self.camera_y <= bandit.y < self.camera_y + tiles_y):
-
-                # Проверяем, видим ли мы бандита (туман войны)
-                tile = self.game_map.get_tile(bandit.x, bandit.y)
-                if tile.explored and self.fog_of_war.is_visible(bandit.x, bandit.y, self.player.x, self.player.y):
-                    if not bandit.is_alive:
-                        continue
-
-                    bandit_screen_x = (bandit.x - self.camera_x) * TILE_SIZE
-                    bandit_screen_y = (bandit.y - self.camera_y) * TILE_SIZE
-
-                    # Цвет зависит от состояния бандита
-                    if bandit.state == "rest":
-                        bandit_color = (150, 0, 0)  # Темно-красный для отдыха
-                    elif bandit.state == "combat":
-                        bandit_color = (255, 50, 50)  # Ярко-красный для боя
-                    else:
-                        bandit_color = (200, 0, 0)  # Красный для патруля
-
-                    # Функция отрисовки по умолчанию (геометрическая фигура)
-                    def draw_bandit_default():
-                        center_x = bandit_screen_x + TILE_SIZE // 2
-                        center_y = bandit_screen_y + TILE_SIZE // 2
-                        size = TILE_SIZE // 3
-
-                        points = [
-                            (center_x, center_y - size),  # Верх
-                            (center_x - size, center_y + size),  # Левый низ
-                            (center_x + size, center_y + size)   # Правый низ
-                        ]
-
-                        pygame.draw.polygon(
-                            self.screen,
-                            bandit_color,
-                            points
-                        )
-
-                    # Отрисовка бандита (спрайт или геометрическая фигура)
-                    self.sprite_manager.render_npc(
-                        self.screen, 'bandit', bandit_screen_x, bandit_screen_y,
-                        draw_bandit_default, bandit.level
-                    )
-
-        # Отрисовка шахтеров
-        for miner in self.miners:
-            # Проверяем, находится ли шахтер в зоне видимости камеры
-            if (self.camera_x <= miner.x < self.camera_x + tiles_x and
-                self.camera_y <= miner.y < self.camera_y + tiles_y):
-
-                # Проверяем, видим ли мы шахтера (туман войны)
-                tile = self.game_map.get_tile(miner.x, miner.y)
-                if tile.explored and self.fog_of_war.is_visible(miner.x, miner.y, self.player.x, self.player.y):
-                    if not miner.is_alive:
-                        continue
-
-                    miner_screen_x = (miner.x - self.camera_x) * TILE_SIZE
-                    miner_screen_y = (miner.y - self.camera_y) * TILE_SIZE
-
-                    # Цвет зависит от состояния шахтера
-                    if miner.state == "rest":
-                        miner_color = (100, 70, 40)  # Коричневый для отдыха
-                    elif miner.state == "flee":
-                        miner_color = (200, 150, 100)  # Светло-коричневый для побега
-                    else:
-                        miner_color = (150, 100, 50)  # Темно-коричневый для работы
-
-                    # Функция отрисовки по умолчанию (геометрическая фигура)
-                    def draw_miner_default():
-                        pygame.draw.rect(
-                            self.screen,
-                            miner_color,
-                            (miner_screen_x + TILE_SIZE // 4, miner_screen_y + TILE_SIZE // 4,
-                             TILE_SIZE // 2, TILE_SIZE // 2)
-                        )
-
-                    # Отрисовка шахтера (спрайт или геометрическая фигура)
-                    self.sprite_manager.render_npc(
-                        self.screen, 'miner', miner_screen_x, miner_screen_y,
-                        draw_miner_default, miner.level
-                    )
-
-        # Отрисовка нежити
-        for undead_npc in self.undead:
-            # Проверяем, находится ли нежить в зоне видимости камеры
-            if (self.camera_x <= undead_npc.x < self.camera_x + tiles_x and
-                self.camera_y <= undead_npc.y < self.camera_y + tiles_y):
-
-                # Проверяем, видим ли мы нежить (туман войны)
-                tile = self.game_map.get_tile(undead_npc.x, undead_npc.y)
-                if tile.explored and self.fog_of_war.is_visible(undead_npc.x, undead_npc.y, self.player.x, self.player.y):
-                    if not undead_npc.is_alive:
-                        continue
-
-                    undead_screen_x = (undead_npc.x - self.camera_x) * TILE_SIZE
-                    undead_screen_y = (undead_npc.y - self.camera_y) * TILE_SIZE
-
-                    # Цвет зависит от уровня нежити (4 ранга)
-                    if undead_npc.level <= 10:
-                        # Зомби - серо-зеленый
-                        base_color = (80, 100, 80)
-                    elif undead_npc.level <= 20:
-                        # Скелет - серо-фиолетовый
-                        base_color = (120, 80, 120)
-                    elif undead_npc.level <= 30:
-                        # Мертвец - темно-фиолетовый
-                        base_color = (100, 0, 100)
-                    else:
-                        # Призрак - ярко-фиолетовый
-                        base_color = (150, 0, 150)
-
-                    # Модификация цвета в зависимости от состояния
-                    if undead_npc.state == "rest":
-                        undead_color = tuple(max(0, c - 30) for c in base_color)
-                    elif undead_npc.state == "combat":
-                        undead_color = tuple(min(255, c + 50) for c in base_color)
-                    else:
-                        undead_color = base_color
-
-                    # Функция отрисовки по умолчанию (геометрическая фигура)
-                    def draw_undead_default():
-                        center_x = undead_screen_x + TILE_SIZE // 2
-                        center_y = undead_screen_y + TILE_SIZE // 2
-                        size = TILE_SIZE // 3
-
-                        points = [
-                            (center_x, center_y - size),  # Верх
-                            (center_x + size, center_y),  # Право
-                            (center_x, center_y + size),  # Низ
-                            (center_x - size, center_y)   # Лево
-                        ]
-
-                        pygame.draw.polygon(
-                            self.screen,
-                            undead_color,
-                            points
-                        )
-
-                        # Обводка для элитной нежити
-                        if undead_npc.level > 30:
-                            pygame.draw.polygon(
-                                self.screen,
-                                (255, 0, 255),
-                                points,
-                                2
-                            )
-
-                    # Отрисовка нежити (спрайт или геометрическая фигура)
-                    self.sprite_manager.render_npc(
-                        self.screen, 'undead', undead_screen_x, undead_screen_y,
-                        draw_undead_default, undead_npc.level
-                    )
-
-        # Отрисовка магов
-        for mage in self.mages:
-            # Проверяем, находится ли маг в зоне видимости камеры
-            if (self.camera_x <= mage.x < self.camera_x + tiles_x and
-                self.camera_y <= mage.y < self.camera_y + tiles_y):
-
-                # Проверяем, видим ли мы мага (туман войны)
-                tile = self.game_map.get_tile(mage.x, mage.y)
-                if tile.explored and self.fog_of_war.is_visible(mage.x, mage.y, self.player.x, self.player.y):
-                    if not mage.is_alive:
-                        continue
-
-                    mage_screen_x = (mage.x - self.camera_x) * TILE_SIZE
-                    mage_screen_y = (mage.y - self.camera_y) * TILE_SIZE
-
-                    # Цвет зависит от уровня мага
-                    if mage.level <= 10:
-                        base_color = (100, 100, 200)  # Светло-синий для адептов
-                    elif mage.level <= 15:
-                        base_color = (80, 80, 220)  # Синий для чародеев
-                    else:
-                        base_color = (138, 43, 226)  # Фиолетовый для магистров
-
-                    # Модификация цвета в зависимости от состояния
-                    if mage.state == "rest":
-                        mage_color = tuple(max(0, c - 30) for c in base_color)
-                    elif mage.state == "combat":
-                        mage_color = tuple(min(255, c + 50) for c in base_color)
-                    else:
-                        mage_color = base_color
-
-                    # Функция отрисовки по умолчанию (звезда для мага)
-                    def draw_mage_default():
-                        center_x = mage_screen_x + TILE_SIZE // 2
-                        center_y = mage_screen_y + TILE_SIZE // 2
-                        size = TILE_SIZE // 3
-
-                        # Рисуем звезду (магический символ)
-                        points = [
-                            (center_x, center_y - size),  # Верх
-                            (center_x + size // 3, center_y - size // 3),
-                            (center_x + size, center_y),  # Право
-                            (center_x + size // 3, center_y + size // 3),
-                            (center_x, center_y + size),  # Низ
-                            (center_x - size // 3, center_y + size // 3),
-                            (center_x - size, center_y),  # Лево
-                            (center_x - size // 3, center_y - size // 3)
-                        ]
-
-                        pygame.draw.polygon(
-                            self.screen,
-                            mage_color,
-                            points
-                        )
-
-                        # Обводка для высокоуровневых магов
-                        if mage.level > 15:
-                            pygame.draw.polygon(
-                                self.screen,
-                                (200, 150, 255),
-                                points,
-                                2
-                            )
-
-                    # Отрисовка мага (спрайт или геометрическая фигура)
-                    self.sprite_manager.render_npc(
-                        self.screen, 'mage', mage_screen_x, mage_screen_y,
-                        draw_mage_default, mage.level
-                    )
-
-        # Отрисовка игрока (поверх всего остального)
-        player_screen_x = (self.player.x - self.camera_x) * TILE_SIZE
-        player_screen_y = (self.player.y - self.camera_y) * TILE_SIZE
-
-        pygame.draw.circle(
-            self.screen,
-            COLORS['player'],
-            (player_screen_x + TILE_SIZE // 2, player_screen_y + TILE_SIZE // 2),
-            TILE_SIZE // 3
-        )
 
     def _render_ui(self):
         """Отрисовка пользовательского интерфейса"""
@@ -2026,7 +481,7 @@ class Game:
 
         # Игровое время и золото
         time_gold_text = self.info_font.render(
-            f"{self.get_time_string()} | Золото: {self.player.inventory.gold}",
+            f"{self.game_time.get_time_string()} | Золото: {self.player.inventory.gold}",
             True,
             (255, 215, 0)
         )
@@ -2230,83 +685,6 @@ class Game:
                     cooldown_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2)
                     self.screen.blit(cooldown_text, cooldown_rect)
 
-    def _render_minimap(self):
-        """Отрисовка мини-карты"""
-        # Размеры мини-карты (масштабируются под разрешение)
-        minimap_size = self.ui_scaler.scale_value(150)
-        margin = self.ui_scaler.scale_value(10)
-        minimap_x = self.window_width - minimap_size - margin
-        minimap_y = margin
-        pixel_per_tile = minimap_size / 100  # Адаптивный размер тайла
-
-        # Фон мини-карты
-        pygame.draw.rect(
-            self.screen,
-            (20, 20, 25),
-            (minimap_x, minimap_y, minimap_size, minimap_size)
-        )
-
-        # Рамка мини-карты
-        pygame.draw.rect(
-            self.screen,
-            COLORS['text'],
-            (minimap_x, minimap_y, minimap_size, minimap_size),
-            2
-        )
-
-        # Вычисляем область карты для отображения (вокруг игрока)
-        map_view_radius = int(minimap_size / pixel_per_tile / 2)
-
-        for dy in range(-map_view_radius, map_view_radius):
-            for dx in range(-map_view_radius, map_view_radius):
-                map_x = self.player.x + dx
-                map_y = self.player.y + dy
-
-                if not self.game_map.is_valid_position(map_x, map_y):
-                    continue
-
-                tile = self.game_map.get_tile(map_x, map_y)
-
-                # Отображаем только исследованные тайлы
-                if tile.explored:
-                    # Позиция на мини-карте
-                    minimap_px = minimap_x + int((dx + map_view_radius) * pixel_per_tile)
-                    minimap_py = minimap_y + int((dy + map_view_radius) * pixel_per_tile)
-
-                    # Определяем цвет
-                    if tile.has_location():
-                        color = COLORS.get(tile.location.location_type, COLORS['background'])
-                    else:
-                        color = COLORS.get(tile.biome, COLORS['background'])
-
-                    # Затемняем цвет для мини-карты
-                    color = tuple(c // 2 for c in color)
-
-                    # Отрисовка пикселя тайла
-                    pygame.draw.rect(
-                        self.screen,
-                        color,
-                        (minimap_px, minimap_py, int(pixel_per_tile), int(pixel_per_tile))
-                    )
-
-        # Отметка игрока на мини-карте (в центре)
-        player_minimap_x = minimap_x + minimap_size // 2
-        player_minimap_y = minimap_y + minimap_size // 2
-
-        pygame.draw.circle(
-            self.screen,
-            COLORS['player'],
-            (player_minimap_x, player_minimap_y),
-            3
-        )
-
-        # Заголовок мини-карты
-        minimap_font_size = self.ui_scaler.scale_font_size(16)
-        minimap_font = pygame.font.Font(None, minimap_font_size)
-        minimap_title = minimap_font.render("Карта", True, COLORS['text'])
-        title_offset = self.ui_scaler.scale_value(18)
-        self.screen.blit(minimap_title, (minimap_x + 5, minimap_y - title_offset))
-
     def _generate_loot(self, enemy):
         """
         Генерировать лут с поверженного врага
@@ -2318,7 +696,6 @@ class Game:
             tuple: (список предметов [(item, quantity)], количество золота)
         """
         from game.inventory import ItemGenerator, ItemQuality, PREDEFINED_ITEMS
-        import random
 
         loot_items = []
         loot_gold = 0
@@ -2465,4 +842,3 @@ class Game:
             action_rect.centerx = menu_x + menu_width // 2
             action_rect.y = buttons_y + i * 30
             self.screen.blit(action_text, action_rect)
-
