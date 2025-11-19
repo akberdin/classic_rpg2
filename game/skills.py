@@ -326,10 +326,10 @@ class BasicAttack(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Вычисляем урон с учетом ранга (10% за ранг)
+            # Вычисляем урон с учетом ранга (20% за ранг - улучшено)
             base_damage = user.get_total_damage()
-            rank_bonus = int(base_damage * (self.rank - 1) * 0.1)
-            total_damage = base_damage + rank_bonus
+            rank_multiplier = 1.0 + (self.rank - 1) * 0.2  # 1.0x -> 1.8x на 5 ранге
+            total_damage = int(base_damage * rank_multiplier)
 
             # Учитываем защиту цели
             target_defense = target.get_total_defense()
@@ -365,20 +365,25 @@ class PowerStrike(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Коэффициент урона растет с рангом (1.5x + 0.2x за ранг)
-            damage_multiplier = 1.5 + (self.rank - 1) * 0.2
+            # Коэффициент урона растет с рангом (1.8x + 0.35x за ранг - улучшено)
+            damage_multiplier = 1.8 + (self.rank - 1) * 0.35  # 1.8x -> 3.2x на 5 ранге
 
             base_damage = user.get_total_damage()
             total_damage = int(base_damage * damage_multiplier)
 
-            # Учитываем защиту цели
+            # Бонус пробития брони на высоких рангах (игнорируем часть защиты)
+            armor_penetration = (self.rank - 1) * 0.1  # 0% -> 40% на 5 ранге
+
+            # Учитываем защиту цели с пробитием
             target_defense = target.get_total_defense()
-            actual_damage = max(1, total_damage - target_defense)
+            effective_defense = int(target_defense * (1 - armor_penetration))
+            actual_damage = max(1, total_damage - effective_defense)
 
             # Применяем урон
             target.take_damage(actual_damage)
 
             result['damage'] = actual_damage
+            result['armor_penetration'] = int(armor_penetration * 100)
             result['message'] = f"{user.name} наносит мощный удар {target.name} на {actual_damage} урона!"
 
             if not target.is_alive:
@@ -405,16 +410,22 @@ class PoisonStrike(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Наносим обычный урон
+            # Наносим урон с множителем от ранга (улучшено)
             base_damage = user.get_total_damage()
+            damage_multiplier = 1.0 + (self.rank - 1) * 0.15  # 1.0x -> 1.6x на 5 ранге
+            total_damage = int(base_damage * damage_multiplier)
+
             target_defense = target.get_total_defense()
-            actual_damage = max(1, base_damage - target_defense)
+            actual_damage = max(1, total_damage - target_defense)
 
             target.take_damage(actual_damage)
 
-            # Длительность и сила яда растут с рангом (сбалансированное масштабирование)
-            poison_duration = 2 + (self.rank - 1)  # 2-6 ходов
-            poison_damage = 3 + (self.rank - 1) * 2  # 3-11 урона/ход
+            # Значительно улучшенный яд с рангом
+            poison_duration = 3 + (self.rank - 1)  # 3-7 ходов
+            poison_damage = 5 + (self.rank - 1) * 4  # 5-21 урона/ход
+
+            # На высоких рангах яд также снижает защиту цели
+            defense_reduction = (self.rank - 1) * 2  # 0-8 снижения защиты
 
             # Накладываем отравление
             poison = PoisonEffect(duration=poison_duration, damage_per_turn=poison_damage)
@@ -424,7 +435,9 @@ class PoisonStrike(Skill):
 
             result['damage'] = actual_damage
             result['poison_applied'] = True
-            result['message'] = f"{user.name} наносит отравленный удар {target.name} на {actual_damage} урона и накладывает яд на {poison_duration} ходов!"
+            result['poison_damage'] = poison_damage
+            result['poison_duration'] = poison_duration
+            result['message'] = f"{user.name} наносит отравленный удар {target.name} на {actual_damage} урона и накладывает яд ({poison_damage} урона/ход на {poison_duration} ходов)!"
 
             if not target.is_alive:
                 result['killed'] = True
@@ -450,8 +463,8 @@ class StunStrike(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Наносим урон с небольшим множителем (1.2x + 0.1x за ранг)
-            damage_multiplier = 1.2 + (self.rank - 1) * 0.1
+            # Наносим урон с множителем (1.5x + 0.2x за ранг - улучшено)
+            damage_multiplier = 1.5 + (self.rank - 1) * 0.2  # 1.5x -> 2.3x на 5 ранге
             base_damage = user.get_total_damage()
             total_damage = int(base_damage * damage_multiplier)
 
@@ -460,11 +473,14 @@ class StunStrike(Skill):
 
             target.take_damage(actual_damage)
 
-            # Шанс оглушения растет с рангом (40% + 8% за ранг, max 72%)
-            stun_chance = min(0.72, 0.4 + (self.rank - 1) * 0.08)
+            # Шанс оглушения растет с рангом (50% + 10% за ранг, max 90%)
+            stun_chance = min(0.90, 0.5 + (self.rank - 1) * 0.1)
+            # Длительность оглушения также растет с рангом
+            stun_duration = 1 + (self.rank - 1) // 2  # 1-3 хода
+
             stunned = False
             if random.random() < stun_chance:
-                stun = StunEffect(duration=1)
+                stun = StunEffect(duration=stun_duration)
                 if not hasattr(target, 'status_effects'):
                     target.status_effects = []
                 target.status_effects.append(stun)
@@ -472,10 +488,11 @@ class StunStrike(Skill):
 
             result['damage'] = actual_damage
             result['stunned'] = stunned
+            result['stun_chance'] = int(stun_chance * 100)
             result['message'] = f"{user.name} наносит оглушающий удар {target.name} на {actual_damage} урона!"
 
             if stunned:
-                result['message'] += f" {target.name} оглушен!"
+                result['message'] += f" {target.name} оглушен на {stun_duration} ход(а)!"
 
             if not target.is_alive:
                 result['killed'] = True
@@ -500,9 +517,12 @@ class BattleCry(Skill):
         """Использовать боевой клич"""
         result = super().use(user, target)
 
-        # Бонус и длительность растут с рангом
-        boost_amount = 3 + self.rank * 2
-        boost_duration = 2 + self.rank
+        # Значительно улучшенный бонус силы от ранга
+        boost_amount = 5 + self.rank * 4  # 9 -> 25 на 5 ранге (было 5-13)
+        boost_duration = 3 + self.rank  # 4-8 ходов (было 3-7)
+
+        # На высоких рангах также даёт бонус к шансу крита
+        crit_bonus = (self.rank - 1) * 3  # 0-12% к криту
 
         # Накладываем усиление на себя
         boost = StrengthBoostEffect(duration=boost_duration, boost_amount=boost_amount)
@@ -510,7 +530,9 @@ class BattleCry(Skill):
             user.status_effects = []
         user.status_effects.append(boost)
 
-        result['message'] = f"{user.name} издает боевой клич! Сила увеличена на {boost_amount} на {boost_duration} ходов!"
+        result['strength_boost'] = boost_amount
+        result['duration'] = boost_duration
+        result['message'] = f"{user.name} издает боевой клич! Сила +{boost_amount} на {boost_duration} ходов!"
 
         return result
 
@@ -537,9 +559,16 @@ class Heal(Skill):
         if target is None:
             target = user
 
-        # Эффективность лечения растет с рангом (30% + 10% за ранг)
-        heal_percent = 0.3 + (self.rank - 1) * 0.1
-        heal_amount = int(target.max_health * heal_percent)
+        # Базовое лечение зависит от интеллекта и духа
+        intelligence = getattr(user, 'intelligence', 1)
+        spirit = getattr(user, 'spirit', 1)
+
+        # Лечение: процент от макс. здоровья + бонус от интеллекта и духа
+        # Улучшено: 35% + 12% за ранг, плюс бонус от статов
+        heal_percent = 0.35 + (self.rank - 1) * 0.12  # 35% -> 83% на 5 ранге
+        base_heal = int(target.max_health * heal_percent)
+        stat_bonus = int(intelligence * 2 + spirit * 1.5) * self.rank  # Бонус от статов
+        heal_amount = base_heal + stat_bonus
 
         old_health = target.health
         target.health = min(target.max_health, target.health + heal_amount)
@@ -571,14 +600,20 @@ class Regeneration(Skill):
         if target is None:
             target = user
 
-        # Эффективность регенерации растет с рангом (улучшено)
-        # Теперь также масштабируется от максимального здоровья
-        base_heal = 10 + self.rank * 4
-        # Добавляем процент от макс. здоровья для лучшего масштабирования
+        # Получаем характеристики заклинателя
+        intelligence = getattr(user, 'intelligence', 1)
+        spirit = getattr(user, 'spirit', 1)
+
+        # Значительно улучшенная регенерация с рангом
+        base_heal = 15 + self.rank * 6  # 21 -> 45 на 5 ранге
+        # Процент от макс. здоровья
         max_health = getattr(target, 'max_health', 100)
-        percent_heal = int(max_health * (0.02 + self.rank * 0.01))  # 2-7% за ход
-        heal_per_turn = base_heal + percent_heal
-        regen_duration = 3 + self.rank
+        percent_heal = int(max_health * (0.04 + self.rank * 0.02))  # 6% -> 14% за ход
+        # Бонус от статов
+        stat_bonus = int((intelligence + spirit) * 0.5 * self.rank)
+        heal_per_turn = base_heal + percent_heal + stat_bonus
+
+        regen_duration = 4 + self.rank  # 5-9 ходов
 
         # Накладываем эффект регенерации
         regen = RegenerationEffect(duration=regen_duration, heal_per_turn=heal_per_turn)
@@ -586,6 +621,8 @@ class Regeneration(Skill):
             target.status_effects = []
         target.status_effects.append(regen)
 
+        result['heal_per_turn'] = heal_per_turn
+        result['duration'] = regen_duration
         result['message'] = f"{user.name} накладывает регенерацию на {target.name}! (+{heal_per_turn} HP/ход на {regen_duration} ходов)"
 
         return result
@@ -610,13 +647,14 @@ class Fireball(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Базовый урон зависит от интеллекта и духа
+            # Базовый урон зависит от интеллекта (значительно увеличено)
             intelligence = getattr(user, 'intelligence', 1)
             spirit = getattr(user, 'spirit', 1)
 
-            # Урон: 15 + интеллект*2 + дух*0.5, с множителем от ранга
-            base_damage = 15 + intelligence * 2 + spirit * 0.5
-            damage_multiplier = 1.0 + (self.rank - 1) * 0.25  # +25% за ранг
+            # Урон: 20 + интеллект*4 + дух*0.3 (интеллект значительно важнее)
+            base_damage = 20 + intelligence * 4 + spirit * 0.3
+            # Улучшенный множитель от ранга (+35% за ранг)
+            damage_multiplier = 1.0 + (self.rank - 1) * 0.35  # 1.0x -> 2.4x на 5 ранге
             total_damage = int(base_damage * damage_multiplier)
 
             # ИГНОРИРУЕМ БРОНЮ, но учитываем магическую защиту
@@ -658,13 +696,13 @@ class IceBolt(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Урон немного меньше чем у огненного шара, но меньше кулдаун
+            # Урон немного меньше чем у огненного шара, но меньше кулдаун и есть замедление
             intelligence = getattr(user, 'intelligence', 1)
             spirit = getattr(user, 'spirit', 1)
 
-            # Урон: 10 + интеллект*1.5 + дух*0.5
-            base_damage = 10 + intelligence * 1.5 + spirit * 0.5
-            damage_multiplier = 1.0 + (self.rank - 1) * 0.2  # +20% за ранг
+            # Урон: 15 + интеллект*3 + дух*0.3 (увеличено)
+            base_damage = 15 + intelligence * 3 + spirit * 0.3
+            damage_multiplier = 1.0 + (self.rank - 1) * 0.3  # +30% за ранг
             total_damage = int(base_damage * damage_multiplier)
 
             # ИГНОРИРУЕМ БРОНЮ, но учитываем магическую защиту
@@ -674,11 +712,12 @@ class IceBolt(Skill):
             # Применяем урон
             target.take_damage(actual_damage)
 
-            # Шанс наложить замедление (эффект оглушения на 1 ход)
-            slow_chance = 0.3 + (self.rank - 1) * 0.05  # 30% + 5% за ранг
+            # Улучшенный шанс и длительность замедления
+            slow_chance = 0.4 + (self.rank - 1) * 0.1  # 40% -> 80% на 5 ранге
+            slow_duration = 1 + (self.rank - 1) // 2  # 1-3 хода
             slowed = False
             if random.random() < slow_chance:
-                slow = StunEffect(duration=1)
+                slow = StunEffect(duration=slow_duration)
                 slow.name = "Обморожение"
                 if not hasattr(target, 'status_effects'):
                     target.status_effects = []
@@ -692,7 +731,7 @@ class IceBolt(Skill):
             result['message'] = f"{user.name} запускает ледяную стрелу в {target.name} и наносит {actual_damage} магического урона!"
 
             if slowed:
-                result['message'] += f" {target.name} заморожен!"
+                result['message'] += f" {target.name} заморожен на {slow_duration} ход(а)!"
 
             if not target.is_alive:
                 result['killed'] = True
@@ -722,9 +761,9 @@ class Lightning(Skill):
             intelligence = getattr(user, 'intelligence', 1)
             spirit = getattr(user, 'spirit', 1)
 
-            # Урон: 20 + интеллект*2.5 + дух*0.8 (сбалансировано)
-            base_damage = 20 + intelligence * 2.5 + spirit * 0.8
-            damage_multiplier = 1.0 + (self.rank - 1) * 0.25  # +25% за ранг
+            # Урон: 30 + интеллект*5 + дух*0.3 (максимальный урон, интеллект критичен)
+            base_damage = 30 + intelligence * 5 + spirit * 0.3
+            damage_multiplier = 1.0 + (self.rank - 1) * 0.4  # +40% за ранг
             total_damage = int(base_damage * damage_multiplier)
 
             # ИГНОРИРУЕМ БРОНЮ, но учитываем магическую защиту
@@ -770,9 +809,9 @@ class MagicMissile(Skill):
             intelligence = getattr(user, 'intelligence', 1)
             spirit = getattr(user, 'spirit', 1)
 
-            # Урон: 8 + интеллект*1.2 + дух*0.3
-            base_damage = 8 + intelligence * 1.2 + spirit * 0.3
-            damage_multiplier = 1.0 + (self.rank - 1) * 0.15  # +15% за ранг
+            # Урон: 12 + интеллект*2.5 + дух*0.2 (увеличено)
+            base_damage = 12 + intelligence * 2.5 + spirit * 0.2
+            damage_multiplier = 1.0 + (self.rank - 1) * 0.25  # +25% за ранг
             total_damage = int(base_damage * damage_multiplier)
 
             # ИГНОРИРУЕМ БРОНЮ, но учитываем магическую защиту
