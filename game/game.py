@@ -25,8 +25,7 @@ class Game:
 
     def __init__(self):
         """Инициализация игры"""
-        # Используем разрешение из констант (pygame.display.Info() может возвращать некорректные данные)
-        # Значения WINDOW_WIDTH и WINDOW_HEIGHT определены в constants.py
+        # Используем разрешение из констант (1920x1200)
         self.window_width = WINDOW_WIDTH
         self.window_height = WINDOW_HEIGHT
 
