@@ -36,7 +36,11 @@
     "mage_veteran": "assets/sprites/npcs/mage_veteran.png",
     "mage_expert": "assets/sprites/npcs/mage_expert.png",
 
-    "player": "assets/sprites/player.png"
+    "player": "assets/sprites/player.png",
+    "player_novice": "assets/sprites/player_novice.png",
+    "player_regular": "assets/sprites/player_regular.png",
+    "player_veteran": "assets/sprites/player_veteran.png",
+    "player_expert": "assets/sprites/player_expert.png"
   },
   "locations": {
     "city": "assets/objects/citys/city.png",

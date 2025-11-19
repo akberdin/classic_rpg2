@@ -832,13 +832,17 @@ class NPC(Character):
         """Генерация и автоматическая экипировка начального снаряжения"""
         from game.inventory import ItemGenerator
 
-        equipment_items = ItemGenerator.generate_npc_equipment(self.npc_type, self.level)
+        # Используем rank-based генерацию для лучшего масштабирования
+        equipment_items = ItemGenerator.generate_npc_equipment_by_rank(self.npc_type, self.level)
 
         for item in equipment_items:
             # Добавляем в инвентарь
             if self.inventory.add_item(item, 1):
                 # Пытаемся сразу экипировать
                 self.inventory.equip_item(item.name)
+
+        # Обновляем характеристики после экипировки
+        self.update_derived_stats()
 
     def _find_next_step(self, target_x, target_y, game_map, max_search_distance=50):
         """
@@ -1640,6 +1644,9 @@ class MagePatrol(NPC):
         # Модификация статов для мага: высокие интеллект и дух, низкие сила и ловкость
         self._adjust_mage_stats()
 
+        # Генерация магических товаров для торговли
+        self._generate_magical_goods()
+
         # AI параметры
         self.state = "patrol"  # patrol, rest, combat
         self.academy_x = academy_x if academy_x is not None else x  # Позиция академии
@@ -1674,6 +1681,45 @@ class MagePatrol(NPC):
         # Обновляем ману на основе духа
         self.max_mana = self.spirit * 10
         self.mana = self.max_mana
+
+    def _generate_magical_goods(self):
+        """Генерация магических товаров для продажи"""
+        from game.inventory import PREDEFINED_ITEMS, ItemGenerator
+
+        # Стартовое золото
+        self.inventory.add_gold(500 + self.level * 50)
+
+        # Книги лечебной магии
+        self.inventory.add_item(PREDEFINED_ITEMS["book_heal"], 1)
+
+        if self.level >= 5:
+            self.inventory.add_item(PREDEFINED_ITEMS["book_regeneration"], 1)
+
+        # Книги атакующей магии (зависят от уровня мага)
+        if self.level >= 8:
+            self.inventory.add_item(PREDEFINED_ITEMS["book_magic_missile"], 1)
+
+        if self.level >= 12:
+            if random.random() < 0.5:
+                self.inventory.add_item(PREDEFINED_ITEMS["book_ice_bolt"], 1)
+
+        if self.level >= 15:
+            if random.random() < 0.3:
+                self.inventory.add_item(PREDEFINED_ITEMS["book_fireball"], 1)
+
+        if self.level >= 20:
+            if random.random() < 0.1:
+                self.inventory.add_item(PREDEFINED_ITEMS["book_lightning"], 1)
+
+        # Зелья маны
+        self.inventory.add_item(PREDEFINED_ITEMS["minor_mana_potion"], random.randint(2, 4))
+        if self.level >= 10:
+            self.inventory.add_item(PREDEFINED_ITEMS["mana_potion"], random.randint(1, 2))
+
+        # Магические украшения
+        if random.random() < 0.5:
+            jewelry = ItemGenerator.generate_jewelry(self.level)
+            self.inventory.add_item(jewelry, 1)
 
     def _generate_patrol_points(self):
         """Генерация точек патрулирования вокруг академии"""

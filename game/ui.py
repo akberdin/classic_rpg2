@@ -1039,10 +1039,10 @@ class TradeWindow:
 
         # Индикаторы прокрутки
         if start_index > 0:
-            scroll_up = self.info_font.render("▲ Еще товары выше", True, (150, 200, 255))
+            scroll_up = self.info_font.render("[^] Еще товары выше", True, (150, 200, 255))
             self.screen.blit(scroll_up, (x + width // 2 - 70, y + 10))
         if end_index < len(items):
-            scroll_down = self.info_font.render("▼ Еще товары ниже", True, (150, 200, 255))
+            scroll_down = self.info_font.render("[v] Еще товары ниже", True, (150, 200, 255))
             self.screen.blit(scroll_down, (x + width // 2 - 70, y + height - 25))
 
     def _render_player_goods(self, player, x, y, width, height):
@@ -1117,10 +1117,10 @@ class TradeWindow:
 
         # Индикаторы прокрутки
         if start_index > 0:
-            scroll_up = self.info_font.render("▲ Еще товары выше", True, (200, 150, 150))
+            scroll_up = self.info_font.render("[^] Еще товары выше", True, (200, 150, 150))
             self.screen.blit(scroll_up, (x + width // 2 - 70, y + 10))
         if end_index < len(items):
-            scroll_down = self.info_font.render("▼ Еще товары ниже", True, (200, 150, 150))
+            scroll_down = self.info_font.render("[v] Еще товары ниже", True, (200, 150, 150))
             self.screen.blit(scroll_down, (x + width // 2 - 70, y + height - 25))
 
     def get_item_at_mouse(self, player, merchant, mouse_x, mouse_y):

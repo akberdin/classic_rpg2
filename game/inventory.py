@@ -231,6 +231,9 @@ class EquipmentItem(Item):
             description: Описание
         """
         super().__init__(name, "equipment", value, weight, quality, description)
+        # Валидация слота - должен быть EquipmentSlot
+        if not isinstance(slot, EquipmentSlot):
+            raise ValueError(f"slot must be EquipmentSlot, got {type(slot)}: {slot}")
         self.slot = slot
         self.stats_bonus = stats_bonus or {}
 
@@ -647,6 +650,23 @@ class Inventory:
             else:
                 slot = EquipmentSlot.RING_1
 
+        # Для браслетов ищем первый свободный слот среди 2 слотов
+        elif slot in [EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]:
+            bracelet_slots = [EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]
+            # Ищем первый пустой слот
+            empty_slot = None
+            for bracelet_slot in bracelet_slots:
+                if not self.equipment[bracelet_slot]:
+                    empty_slot = bracelet_slot
+                    break
+
+            # Если нашли пустой слот, используем его
+            if empty_slot:
+                slot = empty_slot
+            # Если все слоты заняты, используем первый слот (BRACELET_1)
+            else:
+                slot = EquipmentSlot.BRACELET_1
+
         # Если слот занят, снимаем старый предмет
         old_item = self.equipment[slot]
         if old_item:
@@ -796,15 +816,7 @@ class ItemGenerator:
         # Базовый урон зависит от уровня
         base_damage = 5 + (level * 2)
 
-        # Генерация названия
-        if quality in [ItemQuality.RARE, ItemQuality.EPIC, ItemQuality.LEGENDARY, ItemQuality.ARTIFACT]:
-            prefix = random.choice(ItemGenerator.WEAPON_PREFIXES)
-            suffix = random.choice(ItemGenerator.WEAPON_SUFFIXES)
-            name = f"{prefix} {weapon_type.rus_name} {suffix}"
-        else:
-            name = weapon_type.rus_name
-
-        # Генерация бонусов
+        # Генерация бонусов - только для UNCOMMON и выше
         stats_bonus = {}
         if quality.multiplier >= 1.5:  # Необычное и выше
             # Добавляем случайные бонусы к характеристикам
@@ -815,6 +827,25 @@ class ItemGenerator:
                 stat = random.choice(possible_stats)
                 bonus_value = random.randint(1, level)
                 stats_bonus[stat] = stats_bonus.get(stat, 0) + bonus_value
+
+        # Генерация названия на основе реальных бонусов
+        stat_suffixes = {
+            'strength': 'силы',
+            'dexterity': 'скорости',
+            'luck': 'удачи'
+        }
+
+        if quality in [ItemQuality.RARE, ItemQuality.EPIC, ItemQuality.LEGENDARY, ItemQuality.ARTIFACT]:
+            prefix = random.choice(ItemGenerator.WEAPON_PREFIXES)
+            # Суффикс на основе главного стата
+            if stats_bonus:
+                main_stat = max(stats_bonus.keys(), key=lambda k: stats_bonus[k])
+                suffix = stat_suffixes.get(main_stat, 'мощи')
+            else:
+                suffix = random.choice(ItemGenerator.WEAPON_SUFFIXES)
+            name = f"{prefix} {weapon_type.rus_name} {suffix}"
+        else:
+            name = weapon_type.rus_name
 
         value = 50 + (level * 10)
 
@@ -864,16 +895,9 @@ class ItemGenerator:
 
         slot_name = slot_names.get(slot, "Доспех")
 
-        if quality in [ItemQuality.RARE, ItemQuality.EPIC, ItemQuality.LEGENDARY, ItemQuality.ARTIFACT]:
-            prefix = random.choice(ItemGenerator.ARMOR_PREFIXES)
-            suffix = random.choice(ItemGenerator.ARMOR_SUFFIXES)
-            name = f"{prefix} {slot_name} {suffix}"
-        else:
-            name = f"{armor_type.rus_name} {slot_name}"
-
-        # Генерация бонусов
+        # Генерация бонусов - только для UNCOMMON и выше
         stats_bonus = {}
-        if quality.multiplier >= 1.5:
+        if quality.multiplier >= 1.5:  # Необычное и выше
             bonus_count = int(quality.multiplier)
             possible_stats = ['constitution', 'strength', 'dexterity']
 
@@ -881,6 +905,25 @@ class ItemGenerator:
                 stat = random.choice(possible_stats)
                 bonus_value = random.randint(1, level)
                 stats_bonus[stat] = stats_bonus.get(stat, 0) + bonus_value
+
+        # Генерация названия на основе реальных бонусов
+        stat_suffixes = {
+            'constitution': 'стойкости',
+            'strength': 'силы',
+            'dexterity': 'ловкости'
+        }
+
+        if quality in [ItemQuality.RARE, ItemQuality.EPIC, ItemQuality.LEGENDARY, ItemQuality.ARTIFACT]:
+            prefix = random.choice(ItemGenerator.ARMOR_PREFIXES)
+            # Суффикс на основе главного стата
+            if stats_bonus:
+                main_stat = max(stats_bonus.keys(), key=lambda k: stats_bonus[k])
+                suffix = stat_suffixes.get(main_stat, 'защиты')
+            else:
+                suffix = random.choice(ItemGenerator.ARMOR_SUFFIXES)
+            name = f"{prefix} {slot_name} {suffix}"
+        else:
+            name = f"{armor_type.rus_name} {slot_name}"
 
         value = 60 + (level * 12)
 
@@ -929,19 +972,38 @@ class ItemGenerator:
 
         slot_name = slot_names.get(slot, "Украшение")
 
-        prefix = random.choice(ItemGenerator.JEWELRY_PREFIXES)
-        suffix = random.choice(ItemGenerator.JEWELRY_SUFFIXES)
-        name = f"{prefix} {slot_name} {suffix}"
-
-        # Украшения дают бонусы ко всем характеристикам
+        # Бонусы к характеристикам только для UNCOMMON и выше
         stats_bonus = {}
-        bonus_count = max(1, int(quality.multiplier))
-        possible_stats = ['strength', 'dexterity', 'constitution', 'spirit', 'intelligence', 'luck']
+        if quality.multiplier >= 1.5:  # UNCOMMON и выше
+            bonus_count = max(1, int(quality.multiplier))
+            possible_stats = ['strength', 'dexterity', 'constitution', 'spirit', 'intelligence', 'luck']
 
-        for _ in range(bonus_count):
-            stat = random.choice(possible_stats)
-            bonus_value = random.randint(1, max(1, level // 2))
-            stats_bonus[stat] = stats_bonus.get(stat, 0) + bonus_value
+            for _ in range(bonus_count):
+                stat = random.choice(possible_stats)
+                bonus_value = random.randint(1, max(1, level // 2))
+                stats_bonus[stat] = stats_bonus.get(stat, 0) + bonus_value
+
+        # Генерация названия на основе реальных бонусов
+        stat_suffixes = {
+            'strength': 'силы',
+            'dexterity': 'ловкости',
+            'constitution': 'выносливости',
+            'spirit': 'духа',
+            'intelligence': 'мудрости',
+            'luck': 'удачи'
+        }
+
+        prefix = random.choice(ItemGenerator.JEWELRY_PREFIXES)
+
+        # Суффикс на основе главного стата (с наибольшим бонусом)
+        if stats_bonus:
+            main_stat = max(stats_bonus.keys(), key=lambda k: stats_bonus[k])
+            suffix = stat_suffixes.get(main_stat, 'силы')
+        else:
+            # Для плохих/обычных предметов без бонусов - простое название
+            suffix = random.choice(['защиты', 'стойкости'])
+
+        name = f"{prefix} {slot_name} {suffix}"
 
         value = 100 + (level * 20)
 
@@ -1081,6 +1143,169 @@ class ItemGenerator:
             # Украшения (символ богатства)
             if random.random() < 0.7:  # 70% шанс
                 equipment.append(ItemGenerator.generate_jewelry(level))
+
+        elif npc_type == "miner":
+            # Шахтеры имеют кирку и легкие доспехи
+            equipment.append(WeaponItem(
+                "Шахтерская кирка",
+                WeaponType.PICKAXE,
+                8 + level,
+                quality=ItemQuality.COMMON
+            ))
+
+            # Частичные доспехи для защиты
+            if random.random() < 0.6:
+                armor_slots = random.sample(
+                    [EquipmentSlot.HEAD, EquipmentSlot.CHEST],
+                    k=random.randint(1, 2)
+                )
+                for slot in armor_slots:
+                    armor = ItemGenerator.generate_armor(
+                        level,
+                        slot=slot,
+                        armor_type=ArmorType.LIGHT,
+                        quality=ItemQuality.COMMON
+                    )
+                    equipment.append(armor)
+
+        elif npc_type == "undead":
+            # Нежить носит древнее/проклятое снаряжение
+            weapon_types = [WeaponType.SWORD, WeaponType.AXE, WeaponType.CLUB]
+            weapon_type = random.choice(weapon_types)
+
+            equipment.append(WeaponItem(
+                f"Проклятый {weapon_type.rus_name}",
+                weapon_type,
+                7 + level,
+                quality=random.choice([ItemQuality.POOR, ItemQuality.COMMON])
+            ))
+
+            # Разрушенные доспехи
+            if random.random() < 0.4:
+                armor_slots = random.sample(
+                    [EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET],
+                    k=random.randint(1, 3)
+                )
+                for slot in armor_slots:
+                    armor = ItemGenerator.generate_armor(
+                        level,
+                        slot=slot,
+                        armor_type=random.choice([ArmorType.LIGHT, ArmorType.MEDIUM]),
+                        quality=ItemQuality.POOR
+                    )
+                    equipment.append(armor)
+
+        elif npc_type == "mage":
+            # Маги имеют посох и магическую одежду
+            equipment.append(WeaponItem(
+                "Магический посох",
+                WeaponType.STAFF,
+                5 + level // 2,
+                quality=ItemQuality.UNCOMMON,
+                stats_bonus={'intelligence': level // 3, 'spirit': level // 4}
+            ))
+
+            # Легкие доспехи (мантия)
+            chest_armor = ItemGenerator.generate_armor(
+                level,
+                slot=EquipmentSlot.CHEST,
+                armor_type=ArmorType.LIGHT,
+                quality=ItemQuality.UNCOMMON
+            )
+            equipment.append(chest_armor)
+
+            # Украшения (символ магической силы)
+            if random.random() < 0.8:
+                equipment.append(ItemGenerator.generate_jewelry(level))
+
+        return equipment
+
+    @staticmethod
+    def generate_npc_equipment_by_rank(npc_type, level=1):
+        """
+        Генерация экипировки для NPC на основе ранга (уровня)
+        Чем выше ранг, тем лучше и больше экипировки
+
+        Args:
+            npc_type: Тип NPC
+            level: Уровень NPC
+
+        Returns:
+            list: Список предметов экипировки
+        """
+        # Определяем ранг по уровню
+        if level <= 10:
+            rank = "novice"
+            quality_weights = {ItemQuality.POOR: 0.3, ItemQuality.COMMON: 0.6, ItemQuality.UNCOMMON: 0.1}
+            num_items = random.randint(1, 2)
+        elif level <= 20:
+            rank = "regular"
+            quality_weights = {ItemQuality.COMMON: 0.4, ItemQuality.UNCOMMON: 0.4, ItemQuality.RARE: 0.2}
+            num_items = random.randint(2, 3)
+        elif level <= 30:
+            rank = "veteran"
+            quality_weights = {ItemQuality.UNCOMMON: 0.3, ItemQuality.RARE: 0.5, ItemQuality.EPIC: 0.2}
+            num_items = random.randint(3, 5)
+        else:
+            rank = "expert"
+            quality_weights = {ItemQuality.RARE: 0.3, ItemQuality.EPIC: 0.5, ItemQuality.LEGENDARY: 0.2}
+            num_items = random.randint(4, 6)
+
+        equipment = []
+
+        # Всегда добавляем оружие
+        weapon_quality = ItemGenerator.generate_quality(quality_weights)
+        if npc_type == "guard":
+            weapon_type = random.choice([WeaponType.SWORD, WeaponType.SPEAR])
+            equipment.append(ItemGenerator.generate_weapon(level, weapon_quality))
+        elif npc_type == "bandit":
+            weapon_type = random.choice([WeaponType.KNIFE, WeaponType.CLUB, WeaponType.SWORD])
+            equipment.append(ItemGenerator.generate_weapon(level, weapon_quality))
+        elif npc_type == "miner":
+            equipment.append(WeaponItem(
+                "Шахтерская кирка",
+                WeaponType.PICKAXE,
+                8 + level,
+                quality=weapon_quality
+            ))
+        elif npc_type == "undead":
+            weapon_type = random.choice([WeaponType.SWORD, WeaponType.AXE])
+            equipment.append(ItemGenerator.generate_weapon(level, weapon_quality))
+        elif npc_type == "mage":
+            equipment.append(WeaponItem(
+                "Магический посох",
+                WeaponType.STAFF,
+                5 + level // 2,
+                quality=weapon_quality,
+                stats_bonus={'intelligence': level // 3, 'spirit': level // 4} if weapon_quality.multiplier >= 1.5 else {}
+            ))
+        else:
+            equipment.append(ItemGenerator.generate_weapon(level, weapon_quality))
+
+        # Добавляем доспехи в зависимости от количества предметов
+        armor_slots = [EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET]
+        armor_count = min(num_items - 1, len(armor_slots))
+
+        if armor_count > 0:
+            selected_slots = random.sample(armor_slots, armor_count)
+
+            # Тип доспехов зависит от типа NPC
+            if npc_type in ["guard"]:
+                armor_type = random.choice([ArmorType.MEDIUM, ArmorType.HEAVY])
+            elif npc_type in ["mage", "merchant"]:
+                armor_type = ArmorType.LIGHT
+            else:
+                armor_type = random.choice(list(ArmorType))
+
+            for slot in selected_slots:
+                armor_quality = ItemGenerator.generate_quality(quality_weights)
+                armor = ItemGenerator.generate_armor(level, slot, armor_type, armor_quality)
+                equipment.append(armor)
+
+        # Для высоких рангов добавляем украшения
+        if rank in ["veteran", "expert"] and random.random() < 0.5:
+            jewelry_quality = ItemGenerator.generate_quality(quality_weights)
+            equipment.append(ItemGenerator.generate_jewelry(level, quality=jewelry_quality))
 
         return equipment
 
