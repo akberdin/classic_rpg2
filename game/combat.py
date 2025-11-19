@@ -587,12 +587,13 @@ class CombatSystem:
         )
         self.screen.blit(level_text, (x, y + 24))
 
-        # Здоровье с процентами
-        health_percent = (character.health / character.max_health) * 100
+        # Здоровье с процентами (используем эффективное максимальное здоровье с учетом экипировки)
+        effective_max_health = character.get_effective_max_health() if hasattr(character, 'get_effective_max_health') else character.max_health
+        health_percent = (character.health / effective_max_health) * 100 if effective_max_health > 0 else 0
         health_color = (255, 100, 100) if health_percent < 30 else (255, 165, 0) if health_percent < 60 else (100, 255, 100)
 
         health_text = self.info_font.render(
-            f"❤ {character.health}/{character.max_health} ({health_percent:.0f}%)",
+            f"❤ {character.health}/{effective_max_health} ({health_percent:.0f}%)",
             True,
             health_color
         )
@@ -612,7 +613,7 @@ class CombatSystem:
         )
 
         # Заполнение полосы здоровья
-        fill_width = int(bar_width * (character.health / character.max_health))
+        fill_width = int(bar_width * (character.health / effective_max_health)) if effective_max_health > 0 else 0
         if fill_width > 0:
             pygame.draw.rect(
                 self.screen,

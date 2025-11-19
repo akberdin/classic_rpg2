@@ -105,6 +105,10 @@ class Mining(Profession):
         resources = []
         success_bonus = self.get_success_bonus()
 
+        # Добавляем 1 опыт персонажу за каждое использование навыка
+        if hasattr(player, 'add_experience'):
+            player.add_experience(1)
+
         # Пробуем добыть каждый тип руды
         for ore_type, base_chance in self.ore_chances.items():
             # Шанс с учетом ранга
@@ -169,6 +173,10 @@ class Lumberjacking(Profession):
         """
         resources = []
         success_bonus = self.get_success_bonus()
+
+        # Добавляем 1 опыт персонажу за каждое использование навыка
+        if hasattr(player, 'add_experience'):
+            player.add_experience(1)
 
         # Шанс с учетом ранга
         chance = min(95, self.base_chance + success_bonus)
