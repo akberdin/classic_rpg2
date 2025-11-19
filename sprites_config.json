@@ -1,16 +1,16 @@
 {
   "npcs": {
     "guard": "assets/sprites/npcs/guard.png",
-    "guard_novice": "assets/sprites/npcs/guard_novice.png",
-    "guard_regular": "assets/sprites/npcs/guard_regular.png",
-    "guard_veteran": "assets/sprites/npcs/guard_veteran.png",
-    "guard_expert": "assets/sprites/npcs/guard_expert.png",
+    "guard_novice": "assets/soldier/soldier1.png",
+    "guard_regular": "assets/soldier/soldier2.png",
+    "guard_veteran": "assets/soldier/soldier3.png",
+    "guard_expert": "assets/soldier/soldier4.png",
 
     "merchant": "assets/sprites/npcs/merchant.png",
-    "merchant_novice": "assets/sprites/npcs/merchant_novice.png",
-    "merchant_regular": "assets/sprites/npcs/merchant_regular.png",
-    "merchant_veteran": "assets/sprites/npcs/merchant_veteran.png",
-    "merchant_expert": "assets/sprites/npcs/merchant_expert.png",
+    "merchant_novice": "assets/trader/trader1.png",
+    "merchant_regular": "assets/trader/trader2.png",
+    "merchant_veteran": "assets/trader/trader3.png",
+    "merchant_expert": "assets/trader/trader4.png",
 
     "bandit": "assets/sprites/npcs/bandit.png",
     "bandit_novice": "assets/actors/bandits/bandit1.png",
