@@ -591,7 +591,7 @@ class InputHandler:
                     # Обновляем прогресс квестов при добыче ресурсов
                     if result.get('success') and 'gathered' in result:
                         for item_key, quantity in result['gathered']:
-                            messages = self.game.quest_manager.update_gather_progress(item_key, quantity)
+                            messages = self.game.quest_manager.update_gather_progress(item_key, quantity, self.game.player)
                             for msg in messages:
                                 print(f"  {msg}")
                 else:
@@ -691,7 +691,8 @@ class InputHandler:
                     # Принять квест
                     success, message = self.game.quest_manager.accept_quest(
                         quest.quest_id,
-                        self.game.quest_window.location_id
+                        self.game.quest_window.location_id,
+                        self.game.player
                     )
                     print(message)
                     if success:
@@ -726,6 +727,9 @@ class InputHandler:
         """Обновить данные в окне квестов"""
         location_id = self.game.quest_window.location_id
         location_name = self.game.quest_window.location_name
+
+        # Проверяем прогресс всех квестов на сбор ресурсов
+        self.game.quest_manager.check_all_quest_progress(self.game.player)
 
         available_quests = self.game.quest_manager.get_location_quests(location_id)
         active_quests = self.game.quest_manager.get_active_quests()

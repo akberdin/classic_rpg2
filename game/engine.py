@@ -364,6 +364,9 @@ class Game:
             for quest in quests:
                 self.quest_manager.add_location_quest(location_id, quest)
 
+        # Проверяем прогресс всех квестов на сбор ресурсов
+        self.quest_manager.check_all_quest_progress(self.player)
+
         # Получаем доступные квесты для этой локации
         available_quests = self.quest_manager.get_location_quests(location_id)
 
@@ -419,7 +422,7 @@ class Game:
                 # Используем внутреннее имя предмета для квестов
                 item_key = self._get_item_key(item.name)
                 if item_key:
-                    messages = self.quest_manager.update_gather_progress(item_key, quantity)
+                    messages = self.quest_manager.update_gather_progress(item_key, quantity, self.player)
                     for msg in messages:
                         print(f"  {msg}")
             else:

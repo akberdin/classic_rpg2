@@ -341,13 +341,14 @@ class QuestManager:
         """
         return len(self.active_quests) < self.MAX_ACTIVE_QUESTS
 
-    def accept_quest(self, quest_id, location_id=None):
+    def accept_quest(self, quest_id, location_id=None, player=None):
         """
         Принять квест
 
         Args:
             quest_id: ID квеста
             location_id: ID локации (опционально)
+            player: Игрок (для проверки текущего прогресса)
 
         Returns:
             tuple: (bool, str) - успех и сообщение
@@ -386,6 +387,15 @@ class QuestManager:
                 self.available_quests.remove(quest)
 
             self.active_quests.append(quest)
+
+            # Если передан игрок и это квест на сбор, сразу проверяем инвентарь
+            if player and quest.quest_type == QuestType.GATHER_RESOURCE and quest.target_item:
+                current_count = self._get_item_count_in_inventory(player, quest.target_item)
+                if quest.objectives:
+                    quest.objectives[0].current_count = min(current_count, quest.objectives[0].required_count)
+                    quest.objectives[0].completed = quest.objectives[0].current_count >= quest.objectives[0].required_count
+                    quest.check_completion()
+
             return True, f"Принят квест: {quest.name}"
 
         return False, "Квест уже принят"
@@ -529,13 +539,14 @@ class QuestManager:
                         messages.append(f"Квест '{quest.name}' готов к сдаче в {quest.giver_location}!")
         return messages
 
-    def update_gather_progress(self, item_name, amount=1):
+    def update_gather_progress(self, item_name, amount=1, player=None):
         """
         Обновить прогресс квестов на сбор ресурсов
 
         Args:
             item_name: Название собранного предмета
-            amount: Количество
+            amount: Количество (не используется если передан player)
+            player: Игрок (для проверки инвентаря)
 
         Returns:
             list: Список сообщений о прогрессе
@@ -544,11 +555,78 @@ class QuestManager:
         for quest in self.active_quests:
             if quest.quest_type == QuestType.GATHER_RESOURCE and quest.target_item == item_name:
                 if quest.objectives:
-                    completed = quest.objectives[0].progress(amount)
+                    # Если передан игрок, проверяем текущее количество в инвентаре
+                    if player:
+                        current_count = self._get_item_count_in_inventory(player, item_name)
+                        quest.objectives[0].current_count = min(current_count, quest.objectives[0].required_count)
+                        quest.objectives[0].completed = quest.objectives[0].current_count >= quest.objectives[0].required_count
+                    else:
+                        quest.objectives[0].progress(amount)
+
                     quest.check_completion()
-                    if completed:
-                        messages.append(f"Цель выполнена: {quest.objectives[0].description}")
-                    if quest.is_ready_to_turn_in():
+
+                    if quest.objectives[0].is_completed():
+                        if quest.is_ready_to_turn_in():
+                            messages.append(f"Квест '{quest.name}' готов к сдаче в {quest.giver_location}!")
+        return messages
+
+    def _get_item_count_in_inventory(self, player, item_key):
+        """
+        Получить количество предмета в инвентаре игрока
+
+        Args:
+            player: Игрок
+            item_key: Ключ предмета (например 'copper_ore')
+
+        Returns:
+            int: Количество предмета
+        """
+        # Словарь соответствий ключей и отображаемых имен
+        key_to_name = {
+            'copper_ore': 'Медная руда',
+            'iron_ore': 'Железная руда',
+            'silver_ore': 'Серебряная руда',
+            'gold_ore': 'Золотая руда',
+            'mithril_ore': 'Мифриловая руда',
+            'wood': 'Древесина',
+            'ancient_coin': 'Древняя монета',
+            'artifact_fragment': 'Фрагмент артефакта',
+            'magic_crystal': 'Магический кристалл',
+            'old_scroll': 'Старый свиток',
+        }
+
+        item_name = key_to_name.get(item_key)
+        if not item_name:
+            return 0
+
+        # Проверяем инвентарь игрока
+        item_data = player.inventory.get_item(item_name)
+        if item_data:
+            return item_data[1]  # Возвращаем количество
+        return 0
+
+    def check_all_quest_progress(self, player):
+        """
+        Проверить прогресс всех активных квестов на основе инвентаря
+
+        Args:
+            player: Игрок
+
+        Returns:
+            list: Список сообщений о прогрессе
+        """
+        messages = []
+        for quest in self.active_quests:
+            if quest.quest_type == QuestType.GATHER_RESOURCE:
+                if quest.target_item and quest.objectives:
+                    current_count = self._get_item_count_in_inventory(player, quest.target_item)
+                    old_count = quest.objectives[0].current_count
+                    quest.objectives[0].current_count = min(current_count, quest.objectives[0].required_count)
+                    quest.objectives[0].completed = quest.objectives[0].current_count >= quest.objectives[0].required_count
+
+                    quest.check_completion()
+
+                    if quest.is_ready_to_turn_in() and old_count < quest.objectives[0].required_count:
                         messages.append(f"Квест '{quest.name}' готов к сдаче в {quest.giver_location}!")
         return messages
 
