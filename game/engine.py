@@ -27,6 +27,7 @@ from game.world_renderer import WorldRenderer
 from game.game_time import GameTime
 from game.camera import Camera
 from game.respawn_manager import RespawnManager
+from game.events import create_game_systems, TimeOfDayBonuses
 
 
 class Game:
@@ -165,6 +166,9 @@ class Game:
         # Инициализация менеджера достижений
         self.achievement_manager = AchievementManager()
 
+        # Инициализация систем событий, погоды и серий убийств
+        self.weather_system, self.random_event_system, self.killstreak_system = create_game_systems()
+
         # Даем игроку стартовые умения
         self.player.skill_manager.learn_skill('basic_attack')  # Базовая атака
         self.player.skill_manager.learn_skill('mining')  # Рудокоп ранг 1
@@ -221,6 +225,14 @@ class Game:
                     # Генерируем лут
                     defeated_enemy = self.combat_system.enemy
                     loot_items, loot_gold = self._generate_loot(defeated_enemy)
+
+                    # Применяем бонус серии убийств
+                    if hasattr(self, 'killstreak_system'):
+                        streak_info = self.killstreak_system.register_kill()
+                        multiplier = streak_info['multiplier']
+                        loot_gold = int(loot_gold * multiplier)
+                        if streak_info['message']:
+                            print(streak_info['message'])
 
                     # Добавляем лут в инвентарь игрока
                     self.player.inventory.add_gold(loot_gold)
@@ -300,6 +312,11 @@ class Game:
             if self.quest_window_open:
                 if event.type == pygame.KEYDOWN:
                     self.input_handler.handle_quest_input(event.key)
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    # Обработка событий мыши в окне квестов
+                    action = self.quest_window.handle_mouse_event(event, self)
+                    if action:
+                        self._handle_quest_action(action)
                 continue
 
             # Обработка нажатий клавиш
@@ -387,6 +404,49 @@ class Game:
 
         # Открываем окно
         self.quest_window_open = True
+
+    def _handle_quest_action(self, action):
+        """
+        Обработка действий с квестами из окна квестов
+
+        Args:
+            action: Тип действия ('accept', 'turn_in', 'abandon')
+        """
+        quest = self.quest_window.get_selected_quest()
+        if not quest:
+            return
+
+        if action == 'accept':
+            # Принять квест
+            success, message = self.quest_manager.accept_quest(
+                quest.quest_id,
+                self.quest_window.location_id,
+                self.player
+            )
+            print(message)
+            if success:
+                self.input_handler._refresh_quest_window()
+
+        elif action == 'turn_in':
+            # Сдать квест
+            success, messages = self.quest_manager.complete_quest(
+                quest.quest_id,
+                self.player
+            )
+            if success:
+                print(f"Квест '{quest.name}' завершён!")
+                for msg in messages:
+                    print(f"  {msg}")
+                self.input_handler._refresh_quest_window()
+            else:
+                print("Не удалось сдать квест")
+
+        elif action == 'abandon':
+            # Отменить квест
+            success, message = self.quest_manager.abandon_quest(quest.quest_id)
+            print(message)
+            if success:
+                self.input_handler._refresh_quest_window()
 
     def _collect_resources(self):
         """Собрать ресурсы с текущей локации"""
@@ -486,6 +546,23 @@ class Game:
             enemy: Враг для боя
         """
         print(f"Бой начался с {enemy.name}!")
+
+        # Показываем бонусы погоды и времени суток
+        if hasattr(self, 'weather_system'):
+            weather_mods = self.weather_system.get_combat_modifier()
+            if weather_mods['accuracy'] != 1.0 or weather_mods['evasion'] != 1.0:
+                effects = []
+                if weather_mods['accuracy'] < 1.0:
+                    effects.append(f"точность {int(weather_mods['accuracy']*100)}%")
+                if weather_mods['evasion'] > 1.0:
+                    effects.append(f"уклонение +{int((weather_mods['evasion']-1)*100)}%")
+                if effects:
+                    print(f"  Погода ({self.weather_system.current_weather.display_name}): {', '.join(effects)}")
+
+        time_bonuses = TimeOfDayBonuses.get_bonuses(self.game_time.hour)
+        if time_bonuses['description']:
+            print(f"  {time_bonuses['description']}")
+
         self.combat_system = CombatSystem(self.player, enemy, self.screen, self.font, self.ui_scaler, self.game_map, self.respawn_manager)
         self.in_combat = True
         self.nearby_npc = None
@@ -590,14 +667,27 @@ class Game:
         )
         self.screen.blit(name_text, (info_x, info_y))
 
-        # Игровое время и золото
+        # Игровое время, погода и золото
+        weather_str = ""
+        if hasattr(self, 'weather_system'):
+            weather_str = f" | {self.weather_system.current_weather.display_name}"
+
         time_gold_text = self.info_font.render(
-            f"{self.game_time.get_time_string()} | Золото: {self.player.inventory.gold}",
+            f"{self.game_time.get_time_string()}{weather_str} | Золото: {self.player.inventory.gold}",
             True,
             (255, 215, 0)
         )
-        time_gold_x = self.window_width - self.ui_scaler.scale_width(350)
+        time_gold_x = self.window_width - self.ui_scaler.scale_width(450)
         self.screen.blit(time_gold_text, (time_gold_x, info_y + 5))
+
+        # Серия убийств (если активна)
+        if hasattr(self, 'killstreak_system') and self.killstreak_system.current_streak >= 3:
+            streak_text = self.info_font.render(
+                f"Серия: x{self.killstreak_system.current_streak}",
+                True,
+                (255, 100, 100)
+            )
+            self.screen.blit(streak_text, (time_gold_x, info_y + 22))
 
         # Прогресс-бары
         bar_y = info_y + 35

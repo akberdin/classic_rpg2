@@ -643,6 +643,23 @@ class InputHandler:
                 # Продвигаем время на 1 час за перемещение
                 self.game.game_time.advance_time(1)
 
+                # Обновляем системы событий
+                if hasattr(self.game, 'weather_system'):
+                    weather_msg = self.game.weather_system.update(1)
+                    if weather_msg:
+                        print(weather_msg)
+
+                if hasattr(self.game, 'killstreak_system'):
+                    self.game.killstreak_system.update(1)
+
+                # Проверяем случайные события при путешествии
+                if hasattr(self.game, 'random_event_system'):
+                    event_messages = self.game.random_event_system.check_for_event(
+                        self.game.player, self.game
+                    )
+                    for msg in event_messages:
+                        print(msg)
+
                 # Обновляем туман войны
                 self.game.fog_of_war.update_vision(self.game.player.x, self.game.player.y)
                 # Обновляем камеру

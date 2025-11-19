@@ -2070,6 +2070,11 @@ class QuestWindow:
         self.active_quests = []
         self.turn_in_quests = []
 
+        # Для хранения координат элементов при рендеринге
+        self.tab_rects = []      # Прямоугольники вкладок
+        self.quest_rects = []    # Прямоугольники квестов
+        self.window_rect = None  # Прямоугольник окна
+
     def set_data(self, location_name, location_id, available_quests, active_quests, turn_in_quests):
         """
         Установить данные для отображения
@@ -2113,6 +2118,82 @@ class QuestWindow:
             return quests[self.selected_index]
         return None
 
+    def handle_mouse_event(self, event, game):
+        """
+        Обработка событий мыши в окне квестов
+
+        Args:
+            event: Событие pygame
+            game: Объект игры
+
+        Returns:
+            str: Действие для выполнения ('accept', 'turn_in', 'abandon') или None
+        """
+        import pygame
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_pos = event.pos
+
+            # Проверяем клик по вкладкам
+            for i, rect in enumerate(self.tab_rects):
+                if rect.collidepoint(mouse_pos):
+                    modes = ["available", "active", "turn_in"]
+                    self.mode = modes[i]
+                    self.selected_index = 0
+                    self.scroll_offset = 0
+                    return None
+
+            # Проверяем клик по квестам
+            for i, rect in enumerate(self.quest_rects):
+                if rect.collidepoint(mouse_pos):
+                    quest_idx = i + self.scroll_offset
+                    quests = self.get_current_list()
+                    if quest_idx < len(quests):
+                        self.selected_index = quest_idx
+
+                        # Левая кнопка - выбор, двойной клик - действие
+                        if event.button == 1:
+                            # Проверяем двойной клик
+                            if hasattr(self, '_last_click_time'):
+                                import time
+                                if time.time() - self._last_click_time < 0.3:
+                                    # Двойной клик - выполняем действие
+                                    if self.mode == "available":
+                                        return 'accept'
+                                    elif self.mode == "turn_in":
+                                        return 'turn_in'
+                            import time
+                            self._last_click_time = time.time()
+
+                        # Правая кнопка - действие
+                        elif event.button == 3:
+                            if self.mode == "available":
+                                return 'accept'
+                            elif self.mode == "active":
+                                return 'abandon'
+                            elif self.mode == "turn_in":
+                                return 'turn_in'
+                    return None
+
+            # Прокрутка колёсиком мыши
+            if event.button == 4:  # Колёсико вверх
+                if self.scroll_offset > 0:
+                    self.scroll_offset -= 1
+                return None
+            elif event.button == 5:  # Колёсико вниз
+                quests = self.get_current_list()
+                # Определяем количество видимых квестов
+                if self.window_rect:
+                    quest_height = 80
+                    list_height = self.window_rect.height - 200
+                    visible_quests = list_height // quest_height
+                    max_scroll = max(0, len(quests) - visible_quests)
+                    if self.scroll_offset < max_scroll:
+                        self.scroll_offset += 1
+                return None
+
+        return None
+
     def render(self, player):
         """Отрисовать окно квестов"""
         import pygame
@@ -2137,6 +2218,13 @@ class QuestWindow:
 
         window_x = (screen_width - window_width) // 2
         window_y = (screen_height - window_height) // 2
+
+        # Сохраняем прямоугольник окна
+        self.window_rect = pygame.Rect(window_x, window_y, window_width, window_height)
+
+        # Очищаем списки прямоугольников
+        self.tab_rects = []
+        self.quest_rects = []
 
         # Фон окна
         pygame.draw.rect(
@@ -2185,6 +2273,10 @@ class QuestWindow:
         for i, (tab_name, tab_mode, count) in enumerate(tabs):
             tab_x = window_x + 20 + i * (tab_width + 10)
             is_selected = self.mode == tab_mode
+
+            # Сохраняем прямоугольник вкладки
+            tab_rect = pygame.Rect(tab_x, tab_y, tab_width, 30)
+            self.tab_rects.append(tab_rect)
 
             # Фон вкладки
             tab_color = (80, 80, 90) if is_selected else (50, 50, 55)
@@ -2255,6 +2347,10 @@ class QuestWindow:
                 quest = quests[quest_idx]
                 quest_y = list_y + i * quest_height
 
+                # Сохраняем прямоугольник квеста
+                quest_rect = pygame.Rect(window_x + 25, quest_y + 5, list_width - 10, quest_height - 10)
+                self.quest_rects.append(quest_rect)
+
                 # Фон элемента
                 is_selected = quest_idx == self.selected_index
                 bg_color = (60, 60, 70) if is_selected else (40, 40, 45)
@@ -2324,14 +2420,14 @@ class QuestWindow:
         controls_y = window_y + window_height - 50
 
         if self.mode == "available":
-            action_text = "Enter - Принять квест"
+            action_text = "Enter/ПКМ - Принять"
         elif self.mode == "active":
-            action_text = "Delete - Отменить квест"
+            action_text = "Delete/ПКМ - Отменить"
         else:
-            action_text = "Enter - Сдать квест"
+            action_text = "Enter/ПКМ - Сдать"
 
         controls_text = self.info_font.render(
-            f"Tab - Переключить вкладку | W/S - Выбор | {action_text} | Esc - Закрыть",
+            f"Tab/Клик - Вкладки | W/S/Колёсико - Выбор | {action_text} | Esc - Закрыть",
             True,
             (150, 150, 150)
         )
