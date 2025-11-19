@@ -1,0 +1,117 @@
+{
+  "_description": "Конфигурация навыков и способностей - боевые, магические, лечебные",
+  "_version": "1.0.0",
+
+  "melee_skills": {
+    "power_strike": {
+      "name": "Мощный удар",
+      "description": "Усиленная атака с повышенным уроном",
+      "base_multiplier": 1.5,
+      "multiplier_per_rank": 0.3,
+      "stamina_cost": 10,
+      "cooldown": 0
+    },
+    "poison_strike": {
+      "name": "Отравленный удар",
+      "description": "Атака, наносящая урон от яда",
+      "base_damage": 3,
+      "damage_per_rank": 2,
+      "duration": 3,
+      "stamina_cost": 15,
+      "cooldown": 0
+    },
+    "stun_strike": {
+      "name": "Оглушающий удар",
+      "description": "Атака с шансом оглушения",
+      "base_multiplier": 1.2,
+      "multiplier_per_rank": 0.2,
+      "stun_duration": 1,
+      "stamina_cost": 20,
+      "cooldown": 0
+    },
+    "battle_cry": {
+      "name": "Боевой клич",
+      "description": "Усиление силы на несколько ходов",
+      "base_strength_boost": 3,
+      "boost_per_rank": 2,
+      "base_duration": 3,
+      "duration_per_rank": 1,
+      "stamina_cost": 25,
+      "cooldown": 0
+    }
+  },
+
+  "magic_skills": {
+    "fireball": {
+      "name": "Огненный шар",
+      "description": "Мощная огненная атака",
+      "base_damage": 15,
+      "int_multiplier": 2.0,
+      "spirit_multiplier": 0.5,
+      "rank_multiplier": 0.25,
+      "mana_cost": 35,
+      "cooldown": 3
+    },
+    "ice_bolt": {
+      "name": "Ледяная стрела",
+      "description": "Ледяная атака с замедлением",
+      "base_damage": 10,
+      "int_multiplier": 1.5,
+      "spirit_multiplier": 0.5,
+      "rank_multiplier": 0.2,
+      "slow_base_chance": 0.3,
+      "slow_chance_per_rank": 0.05,
+      "mana_cost": 25,
+      "cooldown": 2
+    },
+    "lightning": {
+      "name": "Молния",
+      "description": "Мощная электрическая атака",
+      "base_damage": 20,
+      "int_multiplier": 2.5,
+      "spirit_multiplier": 0.8,
+      "rank_multiplier": 0.25,
+      "mana_cost": 50,
+      "cooldown": 4
+    },
+    "magic_missile": {
+      "name": "Магическая стрела",
+      "description": "Базовая магическая атака",
+      "base_damage": 8,
+      "int_multiplier": 1.2,
+      "spirit_multiplier": 0.3,
+      "rank_multiplier": 0.15,
+      "mana_cost": 15,
+      "cooldown": 1
+    }
+  },
+
+  "healing_skills": {
+    "heal": {
+      "name": "Исцеление",
+      "description": "Восстановление здоровья",
+      "base_percent": 30,
+      "percent_per_rank": 10,
+      "mana_cost": 20,
+      "cooldown": 2
+    },
+    "regeneration": {
+      "name": "Регенерация",
+      "description": "Постепенное восстановление здоровья",
+      "base_heal_per_turn": 8,
+      "heal_per_rank": 3,
+      "base_duration": 2,
+      "duration_per_rank": 1,
+      "mana_cost": 25,
+      "cooldown": 3
+    },
+    "stamina_recovery": {
+      "name": "Восстановление выносливости",
+      "description": "Быстрое восстановление выносливости",
+      "base_percent": 40,
+      "percent_per_rank": 10,
+      "mana_cost": 15,
+      "cooldown": 2
+    }
+  }
+}

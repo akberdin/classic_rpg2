@@ -1,0 +1,36 @@
+{
+  "_description": "Конфигурация боевой системы - уворот, крит, защита, урон",
+  "_version": "1.0.0",
+
+  "dodge": {
+    "_comment": "Система уворота: шанс = ловкость * base_chance_per_dex",
+    "base_chance_per_dex": 3,
+    "max_chance": 85
+  },
+
+  "critical": {
+    "_comment": "Система критического удара: шанс = удача * base_chance_per_luck",
+    "base_chance_per_luck": 3,
+    "max_chance": 85,
+    "damage_multiplier": 2.0
+  },
+
+  "damage": {
+    "min_damage": 1,
+    "combat_range": 1
+  },
+
+  "defense": {
+    "_comment": "Магическая защита и soft cap системы брони",
+    "magic_defense_per_spirit": 1.5,
+    "soft_cap": 50,
+    "reduction_after_cap": 0.5
+  },
+
+  "status_effects": {
+    "_comment": "Длительность и параметры статусных эффектов",
+    "poison_duration_default": 3,
+    "stun_duration_default": 1,
+    "buff_duration_default": 3
+  }
+}

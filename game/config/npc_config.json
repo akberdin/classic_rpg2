@@ -1,0 +1,162 @@
+{
+  "_description": "Конфигурация NPC - типы, AI поведение, отношения, спавн",
+  "_version": "1.0.0",
+
+  "types": {
+    "_comment": "Идентификаторы типов NPC",
+    "guard": "guard",
+    "merchant": "merchant",
+    "bandit": "bandit",
+    "neutral": "neutral",
+    "miner": "miner",
+    "undead": "undead",
+    "mage": "mage"
+  },
+
+  "stat_generation": {
+    "_comment": "Генерация характеристик NPC по уровням",
+    "level_1_5": {"base": 2, "per_level": 0.8},
+    "level_6_15": {"base": 6, "per_level": 0.7},
+    "level_16_30": {"base": 10, "per_level": 0.7},
+    "level_31_40": {"base": 14, "per_level": 0.75},
+    "stat_variation_percent": 15
+  },
+
+  "ai_behavior": {
+    "guard": {
+      "detection_range": 10,
+      "rest_duration_min": 3,
+      "rest_duration_max": 3,
+      "patrol_radius": 15,
+      "aggressive": true
+    },
+    "merchant": {
+      "detection_range": 8,
+      "rest_duration_min": 5,
+      "rest_duration_max": 8,
+      "travel_between_cities": true,
+      "aggressive": false
+    },
+    "bandit": {
+      "detection_range": 10,
+      "rest_duration_min": 2,
+      "rest_duration_max": 4,
+      "camp_radius": 40,
+      "aggressive": true
+    },
+    "miner": {
+      "detection_range": 8,
+      "rest_duration_min": 3,
+      "rest_duration_max": 5,
+      "max_distance_from_mine": 20,
+      "aggressive": false
+    },
+    "undead": {
+      "detection_range": 15,
+      "rest_duration_min": 2,
+      "rest_duration_max": 3,
+      "max_distance_from_ruins": 15,
+      "aggressive": true
+    },
+    "mage": {
+      "detection_range": 12,
+      "rest_duration_min": 3,
+      "rest_duration_max": 5,
+      "max_distance_from_school": 25,
+      "aggressive": true
+    }
+  },
+
+  "relationships": {
+    "_comment": "Матрица отношений: hostile, unfriendly, neutral, friendly, allied",
+    "hostile": "hostile",
+    "unfriendly": "unfriendly",
+    "neutral": "neutral",
+    "friendly": "friendly",
+    "allied": "allied",
+
+    "matrix": {
+      "bandit": {
+        "guard": "hostile",
+        "merchant": "hostile",
+        "neutral": "hostile",
+        "bandit": "friendly",
+        "miner": "hostile",
+        "undead": "hostile",
+        "mage": "hostile"
+      },
+      "guard": {
+        "bandit": "hostile",
+        "guard": "friendly",
+        "merchant": "friendly",
+        "neutral": "neutral",
+        "miner": "friendly",
+        "undead": "hostile",
+        "mage": "friendly"
+      },
+      "merchant": {
+        "bandit": "unfriendly",
+        "guard": "friendly",
+        "merchant": "friendly",
+        "neutral": "neutral",
+        "miner": "friendly",
+        "undead": "unfriendly",
+        "mage": "friendly"
+      },
+      "neutral": {
+        "bandit": "unfriendly",
+        "guard": "neutral",
+        "merchant": "neutral",
+        "neutral": "neutral",
+        "miner": "neutral",
+        "undead": "unfriendly",
+        "mage": "neutral"
+      },
+      "miner": {
+        "bandit": "unfriendly",
+        "guard": "friendly",
+        "merchant": "friendly",
+        "neutral": "neutral",
+        "miner": "friendly",
+        "undead": "unfriendly",
+        "mage": "friendly"
+      },
+      "undead": {
+        "bandit": "hostile",
+        "guard": "hostile",
+        "merchant": "hostile",
+        "neutral": "hostile",
+        "miner": "hostile",
+        "undead": "friendly",
+        "mage": "hostile"
+      },
+      "mage": {
+        "bandit": "hostile",
+        "guard": "friendly",
+        "merchant": "friendly",
+        "neutral": "neutral",
+        "miner": "friendly",
+        "undead": "hostile",
+        "mage": "friendly"
+      }
+    }
+  },
+
+  "spawning": {
+    "guards_per_city": 4,
+    "guards_per_village": 2,
+    "merchants_per_city": 3,
+    "merchants_per_village": 2,
+    "bandits_per_camp": {"min": 3, "max": 6},
+    "miners_per_mine": {"min": 2, "max": 4},
+    "undead_per_ruins": {"min": 3, "max": 6},
+    "mages_per_school": 4
+  },
+
+  "respawn": {
+    "_comment": "Параметры респавна NPC",
+    "min_hours": 10,
+    "max_hours": 20,
+    "check_interval_seconds": 60
+  }
+}

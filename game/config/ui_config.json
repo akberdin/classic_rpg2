@@ -1,0 +1,93 @@
+{
+  "_description": "Конфигурация интерфейса - цвета, шрифты, панели, отображение",
+  "_version": "1.0.0",
+
+  "display": {
+    "window_width": 1920,
+    "window_height": 1200,
+    "base_width": 1920,
+    "base_height": 1200,
+    "fps": 60,
+    "tile_size": 32
+  },
+
+  "fonts": {
+    "min_size": 12,
+    "default_size": 24,
+    "info_size": 20,
+    "title_size": 32
+  },
+
+  "panels": {
+    "overlay_alpha": 180,
+    "border_width": 2,
+    "padding": 10
+  },
+
+  "text_limits": {
+    "max_item_name_display": 25,
+    "max_stat_value_display": 9999,
+    "progress_bar_clamp": true
+  },
+
+  "colors": {
+    "biomes": {
+      "water": [65, 105, 225],
+      "sand": [194, 178, 128],
+      "plains": [107, 142, 35],
+      "hills": [160, 140, 100],
+      "forest": [34, 100, 34]
+    },
+
+    "locations": {
+      "city": [169, 169, 169],
+      "village": [139, 115, 85],
+      "mine": [96, 96, 96],
+      "bandit_camp": [178, 34, 34],
+      "ruins": [128, 128, 128],
+      "magic_school": [138, 43, 226]
+    },
+
+    "general": {
+      "player": [255, 215, 0],
+      "fog": [40, 40, 45],
+      "background": [20, 20, 25],
+      "text": [255, 255, 255]
+    },
+
+    "panel": {
+      "bg": [40, 40, 45],
+      "border": [100, 100, 120],
+      "header": [35, 35, 45],
+      "header_end": [55, 55, 70],
+      "content": [25, 25, 35]
+    },
+
+    "combat": {
+      "title": [255, 215, 0],
+      "log_title": [150, 200, 255],
+      "success": [150, 255, 150],
+      "damage": [255, 150, 150],
+      "crit": [255, 215, 0],
+      "dodge": [150, 200, 255],
+      "default": [200, 200, 200],
+      "player_turn": [100, 255, 100],
+      "enemy_turn": [255, 150, 150],
+      "player_border": [100, 200, 100],
+      "enemy_border": [200, 100, 100]
+    },
+
+    "health": {
+      "low": [255, 100, 100],
+      "medium": [255, 165, 0],
+      "high": [100, 255, 100]
+    },
+
+    "buttons": {
+      "available": [200, 200, 100],
+      "unavailable": [80, 80, 80],
+      "default": [100, 100, 100],
+      "cooldown_text": [255, 100, 100]
+    }
+  }
+}

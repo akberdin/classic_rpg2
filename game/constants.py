@@ -1,89 +1,15 @@
 """
-Константы и настройки игры
+Константы и идентификаторы игры
+
+Этот файл содержит только статические константы и идентификаторы.
+Настраиваемые параметры находятся в профильных конфигах game/config/*.json
 """
 
-# Базовое разрешение для дизайна UI (для масштабирования)
-BASE_WIDTH = 1920
-BASE_HEIGHT = 1200
+from game.config.config_loader import get_config, get_ui_config, get_world_config
 
-# Фактические размеры окна (будут установлены при инициализации)
-WINDOW_WIDTH = 1920
-WINDOW_HEIGHT = 1200
-FPS = 60
-
-# Размеры тайлов и карты
-TILE_SIZE = 32
-MAP_WIDTH = 200
-MAP_HEIGHT = 200
-
-# Радиус видимости игрока (для тумана войны)
-VISION_RADIUS = 5
-
-# Цвета для биомов (более естественная палитра)
-COLORS = {
-    # Биомы
-    'water': (65, 105, 225),       # Вода - королевский синий
-    'sand': (194, 178, 128),       # Песок - натуральный бежевый
-    'plains': (107, 142, 35),      # Равнины - оливково-зеленый
-    'hills': (160, 140, 100),      # Холмы - серо-коричневый
-    'forest': (34, 100, 34),       # Леса - лесной зеленый
-
-    # Объекты
-    'city': (169, 169, 169),       # Города - темно-серый
-    'village': (139, 115, 85),     # Деревни - коричневый
-    'mine': (96, 96, 96),          # Шахты - темно-серый
-    'bandit_camp': (178, 34, 34),  # Бандитские лагеря - огненно-красный
-    'ruins': (128, 128, 128),      # Руины - серый камень
-    'magic_school': (138, 43, 226), # Школа магов - фиолетовый
-
-    # UI
-    'player': (255, 215, 0),       # Игрок - золотой
-    'fog': (40, 40, 45),           # Туман войны - темно-серый с синевой
-    'background': (20, 20, 25),    # Фон - почти черный
-    'text': (255, 255, 255),       # Текст - белый
-
-    # UI элементы
-    'panel_bg': (40, 40, 45),          # Фон панелей
-    'panel_border': (100, 100, 120),   # Рамка панелей
-    'panel_header': (35, 35, 45),      # Фон заголовков
-    'panel_header_end': (55, 55, 70),  # Конец градиента заголовков
-    'panel_content': (25, 25, 35),     # Фон содержимого
-
-    # Боевой интерфейс
-    'combat_title': (255, 215, 0),         # Заголовок боя - золотой
-    'combat_log_title': (150, 200, 255),   # Заголовок лога - светло-синий
-    'combat_success': (150, 255, 150),     # Успешное действие - зеленый
-    'combat_damage': (255, 150, 150),      # Урон - красный
-    'combat_crit': (255, 215, 0),          # Критический урон - золотой
-    'combat_dodge': (150, 200, 255),       # Уворот - синий
-    'combat_default': (200, 200, 200),     # Обычный текст - серый
-    'combat_player_turn': (100, 255, 100), # Ход игрока - зеленый
-    'combat_enemy_turn': (255, 150, 150),  # Ход врага - красный
-    'combat_player_border': (100, 200, 100),  # Рамка игрока
-    'combat_enemy_border': (200, 100, 100),   # Рамка врага
-
-    # Статус здоровья
-    'health_low': (255, 100, 100),     # Низкое здоровье < 30%
-    'health_medium': (255, 165, 0),    # Среднее здоровье < 60%
-    'health_high': (100, 255, 100),    # Высокое здоровье
-
-    # Кнопки и элементы управления
-    'button_available': (200, 200, 100),  # Доступная кнопка
-    'button_unavailable': (80, 80, 80),   # Недоступная кнопка
-    'button_default': (100, 100, 100),    # Кнопка по умолчанию
-    'cooldown_text': (255, 100, 100),     # Текст перезарядки
-}
-
-# Цвета качества предметов
-ITEM_QUALITY_COLORS = {
-    'poor': (128, 128, 128),       # Плохое - серый
-    'common': (255, 255, 255),     # Обычное - белый
-    'uncommon': (30, 255, 0),      # Необычное - зеленый
-    'rare': (0, 112, 255),         # Редкое - синий
-    'epic': (163, 53, 238),        # Эпическое - фиолетовый
-    'legendary': (255, 128, 0),    # Легендарное - оранжевый
-    'artifact': (230, 204, 128),   # Артефакт - золотой
-}
+# =============================================================================
+# ИДЕНТИФИКАТОРЫ ТИПОВ
+# =============================================================================
 
 # Типы биомов
 BIOME_WATER = 'water'
@@ -92,7 +18,7 @@ BIOME_PLAINS = 'plains'
 BIOME_HILLS = 'hills'
 BIOME_FOREST = 'forest'
 
-# Типы объектов
+# Типы локаций
 LOCATION_CITY = 'city'
 LOCATION_VILLAGE = 'village'
 LOCATION_MINE = 'mine'
@@ -100,24 +26,8 @@ LOCATION_BANDIT_CAMP = 'bandit_camp'
 LOCATION_RUINS = 'ruins'
 LOCATION_MAGIC_SCHOOL = 'magic_school'
 
-# Проходимость биомов
+# Проходимые биомы
 PASSABLE_BIOMES = [BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST]
-
-# Система уровней и рангов
-MAX_LEVEL = 40
-RANKS = {
-    (1, 10): "Новичок",
-    (11, 20): "Обычный",
-    (21, 30): "Опытный",
-    (31, 40): "Эксперт"
-}
-
-# Система отношений
-RELATIONSHIP_HOSTILE = "hostile"      # Враждебный
-RELATIONSHIP_UNFRIENDLY = "unfriendly"  # Недружелюбный
-RELATIONSHIP_NEUTRAL = "neutral"      # Нейтральный
-RELATIONSHIP_FRIENDLY = "friendly"    # Дружелюбный
-RELATIONSHIP_ALLIED = "allied"        # Союзный
 
 # Типы NPC
 NPC_TYPE_GUARD = "guard"
@@ -128,32 +38,70 @@ NPC_TYPE_MINER = "miner"
 NPC_TYPE_UNDEAD = "undead"
 NPC_TYPE_MAGE = "mage"
 
-# Матрица отношений между типами NPC
-# Ключ - (тип1, тип2), значение - отношение типа1 к типу2
+# Система отношений
+RELATIONSHIP_HOSTILE = "hostile"
+RELATIONSHIP_UNFRIENDLY = "unfriendly"
+RELATIONSHIP_NEUTRAL = "neutral"
+RELATIONSHIP_FRIENDLY = "friendly"
+RELATIONSHIP_ALLIED = "allied"
+
+# Действия игрока при взаимодействии с NPC
+INTERACTION_TRADE = "trade"
+INTERACTION_ATTACK = "attack"
+INTERACTION_LEAVE = "leave"
+
+# =============================================================================
+# СИСТЕМА РАНГОВ
+# =============================================================================
+
+MAX_LEVEL = 40
+RANKS = {
+    (1, 10): "Новичок",
+    (11, 20): "Обычный",
+    (21, 30): "Опытный",
+    (31, 40): "Эксперт"
+}
+
+# =============================================================================
+# МАТРИЦА ОТНОШЕНИЙ NPC (статическая структура)
+# =============================================================================
+
 NPC_RELATIONSHIPS = {
     # Бандиты
     (NPC_TYPE_BANDIT, NPC_TYPE_GUARD): RELATIONSHIP_HOSTILE,
     (NPC_TYPE_BANDIT, NPC_TYPE_MERCHANT): RELATIONSHIP_HOSTILE,
     (NPC_TYPE_BANDIT, NPC_TYPE_NEUTRAL): RELATIONSHIP_HOSTILE,
     (NPC_TYPE_BANDIT, NPC_TYPE_BANDIT): RELATIONSHIP_FRIENDLY,
+    (NPC_TYPE_BANDIT, NPC_TYPE_MINER): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_BANDIT, NPC_TYPE_UNDEAD): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_BANDIT, NPC_TYPE_MAGE): RELATIONSHIP_HOSTILE,
 
     # Стражники
     (NPC_TYPE_GUARD, NPC_TYPE_BANDIT): RELATIONSHIP_HOSTILE,
     (NPC_TYPE_GUARD, NPC_TYPE_GUARD): RELATIONSHIP_FRIENDLY,
     (NPC_TYPE_GUARD, NPC_TYPE_MERCHANT): RELATIONSHIP_FRIENDLY,
     (NPC_TYPE_GUARD, NPC_TYPE_NEUTRAL): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_GUARD, NPC_TYPE_MINER): RELATIONSHIP_FRIENDLY,
+    (NPC_TYPE_GUARD, NPC_TYPE_UNDEAD): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_GUARD, NPC_TYPE_MAGE): RELATIONSHIP_FRIENDLY,
 
     # Торговцы
     (NPC_TYPE_MERCHANT, NPC_TYPE_BANDIT): RELATIONSHIP_UNFRIENDLY,
     (NPC_TYPE_MERCHANT, NPC_TYPE_GUARD): RELATIONSHIP_FRIENDLY,
     (NPC_TYPE_MERCHANT, NPC_TYPE_MERCHANT): RELATIONSHIP_FRIENDLY,
     (NPC_TYPE_MERCHANT, NPC_TYPE_NEUTRAL): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_MERCHANT, NPC_TYPE_MINER): RELATIONSHIP_FRIENDLY,
+    (NPC_TYPE_MERCHANT, NPC_TYPE_UNDEAD): RELATIONSHIP_UNFRIENDLY,
+    (NPC_TYPE_MERCHANT, NPC_TYPE_MAGE): RELATIONSHIP_FRIENDLY,
 
     # Нейтральные
     (NPC_TYPE_NEUTRAL, NPC_TYPE_BANDIT): RELATIONSHIP_UNFRIENDLY,
     (NPC_TYPE_NEUTRAL, NPC_TYPE_GUARD): RELATIONSHIP_NEUTRAL,
     (NPC_TYPE_NEUTRAL, NPC_TYPE_MERCHANT): RELATIONSHIP_NEUTRAL,
     (NPC_TYPE_NEUTRAL, NPC_TYPE_NEUTRAL): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_NEUTRAL, NPC_TYPE_MINER): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_NEUTRAL, NPC_TYPE_UNDEAD): RELATIONSHIP_UNFRIENDLY,
+    (NPC_TYPE_NEUTRAL, NPC_TYPE_MAGE): RELATIONSHIP_NEUTRAL,
 
     # Шахтеры
     (NPC_TYPE_MINER, NPC_TYPE_BANDIT): RELATIONSHIP_UNFRIENDLY,
@@ -162,6 +110,7 @@ NPC_RELATIONSHIPS = {
     (NPC_TYPE_MINER, NPC_TYPE_NEUTRAL): RELATIONSHIP_NEUTRAL,
     (NPC_TYPE_MINER, NPC_TYPE_MINER): RELATIONSHIP_FRIENDLY,
     (NPC_TYPE_MINER, NPC_TYPE_UNDEAD): RELATIONSHIP_UNFRIENDLY,
+    (NPC_TYPE_MINER, NPC_TYPE_MAGE): RELATIONSHIP_FRIENDLY,
 
     # Нежить
     (NPC_TYPE_UNDEAD, NPC_TYPE_BANDIT): RELATIONSHIP_HOSTILE,
@@ -170,18 +119,7 @@ NPC_RELATIONSHIPS = {
     (NPC_TYPE_UNDEAD, NPC_TYPE_NEUTRAL): RELATIONSHIP_HOSTILE,
     (NPC_TYPE_UNDEAD, NPC_TYPE_MINER): RELATIONSHIP_HOSTILE,
     (NPC_TYPE_UNDEAD, NPC_TYPE_UNDEAD): RELATIONSHIP_FRIENDLY,
-
-    # Обратные отношения к нежити
-    (NPC_TYPE_BANDIT, NPC_TYPE_UNDEAD): RELATIONSHIP_HOSTILE,
-    (NPC_TYPE_GUARD, NPC_TYPE_UNDEAD): RELATIONSHIP_HOSTILE,
-    (NPC_TYPE_MERCHANT, NPC_TYPE_UNDEAD): RELATIONSHIP_UNFRIENDLY,
-    (NPC_TYPE_NEUTRAL, NPC_TYPE_UNDEAD): RELATIONSHIP_UNFRIENDLY,
-
-    # Обратные отношения к шахтерам
-    (NPC_TYPE_BANDIT, NPC_TYPE_MINER): RELATIONSHIP_HOSTILE,
-    (NPC_TYPE_GUARD, NPC_TYPE_MINER): RELATIONSHIP_FRIENDLY,
-    (NPC_TYPE_MERCHANT, NPC_TYPE_MINER): RELATIONSHIP_FRIENDLY,
-    (NPC_TYPE_NEUTRAL, NPC_TYPE_MINER): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_UNDEAD, NPC_TYPE_MAGE): RELATIONSHIP_HOSTILE,
 
     # Маги
     (NPC_TYPE_MAGE, NPC_TYPE_GUARD): RELATIONSHIP_FRIENDLY,
@@ -191,65 +129,12 @@ NPC_RELATIONSHIPS = {
     (NPC_TYPE_MAGE, NPC_TYPE_MAGE): RELATIONSHIP_FRIENDLY,
     (NPC_TYPE_MAGE, NPC_TYPE_BANDIT): RELATIONSHIP_HOSTILE,
     (NPC_TYPE_MAGE, NPC_TYPE_UNDEAD): RELATIONSHIP_HOSTILE,
-
-    # Обратные отношения к магам
-    (NPC_TYPE_GUARD, NPC_TYPE_MAGE): RELATIONSHIP_FRIENDLY,
-    (NPC_TYPE_MERCHANT, NPC_TYPE_MAGE): RELATIONSHIP_FRIENDLY,
-    (NPC_TYPE_MINER, NPC_TYPE_MAGE): RELATIONSHIP_FRIENDLY,
-    (NPC_TYPE_NEUTRAL, NPC_TYPE_MAGE): RELATIONSHIP_NEUTRAL,
-    (NPC_TYPE_BANDIT, NPC_TYPE_MAGE): RELATIONSHIP_HOSTILE,
-    (NPC_TYPE_UNDEAD, NPC_TYPE_MAGE): RELATIONSHIP_HOSTILE,
 }
 
-# Параметры выносливости
-STAMINA_PER_STAT_POINT = 10  # Каждая единица силы/телосложения дает 10 выносливости
-STAMINA_COST_PER_MOVE = 2    # Стоимость перемещения
-STAMINA_REST_MIN = 0.6       # Минимальный % для окончания отдыха (60%)
-STAMINA_REST_MAX = 0.8       # Максимальный % для окончания отдыха (80%)
+# =============================================================================
+# ИМЕНА ЛОКАЦИЙ (статические данные)
+# =============================================================================
 
-# Параметры боя
-COMBAT_RANGE = 1  # Дальность атаки (в клетках)
-BANDIT_CAMP_RADIUS = 40  # Радиус движения бандитов от лагеря
-
-# Параметры уворота и крита (сбалансированные)
-DODGE_BASE_CHANCE = 3  # Базовый шанс уворота при 1 ловкости (3%)
-CRIT_BASE_CHANCE = 3   # Базовый шанс крита при 1 удаче (3%)
-# При максимуме 85% потребуется 28+ характеристики (85 / 3 = 28.3)
-
-# Параметры AI для NPC
-GUARD_DETECTION_RANGE = 10  # Дальность обнаружения врагов для стражников
-GUARD_REST_DURATION_MIN = 3  # Минимальная длительность отдыха стражника (в часах)
-GUARD_REST_DURATION_MAX = 3  # Максимальная длительность отдыха стражника (в часах)
-
-MERCHANT_DETECTION_RANGE = 8  # Дальность обнаружения угроз для торговцев
-MERCHANT_REST_DURATION_MIN = 5  # Минимальная длительность отдыха торговца (в часах)
-MERCHANT_REST_DURATION_MAX = 8  # Максимальная длительность отдыха торговца (в часах)
-
-BANDIT_DETECTION_RANGE = 10  # Дальность обнаружения врагов для бандитов
-BANDIT_REST_DURATION_MIN = 2  # Минимальная длительность отдыха бандита (в часах)
-BANDIT_REST_DURATION_MAX = 4  # Максимальная длительность отдыха бандита (в часах)
-
-MINER_DETECTION_RANGE = 8  # Дальность обнаружения угроз для шахтеров
-MINER_REST_DURATION_MIN = 3  # Минимальная длительность отдыха шахтера (в часах)
-MINER_REST_DURATION_MAX = 5  # Максимальная длительность отдыха шахтера (в часах)
-MINER_MAX_DISTANCE_FROM_MINE = 20  # Максимальная дистанция шахтера от шахты
-
-UNDEAD_DETECTION_RANGE = 15  # Дальность обнаружения врагов для нежити (увеличено)
-UNDEAD_REST_DURATION_MIN = 2  # Минимальная длительность отдыха нежити (в часах)
-UNDEAD_REST_DURATION_MAX = 3  # Максимальная длительность отдыха нежити (в часах)
-UNDEAD_MAX_DISTANCE_FROM_RUINS = 15  # Максимальная дистанция нежити от руин (увеличено)
-
-MAGE_DETECTION_RANGE = 12  # Дальность обнаружения врагов для магов
-MAGE_REST_DURATION_MIN = 3  # Минимальная длительность отдыха мага (в часах)
-MAGE_REST_DURATION_MAX = 5  # Максимальная длительность отдыха мага (в часах)
-MAGE_MAX_DISTANCE_FROM_SCHOOL = 25  # Максимальная дистанция мага от школы магии
-
-# Действия игрока при взаимодействии с NPC
-INTERACTION_TRADE = "trade"      # Торговля
-INTERACTION_ATTACK = "attack"    # Агрессия
-INTERACTION_LEAVE = "leave"      # Уйти
-
-# Имена для локаций
 CITY_NAMES = [
     "Златоград", "Каменск", "Серебряный Град", "Королевская Гавань",
     "Вольный Город", "Изумрудный Город", "Белокаменск", "Красноярск",
@@ -297,48 +182,384 @@ RUIN_NAMES = [
     "Гробница Королей", "Древний Некрополь", "Темные Катакомбы"
 ]
 
-# Параметры игрового времени
-GAME_START_HOUR = 6  # Начальный час игры (утро)
-HOURS_PER_DAY = 24  # Часов в игровом дне
+# =============================================================================
+# ДИНАМИЧЕСКИЕ КОНСТАНТЫ (загружаются из конфигов)
+# Для обратной совместимости со старым кодом
+# =============================================================================
 
-# UI параметры
-UI_OVERLAY_ALPHA = 180  # Прозрачность оверлеев
-UI_PANEL_BORDER_WIDTH = 2  # Толщина рамки панелей
-UI_MIN_FONT_SIZE = 12  # Минимальный размер шрифта
-UI_DEFAULT_FONT_SIZE = 24  # Размер шрифта по умолчанию
-UI_INFO_FONT_SIZE = 20  # Размер информационного шрифта
+def _init_dynamic_constants():
+    """Инициализация динамических констант из конфигов"""
+    global BASE_WIDTH, BASE_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, FPS
+    global TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, VISION_RADIUS
+    global COLORS, ITEM_QUALITY_COLORS
+    global STAMINA_PER_STAT_POINT, STAMINA_COST_PER_MOVE
+    global STAMINA_REST_MIN, STAMINA_REST_MAX
+    global COMBAT_RANGE, BANDIT_CAMP_RADIUS
+    global DODGE_BASE_CHANCE, CRIT_BASE_CHANCE
+    global GUARD_DETECTION_RANGE, GUARD_REST_DURATION_MIN, GUARD_REST_DURATION_MAX
+    global MERCHANT_DETECTION_RANGE, MERCHANT_REST_DURATION_MIN, MERCHANT_REST_DURATION_MAX
+    global BANDIT_DETECTION_RANGE, BANDIT_REST_DURATION_MIN, BANDIT_REST_DURATION_MAX
+    global MINER_DETECTION_RANGE, MINER_REST_DURATION_MIN, MINER_REST_DURATION_MAX
+    global MINER_MAX_DISTANCE_FROM_MINE
+    global UNDEAD_DETECTION_RANGE, UNDEAD_REST_DURATION_MIN, UNDEAD_REST_DURATION_MAX
+    global UNDEAD_MAX_DISTANCE_FROM_RUINS
+    global MAGE_DETECTION_RANGE, MAGE_REST_DURATION_MIN, MAGE_REST_DURATION_MAX
+    global MAGE_MAX_DISTANCE_FROM_SCHOOL
+    global GAME_START_HOUR, HOURS_PER_DAY
+    global UI_OVERLAY_ALPHA, UI_PANEL_BORDER_WIDTH
+    global UI_MIN_FONT_SIZE, UI_DEFAULT_FONT_SIZE, UI_INFO_FONT_SIZE
+    global HEALTH_LOW_THRESHOLD, HEALTH_MEDIUM_THRESHOLD
+    global LOCATION_MIN_DISTANCE
+    global CITY_COUNT_MIN, CITY_COUNT_MAX
+    global VILLAGE_COUNT_MIN, VILLAGE_COUNT_MAX
+    global MINE_COUNT_MIN, MINE_COUNT_MAX
+    global BANDIT_CAMP_COUNT_MIN, BANDIT_CAMP_COUNT_MAX
+    global RUINS_COUNT_MIN, RUINS_COUNT_MAX, MAGIC_SCHOOL_COUNT
+    global GUARDS_PER_CITY, GUARDS_PER_VILLAGE
+    global MERCHANTS_PER_CITY, MERCHANTS_PER_VILLAGE
+    global BANDITS_PER_CAMP_MIN, BANDITS_PER_CAMP_MAX
+    global MINERS_PER_MINE_MIN, MINERS_PER_MINE_MAX
+    global UNDEAD_PER_RUINS_MIN, UNDEAD_PER_RUINS_MAX
+    global MAGES_PER_SCHOOL
+    global SHOP_BUY_MULTIPLIER, SHOP_SELL_MULTIPLIER
 
-# Пороги здоровья для цветовой индикации (в процентах)
-HEALTH_LOW_THRESHOLD = 30  # Низкое здоровье
-HEALTH_MEDIUM_THRESHOLD = 60  # Среднее здоровье
+    config = get_config()
+    ui_config = get_ui_config()
+    world_config = get_world_config()
 
-# Параметры генерации локаций
-LOCATION_MIN_DISTANCE = 8  # Минимальное расстояние между локациями
-CITY_COUNT_MIN = 4  # Минимум городов
-CITY_COUNT_MAX = 6  # Максимум городов
-VILLAGE_COUNT_MIN = 12  # Минимум деревень
-VILLAGE_COUNT_MAX = 18  # Максимум деревень
-MINE_COUNT_MIN = 6  # Минимум шахт
-MINE_COUNT_MAX = 10  # Максимум шахт
-BANDIT_CAMP_COUNT_MIN = 6  # Минимум бандитских лагерей
-BANDIT_CAMP_COUNT_MAX = 10  # Максимум бандитских лагерей
-RUINS_COUNT_MIN = 8  # Минимум руин
-RUINS_COUNT_MAX = 12  # Максимум руин
-MAGIC_SCHOOL_COUNT = 1  # Количество школ магии
+    # Display параметры
+    BASE_WIDTH = ui_config.get_display_param('base_width', 1920)
+    BASE_HEIGHT = ui_config.get_display_param('base_height', 1200)
+    WINDOW_WIDTH = ui_config.get_display_param('window_width', 1920)
+    WINDOW_HEIGHT = ui_config.get_display_param('window_height', 1200)
+    FPS = ui_config.get_display_param('fps', 60)
+    TILE_SIZE = ui_config.get_display_param('tile_size', 32)
 
-# Параметры спавна NPC
-GUARDS_PER_CITY = 4  # Стражников на город
-GUARDS_PER_VILLAGE = 2  # Стражников на деревню
-MERCHANTS_PER_CITY = 3  # Торговцев на город
-MERCHANTS_PER_VILLAGE = 2  # Торговцев на деревню
-BANDITS_PER_CAMP_MIN = 3  # Минимум бандитов в лагере
-BANDITS_PER_CAMP_MAX = 6  # Максимум бандитов в лагере
-MINERS_PER_MINE_MIN = 2  # Минимум шахтеров в шахте
-MINERS_PER_MINE_MAX = 4  # Максимум шахтеров в шахте
-UNDEAD_PER_RUINS_MIN = 3  # Минимум нежити в руинах
-UNDEAD_PER_RUINS_MAX = 6  # Максимум нежити в руинах
-MAGES_PER_SCHOOL = 4  # Магов на школу магии
+    # Map параметры
+    MAP_WIDTH = world_config.get_map_param('width', 200)
+    MAP_HEIGHT = world_config.get_map_param('height', 200)
+    VISION_RADIUS = world_config.get_map_param('vision_radius', 5)
+    LOCATION_MIN_DISTANCE = world_config.get_map_param('location_min_distance', 8)
 
-# Параметры торговли
-SHOP_BUY_MULTIPLIER = 1.5  # Множитель цены покупки
-SHOP_SELL_MULTIPLIER = 0.5  # Множитель цены продажи
+    # Цвета из конфига
+    COLORS = {
+        # Биомы
+        'water': tuple(ui_config.get_color('biomes', 'water', [65, 105, 225])),
+        'sand': tuple(ui_config.get_color('biomes', 'sand', [194, 178, 128])),
+        'plains': tuple(ui_config.get_color('biomes', 'plains', [107, 142, 35])),
+        'hills': tuple(ui_config.get_color('biomes', 'hills', [160, 140, 100])),
+        'forest': tuple(ui_config.get_color('biomes', 'forest', [34, 100, 34])),
+
+        # Локации
+        'city': tuple(ui_config.get_color('locations', 'city', [169, 169, 169])),
+        'village': tuple(ui_config.get_color('locations', 'village', [139, 115, 85])),
+        'mine': tuple(ui_config.get_color('locations', 'mine', [96, 96, 96])),
+        'bandit_camp': tuple(ui_config.get_color('locations', 'bandit_camp', [178, 34, 34])),
+        'ruins': tuple(ui_config.get_color('locations', 'ruins', [128, 128, 128])),
+        'magic_school': tuple(ui_config.get_color('locations', 'magic_school', [138, 43, 226])),
+
+        # Общие
+        'player': tuple(ui_config.get_color('general', 'player', [255, 215, 0])),
+        'fog': tuple(ui_config.get_color('general', 'fog', [40, 40, 45])),
+        'background': tuple(ui_config.get_color('general', 'background', [20, 20, 25])),
+        'text': tuple(ui_config.get_color('general', 'text', [255, 255, 255])),
+
+        # Панели
+        'panel_bg': tuple(ui_config.get_color('panel', 'bg', [40, 40, 45])),
+        'panel_border': tuple(ui_config.get_color('panel', 'border', [100, 100, 120])),
+        'panel_header': tuple(ui_config.get_color('panel', 'header', [35, 35, 45])),
+        'panel_header_end': tuple(ui_config.get_color('panel', 'header_end', [55, 55, 70])),
+        'panel_content': tuple(ui_config.get_color('panel', 'content', [25, 25, 35])),
+
+        # Бой
+        'combat_title': tuple(ui_config.get_color('combat', 'title', [255, 215, 0])),
+        'combat_log_title': tuple(ui_config.get_color('combat', 'log_title', [150, 200, 255])),
+        'combat_success': tuple(ui_config.get_color('combat', 'success', [150, 255, 150])),
+        'combat_damage': tuple(ui_config.get_color('combat', 'damage', [255, 150, 150])),
+        'combat_crit': tuple(ui_config.get_color('combat', 'crit', [255, 215, 0])),
+        'combat_dodge': tuple(ui_config.get_color('combat', 'dodge', [150, 200, 255])),
+        'combat_default': tuple(ui_config.get_color('combat', 'default', [200, 200, 200])),
+        'combat_player_turn': tuple(ui_config.get_color('combat', 'player_turn', [100, 255, 100])),
+        'combat_enemy_turn': tuple(ui_config.get_color('combat', 'enemy_turn', [255, 150, 150])),
+        'combat_player_border': tuple(ui_config.get_color('combat', 'player_border', [100, 200, 100])),
+        'combat_enemy_border': tuple(ui_config.get_color('combat', 'enemy_border', [200, 100, 100])),
+
+        # Здоровье
+        'health_low': tuple(ui_config.get_color('health', 'low', [255, 100, 100])),
+        'health_medium': tuple(ui_config.get_color('health', 'medium', [255, 165, 0])),
+        'health_high': tuple(ui_config.get_color('health', 'high', [100, 255, 100])),
+
+        # Кнопки
+        'button_available': tuple(ui_config.get_color('buttons', 'available', [200, 200, 100])),
+        'button_unavailable': tuple(ui_config.get_color('buttons', 'unavailable', [80, 80, 80])),
+        'button_default': tuple(ui_config.get_color('buttons', 'default', [100, 100, 100])),
+        'cooldown_text': tuple(ui_config.get_color('buttons', 'cooldown_text', [255, 100, 100])),
+    }
+
+    # Цвета качества предметов
+    items_config = config.items
+    ITEM_QUALITY_COLORS = {}
+    for quality in ['poor', 'common', 'uncommon', 'rare', 'epic', 'legendary', 'artifact']:
+        color = items_config.get_quality(quality, 'color', [255, 255, 255])
+        ITEM_QUALITY_COLORS[quality] = tuple(color)
+
+    # Параметры игрока
+    player_config = config.player
+    STAMINA_PER_STAT_POINT = player_config.get_base_stat('stamina_per_stat_point', 10)
+    STAMINA_COST_PER_MOVE = player_config.get_regen_param('stamina_cost_per_move', 2)
+    STAMINA_REST_MIN = player_config.get_regen_param('rest_threshold_min', 0.6)
+    STAMINA_REST_MAX = player_config.get_regen_param('rest_threshold_max', 0.8)
+
+    # Параметры боя
+    combat_config = config.combat
+    COMBAT_RANGE = combat_config.get('damage', 'combat_range', default=1)
+    DODGE_BASE_CHANCE = combat_config.get_dodge_param('base_chance_per_dex', 3)
+    CRIT_BASE_CHANCE = combat_config.get_crit_param('base_chance_per_luck', 3)
+
+    # Параметры NPC
+    npc_config = config.npc
+
+    # Guard
+    guard_ai = npc_config.get_ai_behavior('guard', default={})
+    GUARD_DETECTION_RANGE = guard_ai.get('detection_range', 10) if isinstance(guard_ai, dict) else 10
+    GUARD_REST_DURATION_MIN = guard_ai.get('rest_duration_min', 3) if isinstance(guard_ai, dict) else 3
+    GUARD_REST_DURATION_MAX = guard_ai.get('rest_duration_max', 3) if isinstance(guard_ai, dict) else 3
+
+    # Merchant
+    merchant_ai = npc_config.get_ai_behavior('merchant', default={})
+    MERCHANT_DETECTION_RANGE = merchant_ai.get('detection_range', 8) if isinstance(merchant_ai, dict) else 8
+    MERCHANT_REST_DURATION_MIN = merchant_ai.get('rest_duration_min', 5) if isinstance(merchant_ai, dict) else 5
+    MERCHANT_REST_DURATION_MAX = merchant_ai.get('rest_duration_max', 8) if isinstance(merchant_ai, dict) else 8
+
+    # Bandit
+    bandit_ai = npc_config.get_ai_behavior('bandit', default={})
+    BANDIT_DETECTION_RANGE = bandit_ai.get('detection_range', 10) if isinstance(bandit_ai, dict) else 10
+    BANDIT_REST_DURATION_MIN = bandit_ai.get('rest_duration_min', 2) if isinstance(bandit_ai, dict) else 2
+    BANDIT_REST_DURATION_MAX = bandit_ai.get('rest_duration_max', 4) if isinstance(bandit_ai, dict) else 4
+    BANDIT_CAMP_RADIUS = bandit_ai.get('camp_radius', 40) if isinstance(bandit_ai, dict) else 40
+
+    # Miner
+    miner_ai = npc_config.get_ai_behavior('miner', default={})
+    MINER_DETECTION_RANGE = miner_ai.get('detection_range', 8) if isinstance(miner_ai, dict) else 8
+    MINER_REST_DURATION_MIN = miner_ai.get('rest_duration_min', 3) if isinstance(miner_ai, dict) else 3
+    MINER_REST_DURATION_MAX = miner_ai.get('rest_duration_max', 5) if isinstance(miner_ai, dict) else 5
+    MINER_MAX_DISTANCE_FROM_MINE = miner_ai.get('max_distance_from_mine', 20) if isinstance(miner_ai, dict) else 20
+
+    # Undead
+    undead_ai = npc_config.get_ai_behavior('undead', default={})
+    UNDEAD_DETECTION_RANGE = undead_ai.get('detection_range', 15) if isinstance(undead_ai, dict) else 15
+    UNDEAD_REST_DURATION_MIN = undead_ai.get('rest_duration_min', 2) if isinstance(undead_ai, dict) else 2
+    UNDEAD_REST_DURATION_MAX = undead_ai.get('rest_duration_max', 3) if isinstance(undead_ai, dict) else 3
+    UNDEAD_MAX_DISTANCE_FROM_RUINS = undead_ai.get('max_distance_from_ruins', 15) if isinstance(undead_ai, dict) else 15
+
+    # Mage
+    mage_ai = npc_config.get_ai_behavior('mage', default={})
+    MAGE_DETECTION_RANGE = mage_ai.get('detection_range', 12) if isinstance(mage_ai, dict) else 12
+    MAGE_REST_DURATION_MIN = mage_ai.get('rest_duration_min', 3) if isinstance(mage_ai, dict) else 3
+    MAGE_REST_DURATION_MAX = mage_ai.get('rest_duration_max', 5) if isinstance(mage_ai, dict) else 5
+    MAGE_MAX_DISTANCE_FROM_SCHOOL = mage_ai.get('max_distance_from_school', 25) if isinstance(mage_ai, dict) else 25
+
+    # Игровое время
+    GAME_START_HOUR = world_config.get('time', 'game_start_hour', default=6)
+    HOURS_PER_DAY = world_config.get('time', 'hours_per_day', default=24)
+
+    # UI параметры
+    UI_OVERLAY_ALPHA = ui_config.get_panel_param('overlay_alpha', 180)
+    UI_PANEL_BORDER_WIDTH = ui_config.get_panel_param('border_width', 2)
+    UI_MIN_FONT_SIZE = ui_config.get_font_param('min_size', 12)
+    UI_DEFAULT_FONT_SIZE = ui_config.get_font_param('default_size', 24)
+    UI_INFO_FONT_SIZE = ui_config.get_font_param('info_size', 20)
+
+    # Пороги здоровья
+    HEALTH_LOW_THRESHOLD = config.player.get('health_thresholds', 'low', default=30)
+    HEALTH_MEDIUM_THRESHOLD = config.player.get('health_thresholds', 'medium', default=60)
+
+    # Количество локаций
+    cities = world_config.get_location_count('cities', {'min': 4, 'max': 6})
+    CITY_COUNT_MIN = cities.get('min', 4) if isinstance(cities, dict) else 4
+    CITY_COUNT_MAX = cities.get('max', 6) if isinstance(cities, dict) else 6
+
+    villages = world_config.get_location_count('villages', {'min': 12, 'max': 18})
+    VILLAGE_COUNT_MIN = villages.get('min', 12) if isinstance(villages, dict) else 12
+    VILLAGE_COUNT_MAX = villages.get('max', 18) if isinstance(villages, dict) else 18
+
+    mines = world_config.get_location_count('mines', {'min': 6, 'max': 10})
+    MINE_COUNT_MIN = mines.get('min', 6) if isinstance(mines, dict) else 6
+    MINE_COUNT_MAX = mines.get('max', 10) if isinstance(mines, dict) else 10
+
+    camps = world_config.get_location_count('bandit_camps', {'min': 6, 'max': 10})
+    BANDIT_CAMP_COUNT_MIN = camps.get('min', 6) if isinstance(camps, dict) else 6
+    BANDIT_CAMP_COUNT_MAX = camps.get('max', 10) if isinstance(camps, dict) else 10
+
+    ruins = world_config.get_location_count('ruins', {'min': 8, 'max': 12})
+    RUINS_COUNT_MIN = ruins.get('min', 8) if isinstance(ruins, dict) else 8
+    RUINS_COUNT_MAX = ruins.get('max', 12) if isinstance(ruins, dict) else 12
+
+    MAGIC_SCHOOL_COUNT = world_config.get_location_count('magic_schools', 1)
+
+    # Спавн NPC
+    GUARDS_PER_CITY = npc_config.get_spawn_param('guards_per_city', 4)
+    GUARDS_PER_VILLAGE = npc_config.get_spawn_param('guards_per_village', 2)
+    MERCHANTS_PER_CITY = npc_config.get_spawn_param('merchants_per_city', 3)
+    MERCHANTS_PER_VILLAGE = npc_config.get_spawn_param('merchants_per_village', 2)
+
+    bandits = npc_config.get_spawn_param('bandits_per_camp', {'min': 3, 'max': 6})
+    BANDITS_PER_CAMP_MIN = bandits.get('min', 3) if isinstance(bandits, dict) else 3
+    BANDITS_PER_CAMP_MAX = bandits.get('max', 6) if isinstance(bandits, dict) else 6
+
+    miners = npc_config.get_spawn_param('miners_per_mine', {'min': 2, 'max': 4})
+    MINERS_PER_MINE_MIN = miners.get('min', 2) if isinstance(miners, dict) else 2
+    MINERS_PER_MINE_MAX = miners.get('max', 4) if isinstance(miners, dict) else 4
+
+    undead_spawn = npc_config.get_spawn_param('undead_per_ruins', {'min': 3, 'max': 6})
+    UNDEAD_PER_RUINS_MIN = undead_spawn.get('min', 3) if isinstance(undead_spawn, dict) else 3
+    UNDEAD_PER_RUINS_MAX = undead_spawn.get('max', 6) if isinstance(undead_spawn, dict) else 6
+
+    MAGES_PER_SCHOOL = npc_config.get_spawn_param('mages_per_school', 4)
+
+    # Торговля
+    SHOP_BUY_MULTIPLIER = config.economy.get_trade_param('buy_multiplier', 1.5)
+    SHOP_SELL_MULTIPLIER = config.economy.get_trade_param('sell_multiplier', 0.5)
+
+
+# Значения по умолчанию (до инициализации конфигов)
+BASE_WIDTH = 1920
+BASE_HEIGHT = 1200
+WINDOW_WIDTH = 1920
+WINDOW_HEIGHT = 1200
+FPS = 60
+TILE_SIZE = 32
+MAP_WIDTH = 200
+MAP_HEIGHT = 200
+VISION_RADIUS = 5
+
+# Цвета по умолчанию
+COLORS = {
+    'water': (65, 105, 225),
+    'sand': (194, 178, 128),
+    'plains': (107, 142, 35),
+    'hills': (160, 140, 100),
+    'forest': (34, 100, 34),
+    'city': (169, 169, 169),
+    'village': (139, 115, 85),
+    'mine': (96, 96, 96),
+    'bandit_camp': (178, 34, 34),
+    'ruins': (128, 128, 128),
+    'magic_school': (138, 43, 226),
+    'player': (255, 215, 0),
+    'fog': (40, 40, 45),
+    'background': (20, 20, 25),
+    'text': (255, 255, 255),
+    'panel_bg': (40, 40, 45),
+    'panel_border': (100, 100, 120),
+    'panel_header': (35, 35, 45),
+    'panel_header_end': (55, 55, 70),
+    'panel_content': (25, 25, 35),
+    'combat_title': (255, 215, 0),
+    'combat_log_title': (150, 200, 255),
+    'combat_success': (150, 255, 150),
+    'combat_damage': (255, 150, 150),
+    'combat_crit': (255, 215, 0),
+    'combat_dodge': (150, 200, 255),
+    'combat_default': (200, 200, 200),
+    'combat_player_turn': (100, 255, 100),
+    'combat_enemy_turn': (255, 150, 150),
+    'combat_player_border': (100, 200, 100),
+    'combat_enemy_border': (200, 100, 100),
+    'health_low': (255, 100, 100),
+    'health_medium': (255, 165, 0),
+    'health_high': (100, 255, 100),
+    'button_available': (200, 200, 100),
+    'button_unavailable': (80, 80, 80),
+    'button_default': (100, 100, 100),
+    'cooldown_text': (255, 100, 100),
+}
+
+ITEM_QUALITY_COLORS = {
+    'poor': (128, 128, 128),
+    'common': (255, 255, 255),
+    'uncommon': (30, 255, 0),
+    'rare': (0, 112, 255),
+    'epic': (163, 53, 238),
+    'legendary': (255, 128, 0),
+    'artifact': (230, 204, 128),
+}
+
+# Остальные значения по умолчанию
+STAMINA_PER_STAT_POINT = 10
+STAMINA_COST_PER_MOVE = 2
+STAMINA_REST_MIN = 0.6
+STAMINA_REST_MAX = 0.8
+COMBAT_RANGE = 1
+BANDIT_CAMP_RADIUS = 40
+DODGE_BASE_CHANCE = 3
+CRIT_BASE_CHANCE = 3
+
+GUARD_DETECTION_RANGE = 10
+GUARD_REST_DURATION_MIN = 3
+GUARD_REST_DURATION_MAX = 3
+MERCHANT_DETECTION_RANGE = 8
+MERCHANT_REST_DURATION_MIN = 5
+MERCHANT_REST_DURATION_MAX = 8
+BANDIT_DETECTION_RANGE = 10
+BANDIT_REST_DURATION_MIN = 2
+BANDIT_REST_DURATION_MAX = 4
+MINER_DETECTION_RANGE = 8
+MINER_REST_DURATION_MIN = 3
+MINER_REST_DURATION_MAX = 5
+MINER_MAX_DISTANCE_FROM_MINE = 20
+UNDEAD_DETECTION_RANGE = 15
+UNDEAD_REST_DURATION_MIN = 2
+UNDEAD_REST_DURATION_MAX = 3
+UNDEAD_MAX_DISTANCE_FROM_RUINS = 15
+MAGE_DETECTION_RANGE = 12
+MAGE_REST_DURATION_MIN = 3
+MAGE_REST_DURATION_MAX = 5
+MAGE_MAX_DISTANCE_FROM_SCHOOL = 25
+
+GAME_START_HOUR = 6
+HOURS_PER_DAY = 24
+UI_OVERLAY_ALPHA = 180
+UI_PANEL_BORDER_WIDTH = 2
+UI_MIN_FONT_SIZE = 12
+UI_DEFAULT_FONT_SIZE = 24
+UI_INFO_FONT_SIZE = 20
+HEALTH_LOW_THRESHOLD = 30
+HEALTH_MEDIUM_THRESHOLD = 60
+
+LOCATION_MIN_DISTANCE = 8
+CITY_COUNT_MIN = 4
+CITY_COUNT_MAX = 6
+VILLAGE_COUNT_MIN = 12
+VILLAGE_COUNT_MAX = 18
+MINE_COUNT_MIN = 6
+MINE_COUNT_MAX = 10
+BANDIT_CAMP_COUNT_MIN = 6
+BANDIT_CAMP_COUNT_MAX = 10
+RUINS_COUNT_MIN = 8
+RUINS_COUNT_MAX = 12
+MAGIC_SCHOOL_COUNT = 1
+
+GUARDS_PER_CITY = 4
+GUARDS_PER_VILLAGE = 2
+MERCHANTS_PER_CITY = 3
+MERCHANTS_PER_VILLAGE = 2
+BANDITS_PER_CAMP_MIN = 3
+BANDITS_PER_CAMP_MAX = 6
+MINERS_PER_MINE_MIN = 2
+MINERS_PER_MINE_MAX = 4
+UNDEAD_PER_RUINS_MIN = 3
+UNDEAD_PER_RUINS_MAX = 6
+MAGES_PER_SCHOOL = 4
+
+SHOP_BUY_MULTIPLIER = 1.5
+SHOP_SELL_MULTIPLIER = 0.5
+
+
+def init_constants():
+    """Инициализировать константы из конфигов (вызывать после загрузки конфигов)"""
+    try:
+        _init_dynamic_constants()
+    except Exception as e:
+        print(f"Warning: Failed to load dynamic constants: {e}")
+        print("Using default values")
