@@ -3,6 +3,8 @@
 """
 import pygame
 import random
+import ctypes
+import platform
 from game.map import GameMap
 from game.character import Player, Guard, Merchant, MagicMerchant, MagePatrol, Bandit, Miner, Undead
 from game.fog_of_war import FogOfWar
@@ -25,10 +27,22 @@ class Game:
 
     def __init__(self):
         """Инициализация игры"""
-        # Получаем информацию о фактическом разрешении экрана
-        display_info = pygame.display.Info()
-        actual_width = display_info.current_w
-        actual_height = display_info.current_h
+        # Для Windows: сообщаем системе, что процесс умеет работать с DPI
+        if platform.system() == 'Windows':
+            try:
+                ctypes.windll.user32.SetProcessDPIAware()
+            except Exception:
+                pass  # Игнорируем ошибки на не-Windows системах
+
+        # Получаем актуальное разрешение рабочего стола
+        desktop_sizes = pygame.display.get_desktop_sizes()
+        if desktop_sizes:
+            actual_width, actual_height = desktop_sizes[0]
+        else:
+            # Fallback на Info() если get_desktop_sizes() не сработал
+            display_info = pygame.display.Info()
+            actual_width = display_info.current_w
+            actual_height = display_info.current_h
 
         # Используем фактическое разрешение экрана (не больше максимального из констант)
         self.window_width = min(actual_width, WINDOW_WIDTH)
