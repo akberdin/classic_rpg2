@@ -25,11 +25,16 @@ class Game:
 
     def __init__(self):
         """Инициализация игры"""
-        # Используем разрешение из констант
-        self.window_width = WINDOW_WIDTH
-        self.window_height = WINDOW_HEIGHT
+        # Получаем информацию о фактическом разрешении экрана
+        display_info = pygame.display.Info()
+        actual_width = display_info.current_w
+        actual_height = display_info.current_h
 
-        # Создаем полноэкранное окно с заданным разрешением
+        # Используем фактическое разрешение экрана (не больше максимального из констант)
+        self.window_width = min(actual_width, WINDOW_WIDTH)
+        self.window_height = min(actual_height, WINDOW_HEIGHT)
+
+        # Создаем полноэкранное окно с определенным разрешением
         self.screen = pygame.display.set_mode((self.window_width, self.window_height), pygame.FULLSCREEN)
 
         pygame.display.set_caption("Classic RPG")
@@ -1972,8 +1977,8 @@ class Game:
 
     def _render_ui(self):
         """Отрисовка пользовательского интерфейса"""
-        # Панель внизу экрана
-        ui_height = 100
+        # Панель внизу экрана (масштабируется под разрешение)
+        ui_height = self.ui_scaler.scale_height(100)
         ui_y = self.window_height - ui_height
 
         # Фон панели
@@ -2011,12 +2016,15 @@ class Game:
             True,
             (255, 215, 0)
         )
-        self.screen.blit(time_gold_text, (self.window_width - 350, info_y + 5))
+        time_gold_x = self.window_width - self.ui_scaler.scale_width(350)
+        self.screen.blit(time_gold_text, (time_gold_x, info_y + 5))
 
         # Прогресс-бары
         bar_y = info_y + 35
-        bar_width = 350
+        # Масштабируем размеры и позиции под ширину экрана
+        bar_width = self.ui_scaler.scale_width(350)
         bar_height = 18
+        bar_spacing = self.ui_scaler.scale_width(30)  # Расстояние между полосами
 
         # Получаем эффективные максимумы с учетом экипировки
         effective_max_health = self.player.get_effective_max_health()
@@ -2041,9 +2049,10 @@ class Game:
         )
 
         # Полоса маны (синяя)
+        mana_x = info_x + bar_width + bar_spacing
         UIHelper.draw_progress_bar(
             self.screen,
-            info_x + 380, bar_y, bar_width, bar_height,
+            mana_x, bar_y, bar_width, bar_height,
             self.player.mana, effective_max_mana,
             bg_color=(20, 20, 60),
             fill_color=(50, 100, 200),
@@ -2053,11 +2062,12 @@ class Game:
         )
 
         # Полоса выносливости (оранжевая)
+        stamina_x = mana_x + bar_width + bar_spacing
         stamina_color = (200, 120, 50) if not self.player.is_resting else (150, 70, 30)
         stamina_status = " [ОТДЫХ]" if self.player.is_resting else ""
         UIHelper.draw_progress_bar(
             self.screen,
-            info_x + 760, bar_y, bar_width, bar_height,
+            stamina_x, bar_y, bar_width, bar_height,
             self.player.stamina, effective_max_stamina,
             bg_color=(60, 40, 20),
             fill_color=stamina_color,
@@ -2081,7 +2091,8 @@ class Game:
                 True,
                 (100, 255, 100)
             )
-            self.screen.blit(stat_points_text, (info_x + 300, bar_y + 30))
+            stat_points_x = self.ui_scaler.scale_width(320)
+            self.screen.blit(stat_points_text, (stat_points_x, bar_y + 30))
 
         # Подсказка о помощи
         help_hint = self.info_font.render(
@@ -2089,21 +2100,23 @@ class Game:
             True,
             (180, 180, 180)
         )
-        self.screen.blit(help_hint, (info_x + 800, info_y + 55))
+        help_hint_x = self.ui_scaler.scale_width(800)
+        self.screen.blit(help_hint, (help_hint_x, info_y + 55))
 
         # Панель умений (8 слотов)
         self._render_skill_panel()
 
     def _render_skill_panel(self):
         """Отрисовка панели умений над панелью параметров"""
-        # Размеры и позиция
-        slot_size = 48
-        slot_spacing = 8
+        # Размеры и позиция (масштабируются под разрешение)
+        slot_size = self.ui_scaler.scale_value(48)
+        slot_spacing = self.ui_scaler.scale_value(8)
         panel_x = (self.window_width - (slot_size + slot_spacing) * 8) // 2
-        # Поднимаем над панелью параметров (ui_height = 100)
-        ui_height = 100
+        # Поднимаем над панелью параметров
+        ui_height = self.ui_scaler.scale_height(100)
         ui_y = self.window_height - ui_height
-        panel_y = ui_y - slot_size - 15
+        panel_offset = self.ui_scaler.scale_value(15)
+        panel_y = ui_y - slot_size - panel_offset
 
         # Отрисовываем 8 слотов
         for i in range(8):
@@ -2205,11 +2218,12 @@ class Game:
 
     def _render_minimap(self):
         """Отрисовка мини-карты"""
-        # Размеры мини-карты
-        minimap_size = 150
-        minimap_x = self.window_width - minimap_size - 10
-        minimap_y = 10
-        pixel_per_tile = 1.5  # Размер одного тайла на мини-карте
+        # Размеры мини-карты (масштабируются под разрешение)
+        minimap_size = self.ui_scaler.scale_value(150)
+        margin = self.ui_scaler.scale_value(10)
+        minimap_x = self.window_width - minimap_size - margin
+        minimap_y = margin
+        pixel_per_tile = minimap_size / 100  # Адаптивный размер тайла
 
         # Фон мини-карты
         pygame.draw.rect(
@@ -2273,9 +2287,11 @@ class Game:
         )
 
         # Заголовок мини-карты
-        minimap_font = pygame.font.Font(None, 16)
+        minimap_font_size = self.ui_scaler.scale_font_size(16)
+        minimap_font = pygame.font.Font(None, minimap_font_size)
         minimap_title = minimap_font.render("Карта", True, COLORS['text'])
-        self.screen.blit(minimap_title, (minimap_x + 5, minimap_y - 18))
+        title_offset = self.ui_scaler.scale_value(18)
+        self.screen.blit(minimap_title, (minimap_x + 5, minimap_y - title_offset))
 
     def _generate_loot(self, enemy):
         """
