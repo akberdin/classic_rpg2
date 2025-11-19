@@ -31,10 +31,10 @@
     "undead_expert": "assets/actors/skeletons/skeleton4.png",
 
     "mage": "assets/sprites/npcs/mage.png",
-    "mage_novice": "assets/sprites/npcs/mage_novice.png",
-    "mage_regular": "assets/sprites/npcs/mage_regular.png",
-    "mage_veteran": "assets/sprites/npcs/mage_veteran.png",
-    "mage_expert": "assets/sprites/npcs/mage_expert.png",
+    "mage_novice": "assets/actors/mage/mage1.png",
+    "mage_regular": "assets/actors/mage/mage2.png",
+    "mage_veteran": "assets/actors/mage/mage3.png",
+    "mage_expert": "assets/actors/mage/mage4вв.png",
 
     "player": "assets/actors/player/player1.png",
     "player_novice": "assets/actors/player/player1.png",
