@@ -25,11 +25,17 @@ class Game:
 
     def __init__(self):
         """Инициализация игры"""
-        # Используем константы разрешения из constants.py
-        self.window_width = WINDOW_WIDTH
-        self.window_height = WINDOW_HEIGHT
+        # Получаем информацию о дисплее для определения оптимального разрешения
+        display_info = pygame.display.Info()
+        screen_width = display_info.current_w
+        screen_height = display_info.current_h
 
-        # Окно игры в полноэкранном режиме с заданным разрешением
+        # Используем реальное разрешение экрана для корректного позиционирования UI
+        # Ограничиваем максимальным разрешением из констант
+        self.window_width = min(WINDOW_WIDTH, screen_width)
+        self.window_height = min(WINDOW_HEIGHT, screen_height)
+
+        # Окно игры в полноэкранном режиме с реальным разрешением экрана
         self.screen = pygame.display.set_mode((self.window_width, self.window_height), pygame.FULLSCREEN)
         pygame.display.set_caption("Classic RPG")
 
@@ -693,6 +699,29 @@ class Game:
             if skill:
                 # Используем умение вне боя (применяется только к ремесленным умениям)
                 if skill.category.value == 'crafting':
+                    # Проверяем требования к местности для ремесленных умений
+                    tile = self.game_map.get_tile(self.player.x, self.player.y)
+                    biome = tile.biome
+                    location = tile.location if tile.has_location() else None
+
+                    skill_id = self.player.skill_manager.quickslots[slot_index]
+
+                    # Проверяем рудокопство
+                    if skill_id == 'mining':
+                        mining = self.player.profession_manager.get_profession('mining')
+                        can_use, msg = mining.can_use(self.player, location)
+                        if not can_use:
+                            print(msg)
+                            return
+
+                    # Проверяем лесорубство
+                    elif skill_id == 'lumberjacking':
+                        lumberjacking = self.player.profession_manager.get_profession('lumberjacking')
+                        can_use, msg = lumberjacking.can_use(self.player, biome)
+                        if not can_use:
+                            print(msg)
+                            return
+
                     result = self.player.skill_manager.use_skill_from_slot(slot_index)
                     print(result['message'])
                 else:
@@ -1030,29 +1059,87 @@ class Game:
             key: Нажатая клавиша
         """
         if key == pygame.K_1:
-            # Торговля
+            # Торговля / Магия
             if self.nearby_npc and self.nearby_npc.npc_type == "merchant":
                 self.trade_menu_open = True
                 self.trade_window.mode = "buy"
                 self.trade_window.selected_merchant_index = 0
                 self.trade_window.selected_player_index = 0
                 print(f"Торговля с {self.nearby_npc.name}")
+            elif self.nearby_npc and self.nearby_npc.npc_type == "mage":
+                # Маг продает магические предметы
+                self.trade_menu_open = True
+                self.trade_window.mode = "buy"
+                self.trade_window.selected_merchant_index = 0
+                self.trade_window.selected_player_index = 0
+                print(f"Магическая торговля с {self.nearby_npc.name}")
             else:
                 print(f"{self.nearby_npc.name} не торгует")
             self.interaction_menu_open = False
         elif key == pygame.K_2:
-            # Агрессия - начать бой
-            self._start_combat(self.nearby_npc)
+            # Обучение / Агрессия
+            if self.nearby_npc and self.nearby_npc.npc_type == "mage":
+                # Обучение магии - дает бонус к магическим навыкам
+                self._handle_magic_training()
+            else:
+                # Агрессия - начать бой
+                self._start_combat(self.nearby_npc)
             self.interaction_menu_open = False
         elif key == pygame.K_3:
-            # Уйти
-            print("Вы ушли от разговора.")
+            # Агрессия для магов / Уйти для остальных
+            if self.nearby_npc and self.nearby_npc.npc_type == "mage":
+                self._start_combat(self.nearby_npc)
+            else:
+                print("Вы ушли от разговора.")
+                self.nearby_npc = None
             self.interaction_menu_open = False
-            self.nearby_npc = None
+        elif key == pygame.K_4:
+            # Уйти (для магов)
+            if self.nearby_npc and self.nearby_npc.npc_type == "mage":
+                print("Вы ушли от разговора.")
+                self.nearby_npc = None
+            self.interaction_menu_open = False
         elif key == pygame.K_ESCAPE:
             # Также можно закрыть меню через ESC
             self.interaction_menu_open = False
             self.nearby_npc = None
+
+    def _handle_magic_training(self):
+        """Обработка магического обучения от мага"""
+        if not self.nearby_npc:
+            return
+
+        training_cost = 50 * self.nearby_npc.level
+
+        if self.player.inventory.gold < training_cost:
+            print(f"Недостаточно золота! Нужно {training_cost} золота для обучения.")
+            return
+
+        # Забираем золото
+        self.player.inventory.remove_gold(training_cost)
+
+        # Даем опыт магическим навыкам
+        exp_bonus = 20 * self.nearby_npc.level
+
+        # Находим магические навыки и даем им опыт
+        magic_skills_trained = []
+        for skill_id, skill in self.player.skill_manager.learned_skills.items():
+            if skill.category.value == 'magic':
+                old_rank = skill.rank
+                if skill.add_experience(exp_bonus):
+                    magic_skills_trained.append(f"{skill.name} повышен до ранга {skill.rank}")
+                else:
+                    magic_skills_trained.append(f"{skill.name} +{exp_bonus} опыта")
+
+        if magic_skills_trained:
+            print(f"Обучение завершено за {training_cost} золота!")
+            for msg in magic_skills_trained:
+                print(f"  - {msg}")
+        else:
+            # Если нет магических навыков, повышаем дух
+            self.player.spirit += 1
+            self.player.update_derived_stats()
+            print(f"Обучение завершено за {training_cost} золота! Ваш Дух повышен на 1.")
 
     def _handle_trade_input(self, key):
         """
@@ -2323,12 +2410,27 @@ class Game:
         actions_title_rect.y = actions_y
         self.screen.blit(actions_title, actions_title_rect)
 
-        # Кнопки действий
-        actions = [
-            "[1] Торговля",
-            "[2] Агрессия",
-            "[3] Уйти"
-        ]
+        # Кнопки действий (зависят от типа NPC)
+        if self.nearby_npc.npc_type == "mage":
+            training_cost = 50 * self.nearby_npc.level
+            actions = [
+                "[1] Купить заклинания",
+                f"[2] Обучение ({training_cost} зол.)",
+                "[3] Агрессия",
+                "[4] Уйти"
+            ]
+        elif self.nearby_npc.npc_type == "merchant":
+            actions = [
+                "[1] Торговля",
+                "[2] Агрессия",
+                "[3] Уйти"
+            ]
+        else:
+            actions = [
+                "[1] Торговля",
+                "[2] Агрессия",
+                "[3] Уйти"
+            ]
 
         buttons_y = actions_y + 40
         for i, action in enumerate(actions):
