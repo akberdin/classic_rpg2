@@ -654,8 +654,8 @@ class InputHandler:
                 # Выдаем все книги умений
                 from game.inventory import PREDEFINED_ITEMS
                 skill_books = [
-                    # Магические книги лечения
-                    "book_heal", "book_regeneration",
+                    # Магические книги лечения/восстановления
+                    "book_heal", "book_regeneration", "book_stamina_recovery",
                     # Боевые умения
                     "book_power_strike", "book_poison_strike",
                     "book_stun_strike", "book_battle_cry",

@@ -65,6 +65,7 @@
     "battle_cry": "assets/sprites/skills/battle_cry.png",
     "heal": "assets/sprites/skills/heal.png",
     "regeneration": "assets/sprites/skills/regeneration.png",
+    "stamina_recovery": "assets/sprites/skills/stamina_recovery.png",
     "fireball": "assets/sprites/skills/fireball.png",
     "ice_bolt": "assets/sprites/skills/ice_bolt.png",
     "lightning": "assets/sprites/skills/lightning.png",
