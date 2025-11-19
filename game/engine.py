@@ -11,9 +11,9 @@ from game.npc import Merchant
 from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
-from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler
+from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow
 from game.optimization import PerformanceOptimizer, RenderCache
-from game.quests import QuestManager, AchievementManager, create_starter_quests
+from game.quests import QuestManager, AchievementManager, create_starter_quests, QuestGenerator
 from game.save_system import SaveSystem
 from game.constants import (
     FPS, TILE_SIZE, COLORS, WINDOW_WIDTH, WINDOW_HEIGHT,
@@ -118,6 +118,10 @@ class Game:
         self.character_menu_open = False
         self.skill_book_menu_open = False
         self.loot_window_open = False
+        self.quest_window_open = False
+
+        # Окно квестов
+        self.quest_window = QuestWindow(self.screen, self.font, self.info_font, self.ui_scaler)
 
         # Менеджер спрайтов
         from game.sprite_manager import SpriteManager
@@ -227,6 +231,12 @@ class Game:
                     self.loot_window.set_loot(loot_items, loot_gold, defeated_enemy.name)
                     self.loot_window_open = True
 
+                    # Обновляем прогресс квестов на убийство
+                    if hasattr(defeated_enemy, 'npc_type'):
+                        enemy_type = defeated_enemy.npc_type
+                        if enemy_type in ['bandit', 'undead']:
+                            self.update_kill_quest_progress(enemy_type)
+
                     self.in_combat = False
                     self.combat_system = None
                     print("Победа в бою!")
@@ -286,6 +296,12 @@ class Game:
                     self.loot_window_open = False
                 continue
 
+            # Если открыто окно квестов, обрабатываем его
+            if self.quest_window_open:
+                if event.type == pygame.KEYDOWN:
+                    self.input_handler.handle_quest_input(event.key)
+                continue
+
             # Обработка нажатий клавиш
             if event.type == pygame.KEYDOWN:
                 self.input_handler.handle_key_press(event.key)
@@ -331,6 +347,44 @@ class Game:
 
         print("Рядом нет NPC для взаимодействия и вы не находитесь в городе/деревне!")
 
+    def open_quest_window(self, location):
+        """
+        Открыть окно квестов для локации
+
+        Args:
+            location: Объект локации
+        """
+        location_id = f"{location.x}_{location.y}"
+
+        # Генерируем квесты для локации, если их еще нет
+        if location_id not in self.quest_manager.location_quests:
+            quests = QuestGenerator.generate_quests_for_location(
+                location.name, location_id, self.player.level, count=3
+            )
+            for quest in quests:
+                self.quest_manager.add_location_quest(location_id, quest)
+
+        # Получаем доступные квесты для этой локации
+        available_quests = self.quest_manager.get_location_quests(location_id)
+
+        # Получаем активные квесты
+        active_quests = self.quest_manager.get_active_quests()
+
+        # Получаем квесты готовые к сдаче в этой локации
+        turn_in_quests = self.quest_manager.get_quests_ready_to_turn_in(location_id)
+
+        # Устанавливаем данные в окно квестов
+        self.quest_window.set_data(
+            location.name,
+            location_id,
+            available_quests,
+            active_quests,
+            turn_in_quests
+        )
+
+        # Открываем окно
+        self.quest_window_open = True
+
     def _collect_resources(self):
         """Собрать ресурсы с текущей локации"""
         tile = self.game_map.get_tile(self.player.x, self.player.y)
@@ -360,6 +414,14 @@ class Game:
         for item, quantity in loot:
             if self.player.inventory.add_item(item, quantity):
                 print(f"Найдено: {item.name} x{quantity}")
+
+                # Обновляем прогресс квестов на сбор ресурсов
+                # Используем внутреннее имя предмета для квестов
+                item_key = self._get_item_key(item.name)
+                if item_key:
+                    messages = self.quest_manager.update_gather_progress(item_key, quantity)
+                    for msg in messages:
+                        print(f"  {msg}")
             else:
                 print(f"Инвентарь полон! Не удалось подобрать {item.name}")
 
@@ -376,6 +438,42 @@ class Game:
         # Продвигаем время на 1 час
         self.game_time.advance_time(1)
         print(f"Время: {self.game_time.get_time_string()}")
+
+    def _get_item_key(self, item_name):
+        """
+        Получить ключ предмета для системы квестов
+
+        Args:
+            item_name: Отображаемое имя предмета
+
+        Returns:
+            str: Ключ предмета или None
+        """
+        # Словарь соответствий отображаемых имен и ключей
+        item_mapping = {
+            'Медная руда': 'copper_ore',
+            'Железная руда': 'iron_ore',
+            'Серебряная руда': 'silver_ore',
+            'Золотая руда': 'gold_ore',
+            'Мифриловая руда': 'mithril_ore',
+            'Древесина': 'wood',
+            'Древняя монета': 'ancient_coin',
+            'Фрагмент артефакта': 'artifact_fragment',
+            'Магический кристалл': 'magic_crystal',
+            'Старый свиток': 'old_scroll',
+        }
+        return item_mapping.get(item_name)
+
+    def update_kill_quest_progress(self, enemy_type):
+        """
+        Обновить прогресс квестов на убийство
+
+        Args:
+            enemy_type: Тип убитого врага ('bandit', 'undead')
+        """
+        messages = self.quest_manager.update_kill_progress(enemy_type)
+        for msg in messages:
+            print(f"  {msg}")
 
     def _start_combat(self, enemy):
         """
@@ -443,6 +541,10 @@ class Game:
         # Если открыто окно лута, отрисовываем его
         if self.loot_window_open:
             self.loot_window.render()
+
+        # Если открыто окно квестов, отрисовываем его
+        if self.quest_window_open:
+            self.quest_window.render(self.player)
 
         # Отрисовка окна помощи (поверх всего)
         self.help_window.render()

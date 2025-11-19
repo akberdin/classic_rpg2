@@ -587,6 +587,13 @@ class InputHandler:
 
                     result = self.game.player.skill_manager.use_skill_from_slot(slot_index)
                     print(result['message'])
+
+                    # Обновляем прогресс квестов при добыче ресурсов
+                    if result.get('success') and 'gathered' in result:
+                        for item_key, quantity in result['gathered']:
+                            messages = self.game.quest_manager.update_gather_progress(item_key, quantity)
+                            for msg in messages:
+                                print(f"  {msg}")
                 else:
                     print(f"{skill.name} можно использовать только в бою!")
             else:
@@ -599,6 +606,18 @@ class InputHandler:
         elif key == pygame.K_c:
             # Открыть/закрыть окно характеристик
             self.game.character_menu_open = not self.game.character_menu_open
+            return
+        elif key == pygame.K_q:
+            # Открыть окно квестов (только в городе/деревне)
+            tile = self.game.game_map.get_tile(self.game.player.x, self.game.player.y)
+            if tile.has_location():
+                location = tile.location
+                if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
+                    self.game.open_quest_window(location)
+                else:
+                    print("Квесты можно получить только в городах и деревнях!")
+            else:
+                print("Вы должны находиться в городе или деревне для просмотра квестов!")
             return
         elif key == pygame.K_F1:
             # Открыть/закрыть окно помощи
@@ -635,6 +654,90 @@ class InputHandler:
                     print(f"Вы прибыли в: {tile.location.name}")
                     print(f"  {tile.location.get_description()}")
                     print(f"Время: {self.game.game_time.get_time_string()}")
+
+    def handle_quest_input(self, key):
+        """
+        Обработка ввода в окне квестов
+
+        Args:
+            key: Нажатая клавиша
+        """
+        if key == pygame.K_ESCAPE:
+            self.game.quest_window_open = False
+            return
+
+        # Переключение вкладок
+        if key == pygame.K_TAB:
+            modes = ["available", "active", "turn_in"]
+            current_idx = modes.index(self.game.quest_window.mode)
+            self.game.quest_window.mode = modes[(current_idx + 1) % 3]
+            self.game.quest_window.selected_index = 0
+            self.game.quest_window.scroll_offset = 0
+            return
+
+        # Навигация по списку
+        quests = self.game.quest_window.get_current_list()
+        if key == pygame.K_UP or key == pygame.K_w:
+            if quests:
+                self.game.quest_window.selected_index = max(0, self.game.quest_window.selected_index - 1)
+        elif key == pygame.K_DOWN or key == pygame.K_s:
+            if quests:
+                self.game.quest_window.selected_index = min(len(quests) - 1, self.game.quest_window.selected_index + 1)
+        elif key == pygame.K_RETURN:
+            # Принять или сдать квест
+            quest = self.game.quest_window.get_selected_quest()
+            if quest:
+                if self.game.quest_window.mode == "available":
+                    # Принять квест
+                    success, message = self.game.quest_manager.accept_quest(
+                        quest.quest_id,
+                        self.game.quest_window.location_id
+                    )
+                    print(message)
+                    if success:
+                        # Обновляем данные окна
+                        self._refresh_quest_window()
+                elif self.game.quest_window.mode == "turn_in":
+                    # Сдать квест
+                    success, messages = self.game.quest_manager.complete_quest(
+                        quest.quest_id,
+                        self.game.player
+                    )
+                    if success:
+                        print(f"Квест '{quest.name}' завершён!")
+                        for msg in messages:
+                            print(f"  {msg}")
+                        # Обновляем данные окна
+                        self._refresh_quest_window()
+                    else:
+                        print("Не удалось сдать квест")
+        elif key == pygame.K_DELETE:
+            # Отменить квест (только для активных)
+            if self.game.quest_window.mode == "active":
+                quest = self.game.quest_window.get_selected_quest()
+                if quest:
+                    success, message = self.game.quest_manager.abandon_quest(quest.quest_id)
+                    print(message)
+                    if success:
+                        # Обновляем данные окна
+                        self._refresh_quest_window()
+
+    def _refresh_quest_window(self):
+        """Обновить данные в окне квестов"""
+        location_id = self.game.quest_window.location_id
+        location_name = self.game.quest_window.location_name
+
+        available_quests = self.game.quest_manager.get_location_quests(location_id)
+        active_quests = self.game.quest_manager.get_active_quests()
+        turn_in_quests = self.game.quest_manager.get_quests_ready_to_turn_in(location_id)
+
+        self.game.quest_window.set_data(
+            location_name,
+            location_id,
+            available_quests,
+            active_quests,
+            turn_in_quests
+        )
 
     def _toggle_cheat_mode(self):
         """Включить/выключить чит-мод"""
