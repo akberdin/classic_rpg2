@@ -1,0 +1,42 @@
+{
+  "_description": "Конфигурация игрока - базовые характеристики, инвентарь, регенерация",
+  "_version": "1.0.0",
+
+  "base_stats": {
+    "_comment": "Формулы расчета производных характеристик",
+    "health_per_constitution": 20,
+    "mana_per_spirit": 10,
+    "stamina_per_stat_point": 10,
+    "base_carry_weight": 50,
+    "carry_weight_per_strength": 5
+  },
+
+  "leveling": {
+    "stat_points_per_level": 3,
+    "starting_gold": 0
+  },
+
+  "inventory": {
+    "starting_slots": 20,
+    "max_slots": 80,
+    "weight_penalty_threshold": 0.8
+  },
+
+  "regeneration": {
+    "_comment": "Параметры восстановления здоровья, маны и выносливости",
+    "rest_health_percent": 0.30,
+    "rest_mana_percent": 0.50,
+    "passive_mana_per_hour": 3,
+    "active_rest_stamina_multiplier": 2,
+    "passive_stamina_recovery_divisor": 4,
+    "rest_threshold_min": 0.6,
+    "rest_threshold_max": 0.8,
+    "stamina_cost_per_move": 2
+  },
+
+  "health_thresholds": {
+    "_comment": "Пороги для цветовой индикации здоровья (в процентах)",
+    "low": 30,
+    "medium": 60
+  }
+}

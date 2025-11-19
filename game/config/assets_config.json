@@ -1,0 +1,98 @@
+{
+  "_description": "Конфигурация ассетов - спрайты NPC, локаций, биомов, навыков",
+  "_version": "1.0.0",
+
+  "sprite_size": 64,
+
+  "npcs": {
+    "guard": {
+      "default": "assets/sprites/npcs/guard.png",
+      "novice": "assets/soldier/soldier1.png",
+      "regular": "assets/soldier/soldier2.png",
+      "veteran": "assets/soldier/soldier3.png",
+      "expert": "assets/soldier/soldier4.png"
+    },
+    "merchant": {
+      "default": "assets/sprites/npcs/merchant.png",
+      "novice": "assets/trader/trader1.png",
+      "regular": "assets/trader/trader2.png",
+      "veteran": "assets/trader/trader3.png",
+      "expert": "assets/trader/trader4.png"
+    },
+    "bandit": {
+      "default": "assets/sprites/npcs/bandit.png",
+      "novice": "assets/actors/bandits/bandit1.png",
+      "regular": "assets/actors/bandits/bandit2.png",
+      "veteran": "assets/actors/bandits/bandit3.png",
+      "expert": "assets/actors/bandits/bandit4.png"
+    },
+    "miner": {
+      "default": "assets/sprites/npcs/miner.png",
+      "novice": "assets/actors/miners/miner1.png",
+      "regular": "assets/actors/miners/miner2.png",
+      "veteran": "assets/actors/miners/miner3.png",
+      "expert": "assets/actors/miners/miner4.png"
+    },
+    "undead": {
+      "default": "assets/sprites/npcs/undead.png",
+      "novice": "assets/actors/skeletons/skeleton1.png",
+      "regular": "assets/actors/skeletons/skeleton2.png",
+      "veteran": "assets/actors/skeletons/skeleton3.png",
+      "expert": "assets/actors/skeletons/skeleton4.png"
+    },
+    "mage": {
+      "default": "assets/sprites/npcs/mage.png",
+      "novice": "assets/sprites/npcs/mage_novice.png",
+      "regular": "assets/sprites/npcs/mage_regular.png",
+      "veteran": "assets/sprites/npcs/mage_veteran.png",
+      "expert": "assets/sprites/npcs/mage_expert.png"
+    },
+    "player": {
+      "default": "assets/sprites/player.png",
+      "novice": "assets/sprites/player_novice.png",
+      "regular": "assets/sprites/player_regular.png",
+      "veteran": "assets/sprites/player_veteran.png",
+      "expert": "assets/sprites/player_expert.png"
+    }
+  },
+
+  "locations": {
+    "city": "assets/objects/citys/city.png",
+    "village": "assets/objects/villages/village.png",
+    "mine": "assets/objects/mines/mine.png",
+    "bandit_camp": "assets/objects/camps/bandit.png",
+    "ruins": "assets/objects/ruins/ruins.png",
+    "magic_school": "assets/objects/magic_school/magic_school.png"
+  },
+
+  "biomes": {
+    "water": "assets/sprites/biomes/water.png",
+    "sand": "assets/sprites/biomes/sand.png",
+    "plains": "assets/sprites/biomes/plains.png",
+    "hills": "assets/sprites/biomes/hills.png",
+    "forest": "assets/sprites/biomes/forest.png"
+  },
+
+  "skills": {
+    "basic_attack": "assets/sprites/skills/basic_attack.png",
+    "power_strike": "assets/sprites/skills/power_strike.png",
+    "poison_strike": "assets/sprites/skills/poison_strike.png",
+    "stun_strike": "assets/sprites/skills/stun_strike.png",
+    "battle_cry": "assets/sprites/skills/battle_cry.png",
+    "heal": "assets/sprites/skills/heal.png",
+    "regeneration": "assets/sprites/skills/regeneration.png",
+    "stamina_recovery": "assets/sprites/skills/stamina_recovery.png",
+    "fireball": "assets/sprites/skills/fireball.png",
+    "ice_bolt": "assets/sprites/skills/ice_bolt.png",
+    "lightning": "assets/sprites/skills/lightning.png",
+    "magic_missile": "assets/sprites/skills/magic_missile.png",
+    "mining": "assets/sprites/skills/mining.png",
+    "lumberjacking": "assets/sprites/skills/lumberjacking.png"
+  },
+
+  "fallback": {
+    "_comment": "Если спрайт не найден, используется геометрическая фигура или текст",
+    "use_placeholder": true,
+    "placeholder_color": [255, 0, 255]
+  }
+}

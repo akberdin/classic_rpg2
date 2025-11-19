@@ -1,0 +1,47 @@
+{
+  "_description": "Конфигурация системы прогрессии - опыт, уровни, ранги, профессии",
+  "_version": "1.0.0",
+
+  "experience": {
+    "_comment": "Формула: exp_to_level = base * (scaling_factor ^ level)",
+    "base_exp_to_level": 100,
+    "exp_scaling_factor": 1.35,
+    "max_level": 40,
+    "exp_per_enemy_level": 20,
+    "exp_scaling_with_level_diff": true,
+    "max_level_diff_bonus": 50,
+    "min_level_diff_penalty": 10
+  },
+
+  "ranks": {
+    "_comment": "Система рангов по уровням",
+    "novice": {
+      "min_level": 1,
+      "max_level": 10,
+      "name": "Новичок"
+    },
+    "regular": {
+      "min_level": 11,
+      "max_level": 20,
+      "name": "Обычный"
+    },
+    "veteran": {
+      "min_level": 21,
+      "max_level": 30,
+      "name": "Опытный"
+    },
+    "expert": {
+      "min_level": 31,
+      "max_level": 40,
+      "name": "Эксперт"
+    }
+  },
+
+  "professions": {
+    "_comment": "Система профессий (добыча, крафт)",
+    "base_exp_gain": 10,
+    "exp_per_resource": 5,
+    "exp_scaling_factor": 1.3,
+    "rank_count": 10
+  }
+}
