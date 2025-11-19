@@ -141,20 +141,22 @@
       "merchant": 8,
       "bandit": 10,
       "miner": 8,
-      "undead": 12,
-      "mage": 10
+      "undead": 15,
+      "mage": 12
     },
     "rest_durations": {
       "guard": {"min": 3, "max": 3},
       "merchant": {"min": 5, "max": 8},
       "bandit": {"min": 2, "max": 4},
       "miner": {"min": 3, "max": 5},
-      "undead": {"min": 2, "max": 3}
+      "undead": {"min": 2, "max": 3},
+      "mage": {"min": 3, "max": 5}
     },
     "movement_limits": {
       "bandit_camp_radius": 40,
       "miner_max_distance": 20,
-      "undead_max_distance": 15
+      "undead_max_distance": 15,
+      "mage_max_distance": 25
     }
   },
 
@@ -203,6 +205,46 @@
   "ui": {
     "progress_bar_clamp": true,
     "max_item_name_display": 25,
-    "max_stat_value_display": 9999
+    "max_stat_value_display": 9999,
+    "overlay_alpha": 180,
+    "panel_border_width": 2,
+    "min_font_size": 12,
+    "default_font_size": 24,
+    "info_font_size": 20
+  },
+
+  "display": {
+    "window_width": 1920,
+    "window_height": 1200,
+    "base_width": 1920,
+    "base_height": 1200,
+    "fps": 60,
+    "tile_size": 32
+  },
+
+  "map": {
+    "width": 200,
+    "height": 200,
+    "vision_radius": 5,
+    "location_min_distance": 8
+  },
+
+  "spawning": {
+    "guards_per_city": 4,
+    "guards_per_village": 2,
+    "merchants_per_city": 3,
+    "merchants_per_village": 2,
+    "bandits_per_camp": {"min": 3, "max": 6},
+    "miners_per_mine": {"min": 2, "max": 4},
+    "undead_per_ruins": {"min": 3, "max": 6},
+    "mages_per_school": 4,
+    "locations": {
+      "cities": {"min": 4, "max": 6},
+      "villages": {"min": 12, "max": 18},
+      "mines": {"min": 6, "max": 10},
+      "bandit_camps": {"min": 6, "max": 10},
+      "ruins": {"min": 8, "max": 12},
+      "magic_schools": 1
+    }
   }
 }

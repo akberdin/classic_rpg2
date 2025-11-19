@@ -14,7 +14,7 @@ from game.quests import QuestManager, AchievementManager, create_starter_quests
 from game.save_system import SaveSystem
 from game.skills import PowerStrike, Heal
 from game.constants import (
-    FPS, TILE_SIZE, COLORS,
+    FPS, TILE_SIZE, COLORS, WINDOW_WIDTH, WINDOW_HEIGHT,
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
     LOCATION_MINE, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL
 )
@@ -25,12 +25,11 @@ class Game:
 
     def __init__(self):
         """Инициализация игры"""
-        # Получаем информацию о дисплее
-        display_info = pygame.display.Info()
-        self.window_width = display_info.current_w
-        self.window_height = display_info.current_h
+        # Используем константы разрешения из constants.py
+        self.window_width = WINDOW_WIDTH
+        self.window_height = WINDOW_HEIGHT
 
-        # Окно игры в полноэкранном режиме с реальным разрешением
+        # Окно игры в полноэкранном режиме с заданным разрешением
         self.screen = pygame.display.set_mode((self.window_width, self.window_height), pygame.FULLSCREEN)
         pygame.display.set_caption("Classic RPG")
 
