@@ -571,9 +571,14 @@ class Regeneration(Skill):
         if target is None:
             target = user
 
-        # Эффективность регенерации растет с рангом
-        heal_per_turn = 8 + self.rank * 3
-        regen_duration = 2 + self.rank
+        # Эффективность регенерации растет с рангом (улучшено)
+        # Теперь также масштабируется от максимального здоровья
+        base_heal = 10 + self.rank * 4
+        # Добавляем процент от макс. здоровья для лучшего масштабирования
+        max_health = getattr(target, 'max_health', 100)
+        percent_heal = int(max_health * (0.02 + self.rank * 0.01))  # 2-7% за ход
+        heal_per_turn = base_heal + percent_heal
+        regen_duration = 3 + self.rank
 
         # Накладываем эффект регенерации
         regen = RegenerationEffect(duration=regen_duration, heal_per_turn=heal_per_turn)
@@ -717,9 +722,9 @@ class Lightning(Skill):
             intelligence = getattr(user, 'intelligence', 1)
             spirit = getattr(user, 'spirit', 1)
 
-            # Урон: 25 + интеллект*3 + дух*1
-            base_damage = 25 + intelligence * 3 + spirit * 1
-            damage_multiplier = 1.0 + (self.rank - 1) * 0.3  # +30% за ранг
+            # Урон: 20 + интеллект*2.5 + дух*0.8 (сбалансировано)
+            base_damage = 20 + intelligence * 2.5 + spirit * 0.8
+            damage_multiplier = 1.0 + (self.rank - 1) * 0.25  # +25% за ранг
             total_damage = int(base_damage * damage_multiplier)
 
             # ИГНОРИРУЕМ БРОНЮ, но учитываем магическую защиту

@@ -137,7 +137,9 @@ class UIHelper:
 
         # Заполнение
         if maximum > 0:
-            fill_width = int((current / maximum) * width)
+            # Вычисляем заполнение с ограничением (clamp)
+            fill_ratio = min(1.0, max(0.0, current / maximum))
+            fill_width = int(fill_ratio * width)
             pygame.draw.rect(surface, fill_color, (x, y, fill_width, height))
 
         # Рамка
@@ -1429,13 +1431,25 @@ class CharacterWindow:
             total_value = stats[stat_key]
 
             if bonus > 0:
-                value_str = f"{base_value} (+{bonus}) = {total_value}"
+                # Компактный формат для больших значений
+                if total_value > 999:
+                    value_str = f"{base_value}+{bonus}={total_value}"
+                else:
+                    value_str = f"{base_value} (+{bonus}) = {total_value}"
                 value_color = (150, 255, 150)
             else:
                 value_str = f"{total_value}"
                 value_color = (200, 200, 200)
 
             value_text = self.info_font.render(value_str, True, value_color)
+            # Ограничиваем ширину текста
+            max_text_width = int(180 * scale_w)
+            if value_text.get_width() > max_text_width:
+                # Используем самый компактный формат
+                value_str = f"{total_value}"
+                if bonus > 0:
+                    value_str += f"(+{bonus})"
+                value_text = self.info_font.render(value_str, True, value_color)
             self.screen.blit(value_text, (window_x + int(300 * scale_w), display_y))
 
             # Кнопка + для добавления очка

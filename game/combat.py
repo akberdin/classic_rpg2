@@ -6,6 +6,37 @@ import random
 from game.constants import COLORS
 
 
+def calculate_combat_exp(player_level, enemy_level, base_exp_per_level=20):
+    """
+    Рассчитать опыт за победу над врагом с учётом разницы уровней
+
+    Args:
+        player_level: Уровень игрока
+        enemy_level: Уровень врага
+        base_exp_per_level: Базовый опыт за уровень врага
+
+    Returns:
+        int: Количество опыта
+    """
+    base_exp = enemy_level * base_exp_per_level
+    level_diff = enemy_level - player_level
+
+    # Бонус/штраф за разницу уровней
+    if level_diff > 0:
+        # Враг сильнее - бонус до 100% (10% за каждый уровень разницы)
+        bonus = min(1.0, level_diff * 0.1)
+        exp = int(base_exp * (1 + bonus))
+    elif level_diff < 0:
+        # Враг слабее - штраф до 90% (5% за каждый уровень разницы)
+        penalty = min(0.9, abs(level_diff) * 0.05)
+        exp = int(base_exp * (1 - penalty))
+    else:
+        exp = base_exp
+
+    # Минимум 10% от базового опыта
+    return max(int(base_exp * 0.1), exp)
+
+
 class CombatSystem:
     """Класс управления боевой системой"""
 
@@ -134,8 +165,8 @@ class CombatSystem:
                                 tile.set_loot(self.enemy.inventory)
                                 self.add_to_log(f"На земле остался лут!")
 
-                    # Даем опыт за победу
-                    exp_gained = self.enemy.level * 20
+                    # Даем опыт за победу (с учётом разницы уровней)
+                    exp_gained = calculate_combat_exp(self.player.level, self.enemy.level)
                     self.player.add_experience(exp_gained)
                     self.add_to_log(f"Получено {exp_gained} опыта!")
                     return "victory"
@@ -196,8 +227,8 @@ class CombatSystem:
                     if hasattr(self.player, 'enemies_killed'):
                         self.player.enemies_killed += 1
 
-                    # Даем опыт за победу
-                    exp_gained = self.enemy.level * 20
+                    # Даем опыт за победу (с учётом разницы уровней)
+                    exp_gained = calculate_combat_exp(self.player.level, self.enemy.level)
                     self.player.add_experience(exp_gained)
                     self.add_to_log(f"Получено {exp_gained} опыта!")
                     return "victory"
@@ -249,8 +280,8 @@ class CombatSystem:
                 if hasattr(self.player, 'enemies_killed'):
                     self.player.enemies_killed += 1
 
-                # Даем опыт за победу
-                exp_gained = self.enemy.level * 20
+                # Даем опыт за победу (с учётом разницы уровней)
+                exp_gained = calculate_combat_exp(self.player.level, self.enemy.level)
                 self.player.add_experience(exp_gained)
                 self.add_to_log(f"Получено {exp_gained} опыта!")
                 return "victory"

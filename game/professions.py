@@ -115,9 +115,10 @@ class Mining(Profession):
                 quantity = random.randint(1, min(5, 1 + self.rank // 2))
                 resources.append((PREDEFINED_ITEMS[ore_type], quantity))
 
-        # Даем опыт только при успешной добыче
+        # Даем опыт только при успешной добыче (улучшенная формула)
         if resources:
-            exp_gained = 10 + len(resources) * 5
+            # Базовый опыт + бонус за количество + бонус за ранг
+            exp_gained = 15 + len(resources) * 10 + self.rank * 2
             leveled_up = self.add_experience(exp_gained)
 
             if leveled_up:
@@ -177,8 +178,8 @@ class Lumberjacking(Profession):
             quantity = random.randint(2, min(8, 2 + self.rank))
             resources.append((PREDEFINED_ITEMS["wood"], quantity))
 
-            # Даем опыт только при успешной добыче
-            exp_gained = 10
+            # Даем опыт только при успешной добыче (улучшенная формула)
+            exp_gained = 15 + quantity * 3 + self.rank * 2
             leveled_up = self.add_experience(exp_gained)
 
             if leveled_up:

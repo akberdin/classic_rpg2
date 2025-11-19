@@ -97,6 +97,12 @@ class Item:
         """Стоимость с учетом качества"""
         return int(self.base_value * self.quality.multiplier)
 
+    @property
+    def is_stackable(self):
+        """Проверить, можно ли стекировать предмет"""
+        # Экипируемые предметы не стекируются
+        return self.item_type not in ["equipment", "skill_book"]
+
     def get_full_name(self):
         """Полное название с качеством"""
         if self.quality == ItemQuality.COMMON:
@@ -233,12 +239,12 @@ class EquipmentItem(Item):
         base_bonus = self.stats_bonus.get(stat_name, 0)
         if self.quality == ItemQuality.COMMON:
             return base_bonus
-        # Бонусы от качества (меньший множитель чем для цены)
+        # Бонусы от качества (улучшенное масштабирование)
         quality_multipliers = {
             ItemQuality.POOR: 0.7,
             ItemQuality.COMMON: 1.0,
-            ItemQuality.UNCOMMON: 1.2,
-            ItemQuality.RARE: 1.5,
+            ItemQuality.UNCOMMON: 1.3,
+            ItemQuality.RARE: 1.6,
             ItemQuality.EPIC: 2.0,
             ItemQuality.LEGENDARY: 3.0,
             ItemQuality.ARTIFACT: 5.0
@@ -465,23 +471,53 @@ class Inventory:
         Returns:
             bool: True если успешно добавлен
         """
-        # Проверка на количество слотов
-        if len(self.items) >= self.max_slots and item.name not in self.items:
-            return False  # Инвентарь полон
-
         # Проверка на вес
         new_weight = self.current_weight + (item.weight * quantity)
         if new_weight > self.max_weight:
             return False  # Превышен максимальный вес
 
-        if item.name in self.items:
-            # Увеличиваем количество существующего предмета
-            self.items[item.name] = (item, self.items[item.name][1] + quantity)
-        else:
-            # Добавляем новый предмет
-            self.items[item.name] = (item, quantity)
+        # Определяем, можно ли стекировать предмет
+        can_stack = getattr(item, 'is_stackable', True)
 
-        return True
+        if can_stack and item.name in self.items:
+            # Увеличиваем количество существующего стекируемого предмета
+            self.items[item.name] = (item, self.items[item.name][1] + quantity)
+            return True
+        else:
+            # Для не-стекируемых предметов создаем уникальный ключ
+            if can_stack:
+                item_key = item.name
+            else:
+                # Генерируем уникальный ключ для не-стекируемых предметов
+                base_key = item.name
+                item_key = base_key
+                counter = 1
+                while item_key in self.items:
+                    item_key = f"{base_key}#{counter}"
+                    counter += 1
+                # Сохраняем оригинальное имя для отображения
+                item._inventory_key = item_key
+
+            # Проверка на количество слотов
+            if len(self.items) >= self.max_slots:
+                return False  # Инвентарь полон
+
+            # Добавляем новый предмет (для не-стекируемых quantity всегда 1)
+            if not can_stack:
+                for _ in range(quantity):
+                    if len(self.items) >= self.max_slots:
+                        return False
+                    # Каждый предмет в отдельный слот
+                    counter = 1
+                    item_key = base_key
+                    while item_key in self.items:
+                        item_key = f"{base_key}#{counter}"
+                        counter += 1
+                    self.items[item_key] = (item, 1)
+            else:
+                self.items[item_key] = (item, quantity)
+
+            return True
 
     def remove_item(self, item_name, quantity=1):
         """
