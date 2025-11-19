@@ -50,15 +50,7 @@ class Game:
         self.window_width = self.screen.get_width()
         self.window_height = self.screen.get_height()
 
-        # Ограничиваем максимальными значениями из констант (на случай очень больших мониторов)
-        if self.window_width > WINDOW_WIDTH or self.window_height > WINDOW_HEIGHT:
-            self.window_width = min(self.window_width, WINDOW_WIDTH)
-            self.window_height = min(self.window_height, WINDOW_HEIGHT)
-            # Пересоздаём окно с ограниченным разрешением
-            self.screen = pygame.display.set_mode(
-                (self.window_width, self.window_height),
-                pygame.FULLSCREEN
-            )
+        # Используем нативное разрешение экрана без ограничений
 
         pygame.display.set_caption("Classic RPG")
 

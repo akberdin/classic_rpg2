@@ -17,6 +17,16 @@ class GameTime:
         self.game_hour = 6  # Начало игры в 6 утра
         self.game_day = 1
 
+    @property
+    def hour(self):
+        """
+        Свойство для доступа к текущему часу
+
+        Returns:
+            int: Текущий час (0-23)
+        """
+        return self.game_hour
+
     def advance_time(self, hours=1, skip_player_recovery=False):
         """
         Продвинуть игровое время на указанное количество часов
