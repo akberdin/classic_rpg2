@@ -155,6 +155,35 @@ class RegenerationEffect(StatusEffect):
         return f"{character.name} восстанавливает {actual_heal} HP от регенерации"
 
 
+class StaminaRecoveryEffect(StatusEffect):
+    """Эффект восстановления выносливости - восстановление выносливости каждый ход"""
+
+    def __init__(self, duration=3, stamina_per_turn=10):
+        """
+        Инициализация восстановления выносливости
+
+        Args:
+            duration: Длительность в ходах
+            stamina_per_turn: Восстановление выносливости за ход
+        """
+        super().__init__(
+            name="Восстановление выносливости",
+            duration=duration,
+            description=f"Восстанавливает {stamina_per_turn} выносливости каждый ход"
+        )
+        self.stamina_per_turn = stamina_per_turn
+
+    def tick(self, character):
+        """Восстановить выносливость"""
+        super().tick(character)
+        if hasattr(character, 'stamina') and hasattr(character, 'max_stamina'):
+            old_stamina = character.stamina
+            character.stamina = min(character.max_stamina, character.stamina + self.stamina_per_turn)
+            actual_recovery = character.stamina - old_stamina
+            return f"{character.name} восстанавливает {actual_recovery} выносливости"
+        return ""
+
+
 class StrengthBoostEffect(StatusEffect):
     """Эффект усиления силы"""
 
@@ -628,6 +657,54 @@ class Regeneration(Skill):
         return result
 
 
+class StaminaRecovery(Skill):
+    """Восстановление выносливости - накладывает эффект восстановления выносливости"""
+
+    def __init__(self):
+        super().__init__(
+            name="Восстановление выносливости",
+            description="Восстанавливает выносливость каждый ход. Эффективность растет с рангом",
+            category=SkillCategory.MAGIC,
+            mana_cost=15,
+            cooldown=5
+        )
+
+    def use(self, user, target=None):
+        """Использовать восстановление выносливости"""
+        result = super().use(user, target)
+
+        # Если цель не указана, накладываем на себя
+        if target is None:
+            target = user
+
+        # Получаем характеристики заклинателя
+        intelligence = getattr(user, 'intelligence', 1)
+        spirit = getattr(user, 'spirit', 1)
+
+        # Восстановление выносливости с рангом
+        base_recovery = 15 + self.rank * 5  # 20 -> 40 на 5 ранге
+        # Процент от макс. выносливости
+        max_stamina = getattr(target, 'max_stamina', 100)
+        percent_recovery = int(max_stamina * (0.05 + self.rank * 0.02))  # 7% -> 15% за ход
+        # Бонус от статов
+        stat_bonus = int((intelligence + spirit) * 0.4 * self.rank)
+        stamina_per_turn = base_recovery + percent_recovery + stat_bonus
+
+        recovery_duration = 4 + self.rank  # 5-9 ходов
+
+        # Накладываем эффект восстановления выносливости
+        stamina_effect = StaminaRecoveryEffect(duration=recovery_duration, stamina_per_turn=stamina_per_turn)
+        if not hasattr(target, 'status_effects'):
+            target.status_effects = []
+        target.status_effects.append(stamina_effect)
+
+        result['stamina_per_turn'] = stamina_per_turn
+        result['duration'] = recovery_duration
+        result['message'] = f"{user.name} накладывает восстановление выносливости на {target.name}! (+{stamina_per_turn} выносливости/ход на {recovery_duration} ходов)"
+
+        return result
+
+
 # ==================== АТАКУЮЩИЕ МАГИЧЕСКИЕ УМЕНИЯ ====================
 
 class Fireball(Skill):
@@ -960,6 +1037,7 @@ AVAILABLE_SKILLS = {
     # Магические (поддерживающие)
     'heal': Heal,
     'regeneration': Regeneration,
+    'stamina_recovery': StaminaRecovery,
     # Магические (атакующие)
     'fireball': Fireball,
     'ice_bolt': IceBolt,
