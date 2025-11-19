@@ -196,6 +196,9 @@ class WorldRenderer:
         self._render_miners(tiles_x, tiles_y, camera_x, camera_y)
         self._render_undead(tiles_x, tiles_y, camera_x, camera_y)
         self._render_mages(tiles_x, tiles_y, camera_x, camera_y)
+        self._render_alchemists(tiles_x, tiles_y, camera_x, camera_y)
+        self._render_hunters(tiles_x, tiles_y, camera_x, camera_y)
+        self._render_necromancers(tiles_x, tiles_y, camera_x, camera_y)
 
     def _render_guards(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка стражников"""
@@ -526,6 +529,124 @@ class WorldRenderer:
                     self.game.sprite_manager.render_npc(
                         self.game.screen, 'mage', mage_screen_x, mage_screen_y,
                         draw_mage_default, mage.level
+                    )
+
+    def _render_alchemists(self, tiles_x, tiles_y, camera_x, camera_y):
+        """Отрисовка алхимиков"""
+        for alchemist in self.game.alchemists:
+            if (camera_x <= alchemist.x < camera_x + tiles_x and
+                camera_y <= alchemist.y < camera_y + tiles_y):
+
+                tile = self.game.game_map.get_tile(alchemist.x, alchemist.y)
+                if tile.explored and self.game.fog_of_war.is_visible(alchemist.x, alchemist.y, self.game.player.x, self.game.player.y):
+                    if not alchemist.is_alive:
+                        continue
+
+                    screen_x = (alchemist.x - camera_x) * TILE_SIZE
+                    screen_y = (alchemist.y - camera_y) * TILE_SIZE
+
+                    # Зеленый цвет для алхимиков
+                    alchemist_color = (50, 200, 100)
+
+                    def draw_alchemist_default(screen=self.game.screen, color=alchemist_color,
+                                              sx=screen_x, sy=screen_y):
+                        # Колба (символ алхимика)
+                        center_x = sx + TILE_SIZE // 2
+                        center_y = sy + TILE_SIZE // 2
+                        pygame.draw.circle(
+                            screen, color,
+                            (center_x, center_y + TILE_SIZE // 6),
+                            TILE_SIZE // 4
+                        )
+                        pygame.draw.rect(
+                            screen, color,
+                            (center_x - TILE_SIZE // 8, center_y - TILE_SIZE // 4,
+                             TILE_SIZE // 4, TILE_SIZE // 3)
+                        )
+
+                    self.game.sprite_manager.render_npc(
+                        self.game.screen, 'alchemist', screen_x, screen_y,
+                        draw_alchemist_default, alchemist.level
+                    )
+
+    def _render_hunters(self, tiles_x, tiles_y, camera_x, camera_y):
+        """Отрисовка охотников"""
+        for hunter in self.game.hunters:
+            if (camera_x <= hunter.x < camera_x + tiles_x and
+                camera_y <= hunter.y < camera_y + tiles_y):
+
+                tile = self.game.game_map.get_tile(hunter.x, hunter.y)
+                if tile.explored and self.game.fog_of_war.is_visible(hunter.x, hunter.y, self.game.player.x, self.game.player.y):
+                    if not hunter.is_alive:
+                        continue
+
+                    screen_x = (hunter.x - camera_x) * TILE_SIZE
+                    screen_y = (hunter.y - camera_y) * TILE_SIZE
+
+                    # Коричнево-зеленый для охотников
+                    if hunter.state == "hunt":
+                        hunter_color = (200, 150, 50)  # Оранжевый при охоте
+                    elif hunter.state == "rest":
+                        hunter_color = (100, 80, 50)  # Темный при отдыхе
+                    else:
+                        hunter_color = (139, 120, 85)  # Коричневый
+
+                    def draw_hunter_default(screen=self.game.screen, color=hunter_color,
+                                           sx=screen_x, sy=screen_y):
+                        # Лук и стрела (символ охотника)
+                        center_x = sx + TILE_SIZE // 2
+                        center_y = sy + TILE_SIZE // 2
+                        size = TILE_SIZE // 3
+                        # Треугольник направленный вправо (стрела)
+                        points = [
+                            (center_x - size, center_y - size // 2),
+                            (center_x + size, center_y),
+                            (center_x - size, center_y + size // 2)
+                        ]
+                        pygame.draw.polygon(screen, color, points)
+
+                    self.game.sprite_manager.render_npc(
+                        self.game.screen, 'hunter', screen_x, screen_y,
+                        draw_hunter_default, hunter.level
+                    )
+
+    def _render_necromancers(self, tiles_x, tiles_y, camera_x, camera_y):
+        """Отрисовка некромантов"""
+        for necromancer in self.game.necromancers:
+            if (camera_x <= necromancer.x < camera_x + tiles_x and
+                camera_y <= necromancer.y < camera_y + tiles_y):
+
+                tile = self.game.game_map.get_tile(necromancer.x, necromancer.y)
+                if tile.explored and self.game.fog_of_war.is_visible(necromancer.x, necromancer.y, self.game.player.x, self.game.player.y):
+                    if not necromancer.is_alive:
+                        continue
+
+                    screen_x = (necromancer.x - camera_x) * TILE_SIZE
+                    screen_y = (necromancer.y - camera_y) * TILE_SIZE
+
+                    # Темно-фиолетовый для некромантов
+                    if necromancer.state == "combat":
+                        necro_color = (180, 50, 180)  # Яркий при бое
+                    else:
+                        necro_color = (100, 20, 120)  # Темный
+
+                    def draw_necro_default(screen=self.game.screen, color=necro_color,
+                                          sx=screen_x, sy=screen_y, level=necromancer.level):
+                        center_x = sx + TILE_SIZE // 2
+                        center_y = sy + TILE_SIZE // 2
+                        size = TILE_SIZE // 3
+                        # Черепоподобный символ
+                        pygame.draw.circle(screen, color, (center_x, center_y - size // 4), size)
+                        pygame.draw.rect(screen, color,
+                                        (center_x - size // 2, center_y, size, size // 2))
+                        # Обводка для высокоуровневых
+                        if level > 25:
+                            pygame.draw.circle(screen, (200, 100, 200),
+                                             (center_x, center_y - size // 4), size, 2)
+
+                    self.game.sprite_manager.render_npc(
+                        self.game.screen, 'necromancer', screen_x, screen_y,
+                        draw_necro_default, necromancer.level
                     )
 
     def _render_player(self, camera_x, camera_y):

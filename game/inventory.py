@@ -1359,6 +1359,45 @@ PREDEFINED_ITEMS = {
     "book_fireball": SkillBookItem("Книга Огненного Шара", "fireball", 2000, 0.5, ItemQuality.EPIC),
     "book_ice_bolt": SkillBookItem("Книга Ледяной Стрелы", "ice_bolt", 1500, 0.5, ItemQuality.EPIC),
     "book_lightning": SkillBookItem("Книга Молнии", "lightning", 3500, 0.5, ItemQuality.LEGENDARY),
+
+    # Уникальные предметы для квестов
+    # Алхимические предметы
+    "elixir_of_life": PotionItem("Эликсир Жизни", "health", 500, 500, ItemQuality.LEGENDARY),
+    "elixir_of_power": PotionItem("Эликсир Силы", "stamina", 300, 400, ItemQuality.EPIC),
+    "philosophers_stone_fragment": ResourceItem("Осколок Философского Камня", 1000, 0.1),
+
+    # Охотничьи трофеи
+    "beast_fang": ResourceItem("Клык Зверя", 150, 0.2),
+    "shadow_essence": ResourceItem("Эссенция Тени", 300, 0.1),
+    "hunter_medal": ResourceItem("Медаль Охотника", 500, 0.1),
+
+    # Артефакты некроманта
+    "dark_crystal": ResourceItem("Темный Кристалл", 400, 0.3),
+    "soul_gem": ResourceItem("Камень Душ", 800, 0.2),
+    "necronomicon_page": ResourceItem("Страница Некрономикона", 1500, 0.1),
+
+    # Уникальное оружие для наград
+    "hunters_bow": WeaponItem(
+        "Лук Следопыта",
+        WeaponType.BOW,
+        25,
+        quality=ItemQuality.EPIC,
+        stats_bonus={'dexterity': 5, 'luck': 3}
+    ),
+    "alchemists_staff": WeaponItem(
+        "Посох Алхимика",
+        WeaponType.STAFF,
+        20,
+        quality=ItemQuality.EPIC,
+        stats_bonus={'intelligence': 6, 'spirit': 4}
+    ),
+    "shadow_blade": WeaponItem(
+        "Клинок Теней",
+        WeaponType.SWORD,
+        30,
+        quality=ItemQuality.LEGENDARY,
+        stats_bonus={'strength': 5, 'dexterity': 4, 'luck': 3}
+    ),
 }
 
 

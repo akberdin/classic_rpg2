@@ -2,7 +2,7 @@
 Модуль для создания и размещения NPC на карте
 """
 import random
-from game.npc import Guard, Merchant, MagicMerchant, MagePatrol, Bandit, Miner, Undead
+from game.npc import Guard, Merchant, MagicMerchant, MagePatrol, Bandit, Miner, Undead, Alchemist, Hunter, Necromancer
 from game.inventory import PREDEFINED_ITEMS, ItemGenerator, ItemQuality
 from game.constants import (
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
@@ -35,7 +35,10 @@ class NPCSpawner:
             'mages': self.spawn_mages(),
             'bandits': self.spawn_bandits(),
             'miners': self.spawn_miners(),
-            'undead': self.spawn_undead()
+            'undead': self.spawn_undead(),
+            'alchemists': self.spawn_alchemists(),
+            'hunters': self.spawn_hunters(),
+            'necromancers': self.spawn_necromancers()
         }
 
         # Добавляем магического торговца к торговцам
@@ -328,6 +331,132 @@ class NPCSpawner:
                     undead_list.append(undead)
 
         return undead_list
+
+    def spawn_alchemists(self):
+        """
+        Создание алхимиков в городах и деревнях
+
+        Returns:
+            list: Список алхимиков
+        """
+        alchemists = []
+        # Находим все города и крупные деревни
+        settlements = [loc for loc in self.game_map.locations
+                      if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]]
+
+        alchemist_names = [
+            "Алхимик Гермес", "Мудрец Парацельс", "Алхимик Фламель",
+            "Знахарь Авиценна", "Зельевар Магнус", "Алхимик Альберт"
+        ]
+
+        # Создаем 1-2 алхимика на каждый город
+        cities = [loc for loc in settlements if loc.location_type == LOCATION_CITY]
+        for city in cities:
+            num_alchemists = random.randint(1, 2)
+            for i in range(num_alchemists):
+                alchemist_pos = self._find_npc_position(city.x, city.y)
+                if alchemist_pos:
+                    ax, ay = alchemist_pos
+                    alchemist_level = random.randint(8, 15)
+                    alchemist_name = random.choice(alchemist_names)
+
+                    alchemist = Alchemist(alchemist_name, ax, ay, alchemist_level)
+                    alchemists.append(alchemist)
+                    print(f"Создан алхимик '{alchemist_name}' в {city.name}")
+
+        return alchemists
+
+    def spawn_hunters(self):
+        """
+        Создание охотников в лесных и диких областях
+
+        Returns:
+            list: Список охотников
+        """
+        hunters = []
+
+        # Находим деревни как базы для охотников
+        villages = [loc for loc in self.game_map.locations
+                   if loc.location_type == LOCATION_VILLAGE]
+
+        hunter_names = [
+            "Охотник Орион", "Следопыт Артемис", "Рейнджер Робин",
+            "Охотник Немрод", "Следопыт Иван", "Ловчий Степан"
+        ]
+
+        # Создаем 1-2 охотника возле каждой деревни
+        for village in villages:
+            if random.random() < 0.5:  # 50% шанс
+                num_hunters = random.randint(1, 2)
+                for i in range(num_hunters):
+                    # Позиция немного дальше от деревни
+                    hunter_pos = None
+                    for attempt in range(20):
+                        offset_x = random.randint(-15, 15)
+                        offset_y = random.randint(-15, 15)
+                        hx = village.x + offset_x
+                        hy = village.y + offset_y
+
+                        if self.game_map.is_valid_position(hx, hy):
+                            tile = self.game_map.get_tile(hx, hy)
+                            if tile.is_passable():
+                                hunter_pos = (hx, hy)
+                                break
+
+                    if hunter_pos:
+                        hx, hy = hunter_pos
+                        hunter_level = random.randint(10, 25)
+                        hunter_name = random.choice(hunter_names)
+
+                        hunter = Hunter(hunter_name, hx, hy, hunter_level, village.x, village.y)
+                        hunters.append(hunter)
+                        print(f"Создан охотник '{hunter_name}' возле {village.name}")
+
+        return hunters
+
+    def spawn_necromancers(self):
+        """
+        Создание некромантов в руинах
+
+        Returns:
+            list: Список некромантов
+        """
+        necromancers = []
+        # Находим все руины
+        ruins = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_RUINS]
+
+        necromancer_names = [
+            "Некромант Мордред", "Темный Маг Лич", "Некромант Кощей",
+            "Владыка Нежити", "Мастер Теней", "Черный Колдун"
+        ]
+
+        # Создаем 1 некроманта в некоторых руинах (30% шанс)
+        for ruin in ruins:
+            if random.random() < 0.3:  # 30% шанс
+                necro_pos = None
+                for attempt in range(20):
+                    offset_x = random.randint(-5, 5)
+                    offset_y = random.randint(-5, 5)
+                    nx = ruin.x + offset_x
+                    ny = ruin.y + offset_y
+
+                    if self.game_map.is_valid_position(nx, ny):
+                        tile = self.game_map.get_tile(nx, ny)
+                        if tile.is_passable():
+                            necro_pos = (nx, ny)
+                            break
+
+                if necro_pos:
+                    nx, ny = necro_pos
+                    # Некроманты высокого уровня
+                    necro_level = random.randint(20, 35)
+                    necro_name = f"{random.choice(necromancer_names)} {ruin.name}"
+
+                    necromancer = Necromancer(necro_name, nx, ny, necro_level, ruin.x, ruin.y)
+                    necromancers.append(necromancer)
+                    print(f"Создан некромант '{necro_name}' в руинах {ruin.name}")
+
+        return necromancers
 
     def _find_npc_position(self, center_x, center_y):
         """

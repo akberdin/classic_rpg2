@@ -34,13 +34,31 @@
     "mage_novice": "assets/actors/mage/mage1.png",
     "mage_regular": "assets/actors/mage/mage2.png",
     "mage_veteran": "assets/actors/mage/mage3.png",
-    "mage_expert": "assets/actors/mage/mage4вв.png",
+    "mage_expert": "assets/actors/mage/mage4.png",
 
     "player": "assets/actors/player/player1.png",
     "player_novice": "assets/actors/player/player1.png",
     "player_regular": "assets/actors/player/player2.png",
     "player_veteran": "assets/actors/player/player3.png",
-    "player_expert": "assets/actors/player/player4.png"
+    "player_expert": "assets/actors/player/player4.png",
+
+    "alchemist": "assets/sprites/npcs/alchemist.png",
+    "alchemist_novice": "assets/actors/alchemist/alchemist1.png",
+    "alchemist_regular": "assets/actors/alchemist/alchemist2.png",
+    "alchemist_veteran": "assets/actors/alchemist/alchemist3.png",
+    "alchemist_expert": "assets/actors/alchemist/alchemist4.png",
+
+    "hunter": "assets/sprites/npcs/hunter.png",
+    "hunter_novice": "assets/actors/hunter/hunter1.png",
+    "hunter_regular": "assets/actors/hunter/hunter2.png",
+    "hunter_veteran": "assets/actors/hunter/hunter3.png",
+    "hunter_expert": "assets/actors/hunter/hunter4.png",
+
+    "necromancer": "assets/sprites/npcs/necromancer.png",
+    "necromancer_novice": "assets/actors/necromancer/necromancer1.png",
+    "necromancer_regular": "assets/actors/necromancer/necromancer2.png",
+    "necromancer_veteran": "assets/actors/necromancer/necromancer3.png",
+    "necromancer_expert": "assets/actors/necromancer/necromancer4.png"
   },
   "locations": {
     "city": "assets/objects/citys/city.png",
