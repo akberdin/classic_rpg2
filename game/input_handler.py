@@ -657,8 +657,12 @@ class InputHandler:
                     event_messages = self.game.random_event_system.check_for_event(
                         self.game.player, self.game
                     )
-                    for msg in event_messages:
-                        print(msg)
+                    if event_messages:
+                        for msg in event_messages:
+                            print(msg)
+                        # Открываем окно события
+                        if hasattr(self.game, 'event_window_open'):
+                            self.game.event_window_open = True
 
                 # Обновляем туман войны
                 self.game.fog_of_war.update_vision(self.game.player.x, self.game.player.y)

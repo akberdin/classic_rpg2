@@ -120,10 +120,18 @@ class WeatherSystem:
         return 1.0
 
 
+class EventType:
+    """Типы событий"""
+    POSITIVE = "positive"
+    NEUTRAL = "neutral"
+    NEGATIVE = "negative"
+
+
 class RandomEvent:
     """Случайное событие"""
 
-    def __init__(self, event_id, name, description, effect_func, chance=0.1):
+    def __init__(self, event_id, name, description, effect_func, chance=0.1,
+                 min_rank="Новичок", event_type=None, icon=None):
         """
         Инициализация события
 
@@ -133,89 +141,352 @@ class RandomEvent:
             description: Описание события
             effect_func: Функция эффекта (принимает player, game)
             chance: Шанс события (0-1)
+            min_rank: Минимальный ранг для события
+            event_type: Тип события (positive/neutral/negative)
+            icon: Иконка события (символ)
         """
         self.event_id = event_id
         self.name = name
         self.description = description
         self.effect_func = effect_func
         self.chance = chance
+        self.min_rank = min_rank
+        self.event_type = event_type or EventType.NEUTRAL
+        self.icon = icon or "?"
+
+
+class EventResult:
+    """Результат случайного события для отображения в UI"""
+
+    def __init__(self, event, effects, player_rank):
+        self.event = event
+        self.effects = effects  # Список строк с эффектами
+        self.player_rank = player_rank
+        self.timestamp = None  # Можно добавить время события
 
 
 class RandomEventSystem:
     """Система случайных событий"""
 
+    # Порядок рангов для сравнения
+    RANK_ORDER = {
+        "Новичок": 1,
+        "Обычный": 2,
+        "Опытный": 3,
+        "Эксперт": 4
+    }
+
     def __init__(self):
         """Инициализация системы событий"""
         self.events = []
+        self.last_event_result = None  # Последний результат для UI
         self._setup_events()
+
+    def _player_rank_sufficient(self, player, required_rank):
+        """Проверить, достаточен ли ранг игрока"""
+        player_rank = player.get_rank() if hasattr(player, 'get_rank') else "Новичок"
+        return self.RANK_ORDER.get(player_rank, 1) >= self.RANK_ORDER.get(required_rank, 1)
 
     def _setup_events(self):
         """Настроить события"""
-        # Положительные события
+        # ======== СОБЫТИЯ ДЛЯ НОВИЧКОВ (1-10 уровень) ========
+
+        # Положительные события для новичков
         self.events.append(RandomEvent(
-            "find_gold",
-            "Найден кошелёк",
+            "find_gold", "Найден кошелёк",
             "Вы нашли кошелёк с золотом на дороге!",
             lambda p, g: self._find_gold(p, g),
-            chance=0.08
+            chance=0.08, min_rank="Новичок",
+            event_type=EventType.POSITIVE, icon="$"
         ))
 
         self.events.append(RandomEvent(
-            "blessing",
-            "Благословение путника",
+            "blessing", "Благословение путника",
             "Странствующий монах благословил вас.",
             lambda p, g: self._blessing(p, g),
-            chance=0.05
+            chance=0.05, min_rank="Новичок",
+            event_type=EventType.POSITIVE, icon="+"
         ))
 
         self.events.append(RandomEvent(
-            "hidden_cache",
-            "Тайник",
+            "hidden_cache", "Тайник",
             "Вы обнаружили тайник под камнем!",
             lambda p, g: self._hidden_cache(p, g),
-            chance=0.06
+            chance=0.06, min_rank="Новичок",
+            event_type=EventType.POSITIVE, icon="*"
         ))
 
         self.events.append(RandomEvent(
-            "lucky_find",
-            "Удачная находка",
+            "lucky_find", "Удачная находка",
             "Вы нашли ценный предмет среди листвы!",
             lambda p, g: self._lucky_find(p, g),
-            chance=0.04
+            chance=0.04, min_rank="Новичок",
+            event_type=EventType.POSITIVE, icon="!"
+        ))
+
+        self.events.append(RandomEvent(
+            "helpful_traveler", "Попутчик",
+            "Дружелюбный путник поделился едой и восстановил ваши силы.",
+            lambda p, g: self._helpful_traveler(p, g),
+            chance=0.06, min_rank="Новичок",
+            event_type=EventType.POSITIVE, icon="@"
+        ))
+
+        # Нейтральные события для новичков
+        self.events.append(RandomEvent(
+            "wandering_merchant", "Странствующий торговец",
+            "Вы встретили странствующего торговца, который поделился советом.",
+            lambda p, g: self._wandering_merchant(p, g),
+            chance=0.07, min_rank="Новичок",
+            event_type=EventType.NEUTRAL, icon="T"
+        ))
+
+        self.events.append(RandomEvent(
+            "ancient_shrine", "Древний алтарь",
+            "Вы нашли древний алтарь. Помолившись, вы чувствуете прилив сил.",
+            lambda p, g: self._ancient_shrine(p, g),
+            chance=0.05, min_rank="Новичок",
+            event_type=EventType.NEUTRAL, icon="A"
+        ))
+
+        self.events.append(RandomEvent(
+            "old_hermit", "Старый отшельник",
+            "Старый отшельник рассказал вам древнюю легенду.",
+            lambda p, g: self._old_hermit(p, g),
+            chance=0.05, min_rank="Новичок",
+            event_type=EventType.NEUTRAL, icon="H"
+        ))
+
+        # Отрицательные события для новичков
+        self.events.append(RandomEvent(
+            "trap", "Ловушка",
+            "Вы попали в скрытую ловушку!",
+            lambda p, g: self._trap(p, g),
+            chance=0.06, min_rank="Новичок",
+            event_type=EventType.NEGATIVE, icon="X"
+        ))
+
+        self.events.append(RandomEvent(
+            "pickpocket", "Карманник",
+            "Ловкий вор украл часть вашего золота!",
+            lambda p, g: self._pickpocket(p, g),
+            chance=0.05, min_rank="Новичок",
+            event_type=EventType.NEGATIVE, icon="V"
+        ))
+
+        self.events.append(RandomEvent(
+            "bad_food", "Испорченная еда",
+            "Вы съели что-то несвежее и чувствуете слабость.",
+            lambda p, g: self._bad_food(p, g),
+            chance=0.04, min_rank="Новичок",
+            event_type=EventType.NEGATIVE, icon="~"
+        ))
+
+        # ======== СОБЫТИЯ ДЛЯ ОБЫЧНЫХ (11-20 уровень) ========
+
+        # Положительные события
+        self.events.append(RandomEvent(
+            "treasure_map", "Карта сокровищ",
+            "Вы нашли старую карту, ведущую к кладу!",
+            lambda p, g: self._treasure_map(p, g),
+            chance=0.05, min_rank="Обычный",
+            event_type=EventType.POSITIVE, icon="M"
+        ))
+
+        self.events.append(RandomEvent(
+            "warrior_spirit", "Дух воина",
+            "Дух древнего воина благословил ваше оружие.",
+            lambda p, g: self._warrior_spirit(p, g),
+            chance=0.04, min_rank="Обычный",
+            event_type=EventType.POSITIVE, icon="W"
+        ))
+
+        self.events.append(RandomEvent(
+            "rare_herb", "Редкая трава",
+            "Вы обнаружили редкую целебную траву!",
+            lambda p, g: self._rare_herb(p, g),
+            chance=0.05, min_rank="Обычный",
+            event_type=EventType.POSITIVE, icon="H"
+        ))
+
+        self.events.append(RandomEvent(
+            "fairy_blessing", "Благословение феи",
+            "Лесная фея одарила вас магической энергией.",
+            lambda p, g: self._fairy_blessing(p, g),
+            chance=0.04, min_rank="Обычный",
+            event_type=EventType.POSITIVE, icon="F"
         ))
 
         # Нейтральные события
         self.events.append(RandomEvent(
-            "wandering_merchant",
-            "Странствующий торговец",
-            "Вы встретили странствующего торговца, который поделился советом.",
-            lambda p, g: self._wandering_merchant(p, g),
-            chance=0.07
+            "mysterious_stranger", "Таинственный незнакомец",
+            "Загадочный путник предложил вам сделку.",
+            lambda p, g: self._mysterious_stranger(p, g),
+            chance=0.05, min_rank="Обычный",
+            event_type=EventType.NEUTRAL, icon="?"
         ))
 
         self.events.append(RandomEvent(
-            "ancient_shrine",
-            "Древний алтарь",
-            "Вы нашли древний алтарь. Помолившись, вы чувствуете прилив сил.",
-            lambda p, g: self._ancient_shrine(p, g),
-            chance=0.05
+            "ancient_inscription", "Древняя надпись",
+            "Вы расшифровали древнюю надпись на камне.",
+            lambda p, g: self._ancient_inscription(p, g),
+            chance=0.04, min_rank="Обычный",
+            event_type=EventType.NEUTRAL, icon="I"
         ))
 
         # Отрицательные события
         self.events.append(RandomEvent(
-            "trap",
-            "Ловушка",
-            "Вы попали в скрытую ловушку!",
-            lambda p, g: self._trap(p, g),
-            chance=0.06
+            "cursed_item", "Проклятый предмет",
+            "Вы подобрали проклятый предмет и потеряли часть сил.",
+            lambda p, g: self._cursed_item(p, g),
+            chance=0.04, min_rank="Обычный",
+            event_type=EventType.NEGATIVE, icon="C"
         ))
 
         self.events.append(RandomEvent(
-            "pickpocket",
-            "Карманник",
-            "Ловкий вор украл часть вашего золота!",
-            lambda p, g: self._pickpocket(p, g),
-            chance=0.05
+            "ambush", "Засада",
+            "На вас напали из засады! Вы получили ранения, но сбежали.",
+            lambda p, g: self._ambush(p, g),
+            chance=0.05, min_rank="Обычный",
+            event_type=EventType.NEGATIVE, icon="!"
+        ))
+
+        # ======== СОБЫТИЯ ДЛЯ ОПЫТНЫХ (21-30 уровень) ========
+
+        # Положительные события
+        self.events.append(RandomEvent(
+            "ancient_artifact", "Древний артефакт",
+            "Вы обнаружили осколок древнего артефакта!",
+            lambda p, g: self._ancient_artifact(p, g),
+            chance=0.04, min_rank="Опытный",
+            event_type=EventType.POSITIVE, icon="A"
+        ))
+
+        self.events.append(RandomEvent(
+            "dragon_scale", "Чешуя дракона",
+            "Вы нашли чешуйку древнего дракона - редчайшая находка!",
+            lambda p, g: self._dragon_scale(p, g),
+            chance=0.03, min_rank="Опытный",
+            event_type=EventType.POSITIVE, icon="D"
+        ))
+
+        self.events.append(RandomEvent(
+            "elemental_blessing", "Благословение стихий",
+            "Духи стихий даровали вам свою силу.",
+            lambda p, g: self._elemental_blessing(p, g),
+            chance=0.04, min_rank="Опытный",
+            event_type=EventType.POSITIVE, icon="E"
+        ))
+
+        self.events.append(RandomEvent(
+            "legendary_teacher", "Легендарный учитель",
+            "Старый мастер согласился поделиться секретами боевых искусств.",
+            lambda p, g: self._legendary_teacher(p, g),
+            chance=0.03, min_rank="Опытный",
+            event_type=EventType.POSITIVE, icon="L"
+        ))
+
+        # Нейтральные события
+        self.events.append(RandomEvent(
+            "time_rift", "Разлом времени",
+            "Вы прошли через разлом во времени и увидели прошлое.",
+            lambda p, g: self._time_rift(p, g),
+            chance=0.03, min_rank="Опытный",
+            event_type=EventType.NEUTRAL, icon="T"
+        ))
+
+        self.events.append(RandomEvent(
+            "divine_vision", "Божественное видение",
+            "Вам явилось видение из мира богов.",
+            lambda p, g: self._divine_vision(p, g),
+            chance=0.03, min_rank="Опытный",
+            event_type=EventType.NEUTRAL, icon="V"
+        ))
+
+        # Отрицательные события
+        self.events.append(RandomEvent(
+            "dark_curse", "Тёмное проклятие",
+            "Древнее проклятие ослабило вас.",
+            lambda p, g: self._dark_curse(p, g),
+            chance=0.04, min_rank="Опытный",
+            event_type=EventType.NEGATIVE, icon="D"
+        ))
+
+        self.events.append(RandomEvent(
+            "soul_drain", "Похищение души",
+            "Призрак попытался похитить часть вашей души.",
+            lambda p, g: self._soul_drain(p, g),
+            chance=0.03, min_rank="Опытный",
+            event_type=EventType.NEGATIVE, icon="S"
+        ))
+
+        # ======== СОБЫТИЯ ДЛЯ ЭКСПЕРТОВ (31-40 уровень) ========
+
+        # Положительные события
+        self.events.append(RandomEvent(
+            "divine_intervention", "Божественное вмешательство",
+            "Боги обратили на вас внимание и даровали великую силу!",
+            lambda p, g: self._divine_intervention(p, g),
+            chance=0.03, min_rank="Эксперт",
+            event_type=EventType.POSITIVE, icon="G"
+        ))
+
+        self.events.append(RandomEvent(
+            "legendary_treasure", "Легендарное сокровище",
+            "Вы нашли легендарное сокровище древних королей!",
+            lambda p, g: self._legendary_treasure(p, g),
+            chance=0.02, min_rank="Эксперт",
+            event_type=EventType.POSITIVE, icon="K"
+        ))
+
+        self.events.append(RandomEvent(
+            "phoenix_feather", "Перо феникса",
+            "Перо феникса упало прямо в ваши руки - невероятная удача!",
+            lambda p, g: self._phoenix_feather(p, g),
+            chance=0.02, min_rank="Эксперт",
+            event_type=EventType.POSITIVE, icon="P"
+        ))
+
+        self.events.append(RandomEvent(
+            "wisdom_of_ages", "Мудрость веков",
+            "Древние духи поделились с вами знаниями прошлого.",
+            lambda p, g: self._wisdom_of_ages(p, g),
+            chance=0.03, min_rank="Эксперт",
+            event_type=EventType.POSITIVE, icon="W"
+        ))
+
+        # Нейтральные события
+        self.events.append(RandomEvent(
+            "cosmic_alignment", "Космическое выравнивание",
+            "Звёзды встали в особое положение, и вы чувствуете их влияние.",
+            lambda p, g: self._cosmic_alignment(p, g),
+            chance=0.03, min_rank="Эксперт",
+            event_type=EventType.NEUTRAL, icon="*"
+        ))
+
+        self.events.append(RandomEvent(
+            "ancient_prophecy", "Древнее пророчество",
+            "Вы узнали о древнем пророчестве, касающемся вас.",
+            lambda p, g: self._ancient_prophecy(p, g),
+            chance=0.02, min_rank="Эксперт",
+            event_type=EventType.NEUTRAL, icon="O"
+        ))
+
+        # Отрицательные события
+        self.events.append(RandomEvent(
+            "demonic_attention", "Внимание демона",
+            "Могущественный демон обратил на вас внимание.",
+            lambda p, g: self._demonic_attention(p, g),
+            chance=0.03, min_rank="Эксперт",
+            event_type=EventType.NEGATIVE, icon="B"
+        ))
+
+        self.events.append(RandomEvent(
+            "temporal_paradox", "Временной парадокс",
+            "Парадокс времени вызвал странные последствия.",
+            lambda p, g: self._temporal_paradox(p, g),
+            chance=0.02, min_rank="Эксперт",
+            event_type=EventType.NEGATIVE, icon="Z"
         ))
 
     def check_for_event(self, player, game):
@@ -230,16 +501,37 @@ class RandomEventSystem:
             list: Список сообщений о событиях
         """
         messages = []
+        player_rank = player.get_rank() if hasattr(player, 'get_rank') else "Новичок"
 
-        for event in self.events:
+        # Фильтруем события по рангу игрока
+        available_events = [
+            e for e in self.events
+            if self._player_rank_sufficient(player, e.min_rank)
+        ]
+
+        # Перемешиваем для разнообразия
+        random.shuffle(available_events)
+
+        for event in available_events:
             if random.random() < event.chance:
                 result = event.effect_func(player, game)
                 if result:
                     messages.append(f"[{event.name}] {event.description}")
                     messages.extend(result)
+
+                    # Сохраняем результат для UI
+                    self.last_event_result = EventResult(event, result, player_rank)
                 break  # Только одно событие за раз
 
         return messages
+
+    def get_last_event(self):
+        """Получить последнее событие для отображения в UI"""
+        return self.last_event_result
+
+    def clear_last_event(self):
+        """Очистить последнее событие"""
+        self.last_event_result = None
 
     def _find_gold(self, player, game):
         """Найти золото"""
@@ -312,6 +604,311 @@ class RandomEventSystem:
             player.inventory.remove_gold(stolen)
             return [f"  Потеряно {stolen} золота"]
         return ["  Вор ничего не нашёл"]
+
+    # === Новые события для новичков ===
+
+    def _helpful_traveler(self, player, game):
+        """Попутчик"""
+        heal = int(player.max_health * 0.3)
+        stamina = int(player.max_stamina * 0.5)
+        player.health = min(player.max_health, player.health + heal)
+        player.stamina = min(player.max_stamina, player.stamina + stamina)
+        return [f"  Восстановлено {heal} здоровья и {stamina} выносливости"]
+
+    def _old_hermit(self, player, game):
+        """Старый отшельник"""
+        exp = random.randint(10, 20) * player.level
+        player.add_experience(exp)
+        return [f"  Получено {exp} опыта от мудрости"]
+
+    def _bad_food(self, player, game):
+        """Испорченная еда"""
+        if player.godmode:
+            return ["  Отравление не подействовало (режим бессмертия)"]
+
+        damage = int(player.max_health * 0.1)
+        stamina_loss = int(player.max_stamina * 0.2)
+        player.health = max(1, player.health - damage)
+        player.stamina = max(0, player.stamina - stamina_loss)
+        return [f"  Потеряно {damage} здоровья и {stamina_loss} выносливости"]
+
+    # === События для обычных ===
+
+    def _treasure_map(self, player, game):
+        """Карта сокровищ"""
+        gold = random.randint(30, 60) * player.level
+        exp = random.randint(20, 40) * player.level
+        player.inventory.add_gold(gold)
+        player.add_experience(exp)
+        return [f"  Получено {gold} золота и {exp} опыта"]
+
+    def _warrior_spirit(self, player, game):
+        """Дух воина"""
+        # Временное усиление через опыт и восстановление
+        exp = random.randint(15, 30) * player.level
+        player.add_experience(exp)
+        player.health = player.max_health
+        return [f"  Получено {exp} опыта, здоровье полностью восстановлено"]
+
+    def _rare_herb(self, player, game):
+        """Редкая трава"""
+        from game.inventory import PREDEFINED_ITEMS
+
+        # Даём несколько зелий
+        potions = ["health_potion", "mana_potion"]
+        results = []
+        for potion_id in potions:
+            if potion_id in PREDEFINED_ITEMS:
+                item = PREDEFINED_ITEMS[potion_id]
+                quantity = random.randint(1, 3)
+                player.inventory.add_item(item, quantity)
+                results.append(f"  Получено: {item.name} x{quantity}")
+        return results if results else ["  Ничего не найдено"]
+
+    def _fairy_blessing(self, player, game):
+        """Благословение феи"""
+        mana = int(player.max_mana * 0.5)
+        exp = random.randint(15, 25) * player.level
+        player.mana = min(player.max_mana, player.mana + mana)
+        player.add_experience(exp)
+        return [f"  Восстановлено {mana} маны, получено {exp} опыта"]
+
+    def _mysterious_stranger(self, player, game):
+        """Таинственный незнакомец"""
+        # Случайный эффект - золото или опыт
+        if random.random() < 0.5:
+            gold = random.randint(20, 50) * player.level
+            player.inventory.add_gold(gold)
+            return [f"  Незнакомец дал вам {gold} золота"]
+        else:
+            exp = random.randint(20, 40) * player.level
+            player.add_experience(exp)
+            return [f"  Незнакомец поделился знаниями: +{exp} опыта"]
+
+    def _ancient_inscription(self, player, game):
+        """Древняя надпись"""
+        exp = random.randint(25, 45) * player.level
+        player.add_experience(exp)
+        return [f"  Расшифровка дала {exp} опыта"]
+
+    def _cursed_item(self, player, game):
+        """Проклятый предмет"""
+        if player.godmode:
+            return ["  Проклятие не подействовало (режим бессмертия)"]
+
+        damage = int(player.max_health * 0.15)
+        mana_loss = int(player.max_mana * 0.2)
+        player.health = max(1, player.health - damage)
+        player.mana = max(0, player.mana - mana_loss)
+        return [f"  Потеряно {damage} здоровья и {mana_loss} маны"]
+
+    def _ambush(self, player, game):
+        """Засада"""
+        if player.godmode:
+            return ["  Вы легко отбили атаку (режим бессмертия)"]
+
+        damage = random.randint(10, 25) + player.level * 2
+        gold_lost = min(player.inventory.gold, random.randint(10, 30) * player.level)
+        player.health = max(1, player.health - damage)
+        if gold_lost > 0:
+            player.inventory.remove_gold(gold_lost)
+        return [f"  Потеряно {damage} здоровья и {gold_lost} золота"]
+
+    # === События для опытных ===
+
+    def _ancient_artifact(self, player, game):
+        """Древний артефакт"""
+        from game.inventory import PREDEFINED_ITEMS
+
+        gold = random.randint(50, 100) * player.level
+        exp = random.randint(40, 70) * player.level
+        player.inventory.add_gold(gold)
+        player.add_experience(exp)
+
+        # Шанс на особый предмет
+        if random.random() < 0.3 and "artifact_fragment" in PREDEFINED_ITEMS:
+            item = PREDEFINED_ITEMS["artifact_fragment"]
+            player.inventory.add_item(item, 1)
+            return [f"  Получено {gold} золота, {exp} опыта и {item.name}"]
+        return [f"  Получено {gold} золота и {exp} опыта"]
+
+    def _dragon_scale(self, player, game):
+        """Чешуя дракона"""
+        gold = random.randint(80, 150) * player.level
+        exp = random.randint(50, 90) * player.level
+        player.inventory.add_gold(gold)
+        player.add_experience(exp)
+        return [f"  Продана за {gold} золота, получено {exp} опыта"]
+
+    def _elemental_blessing(self, player, game):
+        """Благословение стихий"""
+        # Полное восстановление + бонус
+        player.health = player.max_health
+        player.mana = player.max_mana
+        player.stamina = player.max_stamina
+        exp = random.randint(30, 50) * player.level
+        player.add_experience(exp)
+        return ["  Полное восстановление всех ресурсов", f"  Получено {exp} опыта"]
+
+    def _legendary_teacher(self, player, game):
+        """Легендарный учитель"""
+        exp = random.randint(60, 100) * player.level
+        player.add_experience(exp)
+        return [f"  Получено {exp} опыта от тренировки"]
+
+    def _time_rift(self, player, game):
+        """Разлом времени"""
+        exp = random.randint(40, 70) * player.level
+        player.add_experience(exp)
+        # Случайный эффект
+        if random.random() < 0.5:
+            heal = int(player.max_health * 0.3)
+            player.health = min(player.max_health, player.health + heal)
+            return [f"  Получено {exp} опыта, восстановлено {heal} здоровья"]
+        else:
+            gold = random.randint(30, 60) * player.level
+            player.inventory.add_gold(gold)
+            return [f"  Получено {exp} опыта и {gold} золота из прошлого"]
+
+    def _divine_vision(self, player, game):
+        """Божественное видение"""
+        exp = random.randint(50, 80) * player.level
+        player.add_experience(exp)
+        player.mana = player.max_mana
+        return [f"  Получено {exp} опыта, мана полностью восстановлена"]
+
+    def _dark_curse(self, player, game):
+        """Тёмное проклятие"""
+        if player.godmode:
+            return ["  Проклятие рассеялось (режим бессмертия)"]
+
+        damage = int(player.max_health * 0.2)
+        mana_loss = int(player.max_mana * 0.3)
+        stamina_loss = int(player.max_stamina * 0.3)
+        player.health = max(1, player.health - damage)
+        player.mana = max(0, player.mana - mana_loss)
+        player.stamina = max(0, player.stamina - stamina_loss)
+        return [f"  Потеряно {damage} здоровья, {mana_loss} маны, {stamina_loss} выносливости"]
+
+    def _soul_drain(self, player, game):
+        """Похищение души"""
+        if player.godmode:
+            return ["  Призрак отступил (режим бессмертия)"]
+
+        damage = int(player.max_health * 0.25)
+        exp_loss = random.randint(10, 30) * player.level
+        player.health = max(1, player.health - damage)
+        # Опыт не может стать отрицательным
+        player.experience = max(0, player.experience - exp_loss)
+        return [f"  Потеряно {damage} здоровья и {exp_loss} опыта"]
+
+    # === События для экспертов ===
+
+    def _divine_intervention(self, player, game):
+        """Божественное вмешательство"""
+        # Мощный положительный эффект
+        player.health = player.max_health
+        player.mana = player.max_mana
+        player.stamina = player.max_stamina
+        exp = random.randint(100, 150) * player.level
+        gold = random.randint(100, 200) * player.level
+        player.add_experience(exp)
+        player.inventory.add_gold(gold)
+        return [
+            "  Полное восстановление всех ресурсов",
+            f"  Получено {exp} опыта и {gold} золота"
+        ]
+
+    def _legendary_treasure(self, player, game):
+        """Легендарное сокровище"""
+        gold = random.randint(200, 400) * player.level
+        exp = random.randint(80, 120) * player.level
+        player.inventory.add_gold(gold)
+        player.add_experience(exp)
+        return [f"  Получено {gold} золота и {exp} опыта"]
+
+    def _phoenix_feather(self, player, game):
+        """Перо феникса"""
+        # Полное восстановление + большой опыт
+        player.health = player.max_health
+        player.mana = player.max_mana
+        player.stamina = player.max_stamina
+        exp = random.randint(120, 180) * player.level
+        player.add_experience(exp)
+        return [
+            "  Полное восстановление всех ресурсов",
+            f"  Получено {exp} опыта"
+        ]
+
+    def _wisdom_of_ages(self, player, game):
+        """Мудрость веков"""
+        exp = random.randint(150, 250) * player.level
+        player.add_experience(exp)
+        return [f"  Получено {exp} опыта"]
+
+    def _cosmic_alignment(self, player, game):
+        """Космическое выравнивание"""
+        # Случайный мощный эффект
+        effect = random.choice(['health', 'mana', 'gold', 'exp'])
+
+        if effect == 'health':
+            player.health = player.max_health
+            return ["  Здоровье полностью восстановлено силой звёзд"]
+        elif effect == 'mana':
+            player.mana = player.max_mana
+            return ["  Мана полностью восстановлена силой звёзд"]
+        elif effect == 'gold':
+            gold = random.randint(100, 200) * player.level
+            player.inventory.add_gold(gold)
+            return [f"  Звёзды даровали {gold} золота"]
+        else:
+            exp = random.randint(80, 140) * player.level
+            player.add_experience(exp)
+            return [f"  Звёзды даровали {exp} опыта"]
+
+    def _ancient_prophecy(self, player, game):
+        """Древнее пророчество"""
+        exp = random.randint(100, 160) * player.level
+        player.add_experience(exp)
+        return [f"  Знание пророчества дало {exp} опыта"]
+
+    def _demonic_attention(self, player, game):
+        """Внимание демона"""
+        if player.godmode:
+            return ["  Демон отступил перед вашей силой (режим бессмертия)"]
+
+        damage = int(player.max_health * 0.3)
+        gold_lost = min(player.inventory.gold, random.randint(50, 100) * player.level)
+        player.health = max(1, player.health - damage)
+        if gold_lost > 0:
+            player.inventory.remove_gold(gold_lost)
+        return [f"  Потеряно {damage} здоровья и {gold_lost} золота"]
+
+    def _temporal_paradox(self, player, game):
+        """Временной парадокс"""
+        if player.godmode:
+            return ["  Парадокс вас не затронул (режим бессмертия)"]
+
+        # Случайная потеря
+        effect = random.choice(['health', 'mana', 'exp', 'gold'])
+
+        if effect == 'health':
+            damage = int(player.max_health * 0.2)
+            player.health = max(1, player.health - damage)
+            return [f"  Потеряно {damage} здоровья из-за парадокса"]
+        elif effect == 'mana':
+            mana_loss = int(player.max_mana * 0.4)
+            player.mana = max(0, player.mana - mana_loss)
+            return [f"  Потеряно {mana_loss} маны из-за парадокса"]
+        elif effect == 'exp':
+            exp_loss = random.randint(30, 60) * player.level
+            player.experience = max(0, player.experience - exp_loss)
+            return [f"  Потеряно {exp_loss} опыта из-за парадокса"]
+        else:
+            gold_lost = min(player.inventory.gold, random.randint(40, 80) * player.level)
+            if gold_lost > 0:
+                player.inventory.remove_gold(gold_lost)
+            return [f"  Потеряно {gold_lost} золота из-за парадокса"]
 
 
 class KillstreakSystem:

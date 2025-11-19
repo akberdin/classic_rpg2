@@ -11,7 +11,7 @@ from game.npc import Merchant
 from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
-from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow
+from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quests import QuestManager, AchievementManager, create_starter_quests, QuestGenerator
 from game.save_system import SaveSystem
@@ -123,6 +123,10 @@ class Game:
 
         # Окно квестов
         self.quest_window = QuestWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+
+        # Окно случайных событий
+        self.random_event_window = RandomEventWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.event_window_open = False
 
         # Менеджер спрайтов
         from game.sprite_manager import SpriteManager
@@ -317,6 +321,13 @@ class Game:
                     action = self.quest_window.handle_mouse_event(event, self)
                     if action:
                         self._handle_quest_action(action)
+                continue
+
+            # Если открыто окно случайных событий, обрабатываем его
+            if self.event_window_open:
+                if self.random_event_window.handle_input(event):
+                    self.event_window_open = False
+                    self.random_event_system.clear_last_event()
                 continue
 
             # Обработка нажатий клавиш
@@ -625,6 +636,12 @@ class Game:
         # Если открыто окно квестов, отрисовываем его
         if self.quest_window_open:
             self.quest_window.render(self.player)
+
+        # Если открыто окно случайных событий, отрисовываем его
+        if self.event_window_open:
+            event_result = self.random_event_system.get_last_event()
+            if event_result:
+                self.random_event_window.render(event_result)
 
         # Отрисовка окна помощи (поверх всего)
         self.help_window.render()
