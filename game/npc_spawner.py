@@ -2,7 +2,7 @@
 Модуль для создания и размещения NPC на карте
 """
 import random
-from game.character import Guard, Merchant, MagicMerchant, MagePatrol, Bandit, Miner, Undead
+from game.npc import Guard, Merchant, MagicMerchant, MagePatrol, Bandit, Miner, Undead
 from game.inventory import PREDEFINED_ITEMS, ItemGenerator, ItemQuality
 from game.constants import (
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
