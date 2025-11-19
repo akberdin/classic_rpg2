@@ -25,19 +25,12 @@ class Game:
 
     def __init__(self):
         """Инициализация игры"""
-        # Создаем полноэкранное окно с автоматическим определением разрешения
-        # Использование (0, 0) позволяет pygame выбрать нативное разрешение экрана
-        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        # Используем разрешение из констант
+        self.window_width = WINDOW_WIDTH
+        self.window_height = WINDOW_HEIGHT
 
-        # Получаем фактическое разрешение созданного окна
-        self.window_width, self.window_height = self.screen.get_size()
-
-        # Если разрешение экрана больше заданного в константах, ограничиваем
-        # (для совместимости с UI, рассчитанным на BASE_WIDTH x BASE_HEIGHT)
-        if self.window_width > WINDOW_WIDTH or self.window_height > WINDOW_HEIGHT:
-            self.window_width = min(self.window_width, WINDOW_WIDTH)
-            self.window_height = min(self.window_height, WINDOW_HEIGHT)
-            self.screen = pygame.display.set_mode((self.window_width, self.window_height), pygame.FULLSCREEN)
+        # Создаем полноэкранное окно с заданным разрешением
+        self.screen = pygame.display.set_mode((self.window_width, self.window_height), pygame.FULLSCREEN)
 
         pygame.display.set_caption("Classic RPG")
 
