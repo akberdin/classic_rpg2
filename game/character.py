@@ -417,20 +417,20 @@ class Character:
         Получить магическую защиту на основе характеристики Дух
 
         Магическая защита снижает урон от магических атак.
-        Формула: Дух * 1.5 + бонусы от экипировки
+        Формула: Дух * 0.8 + бонусы от экипировки (сниженный множитель для баланса)
 
         Returns:
             int: Значение магической защиты
         """
-        # Базовая магическая защита от характеристики Дух
-        base_magic_defense = int(self.spirit * 1.5)
+        # Базовая магическая защита от характеристики Дух (снижено с 1.5 до 0.8)
+        base_magic_defense = int(self.spirit * 0.8)
 
         # Бонусы от экипировки (spirit дает бонус к магической защите)
         equipment_bonus = 0
         if hasattr(self, 'inventory') and self.inventory and hasattr(self.inventory, 'get_total_stats_bonus'):
             stats_bonus = self.inventory.get_total_stats_bonus()
-            # Spirit от экипировки также увеличивает магическую защиту
-            equipment_bonus = int(stats_bonus.get('spirit', 0) * 1.5)
+            # Spirit от экипировки также увеличивает магическую защиту (сниженный множитель)
+            equipment_bonus = int(stats_bonus.get('spirit', 0) * 0.8)
 
         return base_magic_defense + equipment_bonus
 
@@ -933,6 +933,9 @@ class Guard(NPC):
         """
         super().__init__(name, x, y, npc_type=NPC_TYPE_GUARD, level=level)
 
+        # Модификация статов для стражника: высокие сила и телосложение, низкий дух
+        self._adjust_guard_stats()
+
         # AI параметры
         self.state = "patrol"  # patrol, rest, combat
         self.patrol_points = []  # Точки патрулирования
@@ -946,6 +949,20 @@ class Guard(NPC):
         self.detection_range = 10  # Дальность обнаружения врагов
         self.pursuit_counter = 0  # Счетчик ходов преследования
         self.max_pursuit_steps = 8  # Максимальное количество ходов преследования
+
+    def _adjust_guard_stats(self):
+        """Модификация статов для стражника - воин, не маг"""
+        # Увеличиваем боевые характеристики
+        self.strength = int(self.strength * 1.3)
+        self.constitution = int(self.constitution * 1.2)
+        self.dexterity = int(self.dexterity * 1.1)
+
+        # Снижаем магические характеристики
+        self.spirit = max(1, int(self.spirit * 0.4))
+        self.intelligence = max(1, int(self.intelligence * 0.6))
+
+        # Обновляем производные статы
+        self.update_derived_stats()
 
     def set_patrol_route(self, points):
         """
@@ -1147,6 +1164,9 @@ class Merchant(NPC):
         """
         super().__init__(name, x, y, npc_type=NPC_TYPE_MERCHANT, level=level)
 
+        # Модификация статов для торговца: средние характеристики, низкий дух
+        self._adjust_merchant_stats()
+
         # AI параметры
         self.state = "travel"  # travel, rest, flee
         self.target_location = None  # Целевая локация (город/деревня)
@@ -1161,6 +1181,22 @@ class Merchant(NPC):
 
         # Торговая система
         self._generate_merchant_goods()
+
+    def _adjust_merchant_stats(self):
+        """Модификация статов для торговца - не боец, не маг"""
+        # Немного повышаем удачу (торговая жилка)
+        self.luck = int(self.luck * 1.3)
+
+        # Снижаем боевые характеристики
+        self.strength = max(1, int(self.strength * 0.7))
+        self.dexterity = max(1, int(self.dexterity * 0.8))
+
+        # Снижаем магические характеристики
+        self.spirit = max(1, int(self.spirit * 0.4))
+        self.intelligence = max(1, int(self.intelligence * 0.8))
+
+        # Обновляем производные статы
+        self.update_derived_stats()
 
     def _generate_merchant_goods(self):
         """Генерация начальных товаров торговца"""
@@ -1601,12 +1637,8 @@ class MagePatrol(NPC):
         """
         super().__init__(name, x, y, npc_type=NPC_TYPE_MAGE, level=level)
 
-        # Повышенные характеристики интеллекта и духа для мага
-        self.intelligence = max(self.intelligence, level + 5)
-        self.spirit = max(self.spirit, level + 3)
-        # Обновляем ману на основе духа
-        self.max_mana = self.spirit * 10
-        self.mana = self.max_mana
+        # Модификация статов для мага: высокие интеллект и дух, низкие сила и ловкость
+        self._adjust_mage_stats()
 
         # AI параметры
         self.state = "patrol"  # patrol, rest, combat
@@ -1622,6 +1654,26 @@ class MagePatrol(NPC):
         self.detection_range = 12  # Дальность обнаружения врагов
         self.pursuit_counter = 0  # Счетчик ходов преследования
         self.max_pursuit_steps = 6  # Маги не любят долго преследовать
+
+    def _adjust_mage_stats(self):
+        """Модификация статов для мага - заклинатель, не воин"""
+        # Значительно повышаем магические характеристики
+        self.intelligence = int(self.intelligence * 1.8)
+        self.spirit = int(self.spirit * 1.6)
+
+        # Значительно снижаем боевые характеристики
+        self.strength = max(1, int(self.strength * 0.4))
+        self.dexterity = max(1, int(self.dexterity * 0.5))
+
+        # Телосложение немного снижаем
+        self.constitution = max(1, int(self.constitution * 0.7))
+
+        # Обновляем производные статы
+        self.update_derived_stats()
+
+        # Обновляем ману на основе духа
+        self.max_mana = self.spirit * 10
+        self.mana = self.max_mana
 
     def _generate_patrol_points(self):
         """Генерация точек патрулирования вокруг академии"""
@@ -1849,6 +1901,9 @@ class Bandit(NPC):
         """
         super().__init__(name, x, y, npc_type=NPC_TYPE_BANDIT, level=level)
 
+        # Модификация статов для бандита: боец с низким духом
+        self._adjust_bandit_stats()
+
         # AI параметры
         self.state = "patrol"  # patrol, rest, combat
         self.camp_x = camp_x if camp_x is not None else x  # Позиция лагеря
@@ -1862,6 +1917,19 @@ class Bandit(NPC):
         self.wander_target = None  # Целевая точка для блуждания
         self.pursuit_counter = 0  # Счетчик ходов преследования
         self.max_pursuit_steps = 8  # Максимальное количество ходов преследования
+
+    def _adjust_bandit_stats(self):
+        """Модификация статов для бандита - агрессивный боец"""
+        # Повышаем боевые характеристики
+        self.strength = int(self.strength * 1.2)
+        self.dexterity = int(self.dexterity * 1.15)
+
+        # Снижаем магические характеристики
+        self.spirit = max(1, int(self.spirit * 0.35))
+        self.intelligence = max(1, int(self.intelligence * 0.5))
+
+        # Обновляем производные статы
+        self.update_derived_stats()
 
     def update_ai(self, game_map, all_npcs=None, player=None):
         """
@@ -2111,6 +2179,9 @@ class Miner(NPC):
         """
         super().__init__(name, x, y, npc_type=NPC_TYPE_MINER, level=level)
 
+        # Модификация статов для шахтера: физический труд, низкий дух
+        self._adjust_miner_stats()
+
         # AI параметры
         self.state = "work"  # work, rest, flee
         self.mine_x = mine_x if mine_x is not None else x  # Центр шахты
@@ -2122,6 +2193,22 @@ class Miner(NPC):
         self.threat = None  # Текущая угроза от которой убегаем
         self.detection_range = 8  # Дальность обнаружения угроз
         self.wander_target = None  # Целевая точка для блуждания
+
+    def _adjust_miner_stats(self):
+        """Модификация статов для шахтера - физический труженик"""
+        # Повышаем физические характеристики
+        self.strength = int(self.strength * 1.2)
+        self.constitution = int(self.constitution * 1.3)
+
+        # Снижаем магические характеристики
+        self.spirit = max(1, int(self.spirit * 0.35))
+        self.intelligence = max(1, int(self.intelligence * 0.6))
+
+        # Немного снижаем ловкость
+        self.dexterity = max(1, int(self.dexterity * 0.9))
+
+        # Обновляем производные статы
+        self.update_derived_stats()
 
     def update_ai(self, game_map, all_npcs=None):
         """

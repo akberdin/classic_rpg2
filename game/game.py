@@ -1936,15 +1936,25 @@ class Game:
         bar_width = 350
         bar_height = 18
 
+        # Получаем эффективные максимумы с учетом экипировки
+        effective_max_health = self.player.get_effective_max_health()
+        effective_max_mana = self.player.get_effective_max_mana()
+        effective_max_stamina = self.player.get_effective_max_stamina()
+
+        # Вычисляем проценты
+        health_percent = int((self.player.health / effective_max_health * 100) if effective_max_health > 0 else 0)
+        mana_percent = int((self.player.mana / effective_max_mana * 100) if effective_max_mana > 0 else 0)
+        stamina_percent = int((self.player.stamina / effective_max_stamina * 100) if effective_max_stamina > 0 else 0)
+
         # Полоса здоровья (красная)
         UIHelper.draw_progress_bar(
             self.screen,
             info_x, bar_y, bar_width, bar_height,
-            self.player.health, self.player.max_health,
+            self.player.health, effective_max_health,
             bg_color=(60, 20, 20),
             fill_color=(200, 50, 50),
             border_color=(255, 100, 100),
-            text=f"HP: {self.player.health}/{self.player.max_health}",
+            text=f"HP: {self.player.health}/{effective_max_health} ({health_percent}%)",
             font=self.info_font
         )
 
@@ -1952,11 +1962,11 @@ class Game:
         UIHelper.draw_progress_bar(
             self.screen,
             info_x + 380, bar_y, bar_width, bar_height,
-            self.player.mana, self.player.max_mana,
+            self.player.mana, effective_max_mana,
             bg_color=(20, 20, 60),
             fill_color=(50, 100, 200),
             border_color=(100, 150, 255),
-            text=f"MP: {self.player.mana}/{self.player.max_mana}",
+            text=f"MP: {self.player.mana}/{effective_max_mana} ({mana_percent}%)",
             font=self.info_font
         )
 
@@ -1966,11 +1976,11 @@ class Game:
         UIHelper.draw_progress_bar(
             self.screen,
             info_x + 760, bar_y, bar_width, bar_height,
-            self.player.stamina, self.player.max_stamina,
+            self.player.stamina, effective_max_stamina,
             bg_color=(60, 40, 20),
             fill_color=stamina_color,
             border_color=(255, 165, 0),
-            text=f"Stamina: {self.player.stamina}/{self.player.max_stamina}{stamina_status}",
+            text=f"Stamina: {self.player.stamina}/{effective_max_stamina} ({stamina_percent}%){stamina_status}",
             font=self.info_font
         )
 
