@@ -51,11 +51,20 @@ class Game:
             actual_height = display_info.current_h
 
         # Используем фактическое разрешение экрана (не больше максимального из констант)
-        self.window_width = min(actual_width, WINDOW_WIDTH)
-        self.window_height = min(actual_height, WINDOW_HEIGHT)
+        requested_width = min(actual_width, WINDOW_WIDTH)
+        requested_height = min(actual_height, WINDOW_HEIGHT)
 
         # Создаем полноэкранное окно с определенным разрешением
-        self.screen = pygame.display.set_mode((self.window_width, self.window_height), pygame.FULLSCREEN)
+        # Используем pygame.SCALED для лучшего контроля над разрешением
+        self.screen = pygame.display.set_mode(
+            (requested_width, requested_height),
+            pygame.FULLSCREEN | pygame.SCALED
+        )
+
+        # ВАЖНО: Получаем ФАКТИЧЕСКИЕ размеры экрана после создания окна
+        # pygame.FULLSCREEN может изменить разрешение на поддерживаемое
+        self.window_width = self.screen.get_width()
+        self.window_height = self.screen.get_height()
 
         pygame.display.set_caption("Classic RPG")
 
