@@ -522,21 +522,45 @@ class QuestManager:
         Обновить прогресс квестов на убийство
 
         Args:
-            enemy_type: Тип убитого врага ('bandit', 'undead')
+            enemy_type: Тип убитого врага ('bandit', 'undead', 'necromancer')
 
         Returns:
             list: Список сообщений о прогрессе
         """
         messages = []
+        # Словарь для поиска врагов по описанию цели
+        enemy_keywords = {
+            'bandit': ['бандит', 'разбойник'],
+            'undead': ['нежить', 'мертв', 'зомби', 'скелет'],
+            'necromancer': ['некромант', 'темный маг']
+        }
+
         for quest in self.active_quests:
-            if quest.quest_type == QuestType.KILL_ENEMIES and quest.target_enemy == enemy_type:
-                if quest.objectives:
-                    completed = quest.objectives[0].progress(1)
-                    quest.check_completion()
-                    if completed:
-                        messages.append(f"Цель выполнена: {quest.objectives[0].description}")
-                    elif quest.is_ready_to_turn_in():
-                        messages.append(f"Квест '{quest.name}' готов к сдаче в {quest.giver_location}!")
+            if quest.quest_type == QuestType.KILL_ENEMIES:
+                # Проверяем основной target_enemy
+                if quest.target_enemy == enemy_type:
+                    if quest.objectives:
+                        completed = quest.objectives[0].progress(1)
+                        quest.check_completion()
+                        if completed:
+                            messages.append(f"Цель выполнена: {quest.objectives[0].description}")
+                        elif quest.is_ready_to_turn_in():
+                            messages.append(f"Квест '{quest.name}' готов к сдаче в {quest.giver_location}!")
+                else:
+                    # Для квестов с несколькими целями проверяем каждую цель по описанию
+                    keywords = enemy_keywords.get(enemy_type, [enemy_type])
+                    for i, objective in enumerate(quest.objectives):
+                        if objective.completed:
+                            continue
+                        desc_lower = objective.description.lower()
+                        if any(kw in desc_lower for kw in keywords):
+                            completed = objective.progress(1)
+                            quest.check_completion()
+                            if completed:
+                                messages.append(f"Цель выполнена: {objective.description}")
+                            if quest.is_ready_to_turn_in():
+                                messages.append(f"Квест '{quest.name}' готов к сдаче в {quest.giver_location}!")
+                            break  # Обновляем только одну цель за раз
         return messages
 
     def update_gather_progress(self, item_name, amount=1, player=None):
@@ -552,22 +576,57 @@ class QuestManager:
             list: Список сообщений о прогрессе
         """
         messages = []
+        # Словарь для поиска ресурсов по описанию цели
+        resource_keywords = {
+            'copper_ore': ['медн', 'меди'],
+            'iron_ore': ['железн', 'железа'],
+            'silver_ore': ['серебр', 'серебра'],
+            'gold_ore': ['золот', 'золота'],
+            'wood': ['древесин', 'дерево'],
+            'magic_crystal': ['магическ', 'кристалл'],
+            'artifact_fragment': ['артефакт', 'фрагмент'],
+            'ancient_coin': ['древн', 'монет'],
+            'old_scroll': ['свиток', 'старый']
+        }
+
         for quest in self.active_quests:
-            if quest.quest_type == QuestType.GATHER_RESOURCE and quest.target_item == item_name:
-                if quest.objectives:
-                    # Если передан игрок, проверяем текущее количество в инвентаре
-                    if player:
-                        current_count = self._get_item_count_in_inventory(player, item_name)
-                        quest.objectives[0].current_count = min(current_count, quest.objectives[0].required_count)
-                        quest.objectives[0].completed = quest.objectives[0].current_count >= quest.objectives[0].required_count
-                    else:
-                        quest.objectives[0].progress(amount)
+            if quest.quest_type == QuestType.GATHER_RESOURCE:
+                # Проверяем основной target_item
+                if quest.target_item == item_name:
+                    if quest.objectives:
+                        if player:
+                            current_count = self._get_item_count_in_inventory(player, item_name)
+                            quest.objectives[0].current_count = min(current_count, quest.objectives[0].required_count)
+                            quest.objectives[0].completed = quest.objectives[0].current_count >= quest.objectives[0].required_count
+                        else:
+                            quest.objectives[0].progress(amount)
 
-                    quest.check_completion()
+                        quest.check_completion()
 
-                    if quest.objectives[0].is_completed():
-                        if quest.is_ready_to_turn_in():
-                            messages.append(f"Квест '{quest.name}' готов к сдаче в {quest.giver_location}!")
+                        if quest.objectives[0].is_completed():
+                            if quest.is_ready_to_turn_in():
+                                messages.append(f"Квест '{quest.name}' готов к сдаче в {quest.giver_location}!")
+                else:
+                    # Для квестов с несколькими целями проверяем каждую цель по описанию
+                    keywords = resource_keywords.get(item_name, [item_name])
+                    for objective in quest.objectives:
+                        if objective.completed:
+                            continue
+                        desc_lower = objective.description.lower()
+                        if any(kw in desc_lower for kw in keywords):
+                            if player:
+                                current_count = self._get_item_count_in_inventory(player, item_name)
+                                objective.current_count = min(current_count, objective.required_count)
+                                objective.completed = objective.current_count >= objective.required_count
+                            else:
+                                objective.progress(amount)
+
+                            quest.check_completion()
+
+                            if objective.is_completed():
+                                if quest.is_ready_to_turn_in():
+                                    messages.append(f"Квест '{quest.name}' готов к сдаче в {quest.giver_location}!")
+                            break  # Обновляем только одну цель за раз
         return messages
 
     def _get_item_count_in_inventory(self, player, item_key):
@@ -1131,3 +1190,335 @@ class QuestGenerator:
             )
             quests.append(quest)
         return quests
+
+
+def create_unique_quests():
+    """
+    Создать уникальные квесты с особыми наградами
+
+    Returns:
+        list: Список уникальных квестов
+    """
+    from game.inventory import PREDEFINED_ITEMS
+
+    quests = []
+
+    # ===== КВЕСТЫ АЛХИМИКА =====
+
+    # Квест 1: Сбор редких ингредиентов
+    objectives = [
+        QuestObjective("Собрать магические кристаллы", required_count=5),
+        QuestObjective("Собрать фрагменты артефактов", required_count=3),
+    ]
+    rewards = {
+        'exp': 500,
+        'gold': 300,
+        'items': [
+            (PREDEFINED_ITEMS["elixir_of_life"], 2),
+            (PREDEFINED_ITEMS["elixir_of_power"], 3),
+        ]
+    }
+    quest = Quest(
+        quest_id="alchemist_rare_ingredients",
+        name="Редкие ингредиенты",
+        description="Алхимик ищет редкие компоненты для создания мощных эликсиров.",
+        objectives=objectives,
+        rewards=rewards,
+        quest_type=QuestType.GATHER_RESOURCE,
+        difficulty=QuestDifficulty.HARD,
+        giver_location="Алхимик"
+    )
+    quest.target_item = "magic_crystal"
+    quests.append(quest)
+
+    # Квест 2: Философский камень
+    objectives = [
+        QuestObjective("Найти осколки Философского Камня в руинах", required_count=1),
+        QuestObjective("Собрать золотую руду", required_count=10),
+        QuestObjective("Собрать серебряную руду", required_count=15),
+    ]
+    rewards = {
+        'exp': 1000,
+        'gold': 800,
+        'items': [
+            (PREDEFINED_ITEMS["alchemists_staff"], 1),
+            (PREDEFINED_ITEMS["book_heal"], 1),
+        ]
+    }
+    quest = Quest(
+        quest_id="alchemist_philosophers_stone",
+        name="Тайна Философского Камня",
+        description="Помогите алхимику в поисках легендарного артефакта.",
+        objectives=objectives,
+        rewards=rewards,
+        quest_type=QuestType.GATHER_RESOURCE,
+        difficulty=QuestDifficulty.VERY_HARD,
+        giver_location="Алхимик"
+    )
+    quests.append(quest)
+
+    # ===== КВЕСТЫ ОХОТНИКА =====
+
+    # Квест 3: Охота на бандитов
+    objectives = [
+        QuestObjective("Уничтожить бандитов", required_count=10),
+    ]
+    rewards = {
+        'exp': 600,
+        'gold': 400,
+        'items': [
+            (PREDEFINED_ITEMS["hunters_bow"], 1),
+        ]
+    }
+    quest = Quest(
+        quest_id="hunter_bandit_hunt",
+        name="Чистка дорог",
+        description="Охотник просит помочь очистить территорию от бандитов.",
+        objectives=objectives,
+        rewards=rewards,
+        quest_type=QuestType.KILL_ENEMIES,
+        difficulty=QuestDifficulty.HARD,
+        giver_location="Охотник"
+    )
+    quest.target_enemy = "bandit"
+    quests.append(quest)
+
+    # Квест 4: Охота на нежить
+    objectives = [
+        QuestObjective("Уничтожить нежить в руинах", required_count=15),
+    ]
+    rewards = {
+        'exp': 800,
+        'gold': 500,
+        'items': [
+            (PREDEFINED_ITEMS["shadow_blade"], 1),
+            (PREDEFINED_ITEMS["greater_health_potion"], 5),
+        ]
+    }
+    quest = Quest(
+        quest_id="hunter_undead_hunt",
+        name="Очищение руин",
+        description="Охотник поручает вам очистить древние руины от нежити.",
+        objectives=objectives,
+        rewards=rewards,
+        quest_type=QuestType.KILL_ENEMIES,
+        difficulty=QuestDifficulty.VERY_HARD,
+        giver_location="Охотник"
+    )
+    quest.target_enemy = "undead"
+    quests.append(quest)
+
+    # Квест 5: Мастер охоты
+    objectives = [
+        QuestObjective("Уничтожить бандитов", required_count=20),
+        QuestObjective("Уничтожить нежить", required_count=20),
+    ]
+    rewards = {
+        'exp': 1500,
+        'gold': 1000,
+        'items': [
+            (PREDEFINED_ITEMS["book_power_strike"], 1),
+            (PREDEFINED_ITEMS["book_battle_cry"], 1),
+        ]
+    }
+    quest = Quest(
+        quest_id="hunter_master_hunt",
+        name="Мастер Охоты",
+        description="Докажите, что вы достойны звания Мастера Охоты.",
+        objectives=objectives,
+        rewards=rewards,
+        quest_type=QuestType.KILL_ENEMIES,
+        difficulty=QuestDifficulty.VERY_HARD,
+        giver_location="Охотник"
+    )
+    quests.append(quest)
+
+    # ===== КВЕСТЫ НЕКРОМАНТА (для победы над ним) =====
+
+    # Квест 6: Остановить некроманта
+    objectives = [
+        QuestObjective("Победить некроманта", required_count=1),
+    ]
+    rewards = {
+        'exp': 2000,
+        'gold': 1500,
+        'items': [
+            (PREDEFINED_ITEMS["book_fireball"], 1),
+            (PREDEFINED_ITEMS["book_lightning"], 1),
+        ]
+    }
+    quest = Quest(
+        quest_id="stop_necromancer",
+        name="Угроза из руин",
+        description="Некромант угрожает живым. Остановите его!",
+        objectives=objectives,
+        rewards=rewards,
+        quest_type=QuestType.KILL_ENEMIES,
+        difficulty=QuestDifficulty.VERY_HARD,
+        giver_location="Магическая Академия"
+    )
+    quest.target_enemy = "necromancer"
+    quests.append(quest)
+
+    # ===== КВЕСТЫ НА СБОР =====
+
+    # Квест 7: Богатство земли
+    objectives = [
+        QuestObjective("Собрать медную руду", required_count=20),
+        QuestObjective("Собрать железную руду", required_count=15),
+        QuestObjective("Собрать серебряную руду", required_count=10),
+        QuestObjective("Собрать золотую руду", required_count=5),
+    ]
+    rewards = {
+        'exp': 800,
+        'gold': 1000,
+        'items': [
+            (PREDEFINED_ITEMS["book_regeneration"], 1),
+        ]
+    }
+    quest = Quest(
+        quest_id="mining_master",
+        name="Богатство земли",
+        description="Соберите руды всех типов для кузнецов города.",
+        objectives=objectives,
+        rewards=rewards,
+        quest_type=QuestType.GATHER_RESOURCE,
+        difficulty=QuestDifficulty.HARD,
+        giver_location="Город"
+    )
+    quests.append(quest)
+
+    # Квест 8: Древние знания
+    objectives = [
+        QuestObjective("Собрать древние монеты", required_count=10),
+        QuestObjective("Собрать фрагменты артефактов", required_count=5),
+        QuestObjective("Собрать старые свитки", required_count=8),
+    ]
+    rewards = {
+        'exp': 1200,
+        'gold': 800,
+        'items': [
+            (PREDEFINED_ITEMS["book_magic_missile"], 1),
+            (PREDEFINED_ITEMS["book_ice_bolt"], 1),
+        ]
+    }
+    quest = Quest(
+        quest_id="ancient_knowledge",
+        name="Древние знания",
+        description="Соберите артефакты из руин для исследований.",
+        objectives=objectives,
+        rewards=rewards,
+        quest_type=QuestType.GATHER_RESOURCE,
+        difficulty=QuestDifficulty.VERY_HARD,
+        giver_location="Магическая Академия"
+    )
+    quests.append(quest)
+
+    return quests
+
+
+def create_alchemist_quests(location_name="Алхимик"):
+    """
+    Создать квесты для алхимика
+
+    Args:
+        location_name: Название локации для сдачи
+
+    Returns:
+        list: Список квестов алхимика
+    """
+    from game.inventory import PREDEFINED_ITEMS
+
+    quests = []
+
+    # Квест на сбор магических кристаллов
+    objectives = [
+        QuestObjective("Собрать магические кристаллы", required_count=3),
+    ]
+    rewards = {
+        'exp': 300,
+        'gold': 200,
+        'items': [
+            (PREDEFINED_ITEMS["health_potion"], 5),
+            (PREDEFINED_ITEMS["mana_potion"], 3),
+        ]
+    }
+    quest = Quest(
+        quest_id=f"alchemist_crystals_{random.randint(1000, 9999)}",
+        name="Магические компоненты",
+        description="Алхимик нуждается в магических кристаллах для экспериментов.",
+        objectives=objectives,
+        rewards=rewards,
+        quest_type=QuestType.GATHER_RESOURCE,
+        difficulty=QuestDifficulty.MEDIUM,
+        giver_location=location_name
+    )
+    quest.target_item = "magic_crystal"
+    quests.append(quest)
+
+    return quests
+
+
+def create_hunter_quests(location_name="Охотник"):
+    """
+    Создать квесты для охотника
+
+    Args:
+        location_name: Название локации для сдачи
+
+    Returns:
+        list: Список квестов охотника
+    """
+    from game.inventory import PREDEFINED_ITEMS
+
+    quests = []
+
+    # Квест на охоту на бандитов
+    objectives = [
+        QuestObjective("Уничтожить бандитов", required_count=5),
+    ]
+    rewards = {
+        'exp': 400,
+        'gold': 250,
+        'items': [
+            (PREDEFINED_ITEMS["stamina_potion"], 3),
+        ]
+    }
+    quest = Quest(
+        quest_id=f"hunter_bandits_{random.randint(1000, 9999)}",
+        name="Разбойники на дорогах",
+        description="Охотник просит помочь в борьбе с бандитами.",
+        objectives=objectives,
+        rewards=rewards,
+        quest_type=QuestType.KILL_ENEMIES,
+        difficulty=QuestDifficulty.MEDIUM,
+        giver_location=location_name
+    )
+    quest.target_enemy = "bandit"
+    quests.append(quest)
+
+    # Квест на охоту на нежить
+    objectives = [
+        QuestObjective("Уничтожить нежить", required_count=5),
+    ]
+    rewards = {
+        'exp': 450,
+        'gold': 300,
+        'items': [
+            (PREDEFINED_ITEMS["greater_health_potion"], 2),
+        ]
+    }
+    quest = Quest(
+        quest_id=f"hunter_undead_{random.randint(1000, 9999)}",
+        name="Нежить в руинах",
+        description="Охотник поручает очистить руины от нежити.",
+        objectives=objectives,
+        rewards=rewards,
+        quest_type=QuestType.KILL_ENEMIES,
+        difficulty=QuestDifficulty.MEDIUM,
+        giver_location=location_name
+    )
+    quest.target_enemy = "undead"
+    quests.append(quest)
+
+    return quests

@@ -13,7 +13,7 @@ from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
 from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow
 from game.optimization import PerformanceOptimizer, RenderCache
-from game.quests import QuestManager, AchievementManager, create_starter_quests, QuestGenerator
+from game.quests import QuestManager, AchievementManager, create_starter_quests, QuestGenerator, create_unique_quests
 from game.save_system import SaveSystem
 from game.constants import (
     FPS, TILE_SIZE, COLORS, WINDOW_WIDTH, WINDOW_HEIGHT,
@@ -135,6 +135,9 @@ class Game:
         self.bandits = npcs['bandits']
         self.miners = npcs['miners']
         self.undead = npcs['undead']
+        self.alchemists = npcs['alchemists']
+        self.hunters = npcs['hunters']
+        self.necromancers = npcs['necromancers']
 
         print(f"Игрок создан на позиции ({self.player.x}, {self.player.y})")
         print(f"Создано {len(self.guards)} стражников")
@@ -143,6 +146,9 @@ class Game:
         print(f"Создано {len(self.bandits)} бандитов")
         print(f"Создано {len(self.miners)} шахтеров")
         print(f"Создано {len(self.undead)} нежити")
+        print(f"Создано {len(self.alchemists)} алхимиков")
+        print(f"Создано {len(self.hunters)} охотников")
+        print(f"Создано {len(self.necromancers)} некромантов")
 
         # Инициализация менеджера респавна
         self.respawn_manager = RespawnManager(self.game_map)
@@ -157,6 +163,9 @@ class Game:
         # Инициализация менеджера квестов
         self.quest_manager = QuestManager()
         for quest in create_starter_quests():
+            self.quest_manager.add_available_quest(quest)
+        # Добавляем уникальные квесты с хорошими наградами
+        for quest in create_unique_quests():
             self.quest_manager.add_available_quest(quest)
 
         # Инициализация менеджера достижений
@@ -178,7 +187,7 @@ class Game:
         self.player.skill_manager.assign_to_slot('heal', 3)  # Слот 4
 
         # Перестраиваем spatial grid для NPC
-        all_npcs = self.guards + self.merchants + self.mages + self.bandits + self.miners + self.undead
+        all_npcs = self.guards + self.merchants + self.mages + self.bandits + self.miners + self.undead + self.alchemists + self.hunters + self.necromancers
         self.performance_optimizer.rebuild_spatial_grid(all_npcs)
 
         # Чит-режим (отключен по умолчанию)

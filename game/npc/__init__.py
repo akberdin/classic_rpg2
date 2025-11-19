@@ -9,6 +9,7 @@ from game.npc.merchant import Merchant, MagicMerchant
 from game.npc.mage import MagePatrol
 from game.npc.hostile import Bandit, Undead
 from game.npc.worker import Miner
+from game.npc.unique import Alchemist, Hunter, Necromancer
 
 __all__ = [
     'NPC',
@@ -18,5 +19,8 @@ __all__ = [
     'MagePatrol',
     'Bandit',
     'Undead',
-    'Miner'
+    'Miner',
+    'Alchemist',
+    'Hunter',
+    'Necromancer'
 ]

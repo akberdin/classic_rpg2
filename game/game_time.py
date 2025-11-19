@@ -57,7 +57,8 @@ class GameTime:
 
             # Собираем всех NPC
             all_npcs = (self.game.guards + self.game.merchants + self.game.mages +
-                       self.game.bandits + self.game.miners + self.game.undead)
+                       self.game.bandits + self.game.miners + self.game.undead +
+                       self.game.alchemists + self.game.hunters + self.game.necromancers)
 
             # Перестраиваем spatial grid для оптимизации
             self.game.performance_optimizer.rebuild_spatial_grid(all_npcs)
@@ -89,6 +90,22 @@ class GameTime:
             for undead_npc in self.game.undead:
                 if self.game.performance_optimizer.should_update_ai(undead_npc, self.game.player.x, self.game.player.y):
                     undead_npc.update_ai(self.game.game_map, all_npcs, self.game.player)
+
+            # Алхимики не нуждаются в обновлении AI (статичные торговцы)
+            # но обновляем для консистентности
+            for alchemist in self.game.alchemists:
+                if self.game.performance_optimizer.should_update_ai(alchemist, self.game.player.x, self.game.player.y):
+                    alchemist.update_ai(self.game.game_map, all_npcs)
+
+            # Охотники патрулируют и охотятся
+            for hunter in self.game.hunters:
+                if self.game.performance_optimizer.should_update_ai(hunter, self.game.player.x, self.game.player.y):
+                    hunter.update_ai(self.game.game_map, all_npcs, self.game.player)
+
+            # Некроманты - враждебные маги
+            for necromancer in self.game.necromancers:
+                if self.game.performance_optimizer.should_update_ai(necromancer, self.game.player.x, self.game.player.y):
+                    necromancer.update_ai(self.game.game_map, all_npcs, self.game.player)
 
             # Обрабатываем респавн NPC
             if hasattr(self.game, 'respawn_manager'):
