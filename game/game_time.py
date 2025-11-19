@@ -39,10 +39,11 @@ class GameTime:
                 self.game.player.recover_stamina()
 
             # Обновляем перезарядки навыков и статус-эффекты игрока
-            self.game.player.skill_manager.tick_cooldowns()
-            effect_messages = self.game.player.skill_manager.tick_status_effects()
-            for msg in effect_messages:
-                print(msg)
+            if hasattr(self.game.player, 'skill_manager') and self.game.player.skill_manager:
+                self.game.player.skill_manager.tick_cooldowns()
+                effect_messages = self.game.player.skill_manager.tick_status_effects()
+                for msg in effect_messages:
+                    print(msg)
 
             # Собираем всех NPC
             all_npcs = (self.game.guards + self.game.merchants + self.game.mages +
@@ -57,7 +58,7 @@ class GameTime:
             # Обновляем AI только тех NPC, которых нужно обновлять в этом кадре
             for guard in self.game.guards:
                 if self.game.performance_optimizer.should_update_ai(guard, self.game.player.x, self.game.player.y):
-                    guard.update_ai(self.game.game_map, all_npcs)
+                    guard.update_ai(self.game.game_map, all_npcs, self.game.player)
 
             for merchant in self.game.merchants:
                 if self.game.performance_optimizer.should_update_ai(merchant, self.game.player.x, self.game.player.y):
@@ -78,6 +79,12 @@ class GameTime:
             for undead_npc in self.game.undead:
                 if self.game.performance_optimizer.should_update_ai(undead_npc, self.game.player.x, self.game.player.y):
                     undead_npc.update_ai(self.game.game_map, all_npcs, self.game.player)
+
+            # Обрабатываем респавн NPC
+            if hasattr(self.game, 'respawn_manager'):
+                ready_to_respawn = self.game.respawn_manager.update(1)
+                for respawn_data in ready_to_respawn:
+                    self.game.respawn_manager.respawn_npc(respawn_data, self.game)
 
         # Проверяем, атаковал ли кто-то игрока (принудительное открытие окна боя)
         if self.game.player.attacked_by_npc and not self.game.in_combat:

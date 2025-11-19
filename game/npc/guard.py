@@ -64,7 +64,7 @@ class Guard(NPC):
         self.patrol_points = points
         self.current_patrol_index = 0
 
-    def update_ai(self, game_map, all_npcs=None):
+    def update_ai(self, game_map, all_npcs=None, player=None):
         """
         Обновление AI стражника за 1 час игрового времени
         Стражник делает несколько шагов за час
@@ -72,6 +72,7 @@ class Guard(NPC):
         Args:
             game_map: Объект карты игры
             all_npcs: Список всех NPC для поиска врагов
+            player: Объект игрока (не используется стражниками, но для консистентности API)
         """
         if not self.is_alive:
             return
