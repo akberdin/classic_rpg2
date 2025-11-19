@@ -6,7 +6,8 @@ import random
 import ctypes
 import platform
 from game.map import GameMap
-from game.character import Player, Merchant
+from game.character import Player
+from game.npc import Merchant
 from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
