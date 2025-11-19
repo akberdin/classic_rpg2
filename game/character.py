@@ -1924,6 +1924,14 @@ class Bandit(NPC):
                 if not npc.is_alive:
                     continue
 
+                # Пропускаем самого себя
+                if npc is self:
+                    continue
+
+                # Бандиты не атакуют других бандитов
+                if npc.npc_type == NPC_TYPE_BANDIT:
+                    continue
+
                 # Проверяем отношение к этому NPC
                 relationship = NPC_RELATIONSHIPS.get((self.npc_type, npc.npc_type), RELATIONSHIP_NEUTRAL)
 
