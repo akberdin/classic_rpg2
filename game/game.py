@@ -25,17 +25,12 @@ class Game:
 
     def __init__(self):
         """Инициализация игры"""
-        # Получаем информацию о дисплее для определения оптимального разрешения
-        display_info = pygame.display.Info()
-        screen_width = display_info.current_w
-        screen_height = display_info.current_h
+        # Используем разрешение из констант (pygame.display.Info() может возвращать некорректные данные)
+        # Значения WINDOW_WIDTH и WINDOW_HEIGHT определены в constants.py
+        self.window_width = WINDOW_WIDTH
+        self.window_height = WINDOW_HEIGHT
 
-        # Используем реальное разрешение экрана для корректного позиционирования UI
-        # Ограничиваем максимальным разрешением из констант
-        self.window_width = min(WINDOW_WIDTH, screen_width)
-        self.window_height = min(WINDOW_HEIGHT, screen_height)
-
-        # Окно игры в полноэкранном режиме с реальным разрешением экрана
+        # Окно игры в полноэкранном режиме с разрешением из констант
         self.screen = pygame.display.set_mode((self.window_width, self.window_height), pygame.FULLSCREEN)
         pygame.display.set_caption("Classic RPG")
 
@@ -704,7 +699,7 @@ class Game:
                     biome = tile.biome
                     location = tile.location if tile.has_location() else None
 
-                    skill_id = self.player.skill_manager.quickslots[slot_index]
+                    skill_id = self.player.skill_manager.skill_slots[slot_index]
 
                     # Проверяем рудокопство
                     if skill_id == 'mining':
@@ -2320,7 +2315,7 @@ class Game:
                     if random.random() < 0.5:
                         item = ItemGenerator.generate_weapon(item_level, quality)
                     else:
-                        item = ItemGenerator.generate_armor(item_level, quality)
+                        item = ItemGenerator.generate_armor(item_level, quality=quality)
 
                     loot_items.append((item, 1))
 
