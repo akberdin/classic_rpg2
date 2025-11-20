@@ -685,8 +685,8 @@ class InputHandler:
             self.game.help_window.toggle()
             return
         elif key == pygame.K_F2:
-            # Включить/выключить чит-мод
-            self._toggle_cheat_mode()
+            # Открыть/закрыть чит-меню
+            self.game.cheat_menu_open = not self.game.cheat_menu_open
             return
 
         # Попытка переместить игрока
@@ -840,45 +840,3 @@ class InputHandler:
             turn_in_quests
         )
 
-    def _toggle_cheat_mode(self):
-        """Включить/выключить чит-мод"""
-        self.game.cheat_mode_active = not self.game.cheat_mode_active
-        self.game.player.godmode = self.game.cheat_mode_active  # Устанавливаем режим бессмертия
-        if self.game.cheat_mode_active:
-            print("ЧИТ-МОД АКТИВИРОВАН:")
-            print("- Бесконечное здоровье и выносливость")
-            print("- Вся карта открыта")
-            print("- Туман войны отключен")
-
-            # Выдаем золото один раз при активации
-            if not self.game.cheat_gold_given:
-                self.game.player.inventory.add_gold(5000)
-                print("- Получено 5000 золота")
-
-                # Выдаем все книги умений
-                from game.inventory import PREDEFINED_ITEMS
-                skill_books = [
-                    # Магические книги лечения/восстановления
-                    "book_heal", "book_regeneration", "book_stamina_recovery",
-                    # Боевые умения
-                    "book_power_strike", "book_poison_strike",
-                    "book_stun_strike", "book_battle_cry",
-                    # Атакующие магические умения
-                    "book_magic_missile", "book_fireball",
-                    "book_ice_bolt", "book_lightning"
-                ]
-                for book_id in skill_books:
-                    if book_id in PREDEFINED_ITEMS:
-                        self.game.player.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
-                print("- Получены книги всех умений")
-
-                self.game.cheat_gold_given = True
-
-            # Открываем всю карту (устанавливаем explored для всех тайлов)
-            for x in range(self.game.game_map.width):
-                for y in range(self.game.game_map.height):
-                    tile = self.game.game_map.get_tile(x, y)
-                    if tile:
-                        tile.explored = True
-        else:
-            print("ЧИТ-МОД ОТКЛЮЧЕН")

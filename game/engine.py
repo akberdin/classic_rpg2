@@ -11,7 +11,7 @@ from game.npc import Merchant
 from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
-from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow
+from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow, CheatMenuWindow
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quests import QuestManager, AchievementManager, create_starter_quests, QuestGenerator, create_unique_quests, get_unique_quest_for_location
 from game.save_system import SaveSystem
@@ -120,6 +120,10 @@ class Game:
         self.random_event_window = RandomEventWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.event_window_open = False
 
+        # Окно чит меню
+        self.cheat_menu_window = CheatMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.cheat_menu_open = False
+
         # Менеджер спрайтов
         from game.sprite_manager import SpriteManager
         self.sprite_manager = SpriteManager(tile_size=TILE_SIZE)
@@ -187,10 +191,6 @@ class Game:
         # Перестраиваем spatial grid для NPC
         all_npcs = self.guards + self.merchants + self.mages + self.bandits + self.miners + self.undead + self.alchemists + self.hunters + self.necromancers
         self.performance_optimizer.rebuild_spatial_grid(all_npcs)
-
-        # Чит-режим (отключен по умолчанию)
-        self.cheat_mode_active = False
-        self.cheat_gold_given = False  # Флаг для выдачи золота один раз
 
         # Инициализация обработчика ввода
         self.input_handler = InputHandler(self)
@@ -327,6 +327,12 @@ class Game:
                 if self.random_event_window.handle_input(event):
                     self.event_window_open = False
                     self.random_event_system.clear_last_event()
+                continue
+
+            # Если открыто чит меню, обрабатываем его
+            if self.cheat_menu_open:
+                if self.cheat_menu_window.handle_input(event, self):
+                    self.cheat_menu_open = False
                 continue
 
             # Обработка нажатий клавиш
@@ -687,8 +693,8 @@ class Game:
         """Обновление состояния игры"""
         # AI стражников обновляется в методе advance_time
 
-        # Чит-мод: восстанавливаем здоровье, ману и выносливость (с учетом бонусов от экипировки)
-        if self.cheat_mode_active:
+        # Режим бессмертия: восстанавливаем здоровье, ману и выносливость (с учетом бонусов от экипировки)
+        if self.cheat_menu_window.cheats['godmode']['enabled']:
             self.player.health = self.player.get_effective_max_health()
             self.player.stamina = self.player.get_effective_max_stamina()
             self.player.mana = self.player.get_effective_max_mana()
@@ -747,6 +753,10 @@ class Game:
             event_result = self.random_event_system.get_last_event()
             if event_result:
                 self.random_event_window.render(event_result)
+
+        # Если открыто чит меню, отрисовываем его
+        if self.cheat_menu_open:
+            self.cheat_menu_window.render()
 
         # Отрисовка окна помощи (поверх всего)
         self.help_window.render()
