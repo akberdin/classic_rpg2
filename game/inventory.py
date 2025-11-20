@@ -964,10 +964,25 @@ class ItemGenerator:
         slot_name = slot_names.get(slot, "Доспех")
 
         # Генерация бонусов - только для UNCOMMON и выше
+        # Бонусы зависят от типа брони
         stats_bonus = {}
         if quality.multiplier >= 1.5:  # Необычное и выше
-            bonus_count = int(quality.multiplier)
-            possible_stats = ['constitution', 'strength', 'dexterity']
+            # Определяем доступные характеристики в зависимости от типа брони
+            if armor_type == ArmorType.LIGHT:
+                # Легкая броня: только spirit и intelligence
+                possible_stats = ['spirit', 'intelligence']
+            elif armor_type == ArmorType.HEAVY:
+                # Тяжелая броня: только strength и constitution
+                possible_stats = ['strength', 'constitution']
+            else:  # MEDIUM
+                # Средняя броня: все бонусы, но меньше (компенсаторный механизм)
+                possible_stats = ['strength', 'constitution', 'spirit', 'intelligence', 'dexterity']
+
+            # Для средней брони уменьшаем количество бонусов (компенсаторный механизм)
+            if armor_type == ArmorType.MEDIUM:
+                bonus_count = max(1, int(quality.multiplier * 0.7))  # На 30% меньше бонусов
+            else:
+                bonus_count = int(quality.multiplier)
 
             for _ in range(bonus_count):
                 stat = random.choice(possible_stats)
@@ -978,7 +993,9 @@ class ItemGenerator:
         stat_suffixes = {
             'constitution': 'стойкости',
             'strength': 'силы',
-            'dexterity': 'ловкости'
+            'dexterity': 'ловкости',
+            'spirit': 'духа',
+            'intelligence': 'мудрости'
         }
 
         if quality in [ItemQuality.RARE, ItemQuality.EPIC, ItemQuality.LEGENDARY, ItemQuality.ARTIFACT]:
@@ -1448,9 +1465,10 @@ PREDEFINED_ITEMS = {
     "minor_stamina_potion": PotionItem("Малое зелье выносливости", "stamina", 50, 20),
     "stamina_potion": PotionItem("Зелье выносливости", "stamina", 100, 40),
 
-    # Инструменты
+    # Инструменты и базовое оружие
     "basic_axe": WeaponItem("Базовый топор", WeaponType.AXE, 15, quality=ItemQuality.COMMON),
     "basic_pickaxe": WeaponItem("Базовая кирка", WeaponType.PICKAXE, 12, quality=ItemQuality.COMMON),
+    "steel_sword": WeaponItem("Стальной меч", WeaponType.SWORD, 18, quality=ItemQuality.UNCOMMON),
 
     # Книги магических умений
     "book_heal": SkillBookItem("Книга Лечения", "heal", 150, 0.5, ItemQuality.UNCOMMON),
