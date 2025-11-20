@@ -849,19 +849,47 @@ class ItemGenerator:
         return random.randint(1, 100) <= extra_chance
 
     @staticmethod
-    def generate_quality_for_shop():
+    def generate_quality_for_shop(merchant_rank=1):
         """
-        Генерация качества предмета для магазина (ограничено до RARE)
+        Генерация качества предмета для магазина с учетом ранга торговца
+
+        Args:
+            merchant_rank: Ранг торговца (1-4), влияет на шанс лучшего качества
 
         Returns:
-            ItemQuality: Качество не выше RARE
+            ItemQuality: Качество предмета
         """
-        shop_quality_weights = {
-            ItemQuality.POOR: 0.05,
-            ItemQuality.COMMON: 0.55,
-            ItemQuality.UNCOMMON: 0.28,
-            ItemQuality.RARE: 0.12
-        }
+        # Ранг 1 (новичок): только до UNCOMMON, больше плохого и обычного
+        if merchant_rank == 1:
+            shop_quality_weights = {
+                ItemQuality.POOR: 0.15,
+                ItemQuality.COMMON: 0.65,
+                ItemQuality.UNCOMMON: 0.20,
+            }
+        # Ранг 2 (обычный): до RARE, меньше плохого
+        elif merchant_rank == 2:
+            shop_quality_weights = {
+                ItemQuality.POOR: 0.05,
+                ItemQuality.COMMON: 0.50,
+                ItemQuality.UNCOMMON: 0.35,
+                ItemQuality.RARE: 0.10
+            }
+        # Ранг 3 (опытный): до EPIC, больше редкого
+        elif merchant_rank == 3:
+            shop_quality_weights = {
+                ItemQuality.COMMON: 0.30,
+                ItemQuality.UNCOMMON: 0.40,
+                ItemQuality.RARE: 0.25,
+                ItemQuality.EPIC: 0.05
+            }
+        # Ранг 4 (эксперт): до LEGENDARY, много редкого и эпического
+        else:
+            shop_quality_weights = {
+                ItemQuality.UNCOMMON: 0.20,
+                ItemQuality.RARE: 0.40,
+                ItemQuality.EPIC: 0.30,
+                ItemQuality.LEGENDARY: 0.10
+            }
         return ItemGenerator.generate_quality(shop_quality_weights)
 
     @staticmethod
