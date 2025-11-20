@@ -65,7 +65,7 @@ class NPCSpawner:
             num_guards = 8
 
             for i in range(num_guards):
-                guard_pos = self._find_npc_position(city.x, city.y)
+                guard_pos = self._find_npc_position(city.x, city.y, guards)
                 if guard_pos:
                     gx, gy = guard_pos
                     # Уровень стражников 3-4 ранга (15-40 уровень)
@@ -82,7 +82,7 @@ class NPCSpawner:
             num_guards = 4
 
             for i in range(num_guards):
-                guard_pos = self._find_npc_position(village.x, village.y)
+                guard_pos = self._find_npc_position(village.x, village.y, guards)
                 if guard_pos:
                     gx, gy = guard_pos
                     # Уровень стражников 1-2 ранга (1-15 уровень)
@@ -254,8 +254,8 @@ class NPCSpawner:
             num_bandits = random.randint(10, 15)
 
             for i in range(num_bandits):
-                # Находим позицию рядом с лагерем
-                bandit_pos = self._find_npc_position(camp.x, camp.y)
+                # Находим позицию рядом с лагерем, передаем уже созданных бандитов для проверки коллизий
+                bandit_pos = self._find_npc_position(camp.x, camp.y, bandits)
                 if bandit_pos:
                     bx, by = bandit_pos
                     # Уровни бандитов распределены по рангам:
@@ -354,8 +354,16 @@ class NPCSpawner:
                     if self.game_map.is_valid_position(ux, uy):
                         tile = self.game_map.get_tile(ux, uy)
                         if tile.is_passable():
-                            undead_pos = (ux, uy)
-                            break
+                            # Проверяем, нет ли уже нежити на этой позиции
+                            occupied = False
+                            for existing_undead in undead_list:
+                                if existing_undead.x == ux and existing_undead.y == uy:
+                                    occupied = True
+                                    break
+
+                            if not occupied:
+                                undead_pos = (ux, uy)
+                                break
 
                 if undead_pos:
                     ux, uy = undead_pos
@@ -510,17 +518,21 @@ class NPCSpawner:
 
         return necromancers
 
-    def _find_npc_position(self, center_x, center_y):
+    def _find_npc_position(self, center_x, center_y, existing_npcs=None):
         """
         Найти позицию для NPC рядом с центром
 
         Args:
             center_x: X координата центра
             center_y: Y координата центра
+            existing_npcs: Список уже существующих NPC для проверки коллизий
 
         Returns:
             tuple or None: (x, y) позиция или None
         """
+        if existing_npcs is None:
+            existing_npcs = []
+
         for radius in range(1, 5):
             for dx in range(-radius, radius + 1):
                 for dy in range(-radius, radius + 1):
@@ -530,7 +542,15 @@ class NPCSpawner:
                     if self.game_map.is_valid_position(x, y):
                         tile = self.game_map.get_tile(x, y)
                         if tile.is_passable() and not tile.has_location():
-                            return (x, y)
+                            # Проверяем, нет ли NPC на этой позиции
+                            occupied = False
+                            for npc in existing_npcs:
+                                if npc.x == x and npc.y == y:
+                                    occupied = True
+                                    break
+
+                            if not occupied:
+                                return (x, y)
         return None
 
     def _create_patrol_route(self, center_x, center_y, radius=5):

@@ -16,6 +16,7 @@ class GameTime:
         self.game = game
         self.game_hour = 6.0  # Начало игры в 6 утра (используем float для дробных часов)
         self.game_day = 1
+        self.accumulated_hours = 0.0  # Накопленные дробные часы для обновления AI
 
     @property
     def hour(self):
@@ -32,7 +33,7 @@ class GameTime:
         Продвинуть игровое время на указанное количество часов
 
         Args:
-            hours: Количество часов для продвижения
+            hours: Количество часов для продвижения (может быть дробным)
             skip_player_recovery: Не восстанавливать выносливость игрока (используется при отдыхе)
         """
         self.game_hour += hours
@@ -42,8 +43,15 @@ class GameTime:
             self.game_hour -= 24
             self.game_day += 1
 
-        # Обновляем AI всех NPC при изменении времени
-        for _ in range(hours):
+        # Накапливаем часы для обновления AI
+        self.accumulated_hours += hours
+
+        # Определяем сколько полных часов прошло
+        full_hours_passed = int(self.accumulated_hours)
+        self.accumulated_hours -= full_hours_passed
+
+        # Обновляем AI всех NPC только при прохождении полных часов
+        for _ in range(full_hours_passed):
             # Восстанавливаем выносливость игрока (если не пропускаем)
             if not skip_player_recovery:
                 self.game.player.recover_stamina()
