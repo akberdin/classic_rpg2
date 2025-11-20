@@ -2946,7 +2946,7 @@ class CheatMenuWindow:
                 if item_type == 'weapon':
                     artifact = ItemGenerator.generate_weapon(game.player.level, ItemQuality.ARTIFACT)
                 else:
-                    artifact = ItemGenerator.generate_armor(game.player.level, ItemQuality.ARTIFACT)
+                    artifact = ItemGenerator.generate_armor(game.player.level, quality=ItemQuality.ARTIFACT)
 
                 game.player.inventory.add_item(artifact, 1)
                 print(f"Получен артефакт: {artifact.name}!")
