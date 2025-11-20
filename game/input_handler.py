@@ -586,7 +586,7 @@ class InputHandler:
         elif key == pygame.K_r:
             # Отдых - восстанавливает здоровье и ману, занимает 1 час
             self.game.player.rest()
-            self.game.game_time.advance_time(1, skip_player_recovery=True)
+            self.game.game_time.advance_time(1/3, skip_player_recovery=True)
             print(f"Вы отдохнули. {self.game.game_time.get_time_string()}")
             return
         elif key == pygame.K_ESCAPE:
@@ -700,18 +700,33 @@ class InputHandler:
                 print("У вас недостаточно выносливости! Нажмите R для отдыха.")
                 return
 
+            # Проверяем, не занята ли клетка другим NPC
+            all_npcs = (self.game.guards + self.game.merchants + self.game.mages +
+                       self.game.bandits + self.game.miners + self.game.undead +
+                       self.game.alchemists + self.game.hunters + self.game.necromancers)
+
+            npc_on_cell = None
+            for npc in all_npcs:
+                if npc.is_alive and npc.x == new_x and npc.y == new_y:
+                    npc_on_cell = npc
+                    break
+
+            if npc_on_cell:
+                print(f"Клетка занята: {npc_on_cell.name}! Используйте E для взаимодействия.")
+                return
+
             if self.game.player.move_to(new_x, new_y, self.game.game_map):
-                # Продвигаем время на 1 час за перемещение
-                self.game.game_time.advance_time(1)
+                # Продвигаем время на 20 минут (1/3 часа) за перемещение
+                self.game.game_time.advance_time(1/3)
 
                 # Обновляем системы событий
                 if hasattr(self.game, 'weather_system'):
-                    weather_msg = self.game.weather_system.update(1)
+                    weather_msg = self.game.weather_system.update(1/3)
                     if weather_msg:
                         print(weather_msg)
 
                 if hasattr(self.game, 'killstreak_system'):
-                    self.game.killstreak_system.update(1)
+                    self.game.killstreak_system.update(1/3)
 
                 # Проверяем случайные события при путешествии
                 if hasattr(self.game, 'random_event_system'):

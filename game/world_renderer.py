@@ -102,41 +102,32 @@ class WorldRenderer:
                     # Если тайл не в текущей видимости, затемняем его
                     # В чит-режиме все тайлы видимы
                     is_visible = self.game.cheat_mode_active or self.game.fog_of_war.is_visible(map_x, map_y, self.game.player.x, self.game.player.y)
-                    if not is_visible:
-                        color = tuple(c // 2 for c in color)  # Затемняем цвет
-                        # Под туманом войны НЕ отображаем спрайты локаций, только цвет
-                        pygame.draw.rect(
-                            self.game.screen,
-                            color,
-                            (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
-                        )
-                    else:
-                        # Применяем оттенок времени суток только к видимым тайлам
-                        color = self.apply_time_of_day_tint(color)
 
-                        # Отрисовка тайла
-                        if tile.has_location():
-                            # Используем спрайт для видимой локации
-                            def draw_default():
-                                pygame.draw.rect(
-                                    self.game.screen,
-                                    color,
-                                    (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
-                                )
-                            self.game.sprite_manager.render_location(
-                                self.game.screen,
-                                tile.location.location_type,
-                                screen_x,
-                                screen_y,
-                                draw_default
-                            )
-                        else:
-                            # Обычная отрисовка для биомов
-                            pygame.draw.rect(
-                                self.game.screen,
-                                color,
-                                (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
-                            )
+                    # Применяем оттенок времени суток только к видимым тайлам
+                    if is_visible:
+                        color = self.apply_time_of_day_tint(color)
+                    else:
+                        color = tuple(c // 2 for c in color)  # Затемняем цвет для тумана войны
+
+                    # ВСЕГДА рисуем базовый цвет клетки
+                    pygame.draw.rect(
+                        self.game.screen,
+                        color,
+                        (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
+                    )
+
+                    # Отрисовка спрайта поверх клетки
+                    if tile.has_location():
+                        # Отрисовываем спрайт локации поверх базового цвета
+                        # Спрайт отображается даже в тумане войны (но затемненный)
+                        self.game.sprite_manager.render_location(
+                            self.game.screen,
+                            tile.location.location_type,
+                            screen_x,
+                            screen_y,
+                            lambda: None,  # Пустая функция, так как базовый цвет уже нарисован
+                            darken=not is_visible  # Затемняем спрайт в тумане войны
+                        )
                 else:
                     # Неисследованная область - туман войны
                     pygame.draw.rect(

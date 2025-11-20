@@ -557,8 +557,8 @@ class Game:
         # Добавляем тип локации в посещенные
         self.player.visited_location_types.add(location.location_type)
 
-        # Продвигаем время на 1 час
-        self.game_time.advance_time(1)
+        # Продвигаем время на 20 минут (1/3 часа)
+        self.game_time.advance_time(1/3)
         print(f"Время: {self.game_time.get_time_string()}")
 
     def _process_loot_event(self):
@@ -656,6 +656,12 @@ class Game:
             enemy: Враг для боя
         """
         print(f"Бой начался с {enemy.name}!")
+
+        # Закрываем окно случайного события, если оно открыто
+        if hasattr(self, 'event_window_open') and self.event_window_open:
+            self.event_window_open = False
+            if hasattr(self, 'random_event_system'):
+                self.random_event_system.clear_last_event()
 
         # Показываем бонусы погоды и времени суток
         if hasattr(self, 'weather_system'):
