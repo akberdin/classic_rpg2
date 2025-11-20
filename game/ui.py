@@ -2904,24 +2904,14 @@ class CheatMenuWindow:
                             if game.game_map.is_valid_position(new_x, new_y):
                                 tile = game.game_map.get_tile(new_x, new_y)
                                 if tile.is_passable():
-                                    # Проверяем, не занята ли клетка NPC
-                                    all_npcs = (game.guards + game.merchants + game.mages +
-                                              game.bandits + game.miners + game.undead +
-                                              game.alchemists + game.hunters + game.necromancers)
-                                    occupied = False
-                                    for npc in all_npcs:
-                                        if npc.is_alive and npc.x == new_x and npc.y == new_y:
-                                            occupied = True
-                                            break
-
-                                    if not occupied:
-                                        game.player.x = new_x
-                                        game.player.y = new_y
-                                        game.fog_of_war.update_vision(game.player.x, game.player.y)
-                                        game.camera.update()
-                                        academy_found = True
-                                        print(f"Телепортация к {location.name}!")
-                                        break
+                                    # Телепортируемся без проверки на NPC - сущности могут находиться на одной клетке
+                                    game.player.x = new_x
+                                    game.player.y = new_y
+                                    game.fog_of_war.update_vision(game.player.x, game.player.y)
+                                    game.camera.update()
+                                    academy_found = True
+                                    print(f"Телепортация к {location.name}!")
+                                    break
 
                         if academy_found:
                             break
