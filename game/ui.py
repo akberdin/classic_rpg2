@@ -617,7 +617,7 @@ class InventoryWindow:
                 item_color = item.quality.color if hasattr(item, 'quality') else (200, 200, 200)
 
                 # Показываем количество только для стакающихся предметов или если quantity > 1
-                is_stackable = item.is_stackable() if hasattr(item, 'is_stackable') else True
+                is_stackable = item.is_stackable if hasattr(item, 'is_stackable') else True
                 display_name = f"{item_name} x{quantity}" if (is_stackable and quantity > 1) or (not is_stackable and quantity > 1) else item_name
                 if quantity > 1:
                     display_name = f"{item_name} x{quantity}"

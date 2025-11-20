@@ -196,7 +196,7 @@ class RandomEventSystem:
             "find_gold", "Найден кошелёк",
             "Вы нашли кошелёк с золотом на дороге!",
             lambda p, g: self._find_gold(p, g),
-            chance=0.016, min_rank="Новичок",
+            chance=0.016 / 3, min_rank="Новичок",
             event_type=EventType.POSITIVE, icon="$"
         ))
 
@@ -204,7 +204,7 @@ class RandomEventSystem:
             "blessing", "Благословение путника",
             "Странствующий монах благословил вас.",
             lambda p, g: self._blessing(p, g),
-            chance=0.01, min_rank="Новичок",
+            chance=0.01 / 3, min_rank="Новичок",
             event_type=EventType.POSITIVE, icon="+"
         ))
 
@@ -212,7 +212,7 @@ class RandomEventSystem:
             "hidden_cache", "Тайник",
             "Вы обнаружили тайник под камнем!",
             lambda p, g: self._hidden_cache(p, g),
-            chance=0.012, min_rank="Новичок",
+            chance=0.012 / 3, min_rank="Новичок",
             event_type=EventType.POSITIVE, icon="*"
         ))
 
@@ -220,7 +220,7 @@ class RandomEventSystem:
             "lucky_find", "Удачная находка",
             "Вы нашли ценный предмет среди листвы!",
             lambda p, g: self._lucky_find(p, g),
-            chance=0.008, min_rank="Новичок",
+            chance=0.008 / 3, min_rank="Новичок",
             event_type=EventType.POSITIVE, icon="!"
         ))
 
@@ -228,7 +228,7 @@ class RandomEventSystem:
             "helpful_traveler", "Попутчик",
             "Дружелюбный путник поделился едой и восстановил ваши силы.",
             lambda p, g: self._helpful_traveler(p, g),
-            chance=0.012, min_rank="Новичок",
+            chance=0.012 / 3, min_rank="Новичок",
             event_type=EventType.POSITIVE, icon="@"
         ))
 
@@ -237,7 +237,7 @@ class RandomEventSystem:
             "wandering_merchant", "Странствующий торговец",
             "Вы встретили странствующего торговца, который поделился советом.",
             lambda p, g: self._wandering_merchant(p, g),
-            chance=0.014, min_rank="Новичок",
+            chance=0.014 / 3, min_rank="Новичок",
             event_type=EventType.NEUTRAL, icon="T"
         ))
 
@@ -245,7 +245,7 @@ class RandomEventSystem:
             "ancient_shrine", "Древний алтарь",
             "Вы нашли древний алтарь. Помолившись, вы чувствуете прилив сил.",
             lambda p, g: self._ancient_shrine(p, g),
-            chance=0.01, min_rank="Новичок",
+            chance=0.01 / 3, min_rank="Новичок",
             event_type=EventType.NEUTRAL, icon="A"
         ))
 
@@ -253,7 +253,7 @@ class RandomEventSystem:
             "old_hermit", "Старый отшельник",
             "Старый отшельник рассказал вам древнюю легенду.",
             lambda p, g: self._old_hermit(p, g),
-            chance=0.01, min_rank="Новичок",
+            chance=0.01 / 3, min_rank="Новичок",
             event_type=EventType.NEUTRAL, icon="H"
         ))
 
@@ -262,7 +262,7 @@ class RandomEventSystem:
             "trap", "Ловушка",
             "Вы попали в скрытую ловушку!",
             lambda p, g: self._trap(p, g),
-            chance=0.012, min_rank="Новичок",
+            chance=0.012 / 3, min_rank="Новичок",
             event_type=EventType.NEGATIVE, icon="X"
         ))
 
@@ -270,7 +270,7 @@ class RandomEventSystem:
             "pickpocket", "Карманник",
             "Ловкий вор украл часть вашего золота!",
             lambda p, g: self._pickpocket(p, g),
-            chance=0.01, min_rank="Новичок",
+            chance=0.01 / 3, min_rank="Новичок",
             event_type=EventType.NEGATIVE, icon="V"
         ))
 
@@ -278,7 +278,7 @@ class RandomEventSystem:
             "bad_food", "Испорченная еда",
             "Вы съели что-то несвежее и чувствуете слабость.",
             lambda p, g: self._bad_food(p, g),
-            chance=0.008, min_rank="Новичок",
+            chance=0.008 / 3, min_rank="Новичок",
             event_type=EventType.NEGATIVE, icon="~"
         ))
 
@@ -289,7 +289,7 @@ class RandomEventSystem:
             "treasure_map", "Карта сокровищ",
             "Вы нашли старую карту, ведущую к кладу!",
             lambda p, g: self._treasure_map(p, g),
-            chance=0.01, min_rank="Обычный",
+            chance=0.01 / 3, min_rank="Обычный",
             event_type=EventType.POSITIVE, icon="M"
         ))
 
@@ -297,7 +297,7 @@ class RandomEventSystem:
             "warrior_spirit", "Дух воина",
             "Дух древнего воина благословил ваше оружие.",
             lambda p, g: self._warrior_spirit(p, g),
-            chance=0.008, min_rank="Обычный",
+            chance=0.008 / 3, min_rank="Обычный",
             event_type=EventType.POSITIVE, icon="W"
         ))
 
@@ -305,7 +305,7 @@ class RandomEventSystem:
             "rare_herb", "Редкая трава",
             "Вы обнаружили редкую целебную траву!",
             lambda p, g: self._rare_herb(p, g),
-            chance=0.01, min_rank="Обычный",
+            chance=0.01 / 3, min_rank="Обычный",
             event_type=EventType.POSITIVE, icon="H"
         ))
 
@@ -313,7 +313,7 @@ class RandomEventSystem:
             "fairy_blessing", "Благословение феи",
             "Лесная фея одарила вас магической энергией.",
             lambda p, g: self._fairy_blessing(p, g),
-            chance=0.008, min_rank="Обычный",
+            chance=0.008 / 3, min_rank="Обычный",
             event_type=EventType.POSITIVE, icon="F"
         ))
 
@@ -322,7 +322,7 @@ class RandomEventSystem:
             "mysterious_stranger", "Таинственный незнакомец",
             "Загадочный путник предложил вам сделку.",
             lambda p, g: self._mysterious_stranger(p, g),
-            chance=0.01, min_rank="Обычный",
+            chance=0.01 / 3, min_rank="Обычный",
             event_type=EventType.NEUTRAL, icon="?"
         ))
 
@@ -330,7 +330,7 @@ class RandomEventSystem:
             "ancient_inscription", "Древняя надпись",
             "Вы расшифровали древнюю надпись на камне.",
             lambda p, g: self._ancient_inscription(p, g),
-            chance=0.008, min_rank="Обычный",
+            chance=0.008 / 3, min_rank="Обычный",
             event_type=EventType.NEUTRAL, icon="I"
         ))
 
@@ -339,7 +339,7 @@ class RandomEventSystem:
             "cursed_item", "Проклятый предмет",
             "Вы подобрали проклятый предмет и потеряли часть сил.",
             lambda p, g: self._cursed_item(p, g),
-            chance=0.008, min_rank="Обычный",
+            chance=0.008 / 3, min_rank="Обычный",
             event_type=EventType.NEGATIVE, icon="C"
         ))
 
@@ -347,7 +347,7 @@ class RandomEventSystem:
             "ambush", "Засада",
             "На вас напали из засады! Вы получили ранения, но сбежали.",
             lambda p, g: self._ambush(p, g),
-            chance=0.01, min_rank="Обычный",
+            chance=0.01 / 3, min_rank="Обычный",
             event_type=EventType.NEGATIVE, icon="!"
         ))
 
@@ -358,7 +358,7 @@ class RandomEventSystem:
             "ancient_artifact", "Древний артефакт",
             "Вы обнаружили осколок древнего артефакта!",
             lambda p, g: self._ancient_artifact(p, g),
-            chance=0.008, min_rank="Опытный",
+            chance=0.008 / 3, min_rank="Опытный",
             event_type=EventType.POSITIVE, icon="A"
         ))
 
@@ -366,7 +366,7 @@ class RandomEventSystem:
             "dragon_scale", "Чешуя дракона",
             "Вы нашли чешуйку древнего дракона - редчайшая находка!",
             lambda p, g: self._dragon_scale(p, g),
-            chance=0.006, min_rank="Опытный",
+            chance=0.006 / 3, min_rank="Опытный",
             event_type=EventType.POSITIVE, icon="D"
         ))
 
@@ -374,7 +374,7 @@ class RandomEventSystem:
             "elemental_blessing", "Благословение стихий",
             "Духи стихий даровали вам свою силу.",
             lambda p, g: self._elemental_blessing(p, g),
-            chance=0.008, min_rank="Опытный",
+            chance=0.008 / 3, min_rank="Опытный",
             event_type=EventType.POSITIVE, icon="E"
         ))
 
@@ -382,7 +382,7 @@ class RandomEventSystem:
             "legendary_teacher", "Легендарный учитель",
             "Старый мастер согласился поделиться секретами боевых искусств.",
             lambda p, g: self._legendary_teacher(p, g),
-            chance=0.006, min_rank="Опытный",
+            chance=0.006 / 3, min_rank="Опытный",
             event_type=EventType.POSITIVE, icon="L"
         ))
 
@@ -391,7 +391,7 @@ class RandomEventSystem:
             "time_rift", "Разлом времени",
             "Вы прошли через разлом во времени и увидели прошлое.",
             lambda p, g: self._time_rift(p, g),
-            chance=0.006, min_rank="Опытный",
+            chance=0.006 / 3, min_rank="Опытный",
             event_type=EventType.NEUTRAL, icon="T"
         ))
 
@@ -399,7 +399,7 @@ class RandomEventSystem:
             "divine_vision", "Божественное видение",
             "Вам явилось видение из мира богов.",
             lambda p, g: self._divine_vision(p, g),
-            chance=0.006, min_rank="Опытный",
+            chance=0.006 / 3, min_rank="Опытный",
             event_type=EventType.NEUTRAL, icon="V"
         ))
 
@@ -408,7 +408,7 @@ class RandomEventSystem:
             "dark_curse", "Тёмное проклятие",
             "Древнее проклятие ослабило вас.",
             lambda p, g: self._dark_curse(p, g),
-            chance=0.008, min_rank="Опытный",
+            chance=0.008 / 3, min_rank="Опытный",
             event_type=EventType.NEGATIVE, icon="D"
         ))
 
@@ -416,7 +416,7 @@ class RandomEventSystem:
             "soul_drain", "Похищение души",
             "Призрак попытался похитить часть вашей души.",
             lambda p, g: self._soul_drain(p, g),
-            chance=0.006, min_rank="Опытный",
+            chance=0.006 / 3, min_rank="Опытный",
             event_type=EventType.NEGATIVE, icon="S"
         ))
 
@@ -427,7 +427,7 @@ class RandomEventSystem:
             "divine_intervention", "Божественное вмешательство",
             "Боги обратили на вас внимание и даровали великую силу!",
             lambda p, g: self._divine_intervention(p, g),
-            chance=0.006, min_rank="Эксперт",
+            chance=0.006 / 3, min_rank="Эксперт",
             event_type=EventType.POSITIVE, icon="G"
         ))
 
@@ -435,7 +435,7 @@ class RandomEventSystem:
             "legendary_treasure", "Легендарное сокровище",
             "Вы нашли легендарное сокровище древних королей!",
             lambda p, g: self._legendary_treasure(p, g),
-            chance=0.004, min_rank="Эксперт",
+            chance=0.004 / 3, min_rank="Эксперт",
             event_type=EventType.POSITIVE, icon="K"
         ))
 
@@ -443,7 +443,7 @@ class RandomEventSystem:
             "phoenix_feather", "Перо феникса",
             "Перо феникса упало прямо в ваши руки - невероятная удача!",
             lambda p, g: self._phoenix_feather(p, g),
-            chance=0.004, min_rank="Эксперт",
+            chance=0.004 / 3, min_rank="Эксперт",
             event_type=EventType.POSITIVE, icon="P"
         ))
 
@@ -451,7 +451,7 @@ class RandomEventSystem:
             "wisdom_of_ages", "Мудрость веков",
             "Древние духи поделились с вами знаниями прошлого.",
             lambda p, g: self._wisdom_of_ages(p, g),
-            chance=0.006, min_rank="Эксперт",
+            chance=0.006 / 3, min_rank="Эксперт",
             event_type=EventType.POSITIVE, icon="W"
         ))
 
@@ -460,7 +460,7 @@ class RandomEventSystem:
             "cosmic_alignment", "Космическое выравнивание",
             "Звёзды встали в особое положение, и вы чувствуете их влияние.",
             lambda p, g: self._cosmic_alignment(p, g),
-            chance=0.006, min_rank="Эксперт",
+            chance=0.006 / 3, min_rank="Эксперт",
             event_type=EventType.NEUTRAL, icon="*"
         ))
 
@@ -468,7 +468,7 @@ class RandomEventSystem:
             "ancient_prophecy", "Древнее пророчество",
             "Вы узнали о древнем пророчестве, касающемся вас.",
             lambda p, g: self._ancient_prophecy(p, g),
-            chance=0.004, min_rank="Эксперт",
+            chance=0.004 / 3, min_rank="Эксперт",
             event_type=EventType.NEUTRAL, icon="O"
         ))
 
@@ -477,7 +477,7 @@ class RandomEventSystem:
             "demonic_attention", "Внимание демона",
             "Могущественный демон обратил на вас внимание.",
             lambda p, g: self._demonic_attention(p, g),
-            chance=0.006, min_rank="Эксперт",
+            chance=0.006 / 3, min_rank="Эксперт",
             event_type=EventType.NEGATIVE, icon="B"
         ))
 
@@ -485,7 +485,7 @@ class RandomEventSystem:
             "temporal_paradox", "Временной парадокс",
             "Парадокс времени вызвал странные последствия.",
             lambda p, g: self._temporal_paradox(p, g),
-            chance=0.004, min_rank="Эксперт",
+            chance=0.004 / 3, min_rank="Эксперт",
             event_type=EventType.NEGATIVE, icon="Z"
         ))
 

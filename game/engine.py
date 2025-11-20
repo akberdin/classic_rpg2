@@ -178,13 +178,11 @@ class Game:
         self.player.skill_manager.learn_skill('basic_attack')  # Базовая атака
         self.player.skill_manager.learn_skill('mining')  # Рудокоп ранг 1
         self.player.skill_manager.learn_skill('lumberjacking')  # Лесоруб ранг 1
-        self.player.skill_manager.learn_skill('heal')  # Лечение (магия)
 
         # Назначаем умения в слоты
         self.player.skill_manager.assign_to_slot('basic_attack', 0)  # Слот 1
         self.player.skill_manager.assign_to_slot('mining', 1)  # Слот 2
         self.player.skill_manager.assign_to_slot('lumberjacking', 2)  # Слот 3
-        self.player.skill_manager.assign_to_slot('heal', 3)  # Слот 4
 
         # Перестраиваем spatial grid для NPC
         all_npcs = self.guards + self.merchants + self.mages + self.bandits + self.miners + self.undead + self.alchemists + self.hunters + self.necromancers
