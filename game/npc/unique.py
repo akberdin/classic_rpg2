@@ -110,6 +110,9 @@ class Hunter(NPC):
         self.steps_in_current_state = 0
         self.max_steps_patrol = random.randint(8, 15)
 
+        # Состояние по умолчанию для расписания
+        self.default_state = "patrol"
+
     def _adjust_hunter_stats(self):
         """Настройка характеристик охотника"""
         # Охотники ловкие и наблюдательные
@@ -150,7 +153,7 @@ class Hunter(NPC):
 
         self.update_derived_stats()
 
-    def update_ai(self, game_map, all_npcs=None, player=None):
+    def update_ai(self, game_map, all_npcs=None, player=None, current_hour=12):
         """
         Обновление AI охотника
 
@@ -158,8 +161,23 @@ class Hunter(NPC):
             game_map: Карта игры
             all_npcs: Список всех NPC
             player: Игрок
+            current_hour: Текущий час суток (0-23)
         """
         if not self.is_alive:
+            return
+
+        # Обновляем расписание (проверка времени активности)
+        self.update_schedule(current_hour, game_map)
+
+        # Если NPC скрыт (в локации), не обновляем AI
+        if self.is_hidden():
+            return
+
+        # Восстанавливаем выносливость
+        self.recover_stamina()
+
+        # Если отдыхаем из-за выносливости, ничего не делаем
+        if self.is_resting:
             return
 
         self.steps_in_current_state += 1
@@ -314,6 +332,9 @@ class Necromancer(NPC):
         self.pursuit_steps = 0
         self.max_pursuit_steps = 15
 
+        # Состояние по умолчанию для расписания
+        self.default_state = "patrol"
+
         # Некроманты всегда враждебны
         self.relationship = RELATIONSHIP_HOSTILE
 
@@ -369,7 +390,7 @@ class Necromancer(NPC):
 
         self.update_derived_stats()
 
-    def update_ai(self, game_map, all_npcs=None, player=None):
+    def update_ai(self, game_map, all_npcs=None, player=None, current_hour=12):
         """
         Обновление AI некроманта
 
@@ -377,8 +398,27 @@ class Necromancer(NPC):
             game_map: Карта игры
             all_npcs: Список всех NPC
             player: Игрок
+            current_hour: Текущий час суток (0-23)
         """
         if not self.is_alive:
+            return
+
+        # Обновляем расписание (проверка времени активности)
+        self.update_schedule(current_hour, game_map)
+
+        # Если NPC скрыт (в локации), не обновляем AI
+        if self.is_hidden():
+            return
+
+        # Восстанавливаем выносливость
+        self.recover_stamina()
+
+        # Восстанавливаем ману
+        if self.mana < self.max_mana:
+            self.mana = min(self.max_mana, self.mana + 3)
+
+        # Если отдыхаем из-за выносливости, ничего не делаем
+        if self.is_resting:
             return
 
         self.steps_in_current_state += 1

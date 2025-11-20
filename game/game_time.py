@@ -74,46 +74,49 @@ class GameTime:
             # Увеличиваем счетчик для оптимизации AI
             self.game.performance_optimizer.increment_counter()
 
+            # Получаем текущий час для расписаний NPC
+            current_hour = int(self.game_hour) % 24
+
             # Обновляем AI только тех NPC, которых нужно обновлять в этом кадре
             for guard in self.game.guards:
                 if self.game.performance_optimizer.should_update_ai(guard, self.game.player.x, self.game.player.y):
-                    guard.update_ai(self.game.game_map, all_npcs, self.game.player)
+                    guard.update_ai(self.game.game_map, all_npcs, self.game.player, current_hour)
 
             for merchant in self.game.merchants:
                 if self.game.performance_optimizer.should_update_ai(merchant, self.game.player.x, self.game.player.y):
-                    merchant.update_ai(self.game.game_map, all_npcs)
+                    merchant.update_ai(self.game.game_map, all_npcs, current_hour)
 
             for mage in self.game.mages:
                 if self.game.performance_optimizer.should_update_ai(mage, self.game.player.x, self.game.player.y):
-                    mage.update_ai(self.game.game_map, all_npcs, self.game.player)
+                    mage.update_ai(self.game.game_map, all_npcs, self.game.player, current_hour)
 
             for bandit in self.game.bandits:
                 if self.game.performance_optimizer.should_update_ai(bandit, self.game.player.x, self.game.player.y):
-                    bandit.update_ai(self.game.game_map, all_npcs, self.game.player)
+                    bandit.update_ai(self.game.game_map, all_npcs, self.game.player, current_hour)
 
             for miner in self.game.miners:
                 if self.game.performance_optimizer.should_update_ai(miner, self.game.player.x, self.game.player.y):
-                    miner.update_ai(self.game.game_map, all_npcs)
+                    miner.update_ai(self.game.game_map, all_npcs, current_hour)
 
             for undead_npc in self.game.undead:
                 if self.game.performance_optimizer.should_update_ai(undead_npc, self.game.player.x, self.game.player.y):
-                    undead_npc.update_ai(self.game.game_map, all_npcs, self.game.player)
+                    undead_npc.update_ai(self.game.game_map, all_npcs, self.game.player, current_hour)
 
             # Алхимики не нуждаются в обновлении AI (статичные торговцы)
             # но обновляем для консистентности
             for alchemist in self.game.alchemists:
                 if self.game.performance_optimizer.should_update_ai(alchemist, self.game.player.x, self.game.player.y):
-                    alchemist.update_ai(self.game.game_map, all_npcs)
+                    alchemist.update_ai(self.game.game_map, all_npcs, current_hour)
 
             # Охотники патрулируют и охотятся
             for hunter in self.game.hunters:
                 if self.game.performance_optimizer.should_update_ai(hunter, self.game.player.x, self.game.player.y):
-                    hunter.update_ai(self.game.game_map, all_npcs, self.game.player)
+                    hunter.update_ai(self.game.game_map, all_npcs, self.game.player, current_hour)
 
             # Некроманты - враждебные маги
             for necromancer in self.game.necromancers:
                 if self.game.performance_optimizer.should_update_ai(necromancer, self.game.player.x, self.game.player.y):
-                    necromancer.update_ai(self.game.game_map, all_npcs, self.game.player)
+                    necromancer.update_ai(self.game.game_map, all_npcs, self.game.player, current_hour)
 
             # Обрабатываем респавн NPC
             if hasattr(self.game, 'respawn_manager'):

@@ -172,8 +172,8 @@ class MinerSchedule(NPCSchedule):
         nearest_distance = float('inf')
 
         for location in game_map.locations:
-            if location['type'] in [LOCATION_CITY, LOCATION_VILLAGE]:
-                distance = abs(self.npc.x - location['x']) + abs(self.npc.y - location['y'])
+            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
+                distance = abs(self.npc.x - location.x) + abs(self.npc.y - location.y)
                 if distance < nearest_distance:
                     nearest_distance = distance
                     nearest_location = location
@@ -181,7 +181,7 @@ class MinerSchedule(NPCSchedule):
         # Если рядом с локацией (в пределах 5 клеток), посещаем
         if nearest_location and nearest_distance <= 5:
             duration = random.randint(*self.town_visit_duration)
-            self.hide_in_location(nearest_location['type'], duration)
+            self.hide_in_location(nearest_location.location_type, duration)
             self.last_town_visit = 0  # Сброс счетчика
 
 
