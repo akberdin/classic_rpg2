@@ -156,8 +156,24 @@ class Character:
             equipment_bonus = self.inventory.get_total_stats_bonus()
             base_strength += equipment_bonus.get('strength', 0)
 
-        # Грузоподъемность = 50 + сила * 5
-        return 50 + base_strength * 5
+        # Грузоподъемность = 30 + сила * 10
+        return 30 + base_strength * 10
+
+    def get_effective_strength(self):
+        """
+        Получить эффективную силу с учетом бонусов от экипировки
+
+        Returns:
+            int: Эффективная сила
+        """
+        base_strength = self.strength
+
+        # Добавляем бонусы от экипировки
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            base_strength += equipment_bonus.get('strength', 0)
+
+        return base_strength
 
     def consume_stamina(self, amount=STAMINA_COST_PER_MOVE):
         """
@@ -190,16 +206,35 @@ class Character:
         if self.stamina < self.max_stamina:
             # При активном отдыхе или принудительном отдыхе восстанавливаем больше
             if is_active_rest or self.is_resting:
-                recovery = (self.strength + self.constitution) * 2
+                # Базовое восстановление + бонус от ловкости
+                # Каждые 2 единицы ловкости дают +1 к восстановлению
+                recovery = (self.strength + self.constitution) * 2 + (self.dexterity // 2)
             else:
-                # При обычном движении восстанавливаем только 25% от нормы
-                recovery = max(1, (self.strength + self.constitution) // 4)
+                # При обычном движении восстанавливаем только 25% от нормы + бонус от ловкости
+                recovery = max(1, (self.strength + self.constitution) // 4 + (self.dexterity // 4))
 
             self.stamina = min(self.max_stamina, self.stamina + recovery)
 
             # Проверяем, достаточно ли восстановились для окончания отдыха
             if self.is_resting and self.stamina >= self.rest_threshold:
                 self.is_resting = False
+
+    def recover_health(self, is_active_rest=False):
+        """
+        Восстановить здоровье (вызывается каждый игровой час)
+
+        Args:
+            is_active_rest: True если это активный отдых (команда R)
+        """
+        if self.health < self.max_health:
+            # При активном отдыхе восстанавливаем 30% HP (как в rest())
+            if is_active_rest or self.is_resting:
+                recovery = int(self.max_health * 0.30)
+            else:
+                # При обычном движении восстанавливаем 2% от макс. здоровья
+                recovery = max(1, int(self.max_health * 0.02))
+
+            self.health = min(self.max_health, self.health + recovery)
 
     def take_damage(self, damage):
         """
@@ -682,11 +717,19 @@ class Player(Character):
 
             # Обновляем грузоподъемность если изменилась сила
             if stat_name == 'strength':
-                self.inventory.update_max_weight(self.strength)
+                self.update_inventory_max_weight()
 
             return True
 
         return False
+
+    def update_inventory_max_weight(self):
+        """
+        Обновить максимальный вес инвентаря с учетом бонусов от экипировки
+        Этот метод нужно вызывать при изменении силы или экипировки
+        """
+        effective_strength = self.get_effective_strength()
+        self.inventory.update_max_weight(effective_strength)
 
     def rest(self):
         """

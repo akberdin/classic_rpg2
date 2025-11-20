@@ -60,6 +60,8 @@ class InputHandler:
                     # Обновляем производные характеристики после экипировки
                     if success:
                         self.game.player.update_derived_stats()
+                        # Обновляем максимальный вес с учетом бонусов от экипировки
+                        self.game.player.update_inventory_max_weight()
                 else:
                     print("Этот предмет нельзя экипировать")
         elif key == pygame.K_q:
@@ -72,6 +74,8 @@ class InputHandler:
                     print(message)
                     if success:
                         self.game.player.update_derived_stats()
+                        # Обновляем максимальный вес с учетом бонусов от экипировки
+                        self.game.player.update_inventory_max_weight()
                 else:
                     print("В этом слоте нет предмета")
             else:
@@ -96,6 +100,8 @@ class InputHandler:
                 print(message)
                 if success:
                     self.game.player.update_derived_stats()
+                    # Обновляем максимальный вес с учетом бонусов от экипировки
+                    self.game.player.update_inventory_max_weight()
             elif isinstance(item, SkillBookItem):
                 # Изучить умение из книги
                 result = item.use(self.game.player)
@@ -158,6 +164,8 @@ class InputHandler:
                             print(message)
                             if success:
                                 self.game.player.update_derived_stats()
+                                # Обновляем максимальный вес с учетом бонусов от экипировки
+                                self.game.player.update_inventory_max_weight()
                         else:
                             print(f"Слот {group_name} пуст")
                         return
@@ -700,21 +708,7 @@ class InputHandler:
                 print("У вас недостаточно выносливости! Нажмите R для отдыха.")
                 return
 
-            # Проверяем, не занята ли клетка другим NPC
-            all_npcs = (self.game.guards + self.game.merchants + self.game.mages +
-                       self.game.bandits + self.game.miners + self.game.undead +
-                       self.game.alchemists + self.game.hunters + self.game.necromancers)
-
-            npc_on_cell = None
-            for npc in all_npcs:
-                if npc.is_alive and npc.x == new_x and npc.y == new_y:
-                    npc_on_cell = npc
-                    break
-
-            if npc_on_cell:
-                print(f"Клетка занята: {npc_on_cell.name}! Используйте E для взаимодействия.")
-                return
-
+            # Игрок может проходить сквозь NPC (коллизии убраны)
             if self.game.player.move_to(new_x, new_y, self.game.game_map):
                 # Продвигаем время на 20 минут (1/3 часа) за перемещение
                 self.game.game_time.advance_time(1/3)

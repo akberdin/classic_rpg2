@@ -1523,6 +1523,7 @@ PREDEFINED_ITEMS = {
     "book_heal": SkillBookItem("Книга Лечения", "heal", 150, 0.5, ItemQuality.UNCOMMON),
     "book_regeneration": SkillBookItem("Книга Регенерации", "regeneration", 250, 0.5, ItemQuality.RARE),
     "book_stamina_recovery": SkillBookItem("Книга Восстановления Выносливости", "stamina_recovery", 200, 0.5, ItemQuality.UNCOMMON),
+    "book_mage_shield": SkillBookItem("Книга Щита Мага", "mage_shield", 400, 0.5, ItemQuality.RARE),
 
     # Книги боевых умений
     "book_power_strike": SkillBookItem("Книга Мощного Удара", "power_strike", 200, 0.5, ItemQuality.UNCOMMON),

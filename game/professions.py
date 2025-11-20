@@ -119,6 +119,27 @@ class Mining(Profession):
                 quantity = random.randint(1, min(5, 1 + self.rank // 2))
                 resources.append((PREDEFINED_ITEMS[ore_type], quantity))
 
+        # Случайные события при добыче (10% шанс)
+        event_roll = random.randint(1, 100)
+        if event_roll <= 10:
+            events = [
+                ("Камень упал с потолка и ударил вас по голове!", -10, None),
+                ("Вы нашли тайник со старыми монетами!", 0, 50),
+                ("Обвал! Вы получили травмы.", -15, None),
+                ("Вы нашли дополнительную руду в расщелине!", 0, "extra_ore"),
+            ]
+            event = random.choice(events)
+            print(event[0])
+
+            # Применяем эффект события
+            if event[1] < 0:  # Урон
+                player.take_damage(abs(event[1]))
+            elif event[2] == "extra_ore":  # Дополнительная руда
+                bonus_ore = random.choice(list(self.ore_chances.keys()))
+                resources.append((PREDEFINED_ITEMS[bonus_ore], random.randint(1, 3)))
+            elif event[2] is not None:  # Золото
+                player.inventory.add_gold(event[2])
+
         # Даем опыт только при успешной добыче (улучшенная формула)
         if resources:
             # Базовый опыт + бонус за количество + бонус за ранг
@@ -192,6 +213,26 @@ class Lumberjacking(Profession):
 
             if leveled_up:
                 print(f"Профессия {self.name} повышена до ранга {self.rank}!")
+
+        # Случайные события при рубке (10% шанс)
+        event_roll = random.randint(1, 100)
+        if event_roll <= 10:
+            events = [
+                ("Полено отскочило и ударило вас по ноге!", -12, None),
+                ("Вы нашли дупло с монетами внутри дерева!", 0, 40),
+                ("Дерево упало не в ту сторону! Вы получили травмы.", -18, None),
+                ("Вы нашли особо качественное дерево!", 0, "extra_wood"),
+            ]
+            event = random.choice(events)
+            print(event[0])
+
+            # Применяем эффект события
+            if event[1] < 0:  # Урон
+                player.take_damage(abs(event[1]))
+            elif event[2] == "extra_wood":  # Дополнительная древесина
+                resources.append((PREDEFINED_ITEMS["wood"], random.randint(3, 6)))
+            elif event[2] is not None:  # Золото
+                player.inventory.add_gold(event[2])
 
         return resources
 
