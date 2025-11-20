@@ -72,7 +72,8 @@ class NPCSpawner:
                     guard_level = random.randint(15, 40)
                     guard = Guard(f"Стражник {city.name}", gx, gy, guard_level)
 
-                    patrol_route = self._create_patrol_route(gx, gy, radius=5)
+                    # Увеличенный радиус патрулирования для городов
+                    patrol_route = self._create_patrol_route(gx, gy, radius=8)
                     guard.set_patrol_route(patrol_route)
 
                     guards.append(guard)
@@ -89,7 +90,8 @@ class NPCSpawner:
                     guard_level = random.randint(1, 15)
                     guard = Guard(f"Стражник {village.name}", gx, gy, guard_level)
 
-                    patrol_route = self._create_patrol_route(gx, gy, radius=4)
+                    # Увеличенный радиус патрулирования для деревень
+                    patrol_route = self._create_patrol_route(gx, gy, radius=6)
                     guard.set_patrol_route(patrol_route)
 
                     guards.append(guard)
@@ -624,7 +626,8 @@ class NPCSpawner:
 
     def _create_patrol_route(self, center_x, center_y, radius=5):
         """
-        Создать маршрут патрулирования вокруг точки
+        Создать разнообразный маршрут патрулирования вокруг точки
+        Каждый маршрут уникален для избежания столпотворения стражников
 
         Args:
             center_x: X координата центра
@@ -634,16 +637,69 @@ class NPCSpawner:
         Returns:
             list: Список точек маршрута
         """
-        route = [
-            (center_x + radius, center_y),
-            (center_x + radius, center_y + radius),
-            (center_x, center_y + radius),
-            (center_x - radius, center_y + radius),
-            (center_x - radius, center_y),
-            (center_x - radius, center_y - radius),
-            (center_x, center_y - radius),
-            (center_x + radius, center_y - radius),
-        ]
+        # Добавляем рандомизацию для создания уникальных маршрутов
+        offset_x = random.randint(-2, 2)
+        offset_y = random.randint(-2, 2)
+
+        # Варьируем радиус для каждого стражника
+        actual_radius = radius + random.randint(-1, 2)
+
+        # Выбираем тип маршрута случайно
+        route_type = random.choice(['square', 'diagonal', 'cross', 'wide'])
+
+        if route_type == 'square':
+            # Классический квадратный маршрут с рандомным смещением
+            route = [
+                (center_x + actual_radius + offset_x, center_y + offset_y),
+                (center_x + actual_radius + offset_x, center_y + actual_radius + offset_y),
+                (center_x + offset_x, center_y + actual_radius + offset_y),
+                (center_x - actual_radius + offset_x, center_y + actual_radius + offset_y),
+                (center_x - actual_radius + offset_x, center_y + offset_y),
+                (center_x - actual_radius + offset_x, center_y - actual_radius + offset_y),
+                (center_x + offset_x, center_y - actual_radius + offset_y),
+                (center_x + actual_radius + offset_x, center_y - actual_radius + offset_y),
+            ]
+        elif route_type == 'diagonal':
+            # Диагональный маршрут
+            route = [
+                (center_x + actual_radius + offset_x, center_y + actual_radius + offset_y),
+                (center_x - actual_radius + offset_x, center_y + actual_radius + offset_y),
+                (center_x - actual_radius + offset_x, center_y - actual_radius + offset_y),
+                (center_x + actual_radius + offset_x, center_y - actual_radius + offset_y),
+            ]
+        elif route_type == 'cross':
+            # Крестообразный маршрут
+            route = [
+                (center_x + actual_radius + offset_x, center_y + offset_y),
+                (center_x + offset_x, center_y + offset_y),
+                (center_x + offset_x, center_y + actual_radius + offset_y),
+                (center_x + offset_x, center_y + offset_y),
+                (center_x - actual_radius + offset_x, center_y + offset_y),
+                (center_x + offset_x, center_y + offset_y),
+                (center_x + offset_x, center_y - actual_radius + offset_y),
+                (center_x + offset_x, center_y + offset_y),
+            ]
+        else:  # 'wide'
+            # Широкий маршрут с дополнительными точками
+            route = [
+                (center_x + actual_radius + offset_x, center_y + offset_y),
+                (center_x + actual_radius + offset_x, center_y + actual_radius//2 + offset_y),
+                (center_x + actual_radius + offset_x, center_y + actual_radius + offset_y),
+                (center_x + actual_radius//2 + offset_x, center_y + actual_radius + offset_y),
+                (center_x + offset_x, center_y + actual_radius + offset_y),
+                (center_x - actual_radius//2 + offset_x, center_y + actual_radius + offset_y),
+                (center_x - actual_radius + offset_x, center_y + actual_radius + offset_y),
+                (center_x - actual_radius + offset_x, center_y + actual_radius//2 + offset_y),
+                (center_x - actual_radius + offset_x, center_y + offset_y),
+                (center_x - actual_radius + offset_x, center_y - actual_radius//2 + offset_y),
+                (center_x - actual_radius + offset_x, center_y - actual_radius + offset_y),
+                (center_x - actual_radius//2 + offset_x, center_y - actual_radius + offset_y),
+                (center_x + offset_x, center_y - actual_radius + offset_y),
+                (center_x + actual_radius//2 + offset_x, center_y - actual_radius + offset_y),
+                (center_x + actual_radius + offset_x, center_y - actual_radius + offset_y),
+                (center_x + actual_radius + offset_x, center_y - actual_radius//2 + offset_y),
+            ]
+
         return route
 
 

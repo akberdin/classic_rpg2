@@ -291,6 +291,7 @@ class QuestManager:
     """Менеджер квестов"""
 
     MAX_ACTIVE_QUESTS = 5  # Максимум активных квестов
+    QUEST_ROTATION_DAYS = 5  # Квесты обновляются раз в 5 дней
 
     def __init__(self):
         """Инициализация менеджера квестов"""
@@ -298,6 +299,7 @@ class QuestManager:
         self.active_quests = []     # Активные квесты
         self.completed_quests = []  # Завершенные квесты
         self.location_quests = {}   # Квесты по локациям: {location_id: [quests]}
+        self.location_quest_day = {}  # День последнего обновления квестов: {location_id: day}
 
     def add_available_quest(self, quest):
         """
@@ -715,6 +717,95 @@ class QuestManager:
             list: Список завершенных квестов
         """
         return self.completed_quests
+
+    def rotate_location_quests(self, location_id, location_name, location_type, current_day, player_level=1):
+        """
+        Обновить квесты в локации если прошло достаточно времени
+        Активные квесты не удаляются
+
+        Args:
+            location_id: ID локации
+            location_name: Название локации
+            location_type: Тип локации (для генерации уникальных квестов)
+            current_day: Текущий игровой день
+            player_level: Уровень игрока
+
+        Returns:
+            bool: True если квесты были обновлены
+        """
+        # Проверяем нужно ли обновлять квесты
+        last_update_day = self.location_quest_day.get(location_id, 0)
+        days_since_update = current_day - last_update_day
+
+        if days_since_update < self.QUEST_ROTATION_DAYS:
+            return False
+
+        # Сохраняем ID активных квестов из этой локации
+        active_quest_ids = {q.quest_id for q in self.active_quests if q.location_id == location_id}
+
+        # Удаляем старые НЕ активные квесты из локации
+        if location_id in self.location_quests:
+            # Оставляем только активные квесты
+            self.location_quests[location_id] = [
+                q for q in self.location_quests[location_id]
+                if q.quest_id in active_quest_ids
+            ]
+        else:
+            self.location_quests[location_id] = []
+
+        # Генерируем новые квесты
+        # Сначала пытаемся добавить уникальный квест
+        unique_quest = get_unique_quest_for_location(location_type, location_name)
+        if unique_quest:
+            unique_quest.location_id = location_id
+            self.location_quests[location_id].append(unique_quest)
+
+        # Затем генерируем обычные квесты
+        num_quests = 3 if not unique_quest else 2
+        new_quests = QuestGenerator.generate_quests_for_location(
+            location_name, location_id, player_level, count=num_quests
+        )
+
+        for quest in new_quests:
+            self.location_quests[location_id].append(quest)
+
+        # Обновляем день последнего обновления
+        self.location_quest_day[location_id] = current_day
+
+        return True
+
+    def check_and_rotate_all_quests(self, game_map, current_day, player_level=1):
+        """
+        Проверить и обновить квесты во всех локациях
+
+        Args:
+            game_map: Игровая карта
+            current_day: Текущий игровой день
+            player_level: Уровень игрока
+
+        Returns:
+            list: Список названий локаций где квесты были обновлены
+        """
+        from game.constants import LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL
+
+        updated_locations = []
+
+        # Проходим по всем локациям на карте
+        for location in game_map.locations:
+            # Обновляем квесты только в городах, деревнях и академии магии
+            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL]:
+                location_id = f"{location.x}_{location.y}"
+
+                if self.rotate_location_quests(
+                    location_id,
+                    location.name,
+                    location.location_type,
+                    current_day,
+                    player_level
+                ):
+                    updated_locations.append(location.name)
+
+        return updated_locations
 
 
 def create_alchemist_quests(npc_name):

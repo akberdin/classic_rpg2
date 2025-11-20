@@ -43,6 +43,16 @@ class GameTime:
             self.game_hour -= 24
             self.game_day += 1
 
+            # Проверяем и обновляем квесты раз в 5 дней
+            if hasattr(self.game, 'quest_manager') and hasattr(self.game, 'game_map'):
+                updated_locations = self.game.quest_manager.check_and_rotate_all_quests(
+                    self.game.game_map,
+                    self.game_day,
+                    self.game.player.level
+                )
+                if updated_locations:
+                    print(f"Квесты обновлены в следующих локациях: {', '.join(updated_locations)}")
+
         # Накапливаем часы для обновления AI
         self.accumulated_hours += hours
 

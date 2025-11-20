@@ -1085,16 +1085,37 @@ class ItemGenerator:
 
         slot_name = slot_names.get(slot, "Украшение")
 
-        # Бонусы к характеристикам только для UNCOMMON и выше
+        # Бонусы к характеристикам для ВСЕХ качеств
+        # Количество бонусов зависит от качества
         stats_bonus = {}
-        if quality.multiplier >= 1.5:  # UNCOMMON и выше
-            bonus_count = max(1, int(quality.multiplier))
-            possible_stats = ['strength', 'dexterity', 'constitution', 'spirit', 'intelligence', 'luck']
 
-            for _ in range(bonus_count):
-                stat = random.choice(possible_stats)
-                bonus_value = random.randint(1, max(1, level // 2))
-                stats_bonus[stat] = stats_bonus.get(stat, 0) + bonus_value
+        # Определяем количество бонусных характеристик в зависимости от качества
+        bonus_counts = {
+            ItemQuality.POOR: 1,           # 1 характеристика
+            ItemQuality.COMMON: 1,         # 1 характеристика
+            ItemQuality.UNCOMMON: 2,       # 2 характеристики
+            ItemQuality.RARE: 2,           # 2 характеристики
+            ItemQuality.EPIC: 3,           # 3 характеристики
+            ItemQuality.LEGENDARY: 4,      # 4 характеристики
+            ItemQuality.ARTIFACT: 5        # 5 характеристик
+        }
+
+        bonus_count = bonus_counts.get(quality, 1)
+        possible_stats = ['strength', 'dexterity', 'constitution', 'spirit', 'intelligence', 'luck']
+
+        for _ in range(bonus_count):
+            stat = random.choice(possible_stats)
+            # Значение бонуса зависит от уровня и качества
+            base_value = max(1, level // 2)
+            # Для низких качеств уменьшаем бонус
+            if quality == ItemQuality.POOR:
+                bonus_value = max(1, base_value // 2)
+            elif quality == ItemQuality.COMMON:
+                bonus_value = max(1, int(base_value * 0.7))
+            else:
+                bonus_value = base_value
+
+            stats_bonus[stat] = stats_bonus.get(stat, 0) + bonus_value
 
         # Генерация названия на основе реальных бонусов
         stat_suffixes = {
