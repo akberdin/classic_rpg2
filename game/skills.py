@@ -213,6 +213,28 @@ class StrengthBoostEffect(StatusEffect):
         return f"Усиление спадает с {character.name}"
 
 
+class ShieldEffect(StatusEffect):
+    """Эффект магического щита"""
+
+    def __init__(self, duration=3, defense_bonus=0):
+        super().__init__(
+            name="Магический щит",
+            duration=duration,
+            description=f"+{defense_bonus}% защита"
+        )
+        self.defense_bonus = defense_bonus
+
+    def apply(self, character):
+        return f"Магический щит защищает {character.name}! (+{self.defense_bonus}% защита)"
+
+    def tick(self, character):
+        super().tick(character)
+        return None
+
+    def remove(self, character):
+        return f"Магический щит исчез с {character.name}"
+
+
 class Skill:
     """Базовый класс для умений с системой рангов и прогресса"""
 
@@ -997,6 +1019,50 @@ class MagicMissile(Skill):
         return result
 
 
+class MageShield(Skill):
+    """Магический щит - защитная магия"""
+
+    def __init__(self):
+        super().__init__(
+            name="Щит мага",
+            description="Создает магический щит, повышающий физическую защиту в бою. Эффект зависит от интеллекта и уровня умения",
+            category=SkillCategory.MAGIC,
+            mana_cost=25,
+            cooldown=3
+        )
+
+    def use(self, user, target=None):
+        """Использовать щит мага"""
+        result = super().use(user, target)
+
+        if target is None:
+            target = user
+
+        # Расчет бонуса защиты: базовые 50% + интеллект/2 + ранг*10%
+        intelligence = getattr(user, 'intelligence', 1)
+        defense_bonus = int(50 + intelligence / 2 + (self.rank - 1) * 10)
+
+        # Длительность: 3 хода + ранг
+        duration = 3 + self.rank
+
+        # Создаем и применяем эффект щита
+        shield_effect = ShieldEffect(duration=duration, defense_bonus=defense_bonus)
+        if not hasattr(target, 'status_effects'):
+            target.status_effects = []
+
+        # Проверяем, нет ли уже щита (чтобы избежать многократного наложения)
+        has_shield = any(isinstance(effect, ShieldEffect) for effect in target.status_effects)
+        if has_shield:
+            result['message'] = f"{target.name} уже защищен магическим щитом!"
+        else:
+            target.status_effects.append(shield_effect)
+            result['shield'] = defense_bonus
+            result['duration'] = duration
+            result['message'] = f"{user.name} создает магический щит на {target.name}! (+{defense_bonus}% защита на {duration} ходов)"
+
+        return result
+
+
 # ==================== РЕМЕСЛЕННЫЕ УМЕНИЯ ====================
 
 class Mining(Skill):
@@ -1125,6 +1191,7 @@ AVAILABLE_SKILLS = {
     'heal': Heal,
     'regeneration': Regeneration,
     'stamina_recovery': StaminaRecovery,
+    'mage_shield': MageShield,
     # Магические (атакующие)
     'fireball': Fireball,
     'ice_bolt': IceBolt,

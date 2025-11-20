@@ -62,9 +62,10 @@ class GameTime:
 
         # Обновляем AI всех NPC только при прохождении полных часов
         for _ in range(full_hours_passed):
-            # Восстанавливаем выносливость игрока (если не пропускаем)
+            # Восстанавливаем выносливость и здоровье игрока (если не пропускаем)
             if not skip_player_recovery:
                 self.game.player.recover_stamina()
+                self.game.player.recover_health()
 
             # Обновляем перезарядки навыков и статус-эффекты игрока
             if hasattr(self.game.player, 'skill_manager') and self.game.player.skill_manager:

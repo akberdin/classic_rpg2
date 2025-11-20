@@ -439,7 +439,7 @@ class MagicMerchant(Merchant):
         self.inventory.gold = random.randint(2000, 5000) + self.level * 200
 
         # Книги магических умений (всегда в наличии)
-        magic_books = ["book_heal", "book_regeneration"]
+        magic_books = ["book_heal", "book_regeneration", "book_mage_shield"]
         for book_id in magic_books:
             if book_id in PREDEFINED_ITEMS:
                 self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
