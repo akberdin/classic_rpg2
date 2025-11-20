@@ -240,6 +240,7 @@ class Character:
     def can_attack(self, target):
         """
         Проверить, может ли персонаж атаковать цель
+        Использует расстояние Чебышёва для поддержки атаки в 8 направлениях
 
         Args:
             target: Целевой персонаж
@@ -250,8 +251,9 @@ class Character:
         if not self.is_alive or not target.is_alive:
             return False
 
-        # Проверяем дистанцию
-        distance = abs(self.x - target.x) + abs(self.y - target.y)
+        # Проверяем дистанцию (расстояние Чебышёва для атаки в 8 направлениях)
+        # Это максимум из разностей по X и Y
+        distance = max(abs(self.x - target.x), abs(self.y - target.y))
         return distance <= COMBAT_RANGE
 
     def calculate_dodge_chance(self):

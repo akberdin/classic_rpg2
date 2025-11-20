@@ -220,7 +220,13 @@ class Hunter(NPC):
 
         # Проверяем, можем ли атаковать
         if self.can_attack(self.hunt_target):
-            self.attack(self.hunt_target)
+            # Используем упрощенный бой для NPC vs NPC
+            enemy_killed = self._simplified_npc_combat(self.hunt_target)
+            if enemy_killed:
+                print(f"{self.name} победил {self.hunt_target.name} в быстром бою!")
+                self.hunt_target = None
+                self.state = "patrol"
+                self.steps_in_current_state = 0
             return
 
         # Двигаемся к цели
@@ -456,8 +462,14 @@ class Necromancer(NPC):
 
         # Проверяем, можем ли атаковать
         if self.can_attack(self.target):
-            # Магическая атака (бонус от интеллекта)
-            self.attack(self.target)
+            # Используем упрощенный бой для NPC vs NPC
+            enemy_killed = self._simplified_npc_combat(self.target)
+            if enemy_killed:
+                print(f"{self.name} победил {self.target.name} в быстром бою!")
+                self.target = None
+                self.state = "patrol"
+                self.steps_in_current_state = 0
+                self.pursuit_steps = 0
             return
 
         # Двигаемся к цели
