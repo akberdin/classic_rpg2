@@ -1503,6 +1503,254 @@ def create_unique_quests():
     return quests
 
 
+def get_unique_quest_for_location(location_type, location_name):
+    """
+    Получить уникальный квест для типа локации с вероятностью
+
+    Args:
+        location_type: Тип локации (city, village, magic_school)
+        location_name: Название локации для установки giver_location
+
+    Returns:
+        Quest или None: Уникальный квест или None если не повезло
+    """
+    import random
+    from game.inventory import PREDEFINED_ITEMS
+    from game.constants import LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL
+
+    # Вероятность появления уникального квеста
+    # Города: 30%, Деревни: 15%, Школа магов: 40%
+    probabilities = {
+        LOCATION_CITY: 0.30,
+        LOCATION_VILLAGE: 0.15,
+        LOCATION_MAGIC_SCHOOL: 0.40
+    }
+
+    probability = probabilities.get(location_type, 0)
+    if random.random() > probability:
+        return None
+
+    # Пулы уникальных квестов для разных типов локаций
+    city_quests = [
+        # Квест кузнеца
+        {
+            'quest_id': f'blacksmith_order_{random.randint(1000, 9999)}',
+            'name': 'Заказ кузнеца',
+            'description': 'Кузнец ищет материалы для особого заказа.',
+            'objectives': [
+                QuestObjective("Собрать железную руду", required_count=10),
+                QuestObjective("Собрать медную руду", required_count=8),
+            ],
+            'rewards': {
+                'exp': 400,
+                'gold': 350,
+                'items': [(PREDEFINED_ITEMS["steel_sword"], 1)]
+            },
+            'quest_type': QuestType.GATHER_RESOURCE,
+            'difficulty': QuestDifficulty.MEDIUM,
+            'target_item': 'iron_ore'
+        },
+        # Квест главы города
+        {
+            'quest_id': f'mayor_protection_{random.randint(1000, 9999)}',
+            'name': 'Защита торговых путей',
+            'description': 'Глава города просит очистить окрестности от бандитов.',
+            'objectives': [
+                QuestObjective("Уничтожить бандитов", required_count=12),
+            ],
+            'rewards': {
+                'exp': 600,
+                'gold': 500,
+                'items': [(PREDEFINED_ITEMS["greater_health_potion"], 3)]
+            },
+            'quest_type': QuestType.KILL_ENEMIES,
+            'difficulty': QuestDifficulty.HARD,
+            'target_enemy': 'bandit'
+        },
+        # Квест торговца
+        {
+            'quest_id': f'merchant_collection_{random.randint(1000, 9999)}',
+            'name': 'Ценные находки',
+            'description': 'Торговец готов заплатить за редкие артефакты.',
+            'objectives': [
+                QuestObjective("Собрать древние монеты", required_count=8),
+                QuestObjective("Собрать фрагменты артефактов", required_count=4),
+            ],
+            'rewards': {
+                'exp': 500,
+                'gold': 600,
+                'items': [(PREDEFINED_ITEMS["elixir_of_power"], 2)]
+            },
+            'quest_type': QuestType.GATHER_RESOURCE,
+            'difficulty': QuestDifficulty.HARD,
+            'target_item': 'ancient_coin'
+        },
+    ]
+
+    village_quests = [
+        # Квест старосты
+        {
+            'quest_id': f'elder_herbs_{random.randint(1000, 9999)}',
+            'name': 'Лечебные травы',
+            'description': 'Староста деревни просит помочь собрать лекарства.',
+            'objectives': [
+                QuestObjective("Собрать магические кристаллы", required_count=3),
+            ],
+            'rewards': {
+                'exp': 250,
+                'gold': 150,
+                'items': [(PREDEFINED_ITEMS["health_potion"], 5)]
+            },
+            'quest_type': QuestType.GATHER_RESOURCE,
+            'difficulty': QuestDifficulty.EASY,
+            'target_item': 'magic_crystal'
+        },
+        # Квест охотника деревни
+        {
+            'quest_id': f'village_hunter_{random.randint(1000, 9999)}',
+            'name': 'Помощь охотнику',
+            'description': 'Местный охотник просит помочь с бандитами.',
+            'objectives': [
+                QuestObjective("Уничтожить бандитов", required_count=6),
+            ],
+            'rewards': {
+                'exp': 300,
+                'gold': 200,
+                'items': [(PREDEFINED_ITEMS["hunters_bow"], 1)]
+            },
+            'quest_type': QuestType.KILL_ENEMIES,
+            'difficulty': QuestDifficulty.MEDIUM,
+            'target_enemy': 'bandit'
+        },
+        # Квест шахтёра
+        {
+            'quest_id': f'village_miner_{random.randint(1000, 9999)}',
+            'name': 'Руда для кузни',
+            'description': 'Кузнец деревни нуждается в руде.',
+            'objectives': [
+                QuestObjective("Собрать медную руду", required_count=12),
+            ],
+            'rewards': {
+                'exp': 200,
+                'gold': 180,
+                'items': [(PREDEFINED_ITEMS["mana_potion"], 3)]
+            },
+            'quest_type': QuestType.GATHER_RESOURCE,
+            'difficulty': QuestDifficulty.EASY,
+            'target_item': 'copper_ore'
+        },
+    ]
+
+    magic_school_quests = [
+        # Квест архимага
+        {
+            'quest_id': f'archmage_research_{random.randint(1000, 9999)}',
+            'name': 'Исследование древних',
+            'description': 'Архимаг изучает древние артефакты и нуждается в материалах.',
+            'objectives': [
+                QuestObjective("Собрать старые свитки", required_count=10),
+                QuestObjective("Собрать фрагменты артефактов", required_count=6),
+            ],
+            'rewards': {
+                'exp': 800,
+                'gold': 600,
+                'items': [(PREDEFINED_ITEMS["book_magic_missile"], 1)]
+            },
+            'quest_type': QuestType.GATHER_RESOURCE,
+            'difficulty': QuestDifficulty.HARD,
+            'target_item': 'old_scroll'
+        },
+        # Квест мастера боевой магии
+        {
+            'quest_id': f'battle_mage_training_{random.randint(1000, 9999)}',
+            'name': 'Боевая практика',
+            'description': 'Мастер боевой магии предлагает испытание против нежити.',
+            'objectives': [
+                QuestObjective("Уничтожить нежить", required_count=15),
+            ],
+            'rewards': {
+                'exp': 700,
+                'gold': 400,
+                'items': [(PREDEFINED_ITEMS["book_fireball"], 1)]
+            },
+            'quest_type': QuestType.KILL_ENEMIES,
+            'difficulty': QuestDifficulty.HARD,
+            'target_enemy': 'undead'
+        },
+        # Квест хранителя знаний
+        {
+            'quest_id': f'lorekeeper_crystals_{random.randint(1000, 9999)}',
+            'name': 'Магические кристаллы',
+            'description': 'Хранитель знаний ищет кристаллы для магических исследований.',
+            'objectives': [
+                QuestObjective("Собрать магические кристаллы", required_count=8),
+            ],
+            'rewards': {
+                'exp': 600,
+                'gold': 500,
+                'items': [(PREDEFINED_ITEMS["book_ice_bolt"], 1)]
+            },
+            'quest_type': QuestType.GATHER_RESOURCE,
+            'difficulty': QuestDifficulty.HARD,
+            'target_item': 'magic_crystal'
+        },
+        # Квест на некроманта
+        {
+            'quest_id': f'necromancer_hunt_{random.randint(1000, 9999)}',
+            'name': 'Угроза некромантии',
+            'description': 'Академия просит остановить некроманта, угрожающего региону.',
+            'objectives': [
+                QuestObjective("Победить некроманта", required_count=1),
+            ],
+            'rewards': {
+                'exp': 1500,
+                'gold': 1000,
+                'items': [
+                    (PREDEFINED_ITEMS["book_lightning"], 1),
+                    (PREDEFINED_ITEMS["elixir_of_life"], 2)
+                ]
+            },
+            'quest_type': QuestType.KILL_ENEMIES,
+            'difficulty': QuestDifficulty.VERY_HARD,
+            'target_enemy': 'necromancer'
+        },
+    ]
+
+    # Выбираем пул квестов по типу локации
+    quest_pools = {
+        LOCATION_CITY: city_quests,
+        LOCATION_VILLAGE: village_quests,
+        LOCATION_MAGIC_SCHOOL: magic_school_quests
+    }
+
+    quest_pool = quest_pools.get(location_type, [])
+    if not quest_pool:
+        return None
+
+    # Выбираем случайный квест из пула
+    quest_data = random.choice(quest_pool)
+
+    # Создаём объект квеста
+    quest = Quest(
+        quest_id=quest_data['quest_id'],
+        name=quest_data['name'],
+        description=quest_data['description'],
+        objectives=quest_data['objectives'],
+        rewards=quest_data['rewards'],
+        quest_type=quest_data['quest_type'],
+        difficulty=quest_data['difficulty'],
+        giver_location=location_name
+    )
+
+    # Устанавливаем target_item или target_enemy
+    if 'target_item' in quest_data:
+        quest.target_item = quest_data['target_item']
+    if 'target_enemy' in quest_data:
+        quest.target_enemy = quest_data['target_enemy']
+
+    return quest
+
+
 def create_alchemist_quests(location_name="Алхимик"):
     """
     Создать квесты для алхимика

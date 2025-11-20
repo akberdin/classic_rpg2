@@ -330,6 +330,7 @@ class InventoryWindow:
         self.selected_inventory_index = 0
         self.selected_equipment_slot = None
         self.mode = "inventory"  # "inventory" или "equipment"
+        self.equipment_slot_rects = {}  # Словарь {slot: (rect, item)} для tooltip экипировки
 
     def render(self, player, mouse_pos=None):
         """
@@ -453,6 +454,9 @@ class InventoryWindow:
 
     def _render_equipment_panel(self, player, x, y, width, height):
         """Отрисовка панели экипировки"""
+        # Очищаем словарь координат слотов
+        self.equipment_slot_rects.clear()
+
         # Фон панели
         UIHelper.draw_panel(self.screen, x, y, width, height, (45, 45, 55), (100, 100, 120))
 
@@ -502,12 +506,16 @@ class InventoryWindow:
             for slot in slots:
                 item = player.inventory.get_equipped_item(slot)
 
+                # Создаём прямоугольник слота и сохраняем для tooltip
+                slot_rect = pygame.Rect(x + margin_left, slot_y, width - margin_sides, slot_height - 2)
+                self.equipment_slot_rects[slot] = (slot_rect, item)
+
                 # Фон слота
                 slot_color = (60, 60, 70) if item else (40, 40, 50)
                 pygame.draw.rect(
                     self.screen,
                     slot_color,
-                    (x + margin_left, slot_y, width - margin_sides, slot_height - 2)
+                    slot_rect
                 )
 
                 # Рамка слота
@@ -515,7 +523,7 @@ class InventoryWindow:
                 pygame.draw.rect(
                     self.screen,
                     border_color,
-                    (x + margin_left, slot_y, width - margin_sides, slot_height - 2),
+                    slot_rect,
                     2 if self.selected_equipment_slot == slot else 1
                 )
 
@@ -608,8 +616,16 @@ class InventoryWindow:
                 item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
                 item_color = item.quality.color if hasattr(item, 'quality') else (200, 200, 200)
 
+                # Показываем количество только для стакающихся предметов или если quantity > 1
+                is_stackable = item.is_stackable() if hasattr(item, 'is_stackable') else True
+                display_name = f"{item_name} x{quantity}" if (is_stackable and quantity > 1) or (not is_stackable and quantity > 1) else item_name
+                if quantity > 1:
+                    display_name = f"{item_name} x{quantity}"
+                else:
+                    display_name = item_name
+
                 item_text = self.info_font.render(
-                    f"{item_name} x{quantity}",
+                    display_name,
                     True,
                     item_color if i != self.selected_inventory_index else (255, 255, 255)
                 )
@@ -772,6 +788,11 @@ class InventoryWindow:
         Returns:
             Item или None
         """
+        # Сначала проверяем слоты экипировки
+        for slot, (rect, item) in self.equipment_slot_rects.items():
+            if rect.collidepoint(mouse_x, mouse_y) and item:
+                return item
+
         # Получаем размеры экрана
         screen_width = self.screen.get_width()
         screen_height = self.screen.get_height()
@@ -1021,8 +1042,11 @@ class TradeWindow:
             item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
             item_color = item.quality.color if hasattr(item, 'quality') else (200, 200, 200)
 
+            # Показываем количество только если > 1
+            display_name = f"{item_name} x{quantity}" if quantity > 1 else item_name
+
             name_text = self.info_font.render(
-                f"{item_name} x{quantity}",
+                display_name,
                 True,
                 item_color
             )
@@ -1099,8 +1123,11 @@ class TradeWindow:
             item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
             item_color = item.quality.color if hasattr(item, 'quality') else (200, 200, 200)
 
+            # Показываем количество только если > 1
+            display_name = f"{item_name} x{quantity}" if quantity > 1 else item_name
+
             name_text = self.info_font.render(
-                f"{item_name} x{quantity}",
+                display_name,
                 True,
                 item_color
             )
@@ -1523,6 +1550,8 @@ class SkillBookWindow:
         # Для хранения координат элементов при рендеринге
         self.skill_rects = []  # Список прямоугольников умений
         self.slot_rects = []   # Список прямоугольников слотов
+        self.tab_rects = []    # Список прямоугольников вкладок
+        self.rank_up_rect = None  # Прямоугольник кнопки повышения ранга
 
     def handle_mouse_event(self, event, player):
         """
@@ -1540,6 +1569,36 @@ class SkillBookWindow:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = event.pos
+
+            # Проверяем клик по вкладкам
+            for i, rect in enumerate(self.tab_rects):
+                if rect.collidepoint(mouse_pos):
+                    if event.button == 1:  # Левая кнопка
+                        self.selected_tab = i
+                        self.selected_skill_index = 0
+                    return True
+
+            # Проверяем клик по кнопке повышения ранга
+            if self.rank_up_rect and self.rank_up_rect.collidepoint(mouse_pos):
+                if event.button == 1:  # Левая кнопка
+                    categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+                    current_category = categories[self.selected_tab]
+                    skills_dict = player.skill_manager.get_all_skills()
+                    skills = [skill for skill in skills_dict.values() if skill.category == current_category]
+
+                    if self.selected_skill_index < len(skills):
+                        selected_skill = skills[self.selected_skill_index]
+                        # Найдем ID умения
+                        skill_id = None
+                        for sid, skill in skills_dict.items():
+                            if skill == selected_skill:
+                                skill_id = sid
+                                break
+
+                        if skill_id:
+                            success, message = player.skill_manager.try_rank_up_skill(skill_id, player)
+                            print(message)
+                return True
 
             # Проверяем клик по умениям
             for i, rect in enumerate(self.skill_rects):
@@ -1564,6 +1623,26 @@ class SkillBookWindow:
 
                             if skill_id:
                                 player.skill_manager.assign_to_slot(skill_id, self.selected_slot_index)
+
+                    # Правая кнопка мыши - попытка повышения ранга
+                    elif event.button == 3:
+                        categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+                        current_category = categories[self.selected_tab]
+                        skills_dict = player.skill_manager.get_all_skills()
+                        skills = [skill for skill in skills_dict.values() if skill.category == current_category]
+
+                        if i < len(skills):
+                            selected_skill = skills[i]
+                            # Найдем ID умения
+                            skill_id = None
+                            for sid, skill in skills_dict.items():
+                                if skill == selected_skill:
+                                    skill_id = sid
+                                    break
+
+                            if skill_id:
+                                success, message = player.skill_manager.try_rank_up_skill(skill_id, player)
+                                print(message)
                     return True
 
             # Проверяем клик по слотам
@@ -1571,10 +1650,43 @@ class SkillBookWindow:
                 if rect.collidepoint(mouse_pos):
                     self.selected_slot_index = i
 
+                    # Левая кнопка мыши - назначить выбранное умение в слот
+                    if event.button == 1:
+                        categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+                        current_category = categories[self.selected_tab]
+                        skills_dict = player.skill_manager.get_all_skills()
+                        skills = [skill for skill in skills_dict.values() if skill.category == current_category]
+
+                        if self.selected_skill_index < len(skills):
+                            selected_skill = skills[self.selected_skill_index]
+                            # Найдем ID умения
+                            skill_id = None
+                            for sid, skill in skills_dict.items():
+                                if skill == selected_skill:
+                                    skill_id = sid
+                                    break
+
+                            if skill_id:
+                                player.skill_manager.assign_to_slot(skill_id, i)
+
                     # Правая кнопка мыши - убрать умение из слота
-                    if event.button == 3:
+                    elif event.button == 3:
                         player.skill_manager.unassign_from_slot(i)
                     return True
+
+        # Обработка колёсика мыши для прокрутки умений
+        elif event.type == pygame.MOUSEWHEEL:
+            from game.skills import SkillCategory
+            categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+            current_category = categories[self.selected_tab]
+            skills_dict = player.skill_manager.get_all_skills()
+            skills = [skill for skill in skills_dict.values() if skill.category == current_category]
+
+            if event.y > 0:  # Прокрутка вверх
+                self.selected_skill_index = max(0, self.selected_skill_index - 1)
+            elif event.y < 0:  # Прокрутка вниз
+                self.selected_skill_index = min(len(skills) - 1, self.selected_skill_index + 1)
+            return True
 
         return False
 
@@ -1640,8 +1752,15 @@ class SkillBookWindow:
         tab_height = 40
         tab_y = window_y + 60
 
+        # Очищаем список прямоугольников вкладок
+        self.tab_rects.clear()
+
         for i, tab_name in enumerate(tabs):
             tab_x = window_x + i * tab_width
+
+            # Сохраняем прямоугольник вкладки для обработки мыши
+            tab_rect = pygame.Rect(tab_x, tab_y, tab_width, tab_height)
+            self.tab_rects.append(tab_rect)
 
             # Цвет вкладки
             if i == self.selected_tab:
@@ -1655,14 +1774,14 @@ class SkillBookWindow:
             pygame.draw.rect(
                 self.screen,
                 tab_color,
-                (tab_x, tab_y, tab_width, tab_height)
+                tab_rect
             )
 
             # Рамка вкладки
             pygame.draw.rect(
                 self.screen,
                 (100, 100, 100),
-                (tab_x, tab_y, tab_width, tab_height),
+                tab_rect,
                 2
             )
 
@@ -1688,14 +1807,14 @@ class SkillBookWindow:
         # Отрисовка списка умений
         if skills:
             for idx, skill in enumerate(skills):
-                if idx >= 6:  # Ограничиваем количество отображаемых умений
+                if idx >= 5:  # Ограничиваем количество отображаемых умений
                     break
 
-                skill_y = skills_list_y + idx * 70
+                skill_y = skills_list_y + idx * 90
                 skill_x = window_x + 20
 
                 # Сохраняем прямоугольник умения для обработки мыши
-                skill_rect = pygame.Rect(skill_x, skill_y, window_width - 40, 65)
+                skill_rect = pygame.Rect(skill_x, skill_y, window_width - 40, 85)
                 self.skill_rects.append(skill_rect)
 
                 # Фон умения
@@ -1732,23 +1851,35 @@ class SkillBookWindow:
                     True,
                     (180, 180, 180)
                 )
-                self.screen.blit(skill_desc_text, (skill_x + 10, skill_y + 30))
+                self.screen.blit(skill_desc_text, (skill_x + 10, skill_y + 28))
 
                 # Прогресс до следующего ранга
                 if skill.rank < skill.max_rank:
-                    progress_text = self.info_font.render(
-                        f"Опыт: {skill.experience}/{skill.experience_to_next_rank}",
+                    # Первая строка условий: опыт и использования
+                    exp_color = (100, 255, 100) if skill.experience >= skill.experience_to_next_rank else (200, 200, 100)
+                    use_color = (100, 255, 100) if skill.use_count >= skill.get_required_uses_for_rank() else (200, 200, 100)
+
+                    cond_text1 = self.info_font.render(
+                        f"Опыт: {skill.experience}/{skill.experience_to_next_rank}  |  Использований: {skill.use_count}/{skill.get_required_uses_for_rank()}",
                         True,
-                        (100, 255, 100)
+                        (180, 180, 180)
                     )
-                    self.screen.blit(progress_text, (skill_x + 10, skill_y + 50))
+                    self.screen.blit(cond_text1, (skill_x + 10, skill_y + 48))
+
+                    # Вторая строка условий: уровень и золото
+                    cond_text2 = self.info_font.render(
+                        f"Треб. уровень: {skill.get_required_player_level_for_rank()}  |  Золото: {skill.get_gold_cost_for_rank()}",
+                        True,
+                        (255, 200, 100)
+                    )
+                    self.screen.blit(cond_text2, (skill_x + 10, skill_y + 66))
                 else:
                     max_rank_text = self.info_font.render(
                         "МАКСИМАЛЬНЫЙ РАНГ",
                         True,
                         (255, 215, 0)
                     )
-                    self.screen.blit(max_rank_text, (skill_x + 10, skill_y + 50))
+                    self.screen.blit(max_rank_text, (skill_x + 10, skill_y + 48))
 
                 # Стоимость и перезарядка
                 cost_parts = []
@@ -1762,7 +1893,7 @@ class SkillBookWindow:
                 if cost_parts:
                     cost_text = " ".join(cost_parts)
                     cost_render = self.info_font.render(cost_text, True, (150, 150, 200))
-                    self.screen.blit(cost_render, (skill_x + window_width - 250, skill_y + 50))
+                    self.screen.blit(cost_render, (skill_x + window_width - 250, skill_y + 66))
         else:
             # Нет умений в этой категории
             no_skills_text = self.font.render(
@@ -1843,7 +1974,7 @@ class SkillBookWindow:
         # Подсказки
         hints_y = window_y + window_height - 30
         hint_text = self.info_font.render(
-            "TAB - вкладки | W/S - умение | A/D - слот | Enter - назначить | Del - убрать | K/ESC - закрыть",
+            "ЛКМ - назначить/выбрать | ПКМ - повысить ранг/убрать | Колёсико - листать | K/ESC - закрыть",
             True,
             (180, 180, 180)
         )
@@ -2002,9 +2133,10 @@ class LootWindow:
                     1
                 )
 
-                # Название предмета и количество
+                # Название предмета и количество (показываем количество только если > 1)
+                display_name = f"{item.name} x{quantity}" if quantity > 1 else item.name
                 item_text = self.info_font.render(
-                    f"{item.name} x{quantity}",
+                    display_name,
                     True,
                     (200, 200, 200)
                 )
@@ -2184,7 +2316,7 @@ class QuestWindow:
                 quests = self.get_current_list()
                 # Определяем количество видимых квестов
                 if self.window_rect:
-                    quest_height = 80
+                    quest_height = 95
                     list_height = self.window_rect.height - 200
                     visible_quests = list_height // quest_height
                     max_scroll = max(0, len(quests) - visible_quests)
@@ -2336,7 +2468,7 @@ class QuestWindow:
             self.screen.blit(no_quests_text, no_quests_rect)
         else:
             # Отображаем список квестов
-            quest_height = 80
+            quest_height = 95
             visible_quests = list_height // quest_height
 
             for i in range(min(visible_quests, len(quests))):
@@ -2378,13 +2510,25 @@ class QuestWindow:
                 )
                 self.screen.blit(name_text, (window_x + 35, quest_y + 10))
 
+                # Место выдачи квеста (если есть)
+                if quest.giver_location:
+                    giver_text = self.info_font.render(
+                        f"Место: {quest.giver_location}",
+                        True,
+                        (150, 200, 255)
+                    )
+                    self.screen.blit(giver_text, (window_x + 35, quest_y + 32))
+                    desc_y_offset = 50
+                else:
+                    desc_y_offset = 32
+
                 # Описание
                 desc_text = self.info_font.render(
                     quest.description[:60] + "..." if len(quest.description) > 60 else quest.description,
                     True,
                     (180, 180, 180)
                 )
-                self.screen.blit(desc_text, (window_x + 35, quest_y + 32))
+                self.screen.blit(desc_text, (window_x + 35, quest_y + desc_y_offset))
 
                 # Цели и награды
                 if quest.objectives:
@@ -2396,7 +2540,8 @@ class QuestWindow:
                         True,
                         (100, 255, 100) if obj.is_completed() else (200, 200, 100)
                     )
-                    self.screen.blit(obj_text, (window_x + 35, quest_y + 54))
+                    obj_y_offset = desc_y_offset + 22
+                    self.screen.blit(obj_text, (window_x + 35, quest_y + obj_y_offset))
 
                 # Награды (справа)
                 rewards_parts = []

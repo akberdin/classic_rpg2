@@ -1510,15 +1510,16 @@ PREDEFINED_ITEMS = {
 }
 
 
-def get_random_loot_from_location(location_type, level=1):
+def get_random_loot_from_location(location_type, level=1, luck=1):
     """
     Получить случайный лут с локации (обертка для ItemGenerator)
 
     Args:
         location_type: Тип локации
         level: Уровень локации
+        luck: Удача игрока (влияет на качество и шанс доп. предметов)
 
     Returns:
         list: Список (item, quantity)
     """
-    return ItemGenerator.generate_loot_for_location(location_type, level)
+    return ItemGenerator.generate_loot_for_location(location_type, level, luck)
