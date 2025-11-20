@@ -36,9 +36,10 @@ class Guard(NPC):
         self.patrol_home_y = y
         self.steps_per_hour = 1  # Количество шагов за 1 час игрового времени (только соседние клетки)
         self.target_enemy = None  # Текущий враг для атаки
-        self.detection_range = 10  # Дальность обнаружения врагов
+        self.detection_range = 12  # Увеличена дальность обнаружения врагов
         self.pursuit_counter = 0  # Счетчик ходов преследования
-        self.max_pursuit_steps = 8  # Максимальное количество ходов преследования
+        self.max_pursuit_steps = 15  # Увеличено до 15 ходов преследования
+        self.idle_timer = random.randint(0, 3)  # Рандомная задержка для десинхронизации
 
     def _adjust_guard_stats(self):
         """Модификация статов для стражника - воин, не маг"""
@@ -89,12 +90,26 @@ class Guard(NPC):
         if self.is_resting:
             return
 
+        # Рандомная задержка для десинхронизации
+        if self.idle_timer > 0:
+            self.idle_timer -= 1
+            return
+
         # Проверяем наличие врагов поблизости
         if all_npcs:
             self._check_for_enemies(all_npcs)
 
         if self.state == "combat":
-            self._combat_step(game_map)
+            # В боевом режиме проверяем врагов чаще
+            for _ in range(self.steps_per_hour):
+                if not self.consume_stamina():
+                    break
+                self._combat_step(game_map)
+                # Проверяем врагов после каждого шага
+                if all_npcs:
+                    self._check_for_enemies(all_npcs)
+                if self.state != "combat":
+                    break
         elif self.state == "patrol":
             # Делаем несколько шагов за 1 час
             for _ in range(self.steps_per_hour):
@@ -157,35 +172,37 @@ class Guard(NPC):
             self.pursuit_counter = 0
             return
 
-        # Проверяем лимит преследования (8 ходов)
+        # Проверяем лимит преследования
         if self.pursuit_counter >= self.max_pursuit_steps:
-            self.target_enemy = None
-            self.state = "patrol"
+            # Не сбрасываем цель сразу, пытаемся найти её снова
             self.pursuit_counter = 0
+            # Остаемся в боевом режиме, проверка врагов произойдет в update_ai
             return
 
         # Проверяем, можем ли атаковать
         if self.can_attack(self.target_enemy):
-            attack_result = self.attack(self.target_enemy)
+            # Используем упрощенный бой для NPC vs NPC
+            enemy_killed = self._simplified_npc_combat(self.target_enemy)
 
-            if attack_result['dodged']:
-                print(f"{self.target_enemy.name} увернулся от атаки {self.name}!")
-            elif attack_result['hit']:
-                crit_msg = " КРИТИЧЕСКИЙ УДАР!" if attack_result['critical'] else ""
-                print(f"{self.name} атакует {self.target_enemy.name} и наносит {attack_result['damage']} урона!{crit_msg}")
-                if not self.target_enemy.is_alive:
-                    print(f"{self.target_enemy.name} повержен!")
-                    self.target_enemy = None
-                    self.state = "patrol"
-                    self.pursuit_counter = 0
+            if enemy_killed:
+                print(f"{self.name} победил {self.target_enemy.name} в быстром бою!")
+                self.target_enemy = None
+                self.state = "patrol"
+                self.pursuit_counter = 0
+            else:
+                # Продолжаем атаковать, сбрасываем счетчик
+                self.pursuit_counter = 0
         else:
             # Двигаемся к цели и увеличиваем счетчик преследования
-            dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=30)
-            if (dx != 0 or dy != 0) and self.consume_stamina():
+            dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=40)
+            if (dx != 0 or dy != 0):
                 if self._can_move(self.x + dx, self.y + dy, game_map):
                     self.x += dx
                     self.y += dy
                     self.pursuit_counter += 1  # Увеличиваем счетчик преследования
+                else:
+                    # Не можем двигаться, но не сбрасываем преследование
+                    self.pursuit_counter += 1
 
     def _patrol_step(self, game_map):
         """Один шаг патрулирования"""

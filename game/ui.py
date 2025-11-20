@@ -2939,17 +2939,38 @@ class CheatMenuWindow:
                     print("Достигнут максимальный уровень (40)!")
 
             elif cheat_id == 'give_artifact':
-                from game.inventory import ItemGenerator, ItemQuality
+                from game.inventory import ItemGenerator, ItemQuality, EquipmentSlot, ArmorType
                 import random
                 # Генерируем случайный артефакт
                 item_type = random.choice(['weapon', 'armor'])
-                if item_type == 'weapon':
-                    artifact = ItemGenerator.generate_weapon(game.player.level, ItemQuality.ARTIFACT)
-                else:
-                    artifact = ItemGenerator.generate_armor(game.player.level, quality=ItemQuality.ARTIFACT)
+                try:
+                    if item_type == 'weapon':
+                        # Правильные параметры: level, quality, max_quality
+                        artifact = ItemGenerator.generate_weapon(
+                            level=game.player.level,
+                            quality=ItemQuality.ARTIFACT,
+                            max_quality=ItemQuality.ARTIFACT
+                        )
+                    else:
+                        # Правильные параметры: level, slot, armor_type, quality
+                        slot = random.choice([EquipmentSlot.HEAD, EquipmentSlot.CHEST,
+                                            EquipmentSlot.HANDS, EquipmentSlot.FEET])
+                        armor_type = random.choice(list(ArmorType))
+                        artifact = ItemGenerator.generate_armor(
+                            level=game.player.level,
+                            slot=slot,
+                            armor_type=armor_type,
+                            quality=ItemQuality.ARTIFACT
+                        )
 
-                game.player.inventory.add_item(artifact, 1)
-                print(f"Получен артефакт: {artifact.name}!")
+                    if game.player.inventory.add_item(artifact, 1):
+                        print(f"Получен артефакт: {artifact.name}!")
+                    else:
+                        print("Не удалось добавить артефакт - инвентарь переполнен!")
+                except Exception as e:
+                    print(f"Ошибка при создании артефакта: {e}")
+                    import traceback
+                    traceback.print_exc()
 
         else:
             # Для постоянных читов переключаем состояние

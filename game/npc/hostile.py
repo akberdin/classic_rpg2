@@ -43,11 +43,12 @@ class Bandit(NPC):
         self.rest_duration = random.randint(2, 4)  # Отдых 2-4 часа
         self.steps_per_hour = 1  # Шагов за час
         self.target_enemy = None  # Текущий враг для атаки
-        self.detection_range_player = 10  # Дальность обнаружения игрока
-        self.detection_range_npc = 5  # Дальность обнаружения других NPC
+        self.detection_range_player = 15  # Увеличена дальность обнаружения игрока
+        self.detection_range_npc = 8  # Увеличена дальность обнаружения других NPC
         self.wander_target = None  # Целевая точка для блуждания
         self.pursuit_counter = 0  # Счетчик ходов преследования
-        self.max_pursuit_steps = 8  # Максимальное количество ходов преследования
+        self.max_pursuit_steps = 20  # Увеличено до 20 ходов преследования
+        self.idle_timer = random.randint(0, 5)  # Рандомная задержка для десинхронизации
 
     def _adjust_bandit_stats(self):
         """Модификация статов для бандита - агрессивный боец"""
@@ -86,12 +87,24 @@ class Bandit(NPC):
         if self.is_resting:
             return
 
-        # Проверяем наличие врагов поблизости (включая игрока)
-        if all_npcs or player:
-            self._check_for_enemies(all_npcs, player)
+        # Рандомная задержка для десинхронизации
+        if self.idle_timer > 0:
+            self.idle_timer -= 1
+            return
+
+        # ВСЕГДА проверяем наличие врагов поблизости (включая игрока)
+        self._check_for_enemies(all_npcs, player)
 
         if self.state == "combat":
-            self._combat_step(game_map)
+            # В боевом режиме делаем больше шагов для агрессивности
+            for _ in range(self.steps_per_hour + 1):  # +1 шаг в бою
+                if not self.consume_stamina():
+                    break
+                self._combat_step(game_map)
+                # Проверяем врагов после каждого шага
+                self._check_for_enemies(all_npcs, player)
+                if self.state != "combat":
+                    break
         elif self.state == "patrol":
             # Делаем несколько шагов за 1 час
             for _ in range(self.steps_per_hour):
@@ -184,18 +197,18 @@ class Bandit(NPC):
             self.pursuit_counter = 0
             return
 
-        # Проверяем лимит преследования (8 ходов)
+        # Проверяем лимит преследования
         if self.pursuit_counter >= self.max_pursuit_steps:
-            self.target_enemy = None
-            self.state = "patrol"
+            # Не сбрасываем цель сразу, пытаемся найти её снова
             self.pursuit_counter = 0
+            # Остаемся в боевом режиме, проверка врагов произойдет в update_ai
             return
 
         # Проверяем расстояние до лагеря
         distance_to_camp = abs(self.x - self.camp_x) + abs(self.y - self.camp_y)
 
-        # Если слишком далеко от лагеря, возвращаемся
-        if distance_to_camp > self.max_distance_from_camp:
+        # Если слишком далеко от лагеря (с запасом), возвращаемся
+        if distance_to_camp > self.max_distance_from_camp + 5:
             self.target_enemy = None
             self.state = "patrol"
             self.pursuit_counter = 0
@@ -207,6 +220,8 @@ class Bandit(NPC):
             if hasattr(self.target_enemy, 'attacked_by_npc'):
                 self.target_enemy.attacked_by_npc = self
                 # Не атакуем игрока напрямую, ждем открытия интерфейса боя
+                # Сбрасываем счетчик, чтобы продолжать стоять рядом
+                self.pursuit_counter = 0
                 return
 
             # Атакуем только NPC (упрощенный бой за один ход)
@@ -217,20 +232,26 @@ class Bandit(NPC):
                 self.target_enemy = None
                 self.state = "patrol"
                 self.pursuit_counter = 0
+            else:
+                # Продолжаем атаковать, сбрасываем счетчик
+                self.pursuit_counter = 0
         else:
             # Двигаемся к цели и увеличиваем счетчик преследования
-            dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=30)
-            if (dx != 0 or dy != 0) and self.consume_stamina():
+            dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=50)
+            if (dx != 0 or dy != 0):
                 new_x = self.x + dx
                 new_y = self.y + dy
 
-                # Проверяем, не выходим ли за пределы территории
+                # Проверяем, не выходим ли за пределы территории (с запасом)
                 distance_to_camp_new = abs(new_x - self.camp_x) + abs(new_y - self.camp_y)
-                if distance_to_camp_new <= self.max_distance_from_camp:
+                if distance_to_camp_new <= self.max_distance_from_camp + 5:
                     if self._can_move(new_x, new_y, game_map):
                         self.x = new_x
                         self.y = new_y
                         self.pursuit_counter += 1  # Увеличиваем счетчик преследования
+                    else:
+                        # Не можем двигаться, но не сбрасываем преследование
+                        self.pursuit_counter += 1
                 else:
                     # Слишком далеко, прекращаем преследование
                     self.target_enemy = None
@@ -318,11 +339,12 @@ class Undead(NPC):
         self.rest_duration = random.randint(2, 3)  # Отдых 2-3 часа
         self.steps_per_hour = 2  # Увеличено с 1 до 2 - нежить быстрее передвигается
         self.target_enemy = None  # Текущая цель для атаки
-        self.detection_range_player = 15  # Дальность обнаружения игрока - лучше видят врагов
-        self.detection_range_npc = 5  # Дальность обнаружения других NPC
+        self.detection_range_player = 18  # Увеличена дальность обнаружения игрока - нежить очень чуткая
+        self.detection_range_npc = 10  # Увеличена дальность обнаружения других NPC
         self.wander_target = None  # Целевая точка для патруля
         self.pursuit_counter = 0  # Счетчик ходов преследования
-        self.max_pursuit_steps = 10  # Увеличено с 8 до 10 - дольше преследуют
+        self.max_pursuit_steps = 25  # Увеличено до 25 - нежить упорно преследует
+        self.idle_timer = random.randint(0, 5)  # Рандомная задержка для десинхронизации
 
     def update_ai(self, game_map, all_npcs=None, player=None):
         """
@@ -349,12 +371,24 @@ class Undead(NPC):
         if self.is_resting:
             return
 
-        # Проверяем наличие врагов поблизости (включая игрока)
-        if all_npcs or player:
-            self._check_for_enemies(all_npcs, player)
+        # Рандомная задержка для десинхронизации
+        if self.idle_timer > 0:
+            self.idle_timer -= 1
+            return
+
+        # ВСЕГДА проверяем наличие врагов поблизости (включая игрока)
+        self._check_for_enemies(all_npcs, player)
 
         if self.state == "combat":
-            self._combat_step(game_map)
+            # В боевом режиме делаем еще больше шагов (нежить очень агрессивна)
+            for _ in range(self.steps_per_hour + 1):  # +1 шаг в бою
+                if not self.consume_stamina():
+                    break
+                self._combat_step(game_map)
+                # Проверяем врагов после каждого шага
+                self._check_for_enemies(all_npcs, player)
+                if self.state != "combat":
+                    break
         elif self.state == "patrol":
             # Делаем несколько шагов за 1 час
             for _ in range(self.steps_per_hour):
@@ -430,7 +464,7 @@ class Undead(NPC):
 
     def _combat_step(self, game_map):
         """
-        Один шаг боевого поведения с ограничением преследования
+        Один шаг боевого поведения нежити с ограничением преследования
 
         Args:
             game_map: Объект карты игры
@@ -442,18 +476,18 @@ class Undead(NPC):
             self.pursuit_counter = 0
             return
 
-        # Проверяем лимит преследования (8 ходов)
+        # Проверяем лимит преследования
         if self.pursuit_counter >= self.max_pursuit_steps:
-            self.target_enemy = None
-            self.state = "patrol"
+            # Не сбрасываем цель сразу, пытаемся найти её снова
             self.pursuit_counter = 0
+            # Остаемся в боевом режиме, проверка врагов произойдет в update_ai
             return
 
         # Проверяем расстояние до руин
         distance_to_ruins = abs(self.x - self.ruins_x) + abs(self.y - self.ruins_y)
 
-        # Если слишком далеко от руин, возвращаемся
-        if distance_to_ruins > self.max_distance_from_ruins:
+        # Если слишком далеко от руин (с запасом для нежити), возвращаемся
+        if distance_to_ruins > self.max_distance_from_ruins + 8:
             self.target_enemy = None
             self.state = "patrol"
             self.pursuit_counter = 0
@@ -465,6 +499,8 @@ class Undead(NPC):
             if hasattr(self.target_enemy, 'attacked_by_npc'):
                 self.target_enemy.attacked_by_npc = self
                 # Не атакуем игрока напрямую, ждем открытия интерфейса боя
+                # Сбрасываем счетчик, чтобы продолжать стоять рядом
+                self.pursuit_counter = 0
                 return
 
             # Атакуем только NPC (упрощенный бой за один ход)
@@ -475,20 +511,26 @@ class Undead(NPC):
                 self.target_enemy = None
                 self.state = "patrol"
                 self.pursuit_counter = 0
+            else:
+                # Продолжаем атаковать, сбрасываем счетчик
+                self.pursuit_counter = 0
         else:
             # Двигаемся к цели и увеличиваем счетчик преследования
-            dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=30)
-            if (dx != 0 or dy != 0) and self.consume_stamina():
+            dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=60)
+            if (dx != 0 or dy != 0):
                 new_x = self.x + dx
                 new_y = self.y + dy
 
-                # Проверяем, не выходим ли за пределы территории
+                # Проверяем, не выходим ли за пределы территории (с запасом)
                 distance_to_ruins_new = abs(new_x - self.ruins_x) + abs(new_y - self.ruins_y)
-                if distance_to_ruins_new <= self.max_distance_from_ruins:
+                if distance_to_ruins_new <= self.max_distance_from_ruins + 8:
                     if self._can_move(new_x, new_y, game_map):
                         self.x = new_x
                         self.y = new_y
                         self.pursuit_counter += 1  # Увеличиваем счетчик преследования
+                    else:
+                        # Не можем двигаться, но не сбрасываем преследование
+                        self.pursuit_counter += 1
                 else:
                     # Слишком далеко, прекращаем преследование
                     self.target_enemy = None
