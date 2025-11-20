@@ -5,7 +5,8 @@ from collections import deque
 from game.character import Character
 from game.inventory import Inventory
 from game.constants import (
-    RELATIONSHIP_NEUTRAL, NPC_RELATIONSHIPS, RELATIONSHIP_HOSTILE
+    RELATIONSHIP_NEUTRAL, NPC_RELATIONSHIPS, RELATIONSHIP_HOSTILE,
+    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MINE, LOCATION_MAGIC_SCHOOL
 )
 
 
@@ -36,6 +37,11 @@ class NPC(Character):
 
         # Генерируем и экипируем начальную экипировку
         self._generate_initial_equipment()
+
+        # Временные переменные для проверки коллизий (устанавливаются в update_ai)
+        self._temp_all_npcs = None
+        self._temp_player = None
+        self._temp_game_map = None
 
     def _generate_initial_equipment(self):
         """Генерация и автоматическая экипировка начального снаряжения"""
@@ -112,9 +118,65 @@ class NPC(Character):
         # Путь не найден - возвращаем (0, 0)
         return (0, 0)
 
+    def _allows_collisions(self, x, y, game_map):
+        """
+        Проверить, разрешены ли коллизии на данной клетке
+        Коллизии разрешены в городах, деревнях, шахтах и школах магии
+
+        Args:
+            x: Координата X
+            y: Координата Y
+            game_map: Объект карты
+
+        Returns:
+            bool: True если коллизии разрешены на этой клетке
+        """
+        if not game_map.is_valid_position(x, y):
+            return False
+
+        tile = game_map.get_tile(x, y)
+        if tile.has_location():
+            location_type = tile.location.location_type
+            # Коллизии разрешены в городах, деревнях, шахтах и школе магии
+            return location_type in [LOCATION_CITY, LOCATION_VILLAGE,
+                                    LOCATION_MINE, LOCATION_MAGIC_SCHOOL]
+
+        return False
+
+    def _is_position_occupied(self, x, y, all_npcs, player):
+        """
+        Проверить, занята ли клетка другим NPC или игроком
+
+        Args:
+            x: Координата X
+            y: Координата Y
+            all_npcs: Список всех NPC
+            player: Объект игрока
+
+        Returns:
+            bool: True если клетка занята
+        """
+        # Проверяем игрока
+        if player and hasattr(player, 'x') and hasattr(player, 'y'):
+            if player.x == x and player.y == y:
+                return True
+
+        # Проверяем всех NPC
+        if all_npcs:
+            for npc in all_npcs:
+                # Пропускаем самого себя
+                if npc is self:
+                    continue
+                # Проверяем живых NPC на этой позиции
+                if npc.is_alive and npc.x == x and npc.y == y:
+                    return True
+
+        return False
+
     def _can_move(self, x, y, game_map):
         """
         Проверить, может ли NPC двигаться на клетку (базовый метод)
+        Учитывает коллизии с другими NPC и игроком
 
         Args:
             x: Координата X
@@ -128,4 +190,20 @@ class NPC(Character):
             return False
 
         tile = game_map.get_tile(x, y)
-        return tile.is_passable()
+        if not tile.is_passable():
+            return False
+
+        # Если коллизии разрешены на этой клетке (города, деревни и т.д.),
+        # то можно двигаться
+        if self._allows_collisions(x, y, game_map):
+            return True
+
+        # Иначе проверяем, не занята ли клетка другим NPC/игроком
+        # Используем временные переменные, установленные в update_ai
+        all_npcs = self._temp_all_npcs if hasattr(self, '_temp_all_npcs') else None
+        player = self._temp_player if hasattr(self, '_temp_player') else None
+
+        if self._is_position_occupied(x, y, all_npcs, player):
+            return False
+
+        return True
