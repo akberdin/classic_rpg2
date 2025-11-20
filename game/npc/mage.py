@@ -131,11 +131,6 @@ class MagePatrol(NPC):
         if not self.is_alive:
             return
 
-        # Сохраняем ссылки для проверки коллизий
-        self._temp_all_npcs = all_npcs
-        self._temp_player = player
-        self._temp_game_map = game_map
-
         # Восстанавливаем выносливость и ману
         self.recover_stamina()
         if self.mana < self.max_mana:
