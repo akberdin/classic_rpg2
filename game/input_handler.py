@@ -174,51 +174,109 @@ class InputHandler:
         Args:
             key: Нажатая клавиша
         """
+        npc_type = self.game.nearby_npc.npc_type if self.game.nearby_npc else None
+
         if key == pygame.K_1:
-            # Торговля / Магия
-            if self.game.nearby_npc and self.game.nearby_npc.npc_type == "merchant":
+            # Торговля / Магия / Зелья
+            if npc_type in ["merchant", "mage", "alchemist", "hunter"]:
                 self.game.trade_menu_open = True
                 self.game.trade_window.mode = "buy"
                 self.game.trade_window.selected_merchant_index = 0
                 self.game.trade_window.selected_player_index = 0
                 print(f"Торговля с {self.game.nearby_npc.name}")
-            elif self.game.nearby_npc and self.game.nearby_npc.npc_type == "mage":
-                # Маг продает магические предметы
-                self.game.trade_menu_open = True
-                self.game.trade_window.mode = "buy"
-                self.game.trade_window.selected_merchant_index = 0
-                self.game.trade_window.selected_player_index = 0
-                print(f"Магическая торговля с {self.game.nearby_npc.name}")
             else:
                 print(f"{self.game.nearby_npc.name} не торгует")
             self.game.interaction_menu_open = False
+
         elif key == pygame.K_2:
-            # Обучение / Агрессия
-            if self.game.nearby_npc and self.game.nearby_npc.npc_type == "mage":
-                # Обучение магии - дает бонус к магическим навыкам
+            # Действие 2: Обучение / Агрессия / Квест
+            if npc_type == "mage":
                 self.handle_magic_training()
+            elif npc_type in ["alchemist", "hunter"]:
+                self.handle_unique_npc_quest()
             else:
-                # Агрессия - начать бой
                 self.game._start_combat(self.game.nearby_npc)
             self.game.interaction_menu_open = False
+
         elif key == pygame.K_3:
-            # Агрессия для магов / Уйти для остальных
-            if self.game.nearby_npc and self.game.nearby_npc.npc_type == "mage":
+            # Действие 3: Агрессия / Уйти / Сдать квест
+            if npc_type == "mage":
                 self.game._start_combat(self.game.nearby_npc)
+            elif npc_type in ["alchemist", "hunter"]:
+                self.handle_turn_in_quest()
             else:
                 print("Вы ушли от разговора.")
                 self.game.nearby_npc = None
             self.game.interaction_menu_open = False
+
         elif key == pygame.K_4:
-            # Уйти (для магов)
-            if self.game.nearby_npc and self.game.nearby_npc.npc_type == "mage":
+            # Уйти (для магов и уникальных NPC)
+            if npc_type in ["mage", "alchemist", "hunter"]:
                 print("Вы ушли от разговора.")
                 self.game.nearby_npc = None
             self.game.interaction_menu_open = False
+
         elif key == pygame.K_ESCAPE:
-            # Также можно закрыть меню через ESC
             self.game.interaction_menu_open = False
             self.game.nearby_npc = None
+
+    def handle_unique_npc_quest(self):
+        """Обработка получения квеста от уникального NPC"""
+        from game.quests import create_alchemist_quests, create_hunter_quests
+
+        if not self.game.nearby_npc:
+            return
+
+        npc_type = self.game.nearby_npc.npc_type
+        npc_name = self.game.nearby_npc.name
+
+        # Генерируем квесты в зависимости от типа NPC
+        if npc_type == "alchemist":
+            quests = create_alchemist_quests(npc_name)
+        elif npc_type == "hunter":
+            quests = create_hunter_quests(npc_name)
+        else:
+            print(f"{npc_name} не даёт квесты.")
+            return
+
+        if not quests:
+            print(f"У {npc_name} нет доступных квестов.")
+            return
+
+        # Пытаемся принять первый доступный квест
+        if not self.game.quest_manager.can_accept_quest():
+            print("У вас уже максимум активных квестов!")
+            return
+
+        quest = quests[0]
+        self.game.quest_manager.add_available_quest(quest)
+        success, message = self.game.quest_manager.accept_quest(quest.quest_id, player=self.game.player)
+        print(message)
+
+    def handle_turn_in_quest(self):
+        """Обработка сдачи квеста уникальному NPC"""
+        if not self.game.nearby_npc:
+            return
+
+        npc_name = self.game.nearby_npc.name
+
+        # Ищем квесты готовые к сдаче у этого NPC
+        ready_quests = []
+        for quest in self.game.quest_manager.active_quests:
+            if quest.is_ready_to_turn_in() and quest.giver_location == npc_name:
+                ready_quests.append(quest)
+
+        if not ready_quests:
+            print(f"У вас нет квестов готовых к сдаче для {npc_name}.")
+            return
+
+        # Сдаём первый готовый квест
+        quest = ready_quests[0]
+        success, messages = self.game.quest_manager.complete_quest(quest.quest_id, self.game.player)
+        if success:
+            print(f"Квест '{quest.name}' завершён!")
+            for msg in messages:
+                print(f"  {msg}")
 
     def handle_magic_training(self):
         """Обработка магического обучения от мага"""
@@ -608,16 +666,19 @@ class InputHandler:
             self.game.character_menu_open = not self.game.character_menu_open
             return
         elif key == pygame.K_q:
-            # Открыть окно квестов (только в городе/деревне)
+            # Открыть окно квестов (можно просматривать активные из любого места)
             tile = self.game.game_map.get_tile(self.game.player.x, self.game.player.y)
             if tile.has_location():
                 location = tile.location
                 if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
+                    # В городе/деревне - полный доступ к квестам
                     self.game.open_quest_window(location)
                 else:
-                    print("Квесты можно получить только в городах и деревнях!")
+                    # Вне города - только просмотр активных квестов
+                    self.game.open_quest_window_anywhere()
             else:
-                print("Вы должны находиться в городе или деревне для просмотра квестов!")
+                # Вне локации - только просмотр активных квестов
+                self.game.open_quest_window_anywhere()
             return
         elif key == pygame.K_F1:
             # Открыть/закрыть окно помощи

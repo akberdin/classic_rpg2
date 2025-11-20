@@ -104,33 +104,39 @@ class WorldRenderer:
                     is_visible = self.game.cheat_mode_active or self.game.fog_of_war.is_visible(map_x, map_y, self.game.player.x, self.game.player.y)
                     if not is_visible:
                         color = tuple(c // 2 for c in color)  # Затемняем цвет
-                    else:
-                        # Применяем оттенок времени суток только к видимым тайлам
-                        color = self.apply_time_of_day_tint(color)
-
-                    # Отрисовка тайла
-                    if tile.has_location() and is_visible:
-                        # Используем спрайт для видимой локации
-                        def draw_default():
-                            pygame.draw.rect(
-                                self.game.screen,
-                                color,
-                                (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
-                            )
-                        self.game.sprite_manager.render_location(
-                            self.game.screen,
-                            tile.location.location_type,
-                            screen_x,
-                            screen_y,
-                            draw_default
-                        )
-                    else:
-                        # Обычная отрисовка для биомов и невидимых локаций
+                        # Под туманом войны НЕ отображаем спрайты локаций, только цвет
                         pygame.draw.rect(
                             self.game.screen,
                             color,
                             (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
                         )
+                    else:
+                        # Применяем оттенок времени суток только к видимым тайлам
+                        color = self.apply_time_of_day_tint(color)
+
+                        # Отрисовка тайла
+                        if tile.has_location():
+                            # Используем спрайт для видимой локации
+                            def draw_default():
+                                pygame.draw.rect(
+                                    self.game.screen,
+                                    color,
+                                    (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
+                                )
+                            self.game.sprite_manager.render_location(
+                                self.game.screen,
+                                tile.location.location_type,
+                                screen_x,
+                                screen_y,
+                                draw_default
+                            )
+                        else:
+                            # Обычная отрисовка для биомов
+                            pygame.draw.rect(
+                                self.game.screen,
+                                color,
+                                (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
+                            )
                 else:
                     # Неисследованная область - туман войны
                     pygame.draw.rect(
@@ -325,23 +331,16 @@ class WorldRenderer:
                     else:
                         bandit_color = (200, 0, 0)  # Красный для патруля
 
-                    # Функция отрисовки по умолчанию (геометрическая фигура)
+                    # Функция отрисовки по умолчанию (квадрат)
                     def draw_bandit_default(screen=self.game.screen, color=bandit_color,
                                            sx=bandit_screen_x, sy=bandit_screen_y):
-                        center_x = sx + TILE_SIZE // 2
-                        center_y = sy + TILE_SIZE // 2
-                        size = TILE_SIZE // 3
-
-                        points = [
-                            (center_x, center_y - size),  # Верх
-                            (center_x - size, center_y + size),  # Левый низ
-                            (center_x + size, center_y + size)   # Правый низ
-                        ]
-
-                        pygame.draw.polygon(
+                        pygame.draw.rect(
                             screen,
                             color,
-                            points
+                            (sx + TILE_SIZE // 4,
+                             sy + TILE_SIZE // 4,
+                             TILE_SIZE // 2,
+                             TILE_SIZE // 2)
                         )
 
                     # Отрисовка бандита (спрайт или геометрическая фигура)
@@ -424,32 +423,27 @@ class WorldRenderer:
                     else:
                         undead_color = base_color
 
-                    # Функция отрисовки по умолчанию (геометрическая фигура)
+                    # Функция отрисовки по умолчанию (квадрат)
                     def draw_undead_default(screen=self.game.screen, color=undead_color,
                                            sx=undead_screen_x, sy=undead_screen_y, level=undead_npc.level):
-                        center_x = sx + TILE_SIZE // 2
-                        center_y = sy + TILE_SIZE // 2
-                        size = TILE_SIZE // 3
-
-                        points = [
-                            (center_x, center_y - size),  # Верх
-                            (center_x + size, center_y),  # Право
-                            (center_x, center_y + size),  # Низ
-                            (center_x - size, center_y)   # Лево
-                        ]
-
-                        pygame.draw.polygon(
+                        pygame.draw.rect(
                             screen,
                             color,
-                            points
+                            (sx + TILE_SIZE // 4,
+                             sy + TILE_SIZE // 4,
+                             TILE_SIZE // 2,
+                             TILE_SIZE // 2)
                         )
 
                         # Обводка для элитной нежити
                         if level > 30:
-                            pygame.draw.polygon(
+                            pygame.draw.rect(
                                 screen,
                                 (255, 0, 255),
-                                points,
+                                (sx + TILE_SIZE // 4,
+                                 sy + TILE_SIZE // 4,
+                                 TILE_SIZE // 2,
+                                 TILE_SIZE // 2),
                                 2
                             )
 
@@ -491,37 +485,27 @@ class WorldRenderer:
                     else:
                         mage_color = base_color
 
-                    # Функция отрисовки по умолчанию (звезда для мага)
+                    # Функция отрисовки по умолчанию (квадрат для мага)
                     def draw_mage_default(screen=self.game.screen, color=mage_color,
                                          sx=mage_screen_x, sy=mage_screen_y, level=mage.level):
-                        center_x = sx + TILE_SIZE // 2
-                        center_y = sy + TILE_SIZE // 2
-                        size = TILE_SIZE // 3
-
-                        # Рисуем звезду (магический символ)
-                        points = [
-                            (center_x, center_y - size),  # Верх
-                            (center_x + size // 3, center_y - size // 3),
-                            (center_x + size, center_y),  # Право
-                            (center_x + size // 3, center_y + size // 3),
-                            (center_x, center_y + size),  # Низ
-                            (center_x - size // 3, center_y + size // 3),
-                            (center_x - size, center_y),  # Лево
-                            (center_x - size // 3, center_y - size // 3)
-                        ]
-
-                        pygame.draw.polygon(
+                        pygame.draw.rect(
                             screen,
                             color,
-                            points
+                            (sx + TILE_SIZE // 4,
+                             sy + TILE_SIZE // 4,
+                             TILE_SIZE // 2,
+                             TILE_SIZE // 2)
                         )
 
                         # Обводка для высокоуровневых магов
                         if level > 15:
-                            pygame.draw.polygon(
+                            pygame.draw.rect(
                                 screen,
                                 (200, 150, 255),
-                                points,
+                                (sx + TILE_SIZE // 4,
+                                 sy + TILE_SIZE // 4,
+                                 TILE_SIZE // 2,
+                                 TILE_SIZE // 2),
                                 2
                             )
 
@@ -550,18 +534,14 @@ class WorldRenderer:
 
                     def draw_alchemist_default(screen=self.game.screen, color=alchemist_color,
                                               sx=screen_x, sy=screen_y):
-                        # Колба (символ алхимика)
-                        center_x = sx + TILE_SIZE // 2
-                        center_y = sy + TILE_SIZE // 2
-                        pygame.draw.circle(
-                            screen, color,
-                            (center_x, center_y + TILE_SIZE // 6),
-                            TILE_SIZE // 4
-                        )
+                        # Квадрат для алхимика
                         pygame.draw.rect(
-                            screen, color,
-                            (center_x - TILE_SIZE // 8, center_y - TILE_SIZE // 4,
-                             TILE_SIZE // 4, TILE_SIZE // 3)
+                            screen,
+                            color,
+                            (sx + TILE_SIZE // 4,
+                             sy + TILE_SIZE // 4,
+                             TILE_SIZE // 2,
+                             TILE_SIZE // 2)
                         )
 
                     self.game.sprite_manager.render_npc(
@@ -593,17 +573,15 @@ class WorldRenderer:
 
                     def draw_hunter_default(screen=self.game.screen, color=hunter_color,
                                            sx=screen_x, sy=screen_y):
-                        # Лук и стрела (символ охотника)
-                        center_x = sx + TILE_SIZE // 2
-                        center_y = sy + TILE_SIZE // 2
-                        size = TILE_SIZE // 3
-                        # Треугольник направленный вправо (стрела)
-                        points = [
-                            (center_x - size, center_y - size // 2),
-                            (center_x + size, center_y),
-                            (center_x - size, center_y + size // 2)
-                        ]
-                        pygame.draw.polygon(screen, color, points)
+                        # Квадрат для охотника
+                        pygame.draw.rect(
+                            screen,
+                            color,
+                            (sx + TILE_SIZE // 4,
+                             sy + TILE_SIZE // 4,
+                             TILE_SIZE // 2,
+                             TILE_SIZE // 2)
+                        )
 
                     self.game.sprite_manager.render_npc(
                         self.game.screen, 'hunter', screen_x, screen_y,
@@ -632,17 +610,26 @@ class WorldRenderer:
 
                     def draw_necro_default(screen=self.game.screen, color=necro_color,
                                           sx=screen_x, sy=screen_y, level=necromancer.level):
-                        center_x = sx + TILE_SIZE // 2
-                        center_y = sy + TILE_SIZE // 2
-                        size = TILE_SIZE // 3
-                        # Черепоподобный символ
-                        pygame.draw.circle(screen, color, (center_x, center_y - size // 4), size)
-                        pygame.draw.rect(screen, color,
-                                        (center_x - size // 2, center_y, size, size // 2))
+                        # Квадрат для некроманта
+                        pygame.draw.rect(
+                            screen,
+                            color,
+                            (sx + TILE_SIZE // 4,
+                             sy + TILE_SIZE // 4,
+                             TILE_SIZE // 2,
+                             TILE_SIZE // 2)
+                        )
                         # Обводка для высокоуровневых
                         if level > 25:
-                            pygame.draw.circle(screen, (200, 100, 200),
-                                             (center_x, center_y - size // 4), size, 2)
+                            pygame.draw.rect(
+                                screen,
+                                (200, 100, 200),
+                                (sx + TILE_SIZE // 4,
+                                 sy + TILE_SIZE // 4,
+                                 TILE_SIZE // 2,
+                                 TILE_SIZE // 2),
+                                2
+                            )
 
                     self.game.sprite_manager.render_npc(
                         self.game.screen, 'necromancer', screen_x, screen_y,

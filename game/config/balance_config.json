@@ -230,14 +230,18 @@
   },
 
   "spawning": {
-    "guards_per_city": 4,
-    "guards_per_village": 2,
+    "guards_per_city": 8,
+    "guards_per_village": 4,
+    "guard_ranks_city": {"min": 3, "max": 4},
+    "guard_ranks_village": {"min": 1, "max": 2},
     "merchants_per_city": 3,
     "merchants_per_village": 2,
-    "bandits_per_camp": {"min": 3, "max": 6},
-    "miners_per_mine": {"min": 2, "max": 4},
-    "undead_per_ruins": {"min": 3, "max": 6},
+    "bandits_per_camp": {"min": 7, "max": 12},
+    "miners_per_mine": {"min": 5, "max": 8},
+    "undead_per_ruins": {"min": 5, "max": 10},
     "mages_per_school": 4,
+    "elite_enemy_level_min": 30,
+    "elite_enemy_level_max": 40,
     "locations": {
       "cities": {"min": 4, "max": 6},
       "villages": {"min": 12, "max": 18},
@@ -246,5 +250,35 @@
       "ruins": {"min": 8, "max": 12},
       "magic_schools": 1
     }
+  },
+
+  "luck": {
+    "loot_quality_bonus_per_point": 1,
+    "extra_item_chance_per_point": 1,
+    "max_quality_bonus": 50,
+    "max_extra_item_chance": 30
+  },
+
+  "enemy_scaling": {
+    "level_range_from_player": 10,
+    "min_enemy_level": 1,
+    "max_enemy_level": 40
+  },
+
+  "skill_rank_requirements": {
+    "base_experience": 100,
+    "experience_multiplier": 1.5,
+    "gold_cost_per_rank": 50,
+    "required_uses_per_rank": 20,
+    "min_player_level_per_rank": 5
+  },
+
+  "loot_events": {
+    "event_chance": 30,
+    "trap_damage_percent": 10,
+    "enemy_spawn_level_bonus_min": 2,
+    "enemy_spawn_level_bonus_max": 5,
+    "bonus_loot_chance": 20,
+    "event_types": ["trap", "enemy", "bonus", "nothing"]
   }
 }

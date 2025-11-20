@@ -717,6 +717,92 @@ class QuestManager:
         return self.completed_quests
 
 
+def create_alchemist_quests(npc_name):
+    """
+    Создать квесты для алхимика
+
+    Args:
+        npc_name: Имя алхимика (для giver_location)
+
+    Returns:
+        list: Список квестов
+    """
+    quests = []
+
+    # Квест на сбор ингредиентов
+    quests.append(Quest(
+        quest_id=f"alchemist_gather_{random.randint(1000, 9999)}",
+        name="Сбор ингредиентов",
+        description="Алхимику нужны магические кристаллы для зелий.",
+        objectives=[
+            QuestObjective("Собрать магические кристаллы", 3)
+        ],
+        rewards={"experience": 150, "gold": 100, "items": ["health_potion", "mana_potion"]},
+        quest_type=QuestType.GATHER_RESOURCE,
+        difficulty=QuestDifficulty.MEDIUM,
+        giver_location=npc_name
+    ))
+
+    # Квест на уничтожение нежити
+    quests.append(Quest(
+        quest_id=f"alchemist_undead_{random.randint(1000, 9999)}",
+        name="Очищение руин",
+        description="Нежить в руинах мешает собирать редкие ингредиенты.",
+        objectives=[
+            QuestObjective("Уничтожить нежить", 5)
+        ],
+        rewards={"experience": 200, "gold": 150},
+        quest_type=QuestType.KILL_ENEMIES,
+        difficulty=QuestDifficulty.HARD,
+        giver_location=npc_name
+    ))
+
+    return quests
+
+
+def create_hunter_quests(npc_name):
+    """
+    Создать квесты для охотника
+
+    Args:
+        npc_name: Имя охотника (для giver_location)
+
+    Returns:
+        list: Список квестов
+    """
+    quests = []
+
+    # Квест на уничтожение бандитов
+    quests.append(Quest(
+        quest_id=f"hunter_bandits_{random.randint(1000, 9999)}",
+        name="Охота на бандитов",
+        description="Бандиты угрожают путникам на дорогах. Необходимо их остановить.",
+        objectives=[
+            QuestObjective("Уничтожить бандитов", 5)
+        ],
+        rewards={"experience": 180, "gold": 120},
+        quest_type=QuestType.KILL_ENEMIES,
+        difficulty=QuestDifficulty.MEDIUM,
+        giver_location=npc_name
+    ))
+
+    # Квест на охоту на элитных врагов
+    quests.append(Quest(
+        quest_id=f"hunter_elite_{random.randint(1000, 9999)}",
+        name="Опасная охота",
+        description="В округе появился опасный главарь банды. Нужен опытный охотник.",
+        objectives=[
+            QuestObjective("Уничтожить главаря банды", 1)
+        ],
+        rewards={"experience": 300, "gold": 250},
+        quest_type=QuestType.KILL_ENEMIES,
+        difficulty=QuestDifficulty.VERY_HARD,
+        giver_location=npc_name
+    ))
+
+    return quests
+
+
 class AchievementManager:
     """Менеджер достижений"""
 

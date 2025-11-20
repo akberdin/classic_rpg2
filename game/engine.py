@@ -417,6 +417,31 @@ class Game:
         # Открываем окно
         self.quest_window_open = True
 
+    def open_quest_window_anywhere(self):
+        """
+        Открыть окно квестов из любого места (только активные квесты)
+        """
+        # Проверяем прогресс всех квестов на сбор ресурсов
+        self.quest_manager.check_all_quest_progress(self.player)
+
+        # Получаем активные квесты
+        active_quests = self.quest_manager.get_active_quests()
+
+        # Устанавливаем данные в окно квестов (без доступных и готовых к сдаче)
+        self.quest_window.set_data(
+            "Журнал квестов",  # Общее название
+            None,  # Нет локации
+            [],  # Нет доступных квестов
+            active_quests,
+            []  # Нет квестов к сдаче
+        )
+
+        # Автоматически переключаем на вкладку активных квестов
+        self.quest_window.mode = "active"
+
+        # Открываем окно
+        self.quest_window_open = True
+
     def _handle_quest_action(self, action):
         """
         Обработка действий с квестами из окна квестов
@@ -461,7 +486,7 @@ class Game:
                 self.input_handler._refresh_quest_window()
 
     def _collect_resources(self):
-        """Собрать ресурсы с текущей локации"""
+        """Собрать ресурсы с текущей локации с учётом случайных событий"""
         tile = self.game_map.get_tile(self.player.x, self.player.y)
 
         if not tile.has_location():
@@ -478,20 +503,38 @@ class Game:
             print(f"Вы уже собрали ресурсы с {location.name}.")
             return
 
-        # Получаем лут с локации (передаем уровень игрока для более интересного лута)
-        loot = get_random_loot_from_location(location.location_type, self.player.level)
+        # Проверяем случайное событие при сборе лута
+        event_result = self._process_loot_event()
+        if event_result == "combat_started":
+            # Бой начался, лут будет собран после победы
+            location.loot_collected = True
+            return
+        elif event_result == "trap_triggered":
+            # Ловушка сработала, но лут всё равно можно собрать
+            pass
+
+        # Получаем лут с локации с учётом удачи игрока
+        loot = get_random_loot_from_location(location.location_type, self.player.level, self.player.luck)
 
         if not loot:
             print("Ничего не найдено!")
             return
 
+        # Бонусный лут от события
+        if event_result == "bonus_loot":
+            print("Удача! Вы нашли дополнительный тайник!")
+            bonus_loot = get_random_loot_from_location(location.location_type, self.player.level, self.player.luck)
+            loot.extend(bonus_loot)
+
         # Добавляем лут в инвентарь
         for item, quantity in loot:
-            if self.player.inventory.add_item(item, quantity):
+            if item == 'gold':
+                self.player.inventory.add_gold(quantity)
+                print(f"Найдено: {quantity} золота")
+            elif self.player.inventory.add_item(item, quantity):
                 print(f"Найдено: {item.name} x{quantity}")
 
                 # Обновляем прогресс квестов на сбор ресурсов
-                # Используем внутреннее имя предмета для квестов
                 item_key = self._get_item_key(item.name)
                 if item_key:
                     messages = self.quest_manager.update_gather_progress(item_key, quantity, self.player)
@@ -513,6 +556,57 @@ class Game:
         # Продвигаем время на 1 час
         self.game_time.advance_time(1)
         print(f"Время: {self.game_time.get_time_string()}")
+
+    def _process_loot_event(self):
+        """
+        Обработать случайное событие при сборе лута
+
+        Returns:
+            str: тип события ('nothing', 'trap_triggered', 'combat_started', 'bonus_loot')
+        """
+        import random
+        from game.npc import Bandit
+
+        # Шанс события - 30%
+        if random.randint(1, 100) > 30:
+            return "nothing"
+
+        # Выбираем тип события
+        event_type = random.choice(["trap", "enemy", "bonus", "nothing"])
+
+        if event_type == "trap":
+            # Ловушка наносит урон (10% от макс здоровья)
+            trap_damage = int(self.player.max_health * 0.10)
+            self.player.current_health -= trap_damage
+            self.player.current_health = max(1, self.player.current_health)
+            print(f"Вы попали в ловушку! Получено {trap_damage} урона.")
+            return "trap_triggered"
+
+        elif event_type == "enemy":
+            # Спавн врага на 2-5 уровней выше игрока
+            enemy_level = self.player.level + random.randint(2, 5)
+            enemy_level = min(enemy_level, 40)  # Макс 40 уровень
+
+            # Создаём бандита-защитника
+            enemy_names = ["Страж сокровищ", "Охранник", "Засадник", "Грабитель"]
+            enemy = Bandit(
+                random.choice(enemy_names),
+                self.player.x,
+                self.player.y,
+                enemy_level,
+                self.player.x,
+                self.player.y
+            )
+
+            print(f"На вас напал {enemy.name} {enemy_level} уровня!")
+            self._start_combat(enemy)
+            return "combat_started"
+
+        elif event_type == "bonus":
+            # Бонусный лут
+            return "bonus_loot"
+
+        return "nothing"
 
     def _get_item_key(self, item_name):
         """
@@ -1039,6 +1133,20 @@ class Game:
                 "[1] Купить заклинания",
                 f"[2] Обучение ({training_cost} зол.)",
                 "[3] Агрессия",
+                "[4] Уйти"
+            ]
+        elif self.nearby_npc.npc_type == "alchemist":
+            actions = [
+                "[1] Торговля зельями",
+                "[2] Взять квест",
+                "[3] Сдать квест",
+                "[4] Уйти"
+            ]
+        elif self.nearby_npc.npc_type == "hunter":
+            actions = [
+                "[1] Торговля",
+                "[2] Взять квест",
+                "[3] Сдать квест",
                 "[4] Уйти"
             ]
         elif self.nearby_npc.npc_type == "merchant":
