@@ -68,6 +68,11 @@ class Miner(NPC):
         if not self.is_alive:
             return
 
+        # Сохраняем ссылки для проверки коллизий
+        self._temp_all_npcs = all_npcs
+        self._temp_player = None  # Шахтеры не получают player
+        self._temp_game_map = game_map
+
         # Восстанавливаем выносливость
         self.recover_stamina()
 
@@ -232,21 +237,3 @@ class Miner(NPC):
         if self.rest_counter >= self.rest_duration:
             self.state = "work"
             self.rest_counter = 0
-
-    def _can_move(self, x, y, game_map):
-        """
-        Проверить, может ли шахтер двигаться на клетку
-
-        Args:
-            x: Координата X
-            y: Координата Y
-            game_map: Объект карты
-
-        Returns:
-            bool: True если можно двигаться
-        """
-        if not game_map.is_valid_position(x, y):
-            return False
-
-        tile = game_map.get_tile(x, y)
-        return tile.is_passable()

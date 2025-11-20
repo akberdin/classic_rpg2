@@ -167,6 +167,11 @@ class Merchant(NPC):
         if not self.is_alive:
             return
 
+        # Сохраняем ссылки для проверки коллизий
+        self._temp_all_npcs = all_npcs
+        self._temp_player = None  # Торговцы не получают player
+        self._temp_game_map = game_map
+
         # Восстанавливаем выносливость
         self.recover_stamina()
 
@@ -361,24 +366,6 @@ class Merchant(NPC):
             # Закончили отдых, выбираем новый город
             self.state = "travel"
             self._choose_new_destination()
-
-    def _can_move(self, x, y, game_map):
-        """
-        Проверить, может ли торговец двигаться на клетку
-
-        Args:
-            x: Координата X
-            y: Координата Y
-            game_map: Объект карты
-
-        Returns:
-            bool: True если можно двигаться
-        """
-        if not game_map.is_valid_position(x, y):
-            return False
-
-        tile = game_map.get_tile(x, y)
-        return tile.is_passable()
 
 
 class MagicMerchant(Merchant):
