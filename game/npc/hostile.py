@@ -75,11 +75,6 @@ class Bandit(NPC):
         if not self.is_alive:
             return
 
-        # Сохраняем ссылки для проверки коллизий
-        self._temp_all_npcs = all_npcs
-        self._temp_player = player
-        self._temp_game_map = game_map
-
         # Восстанавливаем выносливость
         self.recover_stamina()
 
@@ -358,11 +353,6 @@ class Undead(NPC):
         """
         if not self.is_alive:
             return
-
-        # Сохраняем ссылки для проверки коллизий
-        self._temp_all_npcs = all_npcs
-        self._temp_player = player
-        self._temp_game_map = game_map
 
         # Восстанавливаем выносливость
         self.recover_stamina()
