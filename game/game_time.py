@@ -14,7 +14,7 @@ class GameTime:
             game: Ссылка на основной объект игры
         """
         self.game = game
-        self.game_hour = 6  # Начало игры в 6 утра
+        self.game_hour = 6.0  # Начало игры в 6 утра (используем float для дробных часов)
         self.game_day = 1
 
     @property
@@ -132,6 +132,8 @@ class GameTime:
         Получить строковое представление времени
 
         Returns:
-            str: Время в формате "День X, ЧЧ:00"
+            str: Время в формате "День X, ЧЧ:ММ"
         """
-        return f"День {self.game_day}, {self.game_hour:02d}:00"
+        hours = int(self.game_hour)
+        minutes = int((self.game_hour - hours) * 60)
+        return f"День {self.game_day}, {hours:02d}:{minutes:02d}"

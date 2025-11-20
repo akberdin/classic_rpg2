@@ -250,31 +250,36 @@ class NPCSpawner:
         ]
 
         for camp in bandit_camps:
-            # Создаем 7-12 бандитов возле каждого лагеря
-            num_bandits = random.randint(7, 12)
+            # Создаем 10-15 бандитов возле каждого лагеря с разными уровнями
+            num_bandits = random.randint(10, 15)
 
             for i in range(num_bandits):
                 # Находим позицию рядом с лагерем
                 bandit_pos = self._find_npc_position(camp.x, camp.y)
                 if bandit_pos:
                     bx, by = bandit_pos
-                    # Уровень бандитов от 1 до 10 (относительно начального уровня игрока)
-                    bandit_level = random.randint(1, 10)
-                    bandit_name = f"{random.choice(bandit_names)} {camp.name}"
+                    # Уровни бандитов распределены по рангам:
+                    # 40% новички (1-10), 30% обычные (11-20), 20% опытные (21-30), 10% эксперты (31-40)
+                    roll = random.random()
+                    if roll < 0.4:
+                        bandit_level = random.randint(1, 10)  # Новичок
+                    elif roll < 0.7:
+                        bandit_level = random.randint(11, 20)  # Обычный
+                    elif roll < 0.9:
+                        bandit_level = random.randint(21, 30)  # Опытный
+                    else:
+                        bandit_level = random.randint(31, 40)  # Эксперт
+
+                    # Выбираем имя в зависимости от уровня
+                    if bandit_level >= 30:
+                        bandit_name = f"{random.choice(elite_names)} {camp.name}"
+                    else:
+                        bandit_name = f"{random.choice(bandit_names)} {camp.name}"
 
                     # Создаем бандита с привязкой к лагерю
                     bandit = Bandit(bandit_name, bx, by, bandit_level, camp.x, camp.y)
 
                     bandits.append(bandit)
-
-            # Добавляем 1 элитного бандита 30-40 уровня в каждый лагерь
-            elite_pos = self._find_npc_position(camp.x, camp.y)
-            if elite_pos:
-                ex, ey = elite_pos
-                elite_level = random.randint(30, 40)
-                elite_name = f"{random.choice(elite_names)} {camp.name}"
-                elite_bandit = Bandit(elite_name, ex, ey, elite_level, camp.x, camp.y)
-                bandits.append(elite_bandit)
 
         return bandits
 
@@ -334,8 +339,8 @@ class NPCSpawner:
         ]
 
         for ruin in ruins:
-            # Создаем 5-10 нежити возле каждых руин
-            num_undead = random.randint(5, 10)
+            # Создаем 8-12 нежити возле каждых руин с разными уровнями
+            num_undead = random.randint(8, 12)
 
             for i in range(num_undead):
                 # Находим позицию рядом с руинами (в пределах 7 клеток)
@@ -354,35 +359,28 @@ class NPCSpawner:
 
                 if undead_pos:
                     ux, uy = undead_pos
-                    # Уровень нежити от 1 до 10 (относительно начального уровня игрока)
-                    undead_level = random.randint(1, 10)
-                    undead_name = f"{random.choice(undead_names)} {ruin.name}"
+                    # Уровни нежити распределены по рангам:
+                    # 40% новички (1-10), 30% обычные (11-20), 20% опытные (21-30), 10% эксперты (31-40)
+                    roll = random.random()
+                    if roll < 0.4:
+                        undead_level = random.randint(1, 10)  # Новичок
+                    elif roll < 0.7:
+                        undead_level = random.randint(11, 20)  # Обычный
+                    elif roll < 0.9:
+                        undead_level = random.randint(21, 30)  # Опытный
+                    else:
+                        undead_level = random.randint(31, 40)  # Эксперт
+
+                    # Выбираем имя в зависимости от уровня
+                    if undead_level >= 30:
+                        undead_name = f"{random.choice(elite_names)} {ruin.name}"
+                    else:
+                        undead_name = f"{random.choice(undead_names)} {ruin.name}"
 
                     # Создаем нежить с привязкой к руинам
                     undead = Undead(undead_name, ux, uy, undead_level, ruin.x, ruin.y)
 
                     undead_list.append(undead)
-
-            # Добавляем 1 элитную нежить 30-40 уровня в каждые руины
-            elite_pos = None
-            for attempt in range(20):
-                offset_x = random.randint(-5, 5)
-                offset_y = random.randint(-5, 5)
-                ex = ruin.x + offset_x
-                ey = ruin.y + offset_y
-
-                if self.game_map.is_valid_position(ex, ey):
-                    tile = self.game_map.get_tile(ex, ey)
-                    if tile.is_passable():
-                        elite_pos = (ex, ey)
-                        break
-
-            if elite_pos:
-                ex, ey = elite_pos
-                elite_level = random.randint(30, 40)
-                elite_name = f"{random.choice(elite_names)} {ruin.name}"
-                elite_undead = Undead(elite_name, ex, ey, elite_level, ruin.x, ruin.y)
-                undead_list.append(elite_undead)
 
         return undead_list
 

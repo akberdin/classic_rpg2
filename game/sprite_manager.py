@@ -190,7 +190,7 @@ class SpriteManager:
             # Используем геометрическую фигуру
             default_renderer()
 
-    def render_location(self, screen, location_type, x, y, default_renderer):
+    def render_location(self, screen, location_type, x, y, default_renderer, darken=False):
         """
         Отрисовка локации (спрайт или цвет)
 
@@ -200,10 +200,17 @@ class SpriteManager:
             x: X координата на экране
             y: Y координата на экране
             default_renderer: Функция для отрисовки по умолчанию
+            darken: Затемнить спрайт (для тумана войны)
         """
         sprite = self.get_sprite(location_type, 'location')
         if sprite:
-            screen.blit(sprite, (x, y))
+            if darken:
+                # Создаем затемненную версию спрайта
+                darkened_sprite = sprite.copy()
+                darkened_sprite.fill((128, 128, 128), special_flags=pygame.BLEND_RGB_MULT)
+                screen.blit(darkened_sprite, (x, y))
+            else:
+                screen.blit(sprite, (x, y))
         else:
             # Используем цветной прямоугольник
             default_renderer()

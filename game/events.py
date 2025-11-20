@@ -180,6 +180,8 @@ class RandomEventSystem:
         """Инициализация системы событий"""
         self.events = []
         self.last_event_result = None  # Последний результат для UI
+        self.turns_since_last_event = 0  # Счетчик ходов с последнего события
+        self.min_turns_between_events = 20  # Минимум 20 ходов между событиями
         self._setup_events()
 
     def _player_rank_sufficient(self, player, required_rank):
@@ -503,6 +505,13 @@ class RandomEventSystem:
         messages = []
         player_rank = player.get_rank() if hasattr(player, 'get_rank') else "Новичок"
 
+        # Увеличиваем счетчик ходов
+        self.turns_since_last_event += 1
+
+        # Проверяем минимальное время между событиями
+        if self.turns_since_last_event < self.min_turns_between_events:
+            return messages  # Слишком рано для нового события
+
         # Фильтруем события по рангу игрока
         available_events = [
             e for e in self.events
@@ -521,6 +530,9 @@ class RandomEventSystem:
 
                     # Сохраняем результат для UI
                     self.last_event_result = EventResult(event, result, player_rank)
+
+                    # Сбрасываем счетчик ходов
+                    self.turns_since_last_event = 0
                 break  # Только одно событие за раз
 
         return messages
