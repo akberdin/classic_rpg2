@@ -228,13 +228,13 @@ class NPC(Character):
 
         # Моментальный расчет боя на основе характеристик
         # Рассчитываем "силу" каждого бойца
-        self_power = (self.attack_power * 0.4 +
-                     self.defense * 0.2 +
+        self_power = (self.get_total_damage() * 0.4 +
+                     self.get_total_defense() * 0.2 +
                      self.health * 0.3 +
                      self.dexterity * 0.1)
 
-        enemy_power = (enemy.attack_power * 0.4 +
-                      enemy.defense * 0.2 +
+        enemy_power = (enemy.get_total_damage() * 0.4 +
+                      enemy.get_total_defense() * 0.2 +
                       enemy.health * 0.3 +
                       enemy.dexterity * 0.1)
 
@@ -246,22 +246,22 @@ class NPC(Character):
         if self_power > enemy_power:
             # Этот NPC побеждает
             power_ratio = self_power / enemy_power
-            damage = int(self.attack_power * power_ratio * random.uniform(0.8, 1.5))
+            damage = int(self.get_total_damage() * power_ratio * random.uniform(0.8, 1.5))
             enemy.take_damage(damage)
 
             # Этот NPC тоже получает урон, но меньше
-            counter_damage = int(enemy.attack_power * random.uniform(0.3, 0.7))
+            counter_damage = int(enemy.get_total_damage() * random.uniform(0.3, 0.7))
             self.take_damage(counter_damage)
 
             return not enemy.is_alive
         else:
             # Враг побеждает
             power_ratio = enemy_power / self_power
-            damage = int(enemy.attack_power * power_ratio * random.uniform(0.8, 1.5))
+            damage = int(enemy.get_total_damage() * power_ratio * random.uniform(0.8, 1.5))
             self.take_damage(damage)
 
             # Враг тоже получает урон, но меньше
-            counter_damage = int(self.attack_power * random.uniform(0.3, 0.7))
+            counter_damage = int(self.get_total_damage() * random.uniform(0.3, 0.7))
             enemy.take_damage(counter_damage)
 
             return False

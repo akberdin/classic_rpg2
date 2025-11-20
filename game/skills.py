@@ -1376,3 +1376,20 @@ class SkillManager:
             dict: Словарь {skill_id: skill}
         """
         return self.learned_skills
+
+    def try_rank_up_skill(self, skill_id, player):
+        """
+        Попытаться повысить ранг умения
+
+        Args:
+            skill_id: ID умения
+            player: Игрок
+
+        Returns:
+            tuple: (bool, str) - успех и сообщение
+        """
+        if skill_id not in self.learned_skills:
+            return False, "Умение не найдено"
+
+        skill = self.learned_skills[skill_id]
+        return skill.try_rank_up(player)
