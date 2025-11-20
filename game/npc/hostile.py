@@ -43,7 +43,8 @@ class Bandit(NPC):
         self.rest_duration = random.randint(2, 4)  # Отдых 2-4 часа
         self.steps_per_hour = 1  # Шагов за час
         self.target_enemy = None  # Текущий враг для атаки
-        self.detection_range = 10  # Дальность обнаружения врагов
+        self.detection_range_player = 10  # Дальность обнаружения игрока
+        self.detection_range_npc = 5  # Дальность обнаружения других NPC
         self.wander_target = None  # Целевая точка для блуждания
         self.pursuit_counter = 0  # Счетчик ходов преследования
         self.max_pursuit_steps = 8  # Максимальное количество ходов преследования
@@ -117,11 +118,11 @@ class Bandit(NPC):
         # Проверяем игрока (бандиты ВСЕГДА агрессивны к игроку)
         if player and player.is_alive:
             distance = abs(self.x - player.x) + abs(self.y - player.y)
-            if distance <= self.detection_range:
+            if distance <= self.detection_range_player:
                 closest_enemy = player
                 closest_distance = distance
 
-        # Проверяем других NPC
+        # Проверяем других NPC (с меньшей дистанцией обнаружения)
         if all_npcs:
             for npc in all_npcs:
                 if not npc.is_alive:
@@ -141,16 +142,28 @@ class Bandit(NPC):
                 if relationship == RELATIONSHIP_HOSTILE:
                     distance = abs(self.x - npc.x) + abs(self.y - npc.y)
 
-                    # Если враг в зоне обнаружения
-                    if distance <= self.detection_range and distance < closest_distance:
+                    # Если враг в зоне обнаружения (используем меньшую дистанцию для NPC)
+                    if distance <= self.detection_range_npc and distance < closest_distance:
                         closest_enemy = npc
                         closest_distance = distance
 
-        # Если нашли врага, переходим в боевой режим
+        # Если нашли врага, проверяем лимит преследователей
         if closest_enemy:
-            self.target_enemy = closest_enemy
-            self.state = "combat"
-            self.pursuit_counter = 0  # Сбрасываем счетчик преследования
+            # Считаем сколько NPC уже преследуют эту цель
+            pursuers_count = 0
+            if all_npcs:
+                for npc in all_npcs:
+                    if (npc.is_alive and npc is not self and
+                        hasattr(npc, 'target_enemy') and npc.target_enemy is closest_enemy and
+                        hasattr(npc, 'state') and npc.state == "combat"):
+                        pursuers_count += 1
+
+            # Ограничиваем до 2 преследующих
+            if pursuers_count < 2:
+                self.target_enemy = closest_enemy
+                self.state = "combat"
+                self.pursuit_counter = 0  # Сбрасываем счетчик преследования
+            # Если уже есть 2 преследователя, остаемся на патруле
         elif self.state == "combat":
             # Если враг исчез, возвращаемся к патрулю
             self.target_enemy = None
@@ -196,19 +209,14 @@ class Bandit(NPC):
                 # Не атакуем игрока напрямую, ждем открытия интерфейса боя
                 return
 
-            # Атакуем только NPC
-            attack_result = self.attack(self.target_enemy)
+            # Атакуем только NPC (упрощенный бой за один ход)
+            enemy_killed = self._simplified_npc_combat(self.target_enemy)
 
-            if attack_result['dodged']:
-                print(f"{self.target_enemy.name} увернулся от атаки {self.name}!")
-            elif attack_result['hit']:
-                crit_msg = " КРИТИЧЕСКИЙ УДАР!" if attack_result['critical'] else ""
-                print(f"{self.name} атакует {self.target_enemy.name} и наносит {attack_result['damage']} урона!{crit_msg}")
-                if not self.target_enemy.is_alive:
-                    print(f"{self.target_enemy.name} повержен!")
-                    self.target_enemy = None
-                    self.state = "patrol"
-                    self.pursuit_counter = 0
+            if enemy_killed:
+                print(f"{self.name} победил {self.target_enemy.name} в быстром бою!")
+                self.target_enemy = None
+                self.state = "patrol"
+                self.pursuit_counter = 0
         else:
             # Двигаемся к цели и увеличиваем счетчик преследования
             dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=30)
@@ -310,7 +318,8 @@ class Undead(NPC):
         self.rest_duration = random.randint(2, 3)  # Отдых 2-3 часа
         self.steps_per_hour = 2  # Увеличено с 1 до 2 - нежить быстрее передвигается
         self.target_enemy = None  # Текущая цель для атаки
-        self.detection_range = 15  # Увеличено с 12 до 15 - лучше видят врагов
+        self.detection_range_player = 15  # Дальность обнаружения игрока - лучше видят врагов
+        self.detection_range_npc = 5  # Дальность обнаружения других NPC
         self.wander_target = None  # Целевая точка для патруля
         self.pursuit_counter = 0  # Счетчик ходов преследования
         self.max_pursuit_steps = 10  # Увеличено с 8 до 10 - дольше преследуют
@@ -373,11 +382,12 @@ class Undead(NPC):
         # Проверяем игрока (нежита ВСЕГДА агрессивна к игроку)
         if player and player.is_alive:
             distance = abs(self.x - player.x) + abs(self.y - player.y)
-            if distance <= self.detection_range:
+            if distance <= self.detection_range_player:
                 closest_enemy = player
                 closest_distance = distance
 
         # Проверяем других NPC (нежита агрессивна ко всем, кроме другой нежити!)
+        # Используем меньшую дистанцию обнаружения для NPC
         if all_npcs:
             for npc in all_npcs:
                 if not npc.is_alive:
@@ -390,16 +400,28 @@ class Undead(NPC):
                 # Нежита враждебна ко всем живым существам
                 distance = abs(self.x - npc.x) + abs(self.y - npc.y)
 
-                # Если враг в зоне обнаружения
-                if distance <= self.detection_range and distance < closest_distance:
+                # Если враг в зоне обнаружения (используем меньшую дистанцию для NPC)
+                if distance <= self.detection_range_npc and distance < closest_distance:
                     closest_enemy = npc
                     closest_distance = distance
 
-        # Если нашли врага, переходим в боевой режим
+        # Если нашли врага, проверяем лимит преследователей
         if closest_enemy:
-            self.target_enemy = closest_enemy
-            self.state = "combat"
-            self.pursuit_counter = 0  # Сбрасываем счетчик преследования
+            # Считаем сколько NPC уже преследуют эту цель
+            pursuers_count = 0
+            if all_npcs:
+                for npc in all_npcs:
+                    if (npc.is_alive and npc is not self and
+                        hasattr(npc, 'target_enemy') and npc.target_enemy is closest_enemy and
+                        hasattr(npc, 'state') and npc.state == "combat"):
+                        pursuers_count += 1
+
+            # Ограничиваем до 2 преследующих
+            if pursuers_count < 2:
+                self.target_enemy = closest_enemy
+                self.state = "combat"
+                self.pursuit_counter = 0  # Сбрасываем счетчик преследования
+            # Если уже есть 2 преследователя, остаемся на патруле
         elif self.state == "combat":
             # Если враг исчез, возвращаемся к патрулю
             self.target_enemy = None
@@ -445,19 +467,14 @@ class Undead(NPC):
                 # Не атакуем игрока напрямую, ждем открытия интерфейса боя
                 return
 
-            # Атакуем только NPC
-            attack_result = self.attack(self.target_enemy)
+            # Атакуем только NPC (упрощенный бой за один ход)
+            enemy_killed = self._simplified_npc_combat(self.target_enemy)
 
-            if attack_result['dodged']:
-                print(f"{self.target_enemy.name} увернулся от атаки {self.name}!")
-            elif attack_result['hit']:
-                crit_msg = " КРИТИЧЕСКИЙ УДАР!" if attack_result['critical'] else ""
-                print(f"{self.name} атакует {self.target_enemy.name} и наносит {attack_result['damage']} урона!{crit_msg}")
-                if not self.target_enemy.is_alive:
-                    print(f"{self.target_enemy.name} повержен!")
-                    self.target_enemy = None
-                    self.state = "patrol"
-                    self.pursuit_counter = 0
+            if enemy_killed:
+                print(f"{self.name} победил {self.target_enemy.name} в быстром бою!")
+                self.target_enemy = None
+                self.state = "patrol"
+                self.pursuit_counter = 0
         else:
             # Двигаемся к цели и увеличиваем счетчик преследования
             dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=30)

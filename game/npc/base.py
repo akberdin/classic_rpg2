@@ -207,3 +207,31 @@ class NPC(Character):
             return False
 
         return True
+
+    def _simplified_npc_combat(self, enemy):
+        """
+        Упрощенный бой между NPC за один ход
+        Оба NPC обмениваются ударами одновременно
+
+        Args:
+            enemy: Враг для боя
+
+        Returns:
+            bool: True если враг повержен
+        """
+        import random
+
+        # Оба NPC атакуют друг друга одновременно
+        # Атака этого NPC на врага
+        self_attack = self.attack(enemy)
+        enemy_killed = False
+
+        if self_attack['hit'] and not self_attack['dodged']:
+            if not enemy.is_alive:
+                enemy_killed = True
+
+        # Если враг еще жив, он контратакует
+        if not enemy_killed and enemy.is_alive:
+            enemy_attack = enemy.attack(self)
+
+        return enemy_killed
