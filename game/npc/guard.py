@@ -41,6 +41,9 @@ class Guard(NPC):
         self.max_pursuit_steps = 15  # Увеличено до 15 ходов преследования
         self.idle_timer = random.randint(0, 3)  # Рандомная задержка для десинхронизации
 
+        # Состояние по умолчанию для расписания
+        self.default_state = "patrol"
+
     def _adjust_guard_stats(self):
         """Модификация статов для стражника - воин, не маг"""
         # Увеличиваем боевые характеристики
@@ -65,7 +68,7 @@ class Guard(NPC):
         self.patrol_points = points
         self.current_patrol_index = 0
 
-    def update_ai(self, game_map, all_npcs=None, player=None):
+    def update_ai(self, game_map, all_npcs=None, player=None, current_hour=12):
         """
         Обновление AI стражника за 1 час игрового времени
         Стражник делает несколько шагов за час
@@ -74,8 +77,16 @@ class Guard(NPC):
             game_map: Объект карты игры
             all_npcs: Список всех NPC для поиска врагов
             player: Объект игрока (не используется стражниками, но для консистентности API)
+            current_hour: Текущий час суток (0-23)
         """
         if not self.is_alive:
+            return
+
+        # Обновляем расписание (проверка времени активности)
+        self.update_schedule(current_hour, game_map)
+
+        # Если NPC скрыт (в локации), не обновляем AI
+        if self.is_hidden():
             return
 
         # Восстанавливаем выносливость
@@ -95,24 +106,16 @@ class Guard(NPC):
             self._check_for_enemies(all_npcs)
 
         if self.state == "combat":
-            # В боевом режиме проверяем врагов чаще
-            for _ in range(self.steps_per_hour):
-                if not self.consume_stamina():
-                    break
+            # В боевом режиме делаем 1 шаг за час (избегаем телепортации)
+            if self.consume_stamina():
                 self._combat_step(game_map)
-                # Проверяем врагов после каждого шага
+                # Проверяем врагов после шага
                 if all_npcs:
                     self._check_for_enemies(all_npcs)
-                if self.state != "combat":
-                    break
         elif self.state == "patrol":
-            # Делаем несколько шагов за 1 час
-            for _ in range(self.steps_per_hour):
-                if not self.consume_stamina():
-                    break
+            # Делаем 1 шаг за 1 час (избегаем телепортации)
+            if self.consume_stamina():
                 self._patrol_step(game_map)
-                if self.state == "rest":
-                    break
         elif self.state == "rest":
             self._rest()
 

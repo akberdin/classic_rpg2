@@ -46,6 +46,9 @@ class MagePatrol(NPC):
         self.pursuit_counter = 0  # Счетчик ходов преследования
         self.max_pursuit_steps = 6  # Маги не любят долго преследовать
 
+        # Состояние по умолчанию для расписания
+        self.default_state = "patrol"
+
     def _adjust_mage_stats(self):
         """Модификация статов для мага - заклинатель, не воин"""
         # Значительно повышаем магические характеристики
@@ -119,7 +122,7 @@ class MagePatrol(NPC):
             points.append((self.academy_x + dx, self.academy_y + dy))
         return points
 
-    def update_ai(self, game_map, all_npcs=None, player=None):
+    def update_ai(self, game_map, all_npcs=None, player=None, current_hour=12):
         """
         Обновление AI мага за 1 час игрового времени
 
@@ -127,8 +130,16 @@ class MagePatrol(NPC):
             game_map: Объект карты игры
             all_npcs: Список всех NPC для поиска врагов
             player: Объект игрока
+            current_hour: Текущий час суток (0-23)
         """
         if not self.is_alive:
+            return
+
+        # Обновляем расписание (проверка времени активности)
+        self.update_schedule(current_hour, game_map)
+
+        # Если NPC скрыт (в локации), не обновляем AI
+        if self.is_hidden():
             return
 
         # Восстанавливаем выносливость и ману
@@ -145,14 +156,12 @@ class MagePatrol(NPC):
             self._check_for_enemies(all_npcs, player)
 
         if self.state == "combat":
-            self._combat_step(game_map)
+            if self.consume_stamina():
+                self._combat_step(game_map)
         elif self.state == "patrol":
-            for _ in range(self.steps_per_hour):
-                if not self.consume_stamina():
-                    break
+            # Делаем 1 шаг за 1 час (избегаем телепортации)
+            if self.consume_stamina():
                 self._patrol_step(game_map)
-                if self.state == "rest":
-                    break
         elif self.state == "rest":
             self._rest()
 

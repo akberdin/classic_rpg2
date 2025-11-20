@@ -9,6 +9,19 @@ from game.constants import (
 )
 
 
+# Импорт расписаний будет выполнен позже, чтобы избежать циклических зависимостей
+_schedule_module = None
+
+
+def get_schedule_module():
+    """Ленивый импорт модуля расписаний"""
+    global _schedule_module
+    if _schedule_module is None:
+        from game import npc_schedule
+        _schedule_module = npc_schedule
+    return _schedule_module
+
+
 class NPC(Character):
     """Класс NPC (неигровых персонажей)"""
 
@@ -42,6 +55,16 @@ class NPC(Character):
         self.action_delay = random.uniform(0.5, 2.0)  # Случайная задержка между действиями
         self.decision_variance = random.uniform(0.8, 1.2)  # Вариативность принятия решений
 
+        # Система расписаний (инициализируется позже)
+        self.schedule = None
+        self._init_schedule()
+
+    def _init_schedule(self):
+        """Инициализация расписания для NPC"""
+        schedule_module = get_schedule_module()
+        if schedule_module:
+            self.schedule = schedule_module.create_schedule_for_npc(self)
+
     def _generate_initial_equipment(self):
         """Генерация и автоматическая экипировка начального снаряжения"""
         from game.inventory import ItemGenerator
@@ -57,6 +80,26 @@ class NPC(Character):
 
         # Обновляем характеристики после экипировки
         self.update_derived_stats()
+
+    def is_hidden(self):
+        """
+        Проверить, скрыт ли NPC (находится в локации)
+
+        Returns:
+            bool: True если NPC скрыт
+        """
+        return self.schedule and self.schedule.is_hidden
+
+    def update_schedule(self, current_hour, game_map):
+        """
+        Обновить расписание NPC
+
+        Args:
+            current_hour: Текущий час суток (0-23)
+            game_map: Карта игры
+        """
+        if self.schedule:
+            self.schedule.update(current_hour, game_map)
 
     def _find_next_step(self, target_x, target_y, game_map, max_search_distance=50):
         """

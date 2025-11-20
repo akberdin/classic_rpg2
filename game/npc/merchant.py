@@ -39,6 +39,9 @@ class Merchant(NPC):
         self.threat = None  # Текущая угроза от которой убегаем
         self.detection_range = 8  # Дальность обнаружения угроз
 
+        # Состояние по умолчанию для расписания
+        self.default_state = "travel"
+
         # Торговая система
         self._generate_merchant_goods()
 
@@ -193,15 +196,23 @@ class Merchant(NPC):
         if settlements and not self.target_location:
             self._choose_new_destination()
 
-    def update_ai(self, game_map, all_npcs=None):
+    def update_ai(self, game_map, all_npcs=None, current_hour=12):
         """
         Обновление AI торговца за 1 час игрового времени
 
         Args:
             game_map: Объект карты игры
             all_npcs: Список всех NPC для обнаружения угроз
+            current_hour: Текущий час суток (0-23)
         """
         if not self.is_alive:
+            return
+
+        # Обновляем расписание (проверка времени активности)
+        self.update_schedule(current_hour, game_map)
+
+        # Если NPC скрыт (в локации), не обновляем AI
+        if self.is_hidden():
             return
 
         # Восстанавливаем выносливость
@@ -218,12 +229,9 @@ class Merchant(NPC):
         if self.state == "flee":
             self._flee_step(game_map)
         elif self.state == "travel":
-            # Делаем несколько шагов за 1 час
-            for _ in range(self.steps_per_hour):
-                if not self.consume_stamina():
-                    break
-                if not self._travel_step(game_map):
-                    break
+            # Делаем 1 шаг за 1 час (избегаем телепортации)
+            if self.consume_stamina():
+                self._travel_step(game_map)
         elif self.state == "rest":
             self._rest()
 
@@ -492,8 +500,15 @@ class MagicMerchant(Merchant):
             jewelry = ItemGenerator.generate_jewelry(self.level + 2, quality=quality)
             self.inventory.add_item(jewelry, 1)
 
-    def update_ai(self, game_map, all_npcs=None):
+    def update_ai(self, game_map, all_npcs=None, current_hour=12):
         """Магический торговец не перемещается"""
+        # Обновляем расписание
+        self.update_schedule(current_hour, game_map)
+
+        # Если NPC скрыт (в локации), не обновляем AI
+        if self.is_hidden():
+            return
+
         # Восстанавливаем энергию стоя на месте
         if self.stamina < self.max_stamina:
             self.stamina = min(self.max_stamina, self.stamina + 2)
