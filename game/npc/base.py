@@ -43,6 +43,11 @@ class NPC(Character):
         self._temp_player = None
         self._temp_game_map = None
 
+        # Рандомная задержка для десинхронизации поведения NPC
+        import random
+        self.action_delay = random.uniform(0.5, 2.0)  # Случайная задержка между действиями
+        self.decision_variance = random.uniform(0.8, 1.2)  # Вариативность принятия решений
+
     def _generate_initial_equipment(self):
         """Генерация и автоматическая экипировка начального снаряжения"""
         from game.inventory import ItemGenerator
@@ -210,8 +215,8 @@ class NPC(Character):
 
     def _simplified_npc_combat(self, enemy):
         """
-        Упрощенный бой между NPC за один ход
-        Оба NPC обмениваются ударами одновременно
+        Упрощенный бой между NPC - моментальный расчет победителя
+        Рассчитывает исход боя мгновенно на основе характеристик
 
         Args:
             enemy: Враг для боя
@@ -221,17 +226,42 @@ class NPC(Character):
         """
         import random
 
-        # Оба NPC атакуют друг друга одновременно
-        # Атака этого NPC на врага
-        self_attack = self.attack(enemy)
-        enemy_killed = False
+        # Моментальный расчет боя на основе характеристик
+        # Рассчитываем "силу" каждого бойца
+        self_power = (self.attack_power * 0.4 +
+                     self.defense * 0.2 +
+                     self.health * 0.3 +
+                     self.dexterity * 0.1)
 
-        if self_attack['hit'] and not self_attack['dodged']:
-            if not enemy.is_alive:
-                enemy_killed = True
+        enemy_power = (enemy.attack_power * 0.4 +
+                      enemy.defense * 0.2 +
+                      enemy.health * 0.3 +
+                      enemy.dexterity * 0.1)
 
-        # Если враг еще жив, он контратакует
-        if not enemy_killed and enemy.is_alive:
-            enemy_attack = enemy.attack(self)
+        # Добавляем случайность (±20%)
+        self_power *= random.uniform(0.8, 1.2)
+        enemy_power *= random.uniform(0.8, 1.2)
 
-        return enemy_killed
+        # Определяем победителя и наносим урон
+        if self_power > enemy_power:
+            # Этот NPC побеждает
+            power_ratio = self_power / enemy_power
+            damage = int(self.attack_power * power_ratio * random.uniform(0.8, 1.5))
+            enemy.take_damage(damage)
+
+            # Этот NPC тоже получает урон, но меньше
+            counter_damage = int(enemy.attack_power * random.uniform(0.3, 0.7))
+            self.take_damage(counter_damage)
+
+            return not enemy.is_alive
+        else:
+            # Враг побеждает
+            power_ratio = enemy_power / self_power
+            damage = int(enemy.attack_power * power_ratio * random.uniform(0.8, 1.5))
+            self.take_damage(damage)
+
+            # Враг тоже получает урон, но меньше
+            counter_damage = int(self.attack_power * random.uniform(0.3, 0.7))
+            enemy.take_damage(counter_damage)
+
+            return False
