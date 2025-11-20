@@ -13,7 +13,7 @@ from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
 from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow
 from game.optimization import PerformanceOptimizer, RenderCache
-from game.quests import QuestManager, AchievementManager, create_starter_quests, QuestGenerator, create_unique_quests
+from game.quests import QuestManager, AchievementManager, create_starter_quests, QuestGenerator, create_unique_quests, get_unique_quest_for_location
 from game.save_system import SaveSystem
 from game.constants import (
     FPS, TILE_SIZE, COLORS, WINDOW_WIDTH, WINDOW_HEIGHT,
@@ -392,6 +392,12 @@ class Game:
             )
             for quest in quests:
                 self.quest_manager.add_location_quest(location_id, quest)
+
+            # Пробуем добавить уникальный квест для городов, деревень и школы магов
+            unique_quest = get_unique_quest_for_location(location.location_type, location.name)
+            if unique_quest:
+                unique_quest.location_id = location_id
+                self.quest_manager.add_location_quest(location_id, unique_quest)
 
         # Проверяем прогресс всех квестов на сбор ресурсов
         self.quest_manager.check_all_quest_progress(self.player)
