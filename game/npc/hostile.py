@@ -50,6 +50,9 @@ class Bandit(NPC):
         self.max_pursuit_steps = 20  # Увеличено до 20 ходов преследования
         self.idle_timer = random.randint(0, 5)  # Рандомная задержка для десинхронизации
 
+        # Состояние по умолчанию для расписания
+        self.default_state = "patrol"
+
     def _adjust_bandit_stats(self):
         """Модификация статов для бандита - агрессивный боец"""
         # Повышаем боевые характеристики
@@ -63,7 +66,7 @@ class Bandit(NPC):
         # Обновляем производные статы
         self.update_derived_stats()
 
-    def update_ai(self, game_map, all_npcs=None, player=None):
+    def update_ai(self, game_map, all_npcs=None, player=None, current_hour=12):
         """
         Обновление AI бандита за 1 час игрового времени
 
@@ -71,8 +74,16 @@ class Bandit(NPC):
             game_map: Объект карты игры
             all_npcs: Список всех NPC для поиска врагов
             player: Объект игрока (бандиты агрессивны к игроку)
+            current_hour: Текущий час суток (0-23)
         """
         if not self.is_alive:
+            return
+
+        # Обновляем расписание (проверка времени активности)
+        self.update_schedule(current_hour, game_map)
+
+        # Если NPC скрыт (в локации), не обновляем AI
+        if self.is_hidden():
             return
 
         # Восстанавливаем выносливость
@@ -91,23 +102,15 @@ class Bandit(NPC):
         self._check_for_enemies(all_npcs, player)
 
         if self.state == "combat":
-            # В боевом режиме делаем больше шагов для агрессивности
-            for _ in range(self.steps_per_hour + 1):  # +1 шаг в бою
-                if not self.consume_stamina():
-                    break
+            # В боевом режиме делаем 1 шаг за час (избегаем телепортации)
+            if self.consume_stamina():
                 self._combat_step(game_map)
-                # Проверяем врагов после каждого шага
+                # Проверяем врагов после шага
                 self._check_for_enemies(all_npcs, player)
-                if self.state != "combat":
-                    break
         elif self.state == "patrol":
-            # Делаем несколько шагов за 1 час
-            for _ in range(self.steps_per_hour):
-                if not self.consume_stamina():
-                    break
+            # Делаем 1 шаг за 1 час (избегаем телепортации)
+            if self.consume_stamina():
                 self._patrol_step(game_map)
-                if self.state == "rest":
-                    break
         elif self.state == "rest":
             self._rest()
 
@@ -332,7 +335,7 @@ class Undead(NPC):
 
         self.rest_counter = 0
         self.rest_duration = random.randint(2, 3)  # Отдых 2-3 часа
-        self.steps_per_hour = 2  # Увеличено с 1 до 2 - нежить быстрее передвигается
+        self.steps_per_hour = 1  # 1 шаг за час (избегаем телепортации)
         self.target_enemy = None  # Текущая цель для атаки
         self.detection_range_player = 18  # Увеличена дальность обнаружения игрока - нежить очень чуткая
         self.detection_range_npc = 10  # Увеличена дальность обнаружения других NPC
@@ -341,7 +344,10 @@ class Undead(NPC):
         self.max_pursuit_steps = 25  # Увеличено до 25 - нежить упорно преследует
         self.idle_timer = random.randint(0, 5)  # Рандомная задержка для десинхронизации
 
-    def update_ai(self, game_map, all_npcs=None, player=None):
+        # Состояние по умолчанию для расписания
+        self.default_state = "patrol"
+
+    def update_ai(self, game_map, all_npcs=None, player=None, current_hour=12):
         """
         Обновление AI нежити за 1 час игрового времени
         АКТИВИРОВАНА система патруля и агрессии
@@ -350,8 +356,16 @@ class Undead(NPC):
             game_map: Объект карты игры
             all_npcs: Список всех NPC для обнаружения врагов
             player: Объект игрока (нежита также агрессивна к игроку)
+            current_hour: Текущий час суток (0-23)
         """
         if not self.is_alive:
+            return
+
+        # Обновляем расписание (проверка времени активности)
+        self.update_schedule(current_hour, game_map)
+
+        # Если NPC скрыт (в локации), не обновляем AI
+        if self.is_hidden():
             return
 
         # Восстанавливаем выносливость
@@ -370,23 +384,15 @@ class Undead(NPC):
         self._check_for_enemies(all_npcs, player)
 
         if self.state == "combat":
-            # В боевом режиме делаем еще больше шагов (нежить очень агрессивна)
-            for _ in range(self.steps_per_hour + 1):  # +1 шаг в бою
-                if not self.consume_stamina():
-                    break
+            # В боевом режиме делаем 1 шаг за час (избегаем телепортации)
+            if self.consume_stamina():
                 self._combat_step(game_map)
-                # Проверяем врагов после каждого шага
+                # Проверяем врагов после шага
                 self._check_for_enemies(all_npcs, player)
-                if self.state != "combat":
-                    break
         elif self.state == "patrol":
-            # Делаем несколько шагов за 1 час
-            for _ in range(self.steps_per_hour):
-                if not self.consume_stamina():
-                    break
+            # Делаем 1 шаг за 1 час (избегаем телепортации)
+            if self.consume_stamina():
                 self._patrol_step(game_map)
-                if self.state == "rest":
-                    break
         elif self.state == "rest":
             self._rest()
 

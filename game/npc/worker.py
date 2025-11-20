@@ -41,6 +41,9 @@ class Miner(NPC):
         self.detection_range = 8  # Дальность обнаружения угроз
         self.wander_target = None  # Целевая точка для блуждания
 
+        # Состояние по умолчанию для расписания
+        self.default_state = "work"
+
     def _adjust_miner_stats(self):
         """Модификация статов для шахтера - физический труженик"""
         # Повышаем физические характеристики
@@ -57,15 +60,23 @@ class Miner(NPC):
         # Обновляем производные статы
         self.update_derived_stats()
 
-    def update_ai(self, game_map, all_npcs=None):
+    def update_ai(self, game_map, all_npcs=None, current_hour=12):
         """
         Обновление AI шахтера за 1 час игрового времени
 
         Args:
             game_map: Объект карты игры
             all_npcs: Список всех NPC для обнаружения угроз
+            current_hour: Текущий час суток (0-23)
         """
         if not self.is_alive:
+            return
+
+        # Обновляем расписание (проверка времени активности и посещение локаций)
+        self.update_schedule(current_hour, game_map)
+
+        # Если NPC скрыт (в локации), не обновляем AI
+        if self.is_hidden():
             return
 
         # Восстанавливаем выносливость
@@ -82,13 +93,9 @@ class Miner(NPC):
         if self.state == "flee":
             self._flee_step(game_map)
         elif self.state == "work":
-            # Делаем несколько шагов за 1 час
-            for _ in range(self.steps_per_hour):
-                if not self.consume_stamina():
-                    break
+            # Делаем 1 шаг за 1 час (избегаем телепортации)
+            if self.consume_stamina():
                 self._work_step(game_map)
-                if self.state == "rest":
-                    break
         elif self.state == "rest":
             self._rest()
 

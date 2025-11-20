@@ -67,6 +67,46 @@
     }
   },
 
+  "schedules": {
+    "_comment": "Расписания активности NPC (часы в сутках 0-23)",
+    "guard": {
+      "active_hours_start": 0,
+      "active_hours_end": 12,
+      "_note": "Стражники работают в смены по 12 часов"
+    },
+    "merchant": {
+      "active_hours_start": 7,
+      "active_hours_end": 21,
+      "_note": "Торговцы активны днем"
+    },
+    "bandit": {
+      "active_hours_start": 18,
+      "active_hours_end": 6,
+      "_note": "Бандиты активны ночью и вечером"
+    },
+    "miner": {
+      "active_hours_start": 6,
+      "active_hours_end": 20,
+      "visit_mine_chance": 0.15,
+      "visit_town_chance": 0.05,
+      "mine_visit_duration_min": 2,
+      "mine_visit_duration_max": 4,
+      "town_visit_duration_min": 1,
+      "town_visit_duration_max": 3,
+      "_note": "Шахтеры работают с утра до вечера, посещают шахты и города"
+    },
+    "undead": {
+      "active_hours_start": 20,
+      "active_hours_end": 6,
+      "_note": "Нежить активна только ночью"
+    },
+    "mage": {
+      "active_hours_start": 8,
+      "active_hours_end": 22,
+      "_note": "Маги работают днем"
+    }
+  },
+
   "relationships": {
     "_comment": "Матрица отношений: hostile, unfriendly, neutral, friendly, allied",
     "hostile": "hostile",
