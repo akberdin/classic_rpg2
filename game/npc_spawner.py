@@ -50,7 +50,7 @@ class NPCSpawner:
 
     def spawn_guards(self):
         """
-        Создание стражников в городах
+        Создание стражников в городах и деревнях
 
         Returns:
             list: Список стражников
@@ -58,22 +58,38 @@ class NPCSpawner:
         guards = []
         # Находим все города на карте
         cities = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_CITY]
+        villages = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_VILLAGE]
 
+        # Спавн стражников в городах (8 стражников 3-4 ранга)
         for city in cities:
-            # Создаем 6-10 стражников возле каждого города
-            num_guards = random.randint(6, 10)
+            num_guards = 8
 
             for i in range(num_guards):
-                # Находим позицию рядом с городом
                 guard_pos = self._find_npc_position(city.x, city.y)
                 if guard_pos:
                     gx, gy = guard_pos
-                    # Уровень стражников от 5 до 20
-                    guard_level = random.randint(5, 20)
+                    # Уровень стражников 3-4 ранга (15-40 уровень)
+                    guard_level = random.randint(15, 40)
                     guard = Guard(f"Стражник {city.name}", gx, gy, guard_level)
 
-                    # Создаем маршрут патрулирования вокруг города
                     patrol_route = self._create_patrol_route(gx, gy, radius=5)
+                    guard.set_patrol_route(patrol_route)
+
+                    guards.append(guard)
+
+        # Спавн стражников в деревнях (4 стражника 1-2 ранга)
+        for village in villages:
+            num_guards = 4
+
+            for i in range(num_guards):
+                guard_pos = self._find_npc_position(village.x, village.y)
+                if guard_pos:
+                    gx, gy = guard_pos
+                    # Уровень стражников 1-2 ранга (1-15 уровень)
+                    guard_level = random.randint(1, 15)
+                    guard = Guard(f"Стражник {village.name}", gx, gy, guard_level)
+
+                    patrol_route = self._create_patrol_route(gx, gy, radius=4)
                     guard.set_patrol_route(patrol_route)
 
                     guards.append(guard)
@@ -215,7 +231,7 @@ class NPCSpawner:
 
     def spawn_bandits(self):
         """
-        Создание бандитов в лагерях
+        Создание бандитов в лагерях с динамическими уровнями
 
         Returns:
             list: Список бандитов
@@ -229,6 +245,10 @@ class NPCSpawner:
             "Налетчик", "Лихой человек", "Бандюган", "Воришка"
         ]
 
+        elite_names = [
+            "Главарь банды", "Атаман разбойников", "Вожак головорезов"
+        ]
+
         for camp in bandit_camps:
             # Создаем 7-12 бандитов возле каждого лагеря
             num_bandits = random.randint(7, 12)
@@ -238,14 +258,23 @@ class NPCSpawner:
                 bandit_pos = self._find_npc_position(camp.x, camp.y)
                 if bandit_pos:
                     bx, by = bandit_pos
-                    # Уровень бандитов от 3 до 15
-                    bandit_level = random.randint(3, 15)
+                    # Уровень бандитов от 1 до 10 (относительно начального уровня игрока)
+                    bandit_level = random.randint(1, 10)
                     bandit_name = f"{random.choice(bandit_names)} {camp.name}"
 
                     # Создаем бандита с привязкой к лагерю
                     bandit = Bandit(bandit_name, bx, by, bandit_level, camp.x, camp.y)
 
                     bandits.append(bandit)
+
+            # Добавляем 1 элитного бандита 30-40 уровня в каждый лагерь
+            elite_pos = self._find_npc_position(camp.x, camp.y)
+            if elite_pos:
+                ex, ey = elite_pos
+                elite_level = random.randint(30, 40)
+                elite_name = f"{random.choice(elite_names)} {camp.name}"
+                elite_bandit = Bandit(elite_name, ex, ey, elite_level, camp.x, camp.y)
+                bandits.append(elite_bandit)
 
         return bandits
 
@@ -286,7 +315,7 @@ class NPCSpawner:
 
     def spawn_undead(self):
         """
-        Создание нежити в руинах
+        Создание нежити в руинах с динамическими уровнями
 
         Returns:
             list: Список нежити
@@ -298,6 +327,10 @@ class NPCSpawner:
         undead_names = [
             "Зомби", "Скелет", "Мертвец", "Призрак",
             "Нежить", "Упырь", "Костяк", "Тень"
+        ]
+
+        elite_names = [
+            "Древний лич", "Повелитель мёртвых", "Призрачный страж"
         ]
 
         for ruin in ruins:
@@ -321,14 +354,35 @@ class NPCSpawner:
 
                 if undead_pos:
                     ux, uy = undead_pos
-                    # 4 ранга нежити (уровни распределяем от 1 до 40)
-                    undead_level = random.randint(1, 40)
+                    # Уровень нежити от 1 до 10 (относительно начального уровня игрока)
+                    undead_level = random.randint(1, 10)
                     undead_name = f"{random.choice(undead_names)} {ruin.name}"
 
                     # Создаем нежить с привязкой к руинам
                     undead = Undead(undead_name, ux, uy, undead_level, ruin.x, ruin.y)
 
                     undead_list.append(undead)
+
+            # Добавляем 1 элитную нежить 30-40 уровня в каждые руины
+            elite_pos = None
+            for attempt in range(20):
+                offset_x = random.randint(-5, 5)
+                offset_y = random.randint(-5, 5)
+                ex = ruin.x + offset_x
+                ey = ruin.y + offset_y
+
+                if self.game_map.is_valid_position(ex, ey):
+                    tile = self.game_map.get_tile(ex, ey)
+                    if tile.is_passable():
+                        elite_pos = (ex, ey)
+                        break
+
+            if elite_pos:
+                ex, ey = elite_pos
+                elite_level = random.randint(30, 40)
+                elite_name = f"{random.choice(elite_names)} {ruin.name}"
+                elite_undead = Undead(elite_name, ex, ey, elite_level, ruin.x, ruin.y)
+                undead_list.append(elite_undead)
 
         return undead_list
 

@@ -781,6 +781,74 @@ class ItemGenerator:
         return random.choices(qualities, weights=weights)[0]
 
     @staticmethod
+    def generate_quality_with_luck(luck=1, base_quality_weights=None):
+        """
+        Генерация качества предмета с учётом удачи игрока.
+        1 очко удачи добавляет 1% к шансу получения лучшего качества.
+
+        Args:
+            luck: Значение удачи игрока
+            base_quality_weights: Словарь весов для каждого качества
+
+        Returns:
+            ItemQuality
+        """
+        if base_quality_weights is None:
+            # Стандартные веса
+            base_quality_weights = {
+                ItemQuality.POOR: 0.05,
+                ItemQuality.COMMON: 0.50,
+                ItemQuality.UNCOMMON: 0.25,
+                ItemQuality.RARE: 0.12,
+                ItemQuality.EPIC: 0.06,
+                ItemQuality.LEGENDARY: 0.02,
+                ItemQuality.ARTIFACT: 0.001
+            }
+
+        # Копируем веса для модификации
+        modified_weights = base_quality_weights.copy()
+
+        # Бонус от удачи: каждое очко удачи добавляет 1% к шансу лучшего качества
+        luck_bonus = min(luck * 0.01, 0.50)  # Максимум 50% бонуса
+
+        # Перераспределяем веса: уменьшаем POOR и COMMON, увеличиваем остальные
+        if luck_bonus > 0:
+            # Уменьшаем веса низкого качества
+            poor_reduction = min(modified_weights[ItemQuality.POOR], luck_bonus * 0.1)
+            common_reduction = min(modified_weights[ItemQuality.COMMON], luck_bonus * 0.5)
+
+            modified_weights[ItemQuality.POOR] = max(0.01, modified_weights[ItemQuality.POOR] - poor_reduction)
+            modified_weights[ItemQuality.COMMON] = max(0.20, modified_weights[ItemQuality.COMMON] - common_reduction)
+
+            # Добавляем освободившиеся веса к более высокому качеству
+            bonus_to_distribute = poor_reduction + common_reduction
+            modified_weights[ItemQuality.UNCOMMON] += bonus_to_distribute * 0.35
+            modified_weights[ItemQuality.RARE] += bonus_to_distribute * 0.30
+            modified_weights[ItemQuality.EPIC] += bonus_to_distribute * 0.20
+            modified_weights[ItemQuality.LEGENDARY] += bonus_to_distribute * 0.10
+            modified_weights[ItemQuality.ARTIFACT] += bonus_to_distribute * 0.05
+
+        qualities = list(modified_weights.keys())
+        weights = list(modified_weights.values())
+
+        return random.choices(qualities, weights=weights)[0]
+
+    @staticmethod
+    def check_extra_item_drop(luck=1):
+        """
+        Проверить, получит ли игрок дополнительный предмет.
+        1 очко удачи добавляет 1% к шансу.
+
+        Args:
+            luck: Значение удачи игрока
+
+        Returns:
+            bool: True если дополнительный предмет должен выпасть
+        """
+        extra_chance = min(luck * 1, 30)  # Максимум 30% шанс
+        return random.randint(1, 100) <= extra_chance
+
+    @staticmethod
     def generate_quality_for_shop():
         """
         Генерация качества предмета для магазина (ограничено до RARE)
@@ -1010,13 +1078,14 @@ class ItemGenerator:
         return JewelryItem(name, slot, value, quality, stats_bonus)
 
     @staticmethod
-    def generate_loot_for_location(location_type, level=1):
+    def generate_loot_for_location(location_type, level=1, luck=1):
         """
-        Генерация лута для конкретной локации
+        Генерация лута для конкретной локации с учётом удачи
 
         Args:
             location_type: Тип локации
             level: Уровень локации (влияет на качество лута)
+            luck: Удача игрока (влияет на качество и шанс доп. предметов)
 
         Returns:
             list: Список (item, quantity)
@@ -1026,49 +1095,89 @@ class ItemGenerator:
         from game.constants import LOCATION_MINE, LOCATION_RUINS, LOCATION_BANDIT_CAMP
 
         if location_type == LOCATION_MINE:
-            # Руда из шахт
+            # Руда из шахт - удача влияет на тип руды
             ores = ["copper_ore", "iron_ore", "silver_ore", "gold_ore", "mithril_ore"]
-            weights = [0.5, 0.3, 0.12, 0.06, 0.02]
+            # Модифицируем веса с учётом удачи
+            luck_modifier = min(luck * 0.005, 0.15)  # Макс 15% смещение
+            weights = [
+                max(0.35 - luck_modifier, 0.20),  # copper
+                0.30,  # iron
+                0.12 + luck_modifier * 0.5,  # silver
+                0.06 + luck_modifier * 0.3,  # gold
+                0.02 + luck_modifier * 0.2   # mithril
+            ]
             ore_type = random.choices(ores, weights=weights)[0]
             quantity = random.randint(1, 3)
             loot.append((PREDEFINED_ITEMS[ore_type], quantity))
 
+            # Шанс доп. руды от удачи
+            if ItemGenerator.check_extra_item_drop(luck):
+                extra_ore = random.choices(ores, weights=weights)[0]
+                loot.append((PREDEFINED_ITEMS[extra_ore], 1))
+
         elif location_type == LOCATION_RUINS:
             # Артефакты из руин
             artifacts = ["ancient_coin", "artifact_fragment", "magic_crystal", "old_scroll"]
-            weights = [0.5, 0.3, 0.1, 0.1]
+            luck_modifier = min(luck * 0.005, 0.15)
+            weights = [
+                max(0.5 - luck_modifier, 0.30),  # coin
+                0.3,  # fragment
+                0.1 + luck_modifier * 0.6,  # crystal
+                0.1 + luck_modifier * 0.4   # scroll
+            ]
             artifact_type = random.choices(artifacts, weights=weights)[0]
             quantity = random.randint(1, 2)
             loot.append((PREDEFINED_ITEMS[artifact_type], quantity))
 
-            # Шанс найти экипировку
-            if random.random() < 0.4:  # 40% шанс
+            # Шанс найти экипировку (базовый + бонус от удачи)
+            equip_chance = 0.4 + min(luck * 0.01, 0.20)  # Макс +20%
+            if random.random() < equip_chance:
                 item_type = random.choice(['weapon', 'armor', 'jewelry'])
+                quality = ItemGenerator.generate_quality_with_luck(luck)
                 if item_type == 'weapon':
-                    loot.append((ItemGenerator.generate_weapon(level), 1))
+                    loot.append((ItemGenerator.generate_weapon(level, quality=quality), 1))
                 elif item_type == 'armor':
-                    loot.append((ItemGenerator.generate_armor(level), 1))
+                    loot.append((ItemGenerator.generate_armor(level, quality=quality), 1))
                 else:
-                    loot.append((ItemGenerator.generate_jewelry(level), 1))
+                    loot.append((ItemGenerator.generate_jewelry(level, quality=quality), 1))
 
             # Шанс найти зелье
-            if random.random() < 0.3:  # 30% шанс
+            potion_chance = 0.3 + min(luck * 0.005, 0.15)
+            if random.random() < potion_chance:
                 potions = ["minor_health_potion", "health_potion", "minor_mana_potion"]
                 potion_type = random.choice(potions)
                 loot.append((PREDEFINED_ITEMS[potion_type], 1))
 
+            # Дополнительный предмет от удачи
+            if ItemGenerator.check_extra_item_drop(luck):
+                extra_artifact = random.choices(artifacts, weights=weights)[0]
+                loot.append((PREDEFINED_ITEMS[extra_artifact], 1))
+
         elif location_type == LOCATION_BANDIT_CAMP:
             # Бандиты могут иметь разное снаряжение
-            if random.random() < 0.3:  # 30% шанс оружия
-                loot.append((ItemGenerator.generate_weapon(level), 1))
+            weapon_chance = 0.3 + min(luck * 0.01, 0.15)
+            if random.random() < weapon_chance:
+                quality = ItemGenerator.generate_quality_with_luck(luck)
+                loot.append((ItemGenerator.generate_weapon(level, quality=quality), 1))
 
-            if random.random() < 0.2:  # 20% шанс доспехов
-                loot.append((ItemGenerator.generate_armor(level), 1))
+            armor_chance = 0.2 + min(luck * 0.01, 0.15)
+            if random.random() < armor_chance:
+                quality = ItemGenerator.generate_quality_with_luck(luck)
+                loot.append((ItemGenerator.generate_armor(level, quality=quality), 1))
 
-            # Золото
-            gold_amount = random.randint(10, 50) * level
-            # Добавляем золото через специальный объект
+            # Золото (бонус от удачи)
+            luck_gold_bonus = 1 + min(luck * 0.02, 0.50)  # До +50% золота
+            gold_amount = int(random.randint(10, 50) * level * luck_gold_bonus)
             loot.append(('gold', gold_amount))
+
+            # Дополнительный предмет от удачи
+            if ItemGenerator.check_extra_item_drop(luck):
+                quality = ItemGenerator.generate_quality_with_luck(luck)
+                extra_item = random.choice(['weapon', 'armor'])
+                if extra_item == 'weapon':
+                    loot.append((ItemGenerator.generate_weapon(level, quality=quality), 1))
+                else:
+                    loot.append((ItemGenerator.generate_armor(level, quality=quality), 1))
 
         return loot
 

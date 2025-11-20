@@ -242,11 +242,69 @@ class Skill:
         self.max_rank = max_rank
         self.experience = 0
         self.experience_to_next_rank = 100  # Базовое значение для ранга 2
+        self.use_count = 0  # Счётчик использований
 
     @property
     def description(self):
         """Получить описание с учетом текущего ранга"""
         return f"{self.base_description} [Ранг {self.rank}/{self.max_rank}]"
+
+    def get_required_uses_for_rank(self):
+        """Получить требуемое количество использований для следующего ранга"""
+        return 20 * self.rank  # 20, 40, 60, 80 для рангов 2, 3, 4, 5
+
+    def get_required_player_level_for_rank(self):
+        """Получить минимальный уровень игрока для следующего ранга"""
+        return 5 * self.rank  # 5, 10, 15, 20 для рангов 2, 3, 4, 5
+
+    def get_gold_cost_for_rank(self):
+        """Получить стоимость в золоте для повышения ранга"""
+        return 50 * self.rank * self.rank  # 50, 200, 450, 800 для рангов 2, 3, 4, 5
+
+    def can_rank_up(self, player):
+        """
+        Проверить, можно ли повысить ранг умения
+
+        Args:
+            player: Игрок
+
+        Returns:
+            tuple: (bool, str) - можно ли повысить и причина если нет
+        """
+        if self.rank >= self.max_rank:
+            return False, "Достигнут максимальный ранг"
+
+        # Проверка опыта
+        if self.experience < self.experience_to_next_rank:
+            return False, f"Недостаточно опыта умения ({self.experience}/{self.experience_to_next_rank})"
+
+        # Проверка использований
+        required_uses = self.get_required_uses_for_rank()
+        if self.use_count < required_uses:
+            return False, f"Недостаточно использований ({self.use_count}/{required_uses})"
+
+        # Проверка уровня игрока
+        required_level = self.get_required_player_level_for_rank()
+        if player.level < required_level:
+            return False, f"Недостаточный уровень персонажа ({player.level}/{required_level})"
+
+        # Проверка золота
+        gold_cost = self.get_gold_cost_for_rank()
+        if player.inventory.gold < gold_cost:
+            return False, f"Недостаточно золота ({player.inventory.gold}/{gold_cost})"
+
+        return True, ""
+
+    def get_rank_up_requirements(self):
+        """Получить строку с требованиями для повышения ранга"""
+        if self.rank >= self.max_rank:
+            return "Максимальный ранг достигнут"
+
+        return (f"Требования для ранга {self.rank + 1}:\n"
+                f"  Опыт: {self.experience}/{self.experience_to_next_rank}\n"
+                f"  Использований: {self.use_count}/{self.get_required_uses_for_rank()}\n"
+                f"  Уровень персонажа: {self.get_required_player_level_for_rank()}\n"
+                f"  Золото: {self.get_gold_cost_for_rank()}")
 
     def add_experience(self, amount):
         """
@@ -256,21 +314,47 @@ class Skill:
             amount: Количество опыта
 
         Returns:
-            bool: True если произошло повышение ранга
+            bool: True если достигнуто достаточно опыта (но ранг не повышается автоматически)
         """
         if self.rank >= self.max_rank:
             return False
 
         self.experience += amount
 
-        if self.experience >= self.experience_to_next_rank:
-            self.rank_up()
-            return True
+        # Теперь повышение ранга НЕ происходит автоматически
+        # Нужно явно вызвать try_rank_up с проверкой всех условий
+        return self.experience >= self.experience_to_next_rank
 
-        return False
+    def try_rank_up(self, player):
+        """
+        Попытаться повысить ранг умения с проверкой всех условий
+
+        Args:
+            player: Игрок
+
+        Returns:
+            tuple: (bool, str) - успех и сообщение
+        """
+        can_up, reason = self.can_rank_up(player)
+        if not can_up:
+            return False, reason
+
+        # Списываем золото
+        gold_cost = self.get_gold_cost_for_rank()
+        player.inventory.gold -= gold_cost
+
+        # Повышаем ранг
+        self.experience -= self.experience_to_next_rank
+        self.rank += 1
+        self.use_count = 0  # Сбрасываем счётчик использований
+
+        # Увеличиваем требуемый опыт для следующего ранга
+        self.experience_to_next_rank = int(self.experience_to_next_rank * 1.5)
+
+        return True, f"Умение '{self.name}' повышено до ранга {self.rank}! Потрачено {gold_cost} золота."
 
     def rank_up(self):
-        """Повысить ранг умения"""
+        """Устаревший метод - используйте try_rank_up с проверкой условий"""
         if self.rank >= self.max_rank:
             return
 
@@ -324,6 +408,9 @@ class Skill:
 
         # Добавляем опыт за использование
         self.add_experience(10)
+
+        # Увеличиваем счётчик использований для системы рангов
+        self.use_count += 1
 
         return {
             'success': True,
