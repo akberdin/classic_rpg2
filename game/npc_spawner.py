@@ -99,6 +99,7 @@ class NPCSpawner:
     def spawn_merchants(self):
         """
         Создание торговцев, курсирующих между населенными пунктами
+        Распределение по рангам: 15-1 ранга, 10-2 ранга, 5-3 ранга, 3-4 ранга
 
         Returns:
             list: Список торговцев
@@ -112,33 +113,81 @@ class NPCSpawner:
             # Нужно как минимум 2 населенных пункта для торговцев
             return merchants
 
-        # Создаем 10-15 торговцев
-        num_merchants = random.randint(10, 15)
-
-        merchant_names = [
+        # Имена торговцев с приставками по рангу
+        merchant_names_rank1 = [
             "Торговец Иван", "Купец Петр", "Торговка Мария",
-            "Купец Василий", "Торговец Николай", "Купчиха Анна",
-            "Странствующий торговец", "Заезжий купец"
+            "Торговец Николай", "Купчиха Анна", "Странствующий торговец"
+        ]
+        merchant_names_rank2 = [
+            "Купец Василий", "Торговка Елена", "Купчиха Ольга",
+            "Опытный торговец", "Купец Дмитрий", "Торговец Сергей"
+        ]
+        merchant_names_rank3 = [
+            "Богатый купец Михаил", "Именитая купчиха Екатерина",
+            "Зажиточный торговец", "Купец Александр", "Торговка Наталья"
+        ]
+        merchant_names_rank4 = [
+            "Главный купец", "Торговый магнат", "Знатный купец Борис"
         ]
 
-        for i in range(num_merchants):
-            # Выбираем случайный стартовый населенный пункт
+        # Создаем торговцев по рангам
+        # Ранг 1: 15 торговцев (уровень 1-10)
+        for i in range(15):
             start_settlement = random.choice(settlements)
-
-            # Находим позицию рядом с населенным пунктом
             merchant_pos = self._find_npc_position(start_settlement.x, start_settlement.y)
 
             if merchant_pos:
                 mx, my = merchant_pos
-                # Уровень торговцев от 2 до 8
-                merchant_level = random.randint(2, 8)
-                merchant_name = random.choice(merchant_names)
+                merchant_level = random.randint(1, 10)
+                merchant_name = random.choice(merchant_names_rank1)
 
                 merchant = Merchant(merchant_name, mx, my, merchant_level)
                 merchant.set_settlements(settlements)
-
                 merchants.append(merchant)
 
+        # Ранг 2: 10 торговцев (уровень 11-20)
+        for i in range(10):
+            start_settlement = random.choice(settlements)
+            merchant_pos = self._find_npc_position(start_settlement.x, start_settlement.y)
+
+            if merchant_pos:
+                mx, my = merchant_pos
+                merchant_level = random.randint(11, 20)
+                merchant_name = random.choice(merchant_names_rank2)
+
+                merchant = Merchant(merchant_name, mx, my, merchant_level)
+                merchant.set_settlements(settlements)
+                merchants.append(merchant)
+
+        # Ранг 3: 5 торговцев (уровень 21-30)
+        for i in range(5):
+            start_settlement = random.choice(settlements)
+            merchant_pos = self._find_npc_position(start_settlement.x, start_settlement.y)
+
+            if merchant_pos:
+                mx, my = merchant_pos
+                merchant_level = random.randint(21, 30)
+                merchant_name = random.choice(merchant_names_rank3)
+
+                merchant = Merchant(merchant_name, mx, my, merchant_level)
+                merchant.set_settlements(settlements)
+                merchants.append(merchant)
+
+        # Ранг 4: 3 торговца (уровень 31-40)
+        for i in range(3):
+            start_settlement = random.choice(settlements)
+            merchant_pos = self._find_npc_position(start_settlement.x, start_settlement.y)
+
+            if merchant_pos:
+                mx, my = merchant_pos
+                merchant_level = random.randint(31, 40)
+                merchant_name = random.choice(merchant_names_rank4)
+
+                merchant = Merchant(merchant_name, mx, my, merchant_level)
+                merchant.set_settlements(settlements)
+                merchants.append(merchant)
+
+        print(f"Создано торговцев: {len(merchants)} (15 ранга 1, 10 ранга 2, 5 ранга 3, 3 ранга 4)")
         return merchants
 
     def spawn_magic_merchant(self):
@@ -254,8 +303,28 @@ class NPCSpawner:
             num_bandits = random.randint(10, 15)
 
             for i in range(num_bandits):
-                # Находим позицию рядом с лагерем, передаем уже созданных бандитов для проверки коллизий
-                bandit_pos = self._find_npc_position(camp.x, camp.y, bandits)
+                # Находим позицию в радиусе 10 клеток от лагеря (радиус спавна)
+                bandit_pos = None
+                for attempt in range(30):  # Увеличиваем попытки для гарантии спавна
+                    offset_x = random.randint(-10, 10)  # spawn_radius = 10
+                    offset_y = random.randint(-10, 10)
+                    bx = camp.x + offset_x
+                    by = camp.y + offset_y
+
+                    if self.game_map.is_valid_position(bx, by):
+                        tile = self.game_map.get_tile(bx, by)
+                        if tile.is_passable():
+                            # Проверяем, нет ли уже бандита на этой позиции
+                            occupied = False
+                            for existing_bandit in bandits:
+                                if existing_bandit.x == bx and existing_bandit.y == by:
+                                    occupied = True
+                                    break
+
+                            if not occupied:
+                                bandit_pos = (bx, by)
+                                break
+
                 if bandit_pos:
                     bx, by = bandit_pos
                     # Уровни бандитов распределены по рангам:
@@ -343,11 +412,11 @@ class NPCSpawner:
             num_undead = random.randint(8, 12)
 
             for i in range(num_undead):
-                # Находим позицию рядом с руинами (в пределах 7 клеток)
+                # Находим позицию в радиусе 10 клеток от руин (радиус спавна)
                 undead_pos = None
-                for attempt in range(20):
-                    offset_x = random.randint(-7, 7)
-                    offset_y = random.randint(-7, 7)
+                for attempt in range(30):  # Увеличиваем попытки для гарантии спавна
+                    offset_x = random.randint(-10, 10)  # spawn_radius = 10
+                    offset_y = random.randint(-10, 10)
                     ux = ruin.x + offset_x
                     uy = ruin.y + offset_y
 

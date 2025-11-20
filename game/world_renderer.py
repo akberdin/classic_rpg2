@@ -204,9 +204,9 @@ class WorldRenderer:
             if (camera_x <= guard.x < camera_x + tiles_x and
                 camera_y <= guard.y < camera_y + tiles_y):
 
-                # Проверяем, видим ли мы стражника (туман войны)
+                # Проверяем, видим ли мы стражника (туман войны) или активирован чит-мод
                 tile = self.game.game_map.get_tile(guard.x, guard.y)
-                if tile.explored and self.game.fog_of_war.is_visible(guard.x, guard.y, self.game.player.x, self.game.player.y):
+                if tile.explored and (self.game.cheat_mode_active or self.game.fog_of_war.is_visible(guard.x, guard.y, self.game.player.x, self.game.player.y)):
                     if not guard.is_alive:
                         continue
 
@@ -263,9 +263,9 @@ class WorldRenderer:
             if (camera_x <= merchant.x < camera_x + tiles_x and
                 camera_y <= merchant.y < camera_y + tiles_y):
 
-                # Проверяем, видим ли мы торговца (туман войны)
+                # Проверяем, видим ли мы торговца (туман войны) или активирован чит-мод
                 tile = self.game.game_map.get_tile(merchant.x, merchant.y)
-                if tile.explored and self.game.fog_of_war.is_visible(merchant.x, merchant.y, self.game.player.x, self.game.player.y):
+                if tile.explored and (self.game.cheat_mode_active or self.game.fog_of_war.is_visible(merchant.x, merchant.y, self.game.player.x, self.game.player.y)):
                     if not merchant.is_alive:
                         continue
 
@@ -305,9 +305,9 @@ class WorldRenderer:
             if (camera_x <= bandit.x < camera_x + tiles_x and
                 camera_y <= bandit.y < camera_y + tiles_y):
 
-                # Проверяем, видим ли мы бандита (туман войны)
+                # Проверяем, видим ли мы бандита (туман войны) или активирован чит-мод
                 tile = self.game.game_map.get_tile(bandit.x, bandit.y)
-                if tile.explored and self.game.fog_of_war.is_visible(bandit.x, bandit.y, self.game.player.x, self.game.player.y):
+                if tile.explored and (self.game.cheat_mode_active or self.game.fog_of_war.is_visible(bandit.x, bandit.y, self.game.player.x, self.game.player.y)):
                     if not bandit.is_alive:
                         continue
 
@@ -347,9 +347,9 @@ class WorldRenderer:
             if (camera_x <= miner.x < camera_x + tiles_x and
                 camera_y <= miner.y < camera_y + tiles_y):
 
-                # Проверяем, видим ли мы шахтера (туман войны)
+                # Проверяем, видим ли мы шахтера (туман войны) или активирован чит-мод
                 tile = self.game.game_map.get_tile(miner.x, miner.y)
-                if tile.explored and self.game.fog_of_war.is_visible(miner.x, miner.y, self.game.player.x, self.game.player.y):
+                if tile.explored and (self.game.cheat_mode_active or self.game.fog_of_war.is_visible(miner.x, miner.y, self.game.player.x, self.game.player.y)):
                     if not miner.is_alive:
                         continue
 
@@ -387,9 +387,9 @@ class WorldRenderer:
             if (camera_x <= undead_npc.x < camera_x + tiles_x and
                 camera_y <= undead_npc.y < camera_y + tiles_y):
 
-                # Проверяем, видим ли мы нежить (туман войны)
+                # Проверяем, видим ли мы нежить (туман войны) или активирован чит-мод
                 tile = self.game.game_map.get_tile(undead_npc.x, undead_npc.y)
-                if tile.explored and self.game.fog_of_war.is_visible(undead_npc.x, undead_npc.y, self.game.player.x, self.game.player.y):
+                if tile.explored and (self.game.cheat_mode_active or self.game.fog_of_war.is_visible(undead_npc.x, undead_npc.y, self.game.player.x, self.game.player.y)):
                     if not undead_npc.is_alive:
                         continue
 
@@ -451,9 +451,9 @@ class WorldRenderer:
             if (camera_x <= mage.x < camera_x + tiles_x and
                 camera_y <= mage.y < camera_y + tiles_y):
 
-                # Проверяем, видим ли мы мага (туман войны)
+                # Проверяем, видим ли мы мага (туман войны) или активирован чит-мод
                 tile = self.game.game_map.get_tile(mage.x, mage.y)
-                if tile.explored and self.game.fog_of_war.is_visible(mage.x, mage.y, self.game.player.x, self.game.player.y):
+                if tile.explored and (self.game.cheat_mode_active or self.game.fog_of_war.is_visible(mage.x, mage.y, self.game.player.x, self.game.player.y)):
                     if not mage.is_alive:
                         continue
 
@@ -512,8 +512,9 @@ class WorldRenderer:
             if (camera_x <= alchemist.x < camera_x + tiles_x and
                 camera_y <= alchemist.y < camera_y + tiles_y):
 
+                # Проверяем видимость алхимика или активирован чит-мод
                 tile = self.game.game_map.get_tile(alchemist.x, alchemist.y)
-                if tile.explored and self.game.fog_of_war.is_visible(alchemist.x, alchemist.y, self.game.player.x, self.game.player.y):
+                if tile.explored and (self.game.cheat_mode_active or self.game.fog_of_war.is_visible(alchemist.x, alchemist.y, self.game.player.x, self.game.player.y)):
                     if not alchemist.is_alive:
                         continue
 
@@ -546,8 +547,9 @@ class WorldRenderer:
             if (camera_x <= hunter.x < camera_x + tiles_x and
                 camera_y <= hunter.y < camera_y + tiles_y):
 
+                # Проверяем видимость охотника или активирован чит-мод
                 tile = self.game.game_map.get_tile(hunter.x, hunter.y)
-                if tile.explored and self.game.fog_of_war.is_visible(hunter.x, hunter.y, self.game.player.x, self.game.player.y):
+                if tile.explored and (self.game.cheat_mode_active or self.game.fog_of_war.is_visible(hunter.x, hunter.y, self.game.player.x, self.game.player.y)):
                     if not hunter.is_alive:
                         continue
 
@@ -585,8 +587,9 @@ class WorldRenderer:
             if (camera_x <= necromancer.x < camera_x + tiles_x and
                 camera_y <= necromancer.y < camera_y + tiles_y):
 
+                # Проверяем видимость некроманта или активирован чит-мод
                 tile = self.game.game_map.get_tile(necromancer.x, necromancer.y)
-                if tile.explored and self.game.fog_of_war.is_visible(necromancer.x, necromancer.y, self.game.player.x, self.game.player.y):
+                if tile.explored and (self.game.cheat_mode_active or self.game.fog_of_war.is_visible(necromancer.x, necromancer.y, self.game.player.x, self.game.player.y)):
                     if not necromancer.is_alive:
                         continue
 

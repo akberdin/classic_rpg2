@@ -58,90 +58,127 @@ class Merchant(NPC):
         # Обновляем производные статы
         self.update_derived_stats()
 
+    def get_merchant_rank(self):
+        """
+        Получить ранг торговца на основе уровня
+
+        Returns:
+            int: Ранг от 1 до 4
+        """
+        if self.level <= 10:
+            return 1
+        elif self.level <= 20:
+            return 2
+        elif self.level <= 30:
+            return 3
+        else:
+            return 4
+
     def _generate_merchant_goods(self):
-        """Генерация начальных товаров торговца"""
+        """Генерация начальных товаров торговца с учетом ранга"""
         from game.inventory import ItemGenerator, PREDEFINED_ITEMS
 
-        # Увеличиваем инвентарь торговца
-        self.inventory.max_slots = 30
-        self.inventory.max_weight = 200.0
+        # Получаем ранг торговца
+        rank = self.get_merchant_rank()
 
-        # Даем торговцу стартовое золото
-        self.inventory.gold = random.randint(200, 500) + self.level * 50
+        # Увеличиваем инвентарь и золото торговца в зависимости от ранга
+        self.inventory.max_slots = 30 + (rank * 10)  # 40/50/60/70 слотов
+        self.inventory.max_weight = 200.0 + (rank * 50)  # 250/300/350/400 веса
 
-        # Генерируем зелья (5-10 разных видов)
+        # Даем торговцу стартовое золото (больше для высокого ранга)
+        base_gold = 200 + self.level * 50
+        self.inventory.gold = int(base_gold * (1 + rank * 0.5))  # x1.5/x2/x2.5/x3
+
+        # Генерируем зелья (больше для высокого ранга)
         potion_types = [
             "minor_health_potion", "health_potion", "greater_health_potion",
             "minor_mana_potion", "mana_potion",
             "minor_stamina_potion", "stamina_potion"
         ]
-        for potion_type in random.sample(potion_types, random.randint(4, 6)):
-            quantity = random.randint(2, 5)
+        num_potion_types = min(4 + rank, len(potion_types))  # 5/6/7/7 видов
+        for potion_type in random.sample(potion_types, num_potion_types):
+            quantity = random.randint(2 + rank, 5 + rank * 2)  # Больше зелий
             self.inventory.add_item(PREDEFINED_ITEMS[potion_type], quantity)
 
-        # Всегда добавляем инструменты (кирки и топоры)
-        self.inventory.add_item(PREDEFINED_ITEMS["basic_pickaxe"], random.randint(1, 3))
-        self.inventory.add_item(PREDEFINED_ITEMS["basic_axe"], random.randint(1, 3))
+        # Всегда добавляем инструменты (больше для высокого ранга)
+        self.inventory.add_item(PREDEFINED_ITEMS["basic_pickaxe"], random.randint(1 + rank, 3 + rank))
+        self.inventory.add_item(PREDEFINED_ITEMS["basic_axe"], random.randint(1 + rank, 3 + rank))
 
-        # Генерируем оружие (2-4 штуки) с ограничением качества для магазина
-        for _ in range(random.randint(2, 4)):
-            quality = ItemGenerator.generate_quality_for_shop()
+        # Генерируем оружие (больше для высокого ранга) с ограничением качества по рангу
+        num_weapons = random.randint(2 + rank, 4 + rank * 2)  # 3-6/4-8/5-10/6-12
+        for _ in range(num_weapons):
+            quality = ItemGenerator.generate_quality_for_shop(rank)
             weapon = ItemGenerator.generate_weapon(self.level, quality=quality)
             self.inventory.add_item(weapon, 1)
 
-        # Генерируем доспехи (3-6 штук) с ограничением качества для магазина
-        for _ in range(random.randint(3, 6)):
-            quality = ItemGenerator.generate_quality_for_shop()
+        # Генерируем доспехи (больше для высокого ранга) с ограничением качества по рангу
+        num_armors = random.randint(3 + rank, 6 + rank * 2)  # 4-8/5-10/6-12/7-14
+        for _ in range(num_armors):
+            quality = ItemGenerator.generate_quality_for_shop(rank)
             armor = ItemGenerator.generate_armor(self.level, quality=quality)
             self.inventory.add_item(armor, 1)
 
-        # Генерируем украшения (1-3 штуки) с ограничением качества для магазина
-        for _ in range(random.randint(1, 3)):
-            quality = ItemGenerator.generate_quality_for_shop()
+        # Генерируем украшения (больше для высокого ранга) с ограничением качества по рангу
+        num_jewelry = random.randint(1 + rank, 3 + rank * 2)  # 2-5/3-7/4-9/5-11
+        for _ in range(num_jewelry):
+            quality = ItemGenerator.generate_quality_for_shop(rank)
             jewelry = ItemGenerator.generate_jewelry(self.level, quality=quality)
             self.inventory.add_item(jewelry, 1)
 
-        # Генерируем ресурсы (2-4 вида)
+        # Генерируем ресурсы (больше для высокого ранга)
         resource_types = ["copper_ore", "iron_ore", "silver_ore", "ancient_coin", "artifact_fragment"]
-        for resource_type in random.sample(resource_types, random.randint(2, 4)):
-            quantity = random.randint(3, 10)
+        num_resources = min(2 + rank, len(resource_types))  # 3/4/5/5 видов
+        for resource_type in random.sample(resource_types, num_resources):
+            quantity = random.randint(3 + rank * 2, 10 + rank * 5)  # Больше ресурсов
             self.inventory.add_item(PREDEFINED_ITEMS[resource_type], quantity)
 
     def restock_goods(self):
-        """Пополнение товаров торговца (вызывается при отдыхе в городе)"""
+        """Пополнение товаров торговца с учетом ранга (вызывается при отдыхе в городе)"""
         from game.inventory import ItemGenerator, PREDEFINED_ITEMS
 
-        # Добавляем золото
-        self.inventory.gold += random.randint(50, 150)
+        # Получаем ранг торговца
+        rank = self.get_merchant_rank()
 
-        # Добавляем случайные новые товары
-        if random.random() < 0.7:  # 70% шанс добавить зелье
+        # Добавляем золото (больше для высокого ранга)
+        base_gold = random.randint(50, 150)
+        self.inventory.gold += int(base_gold * (1 + rank * 0.3))
+
+        # Добавляем случайные новые товары (шанс увеличивается с рангом)
+        potion_chance = 0.7 + (rank * 0.05)  # 75%/80%/85%/90%
+        if random.random() < potion_chance:
             potion_types = [
                 "minor_health_potion", "health_potion",
                 "minor_mana_potion", "mana_potion",
                 "minor_stamina_potion"
             ]
             potion_type = random.choice(potion_types)
-            quantity = random.randint(1, 3)
+            quantity = random.randint(1 + rank, 3 + rank)
             self.inventory.add_item(PREDEFINED_ITEMS[potion_type], quantity)
 
-        # Пополняем инструменты если их мало (кирки и топоры)
-        if random.random() < 0.6:  # 60% шанс пополнить инструменты
-            self.inventory.add_item(PREDEFINED_ITEMS["basic_pickaxe"], 1)
-            self.inventory.add_item(PREDEFINED_ITEMS["basic_axe"], 1)
+        # Пополняем инструменты (шанс увеличивается с рангом)
+        tool_chance = 0.6 + (rank * 0.05)  # 65%/70%/75%/80%
+        if random.random() < tool_chance:
+            self.inventory.add_item(PREDEFINED_ITEMS["basic_pickaxe"], rank)
+            self.inventory.add_item(PREDEFINED_ITEMS["basic_axe"], rank)
 
-        if random.random() < 0.5:  # 50% шанс добавить оружие
-            quality = ItemGenerator.generate_quality_for_shop()
+        # Шанс добавить оружие (увеличивается с рангом)
+        weapon_chance = 0.5 + (rank * 0.1)  # 60%/70%/80%/90%
+        if random.random() < weapon_chance:
+            quality = ItemGenerator.generate_quality_for_shop(rank)
             weapon = ItemGenerator.generate_weapon(self.level, quality=quality)
             self.inventory.add_item(weapon, 1)
 
-        if random.random() < 0.5:  # 50% шанс добавить доспех
-            quality = ItemGenerator.generate_quality_for_shop()
+        # Шанс добавить доспех (увеличивается с рангом)
+        armor_chance = 0.5 + (rank * 0.1)  # 60%/70%/80%/90%
+        if random.random() < armor_chance:
+            quality = ItemGenerator.generate_quality_for_shop(rank)
             armor = ItemGenerator.generate_armor(self.level, quality=quality)
             self.inventory.add_item(armor, 1)
 
-        if random.random() < 0.3:  # 30% шанс добавить украшение
-            quality = ItemGenerator.generate_quality_for_shop()
+        # Шанс добавить украшение (увеличивается с рангом)
+        jewelry_chance = 0.3 + (rank * 0.1)  # 40%/50%/60%/70%
+        if random.random() < jewelry_chance:
+            quality = ItemGenerator.generate_quality_for_shop(rank)
             jewelry = ItemGenerator.generate_jewelry(self.level, quality=quality)
             self.inventory.add_item(jewelry, 1)
 

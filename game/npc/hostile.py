@@ -30,10 +30,15 @@ class Bandit(NPC):
         self._adjust_bandit_stats()
 
         # AI параметры
-        self.state = "patrol"  # patrol, rest, combat
+        self.state = "patrol"  # patrol, rest, combat, return_to_camp
         self.camp_x = camp_x if camp_x is not None else x  # Позиция лагеря
         self.camp_y = camp_y if camp_y is not None else y
-        self.max_distance_from_camp = BANDIT_CAMP_RADIUS  # Максимальная дистанция от лагеря
+
+        # Радиусы зоны контроля бандитов
+        self.spawn_radius = 10  # Радиус спавна от лагеря
+        self.patrol_radius = 20  # Радиус патрулирования
+        self.max_distance_from_camp = self.patrol_radius  # Максимальная дистанция для патруля
+
         self.rest_counter = 0
         self.rest_duration = random.randint(2, 4)  # Отдых 2-4 часа
         self.steps_per_hour = 1  # Шагов за час
@@ -257,9 +262,9 @@ class Bandit(NPC):
             self.rest_counter = 0
 
     def _choose_wander_target(self):
-        """Выбрать случайную точку для блуждания в пределах территории"""
-        # Выбираем случайную точку в пределах радиуса от лагеря
-        max_offset = min(self.max_distance_from_camp, 15)  # Ограничиваем для производительности
+        """Выбрать случайную точку для блуждания в пределах радиуса патрулирования"""
+        # Выбираем случайную точку в пределах радиуса патрулирования от лагеря
+        max_offset = self.patrol_radius
 
         target_x = self.camp_x + random.randint(-max_offset, max_offset)
         target_y = self.camp_y + random.randint(-max_offset, max_offset)
@@ -292,10 +297,15 @@ class Undead(NPC):
         super().__init__(name, x, y, npc_type=NPC_TYPE_UNDEAD, level=level)
 
         # AI параметры
-        self.state = "patrol"  # patrol, rest, combat
+        self.state = "patrol"  # patrol, rest, combat, return_to_ruins
         self.ruins_x = ruins_x if ruins_x is not None else x  # Центр руин
         self.ruins_y = ruins_y if ruins_y is not None else y
-        self.max_distance_from_ruins = 15  # Увеличено с 7 до 15 - больше радиус патруля
+
+        # Радиусы зоны контроля нежити
+        self.spawn_radius = 10  # Радиус спавна от руин
+        self.patrol_radius = 20  # Радиус патрулирования
+        self.max_distance_from_ruins = self.patrol_radius  # Максимальная дистанция для патруля
+
         self.rest_counter = 0
         self.rest_duration = random.randint(2, 3)  # Отдых 2-3 часа
         self.steps_per_hour = 2  # Увеличено с 1 до 2 - нежить быстрее передвигается
@@ -501,9 +511,9 @@ class Undead(NPC):
             self.rest_counter = 0
 
     def _choose_patrol_target(self):
-        """Выбрать случайную точку для патруля в пределах территории руин"""
-        # Выбираем случайную точку в пределах радиуса от руин
-        max_offset = min(self.max_distance_from_ruins, 7)
+        """Выбрать случайную точку для патруля в пределах радиуса патрулирования руин"""
+        # Выбираем случайную точку в пределах радиуса патрулирования от руин
+        max_offset = self.patrol_radius
 
         target_x = self.ruins_x + random.randint(-max_offset, max_offset)
         target_y = self.ruins_y + random.randint(-max_offset, max_offset)
