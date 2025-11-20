@@ -226,19 +226,14 @@ class MagePatrol(NPC):
 
         # Проверяем, можем ли атаковать
         if self.can_attack(self.target_enemy):
-            # Атакуем
-            attack_result = self.attack(self.target_enemy)
+            # Используем упрощенный бой для NPC vs NPC
+            enemy_killed = self._simplified_npc_combat(self.target_enemy)
 
-            if attack_result['dodged']:
-                print(f"{self.target_enemy.name} увернулся от атаки {self.name}!")
-            elif attack_result['hit']:
-                crit_msg = " КРИТИЧЕСКИЙ УДАР!" if attack_result['critical'] else ""
-                print(f"{self.name} атакует {self.target_enemy.name} и наносит {attack_result['damage']} урона!{crit_msg}")
-                if not self.target_enemy.is_alive:
-                    print(f"{self.target_enemy.name} повержен!")
-                    self.target_enemy = None
-                    self.state = "patrol"
-                    self.pursuit_counter = 0
+            if enemy_killed:
+                print(f"{self.name} победил {self.target_enemy.name} в быстром бою!")
+                self.target_enemy = None
+                self.state = "patrol"
+                self.pursuit_counter = 0
         else:
             # Двигаемся к цели
             dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=20)
