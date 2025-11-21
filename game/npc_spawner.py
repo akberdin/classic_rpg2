@@ -769,7 +769,7 @@ class NPCSpawner:
             # Волки
             num_wolves = random.randint(wolves_min, wolves_max)
             for i in range(num_wolves):
-                pos = self._find_npc_position(spawn_x, spawn_y, animals, radius=15)
+                pos = self._find_npc_position(spawn_x, spawn_y, animals)
                 if pos:
                     wx, wy = pos
                     level = random.randint(level_min, level_max)
@@ -779,7 +779,7 @@ class NPCSpawner:
             # Медведи
             num_bears = random.randint(bears_min, bears_max)
             for i in range(num_bears):
-                pos = self._find_npc_position(spawn_x, spawn_y, animals, radius=15)
+                pos = self._find_npc_position(spawn_x, spawn_y, animals)
                 if pos:
                     bx, by = pos
                     level = random.randint(level_min, level_max)
@@ -789,7 +789,7 @@ class NPCSpawner:
             # Олени
             num_deer = random.randint(deer_min, deer_max)
             for i in range(num_deer):
-                pos = self._find_npc_position(spawn_x, spawn_y, animals, radius=15)
+                pos = self._find_npc_position(spawn_x, spawn_y, animals)
                 if pos:
                     dx, dy = pos
                     level = random.randint(level_min, level_max)
