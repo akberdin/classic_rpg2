@@ -77,7 +77,8 @@ class GameTime:
             # Собираем всех NPC
             all_npcs = (self.game.guards + self.game.merchants + self.game.mages +
                        self.game.bandits + self.game.miners + self.game.undead +
-                       self.game.alchemists + self.game.hunters + self.game.necromancers)
+                       self.game.alchemists + self.game.hunters + self.game.necromancers +
+                       self.game.animals)
 
             # Перестраиваем spatial grid для оптимизации
             self.game.performance_optimizer.rebuild_spatial_grid(all_npcs)
@@ -128,6 +129,11 @@ class GameTime:
             for necromancer in self.game.necromancers:
                 if self.game.performance_optimizer.should_update_ai(necromancer, self.game.player.x, self.game.player.y):
                     necromancer.update_ai(self.game.game_map, all_npcs, self.game.player, current_hour)
+
+            # Животные - волки, медведи, олени
+            for animal in self.game.animals:
+                if self.game.performance_optimizer.should_update_ai(animal, self.game.player.x, self.game.player.y):
+                    animal.update_ai(self.game.game_map, all_npcs, self.game.player, current_hour)
 
             # Обрабатываем респавн NPC
             if hasattr(self.game, 'respawn_manager'):
