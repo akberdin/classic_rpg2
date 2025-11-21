@@ -47,8 +47,8 @@ class Merchant(NPC):
 
     def _adjust_merchant_stats(self):
         """Модификация статов для торговца - не боец, не маг"""
-        # Немного повышаем удачу (торговая жилка)
-        self.luck = int(self.luck * 1.3)
+        # Немного повышаем удачу (торговая жилка, макс +5%)
+        self.luck = int(self.luck * 1.05)
 
         # Снижаем боевые характеристики
         self.strength = max(1, int(self.strength * 0.7))

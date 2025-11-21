@@ -67,7 +67,7 @@ class CombatSystem:
         self.active = True
         self.turn = "player"  # player или enemy
         self.combat_log = []  # Лог боевых событий
-        self.max_log_entries = 10  # Увеличено с 5 до 10 для более полного лога
+        self.max_log_entries = 15  # Увеличено для отображения детальной информации о бое
 
         # Варианты действий игрока
         self.actions = [
@@ -78,8 +78,24 @@ class CombatSystem:
         self.hovered_action = None  # Действие под курсором мыши
         self.action_buttons = []  # Список прямоугольников кнопок для обработки мыши
 
-        # Добавляем начальное сообщение в лог
-        self.add_to_log(f"Бой начался! Противник: {enemy.name} (Уровень {enemy.level})")
+        # Добавляем начальные сообщения в лог с информацией о бое
+        self.add_to_log(f"═══ БОЙ НАЧАЛСЯ! ═══")
+        self.add_to_log(f"Противник: {enemy.name} (Уровень {enemy.level})")
+
+        # Информация о статах противника
+        enemy_dodge = enemy.calculate_dodge_chance()
+        enemy_crit = enemy.calculate_crit_chance()
+        enemy_dmg = enemy.get_total_damage()
+        enemy_def = enemy.get_total_defense()
+        self.add_to_log(f"  [Урон: {enemy_dmg}, Защита: {enemy_def}, Уворот: {enemy_dodge:.1f}%, Крит: {enemy_crit:.1f}%]")
+
+        # Информация о статах игрока
+        player_dodge = player.calculate_dodge_chance()
+        player_crit = player.calculate_crit_chance()
+        player_dmg = player.get_total_damage()
+        player_def = player.get_total_defense()
+        self.add_to_log(f"Ваши статы: Урон {player_dmg}, Защита {player_def}")
+        self.add_to_log(f"  [Уворот: {player_dodge:.1f}%, Крит: {player_crit:.1f}%]")
 
     def add_to_log(self, message):
         """
@@ -146,11 +162,41 @@ class CombatSystem:
             attack_result = self.player.attack(self.enemy)
 
             if attack_result['dodged']:
-                self.add_to_log(f"{self.enemy.name} увернулся от вашей атаки!")
+                # Разнообразные сообщения об увороте
+                dodge_msgs = [
+                    f"{self.enemy.name} ловко увернулся от вашего удара!",
+                    f"Ваш удар прошел мимо - {self.enemy.name} уклонился!",
+                    f"{self.enemy.name} предвидел атаку и ушел в сторону!",
+                    f"Промах! {self.enemy.name} отскочил в последний момент!"
+                ]
+                self.add_to_log(random.choice(dodge_msgs))
+                dodge_chance = self.enemy.calculate_dodge_chance()
+                self.add_to_log(f"  [Шанс уворота противника: {dodge_chance:.1f}%]")
             elif attack_result['hit']:
-                crit_msg = " КРИТИЧЕСКИЙ УДАР!" if attack_result['critical'] else ""
-                armor_msg = f" (броня заблокировала {attack_result['blocked_by_armor']} урона)" if attack_result['blocked_by_armor'] > 0 else ""
-                self.add_to_log(f"Вы атакуете {self.enemy.name} и наносите {attack_result['damage']} урона!{crit_msg}{armor_msg}")
+                # Разнообразные сообщения об атаке
+                if attack_result['critical']:
+                    crit_msgs = [
+                        f"КРИТИЧЕСКИЙ УДАР! Вы наносите сокрушительный удар {self.enemy.name}!",
+                        f"Точное попадание в уязвимое место! КРИТ по {self.enemy.name}!",
+                        f"Мощнейший удар! Критическое попадание!"
+                    ]
+                    self.add_to_log(random.choice(crit_msgs))
+                    crit_chance = self.player.calculate_crit_chance()
+                    self.add_to_log(f"  [Урон: {attack_result['damage']}, ваш шанс крита: {crit_chance:.1f}%]")
+                else:
+                    attack_msgs = [
+                        f"Вы наносите удар по {self.enemy.name}!",
+                        f"Ваша атака достигает цели!",
+                        f"Удар попадает в {self.enemy.name}!"
+                    ]
+                    self.add_to_log(random.choice(attack_msgs))
+                    self.add_to_log(f"  [Урон: {attack_result['damage']}]")
+
+                # Информация о броне
+                if attack_result.get('blocked_by_armor', 0) > 0:
+                    armor_blocked = attack_result['blocked_by_armor']
+                    enemy_def = self.enemy.get_total_defense()
+                    self.add_to_log(f"  [Броня противника ({enemy_def}) заблокировала {armor_blocked} урона]")
 
                 if not self.enemy.is_alive:
                     self.add_to_log(f"Вы победили {self.enemy.name}!")
@@ -315,19 +361,48 @@ class CombatSystem:
         attack_result = self.enemy.attack(self.player)
 
         if attack_result['dodged']:
-            self.add_to_log(f"Вы увернулись от атаки {self.enemy.name}!")
+            # Разнообразные сообщения об увороте игрока
+            dodge_msgs = [
+                f"Вы ловко уворачиваетесь от атаки {self.enemy.name}!",
+                f"Атака {self.enemy.name} проходит мимо - вы уклонились!",
+                f"Вы предвидели удар и ушли в сторону!",
+                f"Отличный уворот! {self.enemy.name} промахнулся!"
+            ]
+            self.add_to_log(random.choice(dodge_msgs))
+            player_dodge = self.player.calculate_dodge_chance()
+            self.add_to_log(f"  [Ваш шанс уворота: {player_dodge:.1f}%]")
         elif attack_result['hit']:
-            crit_msg = " КРИТИЧЕСКИЙ УДАР!" if attack_result['critical'] else ""
-
             # Проверяем режим бессмертия
             if attack_result.get('godmode', False):
                 self.add_to_log(f"{self.enemy.name} атакует вас, но ЧИТ-МОД блокирует весь урон!")
             else:
-                armor_msg = f" (ваша броня заблокировала {attack_result['blocked_by_armor']} урона)" if attack_result.get('blocked_by_armor', 0) > 0 else ""
-                self.add_to_log(f"{self.enemy.name} атакует вас и наносит {attack_result['damage']} урона!{crit_msg}{armor_msg}")
+                # Разнообразные сообщения об атаке врага
+                if attack_result['critical']:
+                    crit_msgs = [
+                        f"КРИТИЧЕСКИЙ УДАР! {self.enemy.name} наносит вам мощнейший удар!",
+                        f"{self.enemy.name} находит брешь в защите! КРИТ!",
+                        f"Сокрушительный удар от {self.enemy.name}! Критическое попадание!"
+                    ]
+                    self.add_to_log(random.choice(crit_msgs))
+                    enemy_crit = self.enemy.calculate_crit_chance()
+                    self.add_to_log(f"  [Получено урона: {attack_result['damage']}, шанс крита противника: {enemy_crit:.1f}%]")
+                else:
+                    attack_msgs = [
+                        f"{self.enemy.name} атакует вас!",
+                        f"Удар {self.enemy.name} достигает цели!",
+                        f"{self.enemy.name} наносит вам урон!"
+                    ]
+                    self.add_to_log(random.choice(attack_msgs))
+                    self.add_to_log(f"  [Получено урона: {attack_result['damage']}]")
+
+                # Информация о броне игрока
+                if attack_result.get('blocked_by_armor', 0) > 0:
+                    armor_blocked = attack_result['blocked_by_armor']
+                    player_def = self.player.get_total_defense()
+                    self.add_to_log(f"  [Ваша броня ({player_def}) заблокировала {armor_blocked} урона]")
 
                 if not self.player.is_alive:
-                    self.add_to_log("Вы погибли!")
+                    self.add_to_log("Вы погибли в бою...")
                     return "defeat"
 
         # Уменьшаем перезарядку умений игрока после полного хода

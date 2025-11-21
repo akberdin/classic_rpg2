@@ -46,9 +46,9 @@ class Miner(NPC):
 
     def _adjust_miner_stats(self):
         """Модификация статов для шахтера - физический труженик"""
-        # Повышаем физические характеристики
-        self.strength = int(self.strength * 1.2)
-        self.constitution = int(self.constitution * 1.3)
+        # Повышаем физические характеристики (макс +5% для баланса)
+        self.strength = int(self.strength * 1.05)
+        self.constitution = int(self.constitution * 1.05)
 
         # Снижаем магические характеристики
         self.spirit = max(1, int(self.spirit * 0.35))

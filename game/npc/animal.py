@@ -345,8 +345,8 @@ class Wolf(Animal):
 
     def _adjust_wolf_stats(self):
         """Модификация статов для волка - быстрый хищник"""
-        self.dexterity = int(self.dexterity * 1.3)  # Высокая ловкость
-        self.strength = int(self.strength * 1.1)  # Умеренная сила
+        self.dexterity = int(self.dexterity * 1.05)  # Слегка повышенная ловкость (макс +5%)
+        self.strength = int(self.strength * 1.03)  # Слегка повышенная сила
         self.constitution = int(self.constitution * 0.9)  # Низкая выносливость
         self.spirit = max(1, int(self.spirit * 0.4))
         self.intelligence = max(1, int(self.intelligence * 0.4))
@@ -366,8 +366,8 @@ class Bear(Animal):
 
     def _adjust_bear_stats(self):
         """Модификация статов для медведя - сильный и живучий"""
-        self.strength = int(self.strength * 1.4)  # Очень высокая сила
-        self.constitution = int(self.constitution * 1.3)  # Высокая выносливость
+        self.strength = int(self.strength * 1.05)  # Повышенная сила (макс +5%)
+        self.constitution = int(self.constitution * 1.05)  # Повышенная выносливость
         self.dexterity = int(self.dexterity * 0.8)  # Низкая ловкость
         self.spirit = max(1, int(self.spirit * 0.4))
         self.intelligence = max(1, int(self.intelligence * 0.4))
@@ -386,7 +386,7 @@ class Deer(Animal):
 
     def _adjust_deer_stats(self):
         """Модификация статов для оленя - быстрый и слабый"""
-        self.dexterity = int(self.dexterity * 1.4)  # Очень высокая ловкость
+        self.dexterity = int(self.dexterity * 1.05)  # Слегка повышенная ловкость (макс +5%)
         self.strength = int(self.strength * 0.7)  # Низкая сила
         self.constitution = int(self.constitution * 0.8)  # Низкая выносливость
         self.spirit = max(1, int(self.spirit * 0.4))
