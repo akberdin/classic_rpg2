@@ -13,7 +13,9 @@ from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
 from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow, CheatMenuWindow
 from game.optimization import PerformanceOptimizer, RenderCache
-from game.quests import QuestManager, AchievementManager, create_starter_quests, QuestGenerator, create_unique_quests, get_unique_quest_for_location
+from game.quests import (QuestManager, AchievementManager, create_starter_quests,
+                        QuestGenerator, create_unique_quests, get_unique_quest_for_location,
+                        auto_assign_starter_quests, AchievementRarity)
 from game.save_system import SaveSystem
 from game.constants import (
     FPS, TILE_SIZE, COLORS, WINDOW_WIDTH, WINDOW_HEIGHT,
@@ -168,13 +170,13 @@ class Game:
 
         # Инициализация менеджера квестов
         self.quest_manager = QuestManager()
-        for quest in create_starter_quests():
-            self.quest_manager.add_available_quest(quest)
-        # Добавляем уникальные квесты с хорошими наградами
+        # Автоматически назначаем стартовые квесты игроку
+        auto_assign_starter_quests(self.quest_manager)
+        # Добавляем уникальные квесты с хорошими наградами в доступные
         for quest in create_unique_quests():
             self.quest_manager.add_available_quest(quest)
 
-        # Инициализация менеджера достижений
+        # Инициализация менеджера достижений с наградами
         self.achievement_manager = AchievementManager()
 
         # Инициализация систем событий, погоды и серий убийств
@@ -251,7 +253,27 @@ class Game:
                     # Обновляем прогресс квестов на убийство
                     if hasattr(defeated_enemy, 'npc_type'):
                         enemy_type = defeated_enemy.npc_type
-                        if enemy_type in ['bandit', 'undead']:
+                        # Обновляем статистику игрока
+                        if not hasattr(self.player, 'enemies_killed'):
+                            self.player.enemies_killed = 0
+                        self.player.enemies_killed += 1
+
+                        # Отслеживание убийств животных
+                        if enemy_type == 'wolf':
+                            if not hasattr(self.player, 'wolves_killed'):
+                                self.player.wolves_killed = 0
+                            self.player.wolves_killed += 1
+                        elif enemy_type == 'bear':
+                            if not hasattr(self.player, 'bears_killed'):
+                                self.player.bears_killed = 0
+                            self.player.bears_killed += 1
+                        elif enemy_type == 'deer':
+                            if not hasattr(self.player, 'deer_killed'):
+                                self.player.deer_killed = 0
+                            self.player.deer_killed += 1
+
+                        # Обновляем прогресс квестов для всех типов врагов
+                        if enemy_type in ['bandit', 'undead', 'wolf', 'bear', 'deer', 'necromancer']:
                             self.update_kill_quest_progress(enemy_type)
 
                     self.in_combat = False

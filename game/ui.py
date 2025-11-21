@@ -2521,15 +2521,44 @@ class QuestWindow:
 
                 # Фон элемента
                 is_selected = quest_idx == self.selected_index
-                bg_color = (60, 60, 70) if is_selected else (40, 40, 45)
+                is_unique = getattr(quest, 'is_unique', False)
+                is_starter = getattr(quest, 'is_starter', False)
+
+                # Цвет фона: уникальные - темно-красный, стартовые - темно-зеленый, обычные - серый
+                if is_unique:
+                    bg_color = (70, 40, 40) if is_selected else (50, 30, 30)
+                elif is_starter:
+                    bg_color = (40, 60, 40) if is_selected else (30, 45, 30)
+                else:
+                    bg_color = (60, 60, 70) if is_selected else (40, 40, 45)
+
                 pygame.draw.rect(
                     self.screen,
                     bg_color,
                     (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10)
                 )
 
-                # Рамка (если выбран)
-                if is_selected:
+                # Рамка: уникальные - красная, стартовые - зеленая, выбранные - золотая
+                if is_unique:
+                    # Красная рамка для уникальных квестов (всегда)
+                    border_color = (255, 100, 100) if is_selected else (200, 50, 50)
+                    pygame.draw.rect(
+                        self.screen,
+                        border_color,
+                        (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10),
+                        3 if is_selected else 2
+                    )
+                elif is_starter:
+                    # Зеленая рамка для стартовых квестов (всегда)
+                    border_color = (100, 255, 100) if is_selected else (50, 200, 50)
+                    pygame.draw.rect(
+                        self.screen,
+                        border_color,
+                        (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10),
+                        3 if is_selected else 2
+                    )
+                elif is_selected:
+                    # Золотая рамка только для выбранных обычных квестов
                     pygame.draw.rect(
                         self.screen,
                         (255, 215, 0),
@@ -2537,12 +2566,19 @@ class QuestWindow:
                         2
                     )
 
-                # Название квеста
+                # Название квеста с цветом по типу
                 difficulty_str = f" [{quest.difficulty.display_name}]" if hasattr(quest.difficulty, 'display_name') else ""
+                if is_unique:
+                    name_color = (255, 150, 150)  # Красноватый для уникальных
+                elif is_starter:
+                    name_color = (150, 255, 150)  # Зеленоватый для стартовых
+                else:
+                    name_color = (255, 255, 255)  # Белый для обычных
+
                 name_text = self.font.render(
                     f"{quest.name}{difficulty_str}",
                     True,
-                    (255, 255, 255)
+                    name_color
                 )
                 self.screen.blit(name_text, (window_x + 35, quest_y + 10))
 
