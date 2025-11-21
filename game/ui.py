@@ -448,9 +448,17 @@ class InventoryWindow:
         # Отрисовка tooltip при наведении мыши
         if mouse_pos:
             mouse_x, mouse_y = mouse_pos
+            # Проверяем, наведён ли курсор на экипированный предмет
+            is_equipped_item = False
+            for slot, (rect, eq_item) in self.equipment_slot_rects.items():
+                if rect.collidepoint(mouse_x, mouse_y) and eq_item:
+                    is_equipped_item = True
+                    break
+
             item = self.get_item_at_mouse(player, mouse_x, mouse_y)
             if item:
-                self.render_item_tooltip(item, mouse_x, mouse_y, player)
+                # Не показываем сравнение для экипированных предметов
+                self.render_item_tooltip(item, mouse_x, mouse_y, player, show_comparison=not is_equipped_item)
 
     def _render_equipment_panel(self, player, x, y, width, height):
         """Отрисовка панели экипировки"""
@@ -647,7 +655,7 @@ class InventoryWindow:
                 )
                 self.screen.blit(value_text, (x + width - value_offset, items_y + display_index * item_height + int(7 * (height / 500))))
 
-    def render_item_tooltip(self, item, mouse_x, mouse_y, player=None):
+    def render_item_tooltip(self, item, mouse_x, mouse_y, player=None, show_comparison=True):
         """
         Отрисовка всплывающей подсказки для предмета с возможным сравнением
 
@@ -656,6 +664,7 @@ class InventoryWindow:
             mouse_x: X координата мыши
             mouse_y: Y координата мыши
             player: Игрок для сравнения с экипировкой
+            show_comparison: Показывать ли окна сравнения (False для экипированных предметов)
         """
         from game.inventory import EquipmentItem, WeaponItem, ArmorItem, JewelryItem, PotionItem, EquipmentSlot
 
@@ -694,14 +703,14 @@ class InventoryWindow:
         elif isinstance(item, PotionItem):
             lines.append(("Тип: Зелье", (180, 180, 180), False))
 
-        # Характеристики экипировки
+        # УРОН И БРОНЯ СВЕРХУ (сразу после типа)
         if isinstance(item, EquipmentItem):
-            lines.append(("", (0, 0, 0), False))  # Пустая строка
-
             if hasattr(item, 'attack') and item.attack > 0:
-                lines.append((f"Атака: +{item.attack}", (255, 100, 100), False))
+                lines.append((f"Урон: +{item.attack}", (255, 100, 100), False))
             if hasattr(item, 'defense') and item.defense > 0:
-                lines.append((f"Защита: +{item.defense}", (100, 150, 255), False))
+                lines.append((f"Броня: +{item.defense}", (100, 150, 255), False))
+
+            lines.append(("", (0, 0, 0), False))  # Пустая строка
 
             # Бонусы к характеристикам
             if item.stats_bonus:
@@ -797,8 +806,8 @@ class InventoryWindow:
             self.screen.blit(text_surface, (tooltip_x + tooltip_padding, text_y))
             text_y += line_height
 
-        # Отрисовка окон сравнения для экипируемых предметов
-        if player and isinstance(item, EquipmentItem):
+        # Отрисовка окон сравнения для экипируемых предметов (только если не наводим на экипировку)
+        if player and isinstance(item, EquipmentItem) and show_comparison:
             self._render_comparison_tooltips(item, tooltip_x, tooltip_y, tooltip_width, tooltip_height, player)
 
     def _render_comparison_tooltips(self, item, main_tooltip_x, main_tooltip_y, main_width, main_height, player):
@@ -877,23 +886,23 @@ class InventoryWindow:
             lines.append(("", (0, 0, 0), False))
 
             # Сравнение характеристик
-            # Атака
+            # Урон
             item_attack = getattr(item, 'attack', 0)
             equip_attack = getattr(equipped, 'attack', 0)
             if item_attack or equip_attack:
                 diff = item_attack - equip_attack
                 diff_color = (100, 255, 100) if diff > 0 else ((255, 100, 100) if diff < 0 else (180, 180, 180))
                 diff_str = f"+{diff}" if diff > 0 else str(diff)
-                lines.append((f"Атака: {diff_str}", diff_color, False))
+                lines.append((f"Урон: {diff_str}", diff_color, False))
 
-            # Защита
+            # Броня
             item_defense = getattr(item, 'defense', 0)
             equip_defense = getattr(equipped, 'defense', 0)
             if item_defense or equip_defense:
                 diff = item_defense - equip_defense
                 diff_color = (100, 255, 100) if diff > 0 else ((255, 100, 100) if diff < 0 else (180, 180, 180))
                 diff_str = f"+{diff}" if diff > 0 else str(diff)
-                lines.append((f"Защита: {diff_str}", diff_color, False))
+                lines.append((f"Броня: {diff_str}", diff_color, False))
 
             # Бонусы к характеристикам
             stat_names = {
@@ -916,6 +925,23 @@ class InventoryWindow:
                     diff_color = (100, 255, 100) if diff > 0 else (255, 100, 100)
                     diff_str = f"+{diff}" if diff > 0 else str(diff)
                     lines.append((f"{stat_names.get(stat, stat)}: {diff_str}", diff_color, False))
+
+            # Процентные бонусы к параметрам (важно для бижутерии)
+            param_names = {
+                'health': 'Здоровье', 'mana': 'Мана', 'stamina': 'Выносливость'
+            }
+            item_param_bonus = getattr(item, 'param_bonus', {}) or {}
+            equip_param_bonus = getattr(equipped, 'param_bonus', {}) or {}
+            all_params = set(item_param_bonus.keys()) | set(equip_param_bonus.keys())
+
+            for param in all_params:
+                item_pb = item_param_bonus.get(param, 0)
+                equip_pb = equip_param_bonus.get(param, 0)
+                diff = item_pb - equip_pb
+                if diff != 0:
+                    diff_color = (100, 255, 100) if diff > 0 else (255, 100, 100)
+                    diff_str = f"+{diff}%" if diff > 0 else f"{diff}%"
+                    lines.append((f"{param_names.get(param, param)}: {diff_str}", diff_color, False))
 
             # Вычисляем высоту
             comp_height = comp_padding * 2 + len(lines) * line_height
@@ -1569,14 +1595,16 @@ class TradeWindow:
         elif isinstance(item, PotionItem):
             lines.append(("Тип: Зелье", (180, 180, 180), False))
 
-        # Характеристики экипировки
+        # УРОН И БРОНЯ СВЕРХУ (сразу после типа)
         if isinstance(item, EquipmentItem):
-            lines.append(("", (0, 0, 0), False))  # Пустая строка
-
-            if hasattr(item, 'damage') and item.damage > 0:
-                lines.append((f"Урон: +{item.damage}", (255, 100, 100), False))
+            # Урон (проверяем и damage, и attack)
+            item_damage = getattr(item, 'damage', 0) or getattr(item, 'attack', 0)
+            if item_damage > 0:
+                lines.append((f"Урон: +{item_damage}", (255, 100, 100), False))
             if hasattr(item, 'defense') and item.defense > 0:
-                lines.append((f"Защита: +{item.defense}", (100, 150, 255), False))
+                lines.append((f"Броня: +{item.defense}", (100, 150, 255), False))
+
+            lines.append(("", (0, 0, 0), False))  # Пустая строка
 
             # Бонусы к характеристикам
             if item.stats_bonus:
@@ -1733,7 +1761,7 @@ class TradeWindow:
                 diff = item_attack - equip_attack
                 diff_color = (100, 255, 100) if diff > 0 else ((255, 100, 100) if diff < 0 else (180, 180, 180))
                 diff_str = f"+{diff}" if diff > 0 else str(diff)
-                lines.append((f"Атака: {diff_str}", diff_color, False))
+                lines.append((f"Урон: {diff_str}", diff_color, False))
 
             item_defense = getattr(item, 'defense', 0)
             equip_defense = getattr(equipped, 'defense', 0)
@@ -1741,7 +1769,7 @@ class TradeWindow:
                 diff = item_defense - equip_defense
                 diff_color = (100, 255, 100) if diff > 0 else ((255, 100, 100) if diff < 0 else (180, 180, 180))
                 diff_str = f"+{diff}" if diff > 0 else str(diff)
-                lines.append((f"Защита: {diff_str}", diff_color, False))
+                lines.append((f"Броня: {diff_str}", diff_color, False))
 
             all_stats = set()
             if item.stats_bonus:
@@ -1759,6 +1787,21 @@ class TradeWindow:
                     diff_color = (100, 255, 100) if diff > 0 else (255, 100, 100)
                     diff_str = f"+{diff}" if diff > 0 else str(diff)
                     lines.append((f"{stat_names.get(stat, stat)}: {diff_str}", diff_color, False))
+
+            # Процентные бонусы к параметрам (важно для бижутерии)
+            param_names = {'health': 'Здоровье', 'mana': 'Мана', 'stamina': 'Выносливость'}
+            item_param_bonus = getattr(item, 'param_bonus', {}) or {}
+            equip_param_bonus = getattr(equipped, 'param_bonus', {}) or {}
+            all_params = set(item_param_bonus.keys()) | set(equip_param_bonus.keys())
+
+            for param in all_params:
+                item_pb = item_param_bonus.get(param, 0)
+                equip_pb = equip_param_bonus.get(param, 0)
+                diff = item_pb - equip_pb
+                if diff != 0:
+                    diff_color = (100, 255, 100) if diff > 0 else (255, 100, 100)
+                    diff_str = f"+{diff}%" if diff > 0 else f"{diff}%"
+                    lines.append((f"{param_names.get(param, param)}: {diff_str}", diff_color, False))
 
             comp_height = comp_padding * 2 + len(lines) * line_height
             UIHelper.draw_gradient_rect(self.screen, comp_x, comp_y, comp_width, comp_height, (50, 40, 40), (70, 55, 55))

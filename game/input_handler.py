@@ -308,7 +308,9 @@ class InputHandler:
             if not hasattr(self.game.nearby_npc, 'inventory'):
                 return
 
+            # Используем отфильтрованный список
             merchant_items = self.game.nearby_npc.inventory.get_all_items()
+            merchant_items = self.game.trade_window.filter_and_sort_items(merchant_items)
             if not merchant_items:
                 return
 
@@ -336,7 +338,9 @@ class InputHandler:
                         print(f"Недостаточно золота! Нужно {buy_price}, у вас {self.game.player.inventory.gold}")
         else:
             # Режим продажи
+            # Используем отфильтрованный список
             player_items = self.game.player.inventory.get_all_items()
+            player_items = self.game.trade_window.filter_and_sort_items(player_items)
             if not player_items:
                 return
 
@@ -406,7 +410,9 @@ class InputHandler:
             if not hasattr(self.game.nearby_npc, 'inventory'):
                 return
 
+            # ВАЖНО: используем отфильтрованный список, как в окне торговли
             merchant_items = self.game.nearby_npc.inventory.get_all_items()
+            merchant_items = self.game.trade_window.filter_and_sort_items(merchant_items)
             if not merchant_items or item_index >= len(merchant_items):
                 return
 
@@ -428,7 +434,9 @@ class InputHandler:
                 print(f"Недостаточно золота! Нужно {buy_price}, у вас {self.game.player.inventory.gold}")
         else:
             # Режим продажи
+            # ВАЖНО: используем отфильтрованный список, как в окне торговли
             player_items = self.game.player.inventory.get_all_items()
+            player_items = self.game.trade_window.filter_and_sort_items(player_items)
             if not player_items or item_index >= len(player_items):
                 return
 

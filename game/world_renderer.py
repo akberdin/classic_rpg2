@@ -814,11 +814,12 @@ class WorldRenderer:
                     # Затемняем цвет для мини-карты
                     color = tuple(c // 2 for c in color)
 
-                    # Отрисовка пикселя тайла
+                    # Отрисовка пикселя тайла (размер +1 для устранения зазоров-сетки)
+                    tile_draw_size = int(pixel_per_tile) + 1
                     pygame.draw.rect(
                         self.game.screen,
                         color,
-                        (minimap_px, minimap_py, int(pixel_per_tile), int(pixel_per_tile))
+                        (minimap_px, minimap_py, tile_draw_size, tile_draw_size)
                     )
 
         # Отметка игрока на мини-карте (в центре)
