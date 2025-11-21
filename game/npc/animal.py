@@ -13,7 +13,7 @@ from game.constants import (
 class Animal(NPC):
     """Базовый класс для животных NPC"""
 
-    def __init__(self, name, x=0, y=0, npc_type=NPC_TYPE_WOLF, level=1, spawn_x=None, spawn_y=None):
+    def __init__(self, name, x=0, y=0, npc_type=NPC_TYPE_WOLF, level=1, spawn_x=None, spawn_y=None, behavior_mode="patrol"):
         """
         Инициализация животного
 
@@ -25,17 +25,26 @@ class Animal(NPC):
             level: Уровень животного
             spawn_x: Координата X точки спавна
             spawn_y: Координата Y точки спавна
+            behavior_mode: Режим поведения ("patrol" - патрулирование вокруг точки спавна,
+                          "wander" - свободное путешествие по всей карте)
         """
         super().__init__(name, x, y, npc_type=npc_type, level=level)
 
         # AI параметры
-        self.state = "patrol"  # patrol, rest, combat, flee
+        self.behavior_mode = behavior_mode  # patrol или wander
+        self.state = behavior_mode  # patrol, wander, rest, combat, flee
         self.spawn_x = spawn_x if spawn_x is not None else x
         self.spawn_y = spawn_y if spawn_y is not None else y
 
-        # Радиусы зоны
+        # Радиусы зоны (для режима patrol)
         self.patrol_radius = 20
         self.max_distance_from_spawn = 30
+
+        # Параметры для режима wander (свободное путешествие)
+        self.wander_direction_timer = 0  # Таймер смены направления
+        self.wander_direction_duration = random.randint(5, 15)  # Как долго идти в одном направлении
+        self.wander_dx = 0  # Текущее направление X
+        self.wander_dy = 0  # Текущее направление Y
 
         self.rest_counter = 0
         self.rest_duration = random.randint(2, 4)
@@ -50,7 +59,7 @@ class Animal(NPC):
         self.provoked = False  # Флаг провокации (атаки игроком)
 
         # Состояние по умолчанию для расписания
-        self.default_state = "patrol"
+        self.default_state = behavior_mode
 
     def _generate_initial_equipment(self):
         """Переопределяем метод - животные не имеют экипировки"""
@@ -101,9 +110,13 @@ class Animal(NPC):
                 self._combat_step(game_map)
                 self._check_for_threats(all_npcs, player)
         elif self.state == "patrol":
-            # Патрулирование
+            # Патрулирование вокруг точки спавна
             if self.consume_stamina():
                 self._patrol_step(game_map)
+        elif self.state == "wander":
+            # Свободное путешествие по карте
+            if self.consume_stamina():
+                self._wander_step(game_map)
         elif self.state == "rest":
             self._rest()
 
@@ -150,8 +163,8 @@ class Animal(NPC):
                 self.target_enemy = closest_threat
                 self.pursuit_counter = 0
         elif self.state in ["combat", "flee"]:
-            # Возвращаемся к патрулированию
-            self.state = "patrol"
+            # Возвращаемся к базовому режиму (patrol или wander)
+            self.state = self.behavior_mode
             self.target_enemy = None
             self.pursuit_counter = 0
 
@@ -183,10 +196,73 @@ class Animal(NPC):
         if game_map.is_passable(new_x, new_y):
             self.x, self.y = new_x, new_y
 
+    def _wander_step(self, game_map):
+        """Делает один шаг свободного путешествия по карте"""
+        # Обновляем таймер направления
+        self.wander_direction_timer += 1
+
+        # Если пришло время сменить направление или столкнулись с препятствием
+        if self.wander_direction_timer >= self.wander_direction_duration:
+            self._choose_new_wander_direction(game_map)
+
+        # Пытаемся двигаться в текущем направлении
+        new_x = self.x + self.wander_dx
+        new_y = self.y + self.wander_dy
+
+        # Проверяем границы карты (отступ от края)
+        map_margin = 10
+        if new_x < map_margin or new_x >= game_map.width - map_margin:
+            self._choose_new_wander_direction(game_map)
+            new_x = self.x + self.wander_dx
+        if new_y < map_margin or new_y >= game_map.height - map_margin:
+            self._choose_new_wander_direction(game_map)
+            new_y = self.y + self.wander_dy
+
+        # Проверяем проходимость и двигаемся
+        if game_map.is_passable(new_x, new_y):
+            self.x, self.y = new_x, new_y
+        else:
+            # Столкнулись с препятствием - меняем направление
+            self._choose_new_wander_direction(game_map)
+            new_x = self.x + self.wander_dx
+            new_y = self.y + self.wander_dy
+            if game_map.is_passable(new_x, new_y):
+                self.x, self.y = new_x, new_y
+
+        # С небольшой вероятностью отдыхаем
+        if random.random() < 0.05:
+            self.state = "rest"
+
+    def _choose_new_wander_direction(self, game_map):
+        """Выбирает новое случайное направление для путешествия"""
+        self.wander_direction_timer = 0
+        self.wander_direction_duration = random.randint(5, 15)
+
+        # Выбираем случайное направление (включая диагонали)
+        directions = [
+            (1, 0), (-1, 0), (0, 1), (0, -1),  # Кардинальные
+            (1, 1), (1, -1), (-1, 1), (-1, -1)  # Диагональные
+        ]
+
+        # Отдаем предпочтение направлениям, ведущим к центру карты
+        center_x = game_map.width // 2
+        center_y = game_map.height // 2
+
+        # Если далеко от центра, с большей вероятностью двигаемся к центру
+        if abs(self.x - center_x) > game_map.width // 3 or abs(self.y - center_y) > game_map.height // 3:
+            if random.random() < 0.6:  # 60% шанс двигаться к центру
+                dx = 1 if center_x > self.x else -1 if center_x < self.x else 0
+                dy = 1 if center_y > self.y else -1 if center_y < self.y else 0
+                self.wander_dx, self.wander_dy = dx, dy
+                return
+
+        # Иначе случайное направление
+        self.wander_dx, self.wander_dy = random.choice(directions)
+
     def _combat_step(self, game_map):
         """Делает один шаг в боевом режиме"""
         if not self.target_enemy or not self.target_enemy.is_alive:
-            self.state = "patrol"
+            self.state = self.behavior_mode
             self.target_enemy = None
             return
 
@@ -196,7 +272,7 @@ class Animal(NPC):
         if distance > self.detection_range * 2:
             # Враг слишком далеко, прекращаем преследование
             self.pursuit_counter = 0
-            self.state = "patrol"
+            self.state = self.behavior_mode
             self.target_enemy = None
             return
 
@@ -205,7 +281,7 @@ class Animal(NPC):
         if self.pursuit_counter > self.max_pursuit_steps:
             # Прекращаем преследование после N шагов
             self.pursuit_counter = 0
-            self.state = "patrol"
+            self.state = self.behavior_mode
             self.target_enemy = None
             return
 
@@ -219,7 +295,7 @@ class Animal(NPC):
     def _flee_step(self, game_map):
         """Делает один шаг при побеге"""
         if not self.target_enemy:
-            self.state = "patrol"
+            self.state = self.behavior_mode
             return
 
         # Убегаем в противоположную сторону от угрозы
@@ -240,7 +316,7 @@ class Animal(NPC):
         distance = abs(self.x - self.target_enemy.x) + abs(self.y - self.target_enemy.y)
         if distance > self.detection_range * 2:
             # Убежали достаточно далеко
-            self.state = "patrol"
+            self.state = self.behavior_mode
             self.target_enemy = None
 
     def _rest(self):
@@ -249,7 +325,7 @@ class Animal(NPC):
         if self.rest_counter >= self.rest_duration:
             self.rest_counter = 0
             self.rest_duration = random.randint(2, 4)
-            self.state = "patrol"
+            self.state = self.behavior_mode
 
     def mark_as_provoked(self):
         """Пометить животное как провоцированное (атакованное игроком)"""
@@ -259,8 +335,8 @@ class Animal(NPC):
 class Wolf(Animal):
     """Класс Волка - быстрый и агрессивный хищник"""
 
-    def __init__(self, name, x=0, y=0, level=1, spawn_x=None, spawn_y=None):
-        super().__init__(name, x, y, npc_type=NPC_TYPE_WOLF, level=level, spawn_x=spawn_x, spawn_y=spawn_y)
+    def __init__(self, name, x=0, y=0, level=1, spawn_x=None, spawn_y=None, behavior_mode="patrol"):
+        super().__init__(name, x, y, npc_type=NPC_TYPE_WOLF, level=level, spawn_x=spawn_x, spawn_y=spawn_y, behavior_mode=behavior_mode)
         self._adjust_wolf_stats()
         self.detection_range = 12
         self.max_pursuit_steps = 15
@@ -279,8 +355,8 @@ class Wolf(Animal):
 class Bear(Animal):
     """Класс Медведя - сильный и территориальный"""
 
-    def __init__(self, name, x=0, y=0, level=1, spawn_x=None, spawn_y=None):
-        super().__init__(name, x, y, npc_type=NPC_TYPE_BEAR, level=level, spawn_x=spawn_x, spawn_y=spawn_y)
+    def __init__(self, name, x=0, y=0, level=1, spawn_x=None, spawn_y=None, behavior_mode="patrol"):
+        super().__init__(name, x, y, npc_type=NPC_TYPE_BEAR, level=level, spawn_x=spawn_x, spawn_y=spawn_y, behavior_mode=behavior_mode)
         self._adjust_bear_stats()
         self.detection_range = 8
         self.max_pursuit_steps = 10
@@ -300,8 +376,8 @@ class Bear(Animal):
 class Deer(Animal):
     """Класс Оленя - быстрый и пугливый"""
 
-    def __init__(self, name, x=0, y=0, level=1, spawn_x=None, spawn_y=None):
-        super().__init__(name, x, y, npc_type=NPC_TYPE_DEER, level=level, spawn_x=spawn_x, spawn_y=spawn_y)
+    def __init__(self, name, x=0, y=0, level=1, spawn_x=None, spawn_y=None, behavior_mode="patrol"):
+        super().__init__(name, x, y, npc_type=NPC_TYPE_DEER, level=level, spawn_x=spawn_x, spawn_y=spawn_y, behavior_mode=behavior_mode)
         self._adjust_deer_stats()
         self.detection_range = 10
         self.max_pursuit_steps = 5
@@ -344,5 +420,5 @@ class Deer(Animal):
             self.state = "flee"
             self.target_enemy = closest_threat
         elif self.state == "flee":
-            self.state = "patrol"
+            self.state = self.behavior_mode
             self.target_enemy = None
