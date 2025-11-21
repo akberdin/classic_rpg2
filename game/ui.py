@@ -705,15 +705,35 @@ class InventoryWindow:
             # Бонусы к характеристикам
             if item.stats_bonus:
                 for stat, bonus in item.stats_bonus.items():
+                    if stat in ['damage', 'defense']:  # Пропускаем урон и защиту, они уже отображены
+                        continue
                     stat_names = {
                         'strength': 'Сила',
                         'dexterity': 'Ловкость',
+                        'constitution': 'Телосложение',
+                        'spirit': 'Дух',
                         'intelligence': 'Интеллект',
-                        'vitality': 'Телосложение',
                         'luck': 'Удача'
                     }
                     stat_name = stat_names.get(stat, stat)
-                    lines.append((f"{stat_name}: +{bonus}", (150, 255, 150), False))
+                    actual_bonus = item.get_stat_bonus(stat)
+                    lines.append((f"{stat_name}: +{actual_bonus}", (150, 255, 150), False))
+
+            # Процентные бонусы к параметрам
+            if hasattr(item, 'param_bonus') and item.param_bonus:
+                for param, bonus in item.param_bonus.items():
+                    param_names = {
+                        'health': 'Здоровье',
+                        'mana': 'Мана',
+                        'stamina': 'Выносливость'
+                    }
+                    param_name = param_names.get(param, param)
+                    lines.append((f"{param_name}: +{bonus}%", (100, 200, 255), False))
+
+            # Бонусы к навыкам
+            if hasattr(item, 'skill_bonus') and item.skill_bonus:
+                for skill_id, bonus in item.skill_bonus.items():
+                    lines.append((f"Навык: +{bonus}", (255, 200, 100), False))
 
         # Эффекты зелья
         if isinstance(item, PotionItem):
@@ -1248,6 +1268,22 @@ class TradeWindow:
                     stat_name = stat_names.get(stat, stat)
                     if stat not in ['damage', 'defense']:  # Урон и защита уже показаны выше
                         lines.append((f"{stat_name}: +{actual_bonus}", (150, 255, 150), False))
+
+            # Процентные бонусы к параметрам
+            if hasattr(item, 'param_bonus') and item.param_bonus:
+                for param, bonus in item.param_bonus.items():
+                    param_names = {
+                        'health': 'Здоровье',
+                        'mana': 'Мана',
+                        'stamina': 'Выносливость'
+                    }
+                    param_name = param_names.get(param, param)
+                    lines.append((f"{param_name}: +{bonus}%", (100, 200, 255), False))
+
+            # Бонусы к навыкам
+            if hasattr(item, 'skill_bonus') and item.skill_bonus:
+                for skill_id, bonus in item.skill_bonus.items():
+                    lines.append((f"Навык: +{bonus}", (255, 200, 100), False))
 
         # Эффекты зелья
         if isinstance(item, PotionItem):

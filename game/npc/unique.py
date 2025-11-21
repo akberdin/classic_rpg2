@@ -130,16 +130,15 @@ class Hunter(NPC):
 
     def _generate_initial_equipment(self):
         """Генерация экипировки охотника"""
-        from game.inventory import WeaponItem, WeaponType, ItemGenerator, ItemQuality
+        from game.inventory import ItemGenerator, ItemQuality, WeaponType
 
         # Лук - основное оружие охотника
-        bow = WeaponItem(
-            "Охотничий лук",
-            WeaponType.BOW,
-            8 + self.level,
-            quality=ItemQuality.UNCOMMON,
-            stats_bonus={'dexterity': max(1, self.level // 4), 'luck': max(1, self.level // 5)}
+        bow = ItemGenerator.generate_weapon(
+            self.level,
+            quality=ItemQuality.UNCOMMON
         )
+        bow.name = "Охотничий лук"
+        bow.weapon_type = WeaponType.BOW
         if self.inventory.add_item(bow, 1):
             self.inventory.equip_item(bow.name)
 
@@ -357,19 +356,15 @@ class Necromancer(NPC):
 
     def _generate_initial_equipment(self):
         """Генерация экипировки некроманта"""
-        from game.inventory import WeaponItem, WeaponType, ItemGenerator, ItemQuality, ArmorType, EquipmentSlot
+        from game.inventory import ItemGenerator, ItemQuality, ArmorType, EquipmentSlot, WeaponType
 
         # Посох тьмы - мощное магическое оружие
-        staff = WeaponItem(
-            "Посох Тьмы",
-            WeaponType.STAFF,
-            10 + self.level,
-            quality=ItemQuality.EPIC,
-            stats_bonus={
-                'intelligence': max(1, self.level // 2),
-                'spirit': max(1, self.level // 3)
-            }
+        staff = ItemGenerator.generate_weapon(
+            self.level,
+            quality=ItemQuality.EPIC
         )
+        staff.name = "Посох Тьмы"
+        staff.weapon_type = WeaponType.STAFF
         if self.inventory.add_item(staff, 1):
             self.inventory.equip_item(staff.name)
 

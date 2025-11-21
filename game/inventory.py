@@ -242,22 +242,8 @@ class EquipmentItem(Item):
         self.skill_bonus = skill_bonus or {}  # Бонусы к навыкам
 
     def get_stat_bonus(self, stat_name):
-        """Получить бонус к характеристике с учетом качества"""
-        base_bonus = self.stats_bonus.get(stat_name, 0)
-        if self.quality == ItemQuality.COMMON:
-            return base_bonus
-        # Бонусы от качества (улучшенное масштабирование)
-        quality_multipliers = {
-            ItemQuality.POOR: 0.7,
-            ItemQuality.COMMON: 1.0,
-            ItemQuality.UNCOMMON: 1.3,
-            ItemQuality.RARE: 1.6,
-            ItemQuality.EPIC: 2.0,
-            ItemQuality.LEGENDARY: 3.0,
-            ItemQuality.ARTIFACT: 5.0
-        }
-        multiplier = quality_multipliers.get(self.quality, 1.0)
-        return int(base_bonus * multiplier)
+        """Получить бонус к характеристике (без дополнительных множителей, т.к. они уже в конфиге)"""
+        return self.stats_bonus.get(stat_name, 0)
 
     def get_stats_description(self):
         """Получить описание бонусов"""
@@ -1350,16 +1336,10 @@ class ItemGenerator:
 
         elif npc_type == "bandit":
             # Бандиты носят легкие доспехи и разное оружие
-            weapon_types = [WeaponType.KNIFE, WeaponType.CLUB, WeaponType.SWORD]
-            weapon_type = random.choice(weapon_types)
-
-            weapon = WeaponItem(
-                weapon_type.rus_name,
-                weapon_type,
-                5 + level,
+            equipment.append(ItemGenerator.generate_weapon(
+                level,
                 quality=random.choice([ItemQuality.POOR, ItemQuality.COMMON])
-            )
-            equipment.append(weapon)
+            ))
 
             # Частичные доспехи
             if random.random() < 0.5:  # 50% шанс иметь доспехи
@@ -1378,12 +1358,12 @@ class ItemGenerator:
 
         elif npc_type == "merchant":
             # Торговцы имеют легкое оружие и украшения
-            equipment.append(WeaponItem(
-                "Торговый нож",
-                WeaponType.KNIFE,
-                3,
+            weapon = ItemGenerator.generate_weapon(
+                level,
                 quality=ItemQuality.COMMON
-            ))
+            )
+            weapon.name = "Торговый нож"  # Переименовываем для уникальности
+            equipment.append(weapon)
 
             # Украшения (символ богатства)
             if random.random() < 0.7:  # 70% шанс
@@ -1391,12 +1371,13 @@ class ItemGenerator:
 
         elif npc_type == "miner":
             # Шахтеры имеют кирку и легкие доспехи
-            equipment.append(WeaponItem(
-                "Шахтерская кирка",
-                WeaponType.PICKAXE,
-                8 + level,
+            weapon = ItemGenerator.generate_weapon(
+                level,
                 quality=ItemQuality.COMMON
-            ))
+            )
+            weapon.name = "Шахтерская кирка"  # Переименовываем для уникальности
+            weapon.weapon_type = WeaponType.PICKAXE
+            equipment.append(weapon)
 
             # Частичные доспехи для защиты
             if random.random() < 0.6:
@@ -1415,15 +1396,13 @@ class ItemGenerator:
 
         elif npc_type == "undead":
             # Нежить носит древнее/проклятое снаряжение
-            weapon_types = [WeaponType.SWORD, WeaponType.AXE, WeaponType.CLUB]
-            weapon_type = random.choice(weapon_types)
-
-            equipment.append(WeaponItem(
-                f"Проклятый {weapon_type.rus_name}",
-                weapon_type,
-                7 + level,
+            weapon = ItemGenerator.generate_weapon(
+                level,
                 quality=random.choice([ItemQuality.POOR, ItemQuality.COMMON])
-            ))
+            )
+            # Добавляем префикс "Проклятый" к имени
+            weapon.name = f"Проклятый {weapon.name}"
+            equipment.append(weapon)
 
             # Разрушенные доспехи
             if random.random() < 0.4:
@@ -1442,13 +1421,13 @@ class ItemGenerator:
 
         elif npc_type == "mage":
             # Маги имеют посох и магическую одежду
-            equipment.append(WeaponItem(
-                "Магический посох",
-                WeaponType.STAFF,
-                5 + level // 2,
-                quality=ItemQuality.UNCOMMON,
-                stats_bonus={'intelligence': level // 3, 'spirit': level // 4}
-            ))
+            weapon = ItemGenerator.generate_weapon(
+                level,
+                quality=ItemQuality.UNCOMMON
+            )
+            weapon.name = "Магический посох"  # Переименовываем для уникальности
+            weapon.weapon_type = WeaponType.STAFF
+            equipment.append(weapon)
 
             # Легкие доспехи (мантия)
             chest_armor = ItemGenerator.generate_armor(
@@ -1507,23 +1486,18 @@ class ItemGenerator:
             weapon_type = random.choice([WeaponType.KNIFE, WeaponType.CLUB, WeaponType.SWORD])
             equipment.append(ItemGenerator.generate_weapon(level, weapon_quality))
         elif npc_type == "miner":
-            equipment.append(WeaponItem(
-                "Шахтерская кирка",
-                WeaponType.PICKAXE,
-                8 + level,
-                quality=weapon_quality
-            ))
+            weapon = ItemGenerator.generate_weapon(level, weapon_quality)
+            weapon.name = "Шахтерская кирка"
+            weapon.weapon_type = WeaponType.PICKAXE
+            equipment.append(weapon)
         elif npc_type == "undead":
             weapon_type = random.choice([WeaponType.SWORD, WeaponType.AXE])
             equipment.append(ItemGenerator.generate_weapon(level, weapon_quality))
         elif npc_type == "mage":
-            equipment.append(WeaponItem(
-                "Магический посох",
-                WeaponType.STAFF,
-                5 + level // 2,
-                quality=weapon_quality,
-                stats_bonus={'intelligence': level // 3, 'spirit': level // 4} if weapon_quality.multiplier >= 1.5 else {}
-            ))
+            weapon = ItemGenerator.generate_weapon(level, weapon_quality)
+            weapon.name = "Магический посох"
+            weapon.weapon_type = WeaponType.STAFF
+            equipment.append(weapon)
         else:
             equipment.append(ItemGenerator.generate_weapon(level, weapon_quality))
 
@@ -1585,9 +1559,12 @@ PREDEFINED_ITEMS = {
     "stamina_potion": PotionItem("Зелье выносливости", "stamina", 100, 40),
 
     # Инструменты и базовое оружие
-    "basic_axe": WeaponItem("Базовый топор", WeaponType.AXE, 15, quality=ItemQuality.COMMON),
-    "basic_pickaxe": WeaponItem("Базовая кирка", WeaponType.PICKAXE, 12, quality=ItemQuality.COMMON),
-    "steel_sword": WeaponItem("Стальной меч", WeaponType.SWORD, 18, quality=ItemQuality.UNCOMMON),
+    "basic_axe": WeaponItem("Базовый топор", WeaponType.AXE, 15, quality=ItemQuality.COMMON,
+                            stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "basic_pickaxe": WeaponItem("Базовая кирка", WeaponType.PICKAXE, 12, quality=ItemQuality.COMMON,
+                                stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "steel_sword": WeaponItem("Стальной меч", WeaponType.SWORD, 18, quality=ItemQuality.UNCOMMON,
+                              stats_bonus={}, param_bonus={}, skill_bonus={}),
 
     # Книги магических умений
     "book_heal": SkillBookItem("Книга Лечения", "heal", 150, 0.5, ItemQuality.UNCOMMON),
@@ -1629,21 +1606,27 @@ PREDEFINED_ITEMS = {
         WeaponType.BOW,
         25,
         quality=ItemQuality.EPIC,
-        stats_bonus={'dexterity': 5, 'luck': 3}
+        stats_bonus={'dexterity': 5, 'luck': 3},
+        param_bonus={'stamina': 5},  # Эпическое оружие - бонус к выносливости
+        skill_bonus={}
     ),
     "alchemists_staff": WeaponItem(
         "Посох Алхимика",
         WeaponType.STAFF,
         20,
         quality=ItemQuality.EPIC,
-        stats_bonus={'intelligence': 6, 'spirit': 4}
+        stats_bonus={'intelligence': 6, 'spirit': 4},
+        param_bonus={'mana': 5},  # Эпическое оружие - бонус к мане
+        skill_bonus={}
     ),
     "shadow_blade": WeaponItem(
         "Клинок Теней",
         WeaponType.SWORD,
         30,
         quality=ItemQuality.LEGENDARY,
-        stats_bonus={'strength': 5, 'dexterity': 4, 'luck': 3}
+        stats_bonus={'strength': 5, 'dexterity': 4, 'luck': 3},
+        param_bonus={'health': 8, 'stamina': 5},  # Легендарное оружие - два бонуса к параметрам
+        skill_bonus={}
     ),
 }
 
