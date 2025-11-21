@@ -750,7 +750,7 @@ class NPCSpawner:
             y = random.randint(5, map_height - 5)
 
             # Проверяем, что это лесной биом
-            if self.game_map.biomes[x][y] == BIOME_FOREST:
+            if self.game_map.tiles[y][x].biome == BIOME_FOREST:
                 # Проверяем, что нет локаций поблизости
                 location_nearby = False
                 for loc in self.game_map.locations:
