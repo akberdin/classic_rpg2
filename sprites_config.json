@@ -67,10 +67,10 @@
     "wolf_expert": "assets/actors/wolf/wolf4.png",
 
     "bear": "assets/sprites/npcs/bear.png",
-    "bear_novice": "assets/actors/deer/deer1.png",
-    "bear_regular": "assets/actors/deer/deer2.png",
-    "bear_veteran": "assets/actors/deer/deer3.png",
-    "bear_expert": "assets/actors/deer/deer4.png",
+    "bear_novice": "assets/actors/bear/bear1.png",
+    "bear_regular": "assets/actors/bear/bear2.png",
+    "bear_veteran": "assets/actors/bear/bear3.png",
+    "bear_expert": "assets/actors/bear/bear4.png",
 
     "deer": "assets/sprites/npcs/deer.png",
     "deer_novice": "assets/actors/deer/deer1.png",
