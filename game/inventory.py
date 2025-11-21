@@ -619,9 +619,47 @@ class Inventory:
         """
         return [(item, quantity) for item, quantity in self.items.values() if item.item_type == item_type]
 
-    def get_all_items(self):
-        """Получить все предметы"""
-        return list(self.items.values())
+    def get_all_items(self, sorted_items=True):
+        """
+        Получить все предметы
+
+        Args:
+            sorted_items: Если True, сортировать по типу и качеству
+
+        Returns:
+            list: Список кортежей (item, quantity)
+        """
+        items = list(self.items.values())
+        if sorted_items:
+            # Сортировка: сначала по типу, затем по качеству (по убыванию)
+            def sort_key(item_tuple):
+                item = item_tuple[0]
+                # Порядок типов: оружие, броня, украшения, зелья, книги, ресурсы, прочее
+                type_order = {'weapon': 0, 'armor': 1, 'jewelry': 2, 'potion': 3, 'book': 4, 'resource': 5, 'other': 6}
+                item_type = 'other'
+                if isinstance(item, WeaponItem):
+                    item_type = 'weapon'
+                elif isinstance(item, ArmorItem):
+                    item_type = 'armor'
+                elif isinstance(item, JewelryItem):
+                    item_type = 'jewelry'
+                elif isinstance(item, PotionItem):
+                    item_type = 'potion'
+                elif isinstance(item, SkillBookItem):
+                    item_type = 'book'
+                elif isinstance(item, ResourceItem):
+                    item_type = 'resource'
+
+                # Качество (по убыванию: 6 - артефакт, 0 - плохое)
+                quality_order = {'ARTIFACT': 6, 'LEGENDARY': 5, 'EPIC': 4, 'RARE': 3, 'UNCOMMON': 2, 'COMMON': 1, 'POOR': 0}
+                quality_value = 0
+                if hasattr(item, 'quality'):
+                    quality_value = quality_order.get(item.quality.name, 0)
+
+                return (type_order.get(item_type, 6), -quality_value, item.name)
+
+            items = sorted(items, key=sort_key)
+        return items
 
     def equip_item(self, item_name):
         """
