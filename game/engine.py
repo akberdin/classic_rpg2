@@ -142,6 +142,7 @@ class Game:
         self.alchemists = npcs['alchemists']
         self.hunters = npcs['hunters']
         self.necromancers = npcs['necromancers']
+        self.animals = npcs['animals']
 
         print(f"Игрок создан на позиции ({self.player.x}, {self.player.y})")
         print(f"Создано {len(self.guards)} стражников")
@@ -153,6 +154,7 @@ class Game:
         print(f"Создано {len(self.alchemists)} алхимиков")
         print(f"Создано {len(self.hunters)} охотников")
         print(f"Создано {len(self.necromancers)} некромантов")
+        print(f"Создано {len(self.animals)} животных")
 
         # Инициализация менеджера респавна
         self.respawn_manager = RespawnManager(self.game_map)
@@ -189,7 +191,7 @@ class Game:
         self.player.skill_manager.assign_to_slot('lumberjacking', 2)  # Слот 3
 
         # Перестраиваем spatial grid для NPC
-        all_npcs = self.guards + self.merchants + self.mages + self.bandits + self.miners + self.undead + self.alchemists + self.hunters + self.necromancers
+        all_npcs = self.guards + self.merchants + self.mages + self.bandits + self.miners + self.undead + self.alchemists + self.hunters + self.necromancers + self.animals
         self.performance_optimizer.rebuild_spatial_grid(all_npcs)
 
         # Инициализация обработчика ввода
@@ -368,8 +370,8 @@ class Game:
                 print(f"Добро пожаловать в {location.name}! Вы можете торговать здесь.")
                 return
 
-        # Собираем всех NPC (включая mages, alchemists, hunters, necromancers)
-        all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead + self.mages + self.alchemists + self.hunters + self.necromancers
+        # Собираем всех NPC (включая mages, alchemists, hunters, necromancers, animals)
+        all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead + self.mages + self.alchemists + self.hunters + self.necromancers + self.animals
 
         # Ищем NPC рядом с игроком (в соседних клетках)
         for npc in all_npcs:

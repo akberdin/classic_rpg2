@@ -196,6 +196,7 @@ class WorldRenderer:
         self._render_alchemists(tiles_x, tiles_y, camera_x, camera_y)
         self._render_hunters(tiles_x, tiles_y, camera_x, camera_y)
         self._render_necromancers(tiles_x, tiles_y, camera_x, camera_y)
+        self._render_animals(tiles_x, tiles_y, camera_x, camera_y)
 
     def _render_guards(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка стражников"""
@@ -655,6 +656,86 @@ class WorldRenderer:
                     self.game.sprite_manager.render_npc(
                         self.game.screen, 'necromancer', screen_x, screen_y,
                         draw_necro_default, necromancer.level
+                    )
+
+    def _render_animals(self, tiles_x, tiles_y, camera_x, camera_y):
+        """Отрисовка животных (волков, медведей, оленей)"""
+        for animal in self.game.animals:
+            if (camera_x <= animal.x < camera_x + tiles_x and
+                camera_y <= animal.y < camera_y + tiles_y):
+
+                # Проверяем, исследован ли тайл с животным
+                tile = self.game.game_map.get_tile(animal.x, animal.y)
+                # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
+                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(animal.x, animal.y, self.game.player.x, self.game.player.y)
+
+                if tile.explored and is_visible:
+                    if not animal.is_alive:
+                        continue
+
+                    screen_x = (animal.x - camera_x) * TILE_SIZE
+                    screen_y = (animal.y - camera_y) * TILE_SIZE
+
+                    # Определяем цвет в зависимости от типа животного и уровня
+                    if animal.npc_type == 'wolf':
+                        # Волк - серый с градацией по уровню
+                        if animal.level <= 10:
+                            base_color = (120, 120, 120)  # Новичок - светло-серый
+                        elif animal.level <= 20:
+                            base_color = (90, 90, 90)  # Обычный - серый
+                        elif animal.level <= 30:
+                            base_color = (60, 60, 70)  # Опытный - темно-серый
+                        else:
+                            base_color = (40, 40, 50)  # Эксперт - почти черный
+                    elif animal.npc_type == 'bear':
+                        # Медведь - коричневый с градацией по уровню
+                        if animal.level <= 10:
+                            base_color = (139, 90, 43)  # Новичок - светло-коричневый
+                        elif animal.level <= 20:
+                            base_color = (101, 67, 33)  # Обычный - коричневый
+                        elif animal.level <= 30:
+                            base_color = (70, 50, 30)  # Опытный - темно-коричневый
+                        else:
+                            base_color = (50, 35, 20)  # Эксперт - очень темный коричневый
+                    elif animal.npc_type == 'deer':
+                        # Олень - бежевый с градацией по уровню
+                        if animal.level <= 10:
+                            base_color = (210, 180, 140)  # Новичок - светло-бежевый
+                        elif animal.level <= 20:
+                            base_color = (180, 140, 100)  # Обычный - бежевый
+                        elif animal.level <= 30:
+                            base_color = (150, 110, 70)  # Опытный - темно-бежевый
+                        else:
+                            base_color = (120, 90, 60)  # Эксперт - темный бежевый
+                    else:
+                        base_color = (100, 100, 100)  # Неизвестное животное
+
+                    # Модификация цвета в зависимости от состояния
+                    if animal.state == "flee":
+                        animal_color = tuple(min(255, c + 30) for c in base_color)  # Светлее при побеге
+                    elif animal.state == "combat":
+                        animal_color = tuple(min(255, c + 50) for c in base_color)  # Ярче при атаке
+                    else:
+                        animal_color = base_color
+
+                    def draw_animal_default(screen=self.game.screen, color=animal_color,
+                                          sx=screen_x, sy=screen_y, level=animal.level,
+                                          npc_type=animal.npc_type):
+                        # Треугольник для животных (символизирует зверя)
+                        points = [
+                            (sx + TILE_SIZE // 2, sy + TILE_SIZE // 4),  # Верхушка
+                            (sx + TILE_SIZE // 4, sy + 3 * TILE_SIZE // 4),  # Левый угол
+                            (sx + 3 * TILE_SIZE // 4, sy + 3 * TILE_SIZE // 4)  # Правый угол
+                        ]
+                        pygame.draw.polygon(screen, color, points)
+
+                        # Обводка для высокоуровневых животных
+                        if level > 20:
+                            pygame.draw.polygon(screen, (255, 215, 0), points, 2)
+
+                    self.game.sprite_manager.render_npc(
+                        self.game.screen, animal.npc_type, screen_x, screen_y,
+                        draw_animal_default, animal.level
                     )
 
     def _render_player(self, camera_x, camera_y):
