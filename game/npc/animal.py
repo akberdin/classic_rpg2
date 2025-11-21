@@ -286,11 +286,12 @@ class Animal(NPC):
             return
 
         # Двигаемся к врагу
-        path = self._find_path_to(self.target_enemy.x, self.target_enemy.y, game_map)
-        if path and len(path) > 1:
-            next_step = path[1]
-            if self._can_move(next_step[0], next_step[1], game_map):
-                self.x, self.y = next_step
+        dx = 1 if self.target_enemy.x > self.x else -1 if self.target_enemy.x < self.x else 0
+        dy = 1 if self.target_enemy.y > self.y else -1 if self.target_enemy.y < self.y else 0
+
+        new_x, new_y = self.x + dx, self.y + dy
+        if self._can_move(new_x, new_y, game_map):
+            self.x, self.y = new_x, new_y
 
     def _flee_step(self, game_map):
         """Делает один шаг при побеге"""
