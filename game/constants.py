@@ -639,8 +639,9 @@ STAMINA_REST_MIN = 0.6
 STAMINA_REST_MAX = 0.8
 COMBAT_RANGE = 1
 BANDIT_CAMP_RADIUS = 40
-DODGE_BASE_CHANCE = 3
-CRIT_BASE_CHANCE = 3
+# Новые сбалансированные значения с diminishing returns (ver 1.1)
+DODGE_BASE_CHANCE = 2  # Было 3, теперь 2% за первые 10 единиц dex
+CRIT_BASE_CHANCE = 2   # Было 3, теперь 2% за первые 10 единиц luck
 
 GUARD_DETECTION_RANGE = 10
 GUARD_REST_DURATION_MIN = 3
