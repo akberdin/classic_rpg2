@@ -103,10 +103,6 @@ class Merchant(NPC):
             quantity = random.randint(2 + rank, 5 + rank * 2)  # Больше зелий
             self.inventory.add_item(PREDEFINED_ITEMS[potion_type], quantity)
 
-        # Всегда добавляем инструменты (больше для высокого ранга)
-        self.inventory.add_item(PREDEFINED_ITEMS["basic_pickaxe"], random.randint(1 + rank, 3 + rank))
-        self.inventory.add_item(PREDEFINED_ITEMS["basic_axe"], random.randint(1 + rank, 3 + rank))
-
         # Генерируем оружие (больше для высокого ранга) с ограничением качества по рангу
         num_weapons = random.randint(2 + rank, 4 + rank * 2)  # 3-6/4-8/5-10/6-12
         for _ in range(num_weapons):
@@ -157,12 +153,6 @@ class Merchant(NPC):
             potion_type = random.choice(potion_types)
             quantity = random.randint(1 + rank, 3 + rank)
             self.inventory.add_item(PREDEFINED_ITEMS[potion_type], quantity)
-
-        # Пополняем инструменты (шанс увеличивается с рангом)
-        tool_chance = 0.6 + (rank * 0.05)  # 65%/70%/75%/80%
-        if random.random() < tool_chance:
-            self.inventory.add_item(PREDEFINED_ITEMS["basic_pickaxe"], rank)
-            self.inventory.add_item(PREDEFINED_ITEMS["basic_axe"], rank)
 
         # Шанс добавить оружие (увеличивается с рангом)
         weapon_chance = 0.5 + (rank * 0.1)  # 60%/70%/80%/90%
