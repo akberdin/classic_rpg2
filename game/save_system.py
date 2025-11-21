@@ -111,7 +111,9 @@ class SaveSystem:
                     data.get('base_damage', data.get('damage', 10)),  # Поддержка старого формата
                     data['value'],
                     quality,
-                    data.get('stats_bonus', {})
+                    data.get('stats_bonus', {}),
+                    data.get('param_bonus', {}),
+                    data.get('skill_bonus', {})
                 )
             elif data.get('armor', False):
                 # Восстанавливаем ArmorType из имени
@@ -128,7 +130,9 @@ class SaveSystem:
                     data.get('base_defense', data.get('defense', 5)),  # Поддержка старого формата
                     data['value'],
                     quality,
-                    data.get('stats_bonus', {})
+                    data.get('stats_bonus', {}),
+                    data.get('param_bonus', {}),
+                    data.get('skill_bonus', {})
                 )
             elif data.get('jewelry', False):
                 item = JewelryItem(
@@ -136,7 +140,9 @@ class SaveSystem:
                     slot,
                     data['value'],
                     quality,
-                    data.get('stats_bonus', {})
+                    data.get('stats_bonus', {}),
+                    data.get('param_bonus', {}),
+                    data.get('skill_bonus', {})
                 )
             elif data.get('artifact', False):
                 item = ArtifactItem(
@@ -155,6 +161,8 @@ class SaveSystem:
                     data.get('weight', 1.0),
                     quality,
                     data.get('stats_bonus', {}),
+                    data.get('param_bonus', {}),
+                    data.get('skill_bonus', {}),
                     data.get('description', '')
                 )
         else:
