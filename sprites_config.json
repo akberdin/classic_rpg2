@@ -58,7 +58,25 @@
     "necromancer_novice": "assets/actors/necromancer/necromancer1.png",
     "necromancer_regular": "assets/actors/necromancer/necromancer2.png",
     "necromancer_veteran": "assets/actors/necromancer/necromancer3.png",
-    "necromancer_expert": "assets/actors/necromancer/necromancer4.png"
+    "necromancer_expert": "assets/actors/necromancer/necromancer4.png",
+
+    "wolf": "assets/sprites/npcs/wolf.png",
+    "wolf_novice": "assets/actors/animals/wolf1.png",
+    "wolf_regular": "assets/actors/animals/wolf2.png",
+    "wolf_veteran": "assets/actors/animals/wolf3.png",
+    "wolf_expert": "assets/actors/animals/wolf4.png",
+
+    "bear": "assets/sprites/npcs/bear.png",
+    "bear_novice": "assets/actors/animals/bear1.png",
+    "bear_regular": "assets/actors/animals/bear2.png",
+    "bear_veteran": "assets/actors/animals/bear3.png",
+    "bear_expert": "assets/actors/animals/bear4.png",
+
+    "deer": "assets/sprites/npcs/deer.png",
+    "deer_novice": "assets/actors/animals/deer1.png",
+    "deer_regular": "assets/actors/animals/deer2.png",
+    "deer_veteran": "assets/actors/animals/deer3.png",
+    "deer_expert": "assets/actors/animals/deer4.png"
   },
   "locations": {
     "city": "assets/objects/citys/city.png",

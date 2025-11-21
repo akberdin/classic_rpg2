@@ -1039,6 +1039,13 @@ class Game:
         loot_items = []
         loot_gold = 0
 
+        # Животные дают специфичный лут без золота
+        if enemy.npc_type in ["wolf", "bear", "deer"]:
+            animal_loot = ItemGenerator.generate_animal_loot(enemy.npc_type)
+            for item in animal_loot:
+                loot_items.append((item, 1))
+            return loot_items, 0  # Животные не дают золото
+
         # Золото зависит от уровня врага
         base_gold = enemy.level * 5
         loot_gold = random.randint(base_gold, base_gold * 2)
@@ -1180,6 +1187,12 @@ class Game:
                 "[1] Торговля",
                 "[2] Агрессия",
                 "[3] Уйти"
+            ]
+        elif self.nearby_npc.npc_type in ["wolf", "bear", "deer"]:
+            # Животные - только агрессия или уйти
+            actions = [
+                "[1] Агрессия",
+                "[2] Уйти"
             ]
         else:
             actions = [

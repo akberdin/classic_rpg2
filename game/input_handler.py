@@ -185,8 +185,14 @@ class InputHandler:
         npc_type = self.game.nearby_npc.npc_type if self.game.nearby_npc else None
 
         if key == pygame.K_1:
-            # Торговля / Магия / Зелья
-            if npc_type in ["merchant", "mage", "alchemist", "hunter"]:
+            # Торговля / Магия / Зелья / Агрессия (для животных)
+            if npc_type in ["wolf", "bear", "deer"]:
+                # Для животных кнопка 1 - это Агрессия
+                self.game._start_combat(self.game.nearby_npc)
+                # Помечаем животное как провоцированное
+                if hasattr(self.game.nearby_npc, 'mark_as_provoked'):
+                    self.game.nearby_npc.mark_as_provoked()
+            elif npc_type in ["merchant", "mage", "alchemist", "hunter"]:
                 self.game.trade_menu_open = True
                 self.game.trade_window.mode = "buy"
                 self.game.trade_window.selected_merchant_index = 0
@@ -197,8 +203,12 @@ class InputHandler:
             self.game.interaction_menu_open = False
 
         elif key == pygame.K_2:
-            # Действие 2: Обучение / Агрессия / Квест
-            if npc_type == "mage":
+            # Действие 2: Обучение / Агрессия / Квест / Уйти (для животных)
+            if npc_type in ["wolf", "bear", "deer"]:
+                # Для животных кнопка 2 - это Уйти
+                print("Вы ушли.")
+                self.game.nearby_npc = None
+            elif npc_type == "mage":
                 self.handle_magic_training()
             elif npc_type in ["alchemist", "hunter"]:
                 self.handle_unique_npc_quest()
@@ -212,7 +222,7 @@ class InputHandler:
                 self.game._start_combat(self.game.nearby_npc)
             elif npc_type in ["alchemist", "hunter"]:
                 self.handle_turn_in_quest()
-            else:
+            elif npc_type not in ["wolf", "bear", "deer"]:
                 print("Вы ушли от разговора.")
                 self.game.nearby_npc = None
             self.game.interaction_menu_open = False
