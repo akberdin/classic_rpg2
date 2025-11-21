@@ -217,7 +217,7 @@ class EquipmentItem(Item):
     """Базовый класс для экипируемых предметов"""
 
     def __init__(self, name, slot, value=100, weight=1.0, quality=ItemQuality.COMMON,
-                 stats_bonus=None, description=""):
+                 stats_bonus=None, param_bonus=None, skill_bonus=None, description=""):
         """
         Инициализация экипируемого предмета
 
@@ -227,7 +227,9 @@ class EquipmentItem(Item):
             value: Стоимость
             weight: Вес
             quality: Качество
-            stats_bonus: Словарь бонусов к характеристикам
+            stats_bonus: Словарь бонусов к характеристикам (strength, dexterity, etc.)
+            param_bonus: Словарь процентных бонусов к параметрам (health, mana, stamina)
+            skill_bonus: Словарь бонусов к навыкам (skill_id: bonus_value)
             description: Описание
         """
         super().__init__(name, "equipment", value, weight, quality, description)
@@ -236,6 +238,8 @@ class EquipmentItem(Item):
             raise ValueError(f"slot must be EquipmentSlot, got {type(slot)}: {slot}")
         self.slot = slot
         self.stats_bonus = stats_bonus or {}
+        self.param_bonus = param_bonus or {}  # Процентные бонусы к health/mana/stamina
+        self.skill_bonus = skill_bonus or {}  # Бонусы к навыкам
 
     def get_stat_bonus(self, stat_name):
         """Получить бонус к характеристике с учетом качества"""
@@ -257,34 +261,49 @@ class EquipmentItem(Item):
 
     def get_stats_description(self):
         """Получить описание бонусов"""
-        if not self.stats_bonus:
-            return ""
-
-        stat_names = {
-            'strength': 'Сила',
-            'dexterity': 'Ловкость',
-            'constitution': 'Телосложение',
-            'spirit': 'Дух',
-            'intelligence': 'Интеллект',
-            'luck': 'Удача',
-            'damage': 'Урон',
-            'defense': 'Защита'
-        }
-
         parts = []
-        for stat, bonus in self.stats_bonus.items():
-            actual_bonus = self.get_stat_bonus(stat)
-            stat_name = stat_names.get(stat, stat)
-            parts.append(f"+{actual_bonus} {stat_name}")
 
-        return ", ".join(parts)
+        # Бонусы к характеристикам
+        if self.stats_bonus:
+            stat_names = {
+                'strength': 'Сила',
+                'dexterity': 'Ловкость',
+                'constitution': 'Телосложение',
+                'spirit': 'Дух',
+                'intelligence': 'Интеллект',
+                'luck': 'Удача',
+                'damage': 'Урон',
+                'defense': 'Защита'
+            }
+            for stat, bonus in self.stats_bonus.items():
+                actual_bonus = self.get_stat_bonus(stat)
+                stat_name = stat_names.get(stat, stat)
+                parts.append(f"+{actual_bonus} {stat_name}")
+
+        # Процентные бонусы к параметрам
+        if self.param_bonus:
+            param_names = {
+                'health': 'Здоровье',
+                'mana': 'Мана',
+                'stamina': 'Выносливость'
+            }
+            for param, bonus in self.param_bonus.items():
+                param_name = param_names.get(param, param)
+                parts.append(f"+{bonus}% {param_name}")
+
+        # Бонусы к навыкам
+        if self.skill_bonus:
+            for skill_id, bonus in self.skill_bonus.items():
+                parts.append(f"+{bonus} к навыку")
+
+        return ", ".join(parts) if parts else ""
 
 
 class WeaponItem(EquipmentItem):
     """Класс оружия"""
 
     def __init__(self, name, weapon_type, base_damage, value=100,
-                 quality=ItemQuality.COMMON, stats_bonus=None):
+                 quality=ItemQuality.COMMON, stats_bonus=None, param_bonus=None, skill_bonus=None):
         """
         Инициализация оружия
 
@@ -295,6 +314,8 @@ class WeaponItem(EquipmentItem):
             value: Стоимость
             quality: Качество
             stats_bonus: Дополнительные бонусы к характеристикам
+            param_bonus: Процентные бонусы к параметрам
+            skill_bonus: Бонусы к навыкам
         """
         weight = weapon_type.weight
         stats = stats_bonus or {}
@@ -305,7 +326,7 @@ class WeaponItem(EquipmentItem):
 
         description = f"{weapon_type.rus_name}. Урон: {base_damage}"
 
-        super().__init__(name, EquipmentSlot.WEAPON, value, weight, quality, stats, description)
+        super().__init__(name, EquipmentSlot.WEAPON, value, weight, quality, stats, param_bonus, skill_bonus, description)
         self.weapon_type = weapon_type
         self.base_damage = base_damage
 
@@ -319,7 +340,7 @@ class ArmorItem(EquipmentItem):
     """Класс доспехов"""
 
     def __init__(self, name, slot, armor_type, base_defense, value=100,
-                 quality=ItemQuality.COMMON, stats_bonus=None):
+                 quality=ItemQuality.COMMON, stats_bonus=None, param_bonus=None, skill_bonus=None):
         """
         Инициализация доспеха
 
@@ -330,7 +351,9 @@ class ArmorItem(EquipmentItem):
             base_defense: Базовая защита
             value: Стоимость
             quality: Качество
-            stats_bonus: Дополнительные бонусы
+            stats_bonus: Дополнительные бонусы к характеристикам
+            param_bonus: Процентные бонусы к параметрам
+            skill_bonus: Бонусы к навыкам
         """
         # Вес зависит от типа доспеха и слота
         slot_weights = {
@@ -348,7 +371,7 @@ class ArmorItem(EquipmentItem):
 
         description = f"{armor_type.rus_name}. Защита: {base_defense}"
 
-        super().__init__(name, slot, value, weight, quality, stats, description)
+        super().__init__(name, slot, value, weight, quality, stats, param_bonus, skill_bonus, description)
         self.armor_type = armor_type
         self.base_defense = base_defense
 
@@ -361,7 +384,8 @@ class ArmorItem(EquipmentItem):
 class JewelryItem(EquipmentItem):
     """Класс украшений (кольца, амулеты, браслеты)"""
 
-    def __init__(self, name, slot, value=200, quality=ItemQuality.UNCOMMON, stats_bonus=None):
+    def __init__(self, name, slot, value=200, quality=ItemQuality.UNCOMMON,
+                 stats_bonus=None, param_bonus=None, skill_bonus=None):
         """
         Инициализация украшения
 
@@ -371,6 +395,8 @@ class JewelryItem(EquipmentItem):
             value: Стоимость
             quality: Качество
             stats_bonus: Бонусы к характеристикам
+            param_bonus: Процентные бонусы к параметрам
+            skill_bonus: Бонусы к навыкам
         """
         weight = 0.1  # Украшения очень легкие
         stats = stats_bonus or {}
@@ -379,7 +405,7 @@ class JewelryItem(EquipmentItem):
         if stats:
             description = f"Украшение. {self._get_bonus_description(stats)}"
 
-        super().__init__(name, slot, value, weight, quality, stats, description)
+        super().__init__(name, slot, value, weight, quality, stats, param_bonus, skill_bonus, description)
 
     def _get_bonus_description(self, stats):
         """Создать описание бонусов"""
@@ -742,7 +768,10 @@ class Inventory:
 class ItemGenerator:
     """Генератор случайных предметов"""
 
-    # Префиксы и суффиксы для названий
+    # Конфигурация предметов (загружается из JSON)
+    _config = None
+
+    # Префиксы и суффиксы для названий (старые, для совместимости)
     WEAPON_PREFIXES = ["Острый", "Тяжелый", "Легкий", "Мастерский", "Древний", "Зачарованный"]
     WEAPON_SUFFIXES = ["силы", "скорости", "мощи", "точности", "разрушения"]
 
@@ -751,6 +780,170 @@ class ItemGenerator:
 
     JEWELRY_PREFIXES = ["Сияющее", "Темное", "Древнее", "Магическое", "Проклятое", "Благословенное"]
     JEWELRY_SUFFIXES = ["силы", "мудрости", "удачи", "здоровья", "маны"]
+
+    @classmethod
+    def load_config(cls):
+        """Загрузить конфигурацию предметов из JSON файла"""
+        if cls._config is None:
+            import json
+            import os
+            config_path = os.path.join(os.path.dirname(__file__), 'config', 'items_config.json')
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    cls._config = json.load(f)
+            except FileNotFoundError:
+                print(f"WARNING: Config file not found: {config_path}")
+                cls._config = {}
+        return cls._config
+
+    @staticmethod
+    def get_item_type_by_armor(armor_type):
+        """Получить тип предмета из конфига по типу брони"""
+        if armor_type == ArmorType.LIGHT:
+            return "light_armor"
+        elif armor_type == ArmorType.MEDIUM:
+            return "medium_armor"
+        elif armor_type == ArmorType.HEAVY:
+            return "heavy_armor"
+        return "light_armor"
+
+    @staticmethod
+    def get_item_type_by_slot(slot):
+        """Получить тип предмета из конфига по слоту"""
+        if slot == EquipmentSlot.AMULET:
+            return "amulet"
+        elif slot in [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]:
+            return "ring"
+        elif slot in [EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]:
+            return "bracelet"
+        return "ring"
+
+    @classmethod
+    def generate_bonuses_from_config(cls, item_type, quality):
+        """
+        Генерировать бонусы для предмета на основе конфига
+
+        Returns:
+            tuple: (stats_bonus, param_bonus, skill_bonus, damage_or_defense_value)
+        """
+        config = cls.load_config()
+        if not config or 'item_parameters' not in config:
+            return {}, {}, {}, 0
+
+        quality_name = quality.name.lower()
+
+        # Получаем параметры из конфига
+        params = config['item_parameters'].get(item_type, {}).get(quality_name, {})
+        if not params:
+            return {}, {}, {}, 0
+
+        # Генерация урона/защиты
+        damage_range = params.get('damage_range') or params.get('defense_range', [0, 0])
+        damage_or_defense = random.randint(damage_range[0], damage_range[1]) if damage_range else 0
+
+        # Генерация бонусов к характеристикам
+        stats_bonus = {}
+        stats_count_range = params.get('stats_count_range', [0, 0])
+        stats_count = random.randint(stats_count_range[0], stats_count_range[1])
+
+        if stats_count > 0:
+            stat_bonus_range = params.get('stat_bonus_range', [1, 1])
+            stat_bonus_list = params.get('stat_bonus_list', [])
+
+            for _ in range(stats_count):
+                if stat_bonus_list:
+                    stat = random.choice(stat_bonus_list)
+                    bonus = random.randint(stat_bonus_range[0], stat_bonus_range[1])
+                    stats_bonus[stat] = stats_bonus.get(stat, 0) + bonus
+
+        # Генерация процентных бонусов к параметрам
+        param_bonus = {}
+        params_count_range = params.get('params_count_range', [0, 0])
+        params_count = random.randint(params_count_range[0], params_count_range[1])
+
+        if params_count > 0:
+            param_bonus_range = params.get('param_bonus_range', [1, 1])
+            param_bonus_list = params.get('param_bonus_list', [])
+
+            for _ in range(params_count):
+                if param_bonus_list:
+                    param = random.choice(param_bonus_list)
+                    bonus = random.randint(param_bonus_range[0], param_bonus_range[1])
+                    param_bonus[param] = param_bonus.get(param, 0) + bonus
+
+        # Генерация бонусов к навыкам
+        skill_bonus = {}
+        skills_count_range = params.get('skills_count_range', [0, 0])
+        skills_count = random.randint(skills_count_range[0], skills_count_range[1])
+
+        if skills_count > 0:
+            skill_bonus_range = params.get('skill_bonus_range', [1, 1])
+            # Пока используем general skill ID, позже можно добавить список навыков
+            for i in range(skills_count):
+                skill_bonus[f'skill_{i}'] = random.randint(skill_bonus_range[0], skill_bonus_range[1])
+
+        return stats_bonus, param_bonus, skill_bonus, damage_or_defense
+
+    @classmethod
+    def calculate_item_value(cls, item_type, quality, damage_or_defense, stats_bonus, param_bonus, skill_bonus):
+        """Рассчитать стоимость предмета на основе конфига"""
+        config = cls.load_config()
+        if not config:
+            return 100
+
+        # Базовая цена
+        base_prices = config.get('base_prices', {})
+        base_value = base_prices.get(item_type, 50)
+
+        # Получаем мультипликаторы
+        quality_name = quality.name.lower()
+        params = config['item_parameters'].get(item_type, {}).get(quality_name, {})
+        price_multipliers = params.get('price_multipliers', {})
+
+        # Расчет итоговой цены
+        total_value = base_value
+
+        # Добавляем стоимость за урон/защиту
+        if damage_or_defense > 0:
+            multiplier = price_multipliers.get('per_damage', 0) or price_multipliers.get('per_defense', 0)
+            total_value += damage_or_defense * multiplier
+
+        # Добавляем стоимость за характеристики
+        if stats_bonus:
+            multiplier = price_multipliers.get('per_stat', 0)
+            total_stats = sum(stats_bonus.values())
+            total_value *= (1 + multiplier * total_stats)
+
+        # Добавляем стоимость за параметры
+        if param_bonus:
+            multiplier = price_multipliers.get('per_param_percent', 0)
+            total_params = sum(param_bonus.values())
+            total_value *= (1 + multiplier * (total_params / 100))
+
+        # Добавляем стоимость за навыки
+        if skill_bonus:
+            multiplier = price_multipliers.get('per_skill', 0)
+            total_skills = len(skill_bonus)
+            total_value *= (1 + multiplier * total_skills)
+
+        return int(total_value)
+
+    @classmethod
+    def generate_item_name(cls, base_name, item_type_name, quality):
+        """Сгенерировать название предмета с суффиксом из конфига"""
+        config = cls.load_config()
+        if not config or 'quality_levels' not in config:
+            return base_name
+
+        quality_name = quality.name.lower()
+        quality_config = config['quality_levels'].get(quality_name, {})
+        suffixes = quality_config.get('suffixes', [])
+
+        if suffixes and quality != ItemQuality.COMMON:
+            suffix = random.choice(suffixes)
+            return f"{item_type_name} {suffix}"
+
+        return item_type_name
 
     @staticmethod
     def generate_quality(base_quality_weights=None):
@@ -892,68 +1085,42 @@ class ItemGenerator:
             }
         return ItemGenerator.generate_quality(shop_quality_weights)
 
-    @staticmethod
-    def generate_weapon(level=1, quality=None, max_quality=None):
+    @classmethod
+    def generate_weapon(cls, level=1, quality=None, max_quality=None):
         """
-        Генерация случайного оружия
+        Генерация случайного оружия (новая версия с использованием конфига)
 
         Args:
-            level: Уровень предмета (влияет на характеристики)
+            level: Уровень предмета (не используется в новой системе)
             quality: Качество (если None - случайное)
+            max_quality: Максимальное качество (для ограничения генерации)
 
         Returns:
             WeaponItem
         """
         if quality is None:
-            quality = ItemGenerator.generate_quality()
+            quality = cls.generate_quality()
 
         weapon_type = random.choice(list(WeaponType))
 
-        # Базовый урон зависит от уровня
-        base_damage = 5 + (level * 2)
+        # Генерируем бонусы из конфига
+        stats_bonus, param_bonus, skill_bonus, base_damage = cls.generate_bonuses_from_config("weapon", quality)
 
-        # Генерация бонусов - только для UNCOMMON и выше
-        stats_bonus = {}
-        if quality.multiplier >= 1.5:  # Необычное и выше
-            # Добавляем случайные бонусы к характеристикам
-            bonus_count = int(quality.multiplier)
-            possible_stats = ['strength', 'dexterity', 'luck']
+        # Генерируем название
+        name = cls.generate_item_name(weapon_type.rus_name, weapon_type.rus_name, quality)
 
-            for _ in range(bonus_count):
-                stat = random.choice(possible_stats)
-                bonus_value = random.randint(1, level)
-                stats_bonus[stat] = stats_bonus.get(stat, 0) + bonus_value
+        # Рассчитываем стоимость
+        value = cls.calculate_item_value("weapon", quality, base_damage, stats_bonus, param_bonus, skill_bonus)
 
-        # Генерация названия на основе реальных бонусов
-        stat_suffixes = {
-            'strength': 'силы',
-            'dexterity': 'скорости',
-            'luck': 'удачи'
-        }
+        return WeaponItem(name, weapon_type, base_damage, value, quality, stats_bonus, param_bonus, skill_bonus)
 
-        if quality in [ItemQuality.RARE, ItemQuality.EPIC, ItemQuality.LEGENDARY, ItemQuality.ARTIFACT]:
-            prefix = random.choice(ItemGenerator.WEAPON_PREFIXES)
-            # Суффикс на основе главного стата
-            if stats_bonus:
-                main_stat = max(stats_bonus.keys(), key=lambda k: stats_bonus[k])
-                suffix = stat_suffixes.get(main_stat, 'мощи')
-            else:
-                suffix = random.choice(ItemGenerator.WEAPON_SUFFIXES)
-            name = f"{prefix} {weapon_type.rus_name} {suffix}"
-        else:
-            name = weapon_type.rus_name
-
-        value = 50 + (level * 10)
-
-        return WeaponItem(name, weapon_type, base_damage, value, quality, stats_bonus)
-
-    @staticmethod
-    def generate_armor(level=1, slot=None, armor_type=None, quality=None):
+    @classmethod
+    def generate_armor(cls, level=1, slot=None, armor_type=None, quality=None):
         """
-        Генерация случайного доспеха
+        Генерация случайного доспеха (новая версия с использованием конфига)
 
         Args:
-            level: Уровень предмета
+            level: Уровень предмета (не используется в новой системе)
             slot: Слот (если None - случайный из HEAD, CHEST, HANDS, FEET)
             armor_type: Тип доспеха (если None - случайный)
             quality: Качество (если None - случайное)
@@ -962,7 +1129,7 @@ class ItemGenerator:
             ArmorItem
         """
         if quality is None:
-            quality = ItemGenerator.generate_quality()
+            quality = cls.generate_quality()
 
         if slot is None:
             slot = random.choice([EquipmentSlot.HEAD, EquipmentSlot.CHEST,
@@ -971,15 +1138,11 @@ class ItemGenerator:
         if armor_type is None:
             armor_type = random.choice(list(ArmorType))
 
-        # Базовая защита зависит от слота и уровня
-        slot_defense_base = {
-            EquipmentSlot.HEAD: 2,
-            EquipmentSlot.CHEST: 5,
-            EquipmentSlot.HANDS: 1,
-            EquipmentSlot.FEET: 2
-        }
+        # Получаем тип предмета для конфига
+        item_type = cls.get_item_type_by_armor(armor_type)
 
-        base_defense = slot_defense_base.get(slot, 2) + (level * 1)
+        # Генерируем бонусы из конфига
+        stats_bonus, param_bonus, skill_bonus, base_defense = cls.generate_bonuses_from_config(item_type, quality)
 
         # Генерация названия
         slot_names = {
@@ -988,67 +1151,21 @@ class ItemGenerator:
             EquipmentSlot.HANDS: "Перчатки",
             EquipmentSlot.FEET: "Сапоги"
         }
-
         slot_name = slot_names.get(slot, "Доспех")
+        name = cls.generate_item_name(f"{armor_type.rus_name} {slot_name}", slot_name, quality)
 
-        # Генерация бонусов - только для UNCOMMON и выше
-        # Бонусы зависят от типа брони
-        stats_bonus = {}
-        if quality.multiplier >= 1.5:  # Необычное и выше
-            # Определяем доступные характеристики в зависимости от типа брони
-            if armor_type == ArmorType.LIGHT:
-                # Легкая броня: только spirit и intelligence
-                possible_stats = ['spirit', 'intelligence']
-            elif armor_type == ArmorType.HEAVY:
-                # Тяжелая броня: только strength и constitution
-                possible_stats = ['strength', 'constitution']
-            else:  # MEDIUM
-                # Средняя броня: все бонусы, но меньше (компенсаторный механизм)
-                possible_stats = ['strength', 'constitution', 'spirit', 'intelligence', 'dexterity']
+        # Рассчитываем стоимость
+        value = cls.calculate_item_value(item_type, quality, base_defense, stats_bonus, param_bonus, skill_bonus)
 
-            # Для средней брони уменьшаем количество бонусов (компенсаторный механизм)
-            if armor_type == ArmorType.MEDIUM:
-                bonus_count = max(1, int(quality.multiplier * 0.7))  # На 30% меньше бонусов
-            else:
-                bonus_count = int(quality.multiplier)
+        return ArmorItem(name, slot, armor_type, base_defense, value, quality, stats_bonus, param_bonus, skill_bonus)
 
-            for _ in range(bonus_count):
-                stat = random.choice(possible_stats)
-                bonus_value = random.randint(1, level)
-                stats_bonus[stat] = stats_bonus.get(stat, 0) + bonus_value
-
-        # Генерация названия на основе реальных бонусов
-        stat_suffixes = {
-            'constitution': 'стойкости',
-            'strength': 'силы',
-            'dexterity': 'ловкости',
-            'spirit': 'духа',
-            'intelligence': 'мудрости'
-        }
-
-        if quality in [ItemQuality.RARE, ItemQuality.EPIC, ItemQuality.LEGENDARY, ItemQuality.ARTIFACT]:
-            prefix = random.choice(ItemGenerator.ARMOR_PREFIXES)
-            # Суффикс на основе главного стата
-            if stats_bonus:
-                main_stat = max(stats_bonus.keys(), key=lambda k: stats_bonus[k])
-                suffix = stat_suffixes.get(main_stat, 'защиты')
-            else:
-                suffix = random.choice(ItemGenerator.ARMOR_SUFFIXES)
-            name = f"{prefix} {slot_name} {suffix}"
-        else:
-            name = f"{armor_type.rus_name} {slot_name}"
-
-        value = 60 + (level * 12)
-
-        return ArmorItem(name, slot, armor_type, base_defense, value, quality, stats_bonus)
-
-    @staticmethod
-    def generate_jewelry(level=1, slot=None, quality=None):
+    @classmethod
+    def generate_jewelry(cls, level=1, slot=None, quality=None):
         """
-        Генерация случайного украшения
+        Генерация случайного украшения (новая версия с использованием конфига)
 
         Args:
-            level: Уровень предмета
+            level: Уровень предмета (не используется в новой системе)
             slot: Слот (если None - случайный из украшений)
             quality: Качество (если None - случайное, но не ниже UNCOMMON)
 
@@ -1064,7 +1181,7 @@ class ItemGenerator:
                 ItemQuality.LEGENDARY: 0.04,
                 ItemQuality.ARTIFACT: 0.01
             }
-            quality = ItemGenerator.generate_quality(quality_weights)
+            quality = cls.generate_quality(quality_weights)
 
         if slot is None:
             jewelry_slots = [
@@ -1075,6 +1192,12 @@ class ItemGenerator:
             ]
             slot = random.choice(jewelry_slots)
 
+        # Получаем тип предмета для конфига
+        item_type = cls.get_item_type_by_slot(slot)
+
+        # Генерируем бонусы из конфига
+        stats_bonus, param_bonus, skill_bonus, _ = cls.generate_bonuses_from_config(item_type, quality)
+
         # Генерация названия
         slot_names = {
             EquipmentSlot.RING_1: "Кольцо", EquipmentSlot.RING_2: "Кольцо",
@@ -1082,66 +1205,13 @@ class ItemGenerator:
             EquipmentSlot.AMULET: "Амулет",
             EquipmentSlot.BRACELET_1: "Браслет", EquipmentSlot.BRACELET_2: "Браслет"
         }
-
         slot_name = slot_names.get(slot, "Украшение")
+        name = cls.generate_item_name(slot_name, slot_name, quality)
 
-        # Бонусы к характеристикам для ВСЕХ качеств
-        # Количество бонусов зависит от качества
-        stats_bonus = {}
+        # Рассчитываем стоимость
+        value = cls.calculate_item_value(item_type, quality, 0, stats_bonus, param_bonus, skill_bonus)
 
-        # Определяем количество бонусных характеристик в зависимости от качества
-        bonus_counts = {
-            ItemQuality.POOR: 1,           # 1 характеристика
-            ItemQuality.COMMON: 1,         # 1 характеристика
-            ItemQuality.UNCOMMON: 2,       # 2 характеристики
-            ItemQuality.RARE: 2,           # 2 характеристики
-            ItemQuality.EPIC: 3,           # 3 характеристики
-            ItemQuality.LEGENDARY: 4,      # 4 характеристики
-            ItemQuality.ARTIFACT: 5        # 5 характеристик
-        }
-
-        bonus_count = bonus_counts.get(quality, 1)
-        possible_stats = ['strength', 'dexterity', 'constitution', 'spirit', 'intelligence', 'luck']
-
-        for _ in range(bonus_count):
-            stat = random.choice(possible_stats)
-            # Значение бонуса зависит от уровня и качества
-            base_value = max(1, level // 2)
-            # Для низких качеств уменьшаем бонус
-            if quality == ItemQuality.POOR:
-                bonus_value = max(1, base_value // 2)
-            elif quality == ItemQuality.COMMON:
-                bonus_value = max(1, int(base_value * 0.7))
-            else:
-                bonus_value = base_value
-
-            stats_bonus[stat] = stats_bonus.get(stat, 0) + bonus_value
-
-        # Генерация названия на основе реальных бонусов
-        stat_suffixes = {
-            'strength': 'силы',
-            'dexterity': 'ловкости',
-            'constitution': 'выносливости',
-            'spirit': 'духа',
-            'intelligence': 'мудрости',
-            'luck': 'удачи'
-        }
-
-        prefix = random.choice(ItemGenerator.JEWELRY_PREFIXES)
-
-        # Суффикс на основе главного стата (с наибольшим бонусом)
-        if stats_bonus:
-            main_stat = max(stats_bonus.keys(), key=lambda k: stats_bonus[k])
-            suffix = stat_suffixes.get(main_stat, 'силы')
-        else:
-            # Для плохих/обычных предметов без бонусов - простое название
-            suffix = random.choice(['защиты', 'стойкости'])
-
-        name = f"{prefix} {slot_name} {suffix}"
-
-        value = 100 + (level * 20)
-
-        return JewelryItem(name, slot, value, quality, stats_bonus)
+        return JewelryItem(name, slot, value, quality, stats_bonus, param_bonus, skill_bonus)
 
     @staticmethod
     def generate_loot_for_location(location_type, level=1, luck=1):
