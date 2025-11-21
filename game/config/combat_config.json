@@ -1,18 +1,20 @@
 {
   "_description": "Конфигурация боевой системы - уворот, крит, защита, урон",
-  "_version": "1.0.0",
+  "_version": "1.1.0",
 
   "dodge": {
-    "_comment": "Система уворота: шанс = ловкость * base_chance_per_dex",
-    "base_chance_per_dex": 3,
-    "max_chance": 85
+    "_comment": "Система уворота с diminishing returns: первые 10 dex дают 2% за единицу, 11-20 дают 1%, 21-30 дают 0.6%, 31+ дают 0.3%",
+    "base_chance_per_dex": 2,
+    "max_chance": 50,
+    "_balance_note": "При dex=10: 20%, dex=20: 30%, dex=30: 36%, dex=40: 39%"
   },
 
   "critical": {
-    "_comment": "Система критического удара: шанс = удача * base_chance_per_luck",
-    "base_chance_per_luck": 3,
-    "max_chance": 85,
-    "damage_multiplier": 2.0
+    "_comment": "Система критического удара с diminishing returns: первые 10 luck дают 2% за единицу, 11-20 дают 1%, 21-30 дают 0.6%, 31+ дают 0.3%",
+    "base_chance_per_luck": 2,
+    "max_chance": 50,
+    "damage_multiplier": 2.0,
+    "_balance_note": "При luck=10: 20%, luck=20: 30%, luck=30: 36%, luck=40: 39%"
   },
 
   "damage": {

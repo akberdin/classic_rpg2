@@ -293,25 +293,83 @@ class Character:
 
     def calculate_dodge_chance(self):
         """
-        Рассчитать шанс уворота на основе ловкости
-        Максимум 85%
+        Рассчитать шанс уворота на основе ловкости с учетом экипировки
+        Использует систему diminishing returns для баланса
+        Максимум 50%
 
         Returns:
-            float: Шанс уворота (0-85)
+            float: Шанс уворота (0-50)
         """
-        dodge_chance = self.dexterity * DODGE_BASE_CHANCE
-        return min(85.0, dodge_chance)  # Максимум 85%
+        # Базовая ловкость
+        dex = self.dexterity
+
+        # Учитываем бонусы от экипировки
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            dex += equipment_bonus.get('dexterity', 0)
+
+        # Система diminishing returns:
+        # Первые 10 единиц: 100% эффективности (2% за единицу)
+        # 11-20 единиц: 50% эффективности (1% за единицу)
+        # 21-30 единиц: 30% эффективности (0.6% за единицу)
+        # 31+ единиц: 15% эффективности (0.3% за единицу)
+        base_per_point = DODGE_BASE_CHANCE  # 2.0 из конфига
+
+        if dex <= 10:
+            dodge_chance = dex * base_per_point
+        elif dex <= 20:
+            dodge_chance = 10 * base_per_point + (dex - 10) * base_per_point * 0.5
+        elif dex <= 30:
+            dodge_chance = (10 * base_per_point +
+                          10 * base_per_point * 0.5 +
+                          (dex - 20) * base_per_point * 0.3)
+        else:
+            dodge_chance = (10 * base_per_point +
+                          10 * base_per_point * 0.5 +
+                          10 * base_per_point * 0.3 +
+                          (dex - 30) * base_per_point * 0.15)
+
+        return min(50.0, dodge_chance)  # Максимум 50%
 
     def calculate_crit_chance(self):
         """
-        Рассчитать шанс критического удара на основе удачи
-        Максимум 85%
+        Рассчитать шанс критического удара на основе удачи с учетом экипировки
+        Использует систему diminishing returns для баланса
+        Максимум 50%
 
         Returns:
-            float: Шанс крита (0-85)
+            float: Шанс крита (0-50)
         """
-        crit_chance = self.luck * CRIT_BASE_CHANCE
-        return min(85.0, crit_chance)  # Максимум 85%
+        # Базовая удача
+        luck = self.luck
+
+        # Учитываем бонусы от экипировки
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            luck += equipment_bonus.get('luck', 0)
+
+        # Система diminishing returns:
+        # Первые 10 единиц: 100% эффективности (2% за единицу)
+        # 11-20 единиц: 50% эффективности (1% за единицу)
+        # 21-30 единиц: 30% эффективности (0.6% за единицу)
+        # 31+ единиц: 15% эффективности (0.3% за единицу)
+        base_per_point = CRIT_BASE_CHANCE  # 2.0 из конфига
+
+        if luck <= 10:
+            crit_chance = luck * base_per_point
+        elif luck <= 20:
+            crit_chance = 10 * base_per_point + (luck - 10) * base_per_point * 0.5
+        elif luck <= 30:
+            crit_chance = (10 * base_per_point +
+                         10 * base_per_point * 0.5 +
+                         (luck - 20) * base_per_point * 0.3)
+        else:
+            crit_chance = (10 * base_per_point +
+                         10 * base_per_point * 0.5 +
+                         10 * base_per_point * 0.3 +
+                         (luck - 30) * base_per_point * 0.15)
+
+        return min(50.0, crit_chance)  # Максимум 50%
 
     def attack(self, target):
         """
