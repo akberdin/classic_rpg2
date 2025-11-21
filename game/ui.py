@@ -1096,6 +1096,10 @@ class TradeWindow:
         self.item_rects = []  # Список прямоугольников предметов
         self.goods_area = None  # Область списка товаров
 
+        # Хранение отфильтрованных списков для консистентности между рендером и вводом
+        self.current_merchant_items = []  # Текущий отфильтрованный список товаров торговца
+        self.current_player_items = []  # Текущий отфильтрованный список товаров игрока
+
     def render(self, player, merchant, mouse_pos=None):
         """
         Отрисовка окна торговли
@@ -1288,6 +1292,8 @@ class TradeWindow:
         items = merchant.inventory.get_all_items()
         # Применяем фильтрацию и сортировку
         items = self.filter_and_sort_items(items)
+        # Сохраняем для использования в input handler
+        self.current_merchant_items = items
 
         if not items:
             msg = "Нет товаров этого типа" if self.current_filter != "all" else "Товары закончились"
@@ -1372,6 +1378,8 @@ class TradeWindow:
         items = player.inventory.get_all_items()
         # Применяем фильтрацию и сортировку
         items = self.filter_and_sort_items(items)
+        # Сохраняем для использования в input handler
+        self.current_player_items = items
 
         if not items:
             msg = "Нет товаров этого типа" if self.current_filter != "all" else "У вас нет товаров для продажи"
@@ -1479,6 +1487,22 @@ class TradeWindow:
         for rect, item, index in self.item_rects:
             if rect.collidepoint(mouse_x, mouse_y):
                 return index
+        return None
+
+    def get_item_at_mouse_trade(self, mouse_x, mouse_y):
+        """
+        Получить сам предмет под курсором мыши (не индекс)
+
+        Args:
+            mouse_x: X координата мыши
+            mouse_y: Y координата мыши
+
+        Returns:
+            Item или None: Предмет под курсором
+        """
+        for rect, item, index in self.item_rects:
+            if rect.collidepoint(mouse_x, mouse_y):
+                return item
         return None
 
     def _get_item_type(self, item):
