@@ -2,11 +2,11 @@
 Модуль для создания и размещения NPC на карте
 """
 import random
-from game.npc import Guard, Merchant, MagicMerchant, MagePatrol, Bandit, Miner, Undead, Alchemist, Hunter, Necromancer
+from game.npc import Guard, Merchant, MagicMerchant, MagePatrol, Bandit, Miner, Undead, Alchemist, Hunter, Necromancer, Wolf, Bear, Deer
 from game.inventory import PREDEFINED_ITEMS, ItemGenerator, ItemQuality
 from game.constants import (
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
-    LOCATION_MINE, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL
+    LOCATION_MINE, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, BIOME_FOREST
 )
 
 
@@ -38,7 +38,8 @@ class NPCSpawner:
             'undead': self.spawn_undead(),
             'alchemists': self.spawn_alchemists(),
             'hunters': self.spawn_hunters(),
-            'necromancers': self.spawn_necromancers()
+            'necromancers': self.spawn_necromancers(),
+            'animals': self.spawn_animals()
         }
 
         # Добавляем магического торговца к торговцам
@@ -701,6 +702,102 @@ class NPCSpawner:
             ]
 
         return route
+
+    def spawn_animals(self):
+        """
+        Создание животных NPC в лесных биомах
+
+        Returns:
+            list: Список всех животных (волки, медведи, олени)
+        """
+        animals = []
+
+        # Получаем параметры спавна из конфига
+        try:
+            from game.config.config_loader import get_config
+            config = get_config()
+            animal_config = config.npc.get_spawn_param('animals_in_forests', {})
+
+            spawn_areas_min = animal_config.get('spawn_areas_count', {}).get('min', 15)
+            spawn_areas_max = animal_config.get('spawn_areas_count', {}).get('max', 25)
+            wolves_min = animal_config.get('wolves_per_spawn_area', {}).get('min', 2)
+            wolves_max = animal_config.get('wolves_per_spawn_area', {}).get('max', 4)
+            bears_min = animal_config.get('bears_per_spawn_area', {}).get('min', 1)
+            bears_max = animal_config.get('bears_per_spawn_area', {}).get('max', 2)
+            deer_min = animal_config.get('deer_per_spawn_area', {}).get('min', 3)
+            deer_max = animal_config.get('deer_per_spawn_area', {}).get('max', 5)
+            level_min = animal_config.get('initial_level_min', 1)
+            level_max = animal_config.get('initial_level_max', 10)
+        except:
+            # Значения по умолчанию, если конфиг не загружен
+            spawn_areas_min, spawn_areas_max = 15, 25
+            wolves_min, wolves_max = 2, 4
+            bears_min, bears_max = 1, 2
+            deer_min, deer_max = 3, 5
+            level_min, level_max = 1, 10
+
+        # Определяем количество зон спавна
+        num_spawn_areas = random.randint(spawn_areas_min, spawn_areas_max)
+
+        # Ищем подходящие места в лесных биомах
+        forest_positions = []
+        map_width = self.game_map.width
+        map_height = self.game_map.height
+
+        # Собираем все позиции в лесу, которые не заняты локациями
+        for _ in range(num_spawn_areas * 10):  # Больше попыток для поиска мест
+            x = random.randint(5, map_width - 5)
+            y = random.randint(5, map_height - 5)
+
+            # Проверяем, что это лесной биом
+            if self.game_map.biomes[x][y] == BIOME_FOREST:
+                # Проверяем, что нет локаций поблизости
+                location_nearby = False
+                for loc in self.game_map.locations:
+                    dist = abs(loc.x - x) + abs(loc.y - y)
+                    if dist < 10:
+                        location_nearby = True
+                        break
+
+                if not location_nearby:
+                    forest_positions.append((x, y))
+                    if len(forest_positions) >= num_spawn_areas:
+                        break
+
+        # Создаем животных в каждой зоне спавна
+        for spawn_x, spawn_y in forest_positions:
+            # Волки
+            num_wolves = random.randint(wolves_min, wolves_max)
+            for i in range(num_wolves):
+                pos = self._find_npc_position(spawn_x, spawn_y, animals, radius=15)
+                if pos:
+                    wx, wy = pos
+                    level = random.randint(level_min, level_max)
+                    wolf = Wolf(f"Волк #{len(animals) + 1}", wx, wy, level, spawn_x, spawn_y)
+                    animals.append(wolf)
+
+            # Медведи
+            num_bears = random.randint(bears_min, bears_max)
+            for i in range(num_bears):
+                pos = self._find_npc_position(spawn_x, spawn_y, animals, radius=15)
+                if pos:
+                    bx, by = pos
+                    level = random.randint(level_min, level_max)
+                    bear = Bear(f"Медведь #{len(animals) + 1}", bx, by, level, spawn_x, spawn_y)
+                    animals.append(bear)
+
+            # Олени
+            num_deer = random.randint(deer_min, deer_max)
+            for i in range(num_deer):
+                pos = self._find_npc_position(spawn_x, spawn_y, animals, radius=15)
+                if pos:
+                    dx, dy = pos
+                    level = random.randint(level_min, level_max)
+                    deer = Deer(f"Олень #{len(animals) + 1}", dx, dy, level, spawn_x, spawn_y)
+                    animals.append(deer)
+
+        print(f"Создано животных: {len(animals)} в {len(forest_positions)} зонах спавна")
+        return animals
 
 
 def give_starting_items(player):

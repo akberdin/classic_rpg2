@@ -13,7 +13,10 @@
     "mage": "mage",
     "alchemist": "alchemist",
     "hunter": "hunter",
-    "necromancer": "necromancer"
+    "necromancer": "necromancer",
+    "wolf": "wolf",
+    "bear": "bear",
+    "deer": "deer"
   },
 
   "stat_generation": {
@@ -88,6 +91,33 @@
       "rest_duration_max": 5,
       "max_distance_from_ruins": 20,
       "aggressive": true
+    },
+    "wolf": {
+      "detection_range": 12,
+      "rest_duration_min": 2,
+      "rest_duration_max": 4,
+      "patrol_radius": 25,
+      "aggressive": false,
+      "flee_on_low_health": false,
+      "_note": "Волки патрулируют территорию, могут атаковать при провокации"
+    },
+    "bear": {
+      "detection_range": 8,
+      "rest_duration_min": 4,
+      "rest_duration_max": 6,
+      "patrol_radius": 15,
+      "aggressive": false,
+      "flee_on_low_health": false,
+      "_note": "Медведи территориальны, атакуют если подойти слишком близко"
+    },
+    "deer": {
+      "detection_range": 10,
+      "rest_duration_min": 2,
+      "rest_duration_max": 3,
+      "patrol_radius": 20,
+      "aggressive": false,
+      "flee_on_low_health": true,
+      "_note": "Олени пугливы и убегают при опасности"
     }
   },
 
@@ -143,6 +173,21 @@
       "active_hours_start": 20,
       "active_hours_end": 6,
       "_note": "Некроманты активны ночью"
+    },
+    "wolf": {
+      "active_hours_start": 0,
+      "active_hours_end": 24,
+      "_note": "Волки активны круглосуточно"
+    },
+    "bear": {
+      "active_hours_start": 0,
+      "active_hours_end": 24,
+      "_note": "Медведи активны круглосуточно"
+    },
+    "deer": {
+      "active_hours_start": 0,
+      "active_hours_end": 24,
+      "_note": "Олени активны круглосуточно"
     }
   },
 
@@ -261,7 +306,10 @@
         "mage": "friendly",
         "alchemist": "friendly",
         "hunter": "friendly",
-        "necromancer": "hostile"
+        "necromancer": "hostile",
+        "wolf": "hostile",
+        "bear": "hostile",
+        "deer": "hostile"
       },
       "necromancer": {
         "bandit": "neutral",
@@ -274,6 +322,51 @@
         "alchemist": "unfriendly",
         "hunter": "hostile",
         "necromancer": "friendly"
+      },
+      "wolf": {
+        "bandit": "neutral",
+        "guard": "neutral",
+        "merchant": "neutral",
+        "neutral": "neutral",
+        "miner": "neutral",
+        "undead": "neutral",
+        "mage": "neutral",
+        "alchemist": "neutral",
+        "hunter": "unfriendly",
+        "necromancer": "neutral",
+        "wolf": "neutral",
+        "bear": "neutral",
+        "deer": "neutral"
+      },
+      "bear": {
+        "bandit": "neutral",
+        "guard": "neutral",
+        "merchant": "neutral",
+        "neutral": "neutral",
+        "miner": "neutral",
+        "undead": "neutral",
+        "mage": "neutral",
+        "alchemist": "neutral",
+        "hunter": "unfriendly",
+        "necromancer": "neutral",
+        "wolf": "neutral",
+        "bear": "neutral",
+        "deer": "neutral"
+      },
+      "deer": {
+        "bandit": "neutral",
+        "guard": "neutral",
+        "merchant": "neutral",
+        "neutral": "neutral",
+        "miner": "neutral",
+        "undead": "neutral",
+        "mage": "neutral",
+        "alchemist": "neutral",
+        "hunter": "unfriendly",
+        "necromancer": "neutral",
+        "wolf": "neutral",
+        "bear": "neutral",
+        "deer": "neutral"
       }
     }
   },
@@ -290,7 +383,17 @@
     "alchemists_per_city": 1,
     "alchemists_per_village": 1,
     "hunters_per_forest": {"min": 1, "max": 3},
-    "necromancers_per_ruins": {"min": 1, "max": 2}
+    "necromancers_per_ruins": {"min": 1, "max": 2},
+    "animals_in_forests": {
+      "_comment": "Животные спавнятся в биоме forest",
+      "wolves_per_spawn_area": {"min": 2, "max": 4},
+      "bears_per_spawn_area": {"min": 1, "max": 2},
+      "deer_per_spawn_area": {"min": 3, "max": 5},
+      "spawn_areas_count": {"min": 15, "max": 25},
+      "initial_level_min": 1,
+      "initial_level_max": 10,
+      "respawn_level_variance": 5
+    }
   },
 
   "respawn": {

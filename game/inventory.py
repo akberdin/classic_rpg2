@@ -1442,6 +1442,11 @@ class ItemGenerator:
             if random.random() < 0.8:
                 equipment.append(ItemGenerator.generate_jewelry(level))
 
+        elif npc_type in ["wolf", "bear", "deer"]:
+            # Животные не имеют экипировки - только лут после смерти
+            # Лут генерируется через generate_animal_loot()
+            return []
+
         return equipment
 
     @staticmethod
@@ -1528,6 +1533,55 @@ class ItemGenerator:
 
         return equipment
 
+    @staticmethod
+    def generate_animal_loot(npc_type):
+        """
+        Генерация лута от животных после смерти
+
+        Args:
+            npc_type: Тип животного (wolf, bear, deer)
+
+        Returns:
+            list: Список предметов лута
+        """
+        loot = []
+
+        if npc_type == "wolf":
+            # Волки дают: зубы волка, шкура волка
+            # Клык волка - 70% шанс
+            if random.random() < 0.7:
+                loot.append(PREDEFINED_ITEMS["wolf_fang"])
+
+            # Шкура волка - 50% шанс
+            if random.random() < 0.5:
+                loot.append(PREDEFINED_ITEMS["wolf_hide"])
+
+        elif npc_type == "bear":
+            # Медведи дают: зубы медведя, мясо, шкура медведя
+            # Клык медведя - 60% шанс
+            if random.random() < 0.6:
+                loot.append(PREDEFINED_ITEMS["bear_fang"])
+
+            # Мясо - 80% шанс
+            if random.random() < 0.8:
+                loot.append(PREDEFINED_ITEMS["bear_meat"])
+
+            # Шкура медведя - 50% шанс
+            if random.random() < 0.5:
+                loot.append(PREDEFINED_ITEMS["bear_hide"])
+
+        elif npc_type == "deer":
+            # Олени дают: мясо, шкура оленя
+            # Мясо - 90% шанс
+            if random.random() < 0.9:
+                loot.append(PREDEFINED_ITEMS["deer_meat"])
+
+            # Шкура оленя - 60% шанс
+            if random.random() < 0.6:
+                loot.append(PREDEFINED_ITEMS["deer_hide"])
+
+        return loot
+
 
 # Предопределенные предметы
 PREDEFINED_ITEMS = {
@@ -1540,6 +1594,15 @@ PREDEFINED_ITEMS = {
 
     # Древесина
     "wood": ResourceItem("Древесина", 5, 1.0),
+
+    # Ресурсы от животных
+    "wolf_fang": ResourceItem("Клык волка", 25, 0.3),
+    "wolf_hide": ResourceItem("Шкура волка", 35, 0.5),
+    "bear_fang": ResourceItem("Клык медведя", 40, 0.3),
+    "bear_hide": ResourceItem("Шкура медведя", 60, 0.6),
+    "bear_meat": ResourceItem("Медвежатина", 30, 0.4),
+    "deer_hide": ResourceItem("Шкура оленя", 45, 0.5),
+    "deer_meat": ResourceItem("Оленина", 25, 0.4),
 
     # Ресурсы из руин
     "ancient_coin": ResourceItem("Древняя монета", 30),
