@@ -206,7 +206,10 @@ class WorldRenderer:
 
                 # Проверяем, исследован ли тайл со стражником
                 tile = self.game.game_map.get_tile(guard.x, guard.y)
-                if tile.explored:
+                # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
+                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(guard.x, guard.y, self.game.player.x, self.game.player.y)
+
+                if tile.explored and is_visible:
                     if not guard.is_alive:
                         continue
 
@@ -265,7 +268,10 @@ class WorldRenderer:
 
                 # Проверяем, исследован ли тайл с торговцем
                 tile = self.game.game_map.get_tile(merchant.x, merchant.y)
-                if tile.explored:
+                # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
+                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(merchant.x, merchant.y, self.game.player.x, self.game.player.y)
+
+                if tile.explored and is_visible:
                     if not merchant.is_alive:
                         continue
 
@@ -307,7 +313,10 @@ class WorldRenderer:
 
                 # Проверяем, исследован ли тайл с бандитом
                 tile = self.game.game_map.get_tile(bandit.x, bandit.y)
-                if tile.explored:
+                # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
+                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(bandit.x, bandit.y, self.game.player.x, self.game.player.y)
+
+                if tile.explored and is_visible:
                     if not bandit.is_alive:
                         continue
 
@@ -349,7 +358,10 @@ class WorldRenderer:
 
                 # Проверяем, исследован ли тайл с шахтером
                 tile = self.game.game_map.get_tile(miner.x, miner.y)
-                if tile.explored:
+                # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
+                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(miner.x, miner.y, self.game.player.x, self.game.player.y)
+
+                if tile.explored and is_visible:
                     if not miner.is_alive:
                         continue
 
@@ -389,7 +401,10 @@ class WorldRenderer:
 
                 # Проверяем, исследован ли тайл с нежитью
                 tile = self.game.game_map.get_tile(undead_npc.x, undead_npc.y)
-                if tile.explored:
+                # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
+                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(undead_npc.x, undead_npc.y, self.game.player.x, self.game.player.y)
+
+                if tile.explored and is_visible:
                     if not undead_npc.is_alive:
                         continue
 
@@ -453,7 +468,10 @@ class WorldRenderer:
 
                 # Проверяем, исследован ли тайл с магом
                 tile = self.game.game_map.get_tile(mage.x, mage.y)
-                if tile.explored:
+                # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
+                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(mage.x, mage.y, self.game.player.x, self.game.player.y)
+
+                if tile.explored and is_visible:
                     if not mage.is_alive:
                         continue
 
@@ -514,7 +532,10 @@ class WorldRenderer:
 
                 # Проверяем, исследован ли тайл с алхимиком
                 tile = self.game.game_map.get_tile(alchemist.x, alchemist.y)
-                if tile.explored:
+                # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
+                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(alchemist.x, alchemist.y, self.game.player.x, self.game.player.y)
+
+                if tile.explored and is_visible:
                     if not alchemist.is_alive:
                         continue
 
@@ -549,7 +570,10 @@ class WorldRenderer:
 
                 # Проверяем, исследован ли тайл с охотником
                 tile = self.game.game_map.get_tile(hunter.x, hunter.y)
-                if tile.explored:
+                # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
+                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(hunter.x, hunter.y, self.game.player.x, self.game.player.y)
+
+                if tile.explored and is_visible:
                     if not hunter.is_alive:
                         continue
 
@@ -589,7 +613,10 @@ class WorldRenderer:
 
                 # Проверяем, исследован ли тайл с некромантом
                 tile = self.game.game_map.get_tile(necromancer.x, necromancer.y)
-                if tile.explored:
+                # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
+                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(necromancer.x, necromancer.y, self.game.player.x, self.game.player.y)
+
+                if tile.explored and is_visible:
                     if not necromancer.is_alive:
                         continue
 

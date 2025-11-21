@@ -586,9 +586,10 @@ class Game:
 
         if event_type == "trap":
             # Ловушка наносит урон (10% от макс здоровья)
-            trap_damage = int(self.player.max_health * 0.10)
-            self.player.current_health -= trap_damage
-            self.player.current_health = max(1, self.player.current_health)
+            effective_max_health = self.player.get_effective_max_health()
+            trap_damage = int(effective_max_health * 0.10)
+            self.player.health -= trap_damage
+            self.player.health = max(1, self.player.health)
             print(f"Вы попали в ловушку! Получено {trap_damage} урона.")
             return "trap_triggered"
 

@@ -150,7 +150,8 @@ class RegenerationEffect(StatusEffect):
         """Восстановить здоровье"""
         super().tick(character)
         old_health = character.health
-        character.health = min(character.max_health, character.health + self.heal_per_turn)
+        effective_max_health = character.get_effective_max_health() if hasattr(character, 'get_effective_max_health') else character.max_health
+        character.health = min(effective_max_health, character.health + self.heal_per_turn)
         actual_heal = character.health - old_health
         return f"{character.name} восстанавливает {actual_heal} HP от регенерации"
 
@@ -176,9 +177,10 @@ class StaminaRecoveryEffect(StatusEffect):
     def tick(self, character):
         """Восстановить выносливость"""
         super().tick(character)
-        if hasattr(character, 'stamina') and hasattr(character, 'max_stamina'):
+        if hasattr(character, 'stamina'):
             old_stamina = character.stamina
-            character.stamina = min(character.max_stamina, character.stamina + self.stamina_per_turn)
+            effective_max_stamina = character.get_effective_max_stamina() if hasattr(character, 'get_effective_max_stamina') else character.max_stamina
+            character.stamina = min(effective_max_stamina, character.stamina + self.stamina_per_turn)
             actual_recovery = character.stamina - old_stamina
             return f"{character.name} восстанавливает {actual_recovery} выносливости"
         return ""

@@ -183,9 +183,10 @@ class CombatSystem:
 
         elif action_type == "heal":
             # Отдых - восстановление здоровья
-            health_restored = int(self.player.max_health * 0.3)
+            effective_max_health = self.player.get_effective_max_health()
+            health_restored = int(effective_max_health * 0.3)
             old_health = self.player.health
-            self.player.health = min(self.player.max_health, self.player.health + health_restored)
+            self.player.health = min(effective_max_health, self.player.health + health_restored)
             actual_restored = self.player.health - old_health
 
             self.add_to_log(f"Вы отдыхаете и восстанавливаете {actual_restored} HP!")

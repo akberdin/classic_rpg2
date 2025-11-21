@@ -10,7 +10,10 @@
     "neutral": "neutral",
     "miner": "miner",
     "undead": "undead",
-    "mage": "mage"
+    "mage": "mage",
+    "alchemist": "alchemist",
+    "hunter": "hunter",
+    "necromancer": "necromancer"
   },
 
   "stat_generation": {
@@ -64,6 +67,27 @@
       "rest_duration_max": 5,
       "max_distance_from_school": 25,
       "aggressive": true
+    },
+    "alchemist": {
+      "detection_range": 10,
+      "rest_duration_min": 4,
+      "rest_duration_max": 6,
+      "max_distance_from_home": 15,
+      "aggressive": false
+    },
+    "hunter": {
+      "detection_range": 15,
+      "rest_duration_min": 2,
+      "rest_duration_max": 4,
+      "patrol_radius": 30,
+      "aggressive": false
+    },
+    "necromancer": {
+      "detection_range": 12,
+      "rest_duration_min": 3,
+      "rest_duration_max": 5,
+      "max_distance_from_ruins": 20,
+      "aggressive": true
     }
   },
 
@@ -104,6 +128,21 @@
       "active_hours_start": 8,
       "active_hours_end": 22,
       "_note": "Маги работают днем"
+    },
+    "alchemist": {
+      "active_hours_start": 6,
+      "active_hours_end": 23,
+      "_note": "Алхимики работают с утра до поздней ночи"
+    },
+    "hunter": {
+      "active_hours_start": 5,
+      "active_hours_end": 21,
+      "_note": "Охотники активны с раннего утра до вечера"
+    },
+    "necromancer": {
+      "active_hours_start": 20,
+      "active_hours_end": 6,
+      "_note": "Некроманты активны ночью"
     }
   },
 
@@ -123,7 +162,10 @@
         "bandit": "friendly",
         "miner": "hostile",
         "undead": "hostile",
-        "mage": "hostile"
+        "mage": "hostile",
+        "alchemist": "hostile",
+        "hunter": "unfriendly",
+        "necromancer": "neutral"
       },
       "guard": {
         "bandit": "hostile",
@@ -132,7 +174,10 @@
         "neutral": "neutral",
         "miner": "friendly",
         "undead": "hostile",
-        "mage": "friendly"
+        "mage": "friendly",
+        "alchemist": "friendly",
+        "hunter": "friendly",
+        "necromancer": "hostile"
       },
       "merchant": {
         "bandit": "unfriendly",
@@ -141,7 +186,10 @@
         "neutral": "neutral",
         "miner": "friendly",
         "undead": "unfriendly",
-        "mage": "friendly"
+        "mage": "friendly",
+        "alchemist": "friendly",
+        "hunter": "friendly",
+        "necromancer": "unfriendly"
       },
       "neutral": {
         "bandit": "unfriendly",
@@ -150,7 +198,10 @@
         "neutral": "neutral",
         "miner": "neutral",
         "undead": "unfriendly",
-        "mage": "neutral"
+        "mage": "neutral",
+        "alchemist": "neutral",
+        "hunter": "neutral",
+        "necromancer": "unfriendly"
       },
       "miner": {
         "bandit": "unfriendly",
@@ -159,7 +210,10 @@
         "neutral": "neutral",
         "miner": "friendly",
         "undead": "unfriendly",
-        "mage": "friendly"
+        "mage": "friendly",
+        "alchemist": "friendly",
+        "hunter": "friendly",
+        "necromancer": "unfriendly"
       },
       "undead": {
         "bandit": "hostile",
@@ -168,7 +222,10 @@
         "neutral": "hostile",
         "miner": "hostile",
         "undead": "friendly",
-        "mage": "hostile"
+        "mage": "hostile",
+        "alchemist": "hostile",
+        "hunter": "hostile",
+        "necromancer": "allied"
       },
       "mage": {
         "bandit": "hostile",
@@ -177,7 +234,46 @@
         "neutral": "neutral",
         "miner": "friendly",
         "undead": "hostile",
-        "mage": "friendly"
+        "mage": "friendly",
+        "alchemist": "friendly",
+        "hunter": "friendly",
+        "necromancer": "hostile"
+      },
+      "alchemist": {
+        "bandit": "unfriendly",
+        "guard": "friendly",
+        "merchant": "friendly",
+        "neutral": "neutral",
+        "miner": "friendly",
+        "undead": "unfriendly",
+        "mage": "friendly",
+        "alchemist": "friendly",
+        "hunter": "friendly",
+        "necromancer": "unfriendly"
+      },
+      "hunter": {
+        "bandit": "unfriendly",
+        "guard": "friendly",
+        "merchant": "friendly",
+        "neutral": "neutral",
+        "miner": "friendly",
+        "undead": "hostile",
+        "mage": "friendly",
+        "alchemist": "friendly",
+        "hunter": "friendly",
+        "necromancer": "hostile"
+      },
+      "necromancer": {
+        "bandit": "neutral",
+        "guard": "hostile",
+        "merchant": "unfriendly",
+        "neutral": "unfriendly",
+        "miner": "unfriendly",
+        "undead": "allied",
+        "mage": "hostile",
+        "alchemist": "unfriendly",
+        "hunter": "hostile",
+        "necromancer": "friendly"
       }
     }
   },
@@ -190,7 +286,11 @@
     "bandits_per_camp": {"min": 3, "max": 6},
     "miners_per_mine": {"min": 2, "max": 4},
     "undead_per_ruins": {"min": 3, "max": 6},
-    "mages_per_school": 4
+    "mages_per_school": 4,
+    "alchemists_per_city": 1,
+    "alchemists_per_village": 1,
+    "hunters_per_forest": {"min": 1, "max": 3},
+    "necromancers_per_ruins": {"min": 1, "max": 2}
   },
 
   "respawn": {
