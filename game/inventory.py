@@ -1558,11 +1558,7 @@ PREDEFINED_ITEMS = {
     "minor_stamina_potion": PotionItem("Малое зелье выносливости", "stamina", 50, 20),
     "stamina_potion": PotionItem("Зелье выносливости", "stamina", 100, 40),
 
-    # Инструменты и базовое оружие
-    "basic_axe": WeaponItem("Базовый топор", WeaponType.AXE, 15, quality=ItemQuality.COMMON,
-                            stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "basic_pickaxe": WeaponItem("Базовая кирка", WeaponType.PICKAXE, 12, quality=ItemQuality.COMMON,
-                                stats_bonus={}, param_bonus={}, skill_bonus={}),
+    # Базовое оружие
     "steel_sword": WeaponItem("Стальной меч", WeaponType.SWORD, 18, quality=ItemQuality.UNCOMMON,
                               stats_bonus={}, param_bonus={}, skill_bonus={}),
 

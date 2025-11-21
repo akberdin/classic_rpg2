@@ -710,6 +710,8 @@ def give_starting_items(player):
     Args:
         player: Игрок
     """
+    from game.inventory import ArmorType, EquipmentSlot
+
     # Начальное золото
     player.inventory.add_gold(50)
 
@@ -717,16 +719,40 @@ def give_starting_items(player):
     player.inventory.add_item(PREDEFINED_ITEMS["minor_health_potion"], 2)
     player.inventory.add_item(PREDEFINED_ITEMS["minor_stamina_potion"], 1)
 
-    # Стартовое оружие - топор для рубки леса
-    starter_axe = PREDEFINED_ITEMS["basic_axe"]
-    player.inventory.add_item(starter_axe, 1)
-    player.inventory.equip_item(starter_axe.name)
+    # Стартовое оружие - плохой топор
+    starter_weapon = ItemGenerator.generate_weapon(level=1, quality=ItemQuality.POOR)
+    player.inventory.add_item(starter_weapon, 1)
+    player.inventory.equip_item(starter_weapon.name)
 
-    # Генерируем простой доспех для торса
-    starter_chest = ItemGenerator.generate_armor(level=1, quality=ItemQuality.COMMON)
+    # Легкая плохая нагрудная броня
+    starter_chest = ItemGenerator.generate_armor(
+        level=1,
+        slot=EquipmentSlot.CHEST,
+        armor_type=ArmorType.LIGHT,
+        quality=ItemQuality.POOR
+    )
     player.inventory.add_item(starter_chest, 1)
-    if starter_chest.slot.value == "chest":
-        player.inventory.equip_item(starter_chest.name)
+    player.inventory.equip_item(starter_chest.name)
+
+    # Легкая плохая обувь
+    starter_feet = ItemGenerator.generate_armor(
+        level=1,
+        slot=EquipmentSlot.FEET,
+        armor_type=ArmorType.LIGHT,
+        quality=ItemQuality.POOR
+    )
+    player.inventory.add_item(starter_feet, 1)
+    player.inventory.equip_item(starter_feet.name)
+
+    # Легкие плохие перчатки
+    starter_hands = ItemGenerator.generate_armor(
+        level=1,
+        slot=EquipmentSlot.HANDS,
+        armor_type=ArmorType.LIGHT,
+        quality=ItemQuality.POOR
+    )
+    player.inventory.add_item(starter_hands, 1)
+    player.inventory.equip_item(starter_hands.name)
 
     # Обновляем производные характеристики после экипировки
     player.update_derived_stats()
