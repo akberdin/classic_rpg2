@@ -554,10 +554,12 @@ class RandomEventSystem:
     def _blessing(self, player, game):
         """Благословение"""
         # Временное увеличение удачи (через восстановление здоровья/маны)
-        heal = int(player.max_health * 0.2)
-        mana = int(player.max_mana * 0.2)
-        player.health = min(player.max_health, player.health + heal)
-        player.mana = min(player.max_mana, player.mana + mana)
+        effective_max_health = player.get_effective_max_health()
+        effective_max_mana = player.get_effective_max_mana()
+        heal = int(effective_max_health * 0.2)
+        mana = int(effective_max_mana * 0.2)
+        player.health = min(effective_max_health, player.health + heal)
+        player.mana = min(effective_max_mana, player.mana + mana)
         return [f"  Восстановлено {heal} здоровья и {mana} маны"]
 
     def _hidden_cache(self, player, game):
@@ -595,9 +597,9 @@ class RandomEventSystem:
     def _ancient_shrine(self, player, game):
         """Древний алтарь"""
         # Полное восстановление
-        player.health = player.max_health
-        player.mana = player.max_mana
-        player.stamina = player.max_stamina
+        player.health = player.get_effective_max_health()
+        player.mana = player.get_effective_max_mana()
+        player.stamina = player.get_effective_max_stamina()
         return ["  Полностью восстановлены здоровье, мана и выносливость"]
 
     def _trap(self, player, game):
@@ -621,10 +623,12 @@ class RandomEventSystem:
 
     def _helpful_traveler(self, player, game):
         """Попутчик"""
-        heal = int(player.max_health * 0.3)
-        stamina = int(player.max_stamina * 0.5)
-        player.health = min(player.max_health, player.health + heal)
-        player.stamina = min(player.max_stamina, player.stamina + stamina)
+        effective_max_health = player.get_effective_max_health()
+        effective_max_stamina = player.get_effective_max_stamina()
+        heal = int(effective_max_health * 0.3)
+        stamina = int(effective_max_stamina * 0.5)
+        player.health = min(effective_max_health, player.health + heal)
+        player.stamina = min(effective_max_stamina, player.stamina + stamina)
         return [f"  Восстановлено {heal} здоровья и {stamina} выносливости"]
 
     def _old_hermit(self, player, game):
@@ -638,8 +642,10 @@ class RandomEventSystem:
         if player.godmode:
             return ["  Отравление не подействовало (режим бессмертия)"]
 
-        damage = int(player.max_health * 0.1)
-        stamina_loss = int(player.max_stamina * 0.2)
+        effective_max_health = player.get_effective_max_health()
+        effective_max_stamina = player.get_effective_max_stamina()
+        damage = int(effective_max_health * 0.1)
+        stamina_loss = int(effective_max_stamina * 0.2)
         player.health = max(1, player.health - damage)
         player.stamina = max(0, player.stamina - stamina_loss)
         return [f"  Потеряно {damage} здоровья и {stamina_loss} выносливости"]
@@ -659,7 +665,7 @@ class RandomEventSystem:
         # Временное усиление через опыт и восстановление
         exp = random.randint(15, 30) * player.level
         player.add_experience(exp)
-        player.health = player.max_health
+        player.health = player.get_effective_max_health()
         return [f"  Получено {exp} опыта, здоровье полностью восстановлено"]
 
     def _rare_herb(self, player, game):
@@ -679,9 +685,10 @@ class RandomEventSystem:
 
     def _fairy_blessing(self, player, game):
         """Благословение феи"""
-        mana = int(player.max_mana * 0.5)
+        effective_max_mana = player.get_effective_max_mana()
+        mana = int(effective_max_mana * 0.5)
         exp = random.randint(15, 25) * player.level
-        player.mana = min(player.max_mana, player.mana + mana)
+        player.mana = min(effective_max_mana, player.mana + mana)
         player.add_experience(exp)
         return [f"  Восстановлено {mana} маны, получено {exp} опыта"]
 
@@ -708,8 +715,10 @@ class RandomEventSystem:
         if player.godmode:
             return ["  Проклятие не подействовало (режим бессмертия)"]
 
-        damage = int(player.max_health * 0.15)
-        mana_loss = int(player.max_mana * 0.2)
+        effective_max_health = player.get_effective_max_health()
+        effective_max_mana = player.get_effective_max_mana()
+        damage = int(effective_max_health * 0.15)
+        mana_loss = int(effective_max_mana * 0.2)
         player.health = max(1, player.health - damage)
         player.mana = max(0, player.mana - mana_loss)
         return [f"  Потеряно {damage} здоровья и {mana_loss} маны"]
@@ -755,9 +764,9 @@ class RandomEventSystem:
     def _elemental_blessing(self, player, game):
         """Благословение стихий"""
         # Полное восстановление + бонус
-        player.health = player.max_health
-        player.mana = player.max_mana
-        player.stamina = player.max_stamina
+        player.health = player.get_effective_max_health()
+        player.mana = player.get_effective_max_mana()
+        player.stamina = player.get_effective_max_stamina()
         exp = random.randint(30, 50) * player.level
         player.add_experience(exp)
         return ["  Полное восстановление всех ресурсов", f"  Получено {exp} опыта"]
@@ -774,8 +783,9 @@ class RandomEventSystem:
         player.add_experience(exp)
         # Случайный эффект
         if random.random() < 0.5:
-            heal = int(player.max_health * 0.3)
-            player.health = min(player.max_health, player.health + heal)
+            effective_max_health = player.get_effective_max_health()
+            heal = int(effective_max_health * 0.3)
+            player.health = min(effective_max_health, player.health + heal)
             return [f"  Получено {exp} опыта, восстановлено {heal} здоровья"]
         else:
             gold = random.randint(30, 60) * player.level
@@ -786,7 +796,7 @@ class RandomEventSystem:
         """Божественное видение"""
         exp = random.randint(50, 80) * player.level
         player.add_experience(exp)
-        player.mana = player.max_mana
+        player.mana = player.get_effective_max_mana()
         return [f"  Получено {exp} опыта, мана полностью восстановлена"]
 
     def _dark_curse(self, player, game):
@@ -794,9 +804,12 @@ class RandomEventSystem:
         if player.godmode:
             return ["  Проклятие рассеялось (режим бессмертия)"]
 
-        damage = int(player.max_health * 0.2)
-        mana_loss = int(player.max_mana * 0.3)
-        stamina_loss = int(player.max_stamina * 0.3)
+        effective_max_health = player.get_effective_max_health()
+        effective_max_mana = player.get_effective_max_mana()
+        effective_max_stamina = player.get_effective_max_stamina()
+        damage = int(effective_max_health * 0.2)
+        mana_loss = int(effective_max_mana * 0.3)
+        stamina_loss = int(effective_max_stamina * 0.3)
         player.health = max(1, player.health - damage)
         player.mana = max(0, player.mana - mana_loss)
         player.stamina = max(0, player.stamina - stamina_loss)
@@ -807,7 +820,8 @@ class RandomEventSystem:
         if player.godmode:
             return ["  Призрак отступил (режим бессмертия)"]
 
-        damage = int(player.max_health * 0.25)
+        effective_max_health = player.get_effective_max_health()
+        damage = int(effective_max_health * 0.25)
         exp_loss = random.randint(10, 30) * player.level
         player.health = max(1, player.health - damage)
         # Опыт не может стать отрицательным
@@ -819,9 +833,9 @@ class RandomEventSystem:
     def _divine_intervention(self, player, game):
         """Божественное вмешательство"""
         # Мощный положительный эффект
-        player.health = player.max_health
-        player.mana = player.max_mana
-        player.stamina = player.max_stamina
+        player.health = player.get_effective_max_health()
+        player.mana = player.get_effective_max_mana()
+        player.stamina = player.get_effective_max_stamina()
         exp = random.randint(100, 150) * player.level
         gold = random.randint(100, 200) * player.level
         player.add_experience(exp)
@@ -842,9 +856,9 @@ class RandomEventSystem:
     def _phoenix_feather(self, player, game):
         """Перо феникса"""
         # Полное восстановление + большой опыт
-        player.health = player.max_health
-        player.mana = player.max_mana
-        player.stamina = player.max_stamina
+        player.health = player.get_effective_max_health()
+        player.mana = player.get_effective_max_mana()
+        player.stamina = player.get_effective_max_stamina()
         exp = random.randint(120, 180) * player.level
         player.add_experience(exp)
         return [
@@ -864,10 +878,10 @@ class RandomEventSystem:
         effect = random.choice(['health', 'mana', 'gold', 'exp'])
 
         if effect == 'health':
-            player.health = player.max_health
+            player.health = player.get_effective_max_health()
             return ["  Здоровье полностью восстановлено силой звёзд"]
         elif effect == 'mana':
-            player.mana = player.max_mana
+            player.mana = player.get_effective_max_mana()
             return ["  Мана полностью восстановлена силой звёзд"]
         elif effect == 'gold':
             gold = random.randint(100, 200) * player.level
@@ -889,7 +903,8 @@ class RandomEventSystem:
         if player.godmode:
             return ["  Демон отступил перед вашей силой (режим бессмертия)"]
 
-        damage = int(player.max_health * 0.3)
+        effective_max_health = player.get_effective_max_health()
+        damage = int(effective_max_health * 0.3)
         gold_lost = min(player.inventory.gold, random.randint(50, 100) * player.level)
         player.health = max(1, player.health - damage)
         if gold_lost > 0:
@@ -905,11 +920,13 @@ class RandomEventSystem:
         effect = random.choice(['health', 'mana', 'exp', 'gold'])
 
         if effect == 'health':
-            damage = int(player.max_health * 0.2)
+            effective_max_health = player.get_effective_max_health()
+            damage = int(effective_max_health * 0.2)
             player.health = max(1, player.health - damage)
             return [f"  Потеряно {damage} здоровья из-за парадокса"]
         elif effect == 'mana':
-            mana_loss = int(player.max_mana * 0.4)
+            effective_max_mana = player.get_effective_max_mana()
+            mana_loss = int(effective_max_mana * 0.4)
             player.mana = max(0, player.mana - mana_loss)
             return [f"  Потеряно {mana_loss} маны из-за парадокса"]
         elif effect == 'exp':
