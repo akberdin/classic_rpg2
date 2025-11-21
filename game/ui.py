@@ -450,7 +450,7 @@ class InventoryWindow:
             mouse_x, mouse_y = mouse_pos
             item = self.get_item_at_mouse(player, mouse_x, mouse_y)
             if item:
-                self.render_item_tooltip(item, mouse_x, mouse_y)
+                self.render_item_tooltip(item, mouse_x, mouse_y, player)
 
     def _render_equipment_panel(self, player, x, y, width, height):
         """Отрисовка панели экипировки"""
@@ -647,16 +647,17 @@ class InventoryWindow:
                 )
                 self.screen.blit(value_text, (x + width - value_offset, items_y + display_index * item_height + int(7 * (height / 500))))
 
-    def render_item_tooltip(self, item, mouse_x, mouse_y):
+    def render_item_tooltip(self, item, mouse_x, mouse_y, player=None):
         """
-        Отрисовка всплывающей подсказки для предмета
+        Отрисовка всплывающей подсказки для предмета с возможным сравнением
 
         Args:
             item: Предмет для отображения
             mouse_x: X координата мыши
             mouse_y: Y координата мыши
+            player: Игрок для сравнения с экипировкой
         """
-        from game.inventory import EquipmentItem, WeaponItem, ArmorItem, JewelryItem, PotionItem
+        from game.inventory import EquipmentItem, WeaponItem, ArmorItem, JewelryItem, PotionItem, EquipmentSlot
 
         # Размеры подсказки
         tooltip_width = 320
@@ -796,7 +797,150 @@ class InventoryWindow:
             self.screen.blit(text_surface, (tooltip_x + tooltip_padding, text_y))
             text_y += line_height
 
-    def get_item_at_mouse(self, player, mouse_x, mouse_y):
+        # Отрисовка окон сравнения для экипируемых предметов
+        if player and isinstance(item, EquipmentItem):
+            self._render_comparison_tooltips(item, tooltip_x, tooltip_y, tooltip_width, tooltip_height, player)
+
+    def _render_comparison_tooltips(self, item, main_tooltip_x, main_tooltip_y, main_width, main_height, player):
+        """
+        Отрисовка окон сравнения для экипируемых предметов
+
+        Args:
+            item: Предмет для сравнения
+            main_tooltip_x, main_tooltip_y: Позиция основного tooltip
+            main_width, main_height: Размеры основного tooltip
+            player: Игрок
+        """
+        from game.inventory import EquipmentSlot, WeaponItem, ArmorItem, JewelryItem
+
+        # Определяем слоты для сравнения
+        comparison_slots = []
+        if hasattr(item, 'slot'):
+            slot = item.slot
+            # Для колец и браслетов показываем все занятые слоты
+            if slot in [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]:
+                comparison_slots = [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]
+            elif slot in [EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]:
+                comparison_slots = [EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]
+            else:
+                comparison_slots = [slot]
+
+        # Собираем экипированные предметы для сравнения (только непустые слоты)
+        equipped_items = []
+        for comp_slot in comparison_slots:
+            equipped = player.inventory.get_equipped_item(comp_slot)
+            if equipped:
+                equipped_items.append((comp_slot, equipped))
+
+        if not equipped_items:
+            return
+
+        # Отрисовываем окна сравнения
+        comp_width = 250
+        comp_padding = 10
+        line_height = 20
+        screen_width = self.screen.get_width()
+
+        # Позиция окон сравнения - слева от основного или справа
+        comp_x = main_tooltip_x - comp_width - 10
+        if comp_x < 5:
+            comp_x = main_tooltip_x + main_width + 10
+        if comp_x + comp_width > screen_width - 5:
+            return  # Нет места для сравнения
+
+        comp_y = main_tooltip_y
+
+        for slot, equipped in equipped_items:
+            lines = []
+
+            # Заголовок
+            slot_names = {
+                EquipmentSlot.WEAPON: "Оружие",
+                EquipmentSlot.HEAD: "Голова",
+                EquipmentSlot.CHEST: "Торс",
+                EquipmentSlot.HANDS: "Руки",
+                EquipmentSlot.FEET: "Ноги",
+                EquipmentSlot.RING_1: "Кольцо 1",
+                EquipmentSlot.RING_2: "Кольцо 2",
+                EquipmentSlot.RING_3: "Кольцо 3",
+                EquipmentSlot.RING_4: "Кольцо 4",
+                EquipmentSlot.AMULET: "Амулет",
+                EquipmentSlot.BRACELET_1: "Браслет 1",
+                EquipmentSlot.BRACELET_2: "Браслет 2",
+            }
+            lines.append((f"[{slot_names.get(slot, 'Слот')}]", (200, 200, 100), True))
+
+            # Название экипированного предмета
+            equipped_name = equipped.get_full_name() if hasattr(equipped, 'get_full_name') else equipped.name
+            equipped_color = equipped.quality.color if hasattr(equipped, 'quality') else (200, 200, 200)
+            lines.append((equipped_name[:25], equipped_color, False))
+            lines.append(("", (0, 0, 0), False))
+
+            # Сравнение характеристик
+            # Атака
+            item_attack = getattr(item, 'attack', 0)
+            equip_attack = getattr(equipped, 'attack', 0)
+            if item_attack or equip_attack:
+                diff = item_attack - equip_attack
+                diff_color = (100, 255, 100) if diff > 0 else ((255, 100, 100) if diff < 0 else (180, 180, 180))
+                diff_str = f"+{diff}" if diff > 0 else str(diff)
+                lines.append((f"Атака: {diff_str}", diff_color, False))
+
+            # Защита
+            item_defense = getattr(item, 'defense', 0)
+            equip_defense = getattr(equipped, 'defense', 0)
+            if item_defense or equip_defense:
+                diff = item_defense - equip_defense
+                diff_color = (100, 255, 100) if diff > 0 else ((255, 100, 100) if diff < 0 else (180, 180, 180))
+                diff_str = f"+{diff}" if diff > 0 else str(diff)
+                lines.append((f"Защита: {diff_str}", diff_color, False))
+
+            # Бонусы к характеристикам
+            stat_names = {
+                'strength': 'Сила', 'dexterity': 'Ловкость', 'constitution': 'Телосл.',
+                'spirit': 'Дух', 'intelligence': 'Интеллект', 'luck': 'Удача'
+            }
+            all_stats = set()
+            if item.stats_bonus:
+                all_stats.update(item.stats_bonus.keys())
+            if equipped.stats_bonus:
+                all_stats.update(equipped.stats_bonus.keys())
+
+            for stat in all_stats:
+                if stat in ['damage', 'defense']:
+                    continue
+                item_bonus = item.get_stat_bonus(stat) if hasattr(item, 'get_stat_bonus') else 0
+                equip_bonus = equipped.get_stat_bonus(stat) if hasattr(equipped, 'get_stat_bonus') else 0
+                diff = item_bonus - equip_bonus
+                if diff != 0:
+                    diff_color = (100, 255, 100) if diff > 0 else (255, 100, 100)
+                    diff_str = f"+{diff}" if diff > 0 else str(diff)
+                    lines.append((f"{stat_names.get(stat, stat)}: {diff_str}", diff_color, False))
+
+            # Вычисляем высоту
+            comp_height = comp_padding * 2 + len(lines) * line_height
+
+            # Фон сравнения
+            UIHelper.draw_gradient_rect(
+                self.screen, comp_x, comp_y, comp_width, comp_height,
+                (50, 40, 40), (70, 55, 55)
+            )
+            pygame.draw.rect(self.screen, (150, 120, 120), (comp_x, comp_y, comp_width, comp_height), 2)
+
+            # Текст
+            text_y = comp_y + comp_padding
+            for line_text, line_color, is_bold in lines:
+                if line_text == "":
+                    text_y += line_height // 2
+                    continue
+                font_to_use = self.font if is_bold else self.info_font
+                text_surface = font_to_use.render(line_text, True, line_color)
+                self.screen.blit(text_surface, (comp_x + comp_padding, text_y))
+                text_y += line_height
+
+            comp_y += comp_height + 5
+
+    def get_item_at_mouse(self, player, mouse_x, mouse_y, check_equipment=False):
         """
         Получить предмет под курсором мыши
 
@@ -804,14 +948,16 @@ class InventoryWindow:
             player: Объект игрока
             mouse_x: X координата мыши
             mouse_y: Y координата мыши
+            check_equipment: Если True, проверяет только инвентарь (не экипировку)
 
         Returns:
             Item или None
         """
-        # Сначала проверяем слоты экипировки
-        for slot, (rect, item) in self.equipment_slot_rects.items():
-            if rect.collidepoint(mouse_x, mouse_y) and item:
-                return item
+        # Проверяем слоты экипировки только если не отключено
+        if not check_equipment:
+            for slot, (rect, item) in self.equipment_slot_rects.items():
+                if rect.collidepoint(mouse_x, mouse_y) and item:
+                    return item
 
         # Получаем размеры экрана
         screen_width = self.screen.get_width()
@@ -864,9 +1010,46 @@ class InventoryWindow:
 
         return None
 
+    def get_equipment_slot_at_mouse(self, mouse_x, mouse_y):
+        """
+        Получить слот экипировки под курсором мыши
+
+        Args:
+            mouse_x: X координата мыши
+            mouse_y: Y координата мыши
+
+        Returns:
+            tuple: (EquipmentSlot, Item) или (None, None)
+        """
+        for slot, (rect, item) in self.equipment_slot_rects.items():
+            if rect.collidepoint(mouse_x, mouse_y):
+                return (slot, item)
+        return (None, None)
+
 
 class TradeWindow:
     """Окно торговли с NPC"""
+
+    # Типы фильтров
+    FILTER_TYPES = ["all", "weapon", "armor", "jewelry", "potion", "resource", "book"]
+    FILTER_NAMES = {
+        "all": "Все",
+        "weapon": "Оружие",
+        "armor": "Броня",
+        "jewelry": "Украш.",
+        "potion": "Зелья",
+        "resource": "Ресурсы",
+        "book": "Книги"
+    }
+
+    # Типы сортировки
+    SORT_TYPES = ["default", "price_asc", "price_desc", "quality"]
+    SORT_NAMES = {
+        "default": "По умолч.",
+        "price_asc": "Цена ↑",
+        "price_desc": "Цена ↓",
+        "quality": "Качество"
+    }
 
     def __init__(self, screen, font, info_font, scaler=None):
         self.screen = screen
@@ -876,6 +1059,12 @@ class TradeWindow:
         self.selected_merchant_index = 0
         self.selected_player_index = 0
         self.mode = "buy"  # "buy" или "sell"
+
+        # Фильтры и сортировка
+        self.current_filter = "all"
+        self.current_sort = "default"
+        self.filter_rects = []  # Прямоугольники кнопок фильтров
+        self.sort_rects = []  # Прямоугольники кнопок сортировки
 
         # Хранение координат элементов для обработки мыши
         self.item_rects = []  # Список прямоугольников предметов
@@ -963,7 +1152,7 @@ class TradeWindow:
         )
 
         # Переключатель режима
-        mode_y = window_y + int(90 * scale_h)
+        mode_y = window_y + int(85 * scale_h)
         buy_color = (100, 200, 100) if self.mode == "buy" else (100, 100, 100)
         sell_color = (200, 100, 100) if self.mode == "sell" else (100, 100, 100)
 
@@ -973,9 +1162,65 @@ class TradeWindow:
         self.screen.blit(buy_button, (window_x + int(50 * scale_w), mode_y))
         self.screen.blit(sell_button, (window_x + window_width - int(200 * scale_w), mode_y))
 
+        # Отрисовка фильтров и сортировки
+        self.filter_rects = []
+        self.sort_rects = []
+        filter_y = window_y + int(115 * scale_h)
+        filter_x = window_x + int(30 * scale_w)
+        btn_width = int(70 * scale_w)
+        btn_height = int(22 * scale_h)
+        btn_spacing = int(5 * scale_w)
+
+        # Фильтры по типу
+        filter_label = self.info_font.render("Тип:", True, (180, 180, 180))
+        self.screen.blit(filter_label, (filter_x, filter_y + 3))
+        filter_x += int(40 * scale_w)
+
+        for filter_type in self.FILTER_TYPES:
+            is_active = self.current_filter == filter_type
+            btn_color = (80, 120, 80) if is_active else (50, 50, 60)
+            border_color = (120, 200, 120) if is_active else (80, 80, 90)
+            text_color = (200, 255, 200) if is_active else (150, 150, 150)
+
+            btn_rect = pygame.Rect(filter_x, filter_y, btn_width, btn_height)
+            pygame.draw.rect(self.screen, btn_color, btn_rect)
+            pygame.draw.rect(self.screen, border_color, btn_rect, 1)
+
+            btn_text = self.info_font.render(self.FILTER_NAMES[filter_type], True, text_color)
+            text_rect = btn_text.get_rect(center=btn_rect.center)
+            self.screen.blit(btn_text, text_rect)
+
+            self.filter_rects.append((btn_rect, filter_type))
+            filter_x += btn_width + btn_spacing
+
+        # Сортировка
+        sort_y = filter_y
+        sort_x = window_x + window_width - int(350 * scale_w)
+
+        sort_label = self.info_font.render("Сорт.:", True, (180, 180, 180))
+        self.screen.blit(sort_label, (sort_x, sort_y + 3))
+        sort_x += int(50 * scale_w)
+
+        for sort_type in self.SORT_TYPES:
+            is_active = self.current_sort == sort_type
+            btn_color = (80, 80, 120) if is_active else (50, 50, 60)
+            border_color = (120, 120, 200) if is_active else (80, 80, 90)
+            text_color = (200, 200, 255) if is_active else (150, 150, 150)
+
+            btn_rect = pygame.Rect(sort_x, sort_y, btn_width, btn_height)
+            pygame.draw.rect(self.screen, btn_color, btn_rect)
+            pygame.draw.rect(self.screen, border_color, btn_rect, 1)
+
+            btn_text = self.info_font.render(self.SORT_NAMES[sort_type], True, text_color)
+            text_rect = btn_text.get_rect(center=btn_rect.center)
+            self.screen.blit(btn_text, text_rect)
+
+            self.sort_rects.append((btn_rect, sort_type))
+            sort_x += btn_width + btn_spacing
+
         # Панели товаров
-        goods_y = window_y + int(130 * scale_h)
-        goods_height = int(440 * scale_h)
+        goods_y = window_y + int(145 * scale_h)
+        goods_height = int(425 * scale_h)
 
         if self.mode == "buy":
             self._render_merchant_goods(merchant, window_x + int(30 * scale_w), goods_y, window_width - int(60 * scale_w), goods_height)
@@ -1000,7 +1245,7 @@ class TradeWindow:
             mouse_x, mouse_y = mouse_pos
             item = self.get_item_at_mouse(player, merchant, mouse_x, mouse_y)
             if item:
-                self.render_item_tooltip(item, mouse_x, mouse_y)
+                self.render_item_tooltip(item, mouse_x, mouse_y, player)
 
     def _render_merchant_goods(self, merchant, x, y, width, height):
         """Отрисовка товаров торговца"""
@@ -1015,9 +1260,12 @@ class TradeWindow:
             return
 
         items = merchant.inventory.get_all_items()
+        # Применяем фильтрацию и сортировку
+        items = self.filter_and_sort_items(items)
 
         if not items:
-            no_goods = self.info_font.render("Товары закончились", True, (150, 150, 150))
+            msg = "Нет товаров этого типа" if self.current_filter != "all" else "Товары закончились"
+            no_goods = self.info_font.render(msg, True, (150, 150, 150))
             self.screen.blit(no_goods, (x + width // 2 - 100, y + height // 2))
             return
 
@@ -1096,9 +1344,12 @@ class TradeWindow:
         self.screen.blit(title, (x, y))
 
         items = player.inventory.get_all_items()
+        # Применяем фильтрацию и сортировку
+        items = self.filter_and_sort_items(items)
 
         if not items:
-            no_goods = self.info_font.render("У вас нет товаров для продажи", True, (150, 150, 150))
+            msg = "Нет товаров этого типа" if self.current_filter != "all" else "У вас нет товаров для продажи"
+            no_goods = self.info_font.render(msg, True, (150, 150, 150))
             self.screen.blit(no_goods, (x + width // 2 - 120, y + height // 2))
             return
 
@@ -1204,7 +1455,78 @@ class TradeWindow:
                 return index
         return None
 
-    def render_item_tooltip(self, item, mouse_x, mouse_y):
+    def _get_item_type(self, item):
+        """Определить тип предмета для фильтрации"""
+        from game.inventory import WeaponItem, ArmorItem, JewelryItem, PotionItem, ResourceItem, SkillBookItem
+        if isinstance(item, WeaponItem):
+            return "weapon"
+        elif isinstance(item, ArmorItem):
+            return "armor"
+        elif isinstance(item, JewelryItem):
+            return "jewelry"
+        elif isinstance(item, PotionItem):
+            return "potion"
+        elif isinstance(item, ResourceItem):
+            return "resource"
+        elif isinstance(item, SkillBookItem):
+            return "book"
+        return "other"
+
+    def _get_quality_value(self, item):
+        """Получить числовое значение качества для сортировки"""
+        if hasattr(item, 'quality'):
+            quality_order = {
+                'POOR': 0, 'COMMON': 1, 'UNCOMMON': 2,
+                'RARE': 3, 'EPIC': 4, 'LEGENDARY': 5, 'ARTIFACT': 6
+            }
+            return quality_order.get(item.quality.name, 0)
+        return 0
+
+    def filter_and_sort_items(self, items):
+        """
+        Фильтрация и сортировка списка предметов
+
+        Args:
+            items: Список кортежей (item, quantity)
+
+        Returns:
+            list: Отфильтрованный и отсортированный список
+        """
+        # Фильтрация
+        if self.current_filter != "all":
+            items = [(item, qty) for item, qty in items if self._get_item_type(item) == self.current_filter]
+
+        # Сортировка
+        if self.current_sort == "price_asc":
+            items = sorted(items, key=lambda x: x[0].value)
+        elif self.current_sort == "price_desc":
+            items = sorted(items, key=lambda x: x[0].value, reverse=True)
+        elif self.current_sort == "quality":
+            items = sorted(items, key=lambda x: self._get_quality_value(x[0]), reverse=True)
+
+        return items
+
+    def handle_filter_click(self, mouse_x, mouse_y):
+        """Обработка клика по кнопкам фильтров"""
+        for rect, filter_type in self.filter_rects:
+            if rect.collidepoint(mouse_x, mouse_y):
+                self.current_filter = filter_type
+                self.selected_merchant_index = 0
+                self.selected_player_index = 0
+                return True
+        return False
+
+    def handle_sort_click(self, mouse_x, mouse_y):
+        """Обработка клика по кнопкам сортировки"""
+        for rect, sort_type in self.sort_rects:
+            if rect.collidepoint(mouse_x, mouse_y):
+                self.current_sort = sort_type
+                self.selected_merchant_index = 0
+                self.selected_player_index = 0
+                return True
+        return False
+
+    def render_item_tooltip(self, item, mouse_x, mouse_y, player=None):
         """
         Отрисовка всплывающей подсказки для предмета в торговом окне
 
@@ -1212,8 +1534,9 @@ class TradeWindow:
             item: Предмет для отображения
             mouse_x: X координата мыши
             mouse_y: Y координата мыши
+            player: Игрок для сравнения с экипировкой
         """
-        from game.inventory import EquipmentItem, WeaponItem, ArmorItem, JewelryItem, PotionItem
+        from game.inventory import EquipmentItem, WeaponItem, ArmorItem, JewelryItem, PotionItem, EquipmentSlot
 
         # Размеры подсказки
         tooltip_width = 320
@@ -1344,6 +1667,114 @@ class TradeWindow:
             text_surface = font_to_use.render(line_text, True, line_color)
             self.screen.blit(text_surface, (tooltip_x + tooltip_padding, text_y))
             text_y += line_height
+
+        # Отрисовка окон сравнения для экипируемых предметов (если передан player)
+        if player and isinstance(item, EquipmentItem):
+            self._render_comparison_tooltips(item, tooltip_x, tooltip_y, tooltip_width, tooltip_height, player)
+
+    def _render_comparison_tooltips(self, item, main_tooltip_x, main_tooltip_y, main_width, main_height, player):
+        """Отрисовка окон сравнения для экипируемых предметов (торговое окно)"""
+        from game.inventory import EquipmentSlot
+
+        comparison_slots = []
+        if hasattr(item, 'slot'):
+            slot = item.slot
+            if slot in [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]:
+                comparison_slots = [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]
+            elif slot in [EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]:
+                comparison_slots = [EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]
+            else:
+                comparison_slots = [slot]
+
+        equipped_items = []
+        for comp_slot in comparison_slots:
+            equipped = player.inventory.get_equipped_item(comp_slot)
+            if equipped:
+                equipped_items.append((comp_slot, equipped))
+
+        if not equipped_items:
+            return
+
+        comp_width = 250
+        comp_padding = 10
+        line_height = 20
+        screen_width = self.screen.get_width()
+
+        comp_x = main_tooltip_x - comp_width - 10
+        if comp_x < 5:
+            comp_x = main_tooltip_x + main_width + 10
+        if comp_x + comp_width > screen_width - 5:
+            return
+
+        comp_y = main_tooltip_y
+
+        slot_names = {
+            EquipmentSlot.WEAPON: "Оружие", EquipmentSlot.HEAD: "Голова", EquipmentSlot.CHEST: "Торс",
+            EquipmentSlot.HANDS: "Руки", EquipmentSlot.FEET: "Ноги",
+            EquipmentSlot.RING_1: "Кольцо 1", EquipmentSlot.RING_2: "Кольцо 2",
+            EquipmentSlot.RING_3: "Кольцо 3", EquipmentSlot.RING_4: "Кольцо 4",
+            EquipmentSlot.AMULET: "Амулет", EquipmentSlot.BRACELET_1: "Браслет 1", EquipmentSlot.BRACELET_2: "Браслет 2",
+        }
+
+        stat_names = {'strength': 'Сила', 'dexterity': 'Ловкость', 'constitution': 'Телосл.',
+                     'spirit': 'Дух', 'intelligence': 'Интеллект', 'luck': 'Удача'}
+
+        for slot, equipped in equipped_items:
+            lines = []
+            lines.append((f"[{slot_names.get(slot, 'Слот')}]", (200, 200, 100), True))
+            equipped_name = equipped.get_full_name() if hasattr(equipped, 'get_full_name') else equipped.name
+            equipped_color = equipped.quality.color if hasattr(equipped, 'quality') else (200, 200, 200)
+            lines.append((equipped_name[:25], equipped_color, False))
+            lines.append(("", (0, 0, 0), False))
+
+            item_attack = getattr(item, 'attack', 0) or getattr(item, 'damage', 0)
+            equip_attack = getattr(equipped, 'attack', 0) or getattr(equipped, 'damage', 0)
+            if item_attack or equip_attack:
+                diff = item_attack - equip_attack
+                diff_color = (100, 255, 100) if diff > 0 else ((255, 100, 100) if diff < 0 else (180, 180, 180))
+                diff_str = f"+{diff}" if diff > 0 else str(diff)
+                lines.append((f"Атака: {diff_str}", diff_color, False))
+
+            item_defense = getattr(item, 'defense', 0)
+            equip_defense = getattr(equipped, 'defense', 0)
+            if item_defense or equip_defense:
+                diff = item_defense - equip_defense
+                diff_color = (100, 255, 100) if diff > 0 else ((255, 100, 100) if diff < 0 else (180, 180, 180))
+                diff_str = f"+{diff}" if diff > 0 else str(diff)
+                lines.append((f"Защита: {diff_str}", diff_color, False))
+
+            all_stats = set()
+            if item.stats_bonus:
+                all_stats.update(item.stats_bonus.keys())
+            if equipped.stats_bonus:
+                all_stats.update(equipped.stats_bonus.keys())
+
+            for stat in all_stats:
+                if stat in ['damage', 'defense']:
+                    continue
+                item_bonus = item.get_stat_bonus(stat) if hasattr(item, 'get_stat_bonus') else 0
+                equip_bonus = equipped.get_stat_bonus(stat) if hasattr(equipped, 'get_stat_bonus') else 0
+                diff = item_bonus - equip_bonus
+                if diff != 0:
+                    diff_color = (100, 255, 100) if diff > 0 else (255, 100, 100)
+                    diff_str = f"+{diff}" if diff > 0 else str(diff)
+                    lines.append((f"{stat_names.get(stat, stat)}: {diff_str}", diff_color, False))
+
+            comp_height = comp_padding * 2 + len(lines) * line_height
+            UIHelper.draw_gradient_rect(self.screen, comp_x, comp_y, comp_width, comp_height, (50, 40, 40), (70, 55, 55))
+            pygame.draw.rect(self.screen, (150, 120, 120), (comp_x, comp_y, comp_width, comp_height), 2)
+
+            text_y = comp_y + comp_padding
+            for line_text, line_color, is_bold in lines:
+                if line_text == "":
+                    text_y += line_height // 2
+                    continue
+                font_to_use = self.font if is_bold else self.info_font
+                text_surface = font_to_use.render(line_text, True, line_color)
+                self.screen.blit(text_surface, (comp_x + comp_padding, text_y))
+                text_y += line_height
+
+            comp_y += comp_height + 5
 
 
 class CharacterWindow:

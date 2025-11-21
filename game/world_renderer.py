@@ -760,11 +760,15 @@ class WorldRenderer:
 
     def render_minimap(self):
         """Отрисовка мини-карты"""
-        # Размеры мини-карты (масштабируются под разрешение)
-        minimap_size = self.game.ui_scaler.scale_value(150)
+        # Размеры мини-карты (масштабируются под разрешение, увеличено на 30%)
+        base_size = 150 * 1.3  # 195 пикселей базовый размер
+        minimap_size = self.game.ui_scaler.scale_value(int(base_size))
         margin = self.game.ui_scaler.scale_value(10)
+        panel_height = self.game.ui_scaler.scale_value(100)  # Высота нижней панели
+
+        # Позиция в правом нижнем углу над панелью
         minimap_x = self.game.window_width - minimap_size - margin
-        minimap_y = margin
+        minimap_y = self.game.window_height - minimap_size - panel_height - margin
         pixel_per_tile = minimap_size / 100  # Адаптивный размер тайла
 
         # Фон мини-карты
@@ -828,7 +832,7 @@ class WorldRenderer:
             3
         )
 
-        # Заголовок мини-карты
+        # Заголовок мини-карты (над картой)
         minimap_font_size = self.game.ui_scaler.scale_font_size(16)
         minimap_font = pygame.font.Font(None, minimap_font_size)
         minimap_title = minimap_font.render("Карта", True, COLORS['text'])

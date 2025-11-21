@@ -303,6 +303,21 @@ class Game:
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 3:  # ПКМ
                         self.input_handler.handle_inventory_right_click(event.pos)
+                    elif event.button == 4:  # Колесо вверх
+                        all_items = self.player.inventory.get_all_items()
+                        if all_items:
+                            self.inventory_window.selected_inventory_index = max(0, self.inventory_window.selected_inventory_index - 1)
+                    elif event.button == 5:  # Колесо вниз
+                        all_items = self.player.inventory.get_all_items()
+                        if all_items:
+                            self.inventory_window.selected_inventory_index = min(len(all_items) - 1, self.inventory_window.selected_inventory_index + 1)
+                elif event.type == pygame.MOUSEWHEEL:
+                    all_items = self.player.inventory.get_all_items()
+                    if all_items:
+                        if event.y > 0:  # Колесо вверх
+                            self.inventory_window.selected_inventory_index = max(0, self.inventory_window.selected_inventory_index - 1)
+                        elif event.y < 0:  # Колесо вниз
+                            self.inventory_window.selected_inventory_index = min(len(all_items) - 1, self.inventory_window.selected_inventory_index + 1)
                 continue
 
             # Если открыто меню торговли, обрабатываем его
@@ -310,7 +325,9 @@ class Game:
                 if event.type == pygame.KEYDOWN:
                     self.input_handler.handle_trade_input(event.key)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 3:  # ПКМ
+                    if event.button == 1:  # ЛКМ - фильтры и сортировка
+                        self.input_handler.handle_trade_left_click(event.pos)
+                    elif event.button == 3:  # ПКМ
                         self.input_handler.handle_trade_right_click(event.pos)
                 continue
 

@@ -90,8 +90,21 @@ class InputHandler:
         """
         mouse_x, mouse_y = mouse_pos
 
-        # Проверяем клик по предмету в инвентаре
-        item = self.game.inventory_window.get_item_at_mouse(self.game.player, mouse_x, mouse_y)
+        # Сначала проверяем клик по экипированному предмету (используем сохраненные rect'ы)
+        slot, equipped_item = self.game.inventory_window.get_equipment_slot_at_mouse(mouse_x, mouse_y)
+        if slot is not None:
+            if equipped_item:
+                success, message = self.game.player.inventory.unequip_item(slot)
+                print(message)
+                if success:
+                    self.game.player.update_derived_stats()
+                    self.game.player.update_inventory_max_weight()
+            else:
+                print("Слот пуст")
+            return
+
+        # Проверяем клик по предмету в инвентаре (не экипировке)
+        item = self.game.inventory_window.get_item_at_mouse(self.game.player, mouse_x, mouse_y, check_equipment=True)
         if item:
             # Клик по предмету в инвентаре
             if isinstance(item, EquipmentItem):
@@ -112,68 +125,6 @@ class InputHandler:
             else:
                 print("Этот предмет нельзя использовать таким образом")
             return
-
-        # Проверяем клик по экипированному предмету
-        # Получаем размеры экрана
-        screen_width = self.game.screen.get_width()
-        screen_height = self.game.screen.get_height()
-
-        # Размеры окна (адаптивные)
-        if self.game.ui_scaler:
-            window_width = self.game.ui_scaler.scale_width(900)
-            window_height = self.game.ui_scaler.scale_height(650)
-        else:
-            window_width = min(900, int(screen_width * 0.85))
-            window_height = min(650, int(screen_height * 0.75))
-
-        window_x = (screen_width - window_width) // 2
-        window_y = (screen_height - window_height) // 2
-
-        # Левая панель - экипировка
-        margin = int(20 * (window_width / 900))
-        panel_y_offset = int(85 * (window_height / 650))
-        equipment_panel_x = window_x + margin
-        equipment_panel_y = window_y + panel_y_offset
-        equipment_panel_width = int(400 * (window_width / 900))
-
-        # Проверяем, находится ли курсор в области экипировки
-        if equipment_panel_x <= mouse_x <= equipment_panel_x + equipment_panel_width:
-            # Вычисляем на какой слот кликнули
-            slot_y_start = equipment_panel_y + int(40 * (window_height / 650))
-            slot_height = max(22, int(28 * (window_height / 650)))
-
-            # Группировка слотов (такая же как в ui.py)
-            slot_groups = [
-                ("Оружие", [EquipmentSlot.WEAPON]),
-                ("Доспехи", [EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET]),
-                ("Кольца", [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]),
-                ("Украшения", [EquipmentSlot.AMULET, EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]),
-            ]
-
-            current_y = slot_y_start
-            for group_name, slots in slot_groups:
-                # Пропускаем заголовок группы
-                current_y += max(20, int(25 * (window_height / 650)))
-
-                for slot in slots:
-                    # Проверяем клик по этому слоту
-                    if current_y <= mouse_y <= current_y + slot_height:
-                        item = self.game.player.inventory.get_equipped_item(slot)
-                        if item:
-                            success, message = self.game.player.inventory.unequip_item(slot)
-                            print(message)
-                            if success:
-                                self.game.player.update_derived_stats()
-                                # Обновляем максимальный вес с учетом бонусов от экипировки
-                                self.game.player.update_inventory_max_weight()
-                        else:
-                            print(f"Слот {group_name} пуст")
-                        return
-
-                    current_y += slot_height
-
-                # Пропускаем отступ между группами
-                current_y += max(8, int(10 * (window_height / 650)))
 
     def handle_interaction_choice(self, key):
         """
@@ -415,6 +366,25 @@ class InputHandler:
                                 print("У торговца нет места для этого предмета!")
                     else:
                         print(f"У торговца недостаточно золота! Нужно {sell_price}, у него {self.game.nearby_npc.inventory.gold}")
+
+    def handle_trade_left_click(self, pos):
+        """
+        Обработка левого клика мыши в окне торговли (фильтры и сортировка)
+
+        Args:
+            pos: Позиция клика (x, y)
+        """
+        mouse_x, mouse_y = pos
+
+        # Проверяем клик по фильтрам
+        if self.game.trade_window.handle_filter_click(mouse_x, mouse_y):
+            return True
+
+        # Проверяем клик по сортировке
+        if self.game.trade_window.handle_sort_click(mouse_x, mouse_y):
+            return True
+
+        return False
 
     def handle_trade_right_click(self, pos):
         """

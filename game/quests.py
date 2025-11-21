@@ -615,10 +615,15 @@ class QuestManager:
             'deer': ['олен', 'оленей']
         }
 
+        # Типы врагов для any_enemy
+        humanoid_enemies = ['bandit', 'undead', 'necromancer']
+
         for quest in self.active_quests:
             if quest.quest_type in [QuestType.KILL_ENEMIES, QuestType.KILL_ANIMALS]:
                 # Проверяем основной target_enemy или target_animal
-                if quest.target_enemy == enemy_type or quest.target_animal == enemy_type:
+                # any_enemy засчитывает всех гуманоидных врагов
+                is_any_enemy_match = quest.target_enemy == "any_enemy" and enemy_type in humanoid_enemies
+                if quest.target_enemy == enemy_type or quest.target_animal == enemy_type or is_any_enemy_match:
                     if quest.objectives:
                         completed = quest.objectives[0].progress(1)
                         quest.check_completion()
@@ -1368,7 +1373,7 @@ def create_starter_quests():
         is_starter=True,
         giver_location="Любая локация"
     )
-    quest1.target_enemy = "bandit"  # Засчитываются любые враги
+    quest1.target_enemy = "any_enemy"  # Засчитываются любые враги (bandit, undead, necromancer)
     quests.append(quest1)
 
     # Квест 2: Первая охота - автоматически назначается
