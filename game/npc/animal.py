@@ -28,9 +28,6 @@ class Animal(NPC):
         """
         super().__init__(name, x, y, npc_type=npc_type, level=level)
 
-        # Животные не имеют экипировки - очищаем инвентарь
-        self.inventory.clear()
-
         # AI параметры
         self.state = "patrol"  # patrol, rest, combat, flee
         self.spawn_x = spawn_x if spawn_x is not None else x
@@ -54,6 +51,10 @@ class Animal(NPC):
 
         # Состояние по умолчанию для расписания
         self.default_state = "patrol"
+
+    def _generate_initial_equipment(self):
+        """Переопределяем метод - животные не имеют экипировки"""
+        pass
 
     def update_ai(self, game_map, all_npcs=None, player=None, current_hour=12):
         """
