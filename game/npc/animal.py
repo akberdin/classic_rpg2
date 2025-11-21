@@ -193,7 +193,7 @@ class Animal(NPC):
 
         # Пытаемся двигаться
         new_x, new_y = self.x + dx, self.y + dy
-        if game_map.is_passable(new_x, new_y):
+        if self._can_move_to(new_x, new_y, game_map):
             self.x, self.y = new_x, new_y
 
     def _wander_step(self, game_map):
@@ -219,14 +219,14 @@ class Animal(NPC):
             new_y = self.y + self.wander_dy
 
         # Проверяем проходимость и двигаемся
-        if game_map.is_passable(new_x, new_y):
+        if self._can_move_to(new_x, new_y, game_map):
             self.x, self.y = new_x, new_y
         else:
             # Столкнулись с препятствием - меняем направление
             self._choose_new_wander_direction(game_map)
             new_x = self.x + self.wander_dx
             new_y = self.y + self.wander_dy
-            if game_map.is_passable(new_x, new_y):
+            if self._can_move_to(new_x, new_y, game_map):
                 self.x, self.y = new_x, new_y
 
         # С небольшой вероятностью отдыхаем
@@ -289,7 +289,7 @@ class Animal(NPC):
         path = self._find_path_to(self.target_enemy.x, self.target_enemy.y, game_map)
         if path and len(path) > 1:
             next_step = path[1]
-            if game_map.is_passable(next_step[0], next_step[1]):
+            if self._can_move_to(next_step[0], next_step[1], game_map):
                 self.x, self.y = next_step
 
     def _flee_step(self, game_map):
@@ -309,7 +309,7 @@ class Animal(NPC):
             dy = random.choice([-1, 0, 1])
 
         new_x, new_y = self.x + dx, self.y + dy
-        if game_map.is_passable(new_x, new_y):
+        if self._can_move_to(new_x, new_y, game_map):
             self.x, self.y = new_x, new_y
 
         # Проверяем расстояние до угрозы
