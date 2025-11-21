@@ -304,13 +304,8 @@ class InputHandler:
             return
 
         if self.game.trade_window.mode == "buy":
-            # Режим покупки
-            if not hasattr(self.game.nearby_npc, 'inventory'):
-                return
-
-            # Используем отфильтрованный список
-            merchant_items = self.game.nearby_npc.inventory.get_all_items()
-            merchant_items = self.game.trade_window.filter_and_sort_items(merchant_items)
+            # Режим покупки - используем сохранённый список из рендера
+            merchant_items = self.game.trade_window.current_merchant_items
             if not merchant_items:
                 return
 
@@ -337,10 +332,8 @@ class InputHandler:
                     else:
                         print(f"Недостаточно золота! Нужно {buy_price}, у вас {self.game.player.inventory.gold}")
         else:
-            # Режим продажи
-            # Используем отфильтрованный список
-            player_items = self.game.player.inventory.get_all_items()
-            player_items = self.game.trade_window.filter_and_sort_items(player_items)
+            # Режим продажи - используем сохранённый список из рендера
+            player_items = self.game.trade_window.current_player_items
             if not player_items:
                 return
 
@@ -399,10 +392,10 @@ class InputHandler:
         """
         mouse_x, mouse_y = pos
 
-        # Получаем индекс предмета под курсором
-        item_index = self.game.trade_window.get_item_index_at_mouse(mouse_x, mouse_y)
+        # Получаем сам предмет под курсором (напрямую из сохранённых rect'ов)
+        item = self.game.trade_window.get_item_at_mouse_trade(mouse_x, mouse_y)
 
-        if item_index is None:
+        if item is None:
             return
 
         if self.game.trade_window.mode == "buy":
@@ -410,15 +403,6 @@ class InputHandler:
             if not hasattr(self.game.nearby_npc, 'inventory'):
                 return
 
-            # ВАЖНО: используем отфильтрованный список, как в окне торговли
-            merchant_items = self.game.nearby_npc.inventory.get_all_items()
-            merchant_items = self.game.trade_window.filter_and_sort_items(merchant_items)
-            if not merchant_items or item_index >= len(merchant_items):
-                return
-
-            # Выбираем предмет и покупаем
-            self.game.trade_window.selected_merchant_index = item_index
-            item, quantity = merchant_items[item_index]
             buy_price = int(item.value * 1.5)
 
             if self.game.player.inventory.gold >= buy_price:
@@ -434,15 +418,6 @@ class InputHandler:
                 print(f"Недостаточно золота! Нужно {buy_price}, у вас {self.game.player.inventory.gold}")
         else:
             # Режим продажи
-            # ВАЖНО: используем отфильтрованный список, как в окне торговли
-            player_items = self.game.player.inventory.get_all_items()
-            player_items = self.game.trade_window.filter_and_sort_items(player_items)
-            if not player_items or item_index >= len(player_items):
-                return
-
-            # Выбираем предмет и продаем
-            self.game.trade_window.selected_player_index = item_index
-            item, quantity = player_items[item_index]
             sell_price = int(item.value * 0.7)
 
             if self.game.nearby_npc.inventory.gold >= sell_price:
