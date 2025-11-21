@@ -46,10 +46,10 @@ class Guard(NPC):
 
     def _adjust_guard_stats(self):
         """Модификация статов для стражника - воин, не маг"""
-        # Увеличиваем боевые характеристики
-        self.strength = int(self.strength * 1.3)
-        self.constitution = int(self.constitution * 1.2)
-        self.dexterity = int(self.dexterity * 1.1)
+        # Увеличиваем боевые характеристики (макс +5% для баланса)
+        self.strength = int(self.strength * 1.05)
+        self.constitution = int(self.constitution * 1.05)
+        self.dexterity = int(self.dexterity * 1.03)
 
         # Снижаем магические характеристики
         self.spirit = max(1, int(self.spirit * 0.4))

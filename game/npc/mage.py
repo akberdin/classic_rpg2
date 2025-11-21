@@ -51,9 +51,9 @@ class MagePatrol(NPC):
 
     def _adjust_mage_stats(self):
         """Модификация статов для мага - заклинатель, не воин"""
-        # Значительно повышаем магические характеристики
-        self.intelligence = int(self.intelligence * 1.8)
-        self.spirit = int(self.spirit * 1.6)
+        # Повышаем магические характеристики (макс +5% для баланса)
+        self.intelligence = int(self.intelligence * 1.05)
+        self.spirit = int(self.spirit * 1.05)
 
         # Значительно снижаем боевые характеристики
         self.strength = max(1, int(self.strength * 0.4))

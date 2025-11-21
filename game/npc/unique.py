@@ -33,10 +33,10 @@ class Alchemist(Merchant):
 
     def _adjust_alchemist_stats(self):
         """Настройка характеристик алхимика"""
-        # Алхимики умны и духовны
-        self.intelligence = int(self.intelligence * 1.8)
-        self.spirit = int(self.spirit * 1.5)
-        self.luck = int(self.luck * 1.3)
+        # Алхимики умны и духовны (макс +5% для баланса)
+        self.intelligence = int(self.intelligence * 1.05)
+        self.spirit = int(self.spirit * 1.05)
+        self.luck = int(self.luck * 1.03)
         # Но физически слабы
         self.strength = int(self.strength * 0.7)
         self.dexterity = int(self.dexterity * 0.8)
@@ -115,11 +115,11 @@ class Hunter(NPC):
 
     def _adjust_hunter_stats(self):
         """Настройка характеристик охотника"""
-        # Охотники ловкие и наблюдательные
-        self.dexterity = int(self.dexterity * 1.8)
-        self.luck = int(self.luck * 1.5)
-        self.strength = int(self.strength * 1.3)
-        self.constitution = int(self.constitution * 1.2)
+        # Охотники ловкие и наблюдательные (макс +5% для баланса)
+        self.dexterity = int(self.dexterity * 1.05)
+        self.luck = int(self.luck * 1.05)
+        self.strength = int(self.strength * 1.04)
+        self.constitution = int(self.constitution * 1.03)
         # Средний интеллект и дух
         self.intelligence = int(self.intelligence * 0.9)
         self.spirit = int(self.spirit * 0.9)
@@ -343,15 +343,15 @@ class Necromancer(NPC):
 
     def _adjust_necromancer_stats(self):
         """Настройка характеристик некроманта"""
-        # Некроманты очень умны и духовны
-        self.intelligence = int(self.intelligence * 2.0)
-        self.spirit = int(self.spirit * 1.8)
+        # Некроманты умны и духовны (макс +5% для баланса)
+        self.intelligence = int(self.intelligence * 1.05)
+        self.spirit = int(self.spirit * 1.05)
         # Но физически слабы
         self.strength = int(self.strength * 0.6)
         self.constitution = int(self.constitution * 0.8)
         self.dexterity = int(self.dexterity * 0.7)
-        # Высокая удача для критов
-        self.luck = int(self.luck * 1.4)
+        # Слегка повышенная удача
+        self.luck = int(self.luck * 1.04)
         self.update_derived_stats()
 
     def _generate_initial_equipment(self):

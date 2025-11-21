@@ -55,9 +55,9 @@ class Bandit(NPC):
 
     def _adjust_bandit_stats(self):
         """Модификация статов для бандита - агрессивный боец"""
-        # Повышаем боевые характеристики
-        self.strength = int(self.strength * 1.2)
-        self.dexterity = int(self.dexterity * 1.15)
+        # Повышаем боевые характеристики (макс +5% для баланса)
+        self.strength = int(self.strength * 1.05)
+        self.dexterity = int(self.dexterity * 1.04)
 
         # Снижаем магические характеристики
         self.spirit = max(1, int(self.spirit * 0.35))
