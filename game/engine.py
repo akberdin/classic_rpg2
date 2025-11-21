@@ -17,7 +17,7 @@ from game.quests import QuestManager, AchievementManager, create_starter_quests,
 from game.save_system import SaveSystem
 from game.constants import (
     FPS, TILE_SIZE, COLORS, WINDOW_WIDTH, WINDOW_HEIGHT,
-    LOCATION_CITY, LOCATION_VILLAGE
+    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL
 )
 
 # Импорт новых модулей
@@ -341,16 +341,21 @@ class Game:
 
     def _check_npc_nearby(self):
         """Проверить наличие NPC рядом с игроком и открыть меню взаимодействия"""
-        # Сначала проверяем, находимся ли мы в городе или деревне
+        # Сначала проверяем, находимся ли мы в городе, деревне или школе магов
         tile = self.game_map.get_tile(self.player.x, self.player.y)
         if tile.has_location():
             location = tile.location
-            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
-                # Открываем торговое окно для города/деревни
+            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL]:
+                # Открываем торговое окно для города/деревни/школы магов
                 # Создаем временного торговца для этой локации
                 if not hasattr(location, 'merchant_npc'):
                     # Создаем постоянного торговца для этой локации
-                    merchant_level = 10 if location.location_type == LOCATION_CITY else 5
+                    if location.location_type == LOCATION_MAGIC_SCHOOL:
+                        merchant_level = 15
+                    elif location.location_type == LOCATION_CITY:
+                        merchant_level = 10
+                    else:
+                        merchant_level = 5
                     location.merchant_npc = Merchant(f"Торговец {location.name}", self.player.x, self.player.y, merchant_level)
                     # Пополняем товары
                     location.merchant_npc.restock_goods()
@@ -363,8 +368,8 @@ class Game:
                 print(f"Добро пожаловать в {location.name}! Вы можете торговать здесь.")
                 return
 
-        # Собираем всех NPC (включая miners и undead)
-        all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead
+        # Собираем всех NPC (включая mages, alchemists, hunters, necromancers)
+        all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead + self.mages + self.alchemists + self.hunters + self.necromancers
 
         # Ищем NPC рядом с игроком (в соседних клетках)
         for npc in all_npcs:
