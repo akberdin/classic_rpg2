@@ -446,6 +446,34 @@ class Skill:
         if self.current_cooldown > 0:
             self.current_cooldown -= 1
 
+    def get_rank_progression_info(self):
+        """
+        Получить подробную информацию о развитии умения по рангам.
+        Переопределяется в подклассах для специфичной информации.
+
+        Returns:
+            list: Список строк с описанием эффектов на каждом ранге
+        """
+        return [
+            f"Ранг 1: Базовые эффекты",
+            f"Ранг 2: +20% эффективность",
+            f"Ранг 3: +40% эффективность",
+            f"Ранг 4: +60% эффективность",
+            f"Ранг 5: +80% эффективность"
+        ]
+
+    def get_current_rank_description(self):
+        """
+        Получить описание текущих эффектов на текущем ранге.
+
+        Returns:
+            str: Описание текущих эффектов
+        """
+        progression = self.get_rank_progression_info()
+        if self.rank <= len(progression):
+            return progression[self.rank - 1]
+        return "Максимальный уровень"
+
 
 # ==================== БОЕВЫЕ УМЕНИЯ ====================
 
@@ -460,6 +488,15 @@ class BasicAttack(Skill):
             stamina_cost=5,
             cooldown=0
         )
+
+    def get_rank_progression_info(self):
+        return [
+            "Ранг 1: Множитель урона x1.0",
+            "Ранг 2: Множитель урона x1.2",
+            "Ранг 3: Множитель урона x1.4",
+            "Ранг 4: Множитель урона x1.6",
+            "Ранг 5: Множитель урона x1.8"
+        ]
 
     def use(self, user, target=None):
         """Использовать базовую атаку"""
@@ -499,6 +536,15 @@ class PowerStrike(Skill):
             stamina_cost=10,
             cooldown=2
         )
+
+    def get_rank_progression_info(self):
+        return [
+            "Ранг 1: Урон x1.8, пробитие брони 0%",
+            "Ранг 2: Урон x2.15, пробитие брони 10%",
+            "Ранг 3: Урон x2.5, пробитие брони 20%",
+            "Ранг 4: Урон x2.85, пробитие брони 30%",
+            "Ранг 5: Урон x3.2, пробитие брони 40%"
+        ]
 
     def use(self, user, target=None):
         """Использовать мощный удар"""
@@ -544,6 +590,15 @@ class PoisonStrike(Skill):
             stamina_cost=15,
             cooldown=4
         )
+
+    def get_rank_progression_info(self):
+        return [
+            "Ранг 1: Яд 5 урона/ход на 3 хода",
+            "Ранг 2: Яд 9 урона/ход на 4 хода",
+            "Ранг 3: Яд 13 урона/ход на 5 ходов",
+            "Ранг 4: Яд 17 урона/ход на 6 ходов",
+            "Ранг 5: Яд 21 урона/ход на 7 ходов"
+        ]
 
     def use(self, user, target=None):
         """Использовать отравленный удар"""
@@ -597,6 +652,15 @@ class StunStrike(Skill):
             stamina_cost=20,
             cooldown=5
         )
+
+    def get_rank_progression_info(self):
+        return [
+            "Ранг 1: Урон x1.5, шанс оглушения 50%, 1 ход",
+            "Ранг 2: Урон x1.7, шанс оглушения 60%, 1 ход",
+            "Ранг 3: Урон x1.9, шанс оглушения 70%, 2 хода",
+            "Ранг 4: Урон x2.1, шанс оглушения 80%, 2 хода",
+            "Ранг 5: Урон x2.3, шанс оглушения 90%, 3 хода"
+        ]
 
     def use(self, user, target=None):
         """Использовать оглушающий удар"""
@@ -653,6 +717,15 @@ class BattleCry(Skill):
             cooldown=6
         )
 
+    def get_rank_progression_info(self):
+        return [
+            "Ранг 1: +9 Сила на 4 хода",
+            "Ранг 2: +13 Сила на 5 ходов",
+            "Ранг 3: +17 Сила на 6 ходов",
+            "Ранг 4: +21 Сила на 7 ходов",
+            "Ранг 5: +25 Сила на 8 ходов"
+        ]
+
     def use(self, user, target=None):
         """Использовать боевой клич"""
         result = super().use(user, target)
@@ -690,6 +763,15 @@ class Heal(Skill):
             mana_cost=20,
             cooldown=3
         )
+
+    def get_rank_progression_info(self):
+        return [
+            "Ранг 1: Восстановление 35% макс. HP",
+            "Ранг 2: Восстановление 47% макс. HP",
+            "Ранг 3: Восстановление 59% макс. HP",
+            "Ранг 4: Восстановление 71% макс. HP",
+            "Ранг 5: Восстановление 83% макс. HP"
+        ]
 
     def use(self, user, target=None):
         """Использовать лечение - ВСЕГДА лечит себя (user)"""
@@ -828,6 +910,15 @@ class Fireball(Skill):
             cooldown=3
         )
 
+    def get_rank_progression_info(self):
+        return [
+            "Ранг 1: Множитель урона x1.0 (20 + Интеллект*4)",
+            "Ранг 2: Множитель урона x1.35",
+            "Ранг 3: Множитель урона x1.7",
+            "Ранг 4: Множитель урона x2.05",
+            "Ранг 5: Множитель урона x2.4"
+        ]
+
     def use(self, user, target=None):
         """Использовать огненный шар"""
         result = super().use(user, target)
@@ -876,6 +967,15 @@ class IceBolt(Skill):
             mana_cost=25,
             cooldown=2
         )
+
+    def get_rank_progression_info(self):
+        return [
+            "Ранг 1: Урон x1.0, шанс замедления 30%",
+            "Ранг 2: Урон x1.3, шанс замедления 40%",
+            "Ранг 3: Урон x1.6, шанс замедления 50%",
+            "Ранг 4: Урон x1.9, шанс замедления 60%",
+            "Ранг 5: Урон x2.2, шанс замедления 70%"
+        ]
 
     def use(self, user, target=None):
         """Использовать ледяную стрелу"""

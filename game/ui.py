@@ -742,8 +742,36 @@ class InventoryWindow:
 
             # Бонусы к навыкам
             if hasattr(item, 'skill_bonus') and item.skill_bonus:
+                # Словарь названий умений по ID
+                skill_names = {
+                    'basic_attack': 'Базовая атака',
+                    'power_strike': 'Мощный удар',
+                    'poison_strike': 'Отравляющий удар',
+                    'stun_strike': 'Оглушающий удар',
+                    'battle_cry': 'Боевой клич',
+                    'precise_shot': 'Точный выстрел',
+                    'rapid_fire': 'Скорострельность',
+                    'piercing_arrow': 'Пронзающая стрела',
+                    'backstab': 'Удар в спину',
+                    'bleeding_cut': 'Кровоточащий порез',
+                    'shadow_step': 'Шаг сквозь тень',
+                    'whirlwind_strike': 'Вихревой удар',
+                    'shield_breaker': 'Сокрушение щита',
+                    'blade_dance': 'Танец клинков',
+                    'heal': 'Исцеление',
+                    'regeneration': 'Регенерация',
+                    'stamina_recovery': 'Восстановление сил',
+                    'mage_shield': 'Магический щит',
+                    'fireball': 'Огненный шар',
+                    'ice_bolt': 'Ледяная стрела',
+                    'lightning': 'Молния',
+                    'magic_missile': 'Магическая стрела',
+                    'mining': 'Рудокопство',
+                    'lumberjacking': 'Лесорубство'
+                }
                 for skill_id, bonus in item.skill_bonus.items():
-                    lines.append((f"Навык: +{bonus}", (255, 200, 100), False))
+                    skill_name = skill_names.get(skill_id, skill_id)
+                    lines.append((f"Умение: {skill_name} [Ранг {bonus}]", (255, 200, 100), False))
 
         # Эффекты зелья
         if isinstance(item, PotionItem):
@@ -1657,8 +1685,36 @@ class TradeWindow:
 
             # Бонусы к навыкам
             if hasattr(item, 'skill_bonus') and item.skill_bonus:
+                # Словарь названий умений по ID
+                skill_names = {
+                    'basic_attack': 'Базовая атака',
+                    'power_strike': 'Мощный удар',
+                    'poison_strike': 'Отравляющий удар',
+                    'stun_strike': 'Оглушающий удар',
+                    'battle_cry': 'Боевой клич',
+                    'precise_shot': 'Точный выстрел',
+                    'rapid_fire': 'Скорострельность',
+                    'piercing_arrow': 'Пронзающая стрела',
+                    'backstab': 'Удар в спину',
+                    'bleeding_cut': 'Кровоточащий порез',
+                    'shadow_step': 'Шаг сквозь тень',
+                    'whirlwind_strike': 'Вихревой удар',
+                    'shield_breaker': 'Сокрушение щита',
+                    'blade_dance': 'Танец клинков',
+                    'heal': 'Исцеление',
+                    'regeneration': 'Регенерация',
+                    'stamina_recovery': 'Восстановление сил',
+                    'mage_shield': 'Магический щит',
+                    'fireball': 'Огненный шар',
+                    'ice_bolt': 'Ледяная стрела',
+                    'lightning': 'Молния',
+                    'magic_missile': 'Магическая стрела',
+                    'mining': 'Рудокопство',
+                    'lumberjacking': 'Лесорубство'
+                }
                 for skill_id, bonus in item.skill_bonus.items():
-                    lines.append((f"Навык: +{bonus}", (255, 200, 100), False))
+                    skill_name = skill_names.get(skill_id, skill_id)
+                    lines.append((f"Умение: {skill_name} [Ранг {bonus}]", (255, 200, 100), False))
 
         # Эффекты зелья
         if isinstance(item, PotionItem):
@@ -2379,11 +2435,12 @@ class SkillBookWindow:
                 )
                 self.screen.blit(skill_name_text, (skill_x + 10, skill_y + 5))
 
-                # Описание умения
+                # Текущий эффект ранга (вместо базового описания)
+                current_rank_desc = skill.get_current_rank_description() if hasattr(skill, 'get_current_rank_description') else skill.base_description[:80]
                 skill_desc_text = self.info_font.render(
-                    skill.base_description[:80],
+                    current_rank_desc[:85],
                     True,
-                    (180, 180, 180)
+                    (150, 255, 150)  # Зелёный цвет для текущего эффекта
                 )
                 self.screen.blit(skill_desc_text, (skill_x + 10, skill_y + 28))
 
@@ -2516,6 +2573,92 @@ class SkillBookWindow:
         hint_rect.centerx = window_x + window_width // 2
         hint_rect.y = hints_y
         self.screen.blit(hint_text, hint_rect)
+
+        # Всплывающая подсказка при наведении на умение
+        mouse_pos = pygame.mouse.get_pos()
+        for i, rect in enumerate(self.skill_rects):
+            if rect.collidepoint(mouse_pos) and i < len(skills):
+                self._render_skill_tooltip(skills[i], mouse_pos)
+                break
+
+    def _render_skill_tooltip(self, skill, mouse_pos):
+        """
+        Отрисовать всплывающую подсказку с развитием умения по рангам
+
+        Args:
+            skill: Объект умения
+            mouse_pos: Позиция мыши
+        """
+        import pygame
+
+        # Получаем информацию о развитии по рангам
+        progression_info = skill.get_rank_progression_info() if hasattr(skill, 'get_rank_progression_info') else []
+
+        if not progression_info:
+            return
+
+        # Параметры подсказки
+        tooltip_padding = 10
+        line_height = 20
+        tooltip_width = 350
+
+        # Формируем строки подсказки
+        lines = []
+        lines.append((f"Развитие умения: {skill.name}", (255, 215, 0), True))
+        lines.append(("", (0, 0, 0), False))  # Пустая строка
+        lines.append((f"Описание: {skill.base_description}", (180, 180, 180), False))
+        lines.append(("", (0, 0, 0), False))  # Пустая строка
+        lines.append(("Прогрессия по рангам:", (200, 200, 255), True))
+
+        for i, rank_info in enumerate(progression_info):
+            # Подсветка текущего ранга
+            if i + 1 == skill.rank:
+                lines.append((f"► {rank_info}", (100, 255, 100), False))
+            else:
+                lines.append((f"  {rank_info}", (180, 180, 180), False))
+
+        # Добавляем информацию о стоимости
+        lines.append(("", (0, 0, 0), False))
+        lines.append((f"Мана: {skill.mana_cost} | Выносливость: {skill.stamina_cost} | CD: {skill.cooldown}", (100, 200, 255), False))
+
+        # Вычисляем размер подсказки
+        tooltip_height = tooltip_padding * 2 + len(lines) * line_height
+
+        # Позиция подсказки (справа от курсора)
+        tooltip_x = mouse_pos[0] + 15
+        tooltip_y = mouse_pos[1] + 15
+
+        screen_width = self.screen.get_width()
+        screen_height = self.screen.get_height()
+
+        if tooltip_x + tooltip_width > screen_width:
+            tooltip_x = mouse_pos[0] - tooltip_width - 15
+        if tooltip_y + tooltip_height > screen_height:
+            tooltip_y = screen_height - tooltip_height - 5
+
+        # Фон подсказки
+        pygame.draw.rect(
+            self.screen,
+            (30, 30, 40),
+            (tooltip_x, tooltip_y, tooltip_width, tooltip_height)
+        )
+
+        # Рамка
+        pygame.draw.rect(
+            self.screen,
+            (150, 150, 200),
+            (tooltip_x, tooltip_y, tooltip_width, tooltip_height),
+            2
+        )
+
+        # Отрисовка текста
+        text_y = tooltip_y + tooltip_padding
+        for line_text, line_color, is_bold in lines:
+            if line_text:
+                font_to_use = self.font if is_bold else self.info_font
+                text_surface = font_to_use.render(line_text[:60], True, line_color)
+                self.screen.blit(text_surface, (tooltip_x + tooltip_padding, text_y))
+            text_y += line_height
 
 
 class LootWindow:

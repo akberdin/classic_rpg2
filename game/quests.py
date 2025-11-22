@@ -524,8 +524,18 @@ class QuestManager:
         """
         ready_quests = []
         for quest in self.active_quests:
+            # Проверяем завершение квеста перед добавлением
+            quest.check_completion()
+
             if quest.is_ready_to_turn_in():
-                if location_id is None or quest.location_id == location_id:
+                # Стартовые квесты можно сдать в любой локации
+                if quest.is_starter or quest.giver_location == "Любая локация":
+                    ready_quests.append(quest)
+                # Квесты без привязки к локации (от NPC) тоже показываем
+                elif quest.location_id is None:
+                    ready_quests.append(quest)
+                # Локационные квесты - только в нужной локации
+                elif location_id is None or quest.location_id == location_id:
                     ready_quests.append(quest)
         return ready_quests
 
@@ -925,32 +935,36 @@ def create_alchemist_quests(npc_name):
     quests = []
 
     # Квест на сбор ингредиентов
-    quests.append(Quest(
+    gather_quest = Quest(
         quest_id=f"alchemist_gather_{random.randint(1000, 9999)}",
         name="Сбор ингредиентов",
         description="Алхимику нужны магические кристаллы для зелий.",
         objectives=[
             QuestObjective("Собрать магические кристаллы", 3)
         ],
-        rewards={"experience": 150, "gold": 100, "items": ["health_potion", "mana_potion"]},
+        rewards={"exp": 150, "gold": 100},
         quest_type=QuestType.GATHER_RESOURCE,
         difficulty=QuestDifficulty.MEDIUM,
         giver_location=npc_name
-    ))
+    )
+    gather_quest.target_item = "magic_crystal"
+    quests.append(gather_quest)
 
     # Квест на уничтожение нежити
-    quests.append(Quest(
+    kill_quest = Quest(
         quest_id=f"alchemist_undead_{random.randint(1000, 9999)}",
         name="Очищение руин",
         description="Нежить в руинах мешает собирать редкие ингредиенты.",
         objectives=[
             QuestObjective("Уничтожить нежить", 5)
         ],
-        rewards={"experience": 200, "gold": 150},
+        rewards={"exp": 200, "gold": 150},
         quest_type=QuestType.KILL_ENEMIES,
         difficulty=QuestDifficulty.HARD,
         giver_location=npc_name
-    ))
+    )
+    kill_quest.target_enemy = "undead"
+    quests.append(kill_quest)
 
     return quests
 
@@ -968,32 +982,36 @@ def create_hunter_quests(npc_name):
     quests = []
 
     # Квест на уничтожение бандитов
-    quests.append(Quest(
+    bandit_quest = Quest(
         quest_id=f"hunter_bandits_{random.randint(1000, 9999)}",
         name="Охота на бандитов",
         description="Бандиты угрожают путникам на дорогах. Необходимо их остановить.",
         objectives=[
             QuestObjective("Уничтожить бандитов", 5)
         ],
-        rewards={"experience": 180, "gold": 120},
+        rewards={"exp": 180, "gold": 120},
         quest_type=QuestType.KILL_ENEMIES,
         difficulty=QuestDifficulty.MEDIUM,
         giver_location=npc_name
-    ))
+    )
+    bandit_quest.target_enemy = "bandit"
+    quests.append(bandit_quest)
 
     # Квест на охоту на элитных врагов
-    quests.append(Quest(
+    elite_quest = Quest(
         quest_id=f"hunter_elite_{random.randint(1000, 9999)}",
         name="Опасная охота",
         description="В округе появился опасный главарь банды. Нужен опытный охотник.",
         objectives=[
             QuestObjective("Уничтожить главаря банды", 1)
         ],
-        rewards={"experience": 300, "gold": 250},
+        rewards={"exp": 300, "gold": 250},
         quest_type=QuestType.KILL_ENEMIES,
         difficulty=QuestDifficulty.VERY_HARD,
         giver_location=npc_name
-    ))
+    )
+    elite_quest.target_enemy = "bandit"  # Главарь тоже считается бандитом
+    quests.append(elite_quest)
 
     return quests
 

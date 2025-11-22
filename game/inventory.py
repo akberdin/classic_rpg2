@@ -175,6 +175,34 @@ class PotionItem(Item):
 class SkillBookItem(Item):
     """Класс для книг умений"""
 
+    # Словарь описаний умений
+    SKILL_DESCRIPTIONS = {
+        'basic_attack': ("Базовая атака", "combat", "Простой удар оружием. Урон растёт с рангом (x1.0 - x1.8)."),
+        'power_strike': ("Мощный удар", "combat", "Усиленный удар с пробитием брони (x1.8 - x3.2, брони 0-40%)."),
+        'poison_strike': ("Отравленный удар", "combat", "Накладывает яд (5-21 урона/ход, 3-7 ходов)."),
+        'stun_strike': ("Оглушающий удар", "combat", "Шанс оглушения 50-90% на 1-3 хода."),
+        'battle_cry': ("Боевой клич", "combat", "Бонус к силе +9 - +25 на 4-8 ходов."),
+        'precise_shot': ("Точный выстрел", "combat", "Меткая стрельба из лука с бонусом крит. урона."),
+        'rapid_fire': ("Скорострельность", "combat", "Серия быстрых выстрелов."),
+        'piercing_arrow': ("Пронзающая стрела", "combat", "Стрела пробивает броню врага."),
+        'backstab': ("Удар в спину", "combat", "Мощный удар кинжалом (x2.5 - x4.5 урона)."),
+        'bleeding_cut': ("Кровоточащий порез", "combat", "Накладывает кровотечение на цель."),
+        'shadow_step': ("Шаг сквозь тень", "combat", "Уклонение и контратака."),
+        'whirlwind_strike': ("Вихревой удар", "combat", "Круговая атака мечом."),
+        'shield_breaker': ("Сокрушение щита", "combat", "Пробивает защиту противника."),
+        'blade_dance': ("Танец клинков", "combat", "Серия быстрых ударов мечом."),
+        'heal': ("Исцеление", "magic", "Восстановление HP (35-83% макс. здоровья)."),
+        'regeneration': ("Регенерация", "magic", "Постепенное восстановление HP каждый ход."),
+        'stamina_recovery': ("Восстановление сил", "magic", "Восстановление выносливости каждый ход."),
+        'mage_shield': ("Магический щит", "magic", "Временная защита от урона."),
+        'fireball': ("Огненный шар", "magic", "Мощная огненная атака (x1.0 - x2.4). Игнорирует броню."),
+        'ice_bolt': ("Ледяная стрела", "magic", "Ледяной урон + шанс замедления 30-70%."),
+        'lightning': ("Молния", "magic", "Электрическая атака с шансом паралича."),
+        'magic_missile': ("Магическая стрела", "magic", "Базовая магическая атака."),
+        'mining': ("Рудокопство", "crafting", "Добыча руды в шахтах."),
+        'lumberjacking': ("Лесорубство", "crafting", "Заготовка древесины в лесах.")
+    }
+
     def __init__(self, name, skill_id, value=100, weight=0.5, quality=ItemQuality.COMMON):
         """
         Инициализация книги умения
@@ -186,7 +214,17 @@ class SkillBookItem(Item):
             weight: Вес книги
             quality: Качество книги
         """
-        super().__init__(name, "skill_book", value, weight, quality, f"Книга умения: {name}")
+        # Генерируем подробное описание книги
+        skill_info = self.SKILL_DESCRIPTIONS.get(skill_id)
+        if skill_info:
+            skill_name, category, effect_desc = skill_info
+            category_names = {'combat': 'Боевое', 'magic': 'Магическое', 'crafting': 'Ремесленное'}
+            cat_name = category_names.get(category, 'Умение')
+            description = f"{cat_name} умение: {skill_name}. {effect_desc}"
+        else:
+            description = f"Книга умения: {name}"
+
+        super().__init__(name, "skill_book", value, weight, quality, description)
         self.skill_id = skill_id
 
     def use(self, character):
