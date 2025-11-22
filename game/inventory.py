@@ -977,9 +977,32 @@ class ItemGenerator:
 
         if skills_count > 0:
             skill_bonus_range = params.get('skill_bonus_range', [1, 1])
-            # Пока используем general skill ID, позже можно добавить список навыков
-            for i in range(skills_count):
-                skill_bonus[f'skill_{i}'] = random.randint(skill_bonus_range[0], skill_bonus_range[1])
+
+            # Список доступных умений по категориям
+            combat_skills = ['basic_attack', 'power_strike', 'poison_strike', 'stun_strike', 'battle_cry']
+            bow_skills = ['precise_shot', 'rapid_fire', 'piercing_arrow']
+            knife_skills = ['backstab', 'bleeding_cut', 'shadow_step']
+            sword_skills = ['whirlwind_strike', 'shield_breaker', 'blade_dance']
+            magic_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield', 'fireball', 'ice_bolt', 'lightning', 'magic_missile']
+
+            # Выбираем подходящие умения в зависимости от типа предмета
+            if item_type == "weapon":
+                # Для оружия - комбинируем общие боевые и случайные специализированные
+                available_skills = combat_skills + bow_skills + knife_skills + sword_skills
+            elif item_type == "armor":
+                # Для брони - защитные и боевые умения
+                available_skills = combat_skills + ['heal', 'regeneration', 'mage_shield']
+            elif item_type == "jewelry":
+                # Для украшений - магические и поддерживающие умения
+                available_skills = magic_skills + combat_skills
+            else:
+                available_skills = combat_skills + magic_skills
+
+            # Выбираем случайные умения
+            selected_skills = random.sample(available_skills, min(skills_count, len(available_skills)))
+            for skill_id in selected_skills:
+                bonus = random.randint(skill_bonus_range[0], skill_bonus_range[1])
+                skill_bonus[skill_id] = bonus
 
         return stats_bonus, param_bonus, skill_bonus, damage_or_defense
 
