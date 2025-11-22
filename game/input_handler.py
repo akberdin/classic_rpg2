@@ -229,23 +229,34 @@ class InputHandler:
 
         npc_name = self.game.nearby_npc.name
 
+        # Сначала проверяем прогресс всех квестов
+        self.game.quest_manager.check_all_quest_progress(self.game.player)
+
         # Ищем квесты готовые к сдаче у этого NPC
         ready_quests = []
         for quest in self.game.quest_manager.active_quests:
-            if quest.is_ready_to_turn_in() and quest.giver_location == npc_name:
-                ready_quests.append(quest)
+            # Проверяем статус завершения
+            quest.check_completion()
+
+            if quest.is_ready_to_turn_in():
+                # Стартовые квесты можно сдать любому NPC
+                if quest.is_starter or quest.giver_location == "Любая локация":
+                    ready_quests.append(quest)
+                # Обычные квесты - только тому NPC, который их дал
+                elif quest.giver_location == npc_name:
+                    ready_quests.append(quest)
 
         if not ready_quests:
             print(f"У вас нет квестов готовых к сдаче для {npc_name}.")
             return
 
-        # Сдаём первый готовый квест
-        quest = ready_quests[0]
-        success, messages = self.game.quest_manager.complete_quest(quest.quest_id, self.game.player)
-        if success:
-            print(f"Квест '{quest.name}' завершён!")
-            for msg in messages:
-                print(f"  {msg}")
+        # Сдаём все готовые квесты
+        for quest in ready_quests:
+            success, messages = self.game.quest_manager.complete_quest(quest.quest_id, self.game.player)
+            if success:
+                print(f"Квест '{quest.name}' завершён!")
+                for msg in messages:
+                    print(f"  {msg}")
 
     def handle_magic_training(self):
         """Обработка магического обучения от мага"""
