@@ -692,12 +692,11 @@ class Heal(Skill):
         )
 
     def use(self, user, target=None):
-        """Использовать лечение"""
+        """Использовать лечение - ВСЕГДА лечит себя (user)"""
         result = super().use(user, target)
 
-        # Если цель не указана, лечим себя
-        if target is None:
-            target = user
+        # Лечение ВСЕГДА применяется к себе (user), не к target
+        heal_target = user
 
         # Базовое лечение зависит от интеллекта и духа
         intelligence = getattr(user, 'intelligence', 1)
@@ -706,16 +705,17 @@ class Heal(Skill):
         # Лечение: процент от макс. здоровья + бонус от интеллекта и духа
         # Улучшено: 35% + 12% за ранг, плюс бонус от статов
         heal_percent = 0.35 + (self.rank - 1) * 0.12  # 35% -> 83% на 5 ранге
-        base_heal = int(target.max_health * heal_percent)
+        max_health = heal_target.get_effective_max_health() if hasattr(heal_target, 'get_effective_max_health') else heal_target.max_health
+        base_heal = int(max_health * heal_percent)
         stat_bonus = int(intelligence * 2 + spirit * 1.5) * self.rank  # Бонус от статов
         heal_amount = base_heal + stat_bonus
 
-        old_health = target.health
-        target.health = min(target.max_health, target.health + heal_amount)
-        actual_heal = target.health - old_health
+        old_health = heal_target.health
+        heal_target.health = min(max_health, heal_target.health + heal_amount)
+        actual_heal = heal_target.health - old_health
 
         result['heal'] = actual_heal
-        result['message'] = f"{user.name} восстанавливает {actual_heal} HP для {target.name}!"
+        result['message'] = f"{user.name} восстанавливает {actual_heal} HP!"
 
         return result
 
@@ -733,12 +733,11 @@ class Regeneration(Skill):
         )
 
     def use(self, user, target=None):
-        """Использовать регенерацию"""
+        """Использовать регенерацию - ВСЕГДА накладывает на себя (user)"""
         result = super().use(user, target)
 
-        # Если цель не указана, накладываем на себя
-        if target is None:
-            target = user
+        # Регенерация ВСЕГДА применяется к себе (user), не к target
+        regen_target = user
 
         # Получаем характеристики заклинателя
         intelligence = getattr(user, 'intelligence', 1)
@@ -747,7 +746,7 @@ class Regeneration(Skill):
         # Значительно улучшенная регенерация с рангом
         base_heal = 15 + self.rank * 6  # 21 -> 45 на 5 ранге
         # Процент от макс. здоровья
-        max_health = getattr(target, 'max_health', 100)
+        max_health = regen_target.get_effective_max_health() if hasattr(regen_target, 'get_effective_max_health') else getattr(regen_target, 'max_health', 100)
         percent_heal = int(max_health * (0.04 + self.rank * 0.02))  # 6% -> 14% за ход
         # Бонус от статов
         stat_bonus = int((intelligence + spirit) * 0.5 * self.rank)
@@ -755,15 +754,15 @@ class Regeneration(Skill):
 
         regen_duration = 4 + self.rank  # 5-9 ходов
 
-        # Накладываем эффект регенерации
+        # Накладываем эффект регенерации на себя
         regen = RegenerationEffect(duration=regen_duration, heal_per_turn=heal_per_turn)
-        if not hasattr(target, 'status_effects'):
-            target.status_effects = []
-        target.status_effects.append(regen)
+        if not hasattr(regen_target, 'status_effects'):
+            regen_target.status_effects = []
+        regen_target.status_effects.append(regen)
 
         result['heal_per_turn'] = heal_per_turn
         result['duration'] = regen_duration
-        result['message'] = f"{user.name} накладывает регенерацию на {target.name}! (+{heal_per_turn} HP/ход на {regen_duration} ходов)"
+        result['message'] = f"{user.name} накладывает регенерацию на себя! (+{heal_per_turn} HP/ход на {regen_duration} ходов)"
 
         return result
 
@@ -781,12 +780,11 @@ class StaminaRecovery(Skill):
         )
 
     def use(self, user, target=None):
-        """Использовать восстановление выносливости"""
+        """Использовать восстановление выносливости - ВСЕГДА накладывает на себя (user)"""
         result = super().use(user, target)
 
-        # Если цель не указана, накладываем на себя
-        if target is None:
-            target = user
+        # Восстановление выносливости ВСЕГДА применяется к себе (user), не к target
+        recovery_target = user
 
         # Получаем характеристики заклинателя
         intelligence = getattr(user, 'intelligence', 1)
@@ -795,7 +793,7 @@ class StaminaRecovery(Skill):
         # Восстановление выносливости с рангом
         base_recovery = 15 + self.rank * 5  # 20 -> 40 на 5 ранге
         # Процент от макс. выносливости
-        max_stamina = getattr(target, 'max_stamina', 100)
+        max_stamina = recovery_target.get_effective_max_stamina() if hasattr(recovery_target, 'get_effective_max_stamina') else getattr(recovery_target, 'max_stamina', 100)
         percent_recovery = int(max_stamina * (0.05 + self.rank * 0.02))  # 7% -> 15% за ход
         # Бонус от статов
         stat_bonus = int((intelligence + spirit) * 0.4 * self.rank)
@@ -803,15 +801,15 @@ class StaminaRecovery(Skill):
 
         recovery_duration = 4 + self.rank  # 5-9 ходов
 
-        # Накладываем эффект восстановления выносливости
+        # Накладываем эффект восстановления выносливости на себя
         stamina_effect = StaminaRecoveryEffect(duration=recovery_duration, stamina_per_turn=stamina_per_turn)
-        if not hasattr(target, 'status_effects'):
-            target.status_effects = []
-        target.status_effects.append(stamina_effect)
+        if not hasattr(recovery_target, 'status_effects'):
+            recovery_target.status_effects = []
+        recovery_target.status_effects.append(stamina_effect)
 
         result['stamina_per_turn'] = stamina_per_turn
         result['duration'] = recovery_duration
-        result['message'] = f"{user.name} накладывает восстановление выносливости на {target.name}! (+{stamina_per_turn} выносливости/ход на {recovery_duration} ходов)"
+        result['message'] = f"{user.name} накладывает восстановление выносливости на себя! (+{stamina_per_turn} выносливости/ход на {recovery_duration} ходов)"
 
         return result
 
@@ -1034,11 +1032,11 @@ class MageShield(Skill):
         )
 
     def use(self, user, target=None):
-        """Использовать щит мага"""
+        """Использовать щит мага - ВСЕГДА накладывает на себя (user)"""
         result = super().use(user, target)
 
-        if target is None:
-            target = user
+        # Щит мага ВСЕГДА применяется к себе (user), не к target
+        shield_target = user
 
         # Расчет бонуса защиты: базовые 50% + интеллект/2 + ранг*10%
         intelligence = getattr(user, 'intelligence', 1)
@@ -1047,20 +1045,20 @@ class MageShield(Skill):
         # Длительность: 3 хода + ранг
         duration = 3 + self.rank
 
-        # Создаем и применяем эффект щита
+        # Создаем и применяем эффект щита на себя
         shield_effect = ShieldEffect(duration=duration, defense_bonus=defense_bonus)
-        if not hasattr(target, 'status_effects'):
-            target.status_effects = []
+        if not hasattr(shield_target, 'status_effects'):
+            shield_target.status_effects = []
 
         # Проверяем, нет ли уже щита (чтобы избежать многократного наложения)
-        has_shield = any(isinstance(effect, ShieldEffect) for effect in target.status_effects)
+        has_shield = any(isinstance(effect, ShieldEffect) for effect in shield_target.status_effects)
         if has_shield:
-            result['message'] = f"{target.name} уже защищен магическим щитом!"
+            result['message'] = f"{user.name} уже защищен магическим щитом!"
         else:
-            target.status_effects.append(shield_effect)
+            shield_target.status_effects.append(shield_effect)
             result['shield'] = defense_bonus
             result['duration'] = duration
-            result['message'] = f"{user.name} создает магический щит на {target.name}! (+{defense_bonus}% защита на {duration} ходов)"
+            result['message'] = f"{user.name} создает магический щит на себя! (+{defense_bonus}% защита на {duration} ходов)"
 
         return result
 
