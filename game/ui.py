@@ -3447,11 +3447,21 @@ class CheatMenuWindow:
             elif cheat_id == 'give_books':
                 from game.inventory import PREDEFINED_ITEMS
                 skill_books = [
+                    # Магические поддерживающие
                     "book_heal", "book_regeneration", "book_stamina_recovery",
+                    "book_mage_shield",
+                    # Боевые общие
                     "book_power_strike", "book_poison_strike",
                     "book_stun_strike", "book_battle_cry",
+                    # Магические атакующие
                     "book_magic_missile", "book_fireball",
-                    "book_ice_bolt", "book_lightning"
+                    "book_ice_bolt", "book_lightning",
+                    # Оружейные - лук
+                    "book_precise_shot", "book_rapid_fire", "book_piercing_arrow",
+                    # Оружейные - кинжал
+                    "book_backstab", "book_bleeding_cut", "book_shadow_step",
+                    # Оружейные - меч
+                    "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance"
                 ]
                 for book_id in skill_books:
                     if book_id in PREDEFINED_ITEMS:
