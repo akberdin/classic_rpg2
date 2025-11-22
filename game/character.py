@@ -122,6 +122,13 @@ class Character:
             constitution_bonus = equipment_bonus.get('constitution', 0)
             base_max_health += constitution_bonus * 20
 
+        # Добавляем процентный бонус от param_bonus (округляем до целого)
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_param_bonus'):
+            param_bonus = self.inventory.get_total_param_bonus()
+            health_percent_bonus = param_bonus.get('health', 0)
+            if health_percent_bonus > 0:
+                base_max_health = int(base_max_health * (1 + health_percent_bonus / 100))
+
         return base_max_health
 
     def get_effective_max_stamina(self):
@@ -140,7 +147,16 @@ class Character:
             base_strength += equipment_bonus.get('strength', 0)
             base_constitution += equipment_bonus.get('constitution', 0)
 
-        return (base_strength + base_constitution) * STAMINA_PER_STAT_POINT
+        base_max_stamina = (base_strength + base_constitution) * STAMINA_PER_STAT_POINT
+
+        # Добавляем процентный бонус от param_bonus (округляем до целого)
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_param_bonus'):
+            param_bonus = self.inventory.get_total_param_bonus()
+            stamina_percent_bonus = param_bonus.get('stamina', 0)
+            if stamina_percent_bonus > 0:
+                base_max_stamina = int(base_max_stamina * (1 + stamina_percent_bonus / 100))
+
+        return base_max_stamina
 
     def get_effective_max_weight(self):
         """
@@ -598,8 +614,8 @@ class Player(Character):
         # Обновляем производные характеристики (здоровье, выносливость)
         self.update_derived_stats()
 
-        # Инвентарь
-        self.inventory = Inventory(max_slots=20)
+        # Инвентарь (передаём self как владельца для системы умений от предметов)
+        self.inventory = Inventory(max_slots=20, owner=self)
         # Обновляем грузоподъемность на основе силы
         self.inventory.update_max_weight(self.strength)
 
@@ -643,7 +659,16 @@ class Player(Character):
             equipment_bonus = self.inventory.get_total_stats_bonus()
             base_spirit += equipment_bonus.get('spirit', 0)
 
-        return base_spirit * 10
+        base_max_mana = base_spirit * 10
+
+        # Добавляем процентный бонус от param_bonus (округляем до целого)
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_param_bonus'):
+            param_bonus = self.inventory.get_total_param_bonus()
+            mana_percent_bonus = param_bonus.get('mana', 0)
+            if mana_percent_bonus > 0:
+                base_max_mana = int(base_max_mana * (1 + mana_percent_bonus / 100))
+
+        return base_max_mana
 
     def can_move_to(self, x, y, game_map):
         """

@@ -436,18 +436,20 @@ class ArtifactItem(EquipmentItem):
 class Inventory:
     """Класс инвентаря для хранения предметов"""
 
-    def __init__(self, max_slots=20, max_weight=100.0):
+    def __init__(self, max_slots=20, max_weight=100.0, owner=None):
         """
         Инициализация инвентаря
 
         Args:
             max_slots: Максимальное количество слотов
             max_weight: Максимальный вес (кг)
+            owner: Владелец инвентаря (персонаж)
         """
         self.items = {}  # {item_name: (item, quantity)}
         self.max_slots = max_slots
         self.max_weight = max_weight
         self.gold = 0
+        self.owner = owner  # Владелец инвентаря для доступа к skill_manager
 
         # Слоты экипировки
         self.equipment = {slot: None for slot in EquipmentSlot}
@@ -724,10 +726,22 @@ class Inventory:
             if not self.add_item(old_item, 1):
                 return (False, "Не удалось снять экипированный предмет - инвентарь переполнен")
 
+        # Снимаем бонусы умений от старого предмета
+        if old_item and hasattr(old_item, 'skill_bonus') and old_item.skill_bonus:
+            if hasattr(self, 'owner') and self.owner and hasattr(self.owner, 'skill_manager'):
+                for skill_id, skill_rank in old_item.skill_bonus.items():
+                    self.owner.skill_manager.revoke_equipment_skill(skill_id, skill_rank)
+
         # Экипируем новый предмет
         self.equipment[slot] = item
         # Удаляем из инвентаря
         self.remove_item(item_name, 1)
+
+        # Применяем бонусы умений от нового предмета
+        if hasattr(item, 'skill_bonus') and item.skill_bonus:
+            if hasattr(self, 'owner') and self.owner and hasattr(self.owner, 'skill_manager'):
+                for skill_id, skill_rank in item.skill_bonus.items():
+                    self.owner.skill_manager.grant_equipment_skill(skill_id, skill_rank)
 
         return (True, f"{item.get_full_name()} экипирован в слот {slot.value}")
 
@@ -751,6 +765,12 @@ class Inventory:
         # Пытаемся добавить в инвентарь
         if not self.add_item(item, 1):
             return (False, "Инвентарь переполнен")
+
+        # Снимаем бонусы умений от предмета
+        if hasattr(item, 'skill_bonus') and item.skill_bonus:
+            if hasattr(self, 'owner') and self.owner and hasattr(self.owner, 'skill_manager'):
+                for skill_id, skill_rank in item.skill_bonus.items():
+                    self.owner.skill_manager.revoke_equipment_skill(skill_id, skill_rank)
 
         # Снимаем предмет
         self.equipment[slot] = None
@@ -783,6 +803,23 @@ class Inventory:
                 for stat, bonus in item.stats_bonus.items():
                     actual_bonus = item.get_stat_bonus(stat)
                     total_bonus[stat] = total_bonus.get(stat, 0) + actual_bonus
+
+        return total_bonus
+
+    def get_total_param_bonus(self):
+        """
+        Получить суммарные процентные бонусы к параметрам от всей экипировки
+
+        Returns:
+            dict: Словарь процентных бонусов {health, mana, stamina}
+        """
+        total_bonus = {}
+
+        for item in self.equipment.values():
+            if item and isinstance(item, EquipmentItem):
+                if hasattr(item, 'param_bonus') and item.param_bonus:
+                    for param, bonus in item.param_bonus.items():
+                        total_bonus[param] = total_bonus.get(param, 0) + bonus
 
         return total_bonus
 
@@ -1681,6 +1718,21 @@ PREDEFINED_ITEMS = {
     "book_ice_bolt": SkillBookItem("Книга Ледяной Стрелы", "ice_bolt", 1500, 0.5, ItemQuality.EPIC),
     "book_lightning": SkillBookItem("Книга Молнии", "lightning", 3500, 0.5, ItemQuality.LEGENDARY),
 
+    # Книги оружейных умений (для лука)
+    "book_precise_shot": SkillBookItem("Книга Точного Выстрела", "precise_shot", 350, 0.5, ItemQuality.UNCOMMON),
+    "book_rapid_fire": SkillBookItem("Книга Быстрой Стрельбы", "rapid_fire", 500, 0.5, ItemQuality.RARE),
+    "book_piercing_arrow": SkillBookItem("Книга Пронзающей Стрелы", "piercing_arrow", 450, 0.5, ItemQuality.RARE),
+
+    # Книги оружейных умений (для кинжала)
+    "book_backstab": SkillBookItem("Книга Удара в Спину", "backstab", 400, 0.5, ItemQuality.UNCOMMON),
+    "book_bleeding_cut": SkillBookItem("Книга Кровоточащего Пореза", "bleeding_cut", 350, 0.5, ItemQuality.UNCOMMON),
+    "book_shadow_step": SkillBookItem("Книга Шага Тени", "shadow_step", 550, 0.5, ItemQuality.RARE),
+
+    # Книги оружейных умений (для меча)
+    "book_whirlwind_strike": SkillBookItem("Книга Вихревого Удара", "whirlwind_strike", 450, 0.5, ItemQuality.RARE),
+    "book_shield_breaker": SkillBookItem("Книга Разрушителя Щита", "shield_breaker", 400, 0.5, ItemQuality.UNCOMMON),
+    "book_blade_dance": SkillBookItem("Книга Танца Клинка", "blade_dance", 600, 0.5, ItemQuality.RARE),
+
     # Уникальные предметы для квестов
     # Алхимические предметы
     "elixir_of_life": PotionItem("Эликсир Жизни", "health", 500, 500, ItemQuality.LEGENDARY),
@@ -1697,15 +1749,15 @@ PREDEFINED_ITEMS = {
     "soul_gem": ResourceItem("Камень Душ", 800, 0.2),
     "necronomicon_page": ResourceItem("Страница Некрономикона", 1500, 0.1),
 
-    # Уникальное оружие для наград
+    # Уникальное оружие для наград (с бонусами к умениям)
     "hunters_bow": WeaponItem(
         "Лук Следопыта",
         WeaponType.BOW,
         25,
         quality=ItemQuality.EPIC,
         stats_bonus={'dexterity': 5, 'luck': 3},
-        param_bonus={'stamina': 5},  # Эпическое оружие - бонус к выносливости
-        skill_bonus={}
+        param_bonus={'stamina': 5},
+        skill_bonus={'precise_shot': 2}  # Даёт умение "Точный выстрел" ранг 2
     ),
     "alchemists_staff": WeaponItem(
         "Посох Алхимика",
@@ -1713,8 +1765,8 @@ PREDEFINED_ITEMS = {
         20,
         quality=ItemQuality.EPIC,
         stats_bonus={'intelligence': 6, 'spirit': 4},
-        param_bonus={'mana': 5},  # Эпическое оружие - бонус к мане
-        skill_bonus={}
+        param_bonus={'mana': 5},
+        skill_bonus={'heal': 1, 'regeneration': 1}  # Даёт умения лечения
     ),
     "shadow_blade": WeaponItem(
         "Клинок Теней",
@@ -1722,8 +1774,28 @@ PREDEFINED_ITEMS = {
         30,
         quality=ItemQuality.LEGENDARY,
         stats_bonus={'strength': 5, 'dexterity': 4, 'luck': 3},
-        param_bonus={'health': 8, 'stamina': 5},  # Легендарное оружие - два бонуса к параметрам
-        skill_bonus={}
+        param_bonus={'health': 8, 'stamina': 5},
+        skill_bonus={'blade_dance': 2, 'shadow_step': 1}  # Даёт умения "Танец клинка" и "Шаг тени"
+    ),
+    # Кинжал с умениями
+    "assassins_dagger": WeaponItem(
+        "Кинжал Убийцы",
+        WeaponType.KNIFE,
+        22,
+        quality=ItemQuality.EPIC,
+        stats_bonus={'dexterity': 6, 'luck': 4},
+        param_bonus={'stamina': 3},
+        skill_bonus={'backstab': 2, 'bleeding_cut': 1}  # Даёт умения кинжала
+    ),
+    # Лук с множественными умениями
+    "windrunners_bow": WeaponItem(
+        "Лук Бегущего по Ветру",
+        WeaponType.BOW,
+        28,
+        quality=ItemQuality.LEGENDARY,
+        stats_bonus={'dexterity': 7, 'luck': 5},
+        param_bonus={'stamina': 8},
+        skill_bonus={'rapid_fire': 2, 'piercing_arrow': 2}  # Даёт все умения лука
     ),
 }
 

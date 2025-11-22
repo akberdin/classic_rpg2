@@ -317,7 +317,31 @@ class CombatSystem:
         Returns:
             str: Результат боя
         """
-        # Обрабатываем статус-эффекты врага (яд, оглушение и т.д.)
+        # Проверяем оглушение врага ПЕРЕД обработкой эффектов
+        # (чтобы эффект с duration=1 успел подействовать)
+        if hasattr(self.enemy, 'stunned') and self.enemy.stunned:
+            self.add_to_log(f"{self.enemy.name} оглушен/заморожен и пропускает ход!")
+            # Снимаем оглушение после пропуска хода
+            self.enemy.stunned = False
+
+            # Теперь обрабатываем tick() эффектов (для уменьшения duration)
+            if hasattr(self.enemy, 'status_effects'):
+                for effect in self.enemy.status_effects[:]:
+                    message = effect.tick(self.enemy)
+                    if message:
+                        self.add_to_log(message)
+                    if effect.is_expired():
+                        remove_msg = effect.remove(self.enemy)
+                        if remove_msg:
+                            self.add_to_log(remove_msg)
+                        self.enemy.status_effects.remove(effect)
+
+            # Уменьшаем перезарядку умений игрока
+            self.player.skill_manager.tick_cooldowns()
+            self.turn = "player"
+            return "continue"
+
+        # Обрабатываем статус-эффекты врага (яд и т.д.)
         if hasattr(self.enemy, 'status_effects'):
             for effect in self.enemy.status_effects[:]:
                 message = effect.tick(self.enemy)
@@ -346,16 +370,6 @@ class CombatSystem:
                 self.player.add_experience(exp_gained)
                 self.add_to_log(f"Получено {exp_gained} опыта!")
                 return "victory"
-
-            # Проверяем оглушение врага
-            if hasattr(self.enemy, 'stunned') and self.enemy.stunned:
-                self.add_to_log(f"{self.enemy.name} оглушен и пропускает ход!")
-                # Снимаем оглушение
-                self.enemy.stunned = False
-                # Уменьшаем перезарядку умений игрока
-                self.player.skill_manager.tick_cooldowns()
-                self.turn = "player"
-                return "continue"
 
         # Враг всегда атакует
         attack_result = self.enemy.attack(self.player)

@@ -131,6 +131,27 @@ class Merchant(NPC):
             quantity = random.randint(3 + rank * 2, 10 + rank * 5)  # Больше ресурсов
             self.inventory.add_item(PREDEFINED_ITEMS[resource_type], quantity)
 
+        # Книги боевых умений (только для торговцев 3-4 ранга с вероятностью)
+        if rank >= 3:
+            combat_books = [
+                # Общие боевые
+                "book_power_strike", "book_poison_strike", "book_stun_strike", "book_battle_cry",
+                # Оружейные - лук
+                "book_precise_shot", "book_rapid_fire", "book_piercing_arrow",
+                # Оружейные - кинжал
+                "book_backstab", "book_bleeding_cut", "book_shadow_step",
+                # Оружейные - меч
+                "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance"
+            ]
+            # Шанс 30% для ранга 3, 50% для ранга 4
+            book_chance = 0.3 if rank == 3 else 0.5
+            num_books = 1 if rank == 3 else random.randint(1, 2)
+
+            if random.random() < book_chance:
+                for book_id in random.sample(combat_books, min(num_books, len(combat_books))):
+                    if book_id in PREDEFINED_ITEMS:
+                        self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
+
     def restock_goods(self):
         """Пополнение товаров торговца с учетом ранга (вызывается при отдыхе в городе)"""
         from game.inventory import ItemGenerator, PREDEFINED_ITEMS
@@ -429,20 +450,33 @@ class MagicMerchant(Merchant):
         self.inventory.gold = random.randint(2000, 5000) + self.level * 200
 
         # Книги магических умений (всегда в наличии)
-        magic_books = ["book_heal", "book_regeneration", "book_mage_shield"]
+        magic_books = ["book_heal", "book_regeneration", "book_mage_shield", "book_stamina_recovery"]
         for book_id in magic_books:
             if book_id in PREDEFINED_ITEMS:
                 self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
 
-        # Книги боевых умений (1-2 случайных)
+        # Книги боевых умений (всегда в наличии)
         combat_books = ["book_power_strike", "book_poison_strike", "book_stun_strike", "book_battle_cry"]
-        for book_id in random.sample(combat_books, random.randint(1, 2)):
+        for book_id in combat_books:
             if book_id in PREDEFINED_ITEMS:
                 self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
 
         # Книги атакующей магии (очень дорогие, всегда в наличии)
         attack_magic_books = ["book_magic_missile", "book_ice_bolt", "book_fireball", "book_lightning"]
         for book_id in attack_magic_books:
+            if book_id in PREDEFINED_ITEMS:
+                self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
+
+        # Книги оружейных умений (всегда в наличии)
+        weapon_books = [
+            # Лук
+            "book_precise_shot", "book_rapid_fire", "book_piercing_arrow",
+            # Кинжал
+            "book_backstab", "book_bleeding_cut", "book_shadow_step",
+            # Меч
+            "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance"
+        ]
+        for book_id in weapon_books:
             if book_id in PREDEFINED_ITEMS:
                 self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
 
