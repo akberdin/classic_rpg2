@@ -100,6 +100,8 @@ class UIHelper:
             vertical: Вертикальный или горизонтальный градиент
         """
         if vertical:
+            if height <= 0:
+                return
             for i in range(height):
                 ratio = i / height
                 r = int(color1[0] * (1 - ratio) + color2[0] * ratio)
@@ -107,6 +109,8 @@ class UIHelper:
                 b = int(color1[2] * (1 - ratio) + color2[2] * ratio)
                 pygame.draw.line(surface, (r, g, b), (x, y + i), (x + width, y + i))
         else:
+            if width <= 0:
+                return
             for i in range(width):
                 ratio = i / width
                 r = int(color1[0] * (1 - ratio) + color2[0] * ratio)
