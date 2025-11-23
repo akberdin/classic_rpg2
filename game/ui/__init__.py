@@ -5,16 +5,14 @@ UI модуль - пользовательский интерфейс игры.
 - Базовые компоненты (UIScaler, UIHelper)
 - Окна интерфейса (InventoryWindow, TradeWindow и др.)
 
-Для обратной совместимости все классы реэкспортируются из оригинального ui.py.
-Новые модули доступны в game.ui.base и game.ui.windows.
+Все классы доступны через этот модуль для обратной совместимости.
 """
 
-# Базовые компоненты из нового модуля
+# Базовые компоненты
 from game.ui.base import UIScaler, UIHelper
 
-# Для обратной совместимости импортируем все окна из старого ui.py
-# По мере рефакторинга окна будут перемещаться в game.ui.windows
-from game.ui_legacy import (
+# Окна - импортируем из новых модулей
+from game.ui.windows import (
     HelpWindow,
     InventoryWindow,
     TradeWindow,
