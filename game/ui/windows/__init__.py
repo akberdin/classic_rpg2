@@ -1,11 +1,27 @@
 """
-:=0 ?>;L7>20B5;LA:>3> 8=B5@D59A0.
+Окна пользовательского интерфейса.
 
-> <5@5 @5D0:B>@8=30 >:=0 ?5@5<5I0NBAO 87 ui_legacy.py AN40.
-!59G0A 4>ABC?=>:
-- HelpWindow - >:=> ?><>I8
+Все окна извлечены из ui_legacy.py в отдельные модули.
 """
 
 from game.ui.windows.help import HelpWindow
+from game.ui.windows.inventory import InventoryWindow
+from game.ui.windows.trade import TradeWindow
+from game.ui.windows.character import CharacterWindow
+from game.ui.windows.skill_book import SkillBookWindow
+from game.ui.windows.loot import LootWindow
+from game.ui.windows.quest import QuestWindow
+from game.ui.windows.random_event import RandomEventWindow
+from game.ui.windows.cheat_menu import CheatMenuWindow
 
-__all__ = ['HelpWindow']
+__all__ = [
+    'HelpWindow',
+    'InventoryWindow',
+    'TradeWindow',
+    'CharacterWindow',
+    'SkillBookWindow',
+    'LootWindow',
+    'QuestWindow',
+    'RandomEventWindow',
+    'CheatMenuWindow',
+]

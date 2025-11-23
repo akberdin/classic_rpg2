@@ -131,32 +131,27 @@ class Game:
         self.sprite_manager = SpriteManager(tile_size=TILE_SIZE)
         print(f"Менеджер спрайтов инициализирован")
 
-        # Создание NPC с помощью спавнера
+        # Создание NPC с помощью спавнера и NPCManager
+        from game.core.npc_manager import NPCManager
         npc_spawner = NPCSpawner(self.game_map)
         npcs = npc_spawner.spawn_all_npcs()
 
-        self.guards = npcs['guards']
-        self.merchants = npcs['merchants']
-        self.mages = npcs['mages']
-        self.bandits = npcs['bandits']
-        self.miners = npcs['miners']
-        self.undead = npcs['undead']
-        self.alchemists = npcs['alchemists']
-        self.hunters = npcs['hunters']
-        self.necromancers = npcs['necromancers']
-        self.animals = npcs['animals']
+        # Инициализируем централизованный менеджер NPC
+        self.npc_manager = NPCManager()
+        self.npc_manager.load_from_dict(npcs)
 
         print(f"Игрок создан на позиции ({self.player.x}, {self.player.y})")
-        print(f"Создано {len(self.guards)} стражников")
-        print(f"Создано {len(self.merchants)} торговцев")
-        print(f"Создано {len(self.mages)} магов-патрульных")
-        print(f"Создано {len(self.bandits)} бандитов")
-        print(f"Создано {len(self.miners)} шахтеров")
-        print(f"Создано {len(self.undead)} нежити")
-        print(f"Создано {len(self.alchemists)} алхимиков")
-        print(f"Создано {len(self.hunters)} охотников")
-        print(f"Создано {len(self.necromancers)} некромантов")
-        print(f"Создано {len(self.animals)} животных")
+        counts = self.npc_manager.get_counts()
+        print(f"Создано {counts.get('guards', 0)} стражников")
+        print(f"Создано {counts.get('merchants', 0)} торговцев")
+        print(f"Создано {counts.get('mages', 0)} магов-патрульных")
+        print(f"Создано {counts.get('bandits', 0)} бандитов")
+        print(f"Создано {counts.get('miners', 0)} шахтеров")
+        print(f"Создано {counts.get('undead', 0)} нежити")
+        print(f"Создано {counts.get('alchemists', 0)} алхимиков")
+        print(f"Создано {counts.get('hunters', 0)} охотников")
+        print(f"Создано {counts.get('necromancers', 0)} некромантов")
+        print(f"Создано {counts.get('animals', 0)} животных")
 
         # Инициализация менеджера респавна
         self.respawn_manager = RespawnManager(self.game_map)
@@ -192,13 +187,8 @@ class Game:
         self.player.skill_manager.assign_to_slot('mining', 1)  # Слот 2
         self.player.skill_manager.assign_to_slot('lumberjacking', 2)  # Слот 3
 
-        # Создаём централизованный менеджер NPC
-        from game.core import create_npc_manager_from_game, get_all_npcs_from_game
-        self.npc_manager = create_npc_manager_from_game(self)
-
         # Перестраиваем spatial grid для NPC
-        all_npcs = get_all_npcs_from_game(self)
-        self.performance_optimizer.rebuild_spatial_grid(all_npcs)
+        self.performance_optimizer.rebuild_spatial_grid(self.npc_manager.get_all_npcs())
 
         # Инициализация обработчика ввода
         self.input_handler = InputHandler(self)
@@ -207,6 +197,59 @@ class Game:
         self.world_renderer = WorldRenderer(self)
 
         print("Игра готова к запуску!")
+
+    # === Свойства обратной совместимости для доступа к NPC ===
+    # Эти свойства делегируют к npc_manager для совместимости со старым кодом
+
+    @property
+    def guards(self):
+        """Список стражников (через NPCManager)."""
+        return self.npc_manager.guards
+
+    @property
+    def merchants(self):
+        """Список торговцев (через NPCManager)."""
+        return self.npc_manager.merchants
+
+    @property
+    def mages(self):
+        """Список магов (через NPCManager)."""
+        return self.npc_manager.mages
+
+    @property
+    def bandits(self):
+        """Список бандитов (через NPCManager)."""
+        return self.npc_manager.bandits
+
+    @property
+    def miners(self):
+        """Список шахтёров (через NPCManager)."""
+        return self.npc_manager.miners
+
+    @property
+    def undead(self):
+        """Список нежити (через NPCManager)."""
+        return self.npc_manager.undead
+
+    @property
+    def alchemists(self):
+        """Список алхимиков (через NPCManager)."""
+        return self.npc_manager.alchemists
+
+    @property
+    def hunters(self):
+        """Список охотников (через NPCManager)."""
+        return self.npc_manager.hunters
+
+    @property
+    def necromancers(self):
+        """Список некромантов (через NPCManager)."""
+        return self.npc_manager.necromancers
+
+    @property
+    def animals(self):
+        """Список животных (через NPCManager)."""
+        return self.npc_manager.animals
 
     def run(self):
         """Главный игровой цикл"""
@@ -417,8 +460,8 @@ class Game:
                 print(f"Добро пожаловать в {location.name}! Вы можете торговать здесь.")
                 return
 
-        # Собираем всех NPC (включая mages, alchemists, hunters, necromancers, animals)
-        all_npcs = self.guards + self.merchants + self.bandits + self.miners + self.undead + self.mages + self.alchemists + self.hunters + self.necromancers + self.animals
+        # Собираем всех NPC через менеджер
+        all_npcs = self.npc_manager.get_all_npcs()
 
         # Ищем NPC рядом с игроком (в соседних клетках)
         for npc in all_npcs:
