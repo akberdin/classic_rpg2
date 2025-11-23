@@ -182,15 +182,15 @@ class SkillBookItem(Item):
         'poison_strike': ("Отравленный удар", "combat", "Накладывает яд (5-21 урона/ход, 3-7 ходов)."),
         'stun_strike': ("Оглушающий удар", "combat", "Шанс оглушения 50-90% на 1-3 хода."),
         'battle_cry': ("Боевой клич", "combat", "Бонус к силе +9 - +25 на 4-8 ходов."),
-        'precise_shot': ("Точный выстрел", "combat", "Меткая стрельба из лука с бонусом крит. урона."),
-        'rapid_fire': ("Скорострельность", "combat", "Серия быстрых выстрелов."),
-        'piercing_arrow': ("Пронзающая стрела", "combat", "Стрела пробивает броню врага."),
-        'backstab': ("Удар в спину", "combat", "Мощный удар кинжалом (x2.5 - x4.5 урона)."),
-        'bleeding_cut': ("Кровоточащий порез", "combat", "Накладывает кровотечение на цель."),
-        'shadow_step': ("Шаг сквозь тень", "combat", "Уклонение и контратака."),
-        'whirlwind_strike': ("Вихревой удар", "combat", "Круговая атака мечом."),
-        'shield_breaker': ("Сокрушение щита", "combat", "Пробивает защиту противника."),
-        'blade_dance': ("Танец клинков", "combat", "Серия быстрых ударов мечом."),
+        'precise_shot': ("Точный выстрел", "combat", "Требует: Лук. Меткая стрельба с бонусом крит. урона."),
+        'rapid_fire': ("Скорострельность", "combat", "Требует: Лук. Серия быстрых выстрелов."),
+        'piercing_arrow': ("Пронзающая стрела", "combat", "Требует: Лук. Стрела пробивает броню врага."),
+        'backstab': ("Удар в спину", "combat", "Требует: Нож. Мощный удар (x2.5 - x4.5 урона)."),
+        'bleeding_cut': ("Кровоточащий порез", "combat", "Требует: Нож. Накладывает кровотечение на цель."),
+        'shadow_step': ("Шаг сквозь тень", "combat", "Требует: Нож. Уклонение и контратака."),
+        'whirlwind_strike': ("Вихревой удар", "combat", "Требует: Меч. Круговая атака."),
+        'shield_breaker': ("Сокрушение щита", "combat", "Требует: Меч. Пробивает защиту противника."),
+        'blade_dance': ("Танец клинков", "combat", "Требует: Меч. Серия быстрых ударов."),
         'heal': ("Исцеление", "magic", "Восстановление HP (35-83% макс. здоровья)."),
         'regeneration': ("Регенерация", "magic", "Постепенное восстановление HP каждый ход."),
         'stamina_recovery': ("Восстановление сил", "magic", "Восстановление выносливости каждый ход."),
@@ -918,9 +918,14 @@ class ItemGenerator:
         return "ring"
 
     @classmethod
-    def generate_bonuses_from_config(cls, item_type, quality):
+    def generate_bonuses_from_config(cls, item_type, quality, weapon_type=None):
         """
         Генерировать бонусы для предмета на основе конфига
+
+        Args:
+            item_type: Тип предмета (weapon, armor, jewelry)
+            quality: Качество предмета
+            weapon_type: Тип оружия (WeaponType) для фильтрации профильных умений
 
         Returns:
             tuple: (stats_bonus, param_bonus, skill_bonus, damage_or_defense_value)
@@ -987,8 +992,17 @@ class ItemGenerator:
 
             # Выбираем подходящие умения в зависимости от типа предмета
             if item_type == "weapon":
-                # Для оружия - комбинируем общие боевые и случайные специализированные
-                available_skills = combat_skills + bow_skills + knife_skills + sword_skills
+                # Для оружия - общие боевые умения + профильные умения только для своего типа
+                available_skills = combat_skills.copy()
+
+                # Добавляем профильные умения только для соответствующего типа оружия
+                if weapon_type == WeaponType.BOW:
+                    available_skills += bow_skills
+                elif weapon_type == WeaponType.KNIFE:
+                    available_skills += knife_skills
+                elif weapon_type == WeaponType.SWORD:
+                    available_skills += sword_skills
+                # Для остальных типов оружия - только общие боевые умения
             elif item_type == "armor":
                 # Для брони - защитные и боевые умения
                 available_skills = combat_skills + ['heal', 'regeneration', 'mage_shield']
@@ -1225,8 +1239,8 @@ class ItemGenerator:
 
         weapon_type = random.choice(list(WeaponType))
 
-        # Генерируем бонусы из конфига
-        stats_bonus, param_bonus, skill_bonus, base_damage = cls.generate_bonuses_from_config("weapon", quality)
+        # Генерируем бонусы из конфига с учётом типа оружия
+        stats_bonus, param_bonus, skill_bonus, base_damage = cls.generate_bonuses_from_config("weapon", quality, weapon_type)
 
         # Генерируем название
         name = cls.generate_item_name(weapon_type.rus_name, weapon_type.rus_name, quality)

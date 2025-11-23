@@ -152,6 +152,61 @@ class UIHelper:
             text_rect.center = (x + width // 2, y + height // 2)
             surface.blit(text_surface, text_rect)
 
+    @staticmethod
+    def wrap_text(text, font, max_width):
+        """
+        Разбивает текст на строки с переносом по словам
+
+        Args:
+            text: Текст для разбивки
+            font: Шрифт для измерения ширины
+            max_width: Максимальная ширина строки в пикселях
+
+        Returns:
+            list: Список строк
+        """
+        if not text:
+            return [""]
+
+        words = text.split(' ')
+        lines = []
+        current_line = ""
+
+        for word in words:
+            # Пробуем добавить слово к текущей строке
+            test_line = current_line + (" " if current_line else "") + word
+            test_surface = font.render(test_line, True, (255, 255, 255))
+
+            if test_surface.get_width() <= max_width:
+                current_line = test_line
+            else:
+                # Если текущая строка не пуста, сохраняем её
+                if current_line:
+                    lines.append(current_line)
+                # Проверяем, помещается ли слово само по себе
+                word_surface = font.render(word, True, (255, 255, 255))
+                if word_surface.get_width() > max_width:
+                    # Слово слишком длинное, разбиваем по символам
+                    current_word = ""
+                    for char in word:
+                        test_word = current_word + char
+                        char_surface = font.render(test_word, True, (255, 255, 255))
+                        if char_surface.get_width() <= max_width:
+                            current_word = test_word
+                        else:
+                            if current_word:
+                                lines.append(current_word)
+                            current_word = char
+                    current_line = current_word
+                else:
+                    current_line = word
+
+        # Добавляем последнюю строку
+        if current_line:
+            lines.append(current_line)
+
+        return lines if lines else [""]
+
 
 class HelpWindow:
     """Окно помощи (F1)"""
@@ -742,22 +797,22 @@ class InventoryWindow:
 
             # Бонусы к навыкам
             if hasattr(item, 'skill_bonus') and item.skill_bonus:
-                # Словарь названий умений по ID
+                # Словарь названий умений по ID с указанием типа оружия
                 skill_names = {
                     'basic_attack': 'Базовая атака',
                     'power_strike': 'Мощный удар',
                     'poison_strike': 'Отравляющий удар',
                     'stun_strike': 'Оглушающий удар',
                     'battle_cry': 'Боевой клич',
-                    'precise_shot': 'Точный выстрел',
-                    'rapid_fire': 'Скорострельность',
-                    'piercing_arrow': 'Пронзающая стрела',
-                    'backstab': 'Удар в спину',
-                    'bleeding_cut': 'Кровоточащий порез',
-                    'shadow_step': 'Шаг сквозь тень',
-                    'whirlwind_strike': 'Вихревой удар',
-                    'shield_breaker': 'Сокрушение щита',
-                    'blade_dance': 'Танец клинков',
+                    'precise_shot': 'Точный выстрел (Лук)',
+                    'rapid_fire': 'Скорострельность (Лук)',
+                    'piercing_arrow': 'Пронзающая стрела (Лук)',
+                    'backstab': 'Удар в спину (Нож)',
+                    'bleeding_cut': 'Кровоточащий порез (Нож)',
+                    'shadow_step': 'Шаг сквозь тень (Нож)',
+                    'whirlwind_strike': 'Вихревой удар (Меч)',
+                    'shield_breaker': 'Сокрушение щита (Меч)',
+                    'blade_dance': 'Танец клинков (Меч)',
                     'heal': 'Исцеление',
                     'regeneration': 'Регенерация',
                     'stamina_recovery': 'Восстановление сил',
@@ -793,8 +848,35 @@ class InventoryWindow:
             lines.append(("", (0, 0, 0), False))
             lines.append((item.description, (150, 150, 150), False))
 
-        # Вычисляем высоту подсказки
-        tooltip_height = tooltip_padding * 2 + len(lines) * line_height
+        # Максимальная ширина текста
+        max_text_width = tooltip_width - tooltip_padding * 2
+
+        # Обрабатываем перенос строк для длинных текстов
+        wrapped_lines = []
+        for line_text, line_color, is_bold in lines:
+            if line_text == "":
+                wrapped_lines.append((line_text, line_color, is_bold))
+            else:
+                font_to_use = self.font if is_bold else self.info_font
+                # Проверяем, помещается ли текст
+                test_surface = font_to_use.render(line_text, True, line_color)
+                if test_surface.get_width() <= max_text_width:
+                    wrapped_lines.append((line_text, line_color, is_bold))
+                else:
+                    # Переносим по словам
+                    wrapped = UIHelper.wrap_text(line_text, font_to_use, max_text_width)
+                    for wrapped_line in wrapped:
+                        wrapped_lines.append((wrapped_line, line_color, is_bold))
+
+        # Вычисляем высоту подсказки с учетом переносов
+        actual_line_count = 0
+        empty_line_count = 0
+        for line_text, _, _ in wrapped_lines:
+            if line_text == "":
+                empty_line_count += 1
+            else:
+                actual_line_count += 1
+        tooltip_height = tooltip_padding * 2 + actual_line_count * line_height + empty_line_count * (line_height // 2)
 
         # Позиция подсказки (справа от курсора, но в пределах экрана)
         tooltip_x = mouse_x + 15
@@ -824,7 +906,7 @@ class InventoryWindow:
 
         # Отрисовка текста
         text_y = tooltip_y + tooltip_padding
-        for line_text, line_color, is_bold in lines:
+        for line_text, line_color, is_bold in wrapped_lines:
             if line_text == "":  # Пустая строка
                 text_y += line_height // 2
                 continue
@@ -1685,22 +1767,22 @@ class TradeWindow:
 
             # Бонусы к навыкам
             if hasattr(item, 'skill_bonus') and item.skill_bonus:
-                # Словарь названий умений по ID
+                # Словарь названий умений по ID с указанием типа оружия
                 skill_names = {
                     'basic_attack': 'Базовая атака',
                     'power_strike': 'Мощный удар',
                     'poison_strike': 'Отравляющий удар',
                     'stun_strike': 'Оглушающий удар',
                     'battle_cry': 'Боевой клич',
-                    'precise_shot': 'Точный выстрел',
-                    'rapid_fire': 'Скорострельность',
-                    'piercing_arrow': 'Пронзающая стрела',
-                    'backstab': 'Удар в спину',
-                    'bleeding_cut': 'Кровоточащий порез',
-                    'shadow_step': 'Шаг сквозь тень',
-                    'whirlwind_strike': 'Вихревой удар',
-                    'shield_breaker': 'Сокрушение щита',
-                    'blade_dance': 'Танец клинков',
+                    'precise_shot': 'Точный выстрел (Лук)',
+                    'rapid_fire': 'Скорострельность (Лук)',
+                    'piercing_arrow': 'Пронзающая стрела (Лук)',
+                    'backstab': 'Удар в спину (Нож)',
+                    'bleeding_cut': 'Кровоточащий порез (Нож)',
+                    'shadow_step': 'Шаг сквозь тень (Нож)',
+                    'whirlwind_strike': 'Вихревой удар (Меч)',
+                    'shield_breaker': 'Сокрушение щита (Меч)',
+                    'blade_dance': 'Танец клинков (Меч)',
                     'heal': 'Исцеление',
                     'regeneration': 'Регенерация',
                     'stamina_recovery': 'Восстановление сил',
@@ -1735,8 +1817,35 @@ class TradeWindow:
             sell_price = int(item.value * 0.7)
             lines.append((f"Цена продажи: {sell_price} золота", (255, 215, 0), False))
 
-        # Вычисляем высоту подсказки
-        tooltip_height = tooltip_padding * 2 + len(lines) * line_height
+        # Максимальная ширина текста
+        max_text_width = tooltip_width - tooltip_padding * 2
+
+        # Обрабатываем перенос строк для длинных текстов
+        wrapped_lines = []
+        for line_text, line_color, is_bold in lines:
+            if line_text == "":
+                wrapped_lines.append((line_text, line_color, is_bold))
+            else:
+                font_to_use = self.font if is_bold else self.info_font
+                # Проверяем, помещается ли текст
+                test_surface = font_to_use.render(line_text, True, line_color)
+                if test_surface.get_width() <= max_text_width:
+                    wrapped_lines.append((line_text, line_color, is_bold))
+                else:
+                    # Переносим по словам
+                    wrapped = UIHelper.wrap_text(line_text, font_to_use, max_text_width)
+                    for wrapped_line in wrapped:
+                        wrapped_lines.append((wrapped_line, line_color, is_bold))
+
+        # Вычисляем высоту подсказки с учетом переносов
+        actual_line_count = 0
+        empty_line_count = 0
+        for line_text, _, _ in wrapped_lines:
+            if line_text == "":
+                empty_line_count += 1
+            else:
+                actual_line_count += 1
+        tooltip_height = tooltip_padding * 2 + actual_line_count * line_height + empty_line_count * (line_height // 2)
 
         # Позиция подсказки (справа от курсора, но в пределах экрана)
         tooltip_x = mouse_x + 15
@@ -1766,7 +1875,7 @@ class TradeWindow:
 
         # Отрисовка текста
         text_y = tooltip_y + tooltip_padding
-        for line_text, line_color, is_bold in lines:
+        for line_text, line_color, is_bold in wrapped_lines:
             if line_text == "":  # Пустая строка
                 text_y += line_height // 2
                 continue
