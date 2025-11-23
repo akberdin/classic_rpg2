@@ -1,13 +1,19 @@
 """
-Модуль UI компонентов для игры
-Содержит все интерфейсные окна и элементы
+Модуль UI компонентов для игры (legacy).
+
+Этот файл сохранён для обратной совместимости.
+Базовые компоненты UIScaler и UIHelper перенесены в game.ui.base.
+Окна постепенно переносятся в game.ui.windows.
 """
 import pygame
 from game.constants import COLORS, BASE_WIDTH, BASE_HEIGHT
 from game.inventory import EquipmentSlot, EquipmentItem
 
+# Импортируем базовые компоненты из нового модуля
+from game.ui.base import UIScaler, UIHelper
 
-class UIScaler:
+
+class _UIScalerLegacy:
     """Класс для масштабирования UI элементов под разные разрешения экрана"""
 
     def __init__(self, screen_width, screen_height):
@@ -66,8 +72,8 @@ class UIScaler:
         return (self.screen_height - height) // 2
 
 
-class UIHelper:
-    """Вспомогательные методы для UI"""
+class _UIHelperLegacy:
+    """Вспомогательные методы для UI (устаревший, используйте UIHelper из game.ui.base)"""
 
     @staticmethod
     def draw_panel(surface, x, y, width, height, color=(40, 40, 45), border_color=(100, 100, 120), border_width=2):

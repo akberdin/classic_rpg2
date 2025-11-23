@@ -192,8 +192,11 @@ class Game:
         self.player.skill_manager.assign_to_slot('mining', 1)  # Слот 2
         self.player.skill_manager.assign_to_slot('lumberjacking', 2)  # Слот 3
 
+        # Создаём централизованный менеджер NPC
+        from game.core import create_npc_manager_from_game, get_all_npcs_from_game
+        self.npc_manager = create_npc_manager_from_game(self)
+
         # Перестраиваем spatial grid для NPC
-        from game.core import get_all_npcs_from_game
         all_npcs = get_all_npcs_from_game(self)
         self.performance_optimizer.rebuild_spatial_grid(all_npcs)
 
