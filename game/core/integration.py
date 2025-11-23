@@ -156,7 +156,7 @@ def update_all_npc_ai_with_context(game: 'Game', context: 'AIContext' = None) ->
         ('bandits', True),      # Требует player
         ('miners', False),      # НЕ требует player (worker.py)
         ('undead', True),       # Требует player
-        ('alchemists', True),   # Требует player (хотя статичные)
+        ('alchemists', False),  # НЕ требует player (наследует от Merchant)
         ('hunters', True),      # Требует player
         ('necromancers', True), # Требует player
         ('animals', True),      # Требует player
