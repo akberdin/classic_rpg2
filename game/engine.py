@@ -193,7 +193,8 @@ class Game:
         self.player.skill_manager.assign_to_slot('lumberjacking', 2)  # Слот 3
 
         # Перестраиваем spatial grid для NPC
-        all_npcs = self.guards + self.merchants + self.mages + self.bandits + self.miners + self.undead + self.alchemists + self.hunters + self.necromancers + self.animals
+        from game.core import get_all_npcs_from_game
+        all_npcs = get_all_npcs_from_game(self)
         self.performance_optimizer.rebuild_spatial_grid(all_npcs)
 
         # Инициализация обработчика ввода
@@ -229,8 +230,12 @@ class Game:
             if self.in_combat and self.combat_system:
                 result = self.combat_system.handle_input(event)
                 if result == "victory":
-                    # Генерируем лут
+                    # Генерируем лут (проверка на None)
                     defeated_enemy = self.combat_system.enemy
+                    if defeated_enemy is None:
+                        self.in_combat = False
+                        self.combat_system = None
+                        continue
                     loot_items, loot_gold = self._generate_loot(defeated_enemy)
 
                     # Применяем бонус серии убийств

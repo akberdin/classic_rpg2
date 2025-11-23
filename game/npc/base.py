@@ -1,6 +1,7 @@
 """
 Базовый класс NPC (неигровых персонажей)
 """
+import random
 from collections import deque
 from game.character import Character
 from game.inventory import Inventory
@@ -49,11 +50,6 @@ class NPC(Character):
 
         # Генерируем и экипируем начальную экипировку
         self._generate_initial_equipment()
-
-        # Рандомная задержка для десинхронизации поведения NPC
-        import random
-        self.action_delay = random.uniform(0.5, 2.0)  # Случайная задержка между действиями
-        self.decision_variance = random.uniform(0.8, 1.2)  # Вариативность принятия решений
 
         # Система расписаний (инициализируется позже)
         self.schedule = None
@@ -190,8 +186,6 @@ class NPC(Character):
         Returns:
             bool: True если враг повержен
         """
-        import random
-
         # Моментальный расчет боя на основе характеристик
         # Рассчитываем "силу" каждого бойца
         self_power = (self.get_total_damage() * 0.4 +

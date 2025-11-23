@@ -47,8 +47,12 @@ class InputHandler:
                 # Если предметов больше нет, корректируем индекс
                 if self.game.player.inventory.get_item(item.name) is None:
                     all_items = self.game.player.inventory.get_all_items()
-                    self.game.inventory_window.selected_inventory_index = min(self.game.inventory_window.selected_inventory_index, len(all_items) - 1)
-                    if self.game.inventory_window.selected_inventory_index < 0:
+                    if all_items:
+                        self.game.inventory_window.selected_inventory_index = min(
+                            self.game.inventory_window.selected_inventory_index,
+                            len(all_items) - 1
+                        )
+                    else:
                         self.game.inventory_window.selected_inventory_index = 0
         elif key == pygame.K_e:
             # Экипировать выбранный предмет

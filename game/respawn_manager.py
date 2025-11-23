@@ -107,7 +107,7 @@ class RespawnManager:
                 return (npc.academy_x, npc.academy_y, LOCATION_MAGIC_SCHOOL)
         elif npc_class == 'Guard':
             # Стражники патрулируют, используем начальную позицию маршрута
-            if hasattr(npc, 'patrol_route') and npc.patrol_route:
+            if hasattr(npc, 'patrol_route') and npc.patrol_route and len(npc.patrol_route) > 0:
                 route = npc.patrol_route
                 center_x = sum(p[0] for p in route) // len(route)
                 center_y = sum(p[1] for p in route) // len(route)

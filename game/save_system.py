@@ -16,8 +16,11 @@ class SaveSystem:
     @staticmethod
     def _ensure_save_dir():
         """Создать директорию для сохранений если её нет"""
-        if not os.path.exists(SaveSystem.SAVE_DIR):
-            os.makedirs(SaveSystem.SAVE_DIR)
+        try:
+            if not os.path.exists(SaveSystem.SAVE_DIR):
+                os.makedirs(SaveSystem.SAVE_DIR)
+        except OSError as e:
+            print(f"Ошибка создания директории сохранений: {e}")
 
     @staticmethod
     def _serialize_item(item):
@@ -89,13 +92,18 @@ class SaveSystem:
 
         # Если это снаряжение
         if data.get('is_equipment', False):
-            slot = EquipmentSlot(data['slot'])
-            # Поддержка как name (новый формат), так и value (старый формат) для quality
-            quality_data = data['quality']
-            if isinstance(quality_data, str):
-                quality = ItemQuality[quality_data]  # По имени (новый формат)
-            else:
-                quality = ItemQuality(quality_data)  # По значению (старый формат)
+            try:
+                slot = EquipmentSlot(data.get('slot', 'WEAPON'))
+                # Поддержка как name (новый формат), так и value (старый формат) для quality
+                quality_data = data.get('quality', 'COMMON')
+                if isinstance(quality_data, str):
+                    quality = ItemQuality[quality_data]  # По имени (новый формат)
+                else:
+                    quality = ItemQuality(quality_data)  # По значению (старый формат)
+            except (KeyError, ValueError) as e:
+                print(f"Ошибка десериализации слота/качества: {e}, используем значения по умолчанию")
+                slot = EquipmentSlot.WEAPON
+                quality = ItemQuality.COMMON
 
             if data.get('weapon', False):
                 # Восстанавливаем WeaponType из имени
