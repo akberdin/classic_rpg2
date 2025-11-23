@@ -4,6 +4,17 @@
 import random
 from enum import Enum
 
+# Импортируем эффекты из нового модуля
+from game.systems.skills.effects import (
+    StatusEffect,
+    PoisonEffect,
+    StunEffect,
+    RegenerationEffect,
+    StaminaRecoveryEffect,
+    StrengthBoostEffect,
+    ShieldEffect,
+)
+
 
 class SkillCategory(Enum):
     """Категории умений"""
@@ -12,8 +23,12 @@ class SkillCategory(Enum):
     MAGIC = "magic"  # Магические умения
 
 
-class StatusEffect:
-    """Базовый класс для статус-эффектов"""
+# Локальные классы эффектов удалены - используйте импортированные
+# из game.systems.skills.effects
+
+
+class _StatusEffectLegacy:
+    """Устаревший - используйте StatusEffect из game.systems.skills.effects"""
 
     def __init__(self, name, duration, description=""):
         """
@@ -76,8 +91,8 @@ class StatusEffect:
         return f"{self.name} снят с {character.name}"
 
 
-class PoisonEffect(StatusEffect):
-    """Эффект отравления - наносит урон каждый ход"""
+class _PoisonEffectLegacy(_StatusEffectLegacy):
+    """Устаревший - используйте PoisonEffect из game.systems.skills.effects"""
 
     def __init__(self, duration=3, damage_per_turn=5):
         """
@@ -101,8 +116,8 @@ class PoisonEffect(StatusEffect):
         return f"{character.name} получает {self.damage_per_turn} урона от яда"
 
 
-class StunEffect(StatusEffect):
-    """Эффект оглушения - пропуск хода"""
+class _StunEffectLegacy(_StatusEffectLegacy):
+    """Устаревший - используйте StunEffect из game.systems.skills.effects"""
 
     def __init__(self, duration=1):
         """
@@ -128,8 +143,8 @@ class StunEffect(StatusEffect):
         return f"{character.name} пришел в себя"
 
 
-class RegenerationEffect(StatusEffect):
-    """Эффект регенерации - восстановление HP каждый ход"""
+class _RegenerationEffectLegacy(_StatusEffectLegacy):
+    """Устаревший - используйте RegenerationEffect из game.systems.skills.effects"""
 
     def __init__(self, duration=3, heal_per_turn=10):
         """
@@ -156,8 +171,8 @@ class RegenerationEffect(StatusEffect):
         return f"{character.name} восстанавливает {actual_heal} HP от регенерации"
 
 
-class StaminaRecoveryEffect(StatusEffect):
-    """Эффект восстановления выносливости - восстановление выносливости каждый ход"""
+class _StaminaRecoveryEffectLegacy(_StatusEffectLegacy):
+    """Устаревший - используйте StaminaRecoveryEffect из game.systems.skills.effects"""
 
     def __init__(self, duration=3, stamina_per_turn=10):
         """
@@ -186,8 +201,8 @@ class StaminaRecoveryEffect(StatusEffect):
         return ""
 
 
-class StrengthBoostEffect(StatusEffect):
-    """Эффект усиления силы"""
+class _StrengthBoostEffectLegacy(_StatusEffectLegacy):
+    """Устаревший - используйте StrengthBoostEffect из game.systems.skills.effects"""
 
     def __init__(self, duration=3, boost_amount=5):
         """
@@ -215,8 +230,8 @@ class StrengthBoostEffect(StatusEffect):
         return f"Усиление спадает с {character.name}"
 
 
-class ShieldEffect(StatusEffect):
-    """Эффект магического щита"""
+class _ShieldEffectLegacy(_StatusEffectLegacy):
+    """Устаревший - используйте ShieldEffect из game.systems.skills.effects"""
 
     def __init__(self, duration=3, defense_bonus=0):
         super().__init__(
