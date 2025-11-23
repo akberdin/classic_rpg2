@@ -66,7 +66,16 @@ class Bandit(NPC):
         # Обновляем производные статы
         self.update_derived_stats()
 
-    def update_ai(self, game_map, all_npcs=None, player=None, current_hour=12):
+    def update_ai(self, context_or_map, all_npcs=None, player=None, current_hour=12):
+        # Поддержка AIContext и старого способа вызова
+        from game.core.ai_context import AIContext
+        if isinstance(context_or_map, AIContext):
+            context = context_or_map
+            game_map = context.game_map
+            all_npcs = context.all_npcs
+            current_hour = context.current_hour
+        else:
+            game_map = context_or_map
         """
         Обновление AI бандита за 1 час игрового времени
 
@@ -347,7 +356,16 @@ class Undead(NPC):
         # Состояние по умолчанию для расписания
         self.default_state = "patrol"
 
-    def update_ai(self, game_map, all_npcs=None, player=None, current_hour=12):
+    def update_ai(self, context_or_map, all_npcs=None, player=None, current_hour=12):
+        # Поддержка AIContext и старого способа вызова
+        from game.core.ai_context import AIContext
+        if isinstance(context_or_map, AIContext):
+            context = context_or_map
+            game_map = context.game_map
+            all_npcs = context.all_npcs
+            current_hour = context.current_hour
+        else:
+            game_map = context_or_map
         """
         Обновление AI нежити за 1 час игрового времени
         АКТИВИРОВАНА система патруля и агрессии

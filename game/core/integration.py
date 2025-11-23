@@ -139,6 +139,7 @@ def update_all_npc_ai_with_context(game: 'Game', context: 'AIContext' = None) ->
     Обновить AI всех NPC используя AIContext.
 
     Это замена для повторяющегося кода в game_time.py.
+    Все NPC теперь поддерживают унифицированный вызов update_ai(context).
 
     Args:
         game: Экземпляр Game
@@ -147,35 +148,14 @@ def update_all_npc_ai_with_context(game: 'Game', context: 'AIContext' = None) ->
     if context is None:
         context = create_ai_context(game)
 
-    # Обновляем AI для каждого типа NPC
-    # True = требует player, False = не требует player
+    # Унифицированный вызов - все NPC поддерживают AIContext
     npc_groups = [
-        ('guards', True),       # Требует player
-        ('merchants', False),   # Не требует player
-        ('mages', True),        # Требует player
-        ('bandits', True),      # Требует player
-        ('miners', False),      # НЕ требует player (worker.py)
-        ('undead', True),       # Требует player
-        ('alchemists', False),  # НЕ требует player (наследует от Merchant)
-        ('hunters', True),      # Требует player
-        ('necromancers', True), # Требует player
-        ('animals', True),      # Требует player
+        'guards', 'merchants', 'mages', 'bandits', 'miners',
+        'undead', 'alchemists', 'hunters', 'necromancers', 'animals'
     ]
 
-    for group_name, needs_player in npc_groups:
+    for group_name in npc_groups:
         npcs = getattr(game, group_name, [])
         for npc in npcs:
             if context.should_update(npc):
-                if needs_player:
-                    npc.update_ai(
-                        context.game_map,
-                        context.all_npcs,
-                        context.player,
-                        context.current_hour
-                    )
-                else:
-                    npc.update_ai(
-                        context.game_map,
-                        context.all_npcs,
-                        context.current_hour
-                    )
+                npc.update_ai(context)

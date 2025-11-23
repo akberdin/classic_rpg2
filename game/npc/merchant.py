@@ -207,7 +207,16 @@ class Merchant(NPC):
         if settlements and not self.target_location:
             self._choose_new_destination()
 
-    def update_ai(self, game_map, all_npcs=None, current_hour=12):
+    def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
+        # Поддержка AIContext и старого способа вызова
+        from game.core.ai_context import AIContext
+        if isinstance(context_or_map, AIContext):
+            context = context_or_map
+            game_map = context.game_map
+            all_npcs = context.all_npcs
+            current_hour = context.current_hour
+        else:
+            game_map = context_or_map
         """
         Обновление AI торговца за 1 час игрового времени
 
@@ -524,7 +533,16 @@ class MagicMerchant(Merchant):
             jewelry = ItemGenerator.generate_jewelry(self.level + 2, quality=quality)
             self.inventory.add_item(jewelry, 1)
 
-    def update_ai(self, game_map, all_npcs=None, current_hour=12):
+    def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
+        # Поддержка AIContext и старого способа вызова
+        from game.core.ai_context import AIContext
+        if isinstance(context_or_map, AIContext):
+            context = context_or_map
+            game_map = context.game_map
+            all_npcs = context.all_npcs
+            current_hour = context.current_hour
+        else:
+            game_map = context_or_map
         """Магический торговец не перемещается"""
         # Обновляем расписание
         self.update_schedule(current_hour, game_map)
