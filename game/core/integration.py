@@ -148,17 +148,18 @@ def update_all_npc_ai_with_context(game: 'Game', context: 'AIContext' = None) ->
         context = create_ai_context(game)
 
     # Обновляем AI для каждого типа NPC
+    # True = требует player, False = не требует player
     npc_groups = [
         ('guards', True),       # Требует player
         ('merchants', False),   # Не требует player
-        ('mages', True),
-        ('bandits', True),
-        ('miners', True),
-        ('undead', True),
-        ('alchemists', True),
-        ('hunters', True),
-        ('necromancers', True),
-        ('animals', True),
+        ('mages', True),        # Требует player
+        ('bandits', True),      # Требует player
+        ('miners', False),      # НЕ требует player (worker.py)
+        ('undead', True),       # Требует player
+        ('alchemists', True),   # Требует player (хотя статичные)
+        ('hunters', True),      # Требует player
+        ('necromancers', True), # Требует player
+        ('animals', True),      # Требует player
     ]
 
     for group_name, needs_player in npc_groups:
