@@ -97,6 +97,18 @@ class NPC(Character):
         if self.schedule:
             self.schedule.update(current_hour, game_map)
 
+    def update_ai(self, context):
+        """
+        Обновить AI NPC.
+
+        Базовый метод - ничего не делает. Переопределяется в подклассах.
+
+        Args:
+            context: AIContext с данными для принятия решений
+                     или старые параметры для обратной совместимости
+        """
+        pass
+
     def _find_next_step(self, target_x, target_y, game_map, max_search_distance=50):
         """
         Найти следующий шаг к цели используя BFS (поиск в ширину)

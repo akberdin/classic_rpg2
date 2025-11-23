@@ -256,21 +256,8 @@ class NPCManager:
             npc: NPC для обновления
             context: Контекст AI
         """
-        # Определяем тип NPC и вызываем соответствующий метод
-        npc_class_name = npc.__class__.__name__
-
-        # NPC, которые не принимают player (наследники Merchant и рабочие)
-        no_player_npcs = ('Merchant', 'MagicMerchant', 'Alchemist', 'Miner')
-
-        if npc_class_name in no_player_npcs:
-            npc.update_ai(context.game_map, context.all_npcs, context.current_hour)
-        else:
-            npc.update_ai(
-                context.game_map,
-                context.all_npcs,
-                context.player,
-                context.current_hour
-            )
+        # Унифицированный вызов - все NPC теперь поддерживают AIContext
+        npc.update_ai(context)
 
     # === Поиск ===
 

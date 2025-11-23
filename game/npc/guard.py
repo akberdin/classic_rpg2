@@ -68,17 +68,29 @@ class Guard(NPC):
         self.patrol_points = points
         self.current_patrol_index = 0
 
-    def update_ai(self, game_map, all_npcs=None, player=None, current_hour=12):
+    def update_ai(self, context_or_map, all_npcs=None, player=None, current_hour=12):
         """
-        Обновление AI стражника за 1 час игрового времени
-        Стражник делает несколько шагов за час
+        Обновление AI стражника за 1 час игрового времени.
+
+        Поддерживает два способа вызова:
+        1. update_ai(context) - новый способ с AIContext
+        2. update_ai(game_map, all_npcs, player, current_hour) - старый способ
 
         Args:
-            game_map: Объект карты игры
-            all_npcs: Список всех NPC для поиска врагов
-            player: Объект игрока (не используется стражниками, но для консистентности API)
-            current_hour: Текущий час суток (0-23)
+            context_or_map: AIContext или game_map (для обратной совместимости)
+            all_npcs: Список всех NPC (только для старого способа)
+            player: Объект игрока (не используется)
+            current_hour: Текущий час суток (только для старого способа)
         """
+        # Определяем способ вызова
+        from game.core.ai_context import AIContext
+        if isinstance(context_or_map, AIContext):
+            context = context_or_map
+            game_map = context.game_map
+            all_npcs = context.all_npcs
+            current_hour = context.current_hour
+        else:
+            game_map = context_or_map
         if not self.is_alive:
             return
 

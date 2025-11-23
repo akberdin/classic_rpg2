@@ -65,7 +65,16 @@ class Animal(NPC):
         """Переопределяем метод - животные не имеют экипировки"""
         pass
 
-    def update_ai(self, game_map, all_npcs=None, player=None, current_hour=12):
+    def update_ai(self, context_or_map, all_npcs=None, player=None, current_hour=12):
+        # Поддержка AIContext и старого способа вызова
+        from game.core.ai_context import AIContext
+        if isinstance(context_or_map, AIContext):
+            context = context_or_map
+            game_map = context.game_map
+            all_npcs = context.all_npcs
+            current_hour = context.current_hour
+        else:
+            game_map = context_or_map
         """
         Обновление AI животного за 1 час игрового времени
 
