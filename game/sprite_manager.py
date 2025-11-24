@@ -66,6 +66,10 @@ class SpriteManager:
         for biome_type, sprite_path in self.config.get('biomes', {}).items():
             self.load_sprite(biome_type, sprite_path, 'biome')
 
+        # Загружаем спрайты умений
+        for skill_id, sprite_path in self.config.get('skills', {}).items():
+            self.load_skill_sprite(skill_id, sprite_path)
+
         print(f"Загружено спрайтов: {len(self.sprites)}")
 
     def load_sprite(self, sprite_type, sprite_path, category):
@@ -232,6 +236,106 @@ class SpriteManager:
         else:
             # Используем цветной прямоугольник
             default_renderer()
+
+    def load_skill_sprite(self, skill_id, sprite_path, target_size=48):
+        """
+        Загрузка спрайта умения
+
+        Args:
+            skill_id: ID умения (basic_attack, fireball, etc.)
+            sprite_path: Путь к файлу спрайта
+            target_size: Целевой размер спрайта для иконок (по умолчанию 48)
+        """
+        if not os.path.exists(sprite_path):
+            # Спрайт не найден, будет использоваться fallback
+            return
+
+        try:
+            # Загружаем изображение
+            original_sprite = pygame.image.load(sprite_path).convert_alpha()
+
+            # Сохраняем оригинальный спрайт (64x64)
+            key = f"skill_{skill_id}"
+            self.sprites[key] = original_sprite
+
+            # Также сохраняем масштабированную версию для иконок (48x48)
+            scaled_sprite = pygame.transform.scale(original_sprite, (target_size, target_size))
+            self.sprites[f"{key}_icon"] = scaled_sprite
+
+        except Exception as e:
+            print(f"Ошибка загрузки спрайта умения {sprite_path}: {e}")
+
+    def get_skill_sprite(self, skill_id, icon_size=None):
+        """
+        Получить спрайт умения
+
+        Args:
+            skill_id: ID умения
+            icon_size: Размер иконки (если нужен масштабированный вариант)
+
+        Returns:
+            pygame.Surface или None если спрайт не найден
+        """
+        if icon_size:
+            # Пробуем получить готовую иконку
+            icon_key = f"skill_{skill_id}_icon"
+            if icon_key in self.sprites:
+                sprite = self.sprites[icon_key]
+                # Если размер не совпадает, масштабируем
+                if sprite.get_width() != icon_size:
+                    return pygame.transform.scale(sprite, (icon_size, icon_size))
+                return sprite
+
+        # Возвращаем оригинальный спрайт
+        key = f"skill_{skill_id}"
+        sprite = self.sprites.get(key)
+
+        # Если нужен конкретный размер, масштабируем
+        if sprite and icon_size:
+            return pygame.transform.scale(sprite, (icon_size, icon_size))
+
+        return sprite
+
+    def has_skill_sprite(self, skill_id):
+        """
+        Проверить, есть ли спрайт для умения
+
+        Args:
+            skill_id: ID умения
+
+        Returns:
+            bool: True если спрайт загружен
+        """
+        key = f"skill_{skill_id}"
+        return key in self.sprites
+
+    def render_skill_icon(self, screen, skill_id, x, y, size, fallback_text=None):
+        """
+        Отрисовка иконки умения (спрайт или fallback текст)
+
+        Args:
+            screen: Pygame экран
+            skill_id: ID умения
+            x: X координата
+            y: Y координата
+            size: Размер иконки
+            fallback_text: Текст для отображения если спрайт не найден (обычно первая буква)
+
+        Returns:
+            bool: True если спрайт был отрисован, False если использован fallback
+        """
+        sprite = self.get_skill_sprite(skill_id, icon_size=size)
+        if sprite:
+            screen.blit(sprite, (x, y))
+            return True
+        elif fallback_text:
+            # Fallback - рисуем текст (первую букву названия)
+            icon_font = pygame.font.Font(None, int(size * 0.7))
+            icon_text = icon_font.render(fallback_text, True, (255, 255, 255))
+            icon_rect = icon_text.get_rect()
+            icon_rect.center = (x + size // 2, y + size // 2)
+            screen.blit(icon_text, icon_rect)
+        return False
 
     def update_tile_size(self, new_tile_size):
         """

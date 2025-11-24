@@ -488,6 +488,36 @@ class SkillManager:
 
         return self.learned_skills.get(skill_id)
 
+    def get_slot_skill_id(self, slot_index):
+        """
+        Получить ID умения из слота
+
+        Args:
+            slot_index: Индекс слота (0-7)
+
+        Returns:
+            str or None: ID умения в слоте или None
+        """
+        if slot_index < 0 or slot_index >= 8:
+            return None
+
+        return self.skill_slots[slot_index]
+
+    def get_skill_id(self, skill):
+        """
+        Получить ID умения по объекту умения
+
+        Args:
+            skill: Объект умения
+
+        Returns:
+            str or None: ID умения или None если не найдено
+        """
+        for skill_id, skill_obj in self.learned_skills.items():
+            if skill_obj is skill:
+                return skill_id
+        return None
+
     def use_skill_from_slot(self, slot_index, target=None):
         """
         Использовать умение из слота

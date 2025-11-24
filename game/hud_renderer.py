@@ -42,6 +42,10 @@ class HUDRenderer:
     def player(self):
         return self.ctx.player
 
+    @property
+    def sprite_manager(self):
+        return self.game.sprite_manager
+
     def render(self):
         """Отрисовка пользовательского интерфейса"""
         # Панель внизу экрана (масштабируется под разрешение)
@@ -235,7 +239,8 @@ class HUDRenderer:
 
             # Если есть умение, показываем его информацию
             if skill:
-                self._render_skill_slot(skill, slot_x, panel_y, slot_size)
+                skill_id = self.player.skill_manager.get_slot_skill_id(i)
+                self._render_skill_slot(skill, skill_id, slot_x, panel_y, slot_size)
 
     def _get_slot_colors(self, skill, is_usable):
         """
@@ -262,14 +267,30 @@ class HUDRenderer:
 
         return bg_color, border_color
 
-    def _render_skill_slot(self, skill, slot_x, panel_y, slot_size):
+    def _render_skill_slot(self, skill, skill_id, slot_x, panel_y, slot_size):
         """Отрисовка содержимого слота умения."""
-        # Иконка умения (первая буква названия)
-        icon_font = pygame.font.Font(None, 32)
-        icon_text = icon_font.render(skill.name[0], True, (255, 255, 255))
-        icon_rect = icon_text.get_rect()
-        icon_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2 + 4)
-        self.screen.blit(icon_text, icon_rect)
+        # Иконка умения (спрайт или первая буква названия как fallback)
+        icon_size = slot_size - 8  # Немного меньше слота для отступов
+        icon_x = slot_x + 4
+        icon_y = panel_y + 4
+
+        # Пробуем отрисовать спрайт умения
+        if skill_id and self.sprite_manager:
+            self.sprite_manager.render_skill_icon(
+                self.screen,
+                skill_id,
+                icon_x,
+                icon_y,
+                icon_size,
+                fallback_text=skill.name[0]
+            )
+        else:
+            # Fallback: первая буква названия
+            icon_font = pygame.font.Font(None, 32)
+            icon_text = icon_font.render(skill.name[0], True, (255, 255, 255))
+            icon_rect = icon_text.get_rect()
+            icon_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2 + 4)
+            self.screen.blit(icon_text, icon_rect)
 
         # Ранг умения
         rank_text = self.info_font.render(f"R{skill.rank}", True, (255, 215, 0))
