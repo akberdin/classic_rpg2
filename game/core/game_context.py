@@ -298,6 +298,21 @@ class GameContext:
         """Получить окно помощи."""
         return getattr(self._game, 'help_window', None)
 
+    @property
+    def cheat_menu_window(self):
+        """Получить окно чит-меню."""
+        return getattr(self._game, 'cheat_menu_window', None)
+
+    @property
+    def random_event_window(self):
+        """Получить окно случайных событий."""
+        return getattr(self._game, 'random_event_window', None)
+
+    @property
+    def loot_window(self):
+        """Получить окно лута."""
+        return getattr(self._game, 'loot_window', None)
+
     # === Дополнительные системы ===
 
     @property
