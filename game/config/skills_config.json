@@ -1,117 +1,628 @@
 {
-  "_description": "Конфигурация навыков и способностей - боевые, магические, лечебные",
-  "_version": "1.0.0",
+  "_description": "Конфигурация системы умений - параметры, константы, формулы",
+  "_version": "2.0.0",
 
-  "melee_skills": {
+  "system": {
+    "_description": "Глобальные параметры системы умений",
+    "max_rank": 5,
+    "base_experience_to_rank_2": 100,
+    "experience_multiplier": 1.5,
+    "experience_per_use": 10,
+    "skill_slots_count": 8,
+
+    "rank_requirements": {
+      "_description": "Формулы требований для повышения ранга",
+      "uses_per_rank_multiplier": 20,
+      "level_per_rank_multiplier": 5,
+      "gold_base_cost": 50,
+      "gold_multiplier": "rank * rank"
+    }
+  },
+
+  "combat_skills": {
+    "_description": "Боевые умения ближнего боя",
+
+    "basic_attack": {
+      "name": "Базовая атака",
+      "description": "Простой удар оружием. Урон увеличивается с рангом",
+      "category": "combat",
+      "stamina_cost": 5,
+      "mana_cost": 0,
+      "cooldown": 0,
+      "rank_multiplier_per_rank": 0.2,
+      "base_multiplier": 1.0,
+      "description_per_rank": [
+        "Ранг 1: Множитель урона x1.0",
+        "Ранг 2: Множитель урона x1.2",
+        "Ранг 3: Множитель урона x1.4",
+        "Ранг 4: Множитель урона x1.6",
+        "Ранг 5: Множитель урона x1.8"
+      ]
+    },
+
     "power_strike": {
       "name": "Мощный удар",
-      "description": "Усиленная атака с повышенным уроном",
-      "base_multiplier": 1.5,
-      "multiplier_per_rank": 0.3,
+      "description": "Наносит урон с увеличенным коэффициентом. Сила растет с рангом",
+      "category": "combat",
       "stamina_cost": 10,
-      "cooldown": 0
+      "mana_cost": 0,
+      "cooldown": 2,
+      "base_damage_multiplier": 1.8,
+      "damage_multiplier_per_rank": 0.35,
+      "armor_penetration_per_rank": 0.1,
+      "description_per_rank": [
+        "Ранг 1: Урон x1.8, пробитие брони 0%",
+        "Ранг 2: Урон x2.15, пробитие брони 10%",
+        "Ранг 3: Урон x2.5, пробитие брони 20%",
+        "Ранг 4: Урон x2.85, пробитие брони 30%",
+        "Ранг 5: Урон x3.2, пробитие брони 40%"
+      ]
     },
+
     "poison_strike": {
       "name": "Отравленный удар",
-      "description": "Атака, наносящая урон от яда",
-      "base_damage": 3,
-      "damage_per_rank": 2,
-      "duration": 3,
+      "description": "Наносит урон и накладывает отравление. Длительность растет с рангом",
+      "category": "combat",
       "stamina_cost": 15,
-      "cooldown": 0
+      "mana_cost": 0,
+      "cooldown": 4,
+      "base_damage_multiplier": 1.0,
+      "damage_multiplier_per_rank": 0.15,
+      "poison_base_damage": 5,
+      "poison_damage_per_rank": 4,
+      "poison_base_duration": 3,
+      "poison_duration_per_rank": 1,
+      "defense_reduction_per_rank": 2,
+      "description_per_rank": [
+        "Ранг 1: Яд 5 урона/ход на 3 хода",
+        "Ранг 2: Яд 9 урона/ход на 4 хода",
+        "Ранг 3: Яд 13 урона/ход на 5 ходов",
+        "Ранг 4: Яд 17 урона/ход на 6 ходов",
+        "Ранг 5: Яд 21 урона/ход на 7 ходов"
+      ]
     },
+
     "stun_strike": {
       "name": "Оглушающий удар",
-      "description": "Атака с шансом оглушения",
-      "base_multiplier": 1.2,
-      "multiplier_per_rank": 0.2,
-      "stun_duration": 1,
+      "description": "Наносит урон и оглушает. Шанс оглушения растет с рангом",
+      "category": "combat",
       "stamina_cost": 20,
-      "cooldown": 0
+      "mana_cost": 0,
+      "cooldown": 5,
+      "base_damage_multiplier": 1.5,
+      "damage_multiplier_per_rank": 0.2,
+      "base_stun_chance": 0.5,
+      "stun_chance_per_rank": 0.1,
+      "max_stun_chance": 0.9,
+      "base_stun_duration": 1,
+      "stun_duration_rank_divisor": 2,
+      "description_per_rank": [
+        "Ранг 1: Урон x1.5, шанс оглушения 50%, 1 ход",
+        "Ранг 2: Урон x1.7, шанс оглушения 60%, 1 ход",
+        "Ранг 3: Урон x1.9, шанс оглушения 70%, 2 хода",
+        "Ранг 4: Урон x2.1, шанс оглушения 80%, 2 хода",
+        "Ранг 5: Урон x2.3, шанс оглушения 90%, 3 хода"
+      ]
     },
+
     "battle_cry": {
       "name": "Боевой клич",
-      "description": "Усиление силы на несколько ходов",
-      "base_strength_boost": 3,
-      "boost_per_rank": 2,
+      "description": "Увеличивает силу. Бонус и длительность растут с рангом",
+      "category": "combat",
+      "stamina_cost": 15,
+      "mana_cost": 0,
+      "cooldown": 6,
+      "base_strength_boost": 5,
+      "strength_boost_per_rank": 4,
       "base_duration": 3,
       "duration_per_rank": 1,
-      "stamina_cost": 25,
-      "cooldown": 0
+      "crit_bonus_per_rank": 3,
+      "description_per_rank": [
+        "Ранг 1: +9 Сила на 4 хода",
+        "Ранг 2: +13 Сила на 5 ходов",
+        "Ранг 3: +17 Сила на 6 ходов",
+        "Ранг 4: +21 Сила на 7 ходов",
+        "Ранг 5: +25 Сила на 8 ходов"
+      ]
     }
   },
 
   "magic_skills": {
+    "_description": "Магические умения",
+
     "fireball": {
       "name": "Огненный шар",
-      "description": "Мощная огненная атака",
-      "base_damage": 15,
-      "int_multiplier": 2.0,
-      "spirit_multiplier": 0.5,
-      "rank_multiplier": 0.25,
+      "description": "Мощная огненная атака. Игнорирует броню, но снижается магической защитой. Урон растет с рангом",
+      "category": "magic",
       "mana_cost": 35,
-      "cooldown": 3
+      "stamina_cost": 0,
+      "cooldown": 3,
+      "base_damage": 20,
+      "intelligence_multiplier": 4.0,
+      "spirit_multiplier": 0.3,
+      "base_rank_multiplier": 1.0,
+      "rank_multiplier_per_rank": 0.35,
+      "ignores_armor": true,
+      "description_per_rank": [
+        "Ранг 1: Множитель урона x1.0 (20 + Интеллект*4)",
+        "Ранг 2: Множитель урона x1.35",
+        "Ранг 3: Множитель урона x1.7",
+        "Ранг 4: Множитель урона x2.05",
+        "Ранг 5: Множитель урона x2.4"
+      ]
     },
+
     "ice_bolt": {
       "name": "Ледяная стрела",
-      "description": "Ледяная атака с замедлением",
-      "base_damage": 10,
-      "int_multiplier": 1.5,
-      "spirit_multiplier": 0.5,
-      "rank_multiplier": 0.2,
-      "slow_base_chance": 0.3,
-      "slow_chance_per_rank": 0.05,
+      "description": "Ледяная атака с шансом замедления. Игнорирует броню, снижается магической защитой",
+      "category": "magic",
       "mana_cost": 25,
-      "cooldown": 2
+      "stamina_cost": 0,
+      "cooldown": 2,
+      "base_damage": 15,
+      "intelligence_multiplier": 3.0,
+      "spirit_multiplier": 0.3,
+      "base_rank_multiplier": 1.0,
+      "rank_multiplier_per_rank": 0.3,
+      "base_slow_chance": 0.4,
+      "slow_chance_per_rank": 0.1,
+      "base_slow_duration": 1,
+      "slow_duration_rank_divisor": 2,
+      "ignores_armor": true,
+      "description_per_rank": [
+        "Ранг 1: Урон x1.0, шанс замедления 30%",
+        "Ранг 2: Урон x1.3, шанс замедления 40%",
+        "Ранг 3: Урон x1.6, шанс замедления 50%",
+        "Ранг 4: Урон x1.9, шанс замедления 60%",
+        "Ранг 5: Урон x2.2, шанс замедления 70%"
+      ]
     },
+
     "lightning": {
       "name": "Молния",
-      "description": "Мощная электрическая атака",
-      "base_damage": 20,
-      "int_multiplier": 2.5,
-      "spirit_multiplier": 0.8,
-      "rank_multiplier": 0.25,
+      "description": "Мощнейшая атака молнией. Высокий урон, игнорирует броню, снижается магической защитой",
+      "category": "magic",
       "mana_cost": 50,
-      "cooldown": 4
+      "stamina_cost": 0,
+      "cooldown": 4,
+      "base_damage": 30,
+      "intelligence_multiplier": 5.0,
+      "spirit_multiplier": 0.3,
+      "base_rank_multiplier": 1.0,
+      "rank_multiplier_per_rank": 0.4,
+      "ignores_armor": true,
+      "description_per_rank": [
+        "Ранг 1: Множитель урона x1.0 (30 + Интеллект*5)",
+        "Ранг 2: Множитель урона x1.4",
+        "Ранг 3: Множитель урона x1.8",
+        "Ранг 4: Множитель урона x2.2",
+        "Ранг 5: Множитель урона x2.6"
+      ]
     },
+
     "magic_missile": {
       "name": "Магическая стрела",
-      "description": "Базовая магическая атака",
-      "base_damage": 8,
-      "int_multiplier": 1.2,
-      "spirit_multiplier": 0.3,
-      "rank_multiplier": 0.15,
+      "description": "Базовая магическая атака. Низкая стоимость, игнорирует броню, снижается магической защитой",
+      "category": "magic",
       "mana_cost": 15,
-      "cooldown": 1
+      "stamina_cost": 0,
+      "cooldown": 1,
+      "base_damage": 12,
+      "intelligence_multiplier": 2.5,
+      "spirit_multiplier": 0.2,
+      "base_rank_multiplier": 1.0,
+      "rank_multiplier_per_rank": 0.25,
+      "ignores_armor": true,
+      "description_per_rank": [
+        "Ранг 1: Множитель урона x1.0 (12 + Интеллект*2.5)",
+        "Ранг 2: Множитель урона x1.25",
+        "Ранг 3: Множитель урона x1.5",
+        "Ранг 4: Множитель урона x1.75",
+        "Ранг 5: Множитель урона x2.0"
+      ]
     }
   },
 
   "healing_skills": {
+    "_description": "Лечебные и поддерживающие умения",
+
     "heal": {
       "name": "Исцеление",
-      "description": "Восстановление здоровья",
-      "base_percent": 30,
-      "percent_per_rank": 10,
+      "description": "Восстанавливает HP. Эффективность растет с рангом",
+      "category": "magic",
       "mana_cost": 20,
-      "cooldown": 2
+      "stamina_cost": 0,
+      "cooldown": 3,
+      "base_heal_percent": 0.35,
+      "heal_percent_per_rank": 0.12,
+      "intelligence_multiplier": 2.0,
+      "spirit_multiplier": 1.5,
+      "stat_multiplier_per_rank": 1.0,
+      "description_per_rank": [
+        "Ранг 1: Восстановление 35% макс. HP",
+        "Ранг 2: Восстановление 47% макс. HP",
+        "Ранг 3: Восстановление 59% макс. HP",
+        "Ранг 4: Восстановление 71% макс. HP",
+        "Ранг 5: Восстановление 83% макс. HP"
+      ]
     },
+
     "regeneration": {
       "name": "Регенерация",
-      "description": "Постепенное восстановление здоровья",
-      "base_heal_per_turn": 8,
-      "heal_per_rank": 3,
-      "base_duration": 2,
+      "description": "Восстанавливает HP каждый ход. Эффективность растет с рангом",
+      "category": "magic",
+      "mana_cost": 15,
+      "stamina_cost": 0,
+      "cooldown": 5,
+      "base_heal_per_turn": 15,
+      "heal_per_turn_per_rank": 6,
+      "base_percent_heal": 0.04,
+      "percent_heal_per_rank": 0.02,
+      "stat_multiplier": 0.5,
+      "stat_multiplier_per_rank": 1.0,
+      "base_duration": 4,
       "duration_per_rank": 1,
-      "mana_cost": 25,
-      "cooldown": 3
+      "description_per_rank": [
+        "Ранг 1: 21 HP/ход на 5 ходов (6% макс. HP)",
+        "Ранг 2: 27 HP/ход на 6 ходов (8% макс. HP)",
+        "Ранг 3: 33 HP/ход на 7 ходов (10% макс. HP)",
+        "Ранг 4: 39 HP/ход на 8 ходов (12% макс. HP)",
+        "Ранг 5: 45 HP/ход на 9 ходов (14% макс. HP)"
+      ]
     },
+
     "stamina_recovery": {
       "name": "Восстановление выносливости",
-      "description": "Быстрое восстановление выносливости",
-      "base_percent": 40,
-      "percent_per_rank": 10,
+      "description": "Восстанавливает выносливость каждый ход. Эффективность растет с рангом",
+      "category": "magic",
       "mana_cost": 15,
-      "cooldown": 2
+      "stamina_cost": 0,
+      "cooldown": 5,
+      "base_stamina_per_turn": 15,
+      "stamina_per_turn_per_rank": 5,
+      "base_percent_recovery": 0.05,
+      "percent_recovery_per_rank": 0.02,
+      "stat_multiplier": 0.4,
+      "stat_multiplier_per_rank": 1.0,
+      "base_duration": 4,
+      "duration_per_rank": 1,
+      "description_per_rank": [
+        "Ранг 1: 20 выносливости/ход на 5 ходов (7% макс.)",
+        "Ранг 2: 25 выносливости/ход на 6 ходов (9% макс.)",
+        "Ранг 3: 30 выносливости/ход на 7 ходов (11% макс.)",
+        "Ранг 4: 35 выносливости/ход на 8 ходов (13% макс.)",
+        "Ранг 5: 40 выносливости/ход на 9 ходов (15% макс.)"
+      ]
+    },
+
+    "mage_shield": {
+      "name": "Щит мага",
+      "description": "Создает магический щит, повышающий физическую защиту в бою. Эффект зависит от интеллекта и уровня умения",
+      "category": "magic",
+      "mana_cost": 25,
+      "stamina_cost": 0,
+      "cooldown": 3,
+      "base_defense_bonus": 50,
+      "intelligence_bonus_divisor": 2,
+      "rank_bonus": 10,
+      "base_duration": 3,
+      "duration_per_rank": 1,
+      "description_per_rank": [
+        "Ранг 1: +50% защита + Интеллект/2 на 4 хода",
+        "Ранг 2: +60% защита + Интеллект/2 на 5 ходов",
+        "Ранг 3: +70% защита + Интеллект/2 на 6 ходов",
+        "Ранг 4: +80% защита + Интеллект/2 на 7 ходов",
+        "Ранг 5: +90% защита + Интеллект/2 на 8 ходов"
+      ]
+    }
+  },
+
+  "weapon_skills": {
+    "_description": "Оружейные умения - требуют определенного типа оружия",
+
+    "bow_skills": {
+      "_description": "Умения для лука",
+
+      "precise_shot": {
+        "name": "Точный выстрел",
+        "description": "Прицельный выстрел с высоким шансом крита. Шанс растет с рангом",
+        "category": "combat",
+        "required_weapon": "bow",
+        "stamina_cost": 12,
+        "mana_cost": 0,
+        "cooldown": 2,
+        "base_damage_multiplier": 1.2,
+        "damage_multiplier_per_rank": 0.2,
+        "dexterity_bonus_multiplier": 0.3,
+        "base_crit_chance": 0.3,
+        "crit_chance_per_rank": 0.15,
+        "crit_damage_multiplier": 2.0,
+        "description_per_rank": [
+          "Ранг 1: Урон x1.2, крит 30%",
+          "Ранг 2: Урон x1.4, крит 45%",
+          "Ранг 3: Урон x1.6, крит 60%",
+          "Ранг 4: Урон x1.8, крит 75%",
+          "Ранг 5: Урон x2.0, крит 90%"
+        ]
+      },
+
+      "rapid_fire": {
+        "name": "Быстрая стрельба",
+        "description": "Выпускает несколько стрел за один ход. Количество растет с рангом",
+        "category": "combat",
+        "required_weapon": "bow",
+        "stamina_cost": 20,
+        "mana_cost": 0,
+        "cooldown": 4,
+        "base_arrows": 2,
+        "arrows_per_rank": 1,
+        "damage_per_arrow_multiplier": 0.6,
+        "description_per_rank": [
+          "Ранг 1: 2 стрелы по 60% урона",
+          "Ранг 2: 3 стрелы по 60% урона",
+          "Ранг 3: 4 стрелы по 60% урона",
+          "Ранг 4: 5 стрел по 60% урона",
+          "Ранг 5: 6 стрел по 60% урона"
+        ]
+      },
+
+      "piercing_arrow": {
+        "name": "Пронзающая стрела",
+        "description": "Стрела пробивает броню противника. Пробитие растет с рангом",
+        "category": "combat",
+        "required_weapon": "bow",
+        "stamina_cost": 15,
+        "mana_cost": 0,
+        "cooldown": 3,
+        "base_damage_multiplier": 1.5,
+        "damage_multiplier_per_rank": 0.25,
+        "base_armor_penetration": 0.4,
+        "armor_penetration_per_rank": 0.1,
+        "description_per_rank": [
+          "Ранг 1: Урон x1.5, пробитие 40%",
+          "Ранг 2: Урон x1.75, пробитие 50%",
+          "Ранг 3: Урон x2.0, пробитие 60%",
+          "Ранг 4: Урон x2.25, пробитие 70%",
+          "Ранг 5: Урон x2.5, пробитие 80%"
+        ]
+      }
+    },
+
+    "knife_skills": {
+      "_description": "Умения для кинжала",
+
+      "backstab": {
+        "name": "Удар в спину",
+        "description": "Коварный удар с огромным уроном. Множитель растет с рангом",
+        "category": "combat",
+        "required_weapon": "knife",
+        "stamina_cost": 18,
+        "mana_cost": 0,
+        "cooldown": 4,
+        "base_damage_multiplier": 2.5,
+        "damage_multiplier_per_rank": 0.5,
+        "dexterity_bonus_multiplier": 0.5,
+        "armor_reduction_divisor": 2,
+        "description_per_rank": [
+          "Ранг 1: Урон x2.5, игнорирует 50% брони",
+          "Ранг 2: Урон x3.0, игнорирует 50% брони",
+          "Ранг 3: Урон x3.5, игнорирует 50% брони",
+          "Ранг 4: Урон x4.0, игнорирует 50% брони",
+          "Ранг 5: Урон x4.5, игнорирует 50% брони"
+        ]
+      },
+
+      "bleeding_cut": {
+        "name": "Кровоточащий порез",
+        "description": "Глубокий порез вызывает кровотечение. Длительность растет с рангом",
+        "category": "combat",
+        "required_weapon": "knife",
+        "stamina_cost": 14,
+        "mana_cost": 0,
+        "cooldown": 3,
+        "base_damage_multiplier": 1.2,
+        "damage_multiplier_per_rank": 0.15,
+        "bleed_base_damage": 4,
+        "bleed_damage_per_rank": 3,
+        "bleed_base_duration": 3,
+        "bleed_duration_per_rank": 1,
+        "description_per_rank": [
+          "Ранг 1: Кровотечение 4 урона/ход на 3 хода",
+          "Ранг 2: Кровотечение 7 урона/ход на 4 хода",
+          "Ранг 3: Кровотечение 10 урона/ход на 5 ходов",
+          "Ранг 4: Кровотечение 13 урона/ход на 6 ходов",
+          "Ранг 5: Кровотечение 16 урона/ход на 7 ходов"
+        ]
+      },
+
+      "shadow_step": {
+        "name": "Шаг тени",
+        "description": "Уклоняетесь и наносите контрудар. Бонус к уклонению растет с рангом",
+        "category": "combat",
+        "required_weapon": "knife",
+        "stamina_cost": 16,
+        "mana_cost": 0,
+        "cooldown": 3,
+        "base_damage_multiplier": 1.4,
+        "damage_multiplier_per_rank": 0.2,
+        "dexterity_bonus_multiplier": 0.4,
+        "base_dodge_bonus": 20,
+        "dodge_bonus_per_rank": 10,
+        "base_dodge_duration": 1,
+        "dodge_duration_rank_divisor": 2,
+        "description_per_rank": [
+          "Ранг 1: Урон x1.4, +20% уклонение на 1 ход",
+          "Ранг 2: Урон x1.6, +30% уклонение на 1 ход",
+          "Ранг 3: Урон x1.8, +40% уклонение на 2 хода",
+          "Ранг 4: Урон x2.0, +50% уклонение на 2 хода",
+          "Ранг 5: Урон x2.2, +60% уклонение на 3 хода"
+        ]
+      }
+    },
+
+    "sword_skills": {
+      "_description": "Умения для меча",
+
+      "whirlwind_strike": {
+        "name": "Вихревой удар",
+        "description": "Мощный круговой удар мечом. Урон растет с рангом",
+        "category": "combat",
+        "required_weapon": "sword",
+        "stamina_cost": 22,
+        "mana_cost": 0,
+        "cooldown": 4,
+        "base_damage_multiplier": 2.0,
+        "damage_multiplier_per_rank": 0.4,
+        "strength_bonus_multiplier": 0.4,
+        "description_per_rank": [
+          "Ранг 1: Урон x2.0",
+          "Ранг 2: Урон x2.4",
+          "Ранг 3: Урон x2.8",
+          "Ранг 4: Урон x3.2",
+          "Ранг 5: Урон x3.6"
+        ]
+      },
+
+      "shield_breaker": {
+        "name": "Разрушитель щита",
+        "description": "Мощный удар, снижающий защиту врага. Эффект растет с рангом",
+        "category": "combat",
+        "required_weapon": "sword",
+        "stamina_cost": 18,
+        "mana_cost": 0,
+        "cooldown": 4,
+        "base_damage_multiplier": 1.6,
+        "damage_multiplier_per_rank": 0.2,
+        "base_defense_reduction": 5,
+        "defense_reduction_per_rank": 3,
+        "base_duration": 3,
+        "duration_per_rank": 1,
+        "description_per_rank": [
+          "Ранг 1: Урон x1.6, -5 защиты на 3 хода",
+          "Ранг 2: Урон x1.8, -8 защиты на 4 хода",
+          "Ранг 3: Урон x2.0, -11 защиты на 5 ходов",
+          "Ранг 4: Урон x2.2, -14 защиты на 6 ходов",
+          "Ранг 5: Урон x2.4, -17 защиты на 7 ходов"
+        ]
+      },
+
+      "blade_dance": {
+        "name": "Танец клинка",
+        "description": "Серия быстрых ударов мечом. Количество ударов растет с рангом",
+        "category": "combat",
+        "required_weapon": "sword",
+        "stamina_cost": 25,
+        "mana_cost": 0,
+        "cooldown": 5,
+        "base_hits": 3,
+        "hits_per_rank": 1,
+        "damage_per_hit_multiplier": 0.5,
+        "strength_bonus_multiplier": 0.2,
+        "dexterity_bonus_multiplier": 0.2,
+        "crit_chance_per_hit": 0.2,
+        "crit_damage_multiplier": 1.5,
+        "description_per_rank": [
+          "Ранг 1: 3 удара по 50% урона",
+          "Ранг 2: 4 удара по 50% урона",
+          "Ранг 3: 5 ударов по 50% урона",
+          "Ранг 4: 6 ударов по 50% урона",
+          "Ранг 5: 7 ударов по 50% урона"
+        ]
+      }
+    }
+  },
+
+  "status_effects": {
+    "_description": "Параметры статус-эффектов по умолчанию",
+
+    "poison": {
+      "name": "Отравление",
+      "default_duration": 3,
+      "default_damage_per_turn": 5,
+      "description_template": "Наносит {damage} урона каждый ход"
+    },
+
+    "stun": {
+      "name": "Оглушение",
+      "default_duration": 1,
+      "description": "Пропуск хода"
+    },
+
+    "regeneration": {
+      "name": "Регенерация",
+      "default_duration": 3,
+      "default_heal_per_turn": 10,
+      "description_template": "Восстанавливает {heal} HP каждый ход"
+    },
+
+    "stamina_recovery": {
+      "name": "Восстановление выносливости",
+      "default_duration": 3,
+      "default_stamina_per_turn": 10,
+      "description_template": "Восстанавливает {stamina} выносливости каждый ход"
+    },
+
+    "strength_boost": {
+      "name": "Усиление",
+      "default_duration": 3,
+      "default_boost_amount": 5,
+      "description_template": "+{boost} к силе"
+    },
+
+    "shield": {
+      "name": "Магический щит",
+      "default_duration": 3,
+      "default_defense_bonus": 0,
+      "description_template": "+{defense}% защита"
+    },
+
+    "bleed": {
+      "name": "Кровотечение",
+      "default_duration": 3,
+      "default_damage_per_turn": 4,
+      "description_template": "Теряет {damage} здоровья каждый ход"
+    },
+
+    "shadow": {
+      "name": "Тень",
+      "default_duration": 1,
+      "default_dodge_bonus": 20,
+      "description_template": "+{dodge}% к уклонению"
+    },
+
+    "armor_break": {
+      "name": "Сломленная броня",
+      "default_duration": 3,
+      "default_defense_reduction": 5,
+      "description_template": "-{reduction} защиты"
+    }
+  },
+
+  "crafting_skills": {
+    "_description": "Ремесленные умения",
+
+    "mining": {
+      "name": "Добыча руды",
+      "description": "Добыча полезных ископаемых. Эффективность растет с рангом",
+      "category": "crafting",
+      "stamina_cost": 10,
+      "mana_cost": 0,
+      "cooldown": 0,
+      "base_resource_amount": 1,
+      "resource_amount_per_rank": 1,
+      "quality_chance_per_rank": 0.1
+    },
+
+    "lumberjacking": {
+      "name": "Рубка леса",
+      "description": "Заготовка древесины. Эффективность растет с рангом",
+      "category": "crafting",
+      "stamina_cost": 10,
+      "mana_cost": 0,
+      "cooldown": 0,
+      "base_resource_amount": 1,
+      "resource_amount_per_rank": 1,
+      "quality_chance_per_rank": 0.1
     }
   }
 }
