@@ -239,7 +239,7 @@
     "bandits_per_camp": {"min": 7, "max": 12},
     "miners_per_mine": {"min": 5, "max": 8},
     "undead_per_ruins": {"min": 5, "max": 10},
-    "mages_per_school": 4,
+    "mages_per_school": 8,
     "elite_enemy_level_min": 30,
     "elite_enemy_level_max": 40,
     "locations": {

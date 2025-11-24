@@ -263,7 +263,7 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": [2, 2],
         "price_multipliers": {
-          "per_defense": 1.7,
+          "per_defense": 1.2,
           "per_stat": 1.2,
           "per_param_percent": 1.2,
           "per_skill": 1.2
@@ -545,7 +545,7 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 1.5,
+          "per_stat": 1.2,
           "per_param_percent": 1.2,
           "per_skill": 0
         }
@@ -789,7 +789,7 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 1.5,
+          "per_stat": 1.2,
           "per_param_percent": 1.2,
           "per_skill": 0
         }
