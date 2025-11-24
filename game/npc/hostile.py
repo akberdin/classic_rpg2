@@ -67,24 +67,26 @@ class Bandit(NPC):
         self.update_derived_stats()
 
     def update_ai(self, context_or_map, all_npcs=None, player=None, current_hour=12):
+        """
+        Обновление AI бандита за 1 час игрового времени
+
+        Args:
+            context_or_map: AIContext или объект карты игры
+            all_npcs: Список всех NPC для поиска врагов
+            player: Объект игрока (бандиты агрессивны к игроку)
+            current_hour: Текущий час суток (0-23)
+        """
         # Поддержка AIContext и старого способа вызова
         from game.core.ai_context import AIContext
         if isinstance(context_or_map, AIContext):
             context = context_or_map
             game_map = context.game_map
             all_npcs = context.all_npcs
+            player = context.player
             current_hour = context.current_hour
         else:
             game_map = context_or_map
-        """
-        Обновление AI бандита за 1 час игрового времени
 
-        Args:
-            game_map: Объект карты игры
-            all_npcs: Список всех NPC для поиска врагов
-            player: Объект игрока (бандиты агрессивны к игроку)
-            current_hour: Текущий час суток (0-23)
-        """
         if not self.is_alive:
             return
 
@@ -357,25 +359,27 @@ class Undead(NPC):
         self.default_state = "patrol"
 
     def update_ai(self, context_or_map, all_npcs=None, player=None, current_hour=12):
+        """
+        Обновление AI нежити за 1 час игрового времени
+        АКТИВИРОВАНА система патруля и агрессии
+
+        Args:
+            context_or_map: AIContext или объект карты игры
+            all_npcs: Список всех NPC для обнаружения врагов
+            player: Объект игрока (нежить также агрессивна к игроку)
+            current_hour: Текущий час суток (0-23)
+        """
         # Поддержка AIContext и старого способа вызова
         from game.core.ai_context import AIContext
         if isinstance(context_or_map, AIContext):
             context = context_or_map
             game_map = context.game_map
             all_npcs = context.all_npcs
+            player = context.player
             current_hour = context.current_hour
         else:
             game_map = context_or_map
-        """
-        Обновление AI нежити за 1 час игрового времени
-        АКТИВИРОВАНА система патруля и агрессии
 
-        Args:
-            game_map: Объект карты игры
-            all_npcs: Список всех NPC для обнаружения врагов
-            player: Объект игрока (нежита также агрессивна к игроку)
-            current_hour: Текущий час суток (0-23)
-        """
         if not self.is_alive:
             return
 
