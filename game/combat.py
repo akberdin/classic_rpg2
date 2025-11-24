@@ -39,7 +39,7 @@ def calculate_combat_exp(player_level, enemy_level, base_exp_per_level=20):
 class CombatSystem:
     """Класс управления боевой системой"""
 
-    def __init__(self, player, enemy, screen, font, scaler=None, game_map=None, respawn_manager=None):
+    def __init__(self, player, enemy, screen, font, scaler=None, game_map=None, respawn_manager=None, sprite_manager=None):
         """
         Инициализация боевой системы
 
@@ -51,6 +51,7 @@ class CombatSystem:
             scaler: UIScaler для адаптивного масштабирования (опционально)
             game_map: Карта игры (для размещения лута)
             respawn_manager: Менеджер респавна NPC
+            sprite_manager: Менеджер спрайтов для иконок умений (опционально)
         """
         self.player = player
         self.enemy = enemy
@@ -59,6 +60,7 @@ class CombatSystem:
         self.scaler = scaler
         self.game_map = game_map
         self.respawn_manager = respawn_manager
+        self.sprite_manager = sprite_manager
         info_font_size = scaler.scale_font_size(20) if scaler else 20
         self.info_font = pygame.font.Font(None, info_font_size)
 
@@ -621,12 +623,29 @@ class CombatSystem:
 
             # Если есть умение, показываем его
             if skill:
-                # Иконка умения (первая буква названия)
-                icon_font = pygame.font.Font(None, 32)
-                icon_text = icon_font.render(skill.name[0], True, (255, 255, 255))
-                icon_rect = icon_text.get_rect()
-                icon_rect.center = (slot_x + slot_size // 2, slots_y + slot_size // 2 + 4)
-                self.screen.blit(icon_text, icon_rect)
+                # Иконка умения (спрайт или первая буква названия как fallback)
+                skill_id = self.player.skill_manager.get_slot_skill_id(i)
+                icon_size = slot_size - 8  # Немного меньше слота для отступов
+                icon_x = slot_x + 4
+                icon_y = slots_y + 4
+
+                # Пробуем отрисовать спрайт умения
+                if skill_id and self.sprite_manager:
+                    self.sprite_manager.render_skill_icon(
+                        self.screen,
+                        skill_id,
+                        icon_x,
+                        icon_y,
+                        icon_size,
+                        fallback_text=skill.name[0]
+                    )
+                else:
+                    # Fallback: первая буква названия
+                    icon_font = pygame.font.Font(None, 32)
+                    icon_text = icon_font.render(skill.name[0], True, (255, 255, 255))
+                    icon_rect = icon_text.get_rect()
+                    icon_rect.center = (slot_x + slot_size // 2, slots_y + slot_size // 2 + 4)
+                    self.screen.blit(icon_text, icon_rect)
 
                 # Перезарядка (если есть)
                 if skill.current_cooldown > 0:
