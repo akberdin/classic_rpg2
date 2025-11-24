@@ -53,6 +53,8 @@ from game.systems.skills import (
     WhirlwindStrike,
     ShieldBreaker,
     BladeDance,
+    # Словарь умений
+    AVAILABLE_SKILLS,
 )
 
 __all__ = [
@@ -71,4 +73,6 @@ __all__ = [
     # Оружейные
     'WeaponSkill', 'PreciseShot', 'RapidFire', 'PiercingArrow', 'Backstab',
     'BleedingCut', 'ShadowStep', 'WhirlwindStrike', 'ShieldBreaker', 'BladeDance',
+    # Словарь
+    'AVAILABLE_SKILLS',
 ]
