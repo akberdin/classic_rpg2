@@ -159,8 +159,6 @@ class LootSystem:
         quest_enemy_types = ['bandit', 'undead', 'wolf', 'bear', 'deer', 'necromancer']
 
         if enemy_type in quest_enemy_types:
-            messages = self.quest_manager.update_quest_progress(
-                "kill", enemy_type, 1, self.player
-            )
+            messages = self.quest_manager.update_kill_progress(enemy_type)
             for msg in messages:
-                print(msg)
+                print(f"  {msg}")
