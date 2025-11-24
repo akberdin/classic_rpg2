@@ -290,7 +290,8 @@ class SkillBookWindow:
         # Отрисовка списка умений
         if skills:
             for idx, skill in enumerate(skills):
-                if idx >= 5:  # Ограничиваем количество отображаемых умений
+                # Увеличен лимит умений - теперь можно показать до 6 умений
+                if idx >= 6:
                     break
 
                 skill_y = skills_list_y + idx * 90
@@ -328,16 +329,19 @@ class SkillBookWindow:
                 )
                 self.screen.blit(skill_name_text, (skill_x + 10, skill_y + 5))
 
-                # Текущий эффект ранга (вместо базового описания)
-                current_rank_desc = skill.get_current_rank_description() if hasattr(skill, 'get_current_rank_description') else skill.base_description[:80]
-                skill_desc_text = self.info_font.render(
-                    current_rank_desc[:85],
-                    True,
-                    (150, 255, 150)  # Зелёный цвет для текущего эффекта
-                )
-                self.screen.blit(skill_desc_text, (skill_x + 10, skill_y + 28))
+                # Текущий эффект ранга (вместо базового описания) с переносом слов
+                current_rank_desc = skill.get_current_rank_description() if hasattr(skill, 'get_current_rank_description') else skill.base_description
+                # Переносим текст по словам
+                desc_lines = UIHelper.wrap_text(current_rank_desc, self.info_font, window_width - 60)
+                for line_idx, desc_line in enumerate(desc_lines[:2]):  # Показываем максимум 2 строки
+                    skill_desc_text = self.info_font.render(
+                        desc_line,
+                        True,
+                        (150, 255, 150)  # Зелёный цвет для текущего эффекта
+                    )
+                    self.screen.blit(skill_desc_text, (skill_x + 10, skill_y + 28 + line_idx * 18))
 
-                # Прогресс до следующего ранга
+                # Прогресс до следующего ранга (с учетом дополнительной строки описания)
                 if skill.rank < skill.max_rank:
                     # Первая строка условий: опыт и использования
                     exp_color = (100, 255, 100) if skill.experience >= skill.experience_to_next_rank else (200, 200, 100)
@@ -348,7 +352,7 @@ class SkillBookWindow:
                         True,
                         (180, 180, 180)
                     )
-                    self.screen.blit(cond_text1, (skill_x + 10, skill_y + 48))
+                    self.screen.blit(cond_text1, (skill_x + 10, skill_y + 64))
 
                     # Вторая строка условий: уровень и золото
                     cond_text2 = self.info_font.render(
@@ -356,16 +360,16 @@ class SkillBookWindow:
                         True,
                         (255, 200, 100)
                     )
-                    self.screen.blit(cond_text2, (skill_x + 10, skill_y + 66))
+                    self.screen.blit(cond_text2, (skill_x + 10, skill_y + 82))
                 else:
                     max_rank_text = self.info_font.render(
                         "МАКСИМАЛЬНЫЙ РАНГ",
                         True,
                         (255, 215, 0)
                     )
-                    self.screen.blit(max_rank_text, (skill_x + 10, skill_y + 48))
+                    self.screen.blit(max_rank_text, (skill_x + 10, skill_y + 64))
 
-                # Стоимость и перезарядка
+                # Стоимость и перезарядка (сдвинуто вниз для учета дополнительной строки описания)
                 cost_parts = []
                 if skill.mana_cost > 0:
                     cost_parts.append(f"MP:{skill.mana_cost}")
@@ -377,7 +381,7 @@ class SkillBookWindow:
                 if cost_parts:
                     cost_text = " ".join(cost_parts)
                     cost_render = self.info_font.render(cost_text, True, (150, 150, 200))
-                    self.screen.blit(cost_render, (skill_x + window_width - 250, skill_y + 66))
+                    self.screen.blit(cost_render, (skill_x + window_width - 250, skill_y + 82))
         else:
             # Нет умений в этой категории
             no_skills_text = self.font.render(

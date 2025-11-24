@@ -224,6 +224,7 @@ class StunStrike(Skill):
                 if not hasattr(target, 'status_effects'):
                     target.status_effects = []
                 target.status_effects.append(stun)
+                stun.apply(target)  # Применяем эффект оглушения
                 stunned = True
 
             result['damage'] = actual_damage
@@ -278,6 +279,7 @@ class BattleCry(Skill):
         if not hasattr(user, 'status_effects'):
             user.status_effects = []
         user.status_effects.append(boost)
+        boost.apply(user)  # Применяем эффект
 
         result['strength_boost'] = boost_amount
         result['duration'] = boost_duration
