@@ -95,8 +95,8 @@
   },
   "skills": {
     "basic_attack": "assets/skills/basic.png",
-    "power_strike": "assets/sprites/skills/power_strike.png",
-    "poison_strike": "assets/sprites/skills/poison_strike.png",
+    "power_strike": "assets/skills/power_strike.png",
+    "poison_strike": "assets/skills/poison_strike.png",
     "stun_strike": "assets/sprites/skills/stun_strike.png",
     "battle_cry": "assets/sprites/skills/battle_cry.png",
     "heal": "assets/sprites/skills/heal.png",
@@ -106,8 +106,8 @@
     "ice_bolt": "assets/sprites/skills/ice_bolt.png",
     "lightning": "assets/sprites/skills/lightning.png",
     "magic_missile": "assets/sprites/skills/magic_missile.png",
-    "mining": "assets/sprites/skills/mining.png",
-    "lumberjacking": "assets/sprites/skills/lumberjacking.png"
+    "mining": "assets/skills/mining.png",
+    "lumberjacking": "assets/skills/lumberjacking.png"
   },
   "sprite_size": 64,
   "description": "Все спрайты должны быть размером 64x64 пикселя. Если файл не найден, используется геометрическая фигура или текст."
