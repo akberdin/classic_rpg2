@@ -340,6 +340,58 @@ class GameContext:
         """Получить систему случайных событий."""
         return getattr(self._game, 'random_event_system', None)
 
+    # === Списки NPC (через NPCManager) ===
+
+    @property
+    def guards(self):
+        """Список стражников."""
+        return getattr(self._game, 'guards', [])
+
+    @property
+    def merchants(self):
+        """Список торговцев."""
+        return getattr(self._game, 'merchants', [])
+
+    @property
+    def mages(self):
+        """Список магов."""
+        return getattr(self._game, 'mages', [])
+
+    @property
+    def bandits(self):
+        """Список бандитов."""
+        return getattr(self._game, 'bandits', [])
+
+    @property
+    def miners(self):
+        """Список шахтёров."""
+        return getattr(self._game, 'miners', [])
+
+    @property
+    def undead(self):
+        """Список нежити."""
+        return getattr(self._game, 'undead', [])
+
+    @property
+    def alchemists(self):
+        """Список алхимиков."""
+        return getattr(self._game, 'alchemists', [])
+
+    @property
+    def hunters(self):
+        """Список охотников."""
+        return getattr(self._game, 'hunters', [])
+
+    @property
+    def necromancers(self):
+        """Список некромантов."""
+        return getattr(self._game, 'necromancers', [])
+
+    @property
+    def animals(self):
+        """Список животных."""
+        return getattr(self._game, 'animals', [])
+
     # === Методы-делегаты ===
 
     def start_combat(self, npc) -> None:
