@@ -13,6 +13,7 @@
 - ShieldBreaker - пробивание щита (меч)
 - BladeDance - танец клинков (меч)
 """
+import random
 from game.systems.skills.base import Skill, SkillCategory
 from game.systems.skills.effects import PoisonEffect
 
