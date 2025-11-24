@@ -444,7 +444,7 @@ class Game:
         if time_bonuses['description']:
             print(f"  {time_bonuses['description']}")
 
-        self.combat_system = CombatSystem(self.player, enemy, self.screen, self.font, self.ui_scaler, self.game_map, self.respawn_manager)
+        self.combat_system = CombatSystem(self.player, enemy, self.screen, self.font, self.ui_scaler, self.game_map, self.respawn_manager, self.sprite_manager)
         self.in_combat = True
         self.nearby_npc = None
 
