@@ -31,6 +31,9 @@ from game.camera import Camera
 from game.respawn_manager import RespawnManager
 from game.events import create_game_systems, TimeOfDayBonuses
 from game.loot_system import LootSystem
+from game.hud_renderer import HUDRenderer
+from game.resource_system import ResourceSystem
+from game.quest_ui_controller import QuestUIController
 
 
 class Game:
