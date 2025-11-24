@@ -251,6 +251,14 @@ class GameContext:
         self._game.event_window_open = value
 
     @property
+    def loot_window_open(self) -> bool:
+        return getattr(self._game, 'loot_window_open', False)
+
+    @loot_window_open.setter
+    def loot_window_open(self, value: bool):
+        self._game.loot_window_open = value
+
+    @property
     def cheat_menu_open(self) -> bool:
         return getattr(self._game, 'cheat_menu_open', False)
 
