@@ -162,7 +162,8 @@ class Animal(NPC):
 
         # Реакция на угрозу
         if closest_threat:
-            if self.flee_on_low_health or (self.health / self.max_health) < 0.3:
+            health_ratio = self.health / self.max_health if self.max_health > 0 else 1.0
+            if self.flee_on_low_health or health_ratio < 0.3:
                 # Убегаем если пугливы или мало здоровья
                 self.state = "flee"
                 self.target_enemy = closest_threat
