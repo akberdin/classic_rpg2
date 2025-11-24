@@ -503,39 +503,3 @@ class BladeDance(WeaponSkill):
         return result
 
 
-# Список всех доступных умений
-AVAILABLE_SKILLS = {
-    # Боевые (общие)
-    'basic_attack': BasicAttack,
-    'power_strike': PowerStrike,
-    'poison_strike': PoisonStrike,
-    'stun_strike': StunStrike,
-    'battle_cry': BattleCry,
-    # Боевые (лук)
-    'precise_shot': PreciseShot,
-    'rapid_fire': RapidFire,
-    'piercing_arrow': PiercingArrow,
-    # Боевые (кинжал)
-    'backstab': Backstab,
-    'bleeding_cut': BleedingCut,
-    'shadow_step': ShadowStep,
-    # Боевые (меч)
-    'whirlwind_strike': WhirlwindStrike,
-    'shield_breaker': ShieldBreaker,
-    'blade_dance': BladeDance,
-    # Магические (поддерживающие)
-    'heal': Heal,
-    'regeneration': Regeneration,
-    'stamina_recovery': StaminaRecovery,
-    'mage_shield': MageShield,
-    # Магические (атакующие)
-    'fireball': Fireball,
-    'ice_bolt': IceBolt,
-    'lightning': Lightning,
-    'magic_missile': MagicMissile,
-    # Ремесленные
-    'mining': Mining,
-    'lumberjacking': Lumberjacking,
-}
-
-
