@@ -72,40 +72,18 @@ class Guard(NPC):
         """
         Обновление AI стражника за 1 час игрового времени.
 
-        Поддерживает два способа вызова:
-        1. update_ai(context) - новый способ с AIContext
-        2. update_ai(game_map, all_npcs, player, current_hour) - старый способ
-
         Args:
             context_or_map: AIContext или game_map (для обратной совместимости)
             all_npcs: Список всех NPC (только для старого способа)
             player: Объект игрока (не используется)
             current_hour: Текущий час суток (только для старого способа)
         """
-        # Определяем способ вызова
-        from game.core.ai_context import AIContext
-        if isinstance(context_or_map, AIContext):
-            context = context_or_map
-            game_map = context.game_map
-            all_npcs = context.all_npcs
-            current_hour = context.current_hour
-        else:
-            game_map = context_or_map
-        if not self.is_alive:
-            return
+        # Используем базовые методы для парсинга и проверок
+        game_map, all_npcs, player, current_hour = self._parse_ai_context(
+            context_or_map, all_npcs, player, current_hour
+        )
 
-        # Обновляем расписание (проверка времени активности)
-        self.update_schedule(current_hour, game_map)
-
-        # Если NPC скрыт (в локации), не обновляем AI
-        if self.is_hidden():
-            return
-
-        # Восстанавливаем выносливость
-        self.recover_stamina()
-
-        # Если отдыхаем из-за выносливости, ничего не делаем
-        if self.is_resting:
+        if not self._pre_update_ai(current_hour, game_map):
             return
 
         # Рандомная задержка для десинхронизации
