@@ -10,6 +10,19 @@ import random
 from enum import Enum
 
 
+# Ленивый доступ к словарю умений (избегает циклических импортов)
+_available_skills_cache = None
+
+
+def get_available_skills():
+    """Получить словарь всех доступных умений."""
+    global _available_skills_cache
+    if _available_skills_cache is None:
+        from game.systems.skills import AVAILABLE_SKILLS
+        _available_skills_cache = AVAILABLE_SKILLS
+    return _available_skills_cache
+
+
 class SkillCategory(Enum):
     """Категории умений"""
     COMBAT = "combat"  # Боевые умения
@@ -289,14 +302,14 @@ class SkillManager:
         # Если передан строковый ID, получаем класс
         if isinstance(skill_class_or_id, str):
             skill_id = skill_class_or_id
-            if skill_id not in AVAILABLE_SKILLS:
+            if skill_id not in get_available_skills():
                 return False
-            skill_class = AVAILABLE_SKILLS[skill_id]
+            skill_class = get_available_skills()[skill_id]
         else:
             skill_class = skill_class_or_id
             # Ищем ID по классу
             skill_id = None
-            for sid, sclass in AVAILABLE_SKILLS.items():
+            for sid, sclass in get_available_skills().items():
                 if sclass == skill_class:
                     skill_id = sid
                     break
@@ -325,7 +338,7 @@ class SkillManager:
         Returns:
             bool: True если успешно
         """
-        if skill_id not in AVAILABLE_SKILLS:
+        if skill_id not in get_available_skills():
             return False
 
         # Инициализируем equipment_skills если нет
@@ -354,7 +367,7 @@ class SkillManager:
             print(f"Ранг умения {skill.name} повышен до {skill.rank} (от экипировки)")
         else:
             # Умение не изучено - добавляем временно
-            skill_class = AVAILABLE_SKILLS[skill_id]
+            skill_class = get_available_skills()[skill_id]
             skill = skill_class()
             skill.rank = min(5, skill_rank)  # Ранг от предмета
 
