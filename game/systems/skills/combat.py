@@ -8,6 +8,7 @@
 - StunStrike - оглушающий удар
 - BattleCry - боевой клич
 """
+import random
 from game.systems.skills.base import Skill, SkillCategory
 from game.systems.skills.effects import PoisonEffect, StunEffect, StrengthBoostEffect
 
