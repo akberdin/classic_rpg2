@@ -94,7 +94,7 @@
     "forest": "assets/sprites/biomes/forest.png"
   },
   "skills": {
-    "basic_attack": "assets/sprites/skills/basic_attack.png",
+    "basic_attack": "assets/skills/basic.png",
     "power_strike": "assets/sprites/skills/power_strike.png",
     "poison_strike": "assets/sprites/skills/poison_strike.png",
     "stun_strike": "assets/sprites/skills/stun_strike.png",
