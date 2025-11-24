@@ -12,6 +12,7 @@ from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
 from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow, CheatMenuWindow
+from game.ui.windows import InteractionWindow
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quests import (QuestManager, AchievementManager,
                         QuestGenerator, create_unique_quests, get_unique_quest_for_location,
@@ -125,6 +126,9 @@ class Game:
         # Окно чит меню
         self.cheat_menu_window = CheatMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.cheat_menu_open = False
+
+        # Окно взаимодействия с NPC
+        self.interaction_window = InteractionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
 
         # Менеджер спрайтов
         from game.sprite_manager import SpriteManager
@@ -700,7 +704,7 @@ class Game:
 
         # Если открыто меню взаимодействия, отрисовываем его
         if self.interaction_menu_open and self.nearby_npc:
-            self._render_interaction_menu()
+            self.interaction_window.render(self.nearby_npc)
 
         # Если открыто меню инвентаря, отрисовываем его
         if self.inventory_menu_open:
@@ -998,124 +1002,3 @@ class Game:
                     cooldown_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2)
                     self.screen.blit(cooldown_text, cooldown_rect)
 
-    def _render_interaction_menu(self):
-        """Отрисовка меню взаимодействия с NPC"""
-        # Затемняем фон
-        overlay = pygame.Surface((self.window_width, self.window_height))
-        overlay.set_alpha(150)
-        overlay.fill((0, 0, 0))
-        self.screen.blit(overlay, (0, 0))
-
-        # Размеры меню
-        menu_width = 500
-        menu_height = 300
-        menu_x = (self.window_width - menu_width) // 2
-        menu_y = (self.window_height - menu_height) // 2
-
-        # Фон меню
-        pygame.draw.rect(
-            self.screen,
-            (40, 40, 45),
-            (menu_x, menu_y, menu_width, menu_height)
-        )
-
-        # Рамка меню
-        pygame.draw.rect(
-            self.screen,
-            COLORS['text'],
-            (menu_x, menu_y, menu_width, menu_height),
-            3
-        )
-
-        # Заголовок
-        title_text = self.font.render(
-            f"Взаимодействие: {self.nearby_npc.name}",
-            True,
-            (255, 215, 0)
-        )
-        title_rect = title_text.get_rect()
-        title_rect.centerx = menu_x + menu_width // 2
-        title_rect.y = menu_y + 20
-        self.screen.blit(title_text, title_rect)
-
-        # Информация о NPC
-        npc_info = [
-            f"Уровень: {self.nearby_npc.level}",
-            f"Здоровье: {self.nearby_npc.health}/{self.nearby_npc.max_health}",
-            f"Тип: {self.nearby_npc.npc_type}"
-        ]
-
-        info_y = menu_y + 70
-        for i, info in enumerate(npc_info):
-            info_text = self.info_font.render(info, True, (200, 200, 200))
-            info_rect = info_text.get_rect()
-            info_rect.centerx = menu_x + menu_width // 2
-            info_rect.y = info_y + i * 25
-            self.screen.blit(info_text, info_rect)
-
-        # Разделительная линия
-        pygame.draw.line(
-            self.screen,
-            COLORS['text'],
-            (menu_x + 20, menu_y + 160),
-            (menu_x + menu_width - 20, menu_y + 160),
-            2
-        )
-
-        # Варианты действий
-        actions_y = menu_y + 180
-        actions_title = self.font.render("Выберите действие:", True, COLORS['text'])
-        actions_title_rect = actions_title.get_rect()
-        actions_title_rect.centerx = menu_x + menu_width // 2
-        actions_title_rect.y = actions_y
-        self.screen.blit(actions_title, actions_title_rect)
-
-        # Кнопки действий (зависят от типа NPC)
-        if self.nearby_npc.npc_type == "mage":
-            training_cost = 50 * self.nearby_npc.level
-            actions = [
-                "[1] Купить заклинания",
-                f"[2] Обучение ({training_cost} зол.)",
-                "[3] Агрессия",
-                "[4] Уйти"
-            ]
-        elif self.nearby_npc.npc_type == "alchemist":
-            actions = [
-                "[1] Торговля зельями",
-                "[2] Взять квест",
-                "[3] Сдать квест",
-                "[4] Уйти"
-            ]
-        elif self.nearby_npc.npc_type == "hunter":
-            actions = [
-                "[1] Торговля",
-                "[2] Взять квест",
-                "[3] Сдать квест",
-                "[4] Уйти"
-            ]
-        elif self.nearby_npc.npc_type == "merchant":
-            actions = [
-                "[1] Торговля",
-                "[2] Агрессия",
-                "[3] Уйти"
-            ]
-        elif self.nearby_npc.npc_type in ["wolf", "bear", "deer"]:
-            # Животные - только агрессия или уйти
-            actions = [
-                "[1] Агрессия",
-                "[2] Уйти"
-            ]
-        else:
-            actions = [
-                "[1] Торговля",
-                "[2] Агрессия",
-                "[3] Уйти"
-            ]
-
-        buttons_y = actions_y + 40
-        for i, action in enumerate(actions):
-            action_text = self.info_font.render(action, True, (150, 255, 150))
-            action_rect = action_text.get_rect()
-            action_rect.centerx = menu_x + menu_width // 2
-            action_rect.y = buttons_y + i * 30
-            self.screen.blit(action_text, action_rect)

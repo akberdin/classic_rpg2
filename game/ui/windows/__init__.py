@@ -14,6 +14,7 @@ from game.ui.windows.loot import LootWindow
 from game.ui.windows.quest import QuestWindow
 from game.ui.windows.random_event import RandomEventWindow
 from game.ui.windows.cheat_menu import CheatMenuWindow
+from game.ui.windows.interaction import InteractionWindow
 
 __all__ = [
     'BaseWindow',
@@ -26,4 +27,5 @@ __all__ = [
     'QuestWindow',
     'RandomEventWindow',
     'CheatMenuWindow',
+    'InteractionWindow',
 ]
