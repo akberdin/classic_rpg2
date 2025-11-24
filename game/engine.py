@@ -316,93 +316,11 @@ class Game:
                     print("Вы сбежали из боя!")
                 continue
 
-            # Если открыто меню взаимодействия, обрабатываем выбор
-            if self.interaction_menu_open:
-                if event.type == pygame.KEYDOWN:
-                    self.input_handler.handle_interaction_choice(event.key)
+            # Маршрутизация событий меню через InputHandler
+            if self.input_handler.route_menu_event(event, self._handle_quest_action):
                 continue
 
-            # Если открыто меню инвентаря, обрабатываем его
-            if self.inventory_menu_open:
-                if event.type == pygame.KEYDOWN:
-                    self.input_handler.handle_inventory_input(event.key)
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 3:  # ПКМ
-                        self.input_handler.handle_inventory_right_click(event.pos)
-                    elif event.button == 4:  # Колесо вверх
-                        all_items = self.player.inventory.get_all_items()
-                        if all_items:
-                            self.inventory_window.selected_inventory_index = max(0, self.inventory_window.selected_inventory_index - 1)
-                    elif event.button == 5:  # Колесо вниз
-                        all_items = self.player.inventory.get_all_items()
-                        if all_items:
-                            self.inventory_window.selected_inventory_index = min(len(all_items) - 1, self.inventory_window.selected_inventory_index + 1)
-                elif event.type == pygame.MOUSEWHEEL:
-                    all_items = self.player.inventory.get_all_items()
-                    if all_items:
-                        if event.y > 0:  # Колесо вверх
-                            self.inventory_window.selected_inventory_index = max(0, self.inventory_window.selected_inventory_index - 1)
-                        elif event.y < 0:  # Колесо вниз
-                            self.inventory_window.selected_inventory_index = min(len(all_items) - 1, self.inventory_window.selected_inventory_index + 1)
-                continue
-
-            # Если открыто меню торговли, обрабатываем его
-            if self.trade_menu_open:
-                if event.type == pygame.KEYDOWN:
-                    self.input_handler.handle_trade_input(event.key)
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:  # ЛКМ - фильтры и сортировка
-                        self.input_handler.handle_trade_left_click(event.pos)
-                    elif event.button == 3:  # ПКМ
-                        self.input_handler.handle_trade_right_click(event.pos)
-                continue
-
-            # Если открыто окно характеристик, обрабатываем его
-            if self.character_menu_open:
-                if event.type == pygame.KEYDOWN:
-                    self.input_handler.handle_character_input(event.key)
-                continue
-
-            # Если открыто окно книги умений, обрабатываем его
-            if self.skill_book_menu_open:
-                if event.type == pygame.KEYDOWN:
-                    self.input_handler.handle_skill_book_input(event.key)
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # Обработка событий мыши в книге умений
-                    self.skill_book_window.handle_mouse_event(event, self.player)
-                continue
-
-            # Если открыто окно лута, обрабатываем его
-            if self.loot_window_open:
-                if event.type == pygame.KEYDOWN:
-                    self.loot_window_open = False
-                continue
-
-            # Если открыто окно квестов, обрабатываем его
-            if self.quest_window_open:
-                if event.type == pygame.KEYDOWN:
-                    self.input_handler.handle_quest_input(event.key)
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # Обработка событий мыши в окне квестов
-                    action = self.quest_window.handle_mouse_event(event, self)
-                    if action:
-                        self._handle_quest_action(action)
-                continue
-
-            # Если открыто окно случайных событий, обрабатываем его
-            if self.event_window_open:
-                if self.random_event_window.handle_input(event):
-                    self.event_window_open = False
-                    self.random_event_system.clear_last_event()
-                continue
-
-            # Если открыто чит меню, обрабатываем его
-            if self.cheat_menu_open:
-                if self.cheat_menu_window.handle_input(event, self):
-                    self.cheat_menu_open = False
-                continue
-
-            # Обработка нажатий клавиш
+            # Обработка нажатий клавиш (если ни одно меню не открыто)
             if event.type == pygame.KEYDOWN:
                 self.input_handler.handle_key_press(event.key)
 
