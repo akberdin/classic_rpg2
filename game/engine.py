@@ -12,6 +12,7 @@ from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
 from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow, CheatMenuWindow
+from game.ui.windows import InteractionWindow
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quests import (QuestManager, AchievementManager,
                         QuestGenerator, create_unique_quests, get_unique_quest_for_location,
@@ -29,6 +30,7 @@ from game.game_time import GameTime
 from game.camera import Camera
 from game.respawn_manager import RespawnManager
 from game.events import create_game_systems, TimeOfDayBonuses
+from game.loot_system import LootSystem
 
 
 class Game:
@@ -125,6 +127,9 @@ class Game:
         self.cheat_menu_window = CheatMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.cheat_menu_open = False
 
+        # Окно взаимодействия с NPC
+        self.interaction_window = InteractionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+
         # Менеджер спрайтов
         from game.sprite_manager import SpriteManager
         self.sprite_manager = SpriteManager(tile_size=TILE_SIZE)
@@ -175,6 +180,9 @@ class Game:
 
         # Инициализация систем событий, погоды и серий убийств
         self.weather_system, self.random_event_system, self.killstreak_system = create_game_systems()
+
+        # Инициализация системы лута
+        self.loot_system = LootSystem(self.player, self.quest_manager, self.killstreak_system)
 
         # Даем игроку стартовые умения
         self.player.skill_manager.learn_skill('basic_attack')  # Базовая атака
@@ -275,56 +283,28 @@ class Game:
             if self.in_combat and self.combat_system:
                 result = self.combat_system.handle_input(event)
                 if result == "victory":
-                    # Генерируем лут (проверка на None)
+                    # Обрабатываем победу через LootSystem
                     defeated_enemy = self.combat_system.enemy
                     if defeated_enemy is None:
                         self.in_combat = False
                         self.combat_system = None
                         continue
-                    loot_items, loot_gold = self._generate_loot(defeated_enemy)
 
-                    # Применяем бонус серии убийств
-                    if hasattr(self, 'killstreak_system'):
-                        streak_info = self.killstreak_system.register_kill()
-                        multiplier = streak_info['multiplier']
-                        loot_gold = int(loot_gold * multiplier)
-                        if streak_info['message']:
-                            print(streak_info['message'])
+                    # LootSystem обрабатывает: генерацию лута, бонусы killstreak,
+                    # добавление в инвентарь, статистику убийств и квесты
+                    victory_result = self.loot_system.process_victory(defeated_enemy)
 
-                    # Добавляем лут в инвентарь игрока
-                    self.player.inventory.add_gold(loot_gold)
-                    for item, quantity in loot_items:
-                        self.player.inventory.add_item(item, quantity)
+                    # Выводим сообщение о серии убийств
+                    if victory_result['streak_message']:
+                        print(victory_result['streak_message'])
 
                     # Показываем окно лута
-                    self.loot_window.set_loot(loot_items, loot_gold, defeated_enemy.name)
+                    self.loot_window.set_loot(
+                        victory_result['loot_items'],
+                        victory_result['loot_gold'],
+                        defeated_enemy.name
+                    )
                     self.loot_window_open = True
-
-                    # Обновляем прогресс квестов на убийство
-                    if hasattr(defeated_enemy, 'npc_type'):
-                        enemy_type = defeated_enemy.npc_type
-                        # Обновляем статистику игрока
-                        if not hasattr(self.player, 'enemies_killed'):
-                            self.player.enemies_killed = 0
-                        self.player.enemies_killed += 1
-
-                        # Отслеживание убийств животных
-                        if enemy_type == 'wolf':
-                            if not hasattr(self.player, 'wolves_killed'):
-                                self.player.wolves_killed = 0
-                            self.player.wolves_killed += 1
-                        elif enemy_type == 'bear':
-                            if not hasattr(self.player, 'bears_killed'):
-                                self.player.bears_killed = 0
-                            self.player.bears_killed += 1
-                        elif enemy_type == 'deer':
-                            if not hasattr(self.player, 'deer_killed'):
-                                self.player.deer_killed = 0
-                            self.player.deer_killed += 1
-
-                        # Обновляем прогресс квестов для всех типов врагов
-                        if enemy_type in ['bandit', 'undead', 'wolf', 'bear', 'deer', 'necromancer']:
-                            self.update_kill_quest_progress(enemy_type)
 
                     self.in_combat = False
                     self.combat_system = None
@@ -340,93 +320,11 @@ class Game:
                     print("Вы сбежали из боя!")
                 continue
 
-            # Если открыто меню взаимодействия, обрабатываем выбор
-            if self.interaction_menu_open:
-                if event.type == pygame.KEYDOWN:
-                    self.input_handler.handle_interaction_choice(event.key)
+            # Маршрутизация событий меню через InputHandler
+            if self.input_handler.route_menu_event(event, self._handle_quest_action):
                 continue
 
-            # Если открыто меню инвентаря, обрабатываем его
-            if self.inventory_menu_open:
-                if event.type == pygame.KEYDOWN:
-                    self.input_handler.handle_inventory_input(event.key)
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 3:  # ПКМ
-                        self.input_handler.handle_inventory_right_click(event.pos)
-                    elif event.button == 4:  # Колесо вверх
-                        all_items = self.player.inventory.get_all_items()
-                        if all_items:
-                            self.inventory_window.selected_inventory_index = max(0, self.inventory_window.selected_inventory_index - 1)
-                    elif event.button == 5:  # Колесо вниз
-                        all_items = self.player.inventory.get_all_items()
-                        if all_items:
-                            self.inventory_window.selected_inventory_index = min(len(all_items) - 1, self.inventory_window.selected_inventory_index + 1)
-                elif event.type == pygame.MOUSEWHEEL:
-                    all_items = self.player.inventory.get_all_items()
-                    if all_items:
-                        if event.y > 0:  # Колесо вверх
-                            self.inventory_window.selected_inventory_index = max(0, self.inventory_window.selected_inventory_index - 1)
-                        elif event.y < 0:  # Колесо вниз
-                            self.inventory_window.selected_inventory_index = min(len(all_items) - 1, self.inventory_window.selected_inventory_index + 1)
-                continue
-
-            # Если открыто меню торговли, обрабатываем его
-            if self.trade_menu_open:
-                if event.type == pygame.KEYDOWN:
-                    self.input_handler.handle_trade_input(event.key)
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:  # ЛКМ - фильтры и сортировка
-                        self.input_handler.handle_trade_left_click(event.pos)
-                    elif event.button == 3:  # ПКМ
-                        self.input_handler.handle_trade_right_click(event.pos)
-                continue
-
-            # Если открыто окно характеристик, обрабатываем его
-            if self.character_menu_open:
-                if event.type == pygame.KEYDOWN:
-                    self.input_handler.handle_character_input(event.key)
-                continue
-
-            # Если открыто окно книги умений, обрабатываем его
-            if self.skill_book_menu_open:
-                if event.type == pygame.KEYDOWN:
-                    self.input_handler.handle_skill_book_input(event.key)
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # Обработка событий мыши в книге умений
-                    self.skill_book_window.handle_mouse_event(event, self.player)
-                continue
-
-            # Если открыто окно лута, обрабатываем его
-            if self.loot_window_open:
-                if event.type == pygame.KEYDOWN:
-                    self.loot_window_open = False
-                continue
-
-            # Если открыто окно квестов, обрабатываем его
-            if self.quest_window_open:
-                if event.type == pygame.KEYDOWN:
-                    self.input_handler.handle_quest_input(event.key)
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # Обработка событий мыши в окне квестов
-                    action = self.quest_window.handle_mouse_event(event, self)
-                    if action:
-                        self._handle_quest_action(action)
-                continue
-
-            # Если открыто окно случайных событий, обрабатываем его
-            if self.event_window_open:
-                if self.random_event_window.handle_input(event):
-                    self.event_window_open = False
-                    self.random_event_system.clear_last_event()
-                continue
-
-            # Если открыто чит меню, обрабатываем его
-            if self.cheat_menu_open:
-                if self.cheat_menu_window.handle_input(event, self):
-                    self.cheat_menu_open = False
-                continue
-
-            # Обработка нажатий клавиш
+            # Обработка нажатий клавиш (если ни одно меню не открыто)
             if event.type == pygame.KEYDOWN:
                 self.input_handler.handle_key_press(event.key)
 
@@ -740,17 +638,6 @@ class Game:
         }
         return item_mapping.get(item_name)
 
-    def update_kill_quest_progress(self, enemy_type):
-        """
-        Обновить прогресс квестов на убийство
-
-        Args:
-            enemy_type: Тип убитого врага ('bandit', 'undead')
-        """
-        messages = self.quest_manager.update_kill_progress(enemy_type)
-        for msg in messages:
-            print(f"  {msg}")
-
     def _start_combat(self, enemy):
         """
         Начать бой с NPC
@@ -817,7 +704,7 @@ class Game:
 
         # Если открыто меню взаимодействия, отрисовываем его
         if self.interaction_menu_open and self.nearby_npc:
-            self._render_interaction_menu()
+            self.interaction_window.render(self.nearby_npc)
 
         # Если открыто меню инвентаря, отрисовываем его
         if self.inventory_menu_open:
@@ -1115,187 +1002,3 @@ class Game:
                     cooldown_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2)
                     self.screen.blit(cooldown_text, cooldown_rect)
 
-    def _generate_loot(self, enemy):
-        """
-        Генерировать лут с поверженного врага
-
-        Args:
-            enemy: Поверженный враг
-
-        Returns:
-            tuple: (список предметов [(item, quantity)], количество золота)
-        """
-        from game.inventory import ItemGenerator, ItemQuality, PREDEFINED_ITEMS
-
-        loot_items = []
-        loot_gold = 0
-
-        # Животные дают специфичный лут без золота
-        if enemy.npc_type in ["wolf", "bear", "deer"]:
-            animal_loot = ItemGenerator.generate_animal_loot(enemy.npc_type)
-            for item in animal_loot:
-                loot_items.append((item, 1))
-            return loot_items, 0  # Животные не дают золото
-
-        # Золото зависит от уровня врага
-        base_gold = enemy.level * 5
-        loot_gold = random.randint(base_gold, base_gold * 2)
-
-        # Шанс выпадения предметов зависит от уровня врага
-        drop_chance = min(0.3 + enemy.level * 0.02, 0.8)  # От 30% до 80%
-
-        # Количество предметов (1-3)
-        num_items = random.randint(1, 3)
-
-        for _ in range(num_items):
-            if random.random() < drop_chance:
-                # Определяем тип предмета
-                item_type = random.choice(['equipment', 'potion', 'equipment', 'potion'])
-
-                if item_type == 'equipment':
-                    # Генерируем экипировку
-                    item_level = max(1, enemy.level + random.randint(-2, 2))
-                    quality = ItemGenerator.generate_quality()
-
-                    if random.random() < 0.5:
-                        item = ItemGenerator.generate_weapon(item_level, quality)
-                    else:
-                        item = ItemGenerator.generate_armor(item_level, quality=quality)
-
-                    loot_items.append((item, 1))
-
-                elif item_type == 'potion':
-                    # Зелья
-                    potion_choices = ['minor_health_potion', 'minor_stamina_potion', 'minor_mana_potion']
-                    if enemy.level >= 10:
-                        potion_choices.extend(['health_potion', 'stamina_potion', 'mana_potion'])
-
-                    potion_name = random.choice(potion_choices)
-                    if potion_name in PREDEFINED_ITEMS:
-                        potion = PREDEFINED_ITEMS[potion_name]
-                        quantity = random.randint(1, 2)
-                        loot_items.append((potion, quantity))
-
-        return loot_items, loot_gold
-
-    def _render_interaction_menu(self):
-        """Отрисовка меню взаимодействия с NPC"""
-        # Затемняем фон
-        overlay = pygame.Surface((self.window_width, self.window_height))
-        overlay.set_alpha(150)
-        overlay.fill((0, 0, 0))
-        self.screen.blit(overlay, (0, 0))
-
-        # Размеры меню
-        menu_width = 500
-        menu_height = 300
-        menu_x = (self.window_width - menu_width) // 2
-        menu_y = (self.window_height - menu_height) // 2
-
-        # Фон меню
-        pygame.draw.rect(
-            self.screen,
-            (40, 40, 45),
-            (menu_x, menu_y, menu_width, menu_height)
-        )
-
-        # Рамка меню
-        pygame.draw.rect(
-            self.screen,
-            COLORS['text'],
-            (menu_x, menu_y, menu_width, menu_height),
-            3
-        )
-
-        # Заголовок
-        title_text = self.font.render(
-            f"Взаимодействие: {self.nearby_npc.name}",
-            True,
-            (255, 215, 0)
-        )
-        title_rect = title_text.get_rect()
-        title_rect.centerx = menu_x + menu_width // 2
-        title_rect.y = menu_y + 20
-        self.screen.blit(title_text, title_rect)
-
-        # Информация о NPC
-        npc_info = [
-            f"Уровень: {self.nearby_npc.level}",
-            f"Здоровье: {self.nearby_npc.health}/{self.nearby_npc.max_health}",
-            f"Тип: {self.nearby_npc.npc_type}"
-        ]
-
-        info_y = menu_y + 70
-        for i, info in enumerate(npc_info):
-            info_text = self.info_font.render(info, True, (200, 200, 200))
-            info_rect = info_text.get_rect()
-            info_rect.centerx = menu_x + menu_width // 2
-            info_rect.y = info_y + i * 25
-            self.screen.blit(info_text, info_rect)
-
-        # Разделительная линия
-        pygame.draw.line(
-            self.screen,
-            COLORS['text'],
-            (menu_x + 20, menu_y + 160),
-            (menu_x + menu_width - 20, menu_y + 160),
-            2
-        )
-
-        # Варианты действий
-        actions_y = menu_y + 180
-        actions_title = self.font.render("Выберите действие:", True, COLORS['text'])
-        actions_title_rect = actions_title.get_rect()
-        actions_title_rect.centerx = menu_x + menu_width // 2
-        actions_title_rect.y = actions_y
-        self.screen.blit(actions_title, actions_title_rect)
-
-        # Кнопки действий (зависят от типа NPC)
-        if self.nearby_npc.npc_type == "mage":
-            training_cost = 50 * self.nearby_npc.level
-            actions = [
-                "[1] Купить заклинания",
-                f"[2] Обучение ({training_cost} зол.)",
-                "[3] Агрессия",
-                "[4] Уйти"
-            ]
-        elif self.nearby_npc.npc_type == "alchemist":
-            actions = [
-                "[1] Торговля зельями",
-                "[2] Взять квест",
-                "[3] Сдать квест",
-                "[4] Уйти"
-            ]
-        elif self.nearby_npc.npc_type == "hunter":
-            actions = [
-                "[1] Торговля",
-                "[2] Взять квест",
-                "[3] Сдать квест",
-                "[4] Уйти"
-            ]
-        elif self.nearby_npc.npc_type == "merchant":
-            actions = [
-                "[1] Торговля",
-                "[2] Агрессия",
-                "[3] Уйти"
-            ]
-        elif self.nearby_npc.npc_type in ["wolf", "bear", "deer"]:
-            # Животные - только агрессия или уйти
-            actions = [
-                "[1] Агрессия",
-                "[2] Уйти"
-            ]
-        else:
-            actions = [
-                "[1] Торговля",
-                "[2] Агрессия",
-                "[3] Уйти"
-            ]
-
-        buttons_y = actions_y + 40
-        for i, action in enumerate(actions):
-            action_text = self.info_font.render(action, True, (150, 255, 150))
-            action_rect = action_text.get_rect()
-            action_rect.centerx = menu_x + menu_width // 2
-            action_rect.y = buttons_y + i * 30
-            self.screen.blit(action_text, action_rect)

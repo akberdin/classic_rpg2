@@ -813,3 +813,109 @@ class InputHandler:
             turn_in_quests
         )
 
+    def route_menu_event(self, event, quest_action_handler=None):
+        """
+        Маршрутизация событий для открытых меню.
+
+        Args:
+            event: pygame событие
+            quest_action_handler: callback для обработки действий квестов
+
+        Returns:
+            bool: True если событие обработано (нужен continue), False иначе
+        """
+        # Меню взаимодействия
+        if self.ctx.interaction_menu_open:
+            if event.type == pygame.KEYDOWN:
+                self.handle_interaction_choice(event.key)
+            return True
+
+        # Меню инвентаря
+        if self.ctx.inventory_menu_open:
+            if event.type == pygame.KEYDOWN:
+                self.handle_inventory_input(event.key)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 3:  # ПКМ
+                    self.handle_inventory_right_click(event.pos)
+                elif event.button in (4, 5):  # Колесо мыши
+                    self._handle_inventory_scroll(event.button == 4)
+            elif event.type == pygame.MOUSEWHEEL:
+                self._handle_inventory_scroll(event.y > 0)
+            return True
+
+        # Меню торговли
+        if self.ctx.trade_menu_open:
+            if event.type == pygame.KEYDOWN:
+                self.handle_trade_input(event.key)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    self.handle_trade_left_click(event.pos)
+                elif event.button == 3:
+                    self.handle_trade_right_click(event.pos)
+            return True
+
+        # Окно характеристик
+        if self.ctx.character_menu_open:
+            if event.type == pygame.KEYDOWN:
+                self.handle_character_input(event.key)
+            return True
+
+        # Книга умений
+        if self.ctx.skill_book_menu_open:
+            if event.type == pygame.KEYDOWN:
+                self.handle_skill_book_input(event.key)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                self.ctx.skill_book_window.handle_mouse_event(event, self.ctx.player)
+            return True
+
+        # Окно лута
+        if self.ctx.loot_window_open:
+            if event.type == pygame.KEYDOWN:
+                self.ctx.loot_window_open = False
+            return True
+
+        # Окно квестов
+        if self.ctx.quest_window_open:
+            if event.type == pygame.KEYDOWN:
+                self.handle_quest_input(event.key)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                action = self.ctx.quest_window.handle_mouse_event(event, self.game)
+                if action and quest_action_handler:
+                    quest_action_handler(action)
+            return True
+
+        # Окно случайных событий
+        if self.ctx.event_window_open:
+            if self.ctx.random_event_window.handle_input(event):
+                self.ctx.event_window_open = False
+                self.ctx.random_event_system.clear_last_event()
+            return True
+
+        # Чит-меню
+        if self.ctx.cheat_menu_open:
+            if self.ctx.cheat_menu_window.handle_input(event, self.game):
+                self.ctx.cheat_menu_open = False
+            return True
+
+        return False
+
+    def _handle_inventory_scroll(self, scroll_up):
+        """
+        Обработка прокрутки в инвентаре.
+
+        Args:
+            scroll_up: True если прокрутка вверх, False если вниз
+        """
+        all_items = self.ctx.player.inventory.get_all_items()
+        if not all_items:
+            return
+
+        if scroll_up:
+            self.ctx.inventory_window.selected_inventory_index = max(
+                0, self.ctx.inventory_window.selected_inventory_index - 1
+            )
+        else:
+            self.ctx.inventory_window.selected_inventory_index = min(
+                len(all_items) - 1, self.ctx.inventory_window.selected_inventory_index + 1
+            )
+
