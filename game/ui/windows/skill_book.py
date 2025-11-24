@@ -8,7 +8,7 @@ from game.ui.base import UIHelper
 class SkillBookWindow:
     """Окно книги умений для управления изученными умениями и их назначением в слоты"""
 
-    def __init__(self, screen, font, info_font, ui_scaler=None):
+    def __init__(self, screen, font, info_font, ui_scaler=None, sprite_manager=None):
         """
         Инициализация окна книги умений
 
@@ -17,11 +17,13 @@ class SkillBookWindow:
             font: Основной шрифт
             info_font: Шрифт для информации
             ui_scaler: Масштабировщик UI (опционально)
+            sprite_manager: Менеджер спрайтов для иконок умений (опционально)
         """
         self.screen = screen
         self.font = font
         self.info_font = info_font
         self.ui_scaler = ui_scaler
+        self.sprite_manager = sprite_manager
 
         # Индексы для навигации
         self.selected_skill_index = 0
@@ -447,11 +449,30 @@ class SkillBookWindow:
 
             # Если в слоте есть умение
             if slot_skill:
-                icon_font = pygame.font.Font(None, 36)
-                icon_text = icon_font.render(slot_skill.name[0], True, (255, 255, 255))
-                icon_rect = icon_text.get_rect()
-                icon_rect.center = (slot_x + slot_size // 2, slots_panel_y + slot_size // 2)
-                self.screen.blit(icon_text, icon_rect)
+                skill_id = player.skill_manager.get_slot_skill_id(i)
+                icon_size = slot_size - 10  # Немного меньше слота для отступов
+                icon_x = slot_x + 5
+                icon_y = slots_panel_y + 5
+
+                # Пробуем отрисовать спрайт умения
+                sprite_drawn = False
+                if skill_id and self.sprite_manager:
+                    sprite_drawn = self.sprite_manager.render_skill_icon(
+                        self.screen,
+                        skill_id,
+                        icon_x,
+                        icon_y,
+                        icon_size,
+                        fallback_text=slot_skill.name[0]
+                    )
+
+                if not sprite_drawn and not self.sprite_manager:
+                    # Fallback: первая буква названия
+                    icon_font = pygame.font.Font(None, 36)
+                    icon_text = icon_font.render(slot_skill.name[0], True, (255, 255, 255))
+                    icon_rect = icon_text.get_rect()
+                    icon_rect.center = (slot_x + slot_size // 2, slots_panel_y + slot_size // 2)
+                    self.screen.blit(icon_text, icon_rect)
 
         # Подсказки
         hints_y = window_y + window_height - 30

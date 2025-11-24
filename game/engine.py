@@ -138,6 +138,9 @@ class Game:
         self.sprite_manager = SpriteManager(tile_size=TILE_SIZE)
         print(f"Менеджер спрайтов инициализирован")
 
+        # Передаём sprite_manager в окно книги умений для отображения иконок
+        self.skill_book_window.sprite_manager = self.sprite_manager
+
         # Создание NPC с помощью спавнера и NPCManager
         from game.core.npc_manager import NPCManager
         npc_spawner = NPCSpawner(self.game_map)
