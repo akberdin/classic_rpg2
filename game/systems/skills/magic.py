@@ -272,6 +272,7 @@ class IceBolt(Skill):
                 if not hasattr(target, 'status_effects'):
                     target.status_effects = []
                 target.status_effects.append(slow)
+                slow.apply(target)  # Применяем эффект замедления
                 slowed = True
 
             result['damage'] = actual_damage
