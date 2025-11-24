@@ -287,18 +287,29 @@ class SkillBookWindow:
         # Очищаем списки rect'ов
         self.skill_rects.clear()
 
-        # Отрисовка списка умений
+        # Отрисовка списка умений в 2 колонки
         if skills:
+            # Параметры колонок
+            column_width = (window_width - 60) // 2  # Две колонки с отступами
+            column_spacing = 20  # Расстояние между колонками
+            skills_per_column = 5  # По 5 умений в каждой колонке
+            skill_height = 100  # Высота карточки умения
+
             for idx, skill in enumerate(skills):
-                # Увеличен лимит умений - теперь можно показать до 6 умений
-                if idx >= 6:
+                # Максимум 10 умений (2 колонки по 5)
+                if idx >= 10:
                     break
 
-                skill_y = skills_list_y + idx * 90
-                skill_x = window_x + 20
+                # Определяем колонку и позицию в колонке
+                column = idx // skills_per_column  # 0 или 1
+                row = idx % skills_per_column  # 0-4
+
+                # Вычисляем позицию
+                skill_x = window_x + 20 + column * (column_width + column_spacing)
+                skill_y = skills_list_y + row * (skill_height + 10)
 
                 # Сохраняем прямоугольник умения для обработки мыши
-                skill_rect = pygame.Rect(skill_x, skill_y, window_width - 40, 85)
+                skill_rect = pygame.Rect(skill_x, skill_y, column_width, skill_height - 5)
                 self.skill_rects.append(skill_rect)
 
                 # Фон умения
@@ -332,44 +343,42 @@ class SkillBookWindow:
                 # Текущий эффект ранга (вместо базового описания) с переносом слов
                 current_rank_desc = skill.get_current_rank_description() if hasattr(skill, 'get_current_rank_description') else skill.base_description
                 # Переносим текст по словам
-                desc_lines = UIHelper.wrap_text(current_rank_desc, self.info_font, window_width - 60)
+                desc_lines = UIHelper.wrap_text(current_rank_desc, self.info_font, column_width - 20)
                 for line_idx, desc_line in enumerate(desc_lines[:2]):  # Показываем максимум 2 строки
                     skill_desc_text = self.info_font.render(
                         desc_line,
                         True,
                         (150, 255, 150)  # Зелёный цвет для текущего эффекта
                     )
-                    self.screen.blit(skill_desc_text, (skill_x + 10, skill_y + 28 + line_idx * 18))
+                    self.screen.blit(skill_desc_text, (skill_x + 10, skill_y + 28 + line_idx * 16))
 
-                # Прогресс до следующего ранга (с учетом дополнительной строки описания)
+                # Прогресс до следующего ранга (компактная версия для колонок)
+                info_y = skill_y + 60
                 if skill.rank < skill.max_rank:
-                    # Первая строка условий: опыт и использования
-                    exp_color = (100, 255, 100) if skill.experience >= skill.experience_to_next_rank else (200, 200, 100)
-                    use_color = (100, 255, 100) if skill.use_count >= skill.get_required_uses_for_rank() else (200, 200, 100)
-
+                    # Опыт и использования
                     cond_text1 = self.info_font.render(
-                        f"Опыт: {skill.experience}/{skill.experience_to_next_rank}  |  Использований: {skill.use_count}/{skill.get_required_uses_for_rank()}",
+                        f"Опыт: {skill.experience}/{skill.experience_to_next_rank} | Исп: {skill.use_count}/{skill.get_required_uses_for_rank()}",
                         True,
                         (180, 180, 180)
                     )
-                    self.screen.blit(cond_text1, (skill_x + 10, skill_y + 64))
+                    self.screen.blit(cond_text1, (skill_x + 10, info_y))
 
-                    # Вторая строка условий: уровень и золото
+                    # Уровень и золото
                     cond_text2 = self.info_font.render(
-                        f"Треб. уровень: {skill.get_required_player_level_for_rank()}  |  Золото: {skill.get_gold_cost_for_rank()}",
+                        f"Ур: {skill.get_required_player_level_for_rank()} | Золото: {skill.get_gold_cost_for_rank()}",
                         True,
                         (255, 200, 100)
                     )
-                    self.screen.blit(cond_text2, (skill_x + 10, skill_y + 82))
+                    self.screen.blit(cond_text2, (skill_x + 10, info_y + 16))
                 else:
                     max_rank_text = self.info_font.render(
-                        "МАКСИМАЛЬНЫЙ РАНГ",
+                        "МАКС. РАНГ",
                         True,
                         (255, 215, 0)
                     )
-                    self.screen.blit(max_rank_text, (skill_x + 10, skill_y + 64))
+                    self.screen.blit(max_rank_text, (skill_x + 10, info_y))
 
-                # Стоимость и перезарядка (сдвинуто вниз для учета дополнительной строки описания)
+                # Стоимость и перезарядка
                 cost_parts = []
                 if skill.mana_cost > 0:
                     cost_parts.append(f"MP:{skill.mana_cost}")
@@ -381,7 +390,7 @@ class SkillBookWindow:
                 if cost_parts:
                     cost_text = " ".join(cost_parts)
                     cost_render = self.info_font.render(cost_text, True, (150, 150, 200))
-                    self.screen.blit(cost_render, (skill_x + window_width - 250, skill_y + 82))
+                    self.screen.blit(cost_render, (skill_x + column_width - 120, info_y + 16))
         else:
             # Нет умений в этой категории
             no_skills_text = self.font.render(
@@ -515,14 +524,20 @@ class SkillBookWindow:
 
         # Параметры подсказки
         tooltip_padding = 10
-        line_height = 20
-        tooltip_width = 350
+        line_height = 18
+        tooltip_width = 450  # Увеличена ширина для лучшего отображения
 
         # Формируем строки подсказки
         lines = []
         lines.append((f"Развитие умения: {skill.name}", (255, 215, 0), True))
         lines.append(("", (0, 0, 0), False))  # Пустая строка
-        lines.append((f"Описание: {skill.base_description}", (180, 180, 180), False))
+
+        # Описание с переносом слов
+        lines.append(("Описание:", (200, 200, 255), True))
+        desc_lines = UIHelper.wrap_text(skill.base_description, self.info_font, tooltip_width - tooltip_padding * 2)
+        for desc_line in desc_lines:
+            lines.append((desc_line, (180, 180, 180), False))
+
         lines.append(("", (0, 0, 0), False))  # Пустая строка
         lines.append(("Прогрессия по рангам:", (200, 200, 255), True))
 
@@ -535,7 +550,15 @@ class SkillBookWindow:
 
         # Добавляем информацию о стоимости
         lines.append(("", (0, 0, 0), False))
-        lines.append((f"Мана: {skill.mana_cost} | Выносливость: {skill.stamina_cost} | CD: {skill.cooldown}", (100, 200, 255), False))
+        cost_info = []
+        if skill.mana_cost > 0:
+            cost_info.append(f"Мана: {skill.mana_cost}")
+        if skill.stamina_cost > 0:
+            cost_info.append(f"Выносливость: {skill.stamina_cost}")
+        if skill.cooldown > 0:
+            cost_info.append(f"Перезарядка: {skill.cooldown}")
+        if cost_info:
+            lines.append((" | ".join(cost_info), (100, 200, 255), False))
 
         # Вычисляем размер подсказки
         tooltip_height = tooltip_padding * 2 + len(lines) * line_height
@@ -567,12 +590,12 @@ class SkillBookWindow:
             2
         )
 
-        # Отрисовка текста
+        # Отрисовка текста с переносом слов
         text_y = tooltip_y + tooltip_padding
         for line_text, line_color, is_bold in lines:
             if line_text:
                 font_to_use = self.font if is_bold else self.info_font
-                text_surface = font_to_use.render(line_text[:60], True, line_color)
+                text_surface = font_to_use.render(line_text, True, line_color)
                 self.screen.blit(text_surface, (tooltip_x + tooltip_padding, text_y))
             text_y += line_height
 
