@@ -1,6 +1,7 @@
 """
 Модуль для управления игровым временем
 """
+from game.core.game_context import GameContext
 
 
 class GameTime:
@@ -13,7 +14,8 @@ class GameTime:
         Args:
             game: Ссылка на основной объект игры
         """
-        self.game = game
+        self.game = game  # Сохраняем для специфичных вызовов
+        self.ctx = GameContext(game)
         self.game_hour = 6.0  # Начало игры в 6 утра (используем float для дробных часов)
         self.game_day = 1
         self.accumulated_hours = 0.0  # Накопленные дробные часы для обновления AI
@@ -44,11 +46,11 @@ class GameTime:
             self.game_day += 1
 
             # Проверяем и обновляем квесты раз в 5 дней
-            if hasattr(self.game, 'quest_manager') and hasattr(self.game, 'game_map'):
-                updated_locations = self.game.quest_manager.check_and_rotate_all_quests(
-                    self.game.game_map,
+            if self.ctx.quest_manager and self.ctx.game_map:
+                updated_locations = self.ctx.quest_manager.check_and_rotate_all_quests(
+                    self.ctx.game_map,
                     self.game_day,
-                    self.game.player.level
+                    self.ctx.player.level
                 )
                 if updated_locations:
                     print(f"Квесты обновлены в следующих локациях: {', '.join(updated_locations)}")
@@ -64,13 +66,13 @@ class GameTime:
         for _ in range(full_hours_passed):
             # Восстанавливаем выносливость и здоровье игрока (если не пропускаем)
             if not skip_player_recovery:
-                self.game.player.recover_stamina()
-                self.game.player.recover_health()
+                self.ctx.player.recover_stamina()
+                self.ctx.player.recover_health()
 
             # Обновляем перезарядки навыков и статус-эффекты игрока
-            if hasattr(self.game.player, 'skill_manager') and self.game.player.skill_manager:
-                self.game.player.skill_manager.tick_cooldowns()
-                effect_messages = self.game.player.skill_manager.tick_status_effects()
+            if hasattr(self.ctx.player, 'skill_manager') and self.ctx.player.skill_manager:
+                self.ctx.player.skill_manager.tick_cooldowns()
+                effect_messages = self.ctx.player.skill_manager.tick_status_effects()
                 for msg in effect_messages:
                     print(msg)
 
@@ -81,34 +83,35 @@ class GameTime:
             all_npcs = get_all_npcs_from_game(self.game)
 
             # Перестраиваем spatial grid для оптимизации
-            self.game.performance_optimizer.rebuild_spatial_grid(all_npcs)
+            self.ctx.performance_optimizer.rebuild_spatial_grid(all_npcs)
 
             # Увеличиваем счетчик для оптимизации AI
-            self.game.performance_optimizer.increment_counter()
+            self.ctx.performance_optimizer.increment_counter()
 
             # Создаём контекст AI и обновляем всех NPC
             ai_context = create_ai_context(self.game)
             update_all_npc_ai_with_context(self.game, ai_context)
 
             # Обрабатываем респавн NPC
-            if hasattr(self.game, 'respawn_manager'):
-                ready_to_respawn = self.game.respawn_manager.update(1)
+            if self.ctx.respawn_manager:
+                ready_to_respawn = self.ctx.respawn_manager.update(1)
                 for respawn_data in ready_to_respawn:
-                    self.game.respawn_manager.respawn_npc(respawn_data, self.game)
+                    self.ctx.respawn_manager.respawn_npc(respawn_data, self.game)
 
         # Проверяем, атаковал ли кто-то игрока (принудительное открытие окна боя)
-        if self.game.player.attacked_by_npc and not self.game.in_combat:
-            attacker = self.game.player.attacked_by_npc
-            self.game.player.attacked_by_npc = None  # Сбрасываем флаг
+        if self.ctx.player.attacked_by_npc and not self.ctx.in_combat:
+            attacker = self.ctx.player.attacked_by_npc
+            self.ctx.player.attacked_by_npc = None  # Сбрасываем флаг
             if attacker.is_alive:  # Проверяем что атакующий еще жив
-                self.game._start_combat(attacker)
+                self.ctx.start_combat(attacker)
                 print(f"{attacker.name} напал на вас!")
 
         # Проверяем достижения
-        unlocked = self.game.achievement_manager.check_achievements(self.game.player)
-        for achievement in unlocked:
-            print(f"Достижение разблокировано: {achievement.name}!")
-            print(f"   {achievement.description}")
+        if self.ctx.achievement_manager:
+            unlocked = self.ctx.achievement_manager.check_achievements(self.ctx.player)
+            for achievement in unlocked:
+                print(f"Достижение разблокировано: {achievement.name}!")
+                print(f"   {achievement.description}")
 
     def get_time_string(self):
         """

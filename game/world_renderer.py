@@ -3,6 +3,7 @@
 """
 import pygame
 from game.constants import TILE_SIZE, COLORS
+from game.core.game_context import GameContext
 
 
 class WorldRenderer:
@@ -16,6 +17,7 @@ class WorldRenderer:
             game: Ссылка на основной объект игры
         """
         self.game = game
+        self.ctx = GameContext(game)
 
     def get_time_of_day_tint(self):
         """
@@ -24,7 +26,7 @@ class WorldRenderer:
         Returns:
             tuple: (r, g, b) - компонент затемнения (0-255)
         """
-        hour = self.game.game_time.game_hour
+        hour = self.ctx.game_time.game_hour
 
         if 0 <= hour < 6 or hour >= 22:
             # Ночь - очень темно (синеватый оттенок)
@@ -69,11 +71,11 @@ class WorldRenderer:
     def render_map(self):
         """Отрисовка карты с учетом камеры и тумана войны"""
         # Вычисляем видимую область
-        tiles_x = self.game.window_width // TILE_SIZE + 1
-        tiles_y = (self.game.window_height - 100) // TILE_SIZE + 1
+        tiles_x = self.ctx.window_width // TILE_SIZE + 1
+        tiles_y = (self.ctx.window_height - 100) // TILE_SIZE + 1
 
-        camera_x = self.game.camera.x
-        camera_y = self.game.camera.y
+        camera_x = self.ctx.camera.x
+        camera_y = self.ctx.camera.y
 
         for dy in range(tiles_y):
             for dx in range(tiles_x):
@@ -82,10 +84,10 @@ class WorldRenderer:
                 map_y = camera_y + dy
 
                 # Проверяем валидность координат
-                if not self.game.game_map.is_valid_position(map_x, map_y):
+                if not self.ctx.game_map.is_valid_position(map_x, map_y):
                     continue
 
-                tile = self.game.game_map.get_tile(map_x, map_y)
+                tile = self.ctx.game_map.get_tile(map_x, map_y)
 
                 # Координаты на экране
                 screen_x = dx * TILE_SIZE
@@ -101,7 +103,7 @@ class WorldRenderer:
 
                     # Если тайл не в текущей видимости, затемняем его
                     # В чит-режиме все тайлы видимы
-                    is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(map_x, map_y, self.game.player.x, self.game.player.y)
+                    is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(map_x, map_y, self.ctx.player.x, self.ctx.player.y)
 
                     # Применяем оттенок времени суток только к видимым тайлам
                     if is_visible:
@@ -111,7 +113,7 @@ class WorldRenderer:
 
                     # ВСЕГДА рисуем базовый цвет клетки
                     pygame.draw.rect(
-                        self.game.screen,
+                        self.ctx.screen,
                         color,
                         (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
                     )
@@ -120,8 +122,8 @@ class WorldRenderer:
                     if tile.has_location():
                         # Отрисовываем спрайт локации поверх базового цвета
                         # Спрайт отображается даже в тумане войны (но затемненный)
-                        self.game.sprite_manager.render_location(
-                            self.game.screen,
+                        self.ctx.sprite_manager.render_location(
+                            self.ctx.screen,
                             tile.location.location_type,
                             screen_x,
                             screen_y,
@@ -131,7 +133,7 @@ class WorldRenderer:
                 else:
                     # Неисследованная область - туман войны
                     pygame.draw.rect(
-                        self.game.screen,
+                        self.ctx.screen,
                         COLORS['fog'],
                         (screen_x, screen_y, TILE_SIZE, TILE_SIZE)
                     )
@@ -153,14 +155,14 @@ class WorldRenderer:
                 map_x = camera_x + dx
                 map_y = camera_y + dy
 
-                if not self.game.game_map.is_valid_position(map_x, map_y):
+                if not self.ctx.game_map.is_valid_position(map_x, map_y):
                     continue
 
-                tile = self.game.game_map.get_tile(map_x, map_y)
+                tile = self.ctx.game_map.get_tile(map_x, map_y)
 
                 # Отрисовываем название локации, если она видима и исследована
                 if tile.explored and tile.has_location():
-                    if self.game.fog_of_war.is_visible(map_x, map_y, self.game.player.x, self.game.player.y):
+                    if self.ctx.fog_of_war.is_visible(map_x, map_y, self.ctx.player.x, self.ctx.player.y):
                         screen_x = dx * TILE_SIZE
                         screen_y = dy * TILE_SIZE
 
@@ -180,10 +182,10 @@ class WorldRenderer:
                         background_surface = pygame.Surface((label_rect.width + 4, label_rect.height + 2))
                         background_surface.set_alpha(180)
                         background_surface.fill((0, 0, 0))
-                        self.game.screen.blit(background_surface, (label_rect.x - 2, label_rect.y - 1))
+                        self.ctx.screen.blit(background_surface, (label_rect.x - 2, label_rect.y - 1))
 
                         # Отрисовка надписи
-                        self.game.screen.blit(location_label, label_rect)
+                        self.ctx.screen.blit(location_label, label_rect)
 
     def _render_all_npcs(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка всех NPC"""
@@ -200,15 +202,15 @@ class WorldRenderer:
 
     def _render_guards(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка стражников"""
-        for guard in self.game.guards:
+        for guard in self.ctx.guards:
             # Проверяем, находится ли стражник в зоне видимости камеры
             if (camera_x <= guard.x < camera_x + tiles_x and
                 camera_y <= guard.y < camera_y + tiles_y):
 
                 # Проверяем, исследован ли тайл со стражником
-                tile = self.game.game_map.get_tile(guard.x, guard.y)
+                tile = self.ctx.game_map.get_tile(guard.x, guard.y)
                 # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
-                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(guard.x, guard.y, self.game.player.x, self.game.player.y)
+                is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(guard.x, guard.y, self.ctx.player.x, self.ctx.player.y)
 
                 if tile.explored and is_visible:
                     if not guard.is_alive:
@@ -236,7 +238,7 @@ class WorldRenderer:
                         guard_color = base_color
 
                     # Функция отрисовки по умолчанию (геометрическая фигура)
-                    def draw_guard_default(screen=self.game.screen, color=guard_color,
+                    def draw_guard_default(screen=self.ctx.screen, color=guard_color,
                                           sx=guard_screen_x, sy=guard_screen_y, level=guard.level):
                         pygame.draw.circle(
                             screen,
@@ -255,22 +257,22 @@ class WorldRenderer:
                             )
 
                     # Отрисовка стражника (спрайт или геометрическая фигура)
-                    self.game.sprite_manager.render_npc(
-                        self.game.screen, 'guard', guard_screen_x, guard_screen_y,
+                    self.ctx.sprite_manager.render_npc(
+                        self.ctx.screen, 'guard', guard_screen_x, guard_screen_y,
                         draw_guard_default, guard.level
                     )
 
     def _render_merchants(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка торговцев"""
-        for merchant in self.game.merchants:
+        for merchant in self.ctx.merchants:
             # Проверяем, находится ли торговец в зоне видимости камеры
             if (camera_x <= merchant.x < camera_x + tiles_x and
                 camera_y <= merchant.y < camera_y + tiles_y):
 
                 # Проверяем, исследован ли тайл с торговцем
-                tile = self.game.game_map.get_tile(merchant.x, merchant.y)
+                tile = self.ctx.game_map.get_tile(merchant.x, merchant.y)
                 # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
-                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(merchant.x, merchant.y, self.game.player.x, self.game.player.y)
+                is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(merchant.x, merchant.y, self.ctx.player.x, self.ctx.player.y)
 
                 if tile.explored and is_visible:
                     if not merchant.is_alive:
@@ -288,7 +290,7 @@ class WorldRenderer:
                         merchant_color = (200, 150, 50)  # Оранжево-коричневый для путешествия
 
                     # Функция отрисовки по умолчанию (геометрическая фигура)
-                    def draw_merchant_default(screen=self.game.screen, color=merchant_color,
+                    def draw_merchant_default(screen=self.ctx.screen, color=merchant_color,
                                              sx=merchant_screen_x, sy=merchant_screen_y):
                         pygame.draw.rect(
                             screen,
@@ -300,22 +302,22 @@ class WorldRenderer:
                         )
 
                     # Отрисовка торговца (спрайт или геометрическая фигура)
-                    self.game.sprite_manager.render_npc(
-                        self.game.screen, 'merchant', merchant_screen_x, merchant_screen_y,
+                    self.ctx.sprite_manager.render_npc(
+                        self.ctx.screen, 'merchant', merchant_screen_x, merchant_screen_y,
                         draw_merchant_default, merchant.level
                     )
 
     def _render_bandits(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка бандитов"""
-        for bandit in self.game.bandits:
+        for bandit in self.ctx.bandits:
             # Проверяем, находится ли бандит в зоне видимости камеры
             if (camera_x <= bandit.x < camera_x + tiles_x and
                 camera_y <= bandit.y < camera_y + tiles_y):
 
                 # Проверяем, исследован ли тайл с бандитом
-                tile = self.game.game_map.get_tile(bandit.x, bandit.y)
+                tile = self.ctx.game_map.get_tile(bandit.x, bandit.y)
                 # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
-                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(bandit.x, bandit.y, self.game.player.x, self.game.player.y)
+                is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(bandit.x, bandit.y, self.ctx.player.x, self.ctx.player.y)
 
                 if tile.explored and is_visible:
                     if not bandit.is_alive:
@@ -333,7 +335,7 @@ class WorldRenderer:
                         bandit_color = (200, 0, 0)  # Красный для патруля
 
                     # Функция отрисовки по умолчанию (квадрат)
-                    def draw_bandit_default(screen=self.game.screen, color=bandit_color,
+                    def draw_bandit_default(screen=self.ctx.screen, color=bandit_color,
                                            sx=bandit_screen_x, sy=bandit_screen_y):
                         pygame.draw.rect(
                             screen,
@@ -345,22 +347,22 @@ class WorldRenderer:
                         )
 
                     # Отрисовка бандита (спрайт или геометрическая фигура)
-                    self.game.sprite_manager.render_npc(
-                        self.game.screen, 'bandit', bandit_screen_x, bandit_screen_y,
+                    self.ctx.sprite_manager.render_npc(
+                        self.ctx.screen, 'bandit', bandit_screen_x, bandit_screen_y,
                         draw_bandit_default, bandit.level
                     )
 
     def _render_miners(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка шахтеров"""
-        for miner in self.game.miners:
+        for miner in self.ctx.miners:
             # Проверяем, находится ли шахтер в зоне видимости камеры
             if (camera_x <= miner.x < camera_x + tiles_x and
                 camera_y <= miner.y < camera_y + tiles_y):
 
                 # Проверяем, исследован ли тайл с шахтером
-                tile = self.game.game_map.get_tile(miner.x, miner.y)
+                tile = self.ctx.game_map.get_tile(miner.x, miner.y)
                 # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
-                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(miner.x, miner.y, self.game.player.x, self.game.player.y)
+                is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(miner.x, miner.y, self.ctx.player.x, self.ctx.player.y)
 
                 if tile.explored and is_visible:
                     if not miner.is_alive:
@@ -378,7 +380,7 @@ class WorldRenderer:
                         miner_color = (150, 100, 50)  # Темно-коричневый для работы
 
                     # Функция отрисовки по умолчанию (геометрическая фигура)
-                    def draw_miner_default(screen=self.game.screen, color=miner_color,
+                    def draw_miner_default(screen=self.ctx.screen, color=miner_color,
                                           sx=miner_screen_x, sy=miner_screen_y):
                         pygame.draw.rect(
                             screen,
@@ -388,22 +390,22 @@ class WorldRenderer:
                         )
 
                     # Отрисовка шахтера (спрайт или геометрическая фигура)
-                    self.game.sprite_manager.render_npc(
-                        self.game.screen, 'miner', miner_screen_x, miner_screen_y,
+                    self.ctx.sprite_manager.render_npc(
+                        self.ctx.screen, 'miner', miner_screen_x, miner_screen_y,
                         draw_miner_default, miner.level
                     )
 
     def _render_undead(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка нежити"""
-        for undead_npc in self.game.undead:
+        for undead_npc in self.ctx.undead:
             # Проверяем, находится ли нежить в зоне видимости камеры
             if (camera_x <= undead_npc.x < camera_x + tiles_x and
                 camera_y <= undead_npc.y < camera_y + tiles_y):
 
                 # Проверяем, исследован ли тайл с нежитью
-                tile = self.game.game_map.get_tile(undead_npc.x, undead_npc.y)
+                tile = self.ctx.game_map.get_tile(undead_npc.x, undead_npc.y)
                 # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
-                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(undead_npc.x, undead_npc.y, self.game.player.x, self.game.player.y)
+                is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(undead_npc.x, undead_npc.y, self.ctx.player.x, self.ctx.player.y)
 
                 if tile.explored and is_visible:
                     if not undead_npc.is_alive:
@@ -431,7 +433,7 @@ class WorldRenderer:
                         undead_color = base_color
 
                     # Функция отрисовки по умолчанию (квадрат)
-                    def draw_undead_default(screen=self.game.screen, color=undead_color,
+                    def draw_undead_default(screen=self.ctx.screen, color=undead_color,
                                            sx=undead_screen_x, sy=undead_screen_y, level=undead_npc.level):
                         pygame.draw.rect(
                             screen,
@@ -455,22 +457,22 @@ class WorldRenderer:
                             )
 
                     # Отрисовка нежити (спрайт или геометрическая фигура)
-                    self.game.sprite_manager.render_npc(
-                        self.game.screen, 'undead', undead_screen_x, undead_screen_y,
+                    self.ctx.sprite_manager.render_npc(
+                        self.ctx.screen, 'undead', undead_screen_x, undead_screen_y,
                         draw_undead_default, undead_npc.level
                     )
 
     def _render_mages(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка магов"""
-        for mage in self.game.mages:
+        for mage in self.ctx.mages:
             # Проверяем, находится ли маг в зоне видимости камеры
             if (camera_x <= mage.x < camera_x + tiles_x and
                 camera_y <= mage.y < camera_y + tiles_y):
 
                 # Проверяем, исследован ли тайл с магом
-                tile = self.game.game_map.get_tile(mage.x, mage.y)
+                tile = self.ctx.game_map.get_tile(mage.x, mage.y)
                 # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
-                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(mage.x, mage.y, self.game.player.x, self.game.player.y)
+                is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(mage.x, mage.y, self.ctx.player.x, self.ctx.player.y)
 
                 if tile.explored and is_visible:
                     if not mage.is_alive:
@@ -496,7 +498,7 @@ class WorldRenderer:
                         mage_color = base_color
 
                     # Функция отрисовки по умолчанию (квадрат для мага)
-                    def draw_mage_default(screen=self.game.screen, color=mage_color,
+                    def draw_mage_default(screen=self.ctx.screen, color=mage_color,
                                          sx=mage_screen_x, sy=mage_screen_y, level=mage.level):
                         pygame.draw.rect(
                             screen,
@@ -520,21 +522,21 @@ class WorldRenderer:
                             )
 
                     # Отрисовка мага (спрайт или геометрическая фигура)
-                    self.game.sprite_manager.render_npc(
-                        self.game.screen, 'mage', mage_screen_x, mage_screen_y,
+                    self.ctx.sprite_manager.render_npc(
+                        self.ctx.screen, 'mage', mage_screen_x, mage_screen_y,
                         draw_mage_default, mage.level
                     )
 
     def _render_alchemists(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка алхимиков"""
-        for alchemist in self.game.alchemists:
+        for alchemist in self.ctx.alchemists:
             if (camera_x <= alchemist.x < camera_x + tiles_x and
                 camera_y <= alchemist.y < camera_y + tiles_y):
 
                 # Проверяем, исследован ли тайл с алхимиком
-                tile = self.game.game_map.get_tile(alchemist.x, alchemist.y)
+                tile = self.ctx.game_map.get_tile(alchemist.x, alchemist.y)
                 # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
-                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(alchemist.x, alchemist.y, self.game.player.x, self.game.player.y)
+                is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(alchemist.x, alchemist.y, self.ctx.player.x, self.ctx.player.y)
 
                 if tile.explored and is_visible:
                     if not alchemist.is_alive:
@@ -546,7 +548,7 @@ class WorldRenderer:
                     # Зеленый цвет для алхимиков
                     alchemist_color = (50, 200, 100)
 
-                    def draw_alchemist_default(screen=self.game.screen, color=alchemist_color,
+                    def draw_alchemist_default(screen=self.ctx.screen, color=alchemist_color,
                                               sx=screen_x, sy=screen_y):
                         # Квадрат для алхимика
                         pygame.draw.rect(
@@ -558,21 +560,21 @@ class WorldRenderer:
                              TILE_SIZE // 2)
                         )
 
-                    self.game.sprite_manager.render_npc(
-                        self.game.screen, 'alchemist', screen_x, screen_y,
+                    self.ctx.sprite_manager.render_npc(
+                        self.ctx.screen, 'alchemist', screen_x, screen_y,
                         draw_alchemist_default, alchemist.level
                     )
 
     def _render_hunters(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка охотников"""
-        for hunter in self.game.hunters:
+        for hunter in self.ctx.hunters:
             if (camera_x <= hunter.x < camera_x + tiles_x and
                 camera_y <= hunter.y < camera_y + tiles_y):
 
                 # Проверяем, исследован ли тайл с охотником
-                tile = self.game.game_map.get_tile(hunter.x, hunter.y)
+                tile = self.ctx.game_map.get_tile(hunter.x, hunter.y)
                 # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
-                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(hunter.x, hunter.y, self.game.player.x, self.game.player.y)
+                is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(hunter.x, hunter.y, self.ctx.player.x, self.ctx.player.y)
 
                 if tile.explored and is_visible:
                     if not hunter.is_alive:
@@ -589,7 +591,7 @@ class WorldRenderer:
                     else:
                         hunter_color = (139, 120, 85)  # Коричневый
 
-                    def draw_hunter_default(screen=self.game.screen, color=hunter_color,
+                    def draw_hunter_default(screen=self.ctx.screen, color=hunter_color,
                                            sx=screen_x, sy=screen_y):
                         # Квадрат для охотника
                         pygame.draw.rect(
@@ -601,21 +603,21 @@ class WorldRenderer:
                              TILE_SIZE // 2)
                         )
 
-                    self.game.sprite_manager.render_npc(
-                        self.game.screen, 'hunter', screen_x, screen_y,
+                    self.ctx.sprite_manager.render_npc(
+                        self.ctx.screen, 'hunter', screen_x, screen_y,
                         draw_hunter_default, hunter.level
                     )
 
     def _render_necromancers(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка некромантов"""
-        for necromancer in self.game.necromancers:
+        for necromancer in self.ctx.necromancers:
             if (camera_x <= necromancer.x < camera_x + tiles_x and
                 camera_y <= necromancer.y < camera_y + tiles_y):
 
                 # Проверяем, исследован ли тайл с некромантом
-                tile = self.game.game_map.get_tile(necromancer.x, necromancer.y)
+                tile = self.ctx.game_map.get_tile(necromancer.x, necromancer.y)
                 # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
-                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(necromancer.x, necromancer.y, self.game.player.x, self.game.player.y)
+                is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(necromancer.x, necromancer.y, self.ctx.player.x, self.ctx.player.y)
 
                 if tile.explored and is_visible:
                     if not necromancer.is_alive:
@@ -630,7 +632,7 @@ class WorldRenderer:
                     else:
                         necro_color = (100, 20, 120)  # Темный
 
-                    def draw_necro_default(screen=self.game.screen, color=necro_color,
+                    def draw_necro_default(screen=self.ctx.screen, color=necro_color,
                                           sx=screen_x, sy=screen_y, level=necromancer.level):
                         # Квадрат для некроманта
                         pygame.draw.rect(
@@ -653,21 +655,21 @@ class WorldRenderer:
                                 2
                             )
 
-                    self.game.sprite_manager.render_npc(
-                        self.game.screen, 'necromancer', screen_x, screen_y,
+                    self.ctx.sprite_manager.render_npc(
+                        self.ctx.screen, 'necromancer', screen_x, screen_y,
                         draw_necro_default, necromancer.level
                     )
 
     def _render_animals(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка животных (волков, медведей, оленей)"""
-        for animal in self.game.animals:
+        for animal in self.ctx.animals:
             if (camera_x <= animal.x < camera_x + tiles_x and
                 camera_y <= animal.y < camera_y + tiles_y):
 
                 # Проверяем, исследован ли тайл с животным
-                tile = self.game.game_map.get_tile(animal.x, animal.y)
+                tile = self.ctx.game_map.get_tile(animal.x, animal.y)
                 # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
-                is_visible = self.game.cheat_menu_window.cheats['reveal_map']['enabled'] or self.game.fog_of_war.is_visible(animal.x, animal.y, self.game.player.x, self.game.player.y)
+                is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(animal.x, animal.y, self.ctx.player.x, self.ctx.player.y)
 
                 if tile.explored and is_visible:
                     if not animal.is_alive:
@@ -718,7 +720,7 @@ class WorldRenderer:
                     else:
                         animal_color = base_color
 
-                    def draw_animal_default(screen=self.game.screen, color=animal_color,
+                    def draw_animal_default(screen=self.ctx.screen, color=animal_color,
                                           sx=screen_x, sy=screen_y, level=animal.level,
                                           npc_type=animal.npc_type):
                         # Треугольник для животных (символизирует зверя)
@@ -733,54 +735,54 @@ class WorldRenderer:
                         if level > 20:
                             pygame.draw.polygon(screen, (255, 215, 0), points, 2)
 
-                    self.game.sprite_manager.render_npc(
-                        self.game.screen, animal.npc_type, screen_x, screen_y,
+                    self.ctx.sprite_manager.render_npc(
+                        self.ctx.screen, animal.npc_type, screen_x, screen_y,
                         draw_animal_default, animal.level
                     )
 
     def _render_player(self, camera_x, camera_y):
         """Отрисовка игрока"""
-        player_screen_x = (self.game.player.x - camera_x) * TILE_SIZE
-        player_screen_y = (self.game.player.y - camera_y) * TILE_SIZE
+        player_screen_x = (self.ctx.player.x - camera_x) * TILE_SIZE
+        player_screen_y = (self.ctx.player.y - camera_y) * TILE_SIZE
 
         # Функция отрисовки по умолчанию (геометрическая фигура)
         def draw_player_default():
             pygame.draw.circle(
-                self.game.screen,
+                self.ctx.screen,
                 COLORS['player'],
                 (player_screen_x + TILE_SIZE // 2, player_screen_y + TILE_SIZE // 2),
                 TILE_SIZE // 3
             )
 
         # Отрисовка игрока (спрайт или геометрическая фигура)
-        self.game.sprite_manager.render_npc(
-            self.game.screen, 'player', player_screen_x, player_screen_y,
-            draw_player_default, self.game.player.level
+        self.ctx.sprite_manager.render_npc(
+            self.ctx.screen, 'player', player_screen_x, player_screen_y,
+            draw_player_default, self.ctx.player.level
         )
 
     def render_minimap(self):
         """Отрисовка мини-карты"""
         # Размеры мини-карты (масштабируются под разрешение, увеличено на 30%)
         base_size = 150 * 1.3  # 195 пикселей базовый размер
-        minimap_size = self.game.ui_scaler.scale_value(int(base_size))
-        margin = self.game.ui_scaler.scale_value(10)
-        panel_height = self.game.ui_scaler.scale_value(100)  # Высота нижней панели
+        minimap_size = self.ctx.ui_scaler.scale_value(int(base_size))
+        margin = self.ctx.ui_scaler.scale_value(10)
+        panel_height = self.ctx.ui_scaler.scale_value(100)  # Высота нижней панели
 
         # Позиция в правом нижнем углу над панелью
-        minimap_x = self.game.window_width - minimap_size - margin
-        minimap_y = self.game.window_height - minimap_size - panel_height - margin
+        minimap_x = self.ctx.window_width - minimap_size - margin
+        minimap_y = self.ctx.window_height - minimap_size - panel_height - margin
         pixel_per_tile = minimap_size / 100  # Адаптивный размер тайла
 
         # Фон мини-карты
         pygame.draw.rect(
-            self.game.screen,
+            self.ctx.screen,
             (20, 20, 25),
             (minimap_x, minimap_y, minimap_size, minimap_size)
         )
 
         # Рамка мини-карты
         pygame.draw.rect(
-            self.game.screen,
+            self.ctx.screen,
             COLORS['text'],
             (minimap_x, minimap_y, minimap_size, minimap_size),
             2
@@ -791,13 +793,13 @@ class WorldRenderer:
 
         for dy in range(-map_view_radius, map_view_radius):
             for dx in range(-map_view_radius, map_view_radius):
-                map_x = self.game.player.x + dx
-                map_y = self.game.player.y + dy
+                map_x = self.ctx.player.x + dx
+                map_y = self.ctx.player.y + dy
 
-                if not self.game.game_map.is_valid_position(map_x, map_y):
+                if not self.ctx.game_map.is_valid_position(map_x, map_y):
                     continue
 
-                tile = self.game.game_map.get_tile(map_x, map_y)
+                tile = self.ctx.game_map.get_tile(map_x, map_y)
 
                 # Отображаем только исследованные тайлы
                 if tile.explored:
@@ -817,7 +819,7 @@ class WorldRenderer:
                     # Отрисовка пикселя тайла (размер +1 для устранения зазоров-сетки)
                     tile_draw_size = int(pixel_per_tile) + 1
                     pygame.draw.rect(
-                        self.game.screen,
+                        self.ctx.screen,
                         color,
                         (minimap_px, minimap_py, tile_draw_size, tile_draw_size)
                     )
@@ -827,15 +829,15 @@ class WorldRenderer:
         player_minimap_y = minimap_y + minimap_size // 2
 
         pygame.draw.circle(
-            self.game.screen,
+            self.ctx.screen,
             COLORS['player'],
             (player_minimap_x, player_minimap_y),
             3
         )
 
         # Заголовок мини-карты (над картой)
-        minimap_font_size = self.game.ui_scaler.scale_font_size(16)
+        minimap_font_size = self.ctx.ui_scaler.scale_font_size(16)
         minimap_font = pygame.font.Font(None, minimap_font_size)
         minimap_title = minimap_font.render("Карта", True, COLORS['text'])
-        title_offset = self.game.ui_scaler.scale_value(18)
-        self.game.screen.blit(minimap_title, (minimap_x + 5, minimap_y - title_offset))
+        title_offset = self.ctx.ui_scaler.scale_value(18)
+        self.ctx.screen.blit(minimap_title, (minimap_x + 5, minimap_y - title_offset))

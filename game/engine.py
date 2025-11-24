@@ -13,12 +13,11 @@ from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
 from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow, CheatMenuWindow
 from game.optimization import PerformanceOptimizer, RenderCache
-from game.quests import (QuestManager, AchievementManager, create_starter_quests,
+from game.quests import (QuestManager, AchievementManager,
                         QuestGenerator, create_unique_quests, get_unique_quest_for_location,
-                        auto_assign_starter_quests, AchievementRarity)
-from game.save_system import SaveSystem
+                        auto_assign_starter_quests)
 from game.constants import (
-    FPS, TILE_SIZE, COLORS, WINDOW_WIDTH, WINDOW_HEIGHT,
+    FPS, TILE_SIZE, COLORS,
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL
 )
 

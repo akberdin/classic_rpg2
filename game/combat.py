@@ -3,7 +3,6 @@
 """
 import pygame
 import random
-from game.constants import COLORS
 
 
 def calculate_combat_exp(player_level, enemy_level, base_exp_per_level=20):
