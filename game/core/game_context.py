@@ -331,6 +331,11 @@ class GameContext:
         return getattr(self._game, 'killstreak_system', None)
 
     @property
+    def sprite_manager(self):
+        """Получить менеджер спрайтов."""
+        return getattr(self._game, 'sprite_manager', None)
+
+    @property
     def random_event_system(self):
         """Получить систему случайных событий."""
         return getattr(self._game, 'random_event_system', None)
