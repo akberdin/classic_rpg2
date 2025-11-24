@@ -31,6 +31,9 @@ from game.camera import Camera
 from game.respawn_manager import RespawnManager
 from game.events import create_game_systems, TimeOfDayBonuses
 from game.loot_system import LootSystem
+from game.hud_renderer import HUDRenderer
+from game.resource_system import ResourceSystem
+from game.quest_ui_controller import QuestUIController
 
 
 class Game:
@@ -202,6 +205,21 @@ class Game:
 
         # Инициализация рендерера мира
         self.world_renderer = WorldRenderer(self)
+
+        # Инициализация рендерера HUD
+        self.hud_renderer = HUDRenderer(self)
+
+        # Инициализация системы ресурсов
+        self.resource_system = ResourceSystem(
+            self.player, self.game_map, self.quest_manager,
+            self.game_time, self._start_combat
+        )
+
+        # Инициализация контроллера квестов
+        self.quest_ui_controller = QuestUIController(
+            self.player, self.quest_manager, self.quest_window,
+            self.input_handler._refresh_quest_window
+        )
 
         print("Игра готова к запуску!")
 
@@ -375,268 +393,22 @@ class Game:
         print("Рядом нет NPC для взаимодействия и вы не находитесь в городе/деревне!")
 
     def open_quest_window(self, location):
-        """
-        Открыть окно квестов для локации
-
-        Args:
-            location: Объект локации
-        """
-        location_id = f"{location.x}_{location.y}"
-
-        # Генерируем квесты для локации, если их еще нет
-        if location_id not in self.quest_manager.location_quests:
-            quests = QuestGenerator.generate_quests_for_location(
-                location.name, location_id, self.player.level, count=3
-            )
-            for quest in quests:
-                self.quest_manager.add_location_quest(location_id, quest)
-
-            # Пробуем добавить уникальный квест для городов, деревень и школы магов
-            unique_quest = get_unique_quest_for_location(location.location_type, location.name)
-            if unique_quest:
-                unique_quest.location_id = location_id
-                self.quest_manager.add_location_quest(location_id, unique_quest)
-
-        # Проверяем прогресс всех квестов на сбор ресурсов
-        self.quest_manager.check_all_quest_progress(self.player)
-
-        # Получаем доступные квесты для этой локации
-        available_quests = self.quest_manager.get_location_quests(location_id)
-
-        # Получаем активные квесты
-        active_quests = self.quest_manager.get_active_quests()
-
-        # Получаем квесты готовые к сдаче в этой локации
-        turn_in_quests = self.quest_manager.get_quests_ready_to_turn_in(location_id)
-
-        # Устанавливаем данные в окно квестов
-        self.quest_window.set_data(
-            location.name,
-            location_id,
-            available_quests,
-            active_quests,
-            turn_in_quests
-        )
-
-        # Открываем окно
-        self.quest_window_open = True
+        """Делегирование к QuestUIController."""
+        self.quest_ui_controller.open_for_location(location)
+        self.quest_window_open = self.quest_ui_controller.is_open
 
     def open_quest_window_anywhere(self):
-        """
-        Открыть окно квестов из любого места (только активные квесты)
-        """
-        # Проверяем прогресс всех квестов на сбор ресурсов
-        self.quest_manager.check_all_quest_progress(self.player)
-
-        # Получаем активные квесты
-        active_quests = self.quest_manager.get_active_quests()
-
-        # Устанавливаем данные в окно квестов (без доступных и готовых к сдаче)
-        self.quest_window.set_data(
-            "Журнал квестов",  # Общее название
-            None,  # Нет локации
-            [],  # Нет доступных квестов
-            active_quests,
-            []  # Нет квестов к сдаче
-        )
-
-        # Автоматически переключаем на вкладку активных квестов
-        self.quest_window.mode = "active"
-
-        # Открываем окно
-        self.quest_window_open = True
+        """Делегирование к QuestUIController."""
+        self.quest_ui_controller.open_anywhere()
+        self.quest_window_open = self.quest_ui_controller.is_open
 
     def _handle_quest_action(self, action):
-        """
-        Обработка действий с квестами из окна квестов
-
-        Args:
-            action: Тип действия ('accept', 'turn_in', 'abandon')
-        """
-        quest = self.quest_window.get_selected_quest()
-        if not quest:
-            return
-
-        if action == 'accept':
-            # Принять квест
-            success, message = self.quest_manager.accept_quest(
-                quest.quest_id,
-                self.quest_window.location_id,
-                self.player
-            )
-            print(message)
-            if success:
-                self.input_handler._refresh_quest_window()
-
-        elif action == 'turn_in':
-            # Сдать квест
-            success, messages = self.quest_manager.complete_quest(
-                quest.quest_id,
-                self.player
-            )
-            if success:
-                print(f"Квест '{quest.name}' завершён!")
-                for msg in messages:
-                    print(f"  {msg}")
-                self.input_handler._refresh_quest_window()
-            else:
-                print("Не удалось сдать квест")
-
-        elif action == 'abandon':
-            # Отменить квест
-            success, message = self.quest_manager.abandon_quest(quest.quest_id)
-            print(message)
-            if success:
-                self.input_handler._refresh_quest_window()
+        """Делегирование к QuestUIController."""
+        self.quest_ui_controller.handle_action(action)
 
     def _collect_resources(self):
-        """Собрать ресурсы с текущей локации с учётом случайных событий"""
-        tile = self.game_map.get_tile(self.player.x, self.player.y)
-
-        if not tile.has_location():
-            print("Здесь нечего собирать!")
-            return
-
-        location = tile.location
-
-        if not location.can_collect_loot:
-            print(f"{location.name} не содержит ресурсов для сбора.")
-            return
-
-        if location.loot_collected:
-            print(f"Вы уже собрали ресурсы с {location.name}.")
-            return
-
-        # Проверяем случайное событие при сборе лута
-        event_result = self._process_loot_event()
-        if event_result == "combat_started":
-            # Бой начался, лут будет собран после победы
-            location.loot_collected = True
-            return
-        elif event_result == "trap_triggered":
-            # Ловушка сработала, но лут всё равно можно собрать
-            pass
-
-        # Получаем лут с локации с учётом удачи игрока
-        loot = get_random_loot_from_location(location.location_type, self.player.level, self.player.luck)
-
-        if not loot:
-            print("Ничего не найдено!")
-            return
-
-        # Бонусный лут от события
-        if event_result == "bonus_loot":
-            print("Удача! Вы нашли дополнительный тайник!")
-            bonus_loot = get_random_loot_from_location(location.location_type, self.player.level, self.player.luck)
-            loot.extend(bonus_loot)
-
-        # Добавляем лут в инвентарь
-        for item, quantity in loot:
-            if item == 'gold':
-                self.player.inventory.add_gold(quantity)
-                print(f"Найдено: {quantity} золота")
-            elif self.player.inventory.add_item(item, quantity):
-                print(f"Найдено: {item.name} x{quantity}")
-
-                # Обновляем прогресс квестов на сбор ресурсов
-                item_key = self._get_item_key(item.name)
-                if item_key:
-                    messages = self.quest_manager.update_gather_progress(item_key, quantity, self.player)
-                    for msg in messages:
-                        print(f"  {msg}")
-            else:
-                print(f"Инвентарь полон! Не удалось подобрать {item.name}")
-
-        # Помечаем локацию как обыскованную
-        location.loot_collected = True
-
-        # Обновляем прогресс квеста "Охотник за сокровищами"
-        self.player.resources_collected += 1
-        self.quest_manager.update_quest_progress("treasure_hunter", 0, 1)
-
-        # Добавляем тип локации в посещенные
-        self.player.visited_location_types.add(location.location_type)
-
-        # Продвигаем время на 20 минут (1/3 часа)
-        self.game_time.advance_time(1/3)
-        print(f"Время: {self.game_time.get_time_string()}")
-
-    def _process_loot_event(self):
-        """
-        Обработать случайное событие при сборе лута
-
-        Returns:
-            str: тип события ('nothing', 'trap_triggered', 'combat_started', 'bonus_loot')
-        """
-        import random
-        from game.npc import Bandit
-
-        # Шанс события - 30%
-        if random.randint(1, 100) > 30:
-            return "nothing"
-
-        # Выбираем тип события
-        event_type = random.choice(["trap", "enemy", "bonus", "nothing"])
-
-        if event_type == "trap":
-            # Ловушка наносит урон (10% от макс здоровья)
-            effective_max_health = self.player.get_effective_max_health()
-            trap_damage = int(effective_max_health * 0.10)
-            self.player.health -= trap_damage
-            self.player.health = max(1, self.player.health)
-            print(f"Вы попали в ловушку! Получено {trap_damage} урона.")
-            return "trap_triggered"
-
-        elif event_type == "enemy":
-            # Спавн врага на 2-5 уровней выше игрока
-            enemy_level = self.player.level + random.randint(2, 5)
-            enemy_level = min(enemy_level, 40)  # Макс 40 уровень
-
-            # Создаём бандита-защитника
-            enemy_names = ["Страж сокровищ", "Охранник", "Засадник", "Грабитель"]
-            enemy = Bandit(
-                random.choice(enemy_names),
-                self.player.x,
-                self.player.y,
-                enemy_level,
-                self.player.x,
-                self.player.y
-            )
-
-            print(f"На вас напал {enemy.name} {enemy_level} уровня!")
-            self._start_combat(enemy)
-            return "combat_started"
-
-        elif event_type == "bonus":
-            # Бонусный лут
-            return "bonus_loot"
-
-        return "nothing"
-
-    def _get_item_key(self, item_name):
-        """
-        Получить ключ предмета для системы квестов
-
-        Args:
-            item_name: Отображаемое имя предмета
-
-        Returns:
-            str: Ключ предмета или None
-        """
-        # Словарь соответствий отображаемых имен и ключей
-        item_mapping = {
-            'Медная руда': 'copper_ore',
-            'Железная руда': 'iron_ore',
-            'Серебряная руда': 'silver_ore',
-            'Золотая руда': 'gold_ore',
-            'Мифриловая руда': 'mithril_ore',
-            'Древесина': 'wood',
-            'Древняя монета': 'ancient_coin',
-            'Фрагмент артефакта': 'artifact_fragment',
-            'Магический кристалл': 'magic_crystal',
-            'Старый свиток': 'old_scroll',
-        }
-        return item_mapping.get(item_name)
+        """Делегирование к ResourceSystem."""
+        self.resource_system.collect_resources()
 
     def _start_combat(self, enemy):
         """
@@ -693,7 +465,7 @@ class Game:
         self.world_renderer.render_map()
 
         # Отрисовка UI
-        self._render_ui()
+        self.hud_renderer.render()
 
         # Отрисовка мини-карты
         self.world_renderer.render_minimap()
@@ -748,257 +520,4 @@ class Game:
         # Обновление дисплея
         pygame.display.flip()
 
-    def _render_ui(self):
-        """Отрисовка пользовательского интерфейса"""
-        # Панель внизу экрана (масштабируется под разрешение)
-        ui_height = self.ui_scaler.scale_height(100)
-        ui_y = self.window_height - ui_height
-
-        # Фон панели
-        pygame.draw.rect(
-            self.screen,
-            (32, 32, 32),
-            (0, ui_y, self.window_width, ui_height)
-        )
-
-        # Разделительная линия
-        pygame.draw.line(
-            self.screen,
-            COLORS['text'],
-            (0, ui_y),
-            (self.window_width, ui_y),
-            2
-        )
-
-        # Информация об игроке
-        info_x = 20
-        info_y = ui_y + 10
-
-        # Имя и уровень
-        player_rank = self.player.get_rank()
-        name_text = self.font.render(
-            f"{self.player.name} | Ур: {self.player.level} ({player_rank})",
-            True,
-            COLORS['text']
-        )
-        self.screen.blit(name_text, (info_x, info_y))
-
-        # Игровое время, погода и золото
-        weather_str = ""
-        if hasattr(self, 'weather_system'):
-            weather_str = f" | {self.weather_system.current_weather.display_name}"
-
-        time_gold_text = self.info_font.render(
-            f"{self.game_time.get_time_string()}{weather_str} | Золото: {self.player.inventory.gold}",
-            True,
-            (255, 215, 0)
-        )
-        time_gold_x = self.window_width - self.ui_scaler.scale_width(450)
-        self.screen.blit(time_gold_text, (time_gold_x, info_y + 5))
-
-        # Серия убийств (если активна)
-        if hasattr(self, 'killstreak_system') and self.killstreak_system.current_streak >= 3:
-            streak_text = self.info_font.render(
-                f"Серия: x{self.killstreak_system.current_streak}",
-                True,
-                (255, 100, 100)
-            )
-            self.screen.blit(streak_text, (time_gold_x, info_y + 22))
-
-        # Прогресс-бары
-        bar_y = info_y + 35
-        # Масштабируем размеры и позиции под ширину экрана
-        bar_width = self.ui_scaler.scale_width(350)
-        bar_height = 18
-        bar_spacing = self.ui_scaler.scale_width(30)  # Расстояние между полосами
-
-        # Получаем эффективные максимумы с учетом экипировки
-        effective_max_health = self.player.get_effective_max_health()
-        effective_max_mana = self.player.get_effective_max_mana()
-        effective_max_stamina = self.player.get_effective_max_stamina()
-
-        # Вычисляем проценты
-        health_percent = int((self.player.health / effective_max_health * 100) if effective_max_health > 0 else 0)
-        mana_percent = int((self.player.mana / effective_max_mana * 100) if effective_max_mana > 0 else 0)
-        stamina_percent = int((self.player.stamina / effective_max_stamina * 100) if effective_max_stamina > 0 else 0)
-
-        # Полоса здоровья (красная)
-        UIHelper.draw_progress_bar(
-            self.screen,
-            info_x, bar_y, bar_width, bar_height,
-            self.player.health, effective_max_health,
-            bg_color=(60, 20, 20),
-            fill_color=(200, 50, 50),
-            border_color=(255, 100, 100),
-            text=f"HP: {self.player.health}/{effective_max_health} ({health_percent}%)",
-            font=self.info_font
-        )
-
-        # Полоса маны (синяя)
-        mana_x = info_x + bar_width + bar_spacing
-        UIHelper.draw_progress_bar(
-            self.screen,
-            mana_x, bar_y, bar_width, bar_height,
-            self.player.mana, effective_max_mana,
-            bg_color=(20, 20, 60),
-            fill_color=(50, 100, 200),
-            border_color=(100, 150, 255),
-            text=f"MP: {self.player.mana}/{effective_max_mana} ({mana_percent}%)",
-            font=self.info_font
-        )
-
-        # Полоса выносливости (оранжевая)
-        stamina_x = mana_x + bar_width + bar_spacing
-        stamina_color = (200, 120, 50) if not self.player.is_resting else (150, 70, 30)
-        stamina_status = " [ОТДЫХ]" if self.player.is_resting else ""
-        UIHelper.draw_progress_bar(
-            self.screen,
-            stamina_x, bar_y, bar_width, bar_height,
-            self.player.stamina, effective_max_stamina,
-            bg_color=(60, 40, 20),
-            fill_color=stamina_color,
-            border_color=(255, 165, 0),
-            text=f"Stamina: {self.player.stamina}/{effective_max_stamina} ({stamina_percent}%){stamina_status}",
-            font=self.info_font
-        )
-
-        # Опыт и информация о статах (компактно)
-        exp_text = self.info_font.render(
-            f"Опыт: {self.player.experience}/{self.player.experience_to_next_level}",
-            True,
-            (180, 180, 180)
-        )
-        self.screen.blit(exp_text, (info_x, bar_y + 30))
-
-        # Нераспределенные очки характеристик (если есть)
-        if self.player.stat_points > 0:
-            stat_points_text = self.info_font.render(
-                f"Свободных очков: {self.player.stat_points} [Нажми C]",
-                True,
-                (100, 255, 100)
-            )
-            stat_points_x = self.ui_scaler.scale_width(320)
-            self.screen.blit(stat_points_text, (stat_points_x, bar_y + 30))
-
-        # Подсказка о помощи
-        help_hint = self.info_font.render(
-            "F1 - Справка | C - Характеристики | I - Инвентарь | K - Книга умений",
-            True,
-            (180, 180, 180)
-        )
-        help_hint_x = self.ui_scaler.scale_width(800)
-        self.screen.blit(help_hint, (help_hint_x, info_y + 55))
-
-        # Панель умений (8 слотов)
-        self._render_skill_panel()
-
-    def _render_skill_panel(self):
-        """Отрисовка панели умений над панелью параметров"""
-        # Размеры и позиция (масштабируются под разрешение)
-        slot_size = self.ui_scaler.scale_value(48)
-        slot_spacing = self.ui_scaler.scale_value(8)
-        panel_x = (self.window_width - (slot_size + slot_spacing) * 8) // 2
-        # Поднимаем над панелью параметров
-        ui_height = self.ui_scaler.scale_height(100)
-        ui_y = self.window_height - ui_height
-        panel_offset = self.ui_scaler.scale_value(15)
-        panel_y = ui_y - slot_size - panel_offset
-
-        # Отрисовываем 8 слотов
-        for i in range(8):
-            slot_x = panel_x + i * (slot_size + slot_spacing)
-            skill = self.player.skill_manager.get_slot_skill(i)
-
-            # Проверяем, доступно ли умение для использования
-            is_usable = False
-            if skill:
-                can_use, reason = skill.can_use(self.player)
-                is_usable = can_use
-
-            # Фон слота
-            if skill:
-                # Цвет фона зависит от категории умения и доступности
-                if is_usable:
-                    # Яркие цвета для доступных умений
-                    if skill.category.value == 'combat':
-                        bg_color = (80, 50, 50)
-                    elif skill.category.value == 'magic':
-                        bg_color = (50, 50, 80)
-                    elif skill.category.value == 'crafting':
-                        bg_color = (70, 70, 50)
-                    else:
-                        bg_color = (60, 60, 60)
-                else:
-                    # Темные цвета для недоступных умений
-                    if skill.category.value == 'combat':
-                        bg_color = (40, 25, 25)
-                    elif skill.category.value == 'magic':
-                        bg_color = (25, 25, 40)
-                    elif skill.category.value == 'crafting':
-                        bg_color = (35, 35, 25)
-                    else:
-                        bg_color = (30, 30, 30)
-            else:
-                bg_color = (30, 30, 30)
-
-            pygame.draw.rect(
-                self.screen,
-                bg_color,
-                (slot_x, panel_y, slot_size, slot_size)
-            )
-
-            # Рамка слота (ярче для доступных умений)
-            if skill and is_usable:
-                border_color = (200, 200, 100)  # Яркая желтая рамка для доступных
-            elif skill:
-                border_color = (80, 80, 80)  # Темная рамка для недоступных
-            else:
-                border_color = (100, 100, 100)  # Обычная рамка для пустых
-
-            pygame.draw.rect(
-                self.screen,
-                border_color,
-                (slot_x, panel_y, slot_size, slot_size),
-                2
-            )
-
-            # Номер слота (клавиша)
-            key_text = self.info_font.render(
-                str(i + 1),
-                True,
-                (200, 200, 200)
-            )
-            self.screen.blit(key_text, (slot_x + 4, panel_y + 4))
-
-            # Если есть умение, показываем его информацию
-            if skill:
-                # Иконка умения (первая буква названия)
-                icon_font = pygame.font.Font(None, 32)
-                icon_text = icon_font.render(
-                    skill.name[0],
-                    True,
-                    (255, 255, 255)
-                )
-                icon_rect = icon_text.get_rect()
-                icon_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2 + 4)
-                self.screen.blit(icon_text, icon_rect)
-
-                # Ранг умения (маленькими цифрами в углу)
-                rank_text = self.info_font.render(
-                    f"R{skill.rank}",
-                    True,
-                    (255, 215, 0)
-                )
-                self.screen.blit(rank_text, (slot_x + slot_size - 22, panel_y + slot_size - 18))
-
-                # Перезарядка (если есть)
-                if skill.current_cooldown > 0:
-                    cooldown_text = self.info_font.render(
-                        str(skill.current_cooldown),
-                        True,
-                        (255, 100, 100)
-                    )
-                    cooldown_rect = cooldown_text.get_rect()
-                    cooldown_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2)
-                    self.screen.blit(cooldown_text, cooldown_rect)
 
