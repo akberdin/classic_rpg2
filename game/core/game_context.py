@@ -177,6 +177,165 @@ class GameContext:
         """Получить ближайшего NPC."""
         return getattr(self._game, 'nearby_npc', None)
 
+    @nearby_npc.setter
+    def nearby_npc(self, value):
+        """Установить ближайшего NPC."""
+        self._game.nearby_npc = value
+
+    @property
+    def running(self) -> bool:
+        """Проверить, работает ли игра."""
+        return getattr(self._game, 'running', True)
+
+    @running.setter
+    def running(self, value: bool):
+        """Установить флаг работы игры."""
+        self._game.running = value
+
+    # === Флаги меню (с сеттерами) ===
+
+    @property
+    def inventory_menu_open(self) -> bool:
+        return getattr(self._game, 'inventory_menu_open', False)
+
+    @inventory_menu_open.setter
+    def inventory_menu_open(self, value: bool):
+        self._game.inventory_menu_open = value
+
+    @property
+    def trade_menu_open(self) -> bool:
+        return getattr(self._game, 'trade_menu_open', False)
+
+    @trade_menu_open.setter
+    def trade_menu_open(self, value: bool):
+        self._game.trade_menu_open = value
+
+    @property
+    def character_menu_open(self) -> bool:
+        return getattr(self._game, 'character_menu_open', False)
+
+    @character_menu_open.setter
+    def character_menu_open(self, value: bool):
+        self._game.character_menu_open = value
+
+    @property
+    def skill_book_menu_open(self) -> bool:
+        return getattr(self._game, 'skill_book_menu_open', False)
+
+    @skill_book_menu_open.setter
+    def skill_book_menu_open(self, value: bool):
+        self._game.skill_book_menu_open = value
+
+    @property
+    def interaction_menu_open(self) -> bool:
+        return getattr(self._game, 'interaction_menu_open', False)
+
+    @interaction_menu_open.setter
+    def interaction_menu_open(self, value: bool):
+        self._game.interaction_menu_open = value
+
+    @property
+    def quest_window_open(self) -> bool:
+        return getattr(self._game, 'quest_window_open', False)
+
+    @quest_window_open.setter
+    def quest_window_open(self, value: bool):
+        self._game.quest_window_open = value
+
+    @property
+    def event_window_open(self) -> bool:
+        return getattr(self._game, 'event_window_open', False)
+
+    @event_window_open.setter
+    def event_window_open(self, value: bool):
+        self._game.event_window_open = value
+
+    @property
+    def cheat_menu_open(self) -> bool:
+        return getattr(self._game, 'cheat_menu_open', False)
+
+    @cheat_menu_open.setter
+    def cheat_menu_open(self, value: bool):
+        self._game.cheat_menu_open = value
+
+    # === UI окна ===
+
+    @property
+    def inventory_window(self):
+        """Получить окно инвентаря."""
+        return getattr(self._game, 'inventory_window', None)
+
+    @property
+    def trade_window(self):
+        """Получить окно торговли."""
+        return getattr(self._game, 'trade_window', None)
+
+    @property
+    def character_window(self):
+        """Получить окно персонажа."""
+        return getattr(self._game, 'character_window', None)
+
+    @property
+    def skill_book_window(self):
+        """Получить окно книги умений."""
+        return getattr(self._game, 'skill_book_window', None)
+
+    @property
+    def quest_window(self):
+        """Получить окно квестов."""
+        return getattr(self._game, 'quest_window', None)
+
+    @property
+    def help_window(self):
+        """Получить окно помощи."""
+        return getattr(self._game, 'help_window', None)
+
+    # === Дополнительные системы ===
+
+    @property
+    def game_time(self):
+        """Получить систему времени."""
+        return getattr(self._game, 'game_time', None)
+
+    @property
+    def weather_system(self):
+        """Получить систему погоды."""
+        return getattr(self._game, 'weather_system', None)
+
+    @property
+    def killstreak_system(self):
+        """Получить систему серий убийств."""
+        return getattr(self._game, 'killstreak_system', None)
+
+    @property
+    def random_event_system(self):
+        """Получить систему случайных событий."""
+        return getattr(self._game, 'random_event_system', None)
+
+    # === Методы-делегаты ===
+
+    def start_combat(self, npc) -> None:
+        """Начать бой с NPC."""
+        if hasattr(self._game, '_start_combat'):
+            self._game._start_combat(npc)
+
+    def check_npc_nearby(self) -> None:
+        """Проверить наличие NPC поблизости."""
+        if hasattr(self._game, '_check_npc_nearby'):
+            self._game._check_npc_nearby()
+
+    def collect_resources(self) -> None:
+        """Собрать ресурсы."""
+        if hasattr(self._game, '_collect_resources'):
+            self._game._collect_resources()
+
+    def open_quest_window(self, location=None) -> None:
+        """Открыть окно квестов."""
+        if location and hasattr(self._game, 'open_quest_window'):
+            self._game.open_quest_window(location)
+        elif hasattr(self._game, 'open_quest_window_anywhere'):
+            self._game.open_quest_window_anywhere()
+
     # === Вспомогательные методы ===
 
     def get_player_position(self) -> Tuple[int, int]:
