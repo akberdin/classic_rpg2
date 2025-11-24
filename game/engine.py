@@ -29,6 +29,7 @@ from game.game_time import GameTime
 from game.camera import Camera
 from game.respawn_manager import RespawnManager
 from game.events import create_game_systems, TimeOfDayBonuses
+from game.loot_system import LootSystem
 
 
 class Game:
@@ -176,6 +177,9 @@ class Game:
         # Инициализация систем событий, погоды и серий убийств
         self.weather_system, self.random_event_system, self.killstreak_system = create_game_systems()
 
+        # Инициализация системы лута
+        self.loot_system = LootSystem(self.player, self.quest_manager, self.killstreak_system)
+
         # Даем игроку стартовые умения
         self.player.skill_manager.learn_skill('basic_attack')  # Базовая атака
         self.player.skill_manager.learn_skill('mining')  # Рудокоп ранг 1
@@ -275,56 +279,28 @@ class Game:
             if self.in_combat and self.combat_system:
                 result = self.combat_system.handle_input(event)
                 if result == "victory":
-                    # Генерируем лут (проверка на None)
+                    # Обрабатываем победу через LootSystem
                     defeated_enemy = self.combat_system.enemy
                     if defeated_enemy is None:
                         self.in_combat = False
                         self.combat_system = None
                         continue
-                    loot_items, loot_gold = self._generate_loot(defeated_enemy)
 
-                    # Применяем бонус серии убийств
-                    if hasattr(self, 'killstreak_system'):
-                        streak_info = self.killstreak_system.register_kill()
-                        multiplier = streak_info['multiplier']
-                        loot_gold = int(loot_gold * multiplier)
-                        if streak_info['message']:
-                            print(streak_info['message'])
+                    # LootSystem обрабатывает: генерацию лута, бонусы killstreak,
+                    # добавление в инвентарь, статистику убийств и квесты
+                    victory_result = self.loot_system.process_victory(defeated_enemy)
 
-                    # Добавляем лут в инвентарь игрока
-                    self.player.inventory.add_gold(loot_gold)
-                    for item, quantity in loot_items:
-                        self.player.inventory.add_item(item, quantity)
+                    # Выводим сообщение о серии убийств
+                    if victory_result['streak_message']:
+                        print(victory_result['streak_message'])
 
                     # Показываем окно лута
-                    self.loot_window.set_loot(loot_items, loot_gold, defeated_enemy.name)
+                    self.loot_window.set_loot(
+                        victory_result['loot_items'],
+                        victory_result['loot_gold'],
+                        defeated_enemy.name
+                    )
                     self.loot_window_open = True
-
-                    # Обновляем прогресс квестов на убийство
-                    if hasattr(defeated_enemy, 'npc_type'):
-                        enemy_type = defeated_enemy.npc_type
-                        # Обновляем статистику игрока
-                        if not hasattr(self.player, 'enemies_killed'):
-                            self.player.enemies_killed = 0
-                        self.player.enemies_killed += 1
-
-                        # Отслеживание убийств животных
-                        if enemy_type == 'wolf':
-                            if not hasattr(self.player, 'wolves_killed'):
-                                self.player.wolves_killed = 0
-                            self.player.wolves_killed += 1
-                        elif enemy_type == 'bear':
-                            if not hasattr(self.player, 'bears_killed'):
-                                self.player.bears_killed = 0
-                            self.player.bears_killed += 1
-                        elif enemy_type == 'deer':
-                            if not hasattr(self.player, 'deer_killed'):
-                                self.player.deer_killed = 0
-                            self.player.deer_killed += 1
-
-                        # Обновляем прогресс квестов для всех типов врагов
-                        if enemy_type in ['bandit', 'undead', 'wolf', 'bear', 'deer', 'necromancer']:
-                            self.update_kill_quest_progress(enemy_type)
 
                     self.in_combat = False
                     self.combat_system = None
@@ -740,17 +716,6 @@ class Game:
         }
         return item_mapping.get(item_name)
 
-    def update_kill_quest_progress(self, enemy_type):
-        """
-        Обновить прогресс квестов на убийство
-
-        Args:
-            enemy_type: Тип убитого врага ('bandit', 'undead')
-        """
-        messages = self.quest_manager.update_kill_progress(enemy_type)
-        for msg in messages:
-            print(f"  {msg}")
-
     def _start_combat(self, enemy):
         """
         Начать бой с NPC
@@ -1114,69 +1079,6 @@ class Game:
                     cooldown_rect = cooldown_text.get_rect()
                     cooldown_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2)
                     self.screen.blit(cooldown_text, cooldown_rect)
-
-    def _generate_loot(self, enemy):
-        """
-        Генерировать лут с поверженного врага
-
-        Args:
-            enemy: Поверженный враг
-
-        Returns:
-            tuple: (список предметов [(item, quantity)], количество золота)
-        """
-        from game.inventory import ItemGenerator, ItemQuality, PREDEFINED_ITEMS
-
-        loot_items = []
-        loot_gold = 0
-
-        # Животные дают специфичный лут без золота
-        if enemy.npc_type in ["wolf", "bear", "deer"]:
-            animal_loot = ItemGenerator.generate_animal_loot(enemy.npc_type)
-            for item in animal_loot:
-                loot_items.append((item, 1))
-            return loot_items, 0  # Животные не дают золото
-
-        # Золото зависит от уровня врага
-        base_gold = enemy.level * 5
-        loot_gold = random.randint(base_gold, base_gold * 2)
-
-        # Шанс выпадения предметов зависит от уровня врага
-        drop_chance = min(0.3 + enemy.level * 0.02, 0.8)  # От 30% до 80%
-
-        # Количество предметов (1-3)
-        num_items = random.randint(1, 3)
-
-        for _ in range(num_items):
-            if random.random() < drop_chance:
-                # Определяем тип предмета
-                item_type = random.choice(['equipment', 'potion', 'equipment', 'potion'])
-
-                if item_type == 'equipment':
-                    # Генерируем экипировку
-                    item_level = max(1, enemy.level + random.randint(-2, 2))
-                    quality = ItemGenerator.generate_quality()
-
-                    if random.random() < 0.5:
-                        item = ItemGenerator.generate_weapon(item_level, quality)
-                    else:
-                        item = ItemGenerator.generate_armor(item_level, quality=quality)
-
-                    loot_items.append((item, 1))
-
-                elif item_type == 'potion':
-                    # Зелья
-                    potion_choices = ['minor_health_potion', 'minor_stamina_potion', 'minor_mana_potion']
-                    if enemy.level >= 10:
-                        potion_choices.extend(['health_potion', 'stamina_potion', 'mana_potion'])
-
-                    potion_name = random.choice(potion_choices)
-                    if potion_name in PREDEFINED_ITEMS:
-                        potion = PREDEFINED_ITEMS[potion_name]
-                        quantity = random.randint(1, 2)
-                        loot_items.append((potion, quantity))
-
-        return loot_items, loot_gold
 
     def _render_interaction_menu(self):
         """Отрисовка меню взаимодействия с NPC"""
