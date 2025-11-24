@@ -74,7 +74,7 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_damage": 1.2,
-          "per_stat": 1.4,
+          "per_stat": 1.2,
           "per_param_percent": 0,
           "per_skill": 0
         }
@@ -90,9 +90,9 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": null,
         "price_multipliers": {
-          "per_damage": 1.3,
-          "per_stat": 1.5,
-          "per_param_percent": 1.4,
+          "per_damage": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -107,9 +107,9 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": null,
         "price_multipliers": {
-          "per_damage": 1.4,
-          "per_stat": 1.6,
-          "per_param_percent": 1.5,
+          "per_damage": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -124,10 +124,10 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": [1, 1],
         "price_multipliers": {
-          "per_damage": 1.5,
-          "per_stat": 1.8,
-          "per_param_percent": 1.6,
-          "per_skill": 2.2
+          "per_damage": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "legendary": {
@@ -141,10 +141,10 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": [2, 2],
         "price_multipliers": {
-          "per_damage": 1.7,
-          "per_stat": 2.0,
-          "per_param_percent": 1.8,
-          "per_skill": 3.0
+          "per_damage": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "artifact": {
@@ -158,10 +158,10 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": [3, 4],
         "price_multipliers": {
-          "per_damage": 2.0,
-          "per_stat": 2.5,
-          "per_param_percent": 2.2,
-          "per_skill": 4.0
+          "per_damage": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       }
     },
@@ -196,7 +196,7 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
-          "per_stat": 1.4,
+          "per_stat": 1.2,
           "per_param_percent": 1.2,
           "per_skill": 0
         }
@@ -212,9 +212,9 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": null,
         "price_multipliers": {
-          "per_defense": 1.3,
-          "per_stat": 1.5,
-          "per_param_percent": 1.4,
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -229,9 +229,9 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": null,
         "price_multipliers": {
-          "per_defense": 1.4,
-          "per_stat": 1.6,
-          "per_param_percent": 1.5,
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -246,10 +246,10 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": [1, 1],
         "price_multipliers": {
-          "per_defense": 1.5,
-          "per_stat": 1.8,
-          "per_param_percent": 1.6,
-          "per_skill": 2.2
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "legendary": {
@@ -264,9 +264,9 @@
         "skill_bonus_range": [2, 2],
         "price_multipliers": {
           "per_defense": 1.7,
-          "per_stat": 2.0,
-          "per_param_percent": 1.8,
-          "per_skill": 3.0
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "artifact": {
@@ -280,10 +280,10 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": [3, 4],
         "price_multipliers": {
-          "per_defense": 2.0,
-          "per_stat": 2.5,
-          "per_param_percent": 2.2,
-          "per_skill": 4.0
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       }
     },
@@ -318,7 +318,7 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
-          "per_stat": 1.4,
+          "per_stat": 1.2,
           "per_param_percent": 1.2,
           "per_skill": 0
         }
@@ -334,9 +334,9 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": null,
         "price_multipliers": {
-          "per_defense": 1.3,
-          "per_stat": 1.5,
-          "per_param_percent": 1.4,
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -351,9 +351,9 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": null,
         "price_multipliers": {
-          "per_defense": 1.4,
-          "per_stat": 1.6,
-          "per_param_percent": 1.5,
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -368,10 +368,10 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": [1, 1],
         "price_multipliers": {
-          "per_defense": 1.5,
-          "per_stat": 1.8,
-          "per_param_percent": 1.6,
-          "per_skill": 2.2
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "legendary": {
@@ -385,10 +385,10 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": [2, 2],
         "price_multipliers": {
-          "per_defense": 1.7,
-          "per_stat": 2.0,
-          "per_param_percent": 1.8,
-          "per_skill": 3.0
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "artifact": {
@@ -402,10 +402,10 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": [3, 4],
         "price_multipliers": {
-          "per_defense": 2.0,
-          "per_stat": 2.5,
-          "per_param_percent": 2.2,
-          "per_skill": 4.0
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       }
     },
@@ -440,7 +440,7 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
-          "per_stat": 1.4,
+          "per_stat": 1.2,
           "per_param_percent": 1.2,
           "per_skill": 0
         }
@@ -456,9 +456,9 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": null,
         "price_multipliers": {
-          "per_defense": 1.3,
-          "per_stat": 1.5,
-          "per_param_percent": 1.4,
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -473,9 +473,9 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": null,
         "price_multipliers": {
-          "per_defense": 1.4,
-          "per_stat": 1.6,
-          "per_param_percent": 1.5,
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -490,10 +490,10 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": [1, 1],
         "price_multipliers": {
-          "per_defense": 1.5,
-          "per_stat": 1.8,
-          "per_param_percent": 1.6,
-          "per_skill": 2.2
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "legendary": {
@@ -507,10 +507,10 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": [2, 2],
         "price_multipliers": {
-          "per_defense": 1.7,
-          "per_stat": 2.0,
-          "per_param_percent": 1.8,
-          "per_skill": 3.0
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "artifact": {
@@ -524,10 +524,10 @@
         "param_bonus_list": ["health", "mana", "stamina"],
         "skill_bonus_range": [3, 4],
         "price_multipliers": {
-          "per_defense": 2.0,
-          "per_stat": 2.5,
-          "per_param_percent": 2.2,
-          "per_skill": 4.0
+          "per_defense": 1.2,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       }
     },
@@ -562,8 +562,8 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 1.6,
-          "per_param_percent": 1.3,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -579,8 +579,8 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 1.7,
-          "per_param_percent": 1.4,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -596,9 +596,9 @@
         "skill_bonus_range": [1, 1],
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 1.8,
-          "per_param_percent": 1.5,
-          "per_skill": 2.0
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "epic": {
@@ -613,9 +613,9 @@
         "skill_bonus_range": [1, 2],
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 2.0,
-          "per_param_percent": 1.7,
-          "per_skill": 2.5
+          "per_stat": 1.0,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "legendary": {
@@ -630,9 +630,9 @@
         "skill_bonus_range": [2, 3],
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 2.2,
-          "per_param_percent": 2.0,
-          "per_skill": 3.5
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "artifact": {
@@ -647,9 +647,9 @@
         "skill_bonus_range": [4, 5],
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 2.8,
-          "per_param_percent": 2.5,
-          "per_skill": 5.0
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       }
     },
@@ -684,8 +684,8 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 1.6,
-          "per_param_percent": 1.3,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -701,8 +701,8 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 1.7,
-          "per_param_percent": 1.4,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -718,8 +718,8 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 1.8,
-          "per_param_percent": 1.5,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -735,9 +735,9 @@
         "skill_bonus_range": [1, 1],
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 2.0,
-          "per_param_percent": 1.7,
-          "per_skill": 2.5
+          "per_stat": 1.0,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "legendary": {
@@ -752,9 +752,9 @@
         "skill_bonus_range": [2, 2],
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 2.2,
-          "per_param_percent": 2.0,
-          "per_skill": 3.5
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "artifact": {
@@ -769,9 +769,9 @@
         "skill_bonus_range": [3, 4],
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 2.8,
-          "per_param_percent": 2.5,
-          "per_skill": 5.0
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       }
     },
@@ -806,8 +806,8 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 1.6,
-          "per_param_percent": 1.3,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -823,8 +823,8 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 1.7,
-          "per_param_percent": 1.4,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -840,8 +840,8 @@
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 1.8,
-          "per_param_percent": 1.5,
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
           "per_skill": 0
         }
       },
@@ -857,9 +857,9 @@
         "skill_bonus_range": [1, 1],
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 2.0,
-          "per_param_percent": 1.7,
-          "per_skill": 2.5
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "legendary": {
@@ -874,9 +874,9 @@
         "skill_bonus_range": [2, 2],
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 2.2,
-          "per_param_percent": 2.0,
-          "per_skill": 3.5
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       },
       "artifact": {
@@ -891,9 +891,9 @@
         "skill_bonus_range": [3, 4],
         "price_multipliers": {
           "per_defense": 0,
-          "per_stat": 2.8,
-          "per_param_percent": 2.5,
-          "per_skill": 5.0
+          "per_stat": 1.2,
+          "per_param_percent": 1.2,
+          "per_skill": 1.2
         }
       }
     }
