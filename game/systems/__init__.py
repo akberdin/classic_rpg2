@@ -1,13 +1,13 @@
 """
-Game Systems <>4C;L.
+Game Systems модуль.
 
-!>45@68B 83@>2K5 A8AB5<K:
-- skills - A8AB5<0 C<5=89 8 AB0BCA-MDD5:B>2
+Содержит игровые системы:
+- skills - система умений и статус-эффектов
 """
 
-#  5M:A?>@B >A=>2=KE :;0AA>2 87 skills 4;O C4>1AB20
+# Реэкспорт основных классов из skills для удобства
 from game.systems.skills import (
-    # -DD5:BK
+    # Эффекты
     StatusEffect,
     PoisonEffect,
     StunEffect,
@@ -15,16 +15,16 @@ from game.systems.skills import (
     StaminaRecoveryEffect,
     StrengthBoostEffect,
     ShieldEffect,
-    # 07>2K5 :;0AAK
+    # Базовые классы
     Skill,
     SkillCategory,
     SkillManager,
-    # !;>20@L C<5=89
+    # Словарь умений
     AVAILABLE_SKILLS,
 )
 
 __all__ = [
-    # -DD5:BK
+    # Эффекты
     'StatusEffect',
     'PoisonEffect',
     'StunEffect',
@@ -32,10 +32,10 @@ __all__ = [
     'StaminaRecoveryEffect',
     'StrengthBoostEffect',
     'ShieldEffect',
-    # 07>2K5 :;0AAK
+    # Базовые классы
     'Skill',
     'SkillCategory',
     'SkillManager',
-    # !;>20@L
+    # Словарь
     'AVAILABLE_SKILLS',
 ]
