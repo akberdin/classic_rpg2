@@ -109,6 +109,47 @@ class NPC(Character):
         """
         pass
 
+    def _parse_ai_context(self, context_or_map, all_npcs=None, player=None, current_hour=12):
+        """
+        Разобрать параметры вызова update_ai.
+
+        Поддерживает два способа вызова:
+        1. С AIContext (новый способ)
+        2. С отдельными параметрами (старый способ)
+
+        Returns:
+            tuple: (game_map, all_npcs, player, current_hour)
+        """
+        from game.core.ai_context import AIContext
+        if isinstance(context_or_map, AIContext):
+            ctx = context_or_map
+            return (ctx.game_map, ctx.all_npcs, ctx.player, ctx.current_hour)
+        return (context_or_map, all_npcs, player, current_hour)
+
+    def _pre_update_ai(self, current_hour, game_map):
+        """
+        Общие проверки перед обновлением AI.
+
+        Выполняет: is_alive, расписание, is_hidden, recover_stamina, is_resting.
+
+        Returns:
+            bool: True если можно продолжать update_ai
+        """
+        if not self.is_alive:
+            return False
+
+        self.update_schedule(current_hour, game_map)
+
+        if self.is_hidden():
+            return False
+
+        self.recover_stamina()
+
+        if self.is_resting:
+            return False
+
+        return True
+
     def _find_next_step(self, target_x, target_y, game_map, max_search_distance=50):
         """
         Найти следующий шаг к цели используя BFS (поиск в ширину)

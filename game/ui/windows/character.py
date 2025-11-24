@@ -2,17 +2,17 @@
 Окно характеристик персонажа.
 """
 import pygame
-from game.ui.base import UIHelper
+from game.ui.windows.base import BaseWindow
 
 
-class CharacterWindow:
+class CharacterWindow(BaseWindow):
     """Окно характеристик персонажа"""
 
+    BASE_WIDTH = 700
+    BASE_HEIGHT = 600
+
     def __init__(self, screen, font, info_font, scaler=None):
-        self.screen = screen
-        self.font = font
-        self.info_font = info_font
-        self.scaler = scaler
+        super().__init__(screen, font, info_font, scaler)
         self.selected_stat_index = 0
 
         # Список характеристик для навигации
@@ -32,51 +32,18 @@ class CharacterWindow:
         Args:
             player: Объект игрока
         """
-        # Получаем размеры экрана
-        screen_width = self.screen.get_width()
-        screen_height = self.screen.get_height()
-
-        # Затемнение фона
-        overlay = pygame.Surface((screen_width, screen_height))
-        overlay.set_alpha(150)
-        overlay.fill((0, 0, 0))
-        self.screen.blit(overlay, (0, 0))
-
-        # Размеры окна (адаптивные)
-        if self.scaler:
-            window_width = self.scaler.scale_width(700)
-            window_height = self.scaler.scale_height(600)
-        else:
-            window_width = min(700, int(screen_width * 0.7))
-            window_height = min(600, int(screen_height * 0.7))
-
-        window_x = (screen_width - window_width) // 2
-        window_y = (screen_height - window_height) // 2
-
-        # Коэффициенты масштабирования
-        scale_w = window_width / 700
-        scale_h = window_height / 600
-
-        # Фон окна с градиентом
-        UIHelper.draw_gradient_rect(
-            self.screen, window_x, window_y, window_width, window_height,
-            (35, 35, 45), (55, 55, 70)
+        # Используем базовый класс для отрисовки окна
+        win = self.begin_render(
+            self.BASE_WIDTH, self.BASE_HEIGHT,
+            title="ХАРАКТЕРИСТИКИ ПЕРСОНАЖА"
         )
 
-        # Рамка
-        pygame.draw.rect(
-            self.screen,
-            (120, 120, 150),
-            (window_x, window_y, window_width, window_height),
-            3
-        )
-
-        # Заголовок
-        title_text = self.font.render("ХАРАКТЕРИСТИКИ ПЕРСОНАЖА", True, (255, 215, 0))
-        title_rect = title_text.get_rect()
-        title_rect.centerx = window_x + window_width // 2
-        title_rect.y = window_y + int(10 * scale_h)
-        self.screen.blit(title_text, title_rect)
+        window_x = win['x']
+        window_y = win['y']
+        window_width = win['width']
+        window_height = win['height']
+        scale_w = win['scale_w']
+        scale_h = win['scale_h']
 
         # Информация о персонаже
         info_y = window_y + int(50 * scale_h)
