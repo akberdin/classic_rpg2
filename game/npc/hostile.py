@@ -109,6 +109,12 @@ class Bandit(NPC):
             self.idle_timer -= 1
             return
 
+        # Проверяем дискомфорт от коллизии с другими NPC
+        if self._check_and_handle_npc_collision(all_npcs):
+            # Пытаемся разойтись
+            if self._try_move_away_from_collision(game_map, all_npcs):
+                return  # Успешно разошлись, завершаем ход
+
         # ВСЕГДА проверяем наличие врагов поблизости (включая игрока)
         self._check_for_enemies(all_npcs, player)
 
@@ -401,6 +407,12 @@ class Undead(NPC):
         if self.idle_timer > 0:
             self.idle_timer -= 1
             return
+
+        # Проверяем дискомфорт от коллизии с другими NPC
+        if self._check_and_handle_npc_collision(all_npcs):
+            # Пытаемся разойтись
+            if self._try_move_away_from_collision(game_map, all_npcs):
+                return  # Успешно разошлись, завершаем ход
 
         # ВСЕГДА проверяем наличие врагов поблизости (включая игрока)
         self._check_for_enemies(all_npcs, player)

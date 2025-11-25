@@ -1415,6 +1415,30 @@ class ItemGenerator:
                 extra_artifact = random.choices(artifacts, weights=weights)[0]
                 loot.append((PREDEFINED_ITEMS[extra_artifact], 1))
 
+            # Шанс найти книгу умений в руинах (базовый 15% + бонус от удачи до 10%)
+            book_chance = 0.15 + min(luck * 0.005, 0.10)
+            if random.random() < book_chance:
+                # Список всех книг умений
+                all_skill_books = [
+                    # Общие боевые умения
+                    "book_power_strike", "book_poison_strike", "book_stun_strike", "book_battle_cry",
+                    # Умения лука
+                    "book_precise_shot", "book_rapid_fire", "book_piercing_arrow",
+                    # Умения кинжала
+                    "book_backstab", "book_bleeding_cut", "book_shadow_step",
+                    # Умения меча
+                    "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance",
+                    # Магические умения (поддержка)
+                    "book_heal", "book_regeneration", "book_stamina_recovery", "book_mage_shield",
+                    # Атакующая магия
+                    "book_magic_missile", "book_fireball", "book_ice_bolt", "book_lightning"
+                ]
+
+                # Выбираем случайную книгу
+                book_id = random.choice(all_skill_books)
+                if book_id in PREDEFINED_ITEMS:
+                    loot.append((PREDEFINED_ITEMS[book_id], 1))
+
         elif location_type == LOCATION_BANDIT_CAMP:
             # Бандиты могут иметь разное снаряжение
             weapon_chance = 0.3 + min(luck * 0.01, 0.15)
