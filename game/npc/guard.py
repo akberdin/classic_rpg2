@@ -78,6 +78,10 @@ class Guard(NPC):
             player: Объект игрока (не используется)
             current_hour: Текущий час суток (только для старого способа)
         """
+        # Сохраняем context для передачи в методы боя
+        from game.core.ai_context import AIContext
+        context = context_or_map if isinstance(context_or_map, AIContext) else None
+
         # Используем базовые методы для парсинга и проверок
         game_map, all_npcs, player, current_hour = self._parse_ai_context(
             context_or_map, all_npcs, player, current_hour
