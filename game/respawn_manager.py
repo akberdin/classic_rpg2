@@ -22,9 +22,8 @@ class RespawnManager:
         self.game_map = game_map
         # Очередь респавна: [(npc_data, turns_remaining), ...]
         self.respawn_queue = []
-        # Минимальное и максимальное время респавна (в игровых часах)
-        self.min_respawn_time = 10
-        self.max_respawn_time = 20
+        # Фиксированное время респавна (в игровых часах)
+        self.respawn_time = 20
 
     def register_death(self, npc):
         """
@@ -42,10 +41,8 @@ class RespawnManager:
             'npc_class': type(npc).__name__
         }
 
-        # Случайное время респавна от 10 до 20 ходов
-        respawn_time = random.randint(self.min_respawn_time, self.max_respawn_time)
-
-        self.respawn_queue.append((respawn_data, respawn_time))
+        # Фиксированное время респавна - 20 ходов
+        self.respawn_queue.append((respawn_data, self.respawn_time))
 
     def _extract_name_base(self, full_name):
         """
@@ -183,7 +180,9 @@ class RespawnManager:
             ]
             name = f"{random.choice(bandit_names)} {location_name}"
             new_npc = Bandit(name, x, y, level, spawn_x, spawn_y)
-            game.bandits.append(new_npc)
+            # Используем npc_manager для правильного добавления NPC с инвалидацией кэша
+            from game.core.npc_manager import NPCType
+            game.npc_manager.add_npc(new_npc, NPCType.BANDIT)
 
         elif npc_class == 'Undead':
             undead_names = [
@@ -192,13 +191,17 @@ class RespawnManager:
             ]
             name = f"{random.choice(undead_names)} {location_name}"
             new_npc = Undead(name, x, y, level, spawn_x, spawn_y)
-            game.undead.append(new_npc)
+            # Используем npc_manager для правильного добавления NPC с инвалидацией кэша
+            from game.core.npc_manager import NPCType
+            game.npc_manager.add_npc(new_npc, NPCType.UNDEAD)
 
         elif npc_class == 'Miner':
             miner_names = ["Шахтер", "Рудокоп", "Горняк", "Копатель"]
             name = f"{random.choice(miner_names)} {location_name}"
             new_npc = Miner(name, x, y, level, spawn_x, spawn_y)
-            game.miners.append(new_npc)
+            # Используем npc_manager для правильного добавления NPC с инвалидацией кэша
+            from game.core.npc_manager import NPCType
+            game.npc_manager.add_npc(new_npc, NPCType.MINER)
 
         elif npc_class == 'Guard':
             name = f"Стражник {location_name}"
@@ -206,7 +209,9 @@ class RespawnManager:
             # Создаем маршрут патрулирования
             patrol_route = self._create_patrol_route(x, y, radius=5)
             new_npc.set_patrol_route(patrol_route)
-            game.guards.append(new_npc)
+            # Используем npc_manager для правильного добавления NPC с инвалидацией кэша
+            from game.core.npc_manager import NPCType
+            game.npc_manager.add_npc(new_npc, NPCType.GUARD)
 
         elif npc_class == 'MagePatrol':
             mage_names = [
@@ -215,7 +220,9 @@ class RespawnManager:
             ]
             name = f"{random.choice(mage_names)} {location_name}"
             new_npc = MagePatrol(name, x, y, level, spawn_x, spawn_y)
-            game.mages.append(new_npc)
+            # Используем npc_manager для правильного добавления NPC с инвалидацией кэша
+            from game.core.npc_manager import NPCType
+            game.npc_manager.add_npc(new_npc, NPCType.MAGE)
 
         if new_npc:
             print(f"[Респавн] {new_npc.name} (Ур. {level}) появился в {location_name}")
