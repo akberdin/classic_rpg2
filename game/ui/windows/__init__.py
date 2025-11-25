@@ -15,6 +15,7 @@ from game.ui.windows.quest import QuestWindow
 from game.ui.windows.random_event import RandomEventWindow
 from game.ui.windows.cheat_menu import CheatMenuWindow
 from game.ui.windows.interaction import InteractionWindow
+from game.ui.windows.exit_confirmation import ExitConfirmationWindow
 
 __all__ = [
     'BaseWindow',
@@ -28,4 +29,5 @@ __all__ = [
     'RandomEventWindow',
     'CheatMenuWindow',
     'InteractionWindow',
+    'ExitConfirmationWindow',
 ]

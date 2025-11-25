@@ -581,7 +581,8 @@ class InputHandler:
             print(f"Вы отдохнули. {self.ctx.game_time.get_time_string()}")
             return
         elif key == pygame.K_ESCAPE:
-            self.ctx.running = False
+            # Открываем окно подтверждения выхода
+            self.ctx.exit_confirmation_open = True
         elif key == pygame.K_e:
             # Взаимодействие с NPC
             self.ctx.check_npc_nearby()

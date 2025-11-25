@@ -12,7 +12,7 @@ from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
 from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow, CheatMenuWindow
-from game.ui.windows import InteractionWindow
+from game.ui.windows import InteractionWindow, ExitConfirmationWindow
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quests import (QuestManager, AchievementManager,
                         QuestGenerator, create_unique_quests, get_unique_quest_for_location,
@@ -132,6 +132,10 @@ class Game:
 
         # Окно взаимодействия с NPC
         self.interaction_window = InteractionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+
+        # Окно подтверждения выхода
+        self.exit_confirmation_window = ExitConfirmationWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.exit_confirmation_open = False
 
         # Менеджер спрайтов
         from game.sprite_manager import SpriteManager
@@ -298,7 +302,19 @@ class Game:
         """Обработка событий ввода"""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.running = False
+                # Открываем окно подтверждения выхода вместо немедленного выхода
+                if not self.exit_confirmation_open:
+                    self.exit_confirmation_open = True
+                    continue
+
+            # Если открыто окно подтверждения выхода, обрабатываем его события
+            if self.exit_confirmation_open:
+                result = self.exit_confirmation_window.handle_input(event)
+                if result == 'yes':
+                    self.running = False
+                elif result == 'no':
+                    self.exit_confirmation_open = False
+                continue
 
             # Если идет бой, передаем управление боевой системе
             if self.in_combat and self.combat_system:
@@ -516,6 +532,10 @@ class Game:
         # Если открыто чит меню, отрисовываем его
         if self.cheat_menu_open:
             self.cheat_menu_window.render()
+
+        # Если открыто окно подтверждения выхода, отрисовываем его
+        if self.exit_confirmation_open:
+            self.exit_confirmation_window.render()
 
         # Отрисовка окна помощи (поверх всего)
         self.help_window.render()

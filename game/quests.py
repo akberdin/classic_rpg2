@@ -2237,9 +2237,23 @@ class QuestGenerator:
         quest_types = ['gather', 'gather', 'kill']  # Больше квестов на сбор
         random.shuffle(quest_types)
 
+        # Гарантируем хотя бы один квест на части животных
+        animal_parts = ['bear_hide', 'deer_hide', 'bear_meat', 'deer_meat']
+        other_resources = ['silver_ore', 'gold_ore', 'mithril_ore']
+        animal_quest_added = False
+
         for i in range(min(count, len(quest_types))):
             if quest_types[i] == 'gather':
-                resource_key = random.choice(list(QuestGenerator.CITY_GATHER_QUESTS.keys()))
+                # Если это первый квест на сбор и мы еще не добавили квест на части животных
+                if not animal_quest_added and random.random() < 0.7:  # 70% шанс на части животных
+                    resource_key = random.choice(animal_parts)
+                    animal_quest_added = True
+                else:
+                    # Выбираем из всех ресурсов
+                    resource_key = random.choice(list(QuestGenerator.CITY_GATHER_QUESTS.keys()))
+                    if resource_key in animal_parts:
+                        animal_quest_added = True
+
                 quest = QuestGenerator._generate_specialized_gather_quest(
                     resource_key, QuestGenerator.CITY_GATHER_QUESTS[resource_key],
                     location_name, location_id, player_level,
@@ -2264,9 +2278,23 @@ class QuestGenerator:
         quest_types = ['gather', 'kill', 'gather']  # Смешанные квесты
         random.shuffle(quest_types)
 
+        # Гарантируем хотя бы один квест на части животных
+        animal_parts = ['wolf_hide', 'wolf_fang', 'bear_meat', 'deer_meat', 'deer_hide', 'bear_hide', 'bear_fang']
+        other_resources = ['copper_ore', 'iron_ore']
+        animal_quest_added = False
+
         for i in range(min(count, len(quest_types))):
             if quest_types[i] == 'gather':
-                resource_key = random.choice(list(QuestGenerator.VILLAGE_GATHER_QUESTS.keys()))
+                # Если это первый квест на сбор и мы еще не добавили квест на части животных
+                if not animal_quest_added and random.random() < 0.7:  # 70% шанс на части животных
+                    resource_key = random.choice(animal_parts)
+                    animal_quest_added = True
+                else:
+                    # Выбираем из всех ресурсов
+                    resource_key = random.choice(list(QuestGenerator.VILLAGE_GATHER_QUESTS.keys()))
+                    if resource_key in animal_parts:
+                        animal_quest_added = True
+
                 quest = QuestGenerator._generate_specialized_gather_quest(
                     resource_key, QuestGenerator.VILLAGE_GATHER_QUESTS[resource_key],
                     location_name, location_id, player_level,
