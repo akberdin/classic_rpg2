@@ -166,7 +166,7 @@ class MagePatrol(NPC):
 
         if self.state == "combat":
             if self.consume_stamina():
-                self._combat_step(game_map)
+                self._combat_step(game_map, context)
         elif self.state == "patrol":
             # Делаем 1 шаг за 1 час (избегаем телепортации)
             if self.consume_stamina():
@@ -209,7 +209,7 @@ class MagePatrol(NPC):
             self.state = "patrol"
             self.pursuit_counter = 0
 
-    def _combat_step(self, game_map):
+    def _combat_step(self, game_map, context=None):
         """
         Один шаг боевого поведения
 
