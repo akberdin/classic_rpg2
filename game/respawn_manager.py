@@ -2,7 +2,9 @@
 Система автоматического респавна NPC
 """
 import random
-from game.npc import Guard, Merchant, MagicMerchant, MagePatrol, Bandit, Miner, Undead
+from game.npc import (Guard, Merchant, MagicMerchant, MagePatrol, Bandit, Miner, Undead)
+from game.npc.animal import Wolf, Bear, Deer
+from game.npc.unique import Alchemist, Hunter, Necromancer
 from game.constants import (
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
     LOCATION_MINE, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL
@@ -43,6 +45,7 @@ class RespawnManager:
 
         # Фиксированное время респавна - 20 ходов
         self.respawn_queue.append((respawn_data, self.respawn_time))
+        print(f"[Респавн] {npc.name} ({respawn_data['npc_class']}) зарегистрирован для респавна через {self.respawn_time} ходов. Всего в очереди: {len(self.respawn_queue)}")
 
     def _extract_name_base(self, full_name):
         """
@@ -109,6 +112,21 @@ class RespawnManager:
                 center_x = sum(p[0] for p in route) // len(route)
                 center_y = sum(p[1] for p in route) // len(route)
                 return (center_x, center_y, LOCATION_CITY)
+        elif npc_class in ['Wolf', 'Bear', 'Deer']:
+            # Животные привязаны к точке спавна
+            if hasattr(npc, 'spawn_x') and hasattr(npc, 'spawn_y'):
+                return (npc.spawn_x, npc.spawn_y, None)
+        elif npc_class == 'Hunter':
+            # Охотники привязаны к дому
+            if hasattr(npc, 'home_x') and hasattr(npc, 'home_y'):
+                return (npc.home_x, npc.home_y, None)
+        elif npc_class == 'Necromancer':
+            # Некроманты привязаны к руинам
+            if hasattr(npc, 'ruins_x') and hasattr(npc, 'ruins_y'):
+                return (npc.ruins_x, npc.ruins_y, LOCATION_RUINS)
+        elif npc_class == 'Alchemist':
+            # Алхимики стационарны
+            return (npc.x, npc.y, None)
 
         # Для остальных NPC используем их текущую позицию
         return (npc.x, npc.y, None)
@@ -132,11 +150,16 @@ class RespawnManager:
             if turns_remaining <= 0:
                 # NPC готов к респавну
                 ready_to_respawn.append(respawn_data)
+                print(f"[Респавн] {respawn_data['npc_class']} готов к респавну!")
             else:
                 # Еще не время
                 remaining_queue.append((respawn_data, turns_remaining))
 
         self.respawn_queue = remaining_queue
+
+        if ready_to_respawn:
+            print(f"[Респавн] Готовы к респавну {len(ready_to_respawn)} NPC. Осталось в очереди: {len(self.respawn_queue)}")
+
         return ready_to_respawn
 
     def respawn_npc(self, respawn_data, game):
@@ -223,6 +246,53 @@ class RespawnManager:
             # Используем npc_manager для правильного добавления NPC с инвалидацией кэша
             from game.core.npc_manager import NPCType
             game.npc_manager.add_npc(new_npc, NPCType.MAGE)
+
+        elif npc_class == 'Wolf':
+            wolf_names = ["Волк", "Серый волк", "Лесной волк", "Степной волк"]
+            name = f"{random.choice(wolf_names)} {location_name}"
+            # Волки могут патрулировать или странствовать
+            behavior_mode = random.choice(["patrol", "wander"])
+            new_npc = Wolf(name, x, y, level, spawn_x, spawn_y, behavior_mode)
+            from game.core.npc_manager import NPCType
+            game.npc_manager.add_npc(new_npc, NPCType.ANIMAL)
+
+        elif npc_class == 'Bear':
+            bear_names = ["Медведь", "Бурый медведь", "Лесной медведь", "Горный медведь"]
+            name = f"{random.choice(bear_names)} {location_name}"
+            # Медведи обычно патрулируют территорию
+            behavior_mode = random.choice(["patrol", "wander"])
+            new_npc = Bear(name, x, y, level, spawn_x, spawn_y, behavior_mode)
+            from game.core.npc_manager import NPCType
+            game.npc_manager.add_npc(new_npc, NPCType.ANIMAL)
+
+        elif npc_class == 'Deer':
+            deer_names = ["Олень", "Благородный олень", "Лесной олень", "Пятнистый олень"]
+            name = f"{random.choice(deer_names)} {location_name}"
+            # Олени обычно странствуют
+            behavior_mode = random.choice(["patrol", "wander"])
+            new_npc = Deer(name, x, y, level, spawn_x, spawn_y, behavior_mode)
+            from game.core.npc_manager import NPCType
+            game.npc_manager.add_npc(new_npc, NPCType.ANIMAL)
+
+        elif npc_class == 'Alchemist':
+            name = f"Алхимик {location_name}"
+            new_npc = Alchemist(name, x, y, level)
+            from game.core.npc_manager import NPCType
+            game.npc_manager.add_npc(new_npc, NPCType.ALCHEMIST)
+
+        elif npc_class == 'Hunter':
+            hunter_names = ["Охотник", "Следопыт", "Егерь", "Ловчий"]
+            name = f"{random.choice(hunter_names)} {location_name}"
+            new_npc = Hunter(name, x, y, level, spawn_x, spawn_y)
+            from game.core.npc_manager import NPCType
+            game.npc_manager.add_npc(new_npc, NPCType.HUNTER)
+
+        elif npc_class == 'Necromancer':
+            necromancer_names = ["Некромант", "Темный маг", "Повелитель мертвых", "Некромант-отступник"]
+            name = f"{random.choice(necromancer_names)} {location_name}"
+            new_npc = Necromancer(name, x, y, level, spawn_x, spawn_y)
+            from game.core.npc_manager import NPCType
+            game.npc_manager.add_npc(new_npc, NPCType.NECROMANCER)
 
         if new_npc:
             print(f"[Респавн] {new_npc.name} (Ур. {level}) появился в {location_name}")
