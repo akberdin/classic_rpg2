@@ -325,13 +325,14 @@ class NPC(Character):
 
         return False
 
-    def _simplified_npc_combat(self, enemy):
+    def _simplified_npc_combat(self, enemy, context=None):
         """
         Упрощенный бой между NPC - моментальный расчет победителя
         Рассчитывает исход боя мгновенно на основе характеристик
 
         Args:
             enemy: Враг для боя
+            context: AIContext (опционально) для регистрации смертей
 
         Returns:
             bool: True если враг повержен
@@ -363,7 +364,14 @@ class NPC(Character):
             counter_damage = int(enemy.get_total_damage() * random.uniform(0.3, 0.7))
             self.take_damage(counter_damage)
 
-            return not enemy.is_alive
+            # Регистрируем смерть врага для респавна
+            enemy_killed = not enemy.is_alive
+            if enemy_killed and context and context.respawn_manager and context.game:
+                print(f"\n[DEBUG БЫСТРЫЙ БОЙ] {enemy.name} побежден в быстром бою!")
+                print(f"[DEBUG БЫСТРЫЙ БОЙ] Регистрируем смерть для респавна...")
+                context.respawn_manager.register_death(enemy, context.game)
+
+            return enemy_killed
         else:
             # Враг побеждает
             power_ratio = enemy_power / self_power
@@ -373,5 +381,12 @@ class NPC(Character):
             # Враг тоже получает урон, но меньше
             counter_damage = int(self.get_total_damage() * random.uniform(0.3, 0.7))
             enemy.take_damage(counter_damage)
+
+            # Регистрируем смерть этого NPC для респавна
+            self_killed = not self.is_alive
+            if self_killed and context and context.respawn_manager and context.game:
+                print(f"\n[DEBUG БЫСТРЫЙ БОЙ] {self.name} побежден в быстром бою!")
+                print(f"[DEBUG БЫСТРЫЙ БОЙ] Регистрируем смерть для респавна...")
+                context.respawn_manager.register_death(self, context.game)
 
             return False
