@@ -131,8 +131,8 @@ class Merchant(NPC):
             quantity = random.randint(3 + rank * 2, 10 + rank * 5)  # Больше ресурсов
             self.inventory.add_item(PREDEFINED_ITEMS[resource_type], quantity)
 
-        # Книги боевых умений (только для торговцев 3-4 ранга с вероятностью)
-        if rank >= 3:
+        # Книги боевых умений (для торговцев 2-4 ранга с вероятностью)
+        if rank >= 2:
             combat_books = [
                 # Общие боевые
                 "book_power_strike", "book_poison_strike", "book_stun_strike", "book_battle_cry",
@@ -143,9 +143,17 @@ class Merchant(NPC):
                 # Оружейные - меч
                 "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance"
             ]
-            # Шанс 30% для ранга 3, 50% для ранга 4
-            book_chance = 0.3 if rank == 3 else 0.5
-            num_books = 1 if rank == 3 else random.randint(1, 2)
+
+            # Шанс зависит от ранга: 20% для ранга 2, 50% для ранга 3, 80% для ранга 4
+            if rank == 2:
+                book_chance = 0.2
+                num_books = 1
+            elif rank == 3:
+                book_chance = 0.5
+                num_books = random.randint(1, 2)
+            else:  # rank 4
+                book_chance = 0.8
+                num_books = random.randint(2, 3)
 
             if random.random() < book_chance:
                 for book_id in random.sample(combat_books, min(num_books, len(combat_books))):
@@ -195,6 +203,23 @@ class Merchant(NPC):
             quality = ItemGenerator.generate_quality_for_shop(rank)
             jewelry = ItemGenerator.generate_jewelry(self.level, quality=quality)
             self.inventory.add_item(jewelry, 1)
+
+        # Шанс добавить книгу умения (для торговцев 2-4 ранга)
+        if rank >= 2:
+            combat_books = [
+                "book_power_strike", "book_poison_strike", "book_stun_strike", "book_battle_cry",
+                "book_precise_shot", "book_rapid_fire", "book_piercing_arrow",
+                "book_backstab", "book_bleeding_cut", "book_shadow_step",
+                "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance"
+            ]
+
+            # Шанс зависит от ранга: 15% для ранга 2, 30% для ранга 3, 50% для ранга 4
+            book_chance = 0.15 if rank == 2 else (0.3 if rank == 3 else 0.5)
+
+            if random.random() < book_chance:
+                book_id = random.choice(combat_books)
+                if book_id in PREDEFINED_ITEMS:
+                    self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
 
     def set_settlements(self, settlements):
         """
