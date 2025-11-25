@@ -79,6 +79,53 @@ class LootSystem:
                         quantity = random.randint(1, 2)
                         loot_items.append((potion, quantity))
 
+        # Шанс выпадения книг умений (зависит от уровня врага)
+        # Чем выше уровень врага, тем больше шанс
+        book_drop_chance = min(0.05 + enemy.level * 0.005, 0.20)  # от 5% до 20%
+
+        if random.random() < book_drop_chance:
+            # Список всех книг умений
+            all_skill_books = [
+                # Общие боевые умения
+                "book_power_strike", "book_poison_strike", "book_stun_strike", "book_battle_cry",
+                # Умения лука
+                "book_precise_shot", "book_rapid_fire", "book_piercing_arrow",
+                # Умения кинжала
+                "book_backstab", "book_bleeding_cut", "book_shadow_step",
+                # Умения меча
+                "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance",
+                # Магические умения (поддержка)
+                "book_heal", "book_regeneration", "book_stamina_recovery", "book_mage_shield",
+                # Атакующая магия
+                "book_magic_missile", "book_fireball", "book_ice_bolt", "book_lightning"
+            ]
+
+            # Выбираем случайную книгу
+            book_id = random.choice(all_skill_books)
+            if book_id in PREDEFINED_ITEMS:
+                loot_items.append((PREDEFINED_ITEMS[book_id], 1))
+
+        # Специальный лут для бандитов - древние монеты
+        if enemy.npc_type == "bandit":
+            coin_drop_chance = min(0.30 + enemy.level * 0.01, 0.60)  # от 30% до 60%
+            if random.random() < coin_drop_chance:
+                quantity = random.randint(1, 3)
+                loot_items.append((PREDEFINED_ITEMS["ancient_coin"], quantity))
+
+        # Специальный лут для нежити - магические кристаллы и древние свитки
+        if enemy.npc_type == "undead":
+            # Магические кристаллы (40-70% шанс)
+            crystal_drop_chance = min(0.40 + enemy.level * 0.01, 0.70)
+            if random.random() < crystal_drop_chance:
+                quantity = random.randint(1, 2)
+                loot_items.append((PREDEFINED_ITEMS["magic_crystal"], quantity))
+
+            # Древние свитки (35-65% шанс)
+            scroll_drop_chance = min(0.35 + enemy.level * 0.01, 0.65)
+            if random.random() < scroll_drop_chance:
+                quantity = random.randint(1, 3)
+                loot_items.append((PREDEFINED_ITEMS["old_scroll"], quantity))
+
         return loot_items, loot_gold
 
     def process_victory(self, enemy):

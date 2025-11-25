@@ -82,6 +82,10 @@ class GameTime:
             # Собираем всех NPC через вспомогательную функцию
             all_npcs = get_all_npcs_from_game(self.game)
 
+            # Выводим общее количество NPC в мире
+            alive_npcs = [npc for npc in all_npcs if npc.is_alive]
+            print(f"[Статистика NPC] Живых NPC в мире: {len(alive_npcs)} (всего: {len(all_npcs)})")
+
             # Перестраиваем spatial grid для оптимизации
             self.ctx.performance_optimizer.rebuild_spatial_grid(all_npcs)
 

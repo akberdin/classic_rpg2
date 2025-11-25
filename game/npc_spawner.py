@@ -270,8 +270,8 @@ class NPCSpawner:
 
             if mage_pos:
                 mx, my = mage_pos
-                # Уровень магов от 8 до 20
-                mage_level = random.randint(8, 20)
+                # Уровень магов от 31 до 40
+                mage_level = random.randint(31, 40)
                 mage_name = f"{random.choice(mage_names)} {magic_school.name}"
 
                 # Создаем мага с привязкой к академии
