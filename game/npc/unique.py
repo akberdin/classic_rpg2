@@ -193,7 +193,7 @@ class Hunter(NPC):
         if self.state == "patrol":
             self._patrol_step(game_map, all_npcs)
         elif self.state == "hunt":
-            self._hunt_step(game_map, all_npcs)
+            self._hunt_step(game_map, all_npcs, context)
         elif self.state == "rest":
             self._rest_step()
         elif self.state == "return_home":
@@ -231,7 +231,7 @@ class Hunter(NPC):
             self.x = new_x
             self.y = new_y
 
-    def _hunt_step(self, game_map, all_npcs):
+    def _hunt_step(self, game_map, all_npcs, context=None):
         """Шаг охоты на цель"""
         if not self.hunt_target or not self.hunt_target.is_alive:
             self.hunt_target = None
@@ -439,7 +439,7 @@ class Necromancer(NPC):
         if self.state == "patrol":
             self._patrol_step(game_map, all_npcs, player)
         elif self.state == "combat":
-            self._combat_step(game_map, all_npcs, player)
+            self._combat_step(game_map, all_npcs, player, context)
         elif self.state == "rest":
             self._rest_step()
 
@@ -487,7 +487,7 @@ class Necromancer(NPC):
                 self.x = new_x
                 self.y = new_y
 
-    def _combat_step(self, game_map, all_npcs, player):
+    def _combat_step(self, game_map, all_npcs, player, context=None):
         """Шаг боя"""
         if not self.target or not self.target.is_alive:
             self.target = None

@@ -121,7 +121,7 @@ class Bandit(NPC):
         if self.state == "combat":
             # В боевом режиме делаем 1 шаг за час (избегаем телепортации)
             if self.consume_stamina():
-                self._combat_step(game_map)
+                self._combat_step(game_map, context)
                 # Проверяем врагов после шага
                 self._check_for_enemies(all_npcs, player)
         elif self.state == "patrol":
@@ -198,7 +198,7 @@ class Bandit(NPC):
             self.state = "patrol"
             self.pursuit_counter = 0
 
-    def _combat_step(self, game_map):
+    def _combat_step(self, game_map, context=None):
         """
         Один шаг боевого поведения с ограничением преследования
 
@@ -420,7 +420,7 @@ class Undead(NPC):
         if self.state == "combat":
             # В боевом режиме делаем 1 шаг за час (избегаем телепортации)
             if self.consume_stamina():
-                self._combat_step(game_map)
+                self._combat_step(game_map, context)
                 # Проверяем врагов после шага
                 self._check_for_enemies(all_npcs, player)
         elif self.state == "patrol":
@@ -492,7 +492,7 @@ class Undead(NPC):
             self.state = "patrol"
             self.pursuit_counter = 0
 
-    def _combat_step(self, game_map):
+    def _combat_step(self, game_map, context=None):
         """
         Один шаг боевого поведения нежити с ограничением преследования
 

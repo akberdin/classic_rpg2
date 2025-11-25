@@ -122,7 +122,7 @@ class Animal(NPC):
         elif self.state == "combat":
             # В боевом режиме
             if self.consume_stamina():
-                self._combat_step(game_map)
+                self._combat_step(game_map, context)
                 self._check_for_threats(all_npcs, player)
         elif self.state == "patrol":
             # Патрулирование вокруг точки спавна
@@ -275,7 +275,7 @@ class Animal(NPC):
         # Иначе случайное направление
         self.wander_dx, self.wander_dy = random.choice(directions)
 
-    def _combat_step(self, game_map):
+    def _combat_step(self, game_map, context=None):
         """Делает один шаг в боевом режиме"""
         if not self.target_enemy or not self.target_enemy.is_alive:
             self.state = self.behavior_mode
