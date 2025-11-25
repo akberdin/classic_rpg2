@@ -142,13 +142,16 @@ class InputHandler:
         npc_type = self.ctx.nearby_npc.npc_type if self.ctx.nearby_npc else None
 
         if key == pygame.K_1:
-            # Торговля / Магия / Зелья / Агрессия (для животных)
+            # Торговля / Магия / Зелья / Агрессия (для животных/бандитов/нежити)
             if npc_type in ["wolf", "bear", "deer"]:
                 # Для животных кнопка 1 - это Агрессия
                 self.ctx.start_combat(self.ctx.nearby_npc)
                 # Помечаем животное как провоцированное
                 if hasattr(self.ctx.nearby_npc, 'mark_as_provoked'):
                     self.ctx.nearby_npc.mark_as_provoked()
+            elif npc_type in ["bandit", "undead"]:
+                # Для бандитов и нежити кнопка 1 - это Агрессия
+                self.ctx.start_combat(self.ctx.nearby_npc)
             elif npc_type in ["merchant", "mage", "alchemist", "hunter"]:
                 self.ctx.trade_menu_open = True
                 self.ctx.trade_window.mode = "buy"

@@ -55,6 +55,9 @@ class NPC(Character):
         self.schedule = None
         self._init_schedule()
 
+        # Механизм дискомфорта от совместного нахождения с другими NPC
+        self.collision_tracker = {}  # {npc_id: turns_count}
+
     def _init_schedule(self):
         """Инициализация расписания для NPC"""
         schedule_module = get_schedule_module()
@@ -227,6 +230,100 @@ class NPC(Character):
 
         tile = game_map.get_tile(x, y)
         return tile.is_passable()
+
+    def _check_and_handle_npc_collision(self, all_npcs):
+        """
+        Проверить наличие других NPC на той же клетке и обработать дискомфорт.
+        Если NPC находится с другим NPC более 3 ходов, попытаться разойтись.
+
+        Args:
+            all_npcs: Список всех NPC
+
+        Returns:
+            bool: True если нужно попытаться разойтись
+        """
+        if not all_npcs:
+            return False
+
+        # Находим всех NPC на той же клетке
+        npcs_on_same_tile = []
+        for npc in all_npcs:
+            if npc is self or not npc.is_alive:
+                continue
+            if npc.x == self.x and npc.y == self.y:
+                npcs_on_same_tile.append(npc)
+
+        # Обновляем трекер коллизий
+        current_npc_ids = {id(npc) for npc in npcs_on_same_tile}
+
+        # Увеличиваем счетчик для NPC, которые все еще на той же клетке
+        for npc in npcs_on_same_tile:
+            npc_id = id(npc)
+            if npc_id in self.collision_tracker:
+                self.collision_tracker[npc_id] += 1
+            else:
+                self.collision_tracker[npc_id] = 1
+
+        # Удаляем из трекера NPC, которые больше не на той же клетке
+        self.collision_tracker = {
+            npc_id: count
+            for npc_id, count in self.collision_tracker.items()
+            if npc_id in current_npc_ids
+        }
+
+        # Проверяем, есть ли NPC с которым мы находимся более 3 ходов
+        max_collision_turns = max(self.collision_tracker.values()) if self.collision_tracker else 0
+
+        return max_collision_turns > 3
+
+    def _try_move_away_from_collision(self, game_map, all_npcs):
+        """
+        Попытаться уйти с клетки при дискомфорте от коллизии с другим NPC.
+
+        Args:
+            game_map: Объект карты
+            all_npcs: Список всех NPC
+
+        Returns:
+            bool: True если удалось сдвинуться
+        """
+        # Все возможные направления (включая диагонали)
+        directions = [
+            (-1, -1), (-1, 0), (-1, 1),
+            (0, -1),           (0, 1),
+            (1, -1),  (1, 0),  (1, 1)
+        ]
+
+        # Перемешиваем для случайности
+        random.shuffle(directions)
+
+        for dx, dy in directions:
+            new_x = self.x + dx
+            new_y = self.y + dy
+
+            # Проверяем проходимость
+            if not self._can_move(new_x, new_y, game_map):
+                continue
+
+            # Проверяем, нет ли других NPC на новой клетке
+            has_npc = False
+            if all_npcs:
+                for npc in all_npcs:
+                    if npc is self or not npc.is_alive:
+                        continue
+                    if npc.x == new_x and npc.y == new_y:
+                        has_npc = True
+                        break
+
+            # Если клетка свободна, перемещаемся
+            if not has_npc:
+                self.x = new_x
+                self.y = new_y
+                # Сбрасываем трекер коллизий после успешного расхождения
+                self.collision_tracker.clear()
+                return True
+
+        return False
 
     def _simplified_npc_combat(self, enemy):
         """

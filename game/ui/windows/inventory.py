@@ -319,10 +319,11 @@ class InventoryWindow:
                 else:
                     display_name = item_name
 
+                # Используем цвет качества предмета всегда, даже для выделенного
                 item_text = self.info_font.render(
                     display_name,
                     True,
-                    item_color if i != self.selected_inventory_index else (255, 255, 255)
+                    item_color
                 )
                 self.screen.blit(item_text, (x + text_margin, items_y + display_index * item_height + int(7 * (height / 500))))
 

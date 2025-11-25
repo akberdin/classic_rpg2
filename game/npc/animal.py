@@ -106,6 +106,12 @@ class Animal(NPC):
             self.idle_timer -= 1
             return
 
+        # Проверяем дискомфорт от коллизии с другими NPC
+        if self._check_and_handle_npc_collision(all_npcs):
+            # Пытаемся разойтись
+            if self._try_move_away_from_collision(game_map, all_npcs):
+                return  # Успешно разошлись, завершаем ход
+
         # Проверяем наличие врагов (охотников или провокаторов)
         self._check_for_threats(all_npcs, player)
 
