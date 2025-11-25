@@ -131,23 +131,109 @@ class SkillsConfig(ConfigLoader):
     def __init__(self):
         super().__init__('skills_config')
 
-    def get_melee_skill(self, skill_name: str, param_name: str = None, default=None):
-        """Получить параметр ближнего навыка"""
+    # ==================== СИСТЕМНЫЕ ПАРАМЕТРЫ ====================
+
+    def get_system_param(self, param_name: str, default=None):
+        """Получить системный параметр умений"""
+        return self.get('system', param_name, default=default)
+
+    def get_max_rank(self, default=5):
+        """Получить максимальный ранг умения"""
+        return self.get_system_param('max_rank', default=default)
+
+    def get_base_experience_to_rank_2(self, default=100):
+        """Получить базовый опыт для ранга 2"""
+        return self.get_system_param('base_experience_to_rank_2', default=default)
+
+    def get_experience_multiplier(self, default=1.5):
+        """Получить множитель роста опыта"""
+        return self.get_system_param('experience_multiplier', default=default)
+
+    def get_experience_per_use(self, default=10):
+        """Получить опыт за использование умения"""
+        return self.get_system_param('experience_per_use', default=default)
+
+    def get_skill_slots_count(self, default=8):
+        """Получить количество слотов для умений"""
+        return self.get_system_param('skill_slots_count', default=default)
+
+    def get_rank_requirement(self, param_name: str, default=None):
+        """Получить параметр требований для ранга"""
+        return self.get('system', 'rank_requirements', param_name, default=default)
+
+    # ==================== БОЕВЫЕ УМЕНИЯ ====================
+
+    def get_combat_skill(self, skill_name: str, param_name: str = None, default=None):
+        """Получить параметр боевого умения"""
         if param_name:
-            return self.get('melee_skills', skill_name, param_name, default=default)
-        return self.get('melee_skills', skill_name, default=default)
+            return self.get('combat_skills', skill_name, param_name, default=default)
+        return self.get('combat_skills', skill_name, default=default)
+
+    # ==================== МАГИЧЕСКИЕ УМЕНИЯ ====================
 
     def get_magic_skill(self, skill_name: str, param_name: str = None, default=None):
-        """Получить параметр магического навыка"""
+        """Получить параметр магического умения"""
         if param_name:
             return self.get('magic_skills', skill_name, param_name, default=default)
         return self.get('magic_skills', skill_name, default=default)
+
+    # ==================== ЛЕЧЕБНЫЕ УМЕНИЯ ====================
 
     def get_healing_skill(self, skill_name: str, param_name: str = None, default=None):
         """Получить параметр лечебного навыка"""
         if param_name:
             return self.get('healing_skills', skill_name, param_name, default=default)
         return self.get('healing_skills', skill_name, default=default)
+
+    # ==================== ОРУЖЕЙНЫЕ УМЕНИЯ ====================
+
+    def get_weapon_skill(self, weapon_type: str, skill_name: str, param_name: str = None, default=None):
+        """
+        Получить параметр оружейного умения
+
+        Args:
+            weapon_type: Тип оружия (bow_skills, knife_skills, sword_skills)
+            skill_name: Название умения
+            param_name: Название параметра (опционально)
+            default: Значение по умолчанию
+        """
+        if param_name:
+            return self.get('weapon_skills', weapon_type, skill_name, param_name, default=default)
+        return self.get('weapon_skills', weapon_type, skill_name, default=default)
+
+    def get_bow_skill(self, skill_name: str, param_name: str = None, default=None):
+        """Получить параметр умения лука"""
+        return self.get_weapon_skill('bow_skills', skill_name, param_name, default=default)
+
+    def get_knife_skill(self, skill_name: str, param_name: str = None, default=None):
+        """Получить параметр умения кинжала"""
+        return self.get_weapon_skill('knife_skills', skill_name, param_name, default=default)
+
+    def get_sword_skill(self, skill_name: str, param_name: str = None, default=None):
+        """Получить параметр умения меча"""
+        return self.get_weapon_skill('sword_skills', skill_name, param_name, default=default)
+
+    # ==================== СТАТУС-ЭФФЕКТЫ ====================
+
+    def get_status_effect(self, effect_name: str, param_name: str = None, default=None):
+        """Получить параметр статус-эффекта"""
+        if param_name:
+            return self.get('status_effects', effect_name, param_name, default=default)
+        return self.get('status_effects', effect_name, default=default)
+
+    # ==================== РЕМЕСЛЕННЫЕ УМЕНИЯ ====================
+
+    def get_crafting_skill(self, skill_name: str, param_name: str = None, default=None):
+        """Получить параметр ремесленного умения"""
+        if param_name:
+            return self.get('crafting_skills', skill_name, param_name, default=default)
+        return self.get('crafting_skills', skill_name, default=default)
+
+    # ==================== LEGACY МЕТОДЫ ====================
+
+    def get_melee_skill(self, skill_name: str, param_name: str = None, default=None):
+        """Получить параметр ближнего навыка (устаревший - используйте get_combat_skill)"""
+        return self.get_combat_skill(skill_name, param_name, default=default)
 
 
 class NPCConfig(ConfigLoader):
