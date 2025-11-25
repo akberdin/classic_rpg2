@@ -13,7 +13,7 @@
 """
 import random
 from game.systems.skills.base import Skill, SkillCategory
-from game.systems.skills.effects import RegenerationEffect, StaminaRecoveryEffect, ShieldEffect
+from game.systems.skills.effects import RegenerationEffect, StaminaRecoveryEffect, ShieldEffect, StunEffect
 
 
 class Heal(Skill):
