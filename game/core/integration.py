@@ -90,7 +90,9 @@ def create_ai_context(game: 'Game') -> 'AIContext':
         player=game.player,
         current_hour=current_hour,
         all_npcs=all_npcs,
-        performance_optimizer=getattr(game, 'performance_optimizer', None)
+        performance_optimizer=getattr(game, 'performance_optimizer', None),
+        respawn_manager=getattr(game, 'respawn_manager', None),
+        game=game
     )
 
 

@@ -32,7 +32,9 @@ class AIContext:
         player: 'Player',
         current_hour: float,
         all_npcs: List['NPC'],
-        performance_optimizer: Optional['PerformanceOptimizer'] = None
+        performance_optimizer: Optional['PerformanceOptimizer'] = None,
+        respawn_manager=None,
+        game=None
     ):
         """
         Инициализация контекста AI.
@@ -43,12 +45,16 @@ class AIContext:
             current_hour: Текущий игровой час (0-24)
             all_npcs: Список всех NPC в игре
             performance_optimizer: Оптимизатор для определения необходимости обновления
+            respawn_manager: Менеджер респавна NPC (для регистрации смертей в быстрых боях)
+            game: Объект игры (для удаления мертвых NPC из списков)
         """
         self.game_map = game_map
         self.player = player
         self.current_hour = current_hour
         self.all_npcs = all_npcs
         self.optimizer = performance_optimizer
+        self.respawn_manager = respawn_manager
+        self.game = game
 
     # === Информация о игроке ===
 

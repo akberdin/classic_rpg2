@@ -240,7 +240,7 @@ class Bandit(NPC):
                 return
 
             # Атакуем только NPC (упрощенный бой за один ход)
-            enemy_killed = self._simplified_npc_combat(self.target_enemy)
+            enemy_killed = self._simplified_npc_combat(self.target_enemy, context)
 
             if enemy_killed:
                 print(f"{self.name} победил {self.target_enemy.name} в быстром бою!")
@@ -534,7 +534,7 @@ class Undead(NPC):
                 return
 
             # Атакуем только NPC (упрощенный бой за один ход)
-            enemy_killed = self._simplified_npc_combat(self.target_enemy)
+            enemy_killed = self._simplified_npc_combat(self.target_enemy, context)
 
             if enemy_killed:
                 print(f"{self.name} победил {self.target_enemy.name} в быстром бою!")

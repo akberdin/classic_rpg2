@@ -240,7 +240,7 @@ class MagePatrol(NPC):
         # Проверяем, можем ли атаковать
         if self.can_attack(self.target_enemy):
             # Используем упрощенный бой для NPC vs NPC
-            enemy_killed = self._simplified_npc_combat(self.target_enemy)
+            enemy_killed = self._simplified_npc_combat(self.target_enemy, context)
 
             if enemy_killed:
                 print(f"{self.name} победил {self.target_enemy.name} в быстром бою!")
