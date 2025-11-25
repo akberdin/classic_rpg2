@@ -153,19 +153,22 @@ class PotionItem(Item):
         """
         if self.effect_type == "health":
             old_health = character.health
-            character.health = min(character.max_health, character.health + self.effect_value)
+            max_health = character.get_effective_max_health() if hasattr(character, 'get_effective_max_health') else character.max_health
+            character.health = min(max_health, character.health + self.effect_value)
             restored = character.health - old_health
             return f"Восстановлено {restored} здоровья"
         elif self.effect_type == "mana":
             if hasattr(character, 'mana'):
                 old_mana = character.mana
-                character.mana = min(character.max_mana, character.mana + self.effect_value)
+                max_mana = character.get_effective_max_mana() if hasattr(character, 'get_effective_max_mana') else character.max_mana
+                character.mana = min(max_mana, character.mana + self.effect_value)
                 restored = character.mana - old_mana
                 return f"Восстановлено {restored} маны"
             return "Не применимо к этому персонажу"
         elif self.effect_type == "stamina":
             old_stamina = character.stamina
-            character.stamina = min(character.max_stamina, character.stamina + self.effect_value)
+            max_stamina = character.get_effective_max_stamina() if hasattr(character, 'get_effective_max_stamina') else character.max_stamina
+            character.stamina = min(max_stamina, character.stamina + self.effect_value)
             character.is_resting = False  # Снимаем состояние отдыха
             restored = character.stamina - old_stamina
             return f"Восстановлено {restored} выносливости"

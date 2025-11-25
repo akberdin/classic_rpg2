@@ -527,6 +527,13 @@ class Character:
                 if item and isinstance(item, ArmorItem):
                     total_defense += item.defense
 
+        # Добавляем бонусы от активных эффектов (например, Щит мага)
+        if hasattr(self, 'status_effects'):
+            for effect in self.status_effects:
+                if hasattr(effect, 'defense_bonus'):
+                    # defense_bonus в процентах, применяем к total_defense
+                    total_defense = int(total_defense * (1 + effect.defense_bonus / 100))
+
         return total_defense
 
     def get_magic_defense(self):

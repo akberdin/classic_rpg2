@@ -2238,7 +2238,7 @@ class QuestGenerator:
         random.shuffle(quest_types)
 
         # Гарантируем хотя бы один квест на части животных
-        animal_parts = ['bear_hide', 'deer_hide', 'bear_meat', 'deer_meat']
+        animal_parts = ['bear_hide', 'deer_hide', 'bear_meat', 'deer_meat', 'wolf_hide', 'bear_fang']
         other_resources = ['silver_ore', 'gold_ore', 'mithril_ore']
         animal_quest_added = False
 
@@ -2279,6 +2279,7 @@ class QuestGenerator:
         random.shuffle(quest_types)
 
         # Гарантируем хотя бы один квест на части животных
+        # Все части животных из VILLAGE_GATHER_QUESTS
         animal_parts = ['wolf_hide', 'wolf_fang', 'bear_meat', 'deer_meat', 'deer_hide', 'bear_hide', 'bear_fang']
         other_resources = ['copper_ore', 'iron_ore']
         animal_quest_added = False
