@@ -634,6 +634,22 @@ class Inventory:
         _, current_quantity = self.items[item_name]
         return current_quantity >= quantity
 
+    def get_item_count(self, item_name):
+        """
+        Получить количество предмета в инвентаре
+
+        Args:
+            item_name: Название предмета
+
+        Returns:
+            int: Количество предмета (0 если предмет отсутствует)
+        """
+        if item_name not in self.items:
+            return 0
+
+        _, current_quantity = self.items[item_name]
+        return current_quantity
+
     def add_gold(self, amount):
         """Добавить золото"""
         self.gold += amount
