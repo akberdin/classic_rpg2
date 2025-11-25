@@ -367,8 +367,6 @@ class NPC(Character):
             # Регистрируем смерть врага для респавна
             enemy_killed = not enemy.is_alive
             if enemy_killed and context and context.respawn_manager and context.game:
-                print(f"\n[DEBUG БЫСТРЫЙ БОЙ] {enemy.name} побежден в быстром бою!")
-                print(f"[DEBUG БЫСТРЫЙ БОЙ] Регистрируем смерть для респавна...")
                 context.respawn_manager.register_death(enemy, context.game)
 
             return enemy_killed
@@ -385,8 +383,6 @@ class NPC(Character):
             # Регистрируем смерть этого NPC для респавна
             self_killed = not self.is_alive
             if self_killed and context and context.respawn_manager and context.game:
-                print(f"\n[DEBUG БЫСТРЫЙ БОЙ] {self.name} побежден в быстром бою!")
-                print(f"[DEBUG БЫСТРЫЙ БОЙ] Регистрируем смерть для респавна...")
                 context.respawn_manager.register_death(self, context.game)
 
             return False

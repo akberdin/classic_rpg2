@@ -37,15 +37,9 @@ class RespawnManager:
             npc: Умерший NPC
             game: Объект игры (для удаления NPC из списков)
         """
-        print(f"\n[DEBUG РЕСПАВН] register_death вызван для {npc.name}")
-        print(f"[DEBUG РЕСПАВН] Тип NPC: {type(npc).__name__}")
-        print(f"[DEBUG РЕСПАВН] game передан: {game is not None}")
-
         # Удаляем мертвого NPC из списков игры
         if game and hasattr(game, 'npc_manager'):
             self._remove_dead_npc_from_manager(npc, game.npc_manager)
-        else:
-            print(f"[DEBUG РЕСПАВН] ВНИМАНИЕ: game или npc_manager не доступен!")
 
         # Сохраняем данные для респавна
         respawn_data = {
@@ -60,7 +54,6 @@ class RespawnManager:
         self.respawn_queue.append((respawn_data, self.respawn_time))
         print(f"[РЕСПАВН] {npc.name} ({respawn_data['npc_class']}) зарегистрирован для респавна через {self.respawn_time} часов")
         print(f"[РЕСПАВН] Всего в очереди: {len(self.respawn_queue)} NPC")
-        print(f"[DEBUG РЕСПАВН] Содержимое очереди: {[(d['npc_class'], t) for d, t in self.respawn_queue]}\n")
 
     def _remove_dead_npc_from_manager(self, npc, npc_manager):
         """
@@ -192,18 +185,11 @@ class RespawnManager:
         Returns:
             list: Список данных для респавна NPC, у которых истекло время
         """
-        if len(self.respawn_queue) > 0:
-            print(f"\n[DEBUG РЕСПАВН] update вызван, прошло {hours} часов")
-            print(f"[DEBUG РЕСПАВН] В очереди: {len(self.respawn_queue)} NPC")
-
         ready_to_respawn = []
         remaining_queue = []
 
         for respawn_data, turns_remaining in self.respawn_queue:
             turns_remaining -= hours
-
-            if len(self.respawn_queue) > 0:
-                print(f"[DEBUG РЕСПАВН] {respawn_data['npc_class']}: осталось {turns_remaining} часов")
 
             if turns_remaining <= 0:
                 # NPC готов к респавну
@@ -234,24 +220,18 @@ class RespawnManager:
         Returns:
             NPC или None: Созданный NPC или None при ошибке
         """
-        print(f"\n[DEBUG РЕСПАВН] respawn_npc вызван для {respawn_data['npc_class']}")
-
         spawn_location = respawn_data['spawn_location']
         if not spawn_location:
-            print(f"[DEBUG РЕСПАВН] ОШИБКА: нет spawn_location для {respawn_data['npc_class']}")
             return None
 
         spawn_x, spawn_y, location_type = spawn_location
-        print(f"[DEBUG РЕСПАВН] Локация спавна: ({spawn_x}, {spawn_y}), тип: {location_type}")
 
         # Находим позицию для спавна рядом с локацией
         spawn_pos = self._find_spawn_position(spawn_x, spawn_y)
         if not spawn_pos:
-            print(f"[DEBUG РЕСПАВН] ОШИБКА: не найдена позиция для спавна возле ({spawn_x}, {spawn_y})")
             return None
 
         x, y = spawn_pos
-        print(f"[DEBUG РЕСПАВН] Позиция найдена: ({x}, {y})")
 
         level_range = respawn_data['level_range']
         level = random.randint(level_range[0], level_range[1])
