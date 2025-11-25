@@ -24,8 +24,10 @@ class RespawnManager:
         self.game_map = game_map
         # Очередь респавна: [(npc_data, turns_remaining), ...]
         self.respawn_queue = []
-        # Фиксированное время респавна (в игровых часах) - уменьшено для лучшего геймплея
-        self.respawn_time = 8
+        # Фиксированное время респавна (в игровых часах) - сокращено для динамичного геймплея
+        self.respawn_time = 2
+        # Счетчик успешных респавнов
+        self.total_respawns = 0
 
     def register_death(self, npc, game=None):
         """
@@ -199,7 +201,10 @@ class RespawnManager:
         self.respawn_queue = remaining_queue
 
         if ready_to_respawn:
-            print(f"[Респавн] Готовы к респавну {len(ready_to_respawn)} NPC. Осталось в очереди: {len(self.respawn_queue)}")
+            print(f"\n{'='*60}")
+            print(f"[РЕСПАВН] Готовы к респавну {len(ready_to_respawn)} NPC")
+            print(f"[РЕСПАВН] В очереди осталось: {len(self.respawn_queue)} NPC")
+            print(f"{'='*60}\n")
 
         return ready_to_respawn
 
@@ -336,7 +341,8 @@ class RespawnManager:
             game.npc_manager.add_npc(new_npc, NPCType.NECROMANCER)
 
         if new_npc:
-            print(f"[Респавн] {new_npc.name} (Ур. {level}) появился в {location_name}")
+            self.total_respawns += 1
+            print(f"[РЕСПАВН #{self.total_respawns}] {new_npc.name} (Ур. {level}) возродился в {location_name}")
 
         return new_npc
 
