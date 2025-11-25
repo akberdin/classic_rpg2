@@ -195,10 +195,10 @@ class SkillBookWindow:
 
         if self.ui_scaler:
             window_width = self.ui_scaler.scale_width(1000)
-            window_height = self.ui_scaler.scale_height(700)
+            window_height = self.ui_scaler.scale_height(800)
         else:
             window_width = min(1000, int(screen_width * 0.85))
-            window_height = min(700, int(screen_height * 0.8))
+            window_height = min(800, int(screen_height * 0.85))
 
         window_x = (screen_width - window_width) // 2
         window_y = (screen_height - window_height) // 2
@@ -282,7 +282,7 @@ class SkillBookWindow:
 
         # Область списка умений
         skills_list_y = tab_y + tab_height + 20
-        skills_list_height = window_height - 250
+        skills_list_height = window_height - 230
 
         # Очищаем списки rect'ов
         self.skill_rects.clear()
