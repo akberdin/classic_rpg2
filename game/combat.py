@@ -64,11 +64,6 @@ class CombatSystem:
         self.sprite_manager = sprite_manager
         self.game = game
 
-        # Диагностика
-        print(f"\n[DEBUG БОЙ] CombatSystem создан")
-        print(f"[DEBUG БОЙ] respawn_manager передан: {respawn_manager is not None}")
-        print(f"[DEBUG БОЙ] game передан: {game is not None}\n")
-
         info_font_size = scaler.scale_font_size(20) if scaler else 20
         self.info_font = pygame.font.Font(None, info_font_size)
 
@@ -215,14 +210,8 @@ class CombatSystem:
                         self.player.enemies_killed += 1
 
                     # Регистрируем смерть NPC для респавна
-                    print(f"\n[DEBUG БОЙ] NPC {self.enemy.name} побежден!")
-                    print(f"[DEBUG БОЙ] respawn_manager существует: {self.respawn_manager is not None}")
-                    print(f"[DEBUG БОЙ] game существует: {self.game is not None}")
                     if self.respawn_manager:
-                        print(f"[DEBUG БОЙ] Вызываем register_death...")
                         self.respawn_manager.register_death(self.enemy, self.game)
-                    else:
-                        print(f"[DEBUG БОЙ] ВНИМАНИЕ: respawn_manager НЕ существует!")
 
                     # Оставляем лут на тайле (если есть карта и у врага есть предметы)
                     if self.game_map and hasattr(self.enemy, 'inventory'):
@@ -296,14 +285,8 @@ class CombatSystem:
                         self.player.enemies_killed += 1
 
                     # Регистрируем смерть NPC для респавна
-                    print(f"\n[DEBUG БОЙ] NPC {self.enemy.name} побежден умением!")
-                    print(f"[DEBUG БОЙ] respawn_manager существует: {self.respawn_manager is not None}")
-                    print(f"[DEBUG БОЙ] game существует: {self.game is not None}")
                     if self.respawn_manager:
-                        print(f"[DEBUG БОЙ] Вызываем register_death...")
                         self.respawn_manager.register_death(self.enemy, self.game)
-                    else:
-                        print(f"[DEBUG БОЙ] ВНИМАНИЕ: respawn_manager НЕ существует!")
 
                     # Даем опыт за победу (с учётом разницы уровней)
                     exp_gained = calculate_combat_exp(self.player.level, self.enemy.level)
@@ -383,14 +366,8 @@ class CombatSystem:
                     self.player.enemies_killed += 1
 
                 # Регистрируем смерть NPC для респавна
-                print(f"\n[DEBUG БОЙ] NPC {self.enemy.name} погиб от эффектов!")
-                print(f"[DEBUG БОЙ] respawn_manager существует: {self.respawn_manager is not None}")
-                print(f"[DEBUG БОЙ] game существует: {self.game is not None}")
                 if self.respawn_manager:
-                    print(f"[DEBUG БОЙ] Вызываем register_death...")
                     self.respawn_manager.register_death(self.enemy, self.game)
-                else:
-                    print(f"[DEBUG БОЙ] ВНИМАНИЕ: respawn_manager НЕ существует!")
 
                 # Даем опыт за победу (с учётом разницы уровней)
                 exp_gained = calculate_combat_exp(self.player.level, self.enemy.level)
