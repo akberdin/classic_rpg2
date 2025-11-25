@@ -39,7 +39,7 @@ def calculate_combat_exp(player_level, enemy_level, base_exp_per_level=20):
 class CombatSystem:
     """Класс управления боевой системой"""
 
-    def __init__(self, player, enemy, screen, font, scaler=None, game_map=None, respawn_manager=None, sprite_manager=None):
+    def __init__(self, player, enemy, screen, font, scaler=None, game_map=None, respawn_manager=None, sprite_manager=None, game=None):
         """
         Инициализация боевой системы
 
@@ -52,6 +52,7 @@ class CombatSystem:
             game_map: Карта игры (для размещения лута)
             respawn_manager: Менеджер респавна NPC
             sprite_manager: Менеджер спрайтов для иконок умений (опционально)
+            game: Объект игры (для удаления мертвых NPC из списков)
         """
         self.player = player
         self.enemy = enemy
@@ -61,6 +62,7 @@ class CombatSystem:
         self.game_map = game_map
         self.respawn_manager = respawn_manager
         self.sprite_manager = sprite_manager
+        self.game = game
         info_font_size = scaler.scale_font_size(20) if scaler else 20
         self.info_font = pygame.font.Font(None, info_font_size)
 
@@ -208,7 +210,7 @@ class CombatSystem:
 
                     # Регистрируем смерть NPC для респавна
                     if self.respawn_manager:
-                        self.respawn_manager.register_death(self.enemy)
+                        self.respawn_manager.register_death(self.enemy, self.game)
 
                     # Оставляем лут на тайле (если есть карта и у врага есть предметы)
                     if self.game_map and hasattr(self.enemy, 'inventory'):
@@ -283,7 +285,7 @@ class CombatSystem:
 
                     # Регистрируем смерть NPC для респавна
                     if self.respawn_manager:
-                        self.respawn_manager.register_death(self.enemy)
+                        self.respawn_manager.register_death(self.enemy, self.game)
 
                     # Даем опыт за победу (с учётом разницы уровней)
                     exp_gained = calculate_combat_exp(self.player.level, self.enemy.level)

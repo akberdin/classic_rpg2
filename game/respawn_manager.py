@@ -24,16 +24,21 @@ class RespawnManager:
         self.game_map = game_map
         # Очередь респавна: [(npc_data, turns_remaining), ...]
         self.respawn_queue = []
-        # Фиксированное время респавна (в игровых часах)
-        self.respawn_time = 20
+        # Фиксированное время респавна (в игровых часах) - уменьшено для лучшего геймплея
+        self.respawn_time = 8
 
-    def register_death(self, npc):
+    def register_death(self, npc, game=None):
         """
         Зарегистрировать смерть NPC для последующего респавна
 
         Args:
             npc: Умерший NPC
+            game: Объект игры (для удаления NPC из списков)
         """
+        # Удаляем мертвого NPC из списков игры
+        if game and hasattr(game, 'npc_manager'):
+            self._remove_dead_npc_from_manager(npc, game.npc_manager)
+
         # Сохраняем данные для респавна
         respawn_data = {
             'npc_type': npc.npc_type,
@@ -43,9 +48,45 @@ class RespawnManager:
             'npc_class': type(npc).__name__
         }
 
-        # Фиксированное время респавна - 20 ходов
+        # Фиксированное время респавна
         self.respawn_queue.append((respawn_data, self.respawn_time))
-        print(f"[Респавн] {npc.name} ({respawn_data['npc_class']}) зарегистрирован для респавна через {self.respawn_time} ходов. Всего в очереди: {len(self.respawn_queue)}")
+        print(f"[Респавн] {npc.name} ({respawn_data['npc_class']}) зарегистрирован для респавна через {self.respawn_time} часов. Всего в очереди: {len(self.respawn_queue)}")
+
+    def _remove_dead_npc_from_manager(self, npc, npc_manager):
+        """
+        Удалить мертвого NPC из менеджера NPC
+
+        Args:
+            npc: Мертвый NPC для удаления
+            npc_manager: Менеджер NPC
+        """
+        from game.core.npc_manager import NPCType
+
+        # Определяем тип NPC по классу
+        npc_class = type(npc).__name__
+        npc_type_map = {
+            'Guard': NPCType.GUARD,
+            'Merchant': NPCType.MERCHANT,
+            'MagicMerchant': NPCType.MERCHANT,
+            'MagePatrol': NPCType.MAGE,
+            'Bandit': NPCType.BANDIT,
+            'Miner': NPCType.MINER,
+            'Undead': NPCType.UNDEAD,
+            'Alchemist': NPCType.ALCHEMIST,
+            'Hunter': NPCType.HUNTER,
+            'Necromancer': NPCType.NECROMANCER,
+            'Wolf': NPCType.ANIMAL,
+            'Bear': NPCType.ANIMAL,
+            'Deer': NPCType.ANIMAL,
+        }
+
+        npc_type = npc_type_map.get(npc_class)
+        if npc_type:
+            removed = npc_manager.remove_npc(npc, npc_type)
+            if removed:
+                print(f"[Респавн] {npc.name} удален из списков NPC")
+            else:
+                print(f"[Респавн] Предупреждение: {npc.name} не найден в списках для удаления")
 
     def _extract_name_base(self, full_name):
         """
