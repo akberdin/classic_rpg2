@@ -401,8 +401,16 @@ class QuestWindow:
 
                 # Цели и награды
                 if quest.objectives:
+                    from game.quests import QuestType
                     obj = quest.objectives[0]
-                    progress = f"{obj.current_count}/{obj.required_count}"
+
+                    # Для квестов на сбор ресурсов показываем количество в инвентаре
+                    if quest.quest_type == QuestType.GATHER_RESOURCE and quest.target_item and player:
+                        inventory_count = player.inventory.get_item_count(quest.target_item)
+                        progress = f"{inventory_count}/{obj.required_count}"
+                    else:
+                        progress = f"{obj.current_count}/{obj.required_count}"
+
                     obj_text = self.info_font.render(
                         f"Цель: {obj.description[:30]}... ({progress})" if len(obj.description) > 30
                         else f"Цель: {obj.description} ({progress})",

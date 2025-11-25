@@ -18,6 +18,14 @@ ITEM_KEY_MAPPING = {
     'Фрагмент артефакта': 'artifact_fragment',
     'Магический кристалл': 'magic_crystal',
     'Старый свиток': 'old_scroll',
+    # Части животных
+    'Клык волка': 'wolf_fang',
+    'Клык медведя': 'bear_fang',
+    'Шкура волка': 'wolf_hide',
+    'Шкура медведя': 'bear_hide',
+    'Шкура оленя': 'deer_hide',
+    'Медвежатина': 'bear_meat',
+    'Оленина': 'deer_meat',
 }
 
 
@@ -103,8 +111,10 @@ class ResourceSystem:
         self.player.resources_collected += 1
         self.quest_manager.update_quest_progress("treasure_hunter", 0, 1)
 
-        # Добавляем тип локации в посещенные
-        self.player.visited_location_types.add(location.location_type)
+        # Добавляем тип локации в посещенные и обновляем квест "Исследователь"
+        if location.location_type not in self.player.visited_location_types:
+            self.player.visited_location_types.add(location.location_type)
+            self.quest_manager.update_quest_progress("explorer_start", 0, 1)
 
         # Продвигаем время на 20 минут (1/3 часа)
         self.game_time.advance_time(1/3)
