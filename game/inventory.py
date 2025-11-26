@@ -926,6 +926,52 @@ class ItemGenerator:
             return "bracelet"
         return "ring"
 
+    @staticmethod
+    def _filter_weapon_stats(weapon_type, stat_list):
+        """
+        Фильтрация характеристик для оружия в зависимости от его типа
+
+        Args:
+            weapon_type: Тип оружия (WeaponType)
+            stat_list: Список доступных характеристик
+
+        Returns:
+            list: Отфильтрованный список характеристик
+        """
+        # Посохи и жезлы - только интеллект и дух
+        if weapon_type in [WeaponType.STAFF, WeaponType.WAND]:
+            return [s for s in stat_list if s in ['intelligence', 'spirit']]
+
+        # Мечи, дубины, кирки, топоры - не могут иметь интеллект, дух и ловкость
+        elif weapon_type in [WeaponType.SWORD, WeaponType.CLUB, WeaponType.PICKAXE, WeaponType.AXE]:
+            return [s for s in stat_list if s not in ['intelligence', 'spirit', 'dexterity']]
+
+        # Ножи, луки, копья - не могут иметь дух, силу и телосложение
+        elif weapon_type in [WeaponType.KNIFE, WeaponType.BOW, WeaponType.SPEAR]:
+            return [s for s in stat_list if s not in ['spirit', 'strength', 'constitution']]
+
+        # Для остальных типов - без изменений
+        return stat_list
+
+    @staticmethod
+    def _filter_weapon_params(weapon_type, param_list):
+        """
+        Фильтрация параметров для оружия в зависимости от его типа
+
+        Args:
+            weapon_type: Тип оружия (WeaponType)
+            param_list: Список доступных параметров
+
+        Returns:
+            list: Отфильтрованный список параметров
+        """
+        # Посохи и жезлы - только здоровье и мана
+        if weapon_type in [WeaponType.STAFF, WeaponType.WAND]:
+            return [p for p in param_list if p in ['health', 'mana']]
+
+        # Для остальных типов оружия - без изменений
+        return param_list
+
     @classmethod
     def generate_bonuses_from_config(cls, item_type, quality, weapon_type=None):
         """
@@ -963,6 +1009,10 @@ class ItemGenerator:
             stat_bonus_range = params.get('stat_bonus_range', [1, 1])
             stat_bonus_list = params.get('stat_bonus_list', [])
 
+            # Фильтрация характеристик для оружия в зависимости от типа
+            if item_type == "weapon" and weapon_type is not None:
+                stat_bonus_list = cls._filter_weapon_stats(weapon_type, stat_bonus_list)
+
             for _ in range(stats_count):
                 if stat_bonus_list:
                     stat = random.choice(stat_bonus_list)
@@ -977,6 +1027,10 @@ class ItemGenerator:
         if params_count > 0:
             param_bonus_range = params.get('param_bonus_range', [1, 1])
             param_bonus_list = params.get('param_bonus_list', [])
+
+            # Фильтрация параметров для оружия в зависимости от типа
+            if item_type == "weapon" and weapon_type is not None:
+                param_bonus_list = cls._filter_weapon_params(weapon_type, param_bonus_list)
 
             for _ in range(params_count):
                 if param_bonus_list:
