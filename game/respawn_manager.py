@@ -24,8 +24,8 @@ class RespawnManager:
         self.game_map = game_map
         # Очередь респавна: [(npc_data, turns_remaining), ...]
         self.respawn_queue = []
-        # Фиксированное время респавна (в игровых часах) - сокращено для динамичного геймплея
-        self.respawn_time = 2
+        # Фиксированное время респавна (в игровых часах) - 10 часов = 30 ходов
+        self.respawn_time = 10
         # Счетчик успешных респавнов
         self.total_respawns = 0
 
