@@ -97,6 +97,7 @@
     "basic_attack": "assets/skills/basic.png",
     "power_strike": "assets/skills/power_strike.png",
     "poison_strike": "assets/skills/poison_strike.png",
+    "stun_strike": "assets/skills/stun_strike.png",
     "battle_cry": "assets/skills/battle_cry.png",
     "heal": "assets/skills/heal.png",
     "regeneration": "assets/skills/regeneration.png",
