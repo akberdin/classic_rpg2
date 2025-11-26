@@ -37,8 +37,8 @@ class Alchemist(Merchant):
         self.intelligence = int(self.intelligence * 1.05)
         self.spirit = int(self.spirit * 1.05)
         self.luck = int(self.luck * 1.03)
-        # Но физически слабы
-        self.strength = int(self.strength * 0.7)
+        # Но физически слабы, однако имеют бонус +10 к силе для переноски ингредиентов
+        self.strength = int(self.strength * 0.7) + 10  # Бонус +10 к силе
         self.dexterity = int(self.dexterity * 0.8)
         self.update_derived_stats()
 
@@ -75,7 +75,7 @@ class Alchemist(Merchant):
                 self.inventory.add_item(PREDEFINED_ITEMS[ing_key], quantity)
 
         # Добавляем золото для торговли
-        self.inventory.add_gold(random.randint(500, 1500))
+        self.inventory.add_gold(random.randint(500, 1500) * 3)  # Увеличено в 3 раза
 
 
 class Hunter(NPC):

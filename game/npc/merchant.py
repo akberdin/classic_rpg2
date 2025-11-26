@@ -50,8 +50,8 @@ class Merchant(NPC):
         # Немного повышаем удачу (торговая жилка, макс +5%)
         self.luck = int(self.luck * 1.05)
 
-        # Снижаем боевые характеристики
-        self.strength = max(1, int(self.strength * 0.7))
+        # Снижаем боевые характеристики, но компенсируем силу бонусом +10
+        self.strength = max(1, int(self.strength * 0.7)) + 10  # Бонус +10 к силе для переноски товаров
         self.dexterity = max(1, int(self.dexterity * 0.8))
 
         # Снижаем магические характеристики
@@ -85,12 +85,12 @@ class Merchant(NPC):
         rank = self.get_merchant_rank()
 
         # Увеличиваем инвентарь и золото торговца в зависимости от ранга
-        self.inventory.max_slots = 30 + (rank * 10)  # 40/50/60/70 слотов
+        self.inventory.max_slots = 60  # Всегда 60 слотов для всех торговцев
         self.inventory.max_weight = 200.0 + (rank * 50)  # 250/300/350/400 веса
 
         # Даем торговцу стартовое золото (больше для высокого ранга)
         base_gold = 200 + self.level * 50
-        self.inventory.gold = int(base_gold * (1 + rank * 0.5))  # x1.5/x2/x2.5/x3
+        self.inventory.gold = int(base_gold * (1 + rank * 0.5) * 3)  # Увеличено в 3 раза
 
         # Генерируем зелья (больше для высокого ранга)
         potion_types = [
@@ -171,7 +171,7 @@ class Merchant(NPC):
 
         # Добавляем золото (больше для высокого ранга)
         base_gold = random.randint(50, 150)
-        self.inventory.gold += int(base_gold * (1 + rank * 0.3))
+        self.inventory.gold += int(base_gold * (1 + rank * 0.3) * 3)  # Увеличено в 3 раза
 
         # Добавляем случайные новые товары (шанс увеличивается с рангом)
         potion_chance = 0.7 + (rank * 0.05)  # 75%/80%/85%/90%
@@ -489,7 +489,7 @@ class MagicMerchant(Merchant):
         self.inventory.items.clear()
 
         # Увеличенное золото для скупки (больше для дорогих книг)
-        self.inventory.gold = random.randint(2000, 5000) + self.level * 200
+        self.inventory.gold = (random.randint(2000, 5000) + self.level * 200) * 3  # Увеличено в 3 раза
 
         # Книги магических умений (всегда в наличии)
         magic_books = ["book_heal", "book_regeneration", "book_mage_shield", "book_stamina_recovery"]
@@ -540,7 +540,7 @@ class MagicMerchant(Merchant):
         from game.inventory import PREDEFINED_ITEMS, ItemGenerator
 
         # Добавляем золото (больше для скупки дорогих предметов)
-        self.inventory.gold += random.randint(500, 1000)
+        self.inventory.gold += random.randint(500, 1000) * 3  # Увеличено в 3 раза
 
         # 50% шанс добавить книгу обычного умения
         if random.random() < 0.5:

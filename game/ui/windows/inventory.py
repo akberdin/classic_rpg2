@@ -123,7 +123,7 @@ class InventoryWindow:
         # Подсказки внизу
         hints_y = window_y + window_height - int(40 * (window_height / 650))
         hint_text = self.info_font.render(
-            "W/S - выбор | E - экипировать | ПКМ - снять/надеть | U - использовать | I/ESC - закрыть",
+            "W/S - выбор | E - экипировать | U - использовать | D/DEL - выбросить | I/ESC - закрыть",
             True,
             (180, 180, 180)
         )

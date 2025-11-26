@@ -86,6 +86,28 @@ class InputHandler:
                     print("В этом слоте нет предмета")
             else:
                 print("Выберите слот экипировки для снятия предмета")
+        elif key == pygame.K_DELETE or key == pygame.K_d:
+            # Выбросить/уничтожить предмет из инвентаря
+            if all_items and 0 <= self.ctx.inventory_window.selected_inventory_index < len(all_items):
+                item, quantity = all_items[self.ctx.inventory_window.selected_inventory_index]
+                # Удаляем 1 штуку выбранного предмета
+                if self.ctx.player.inventory.remove_item(item.name, 1):
+                    item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
+                    print(f"Выброшен предмет: {item_name}")
+                    # Если предметов больше нет, корректируем индекс
+                    if self.ctx.player.inventory.get_item(item.name) is None:
+                        all_items = self.ctx.player.inventory.get_all_items()
+                        if all_items:
+                            self.ctx.inventory_window.selected_inventory_index = min(
+                                self.ctx.inventory_window.selected_inventory_index,
+                                len(all_items) - 1
+                            )
+                        else:
+                            self.ctx.inventory_window.selected_inventory_index = 0
+                else:
+                    print("Не удалось выбросить предмет")
+            else:
+                print("Выберите предмет для выброса")
 
     def handle_inventory_right_click(self, mouse_pos):
         """
