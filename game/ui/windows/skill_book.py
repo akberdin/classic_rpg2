@@ -165,6 +165,15 @@ class SkillBookWindow:
             skills_dict = player.skill_manager.get_all_skills()
             skills = [skill for skill in skills_dict.values() if skill.category == current_category]
 
+            # Применяем ту же сортировку, что и в render
+            def sort_skills_by_weapon(skill):
+                if not hasattr(skill, 'required_weapon_type') or skill.required_weapon_type is None:
+                    return (0, "")
+                else:
+                    weapon_name = skill.required_weapon_type.value[0]
+                    return (1, weapon_name)
+            skills.sort(key=sort_skills_by_weapon)
+
             if event.y > 0:  # Прокрутка вверх
                 self.selected_skill_index = max(0, self.selected_skill_index - 1)
             elif event.y < 0:  # Прокрутка вниз
@@ -279,6 +288,18 @@ class SkillBookWindow:
         current_category = categories[self.selected_tab]
         skills_dict = player.skill_manager.get_all_skills()
         skills = [skill for skill in skills_dict.values() if skill.category == current_category]
+
+        # Сортируем умения: сначала "Любое" (без требований к оружию), затем с требованиями
+        def sort_skills_by_weapon(skill):
+            # Если у умения нет требования к оружию, возвращаем пустую строку (будет первым)
+            if not hasattr(skill, 'required_weapon_type') or skill.required_weapon_type is None:
+                return (0, "")  # Сначала умения без требований
+            else:
+                # Для умений с требованием к оружию - сортируем по названию оружия
+                weapon_name = skill.required_weapon_type.value[0]  # Получаем название из кортежа
+                return (1, weapon_name)  # Потом умения с требованиями, отсортированные по оружию
+
+        skills.sort(key=sort_skills_by_weapon)
 
         # Область списка умений
         skills_list_y = tab_y + tab_height + 20
