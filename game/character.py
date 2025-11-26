@@ -91,8 +91,15 @@ class Character:
     def update_derived_stats(self):
         """Обновить производные характеристики (выносливость, здоровье)"""
         # Выносливость = (сила + телосложение) * 10
+        old_max_stamina = self.max_stamina
         self.max_stamina = (self.strength + self.constitution) * STAMINA_PER_STAT_POINT
-        self.stamina = self.max_stamina
+
+        # Если выносливость увеличилась, добавляем разницу к текущей выносливости
+        if old_max_stamina > 0:
+            stamina_diff = self.max_stamina - old_max_stamina
+            self.stamina = min(self.max_stamina, self.stamina + stamina_diff)
+        else:
+            self.stamina = self.max_stamina
 
         # Устанавливаем порог отдыха (60-80% от максимальной выносливости)
         rest_percent = random.uniform(STAMINA_REST_MIN, STAMINA_REST_MAX)
