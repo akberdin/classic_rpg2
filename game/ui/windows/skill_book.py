@@ -50,8 +50,9 @@ class SkillBookWindow:
         import pygame
         from game.skills import SkillCategory
 
-        # Функция сортировки умений (та же, что и в render)
-        def sort_skills_by_weapon(skill):
+        # Функция сортировки для пар (skill_id, skill)
+        def sort_skills_by_weapon(item):
+            skill_id, skill = item
             if not hasattr(skill, 'required_weapon_type') or skill.required_weapon_type is None:
                 return (0, "")
             else:
@@ -75,21 +76,14 @@ class SkillBookWindow:
                     categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
                     current_category = categories[self.selected_tab]
                     skills_dict = player.skill_manager.get_all_skills()
-                    skills = [skill for skill in skills_dict.values() if skill.category == current_category]
-                    skills.sort(key=sort_skills_by_weapon)
+                    # Создаем список пар (skill_id, skill) и сортируем
+                    skills_list = [(sid, skill) for sid, skill in skills_dict.items() if skill.category == current_category]
+                    skills_list.sort(key=sort_skills_by_weapon)
 
-                    if self.selected_skill_index < len(skills):
-                        selected_skill = skills[self.selected_skill_index]
-                        # Найдем ID умения
-                        skill_id = None
-                        for sid, skill in skills_dict.items():
-                            if skill == selected_skill:
-                                skill_id = sid
-                                break
-
-                        if skill_id:
-                            success, message = player.skill_manager.try_rank_up_skill(skill_id, player)
-                            print(message)
+                    if self.selected_skill_index < len(skills_list):
+                        skill_id, selected_skill = skills_list[self.selected_skill_index]
+                        success, message = player.skill_manager.try_rank_up_skill(skill_id, player)
+                        print(message)
                 return True
 
             # Проверяем клик по умениям
@@ -102,41 +96,27 @@ class SkillBookWindow:
                         categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
                         current_category = categories[self.selected_tab]
                         skills_dict = player.skill_manager.get_all_skills()
-                        skills = [skill for skill in skills_dict.values() if skill.category == current_category]
-                        skills.sort(key=sort_skills_by_weapon)
+                        # Создаем список пар (skill_id, skill) и сортируем
+                        skills_list = [(sid, skill) for sid, skill in skills_dict.items() if skill.category == current_category]
+                        skills_list.sort(key=sort_skills_by_weapon)
 
-                        if i < len(skills):
-                            selected_skill = skills[i]
-                            # Найдем ID умения
-                            skill_id = None
-                            for sid, skill in skills_dict.items():
-                                if skill == selected_skill:
-                                    skill_id = sid
-                                    break
-
-                            if skill_id:
-                                player.skill_manager.assign_to_slot(skill_id, self.selected_slot_index)
+                        if i < len(skills_list):
+                            skill_id, selected_skill = skills_list[i]
+                            player.skill_manager.assign_to_slot(skill_id, self.selected_slot_index)
 
                     # Правая кнопка мыши - попытка повышения ранга
                     elif event.button == 3:
                         categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
                         current_category = categories[self.selected_tab]
                         skills_dict = player.skill_manager.get_all_skills()
-                        skills = [skill for skill in skills_dict.values() if skill.category == current_category]
-                        skills.sort(key=sort_skills_by_weapon)
+                        # Создаем список пар (skill_id, skill) и сортируем
+                        skills_list = [(sid, skill) for sid, skill in skills_dict.items() if skill.category == current_category]
+                        skills_list.sort(key=sort_skills_by_weapon)
 
-                        if i < len(skills):
-                            selected_skill = skills[i]
-                            # Найдем ID умения
-                            skill_id = None
-                            for sid, skill in skills_dict.items():
-                                if skill == selected_skill:
-                                    skill_id = sid
-                                    break
-
-                            if skill_id:
-                                success, message = player.skill_manager.try_rank_up_skill(skill_id, player)
-                                print(message)
+                        if i < len(skills_list):
+                            skill_id, selected_skill = skills_list[i]
+                            success, message = player.skill_manager.try_rank_up_skill(skill_id, player)
+                            print(message)
                     return True
 
             # Проверяем клик по слотам
@@ -149,20 +129,13 @@ class SkillBookWindow:
                         categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
                         current_category = categories[self.selected_tab]
                         skills_dict = player.skill_manager.get_all_skills()
-                        skills = [skill for skill in skills_dict.values() if skill.category == current_category]
-                        skills.sort(key=sort_skills_by_weapon)
+                        # Создаем список пар (skill_id, skill) и сортируем
+                        skills_list = [(sid, skill) for sid, skill in skills_dict.items() if skill.category == current_category]
+                        skills_list.sort(key=sort_skills_by_weapon)
 
-                        if self.selected_skill_index < len(skills):
-                            selected_skill = skills[self.selected_skill_index]
-                            # Найдем ID умения
-                            skill_id = None
-                            for sid, skill in skills_dict.items():
-                                if skill == selected_skill:
-                                    skill_id = sid
-                                    break
-
-                            if skill_id:
-                                player.skill_manager.assign_to_slot(skill_id, i)
+                        if self.selected_skill_index < len(skills_list):
+                            skill_id, selected_skill = skills_list[self.selected_skill_index]
+                            player.skill_manager.assign_to_slot(skill_id, i)
 
                     # Правая кнопка мыши - убрать умение из слота
                     elif event.button == 3:
@@ -175,21 +148,14 @@ class SkillBookWindow:
             categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
             current_category = categories[self.selected_tab]
             skills_dict = player.skill_manager.get_all_skills()
-            skills = [skill for skill in skills_dict.values() if skill.category == current_category]
-
-            # Применяем ту же сортировку, что и в render
-            def sort_skills_by_weapon(skill):
-                if not hasattr(skill, 'required_weapon_type') or skill.required_weapon_type is None:
-                    return (0, "")
-                else:
-                    weapon_name = skill.required_weapon_type.value[0]
-                    return (1, weapon_name)
-            skills.sort(key=sort_skills_by_weapon)
+            # Создаем список пар (skill_id, skill) и сортируем
+            skills_list = [(sid, skill) for sid, skill in skills_dict.items() if skill.category == current_category]
+            skills_list.sort(key=sort_skills_by_weapon)
 
             if event.y > 0:  # Прокрутка вверх
                 self.selected_skill_index = max(0, self.selected_skill_index - 1)
             elif event.y < 0:  # Прокрутка вниз
-                self.selected_skill_index = min(len(skills) - 1, self.selected_skill_index + 1)
+                self.selected_skill_index = min(len(skills_list) - 1, self.selected_skill_index + 1)
             return True
 
         return False
@@ -295,14 +261,14 @@ class SkillBookWindow:
             tab_text_rect.center = (tab_x + tab_width // 2, tab_y + tab_height // 2)
             self.screen.blit(tab_text, tab_text_rect)
 
-        # Получаем умения текущей категории
+        # Получаем умения текущей категории и сортируем
         categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
         current_category = categories[self.selected_tab]
         skills_dict = player.skill_manager.get_all_skills()
-        skills = [skill for skill in skills_dict.values() if skill.category == current_category]
 
-        # Сортируем умения: сначала "Любое" (без требований к оружию), затем с требованиями
-        def sort_skills_by_weapon(skill):
+        # Функция сортировки для пар (skill_id, skill)
+        def sort_skills_by_weapon(item):
+            skill_id, skill = item
             # Если у умения нет требования к оружию, возвращаем пустую строку (будет первым)
             if not hasattr(skill, 'required_weapon_type') or skill.required_weapon_type is None:
                 return (0, "")  # Сначала умения без требований
@@ -311,7 +277,9 @@ class SkillBookWindow:
                 weapon_name = skill.required_weapon_type.value[0]  # Получаем название из кортежа
                 return (1, weapon_name)  # Потом умения с требованиями, отсортированные по оружию
 
-        skills.sort(key=sort_skills_by_weapon)
+        # Создаем список пар (skill_id, skill) и сортируем
+        skills_list = [(sid, skill) for sid, skill in skills_dict.items() if skill.category == current_category]
+        skills_list.sort(key=sort_skills_by_weapon)
 
         # Область списка умений
         skills_list_y = tab_y + tab_height + 20
@@ -321,14 +289,14 @@ class SkillBookWindow:
         self.skill_rects.clear()
 
         # Отрисовка списка умений в 3 колонки
-        if skills:
+        if skills_list:
             # Параметры колонок
             column_width = (window_width - 80) // 3  # Три колонки с отступами
             column_spacing = 20  # Расстояние между колонками
             skills_per_column = 5  # По 5 умений в каждой колонке
             skill_height = 100  # Высота карточки умения
 
-            for idx, skill in enumerate(skills):
+            for idx, (skill_id, skill) in enumerate(skills_list):
                 # Максимум 15 умений (3 колонки по 5)
                 if idx >= 15:
                     break
@@ -535,8 +503,9 @@ class SkillBookWindow:
         # Всплывающая подсказка при наведении на умение
         mouse_pos = pygame.mouse.get_pos()
         for i, rect in enumerate(self.skill_rects):
-            if rect.collidepoint(mouse_pos) and i < len(skills):
-                self._render_skill_tooltip(skills[i], mouse_pos)
+            if rect.collidepoint(mouse_pos) and i < len(skills_list):
+                skill_id, skill = skills_list[i]
+                self._render_skill_tooltip(skill, mouse_pos)
                 break
 
     def _render_skill_tooltip(self, skill, mouse_pos):
