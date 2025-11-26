@@ -50,6 +50,9 @@ class Character:
         self.health = 0
         self.is_alive = True
 
+        # Временные бонусы от эффектов
+        self.temp_strength_boost = 0
+
     def generate_random_stats(self, level=1):
         """
         Генерация сбалансированных характеристик на основе уровня
@@ -309,12 +312,12 @@ class Character:
 
     def calculate_dodge_chance(self):
         """
-        Рассчитать шанс уворота на основе ловкости с учетом экипировки
+        Рассчитать шанс уворота на основе ловкости с учетом экипировки и эффектов
         Использует систему diminishing returns для баланса
-        Максимум 50%
+        Максимум 75% (с эффектами)
 
         Returns:
-            float: Шанс уворота (0-50)
+            float: Шанс уворота (0-75)
         """
         # Базовая ловкость
         dex = self.dexterity
@@ -345,16 +348,28 @@ class Character:
                           10 * base_per_point * 0.3 +
                           (dex - 30) * base_per_point * 0.15)
 
-        return min(50.0, dodge_chance)  # Максимум 50%
+        # Добавляем бонусы от активных эффектов (например, Шаг тени)
+        # Проверяем эффекты в skill_manager (для игрока) и в status_effects (для NPC)
+        effects_list = []
+        if hasattr(self, 'skill_manager') and hasattr(self.skill_manager, 'status_effects'):
+            effects_list.extend(self.skill_manager.status_effects)
+        if hasattr(self, 'status_effects'):
+            effects_list.extend(self.status_effects)
+
+        for effect in effects_list:
+            if hasattr(effect, 'dodge_bonus'):
+                dodge_chance += effect.dodge_bonus
+
+        return min(75.0, dodge_chance)  # Максимум 75% (с учетом бонусов от эффектов)
 
     def calculate_crit_chance(self):
         """
-        Рассчитать шанс критического удара на основе удачи с учетом экипировки
+        Рассчитать шанс критического удара на основе удачи с учетом экипировки и эффектов
         Использует систему diminishing returns для баланса
-        Максимум 50%
+        Максимум 75% (с эффектами)
 
         Returns:
-            float: Шанс крита (0-50)
+            float: Шанс крита (0-75)
         """
         # Базовая удача
         luck = self.luck
@@ -385,7 +400,19 @@ class Character:
                          10 * base_per_point * 0.3 +
                          (luck - 30) * base_per_point * 0.15)
 
-        return min(50.0, crit_chance)  # Максимум 50%
+        # Добавляем бонусы от активных эффектов
+        # Проверяем эффекты в skill_manager (для игрока) и в status_effects (для NPC)
+        effects_list = []
+        if hasattr(self, 'skill_manager') and hasattr(self.skill_manager, 'status_effects'):
+            effects_list.extend(self.skill_manager.status_effects)
+        if hasattr(self, 'status_effects'):
+            effects_list.extend(self.status_effects)
+
+        for effect in effects_list:
+            if hasattr(effect, 'crit_bonus'):
+                crit_chance += effect.crit_bonus
+
+        return min(75.0, crit_chance)  # Максимум 75% (с учетом бонусов от эффектов)
 
     def attack(self, target):
         """
@@ -528,11 +555,20 @@ class Character:
                     total_defense += item.defense
 
         # Добавляем бонусы от активных эффектов (например, Щит мага)
+        # Проверяем эффекты в skill_manager (для игрока) и в status_effects (для NPC)
+        effects_list = []
+        if hasattr(self, 'skill_manager') and hasattr(self.skill_manager, 'status_effects'):
+            effects_list.extend(self.skill_manager.status_effects)
         if hasattr(self, 'status_effects'):
-            for effect in self.status_effects:
-                if hasattr(effect, 'defense_bonus'):
-                    # defense_bonus в процентах, применяем к total_defense
-                    total_defense = int(total_defense * (1 + effect.defense_bonus / 100))
+            effects_list.extend(self.status_effects)
+
+        for effect in effects_list:
+            if hasattr(effect, 'defense_bonus'):
+                # defense_bonus в процентах, применяем к total_defense
+                total_defense = int(total_defense * (1 + effect.defense_bonus / 100))
+            # Учитываем также отрицательные эффекты (например, Сломленная броня)
+            if hasattr(effect, 'defense_reduction'):
+                total_defense = max(0, total_defense - effect.defense_reduction)
 
         return total_defense
 
