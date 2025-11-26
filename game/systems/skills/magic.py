@@ -102,9 +102,16 @@ class Regeneration(Skill):
 
         # Накладываем эффект регенерации на себя
         regen = RegenerationEffect(duration=regen_duration, heal_per_turn=heal_per_turn)
-        if not hasattr(regen_target, 'status_effects'):
-            regen_target.status_effects = []
-        regen_target.status_effects.append(regen)
+
+        # Добавляем эффект в правильное место
+        if hasattr(regen_target, 'skill_manager'):
+            # Для игрока - в skill_manager
+            regen_target.skill_manager.status_effects.append(regen)
+        else:
+            # Для NPC без skill_manager - в status_effects
+            if not hasattr(regen_target, 'status_effects'):
+                regen_target.status_effects = []
+            regen_target.status_effects.append(regen)
 
         result['heal_per_turn'] = heal_per_turn
         result['duration'] = regen_duration
@@ -149,9 +156,16 @@ class StaminaRecovery(Skill):
 
         # Накладываем эффект восстановления выносливости на себя
         stamina_effect = StaminaRecoveryEffect(duration=recovery_duration, stamina_per_turn=stamina_per_turn)
-        if not hasattr(recovery_target, 'status_effects'):
-            recovery_target.status_effects = []
-        recovery_target.status_effects.append(stamina_effect)
+
+        # Добавляем эффект в правильное место
+        if hasattr(recovery_target, 'skill_manager'):
+            # Для игрока - в skill_manager
+            recovery_target.skill_manager.status_effects.append(stamina_effect)
+        else:
+            # Для NPC без skill_manager - в status_effects
+            if not hasattr(recovery_target, 'status_effects'):
+                recovery_target.status_effects = []
+            recovery_target.status_effects.append(stamina_effect)
 
         result['stamina_per_turn'] = stamina_per_turn
         result['duration'] = recovery_duration
@@ -269,9 +283,17 @@ class IceBolt(Skill):
             if random.random() < slow_chance:
                 slow = StunEffect(duration=slow_duration)
                 slow.name = "Обморожение"
-                if not hasattr(target, 'status_effects'):
-                    target.status_effects = []
-                target.status_effects.append(slow)
+
+                # Добавляем эффект в правильное место
+                if hasattr(target, 'skill_manager'):
+                    # Для игрока - в skill_manager
+                    target.skill_manager.status_effects.append(slow)
+                else:
+                    # Для NPC без skill_manager - в status_effects
+                    if not hasattr(target, 'status_effects'):
+                        target.status_effects = []
+                    target.status_effects.append(slow)
+
                 slow.apply(target)  # Применяем эффект замедления
                 slowed = True
 
@@ -412,15 +434,21 @@ class MageShield(Skill):
 
         # Создаем и применяем эффект щита на себя
         shield_effect = ShieldEffect(duration=duration, defense_bonus=defense_bonus)
-        if not hasattr(shield_target, 'status_effects'):
-            shield_target.status_effects = []
+
+        # Получаем список эффектов
+        if hasattr(shield_target, 'skill_manager'):
+            effects_list = shield_target.skill_manager.status_effects
+        else:
+            if not hasattr(shield_target, 'status_effects'):
+                shield_target.status_effects = []
+            effects_list = shield_target.status_effects
 
         # Проверяем, нет ли уже щита (чтобы избежать многократного наложения)
-        has_shield = any(isinstance(effect, ShieldEffect) for effect in shield_target.status_effects)
+        has_shield = any(isinstance(effect, ShieldEffect) for effect in effects_list)
         if has_shield:
             result['message'] = f"{user.name} уже защищен магическим щитом!"
         else:
-            shield_target.status_effects.append(shield_effect)
+            effects_list.append(shield_effect)
             result['shield'] = defense_bonus
             result['duration'] = duration
             result['message'] = f"{user.name} создает магический щит на себя! (+{defense_bonus}% защита на {duration} ходов)"

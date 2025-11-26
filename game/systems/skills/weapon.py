@@ -280,9 +280,15 @@ class BleedingCut(WeaponSkill):
             bleed.name = "Кровотечение"
             bleed.description = f"Теряет {bleed_damage} здоровья каждый ход"
 
-            if not hasattr(target, 'status_effects'):
-                target.status_effects = []
-            target.status_effects.append(bleed)
+            # Добавляем эффект в правильное место
+            if hasattr(target, 'skill_manager'):
+                # Для игрока - в skill_manager
+                target.skill_manager.status_effects.append(bleed)
+            else:
+                # Для NPC без skill_manager - в status_effects
+                if not hasattr(target, 'status_effects'):
+                    target.status_effects = []
+                target.status_effects.append(bleed)
 
             result['damage'] = actual_damage
             result['bleed_applied'] = True
@@ -337,9 +343,16 @@ class ShadowStep(WeaponSkill):
                 description=f"+{dodge_bonus}% к уклонению"
             )
             dodge_effect.dodge_bonus = dodge_bonus
-            if not hasattr(user, 'status_effects'):
-                user.status_effects = []
-            user.status_effects.append(dodge_effect)
+
+            # Добавляем эффект в правильное место
+            if hasattr(user, 'skill_manager'):
+                # Для игрока - в skill_manager
+                user.skill_manager.status_effects.append(dodge_effect)
+            else:
+                # Для NPC без skill_manager - в status_effects
+                if not hasattr(user, 'status_effects'):
+                    user.status_effects = []
+                user.status_effects.append(dodge_effect)
 
             result['damage'] = actual_damage
             result['dodge_bonus'] = dodge_bonus
@@ -433,9 +446,16 @@ class ShieldBreaker(WeaponSkill):
                 description=f"-{defense_reduction} защиты"
             )
             armor_break.defense_reduction = defense_reduction
-            if not hasattr(target, 'status_effects'):
-                target.status_effects = []
-            target.status_effects.append(armor_break)
+
+            # Добавляем эффект в правильное место
+            if hasattr(target, 'skill_manager'):
+                # Для игрока - в skill_manager
+                target.skill_manager.status_effects.append(armor_break)
+            else:
+                # Для NPC без skill_manager - в status_effects
+                if not hasattr(target, 'status_effects'):
+                    target.status_effects = []
+                target.status_effects.append(armor_break)
 
             result['damage'] = actual_damage
             result['defense_reduced'] = defense_reduction

@@ -160,9 +160,16 @@ class PoisonStrike(Skill):
 
             # Накладываем отравление
             poison = PoisonEffect(duration=poison_duration, damage_per_turn=poison_damage)
-            if not hasattr(target, 'status_effects'):
-                target.status_effects = []
-            target.status_effects.append(poison)
+
+            # Добавляем эффект в правильное место
+            if hasattr(target, 'skill_manager'):
+                # Для игрока - в skill_manager
+                target.skill_manager.status_effects.append(poison)
+            else:
+                # Для NPC без skill_manager - в status_effects
+                if not hasattr(target, 'status_effects'):
+                    target.status_effects = []
+                target.status_effects.append(poison)
 
             result['damage'] = actual_damage
             result['poison_applied'] = True
@@ -221,9 +228,17 @@ class StunStrike(Skill):
             stunned = False
             if random.random() < stun_chance:
                 stun = StunEffect(duration=stun_duration)
-                if not hasattr(target, 'status_effects'):
-                    target.status_effects = []
-                target.status_effects.append(stun)
+
+                # Добавляем эффект в правильное место
+                if hasattr(target, 'skill_manager'):
+                    # Для игрока - в skill_manager
+                    target.skill_manager.status_effects.append(stun)
+                else:
+                    # Для NPC без skill_manager - в status_effects
+                    if not hasattr(target, 'status_effects'):
+                        target.status_effects = []
+                    target.status_effects.append(stun)
+
                 stun.apply(target)  # Применяем эффект оглушения
                 stunned = True
 
@@ -276,9 +291,17 @@ class BattleCry(Skill):
 
         # Накладываем усиление на себя
         boost = StrengthBoostEffect(duration=boost_duration, boost_amount=boost_amount)
-        if not hasattr(user, 'status_effects'):
-            user.status_effects = []
-        user.status_effects.append(boost)
+
+        # Добавляем эффект в правильное место
+        if hasattr(user, 'skill_manager'):
+            # Для игрока - в skill_manager
+            user.skill_manager.status_effects.append(boost)
+        else:
+            # Для NPC без skill_manager - в status_effects
+            if not hasattr(user, 'status_effects'):
+                user.status_effects = []
+            user.status_effects.append(boost)
+
         boost.apply(user)  # Применяем эффект
 
         result['strength_boost'] = boost_amount
