@@ -322,13 +322,11 @@ class CombatSystem:
             str: Результат боя
         """
         # Проверяем оглушение врага ПЕРЕД обработкой эффектов
-        # (чтобы эффект с duration=1 успел подействовать)
         if hasattr(self.enemy, 'stunned') and self.enemy.stunned:
             self.add_to_log(f"{self.enemy.name} оглушен/заморожен и пропускает ход!")
-            # Снимаем оглушение после пропуска хода
-            self.enemy.stunned = False
 
-            # Теперь обрабатываем tick() эффектов (для уменьшения duration)
+            # Обрабатываем tick() эффектов (для уменьшения duration)
+            # Эффект StunEffect сам снимет флаг stunned через remove() когда истечет
             if hasattr(self.enemy, 'status_effects'):
                 for effect in self.enemy.status_effects[:]:
                     message = effect.tick(self.enemy)
@@ -342,6 +340,13 @@ class CombatSystem:
 
             # Уменьшаем перезарядку умений игрока
             self.player.skill_manager.tick_cooldowns()
+
+            # Обрабатываем статус-эффекты игрока
+            if hasattr(self.player, 'skill_manager'):
+                effect_messages = self.player.skill_manager.tick_status_effects()
+                for msg in effect_messages:
+                    self.add_to_log(msg)
+
             self.turn = "player"
             return "continue"
 
