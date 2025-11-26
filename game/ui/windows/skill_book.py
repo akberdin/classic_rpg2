@@ -189,15 +189,15 @@ class SkillBookWindow:
         overlay.fill((0, 0, 0))
         self.screen.blit(overlay, (0, 0))
 
-        # Размеры окна (адаптивные)
+        # Размеры окна (адаптивные) - увеличено для 3 колонок
         screen_width = self.screen.get_width()
         screen_height = self.screen.get_height()
 
         if self.ui_scaler:
-            window_width = self.ui_scaler.scale_width(1000)
+            window_width = self.ui_scaler.scale_width(1500)
             window_height = self.ui_scaler.scale_height(800)
         else:
-            window_width = min(1000, int(screen_width * 0.85))
+            window_width = min(1500, int(screen_width * 0.90))
             window_height = min(800, int(screen_height * 0.85))
 
         window_x = (screen_width - window_width) // 2
@@ -287,21 +287,21 @@ class SkillBookWindow:
         # Очищаем списки rect'ов
         self.skill_rects.clear()
 
-        # Отрисовка списка умений в 2 колонки
+        # Отрисовка списка умений в 3 колонки
         if skills:
             # Параметры колонок
-            column_width = (window_width - 60) // 2  # Две колонки с отступами
+            column_width = (window_width - 80) // 3  # Три колонки с отступами
             column_spacing = 20  # Расстояние между колонками
             skills_per_column = 5  # По 5 умений в каждой колонке
             skill_height = 100  # Высота карточки умения
 
             for idx, skill in enumerate(skills):
-                # Максимум 10 умений (2 колонки по 5)
-                if idx >= 10:
+                # Максимум 15 умений (3 колонки по 5)
+                if idx >= 15:
                     break
 
                 # Определяем колонку и позицию в колонке
-                column = idx // skills_per_column  # 0 или 1
+                column = idx // skills_per_column  # 0, 1 или 2
                 row = idx % skills_per_column  # 0-4
 
                 # Вычисляем позицию
@@ -537,6 +537,14 @@ class SkillBookWindow:
         desc_lines = UIHelper.wrap_text(skill.base_description, self.info_font, tooltip_width - tooltip_padding * 2)
         for desc_line in desc_lines:
             lines.append((desc_line, (180, 180, 180), False))
+
+        # Информация о требуемом оружии
+        lines.append(("", (0, 0, 0), False))  # Пустая строка
+        if hasattr(skill, 'required_weapon_type') and skill.required_weapon_type is not None:
+            weapon_name = skill.required_weapon_type.value[0]  # Получаем название из кортежа
+            lines.append((f"Оружие: {weapon_name}", (255, 200, 100), False))
+        else:
+            lines.append(("Оружие: Любое", (200, 200, 200), False))
 
         lines.append(("", (0, 0, 0), False))  # Пустая строка
         lines.append(("Прогрессия по рангам:", (200, 200, 255), True))
