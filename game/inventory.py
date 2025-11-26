@@ -1431,24 +1431,28 @@ class ItemGenerator:
 
         if location_type == LOCATION_MINE:
             # Руда из шахт - удача влияет на тип руды
-            ores = ["copper_ore", "iron_ore", "silver_ore", "gold_ore", "mithril_ore"]
-            # Модифицируем веса с учётом удачи
-            luck_modifier = min(luck * 0.005, 0.15)  # Макс 15% смещение
-            weights = [
-                max(0.35 - luck_modifier, 0.20),  # copper
-                0.30,  # iron
-                0.12 + luck_modifier * 0.5,  # silver
-                0.06 + luck_modifier * 0.3,  # gold
-                0.02 + luck_modifier * 0.2   # mithril
-            ]
-            ore_type = random.choices(ores, weights=weights)[0]
-            quantity = random.randint(1, 3)
-            loot.append((PREDEFINED_ITEMS[ore_type], quantity))
+            # Шанс добычи руды уменьшен в 10 раз (10% базовый шанс)
+            ore_chance = 0.10 + min(luck * 0.001, 0.05)  # 10% базовый + до 5% от удачи
 
-            # Шанс доп. руды от удачи
-            if ItemGenerator.check_extra_item_drop(luck):
-                extra_ore = random.choices(ores, weights=weights)[0]
-                loot.append((PREDEFINED_ITEMS[extra_ore], 1))
+            if random.random() < ore_chance:
+                ores = ["copper_ore", "iron_ore", "silver_ore", "gold_ore", "mithril_ore"]
+                # Модифицируем веса с учётом удачи
+                luck_modifier = min(luck * 0.005, 0.15)  # Макс 15% смещение
+                weights = [
+                    max(0.35 - luck_modifier, 0.20),  # copper
+                    0.30,  # iron
+                    0.12 + luck_modifier * 0.5,  # silver
+                    0.06 + luck_modifier * 0.3,  # gold
+                    0.02 + luck_modifier * 0.2   # mithril
+                ]
+                ore_type = random.choices(ores, weights=weights)[0]
+                quantity = random.randint(1, 3)
+                loot.append((PREDEFINED_ITEMS[ore_type], quantity))
+
+                # Шанс доп. руды от удачи (также уменьшен)
+                if ItemGenerator.check_extra_item_drop(luck) and random.random() < 0.1:
+                    extra_ore = random.choices(ores, weights=weights)[0]
+                    loot.append((PREDEFINED_ITEMS[extra_ore], 1))
 
         elif location_type == LOCATION_RUINS:
             # Артефакты из руин

@@ -1563,6 +1563,15 @@ class QuestGenerator:
                 'Магическая академия ищет медвежьи клыки.',
                 'Торговец редкостями скупает клыки медведей.'
             ]
+        },
+        'wolf_fang': {
+            'display_name': 'Клык волка',
+            'quest_names': ['Волчьи клыки', 'Трофеи охоты', 'Амулеты защиты'],
+            'descriptions': [
+                'Городской мастер делает обереги из волчьих клыков.',
+                'Магическая академия ищет волчьи зубы для зелий.',
+                'Торговец амулетами скупает волчьи клыки.'
+            ]
         }
     }
 
@@ -2238,7 +2247,7 @@ class QuestGenerator:
         random.shuffle(quest_types)
 
         # Гарантируем хотя бы один квест на части животных
-        animal_parts = ['bear_hide', 'deer_hide', 'bear_meat', 'deer_meat', 'wolf_hide', 'bear_fang']
+        animal_parts = ['bear_hide', 'deer_hide', 'bear_meat', 'deer_meat', 'wolf_hide', 'bear_fang', 'wolf_fang']
         other_resources = ['silver_ore', 'gold_ore', 'mithril_ore']
         animal_quest_added = False
 
