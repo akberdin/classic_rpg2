@@ -648,6 +648,13 @@ class TradeWindow:
             effect_name = effect_names.get(item.effect_type, item.effect_type)
             lines.append((f"Восстановление: +{item.effect_value} {effect_name}", (100, 255, 100), False))
 
+        # Описание книг умений
+        from game.inventory import SkillBookItem
+        if isinstance(item, SkillBookItem):
+            lines.append(("", (0, 0, 0), False))
+            if hasattr(item, 'description') and item.description:
+                lines.append((item.description, (200, 200, 150), False))
+
         # Вес и стоимость
         lines.append(("", (0, 0, 0), False))
         lines.append((f"Вес: {item.weight:.1f} кг", (200, 200, 200), False))
