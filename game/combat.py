@@ -69,19 +69,51 @@ class CombatSystem:
 
         # Загрузка шрифта с поддержкой эмодзи
         self.use_emoji = False
-        emoji_font_path = "assets/fonts/NotoColorEmoji-Regular.ttf"
-        try:
-            import os
-            if os.path.exists(emoji_font_path):
-                # Для эмодзи используем немного меньший размер для лучшей совместимости
-                emoji_size = scaler.scale_font_size(16) if scaler else 16
-                self.emoji_font = pygame.font.Font(emoji_font_path, emoji_size)
-                self.use_emoji = True
-            else:
-                self.emoji_font = self.info_font
-        except Exception as e:
-            print(f"Не удалось загрузить шрифт эмодзи: {e}")
+        import os
+
+        # Пробуем загрузить системные шрифты с поддержкой эмодзи
+        emoji_fonts_to_try = [
+            "assets/fonts/NotoColorEmoji-Regular.ttf",  # Если пользователь добавил
+            "assets/fonts/NotoEmoji-Regular.ttf",        # Монохромная версия
+        ]
+
+        # Сначала пробуем файловые шрифты
+        for font_path in emoji_fonts_to_try:
+            try:
+                if os.path.exists(font_path):
+                    emoji_size = scaler.scale_font_size(18) if scaler else 18
+                    self.emoji_font = pygame.font.Font(font_path, emoji_size)
+                    self.use_emoji = True
+                    print(f"✓ Загружен шрифт эмодзи: {font_path}")
+                    break
+            except Exception as e:
+                print(f"✗ Не удалось загрузить {font_path}: {e}")
+
+        # Если файловые шрифты не найдены, пробуем системные
+        if not self.use_emoji:
+            system_emoji_fonts = [
+                ('Segoe UI Emoji', 'Windows'),
+                ('Apple Color Emoji', 'macOS'),
+                ('Noto Color Emoji', 'Linux'),
+                ('DejaVu Sans', 'Fallback')
+            ]
+
+            for font_name, platform in system_emoji_fonts:
+                try:
+                    emoji_size = scaler.scale_font_size(18) if scaler else 18
+                    test_font = pygame.font.SysFont(font_name, emoji_size)
+                    if test_font:
+                        self.emoji_font = test_font
+                        self.use_emoji = True
+                        print(f"✓ Использован системный шрифт: {font_name} ({platform})")
+                        break
+                except Exception as e:
+                    continue
+
+        # Fallback на обычный шрифт
+        if not self.use_emoji:
             self.emoji_font = self.info_font
+            print("⚠ Шрифты с эмодзи не найдены, используется текстовый режим")
 
         # Словарь эмодзи с текстовыми fallback
         self.icons = {
@@ -590,9 +622,9 @@ class CombatSystem:
 
         # ОТДЕЛЬНЫЙ БЛОК ЛОГА БОЯ (ниже статистики персонажей)
         log_block_x = combat_x + 30
-        log_block_y = combat_y + 240  # Опустили ниже чтобы не накладывался
+        log_block_y = combat_y + 300  # Опустили ниже панелей статистики (65 + 220 + отступ)
         log_block_width = combat_width - 60
-        log_block_height = 330  # Увеличили высоту
+        log_block_height = 280  # Уменьшена высота под новую позицию
 
         # Фон блока лога
         pygame.draw.rect(
@@ -626,7 +658,7 @@ class CombatSystem:
 
         # Отрисовка логов с прокруткой
         log_line_height = 24
-        max_visible_logs = 11  # Увеличено с 9 до 11
+        max_visible_logs = 9  # Подстроено под высоту блока
         log_start_y = log_block_y + 48
 
         # Показываем последние записи
