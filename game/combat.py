@@ -67,69 +67,15 @@ class CombatSystem:
         info_font_size = scaler.scale_font_size(20) if scaler else 20
         self.info_font = pygame.font.Font(None, info_font_size)
 
-        # Загрузка шрифта с поддержкой эмодзи
-        self.use_emoji = False
-        import os
-
-        # Пробуем загрузить системные шрифты с поддержкой эмодзи
-        emoji_fonts_to_try = [
-            "assets/fonts/NotoColorEmoji-Regular.ttf",  # Если пользователь добавил
-            "assets/fonts/NotoEmoji-Regular.ttf",        # Монохромная версия
-        ]
-
-        # Сначала пробуем файловые шрифты
-        for font_path in emoji_fonts_to_try:
-            try:
-                if os.path.exists(font_path):
-                    emoji_size = scaler.scale_font_size(18) if scaler else 18
-                    self.emoji_font = pygame.font.Font(font_path, emoji_size)
-                    self.use_emoji = True
-                    print(f"✓ Загружен шрифт эмодзи: {font_path}")
-                    break
-            except Exception as e:
-                print(f"✗ Не удалось загрузить {font_path}: {e}")
-
-        # Если файловые шрифты не найдены, пробуем системные
-        if not self.use_emoji:
-            system_emoji_fonts = [
-                ('Segoe UI Emoji', 'Windows'),
-                ('Apple Color Emoji', 'macOS'),
-                ('Noto Color Emoji', 'Linux'),
-                ('DejaVu Sans', 'Fallback')
-            ]
-
-            for font_name, platform in system_emoji_fonts:
-                try:
-                    emoji_size = scaler.scale_font_size(18) if scaler else 18
-                    test_font = pygame.font.SysFont(font_name, emoji_size)
-                    if test_font:
-                        self.emoji_font = test_font
-                        self.use_emoji = True
-                        print(f"✓ Использован системный шрифт: {font_name} ({platform})")
-                        break
-                except Exception as e:
-                    continue
-
-        # Fallback на обычный шрифт
-        if not self.use_emoji:
-            self.emoji_font = self.info_font
-            print("⚠ Шрифты с эмодзи не найдены, используется текстовый режим")
-
-        # Словарь эмодзи с текстовыми fallback
-        self.icons = {
-            'title': ('⚔', 'БОЙ'),
-            'log': ('📜', ''),
-            'player': ('🛡', ''),
-            'enemy': ('⚔', ''),
-            'health': ('❤', 'HP:'),
-            'mana': ('💧', 'Мана:'),
-            'stamina': ('⚡', 'Выносливость:'),
-            'damage': ('⚔', 'Урон:'),
-            'defense': ('🛡', 'Защита:'),
-            'dodge': ('💨', 'Уворот:'),
-            'crit': ('✨', 'Крит:'),
-            'your_turn': ('⚡', ''),
-            'enemy_turn': ('⏳', ''),
+        # Текстовые метки для элементов интерфейса
+        self.labels = {
+            'health': 'HP:',
+            'mana': 'Мана:',
+            'stamina': 'Выносливость:',
+            'damage': 'Урон:',
+            'defense': 'Защита:',
+            'dodge': 'Уворот:',
+            'crit': 'Крит:',
         }
 
         # Состояние боя
@@ -166,43 +112,17 @@ class CombatSystem:
         self.add_to_log(f"Ваши статы: Урон {player_dmg}, Защита {player_def}")
         self.add_to_log(f"  [Уворот: {player_dodge:.1f}%, Крит: {player_crit:.1f}%]")
 
-    def get_icon_text(self, icon_name):
+    def get_label(self, label_name):
         """
-        Получить текст с эмодзи или текстовый fallback
+        Получить текстовую метку
 
         Args:
-            icon_name: Название иконки из словаря self.icons
+            label_name: Название метки из словаря self.labels
 
         Returns:
-            str: Эмодзи или текстовый fallback
+            str: Текстовая метка
         """
-        emoji, text_fallback = self.icons.get(icon_name, ('', icon_name))
-        if self.use_emoji and emoji:
-            return emoji
-        return text_fallback
-
-    def render_text_with_icon(self, icon_name, text, color):
-        """
-        Отрисовать текст с иконкой (эмодзи или текст)
-
-        Args:
-            icon_name: Название иконки
-            text: Текст для отображения
-            color: Цвет текста
-
-        Returns:
-            pygame.Surface: Поверхность с отрисованным текстом
-        """
-        icon_text = self.get_icon_text(icon_name)
-
-        if self.use_emoji and icon_text:
-            # Создаем временную поверхность для композиции
-            full_text = f"{icon_text} {text}" if text else icon_text
-            return self.info_font.render(full_text, True, color)
-        else:
-            # Fallback: просто текст
-            full_text = f"{icon_text} {text}" if icon_text and text else (icon_text or text)
-            return self.info_font.render(full_text, True, color)
+        return self.labels.get(label_name, label_name)
 
     def add_to_log(self, message):
         """
@@ -583,11 +503,7 @@ class CombatSystem:
         )
 
         # Заголовок
-        title_icon = self.get_icon_text('title')
-        if self.use_emoji:
-            title_text = self.font.render(f"{title_icon} БОЙ {title_icon}", True, (255, 215, 0))
-        else:
-            title_text = self.font.render("БОЙ", True, (255, 215, 0))
+        title_text = self.font.render("БОЙ", True, (255, 215, 0))
         title_rect = title_text.get_rect()
         title_rect.centerx = combat_x + combat_width // 2
         title_rect.y = combat_y + 15
@@ -622,9 +538,9 @@ class CombatSystem:
 
         # ОТДЕЛЬНЫЙ БЛОК ЛОГА БОЯ (ниже статистики персонажей)
         log_block_x = combat_x + 30
-        log_block_y = combat_y + 300  # Опустили ниже панелей статистики (65 + 220 + отступ)
+        log_block_y = combat_y + 320  # Опустили еще ниже (65 + 240 + отступ)
         log_block_width = combat_width - 60
-        log_block_height = 280  # Уменьшена высота под новую позицию
+        log_block_height = 260  # Уменьшена высота под новую позицию
 
         # Фон блока лога
         pygame.draw.rect(
@@ -642,9 +558,7 @@ class CombatSystem:
         )
 
         # Заголовок лога
-        log_icon = self.get_icon_text('log')
-        log_title_text = f"{log_icon} Журнал боевых действий" if log_icon else "Журнал боевых действий"
-        log_title = self.info_font.render(log_title_text, True, (150, 200, 255))
+        log_title = self.info_font.render("Журнал боевых действий", True, (150, 200, 255))
         self.screen.blit(log_title, (log_block_x + 15, log_block_y + 10))
 
         # Линия под заголовком лога
@@ -658,7 +572,7 @@ class CombatSystem:
 
         # Отрисовка логов с прокруткой
         log_line_height = 24
-        max_visible_logs = 9  # Подстроено под высоту блока
+        max_visible_logs = 8  # Подстроено под новую высоту блока
         log_start_y = log_block_y + 48
 
         # Показываем последние записи
@@ -683,13 +597,9 @@ class CombatSystem:
         # Действия игрока - отображение слотов умений
         actions_y = combat_y + combat_height - 110
         if self.turn == "player":
-            turn_icon = self.get_icon_text('your_turn')
-            actions_text = f"{turn_icon} Ваш ход! Используйте умения (клавиши 1-8):" if turn_icon else "Ваш ход! Используйте умения (клавиши 1-8):"
-            actions_title = self.font.render(actions_text, True, (100, 255, 100))
+            actions_title = self.font.render("Ваш ход! Используйте умения (клавиши 1-8):", True, (100, 255, 100))
         else:
-            turn_icon = self.get_icon_text('enemy_turn')
-            actions_text = f"{turn_icon} Ход противника..." if turn_icon else "Ход противника..."
-            actions_title = self.font.render(actions_text, True, (255, 150, 150))
+            actions_title = self.font.render("Ход противника...", True, (255, 150, 150))
 
         self.screen.blit(actions_title, (combat_x + 30, actions_y))
 
@@ -798,9 +708,9 @@ class CombatSystem:
             label: Название (Игрок/Противник)
             is_player: True если это игрок
         """
-        # Фон панели статистики (увеличен для прогресс-баров маны и выносливости)
+        # Фон панели статистики (увеличен для всех элементов)
         panel_width = 320
-        panel_height = 220  # Увеличено для прогресс-баров маны и выносливости
+        panel_height = 240  # Увеличено чтобы все параметры помещались
         pygame.draw.rect(
             self.screen,
             (45, 45, 60),
@@ -816,11 +726,8 @@ class CombatSystem:
             3
         )
 
-        # Имя с иконкой
-        icon_name = 'player' if is_player else 'enemy'
-        icon = self.get_icon_text(icon_name)
-        name_str = f"{icon} {label}: {character.name}" if icon else f"{label}: {character.name}"
-        name_text = self.info_font.render(name_str, True, (255, 255, 255))
+        # Имя персонажа
+        name_text = self.info_font.render(f"{label}: {character.name}", True, (255, 255, 255))
         self.screen.blit(name_text, (x, y))
 
         # Уровень и ранг
@@ -837,10 +744,13 @@ class CombatSystem:
         health_percent = (character.health / effective_max_health) * 100 if effective_max_health > 0 else 0
         health_color = (255, 100, 100) if health_percent < 30 else (255, 165, 0) if health_percent < 60 else (100, 255, 100)
 
-        # Здоровье с иконкой
-        health_icon = self.get_icon_text('health')
-        health_str = f"{health_icon} {character.health}/{effective_max_health} ({health_percent:.0f}%)" if health_icon else f"HP: {character.health}/{effective_max_health} ({health_percent:.0f}%)"
-        health_text = self.info_font.render(health_str, True, health_color)
+        # Здоровье
+        health_label = self.get_label('health')
+        health_text = self.info_font.render(
+            f"{health_label} {character.health}/{effective_max_health} ({health_percent:.0f}%)",
+            True,
+            health_color
+        )
         self.screen.blit(health_text, (x, y + 48))
 
         # Улучшенная полоса здоровья с градиентом (компактнее)
@@ -879,10 +789,13 @@ class CombatSystem:
             effective_max_mana = character.get_effective_max_mana() if hasattr(character, 'get_effective_max_mana') else character.max_mana
             mana_percent = (character.mana / effective_max_mana) * 100 if effective_max_mana > 0 else 0
 
-            # Текст маны с иконкой
-            mana_icon = self.get_icon_text('mana')
-            mana_str = f"{mana_icon} {character.mana}/{effective_max_mana}" if mana_icon else f"Мана: {character.mana}/{effective_max_mana}"
-            mana_text = self.info_font.render(mana_str, True, (100, 150, 255))
+            # Текст маны
+            mana_label = self.get_label('mana')
+            mana_text = self.info_font.render(
+                f"{mana_label} {character.mana}/{effective_max_mana}",
+                True,
+                (100, 150, 255)
+            )
             self.screen.blit(mana_text, (x, y + 95))
 
             # Полоса маны
@@ -901,10 +814,13 @@ class CombatSystem:
             effective_max_stamina = character.get_effective_max_stamina() if hasattr(character, 'get_effective_max_stamina') else character.max_stamina
             stamina_percent = (character.stamina / effective_max_stamina) * 100 if effective_max_stamina > 0 else 0
 
-            # Текст выносливости с иконкой
-            stamina_icon = self.get_icon_text('stamina')
-            stamina_str = f"{stamina_icon} {character.stamina}/{effective_max_stamina}" if stamina_icon else f"Выносливость: {character.stamina}/{effective_max_stamina}"
-            stamina_text = self.info_font.render(stamina_str, True, (255, 220, 100))
+            # Текст выносливости
+            stamina_label = self.get_label('stamina')
+            stamina_text = self.info_font.render(
+                f"{stamina_label} {character.stamina}/{effective_max_stamina}",
+                True,
+                (255, 220, 100)
+            )
             self.screen.blit(stamina_text, (x, y + 138))
 
             # Полоса выносливости
@@ -917,18 +833,13 @@ class CombatSystem:
 
             pygame.draw.rect(self.screen, (200, 180, 100), (bar_x, stamina_bar_y, bar_width, bar_height), 2)
 
-        # Компактные характеристики с иконками
+        # Компактные характеристики
         stats_y = y + 185
-        damage_icon = self.get_icon_text('damage')
-        defense_icon = self.get_icon_text('defense')
-        dodge_icon = self.get_icon_text('dodge')
-        crit_icon = self.get_icon_text('crit')
-
         stats = [
-            f"{damage_icon} {character.get_total_damage()}" if damage_icon else f"Урон: {character.get_total_damage()}",
-            f"{defense_icon} {character.get_total_defense()}" if defense_icon else f"Защита: {character.get_total_defense()}",
-            f"{dodge_icon} {character.calculate_dodge_chance():.1f}%" if dodge_icon else f"Уворот: {character.calculate_dodge_chance():.1f}%",
-            f"{crit_icon} {character.calculate_crit_chance():.1f}%" if crit_icon else f"Крит: {character.calculate_crit_chance():.1f}%"
+            f"{self.get_label('damage')} {character.get_total_damage()}",
+            f"{self.get_label('defense')} {character.get_total_defense()}",
+            f"{self.get_label('dodge')} {character.calculate_dodge_chance():.1f}%",
+            f"{self.get_label('crit')} {character.calculate_crit_chance():.1f}%"
         ]
 
         for i, stat in enumerate(stats):
