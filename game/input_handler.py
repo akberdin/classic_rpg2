@@ -61,7 +61,7 @@ class InputHandler:
             if all_items and 0 <= self.ctx.inventory_window.selected_inventory_index < len(all_items):
                 item, quantity = all_items[self.ctx.inventory_window.selected_inventory_index]
                 if isinstance(item, EquipmentItem):
-                    success, message = self.ctx.player.inventory.equip_item(item.name)
+                    success, message = self.ctx.player.inventory.equip_item(item)
                     print(message)
                     # Обновляем производные характеристики после экипировки
                     if success:
@@ -91,7 +91,7 @@ class InputHandler:
             if all_items and 0 <= self.ctx.inventory_window.selected_inventory_index < len(all_items):
                 item, quantity = all_items[self.ctx.inventory_window.selected_inventory_index]
                 # Удаляем 1 штуку выбранного предмета
-                if self.ctx.player.inventory.remove_item(item.name, 1):
+                if self.ctx.player.inventory.remove_item(item, 1):
                     item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
                     print(f"Выброшен предмет: {item_name}")
                     # Если предметов больше нет, корректируем индекс
@@ -149,7 +149,7 @@ class InputHandler:
                 print(result)
                 # Если умение успешно изучено, удаляем книгу из инвентаря
                 if "Изучено умение" in result:
-                    self.ctx.player.inventory.remove_item(item.name, 1)
+                    self.ctx.player.inventory.remove_item(item, 1)
             else:
                 print("Этот предмет нельзя использовать таким образом")
             return
@@ -362,7 +362,7 @@ class InputHandler:
                     buy_price = int(item.value * 1.5)  # Торговец продает с наценкой 50%
 
                     if self.ctx.player.inventory.gold >= buy_price:
-                        if self.ctx.nearby_npc.inventory.remove_item(item.name, 1):
+                        if self.ctx.nearby_npc.inventory.remove_item(item, 1):
                             if self.ctx.player.inventory.add_item(item, 1):
                                 self.ctx.player.inventory.remove_gold(buy_price)
                                 self.ctx.nearby_npc.inventory.add_gold(buy_price)
@@ -390,7 +390,7 @@ class InputHandler:
                     sell_price = int(item.value * 0.7)  # Торговец покупает за 70% от стоимости
 
                     if self.ctx.nearby_npc.inventory.gold >= sell_price:
-                        if self.ctx.player.inventory.remove_item(item.name, 1):
+                        if self.ctx.player.inventory.remove_item(item, 1):
                             if self.ctx.nearby_npc.inventory.add_item(item, 1):
                                 self.ctx.player.inventory.add_gold(sell_price)
                                 self.ctx.nearby_npc.inventory.remove_gold(sell_price)
@@ -448,7 +448,7 @@ class InputHandler:
             buy_price = int(item.value * 1.5)
 
             if self.ctx.player.inventory.gold >= buy_price:
-                if self.ctx.nearby_npc.inventory.remove_item(item.name, 1):
+                if self.ctx.nearby_npc.inventory.remove_item(item, 1):
                     if self.ctx.player.inventory.add_item(item, 1):
                         self.ctx.player.inventory.remove_gold(buy_price)
                         self.ctx.nearby_npc.inventory.add_gold(buy_price)
@@ -463,7 +463,7 @@ class InputHandler:
             sell_price = int(item.value * 0.7)
 
             if self.ctx.nearby_npc.inventory.gold >= sell_price:
-                if self.ctx.player.inventory.remove_item(item.name, 1):
+                if self.ctx.player.inventory.remove_item(item, 1):
                     if self.ctx.nearby_npc.inventory.add_item(item, 1):
                         self.ctx.player.inventory.add_gold(sell_price)
                         self.ctx.nearby_npc.inventory.remove_gold(sell_price)

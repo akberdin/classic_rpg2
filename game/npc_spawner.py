@@ -896,7 +896,7 @@ def give_starting_items(player):
     # Стартовое оружие - плохой топор
     starter_weapon = ItemGenerator.generate_weapon(level=1, quality=ItemQuality.POOR)
     player.inventory.add_item(starter_weapon, 1)
-    player.inventory.equip_item(starter_weapon.name)
+    player.inventory.equip_item(starter_weapon)
 
     # Легкая плохая нагрудная броня
     starter_chest = ItemGenerator.generate_armor(
@@ -906,7 +906,7 @@ def give_starting_items(player):
         quality=ItemQuality.POOR
     )
     player.inventory.add_item(starter_chest, 1)
-    player.inventory.equip_item(starter_chest.name)
+    player.inventory.equip_item(starter_chest)
 
     # Легкая плохая обувь
     starter_feet = ItemGenerator.generate_armor(
@@ -916,7 +916,7 @@ def give_starting_items(player):
         quality=ItemQuality.POOR
     )
     player.inventory.add_item(starter_feet, 1)
-    player.inventory.equip_item(starter_feet.name)
+    player.inventory.equip_item(starter_feet)
 
     # Легкие плохие перчатки
     starter_hands = ItemGenerator.generate_armor(
@@ -926,7 +926,7 @@ def give_starting_items(player):
         quality=ItemQuality.POOR
     )
     player.inventory.add_item(starter_hands, 1)
-    player.inventory.equip_item(starter_hands.name)
+    player.inventory.equip_item(starter_hands)
 
     # Обновляем производные характеристики после экипировки
     player.update_derived_stats()
