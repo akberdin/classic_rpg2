@@ -18,6 +18,7 @@ class GameTime:
         self.ctx = GameContext(game)
         self.game_hour = 6.0  # Начало игры в 6 утра (используем float для дробных часов)
         self.game_day = 1
+        self.game_turn = 0  # Счетчик ходов для ротации квестов
         self.accumulated_hours = 0.0  # Накопленные дробные часы для обновления AI
 
     @property
@@ -39,21 +40,22 @@ class GameTime:
             skip_player_recovery: Не восстанавливать выносливость игрока (используется при отдыхе)
         """
         self.game_hour += hours
+        self.game_turn += 1  # Увеличиваем счетчик ходов
+
+        # Проверяем и обновляем квесты каждый ход (но ротация происходит раз в 120 ходов)
+        if self.ctx.quest_manager and self.ctx.game_map:
+            updated_locations = self.ctx.quest_manager.check_and_rotate_all_quests(
+                self.ctx.game_map,
+                self.game_turn,
+                self.ctx.player.level
+            )
+            if updated_locations:
+                print(f"Квесты обновлены в следующих локациях: {', '.join(updated_locations)}")
 
         # Если прошло 24 часа, начинается новый день
         while self.game_hour >= 24:
             self.game_hour -= 24
             self.game_day += 1
-
-            # Проверяем и обновляем квесты раз в 5 дней
-            if self.ctx.quest_manager and self.ctx.game_map:
-                updated_locations = self.ctx.quest_manager.check_and_rotate_all_quests(
-                    self.ctx.game_map,
-                    self.game_day,
-                    self.ctx.player.level
-                )
-                if updated_locations:
-                    print(f"Квесты обновлены в следующих локациях: {', '.join(updated_locations)}")
 
         # Накапливаем часы для обновления AI
         self.accumulated_hours += hours

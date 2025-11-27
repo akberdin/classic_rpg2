@@ -366,7 +366,7 @@ class QuestManager:
     """Менеджер квестов"""
 
     MAX_ACTIVE_QUESTS = 5  # Максимум активных квестов
-    QUEST_ROTATION_DAYS = 5  # Квесты обновляются раз в 5 дней
+    QUEST_ROTATION_TURNS = 120  # Квесты обновляются раз в 120 ходов
 
     def __init__(self):
         """Инициализация менеджера квестов"""
@@ -374,7 +374,7 @@ class QuestManager:
         self.active_quests = []     # Активные квесты
         self.completed_quests = []  # Завершенные квесты
         self.location_quests = {}   # Квесты по локациям: {location_id: [quests]}
-        self.location_quest_day = {}  # День последнего обновления квестов: {location_id: day}
+        self.location_quest_turn = {}  # Ход последнего обновления квестов: {location_id: turn}
 
     def add_available_quest(self, quest):
         """
@@ -832,7 +832,7 @@ class QuestManager:
         """
         return self.completed_quests
 
-    def rotate_location_quests(self, location_id, location_name, location_type, current_day, player_level=1):
+    def rotate_location_quests(self, location_id, location_name, location_type, current_turn, player_level=1):
         """
         Обновить квесты в локации если прошло достаточно времени
         Активные квесты не удаляются
@@ -841,17 +841,17 @@ class QuestManager:
             location_id: ID локации
             location_name: Название локации
             location_type: Тип локации (для генерации уникальных квестов)
-            current_day: Текущий игровой день
+            current_turn: Текущий игровой ход
             player_level: Уровень игрока
 
         Returns:
             bool: True если квесты были обновлены
         """
         # Проверяем нужно ли обновлять квесты
-        last_update_day = self.location_quest_day.get(location_id, 0)
-        days_since_update = current_day - last_update_day
+        last_update_turn = self.location_quest_turn.get(location_id, 0)
+        turns_since_update = current_turn - last_update_turn
 
-        if days_since_update < self.QUEST_ROTATION_DAYS:
+        if turns_since_update < self.QUEST_ROTATION_TURNS:
             return False
 
         # Сохраняем ID активных квестов из этой локации
@@ -883,18 +883,18 @@ class QuestManager:
         for quest in new_quests:
             self.location_quests[location_id].append(quest)
 
-        # Обновляем день последнего обновления
-        self.location_quest_day[location_id] = current_day
+        # Обновляем ход последнего обновления
+        self.location_quest_turn[location_id] = current_turn
 
         return True
 
-    def check_and_rotate_all_quests(self, game_map, current_day, player_level=1):
+    def check_and_rotate_all_quests(self, game_map, current_turn, player_level=1):
         """
         Проверить и обновить квесты во всех локациях
 
         Args:
             game_map: Игровая карта
-            current_day: Текущий игровой день
+            current_turn: Текущий игровой ход
             player_level: Уровень игрока
 
         Returns:
@@ -914,7 +914,7 @@ class QuestManager:
                     location_id,
                     location.name,
                     location.location_type,
-                    current_day,
+                    current_turn,
                     player_level
                 ):
                     updated_locations.append(location.name)
