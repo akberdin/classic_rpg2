@@ -453,13 +453,13 @@ class CombatSystem:
         overlay.fill((0, 0, 0))
         self.screen.blit(overlay, (0, 0))
 
-        # Размеры окна боя (увеличены для лога)
+        # Размеры окна боя (увеличены для лога и прогресс-баров маны/выносливости)
         if self.scaler:
             combat_width = self.scaler.scale_width(1100)
-            combat_height = self.scaler.scale_height(750)
+            combat_height = self.scaler.scale_height(850)
         else:
             combat_width = min(1100, int(screen_width * 0.85))
-            combat_height = min(750, int(screen_height * 0.8))
+            combat_height = min(850, int(screen_height * 0.9))
 
         combat_x = (screen_width - combat_width) // 2
         combat_y = (screen_height - combat_height) // 2
@@ -685,9 +685,9 @@ class CombatSystem:
             label: Название (Игрок/Противник)
             is_player: True если это игрок
         """
-        # Фон панели статистики (компактный)
+        # Фон панели статистики (увеличен для прогресс-баров маны и выносливости)
         panel_width = 320
-        panel_height = 160  # Уменьшено с 190 до 160
+        panel_height = 220  # Увеличено для прогресс-баров маны и выносливости
         pygame.draw.rect(
             self.screen,
             (45, 45, 60),
@@ -759,8 +759,56 @@ class CombatSystem:
             2
         )
 
+        # Прогресс-бар маны (только для персонажей с маной)
+        if hasattr(character, 'mana') and hasattr(character, 'max_mana'):
+            # Получаем эффективную макс. ману с учетом экипировки
+            effective_max_mana = character.get_effective_max_mana() if hasattr(character, 'get_effective_max_mana') else character.max_mana
+            mana_percent = (character.mana / effective_max_mana) * 100 if effective_max_mana > 0 else 0
+
+            # Текст маны
+            mana_text = self.info_font.render(
+                f"💧 Мана: {character.mana}/{effective_max_mana}",
+                True,
+                (100, 150, 255)
+            )
+            self.screen.blit(mana_text, (x, y + 95))
+
+            # Полоса маны
+            mana_bar_y = y + 115
+            pygame.draw.rect(self.screen, (30, 30, 50), (bar_x, mana_bar_y, bar_width, bar_height))
+
+            mana_fill_width = int(bar_width * (character.mana / effective_max_mana)) if effective_max_mana > 0 else 0
+            if mana_fill_width > 0:
+                pygame.draw.rect(self.screen, (100, 150, 255), (bar_x, mana_bar_y, mana_fill_width, bar_height))
+
+            pygame.draw.rect(self.screen, (150, 150, 200), (bar_x, mana_bar_y, bar_width, bar_height), 2)
+
+        # Прогресс-бар выносливости
+        if hasattr(character, 'stamina') and hasattr(character, 'max_stamina'):
+            # Получаем эффективную макс. выносливость с учетом экипировки
+            effective_max_stamina = character.get_effective_max_stamina() if hasattr(character, 'get_effective_max_stamina') else character.max_stamina
+            stamina_percent = (character.stamina / effective_max_stamina) * 100 if effective_max_stamina > 0 else 0
+
+            # Текст выносливости
+            stamina_text = self.info_font.render(
+                f"⚡ Выносливость: {character.stamina}/{effective_max_stamina}",
+                True,
+                (255, 220, 100)
+            )
+            self.screen.blit(stamina_text, (x, y + 138))
+
+            # Полоса выносливости
+            stamina_bar_y = y + 158
+            pygame.draw.rect(self.screen, (50, 40, 20), (bar_x, stamina_bar_y, bar_width, bar_height))
+
+            stamina_fill_width = int(bar_width * (character.stamina / effective_max_stamina)) if effective_max_stamina > 0 else 0
+            if stamina_fill_width > 0:
+                pygame.draw.rect(self.screen, (255, 220, 100), (bar_x, stamina_bar_y, stamina_fill_width, bar_height))
+
+            pygame.draw.rect(self.screen, (200, 180, 100), (bar_x, stamina_bar_y, bar_width, bar_height), 2)
+
         # Компактные характеристики
-        stats_y = y + 100
+        stats_y = y + 185
         stats = [
             f"⚔ Урон: {character.get_total_damage()}",
             f"🛡 Защита: {character.get_total_defense()}",

@@ -1055,17 +1055,21 @@ class ItemGenerator:
 
             # Выбираем подходящие умения в зависимости от типа предмета
             if item_type == "weapon":
-                # Для оружия - общие боевые умения + профильные умения только для своего типа
-                available_skills = combat_skills.copy()
+                # Для посохов и жезлов - только магические умения
+                if weapon_type in [WeaponType.STAFF, WeaponType.WAND]:
+                    available_skills = magic_skills.copy()
+                else:
+                    # Для остального оружия - общие боевые умения + профильные умения только для своего типа
+                    available_skills = combat_skills.copy()
 
-                # Добавляем профильные умения только для соответствующего типа оружия
-                if weapon_type == WeaponType.BOW:
-                    available_skills += bow_skills
-                elif weapon_type == WeaponType.KNIFE:
-                    available_skills += knife_skills
-                elif weapon_type == WeaponType.SWORD:
-                    available_skills += sword_skills
-                # Для остальных типов оружия - только общие боевые умения
+                    # Добавляем профильные умения только для соответствующего типа оружия
+                    if weapon_type == WeaponType.BOW:
+                        available_skills += bow_skills
+                    elif weapon_type == WeaponType.KNIFE:
+                        available_skills += knife_skills
+                    elif weapon_type == WeaponType.SWORD:
+                        available_skills += sword_skills
+                    # Для остальных типов оружия - только общие боевые умения
             elif item_type == "armor":
                 # Для брони - защитные и боевые умения
                 available_skills = combat_skills + ['heal', 'regeneration', 'mage_shield']
