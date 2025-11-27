@@ -480,7 +480,7 @@ class CombatSystem:
         )
 
         # Заголовок
-        title_text = self.font.render("⚔ БОЙ ⚔", True, (255, 215, 0))
+        title_text = self.font.render("БОЙ", True, (255, 215, 0))
         title_rect = title_text.get_rect()
         title_rect.centerx = combat_x + combat_width // 2
         title_rect.y = combat_y + 15
@@ -535,7 +535,7 @@ class CombatSystem:
         )
 
         # Заголовок лога
-        log_title = self.info_font.render("📜 Журнал боевых действий", True, (150, 200, 255))
+        log_title = self.info_font.render("Журнал боевых действий", True, (150, 200, 255))
         self.screen.blit(log_title, (log_block_x + 15, log_block_y + 10))
 
         # Линия под заголовком лога
@@ -574,9 +574,9 @@ class CombatSystem:
         # Действия игрока - отображение слотов умений
         actions_y = combat_y + combat_height - 110
         if self.turn == "player":
-            actions_title = self.font.render("⚡ Ваш ход! Используйте умения (клавиши 1-8):", True, (100, 255, 100))
+            actions_title = self.font.render("Ваш ход! Используйте умения (клавиши 1-8):", True, (100, 255, 100))
         else:
-            actions_title = self.font.render("⏳ Ход противника...", True, (255, 150, 150))
+            actions_title = self.font.render("Ход противника...", True, (255, 150, 150))
 
         self.screen.blit(actions_title, (combat_x + 30, actions_y))
 
@@ -703,9 +703,8 @@ class CombatSystem:
             3
         )
 
-        # Имя и иконка
-        icon = "🛡" if is_player else "⚔"
-        name_text = self.info_font.render(f"{icon} {label}: {character.name}", True, (255, 255, 255))
+        # Имя
+        name_text = self.info_font.render(f"{label}: {character.name}", True, (255, 255, 255))
         self.screen.blit(name_text, (x, y))
 
         # Уровень и ранг
@@ -723,7 +722,7 @@ class CombatSystem:
         health_color = (255, 100, 100) if health_percent < 30 else (255, 165, 0) if health_percent < 60 else (100, 255, 100)
 
         health_text = self.info_font.render(
-            f"❤ {character.health}/{effective_max_health} ({health_percent:.0f}%)",
+            f"HP: {character.health}/{effective_max_health} ({health_percent:.0f}%)",
             True,
             health_color
         )
@@ -767,7 +766,7 @@ class CombatSystem:
 
             # Текст маны
             mana_text = self.info_font.render(
-                f"💧 Мана: {character.mana}/{effective_max_mana}",
+                f"Мана: {character.mana}/{effective_max_mana}",
                 True,
                 (100, 150, 255)
             )
@@ -791,7 +790,7 @@ class CombatSystem:
 
             # Текст выносливости
             stamina_text = self.info_font.render(
-                f"⚡ Выносливость: {character.stamina}/{effective_max_stamina}",
+                f"Выносливость: {character.stamina}/{effective_max_stamina}",
                 True,
                 (255, 220, 100)
             )
@@ -810,10 +809,10 @@ class CombatSystem:
         # Компактные характеристики
         stats_y = y + 185
         stats = [
-            f"⚔ Урон: {character.get_total_damage()}",
-            f"🛡 Защита: {character.get_total_defense()}",
-            f"💨 Уворот: {character.calculate_dodge_chance():.1f}%",
-            f"✨ Крит: {character.calculate_crit_chance():.1f}%"
+            f"Урон: {character.get_total_damage()}",
+            f"Защита: {character.get_total_defense()}",
+            f"Уворот: {character.calculate_dodge_chance():.1f}%",
+            f"Крит: {character.calculate_crit_chance():.1f}%"
         ]
 
         for i, stat in enumerate(stats):
