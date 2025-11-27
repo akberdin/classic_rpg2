@@ -507,15 +507,12 @@ class Inventory:
 
     @property
     def current_weight(self):
-        """Текущий вес инвентаря"""
+        """Текущий вес инвентаря (только предметы в рюкзаке, не экипированные)"""
         total = 0.0
         # Вес предметов в инвентаре
         for item, quantity in self.items.values():
             total += item.weight * quantity
-        # Вес экипированных предметов
-        for item in self.equipment.values():
-            if item:
-                total += item.weight
+        # Экипированные предметы НЕ учитываются в весе инвентаря
         return round(total, 2)
 
     def add_item(self, item, quantity=1):
@@ -577,31 +574,47 @@ class Inventory:
 
             return True
 
-    def remove_item(self, item_name, quantity=1):
+    def remove_item(self, item_name_or_object, quantity=1):
         """
         Удалить предмет из инвентаря
 
         Args:
-            item_name: Название предмета
+            item_name_or_object: Название предмета (строка) или объект предмета
             quantity: Количество для удаления
 
         Returns:
             bool: True если успешно удален
         """
-        if item_name not in self.items:
-            return False
+        # Поддерживаем два варианта: строку (ключ) или объект предмета
+        if isinstance(item_name_or_object, str):
+            item_key = item_name_or_object
+            if item_key not in self.items:
+                return False
+        else:
+            # Передан объект предмета - ищем его в инвентаре
+            item_obj = item_name_or_object
+            item_key = None
 
-        item, current_quantity = self.items[item_name]
+            # Ищем предмет по объекту
+            for key, (stored_item, qty) in self.items.items():
+                if stored_item is item_obj:
+                    item_key = key
+                    break
+
+            if item_key is None:
+                return False
+
+        item, current_quantity = self.items[item_key]
 
         if current_quantity < quantity:
             return False
 
         if current_quantity == quantity:
             # Удаляем предмет полностью
-            del self.items[item_name]
+            del self.items[item_key]
         else:
             # Уменьшаем количество
-            self.items[item_name] = (item, current_quantity - quantity)
+            self.items[item_key] = (item, current_quantity - quantity)
 
         return True
 
@@ -720,20 +733,36 @@ class Inventory:
             items = sorted(items, key=sort_key)
         return items
 
-    def equip_item(self, item_name):
+    def equip_item(self, item_name_or_object):
         """
         Экипировать предмет из инвентаря
 
         Args:
-            item_name: Название предмета для экипировки
+            item_name_or_object: Название предмета (строка) или объект предмета
 
         Returns:
             tuple: (success, message)
         """
-        if item_name not in self.items:
-            return (False, "Предмет не найден в инвентаре")
+        # Поддерживаем два варианта: строку (ключ) или объект предмета
+        if isinstance(item_name_or_object, str):
+            item_key = item_name_or_object
+            if item_key not in self.items:
+                return (False, "Предмет не найден в инвентаре")
+            item, quantity = self.items[item_key]
+        else:
+            # Передан объект предмета - ищем его в инвентаре
+            item = item_name_or_object
+            item_key = None
 
-        item, quantity = self.items[item_name]
+            # Ищем предмет по объекту
+            for key, (stored_item, qty) in self.items.items():
+                if stored_item is item:
+                    item_key = key
+                    quantity = qty
+                    break
+
+            if item_key is None:
+                return (False, "Предмет не найден в инвентаре")
 
         # Проверяем, является ли предмет экипируемым
         if not isinstance(item, EquipmentItem):
@@ -791,8 +820,8 @@ class Inventory:
 
         # Экипируем новый предмет
         self.equipment[slot] = item
-        # Удаляем из инвентаря
-        self.remove_item(item_name, 1)
+        # Удаляем из инвентаря (используем найденный ключ)
+        self.remove_item(item_key, 1)
 
         # Применяем бонусы умений от нового предмета
         if hasattr(item, 'skill_bonus') and item.skill_bonus:
