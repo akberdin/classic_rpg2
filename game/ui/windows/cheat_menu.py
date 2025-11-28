@@ -32,6 +32,7 @@ class CheatMenuWindow:
             'teleport_academy': {'name': 'Телепорт к академии магов', 'enabled': False, 'one_time': True},
             'level_up': {'name': 'Повысить уровень на 1', 'enabled': False, 'one_time': True},
             'give_artifact': {'name': 'Дать случайный артефакт', 'enabled': False, 'one_time': True},
+            'give_artifact_bracelet': {'name': 'Дать артефактный браслет', 'enabled': False, 'one_time': True},
         }
 
         self.selected_index = 0
@@ -197,6 +198,27 @@ class CheatMenuWindow:
                         print("Не удалось добавить артефакт - инвентарь переполнен!")
                 except Exception as e:
                     print(f"Ошибка при создании артефакта: {e}")
+                    import traceback
+                    traceback.print_exc()
+
+            elif cheat_id == 'give_artifact_bracelet':
+                from game.inventory import ItemGenerator, ItemQuality, EquipmentSlot
+                import random
+                # Генерируем артефактный браслет
+                try:
+                    bracelet_slot = random.choice([EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2])
+                    artifact_bracelet = ItemGenerator.generate_jewelry(
+                        level=game.player.level,
+                        slot=bracelet_slot,
+                        quality=ItemQuality.ARTIFACT
+                    )
+
+                    if game.player.inventory.add_item(artifact_bracelet, 1):
+                        print(f"Получен артефактный браслет: {artifact_bracelet.name}!")
+                    else:
+                        print("Не удалось добавить браслет - инвентарь переполнен!")
+                except Exception as e:
+                    print(f"Ошибка при создании артефактного браслета: {e}")
                     import traceback
                     traceback.print_exc()
 
