@@ -153,18 +153,8 @@ class Animal(NPC):
                 closest_threat = player
                 closest_distance = distance
 
-        # Проверяем охотников (всегда враждебны)
-        if all_npcs:
-            for npc in all_npcs:
-                if not npc.is_alive or npc is self:
-                    continue
-
-                # Охотники враждебны к животным
-                if npc.npc_type == NPC_TYPE_HUNTER:
-                    distance = abs(self.x - npc.x) + abs(self.y - npc.y)
-                    if distance <= self.detection_range and distance < closest_distance:
-                        closest_threat = npc
-                        closest_distance = distance
+        # Звери не реагируют на охотников - только охотники охотятся на зверей
+        # (Это предотвращает образование "кучи" из преследующих друг друга NPC)
 
         # Реакция на угрозу
         if closest_threat:
@@ -301,6 +291,17 @@ class Animal(NPC):
             self.target_enemy = None
             return
 
+        # Проверяем, можем ли атаковать (если враг рядом)
+        if self.can_attack(self.target_enemy):
+            # Используем упрощенный бой для NPC vs NPC
+            enemy_killed = self._simplified_npc_combat(self.target_enemy, context)
+            if enemy_killed:
+                print(f"{self.name} победил {self.target_enemy.name} в быстром бою!")
+                self.target_enemy = None
+                self.state = self.behavior_mode
+                self.pursuit_counter = 0
+            return
+
         # Двигаемся к врагу
         dx = 1 if self.target_enemy.x > self.x else -1 if self.target_enemy.x < self.x else 0
         dy = 1 if self.target_enemy.y > self.y else -1 if self.target_enemy.y < self.y else 0
@@ -410,7 +411,7 @@ class Deer(Animal):
         self.update_derived_stats()
 
     def _check_for_threats(self, all_npcs, player=None):
-        """Олени боятся всех - переопределяем метод"""
+        """Олени боятся игрока и хищников, но НЕ охотников"""
         closest_threat = None
         closest_distance = float('inf')
 
@@ -421,10 +422,16 @@ class Deer(Animal):
                 closest_threat = player
                 closest_distance = distance
 
-        # Проверяем всех NPC
+        # Проверяем хищников (волков и медведей), но НЕ охотников
         if all_npcs:
             for npc in all_npcs:
-                if not npc.is_alive or npc is self or npc.npc_type == NPC_TYPE_DEER:
+                if not npc.is_alive or npc is self:
+                    continue
+
+                # Олени убегают только от хищников (волки, медведи), но НЕ от охотников
+                if npc.npc_type == NPC_TYPE_DEER:
+                    continue
+                if npc.npc_type == NPC_TYPE_HUNTER:
                     continue
 
                 distance = abs(self.x - npc.x) + abs(self.y - npc.y)
