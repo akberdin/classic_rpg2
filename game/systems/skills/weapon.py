@@ -83,9 +83,10 @@ class PreciseShot(WeaponSkill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Базовый урон с множителем от ловкости
+            # Базовый урон с множителем от ловкости (с учетом экипировки)
             base_damage = user.get_total_damage()
-            dex_bonus = getattr(user, 'dexterity', 10) * 0.3
+            dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
+            dex_bonus = dexterity * 0.3
             damage_multiplier = 1.2 + (self.rank - 1) * 0.2  # 1.2x -> 2.0x
 
             # Гарантированный крит с шансом, растущим от ранга
@@ -223,7 +224,8 @@ class Backstab(WeaponSkill):
 
         if target and user.can_attack(target):
             base_damage = user.get_total_damage()
-            dex_bonus = getattr(user, 'dexterity', 10) * 0.5
+            dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
+            dex_bonus = dexterity * 0.5
 
             # Огромный множитель урона
             damage_multiplier = 2.5 + (self.rank - 1) * 0.5  # 2.5x -> 4.5x
@@ -321,7 +323,8 @@ class ShadowStep(WeaponSkill):
 
         if target and user.can_attack(target):
             base_damage = user.get_total_damage()
-            dex_bonus = getattr(user, 'dexterity', 10) * 0.4
+            dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
+            dex_bonus = dexterity * 0.4
 
             # Множитель урона
             damage_multiplier = 1.4 + (self.rank - 1) * 0.2  # 1.4x -> 2.2x
@@ -387,7 +390,8 @@ class WhirlwindStrike(WeaponSkill):
 
         if target and user.can_attack(target):
             base_damage = user.get_total_damage()
-            str_bonus = getattr(user, 'strength', 10) * 0.4
+            strength = user.get_effective_strength() if hasattr(user, 'get_effective_strength') else getattr(user, 'strength', 10)
+            str_bonus = strength * 0.4
 
             # Высокий множитель урона
             damage_multiplier = 2.0 + (self.rank - 1) * 0.4  # 2.0x -> 3.6x
@@ -491,8 +495,10 @@ class BladeDance(WeaponSkill):
             num_hits = 3 + (self.rank - 1)  # 3-7 ударов
 
             base_damage = user.get_total_damage()
-            str_bonus = getattr(user, 'strength', 10) * 0.2
-            dex_bonus = getattr(user, 'dexterity', 10) * 0.2
+            strength = user.get_effective_strength() if hasattr(user, 'get_effective_strength') else getattr(user, 'strength', 10)
+            dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
+            str_bonus = strength * 0.2
+            dex_bonus = dexterity * 0.2
 
             damage_per_hit = int((base_damage + str_bonus + dex_bonus) * 0.5)  # 50% за удар
             target_defense = target.get_total_defense()
