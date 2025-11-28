@@ -162,6 +162,7 @@ class Hunter(NPC):
             current_hour = context.current_hour
         else:
             game_map = context_or_map
+            context = None
         """
         Обновление AI охотника
 
@@ -404,6 +405,7 @@ class Necromancer(NPC):
             current_hour = context.current_hour
         else:
             game_map = context_or_map
+            context = None
         """
         Обновление AI некроманта
 
