@@ -201,6 +201,86 @@ class Character:
 
         return base_strength
 
+    def get_effective_intelligence(self):
+        """
+        Получить эффективный интеллект с учетом бонусов от экипировки
+
+        Returns:
+            int: Эффективный интеллект
+        """
+        base_intelligence = self.intelligence
+
+        # Добавляем бонусы от экипировки
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            base_intelligence += equipment_bonus.get('intelligence', 0)
+
+        return base_intelligence
+
+    def get_effective_spirit(self):
+        """
+        Получить эффективный дух с учетом бонусов от экипировки
+
+        Returns:
+            int: Эффективный дух
+        """
+        base_spirit = self.spirit
+
+        # Добавляем бонусы от экипировки
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            base_spirit += equipment_bonus.get('spirit', 0)
+
+        return base_spirit
+
+    def get_effective_dexterity(self):
+        """
+        Получить эффективную ловкость с учетом бонусов от экипировки
+
+        Returns:
+            int: Эффективная ловкость
+        """
+        base_dexterity = self.dexterity
+
+        # Добавляем бонусы от экипировки
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            base_dexterity += equipment_bonus.get('dexterity', 0)
+
+        return base_dexterity
+
+    def get_effective_constitution(self):
+        """
+        Получить эффективное телосложение с учетом бонусов от экипировки
+
+        Returns:
+            int: Эффективное телосложение
+        """
+        base_constitution = self.constitution
+
+        # Добавляем бонусы от экипировки
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            base_constitution += equipment_bonus.get('constitution', 0)
+
+        return base_constitution
+
+    def get_effective_luck(self):
+        """
+        Получить эффективную удачу с учетом бонусов от экипировки
+
+        Returns:
+            int: Эффективная удача
+        """
+        base_luck = self.luck
+
+        # Добавляем бонусы от экипировки
+        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
+            equipment_bonus = self.inventory.get_total_stats_bonus()
+            base_luck += equipment_bonus.get('luck', 0)
+
+        return base_luck
+
     def consume_stamina(self, amount=STAMINA_COST_PER_MOVE):
         """
         Потратить выносливость

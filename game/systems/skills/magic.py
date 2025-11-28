@@ -44,9 +44,9 @@ class Heal(Skill):
         # Лечение ВСЕГДА применяется к себе (user), не к target
         heal_target = user
 
-        # Базовое лечение зависит от интеллекта и духа
-        intelligence = getattr(user, 'intelligence', 1)
-        spirit = getattr(user, 'spirit', 1)
+        # Базовое лечение зависит от интеллекта и духа (с учетом экипировки)
+        intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
+        spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
 
         # Лечение: процент от макс. здоровья + бонус от интеллекта и духа
         # Улучшено: 35% + 12% за ранг, плюс бонус от статов
@@ -85,9 +85,9 @@ class Regeneration(Skill):
         # Регенерация ВСЕГДА применяется к себе (user), не к target
         regen_target = user
 
-        # Получаем характеристики заклинателя
-        intelligence = getattr(user, 'intelligence', 1)
-        spirit = getattr(user, 'spirit', 1)
+        # Получаем характеристики заклинателя (с учетом экипировки)
+        intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
+        spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
 
         # Значительно улучшенная регенерация с рангом
         base_heal = 15 + self.rank * 6  # 21 -> 45 на 5 ранге
@@ -139,9 +139,9 @@ class StaminaRecovery(Skill):
         # Восстановление выносливости ВСЕГДА применяется к себе (user), не к target
         recovery_target = user
 
-        # Получаем характеристики заклинателя
-        intelligence = getattr(user, 'intelligence', 1)
-        spirit = getattr(user, 'spirit', 1)
+        # Получаем характеристики заклинателя (с учетом экипировки)
+        intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
+        spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
 
         # Восстановление выносливости с рангом
         base_recovery = 15 + self.rank * 5  # 20 -> 40 на 5 ранге
@@ -202,9 +202,9 @@ class Fireball(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Базовый урон зависит от интеллекта (значительно увеличено)
-            intelligence = getattr(user, 'intelligence', 1)
-            spirit = getattr(user, 'spirit', 1)
+            # Базовый урон зависит от интеллекта (с учетом экипировки)
+            intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
+            spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
 
             # Урон: 20 + интеллект*4 + дух*0.3 (интеллект значительно важнее)
             base_damage = 20 + intelligence * 4 + spirit * 0.3
@@ -260,9 +260,9 @@ class IceBolt(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Урон немного меньше чем у огненного шара, но меньше кулдаун и есть замедление
-            intelligence = getattr(user, 'intelligence', 1)
-            spirit = getattr(user, 'spirit', 1)
+            # Урон немного меньше чем у огненного шара, но меньше кулдаун и есть замедление (с учетом экипировки)
+            intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
+            spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
 
             # Урон: 15 + интеллект*3 + дух*0.3 (увеличено)
             base_damage = 15 + intelligence * 3 + spirit * 0.3
@@ -330,9 +330,9 @@ class Lightning(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Самый высокий урон среди магических атак
-            intelligence = getattr(user, 'intelligence', 1)
-            spirit = getattr(user, 'spirit', 1)
+            # Самый высокий урон среди магических атак (с учетом экипировки)
+            intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
+            spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
 
             # Урон: 30 + интеллект*5 + дух*0.3 (максимальный урон, интеллект критичен)
             base_damage = 30 + intelligence * 5 + spirit * 0.3
@@ -378,9 +378,9 @@ class MagicMissile(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Базовая магическая атака с низкой стоимостью
-            intelligence = getattr(user, 'intelligence', 1)
-            spirit = getattr(user, 'spirit', 1)
+            # Базовая магическая атака с низкой стоимостью (с учетом экипировки)
+            intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
+            spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
 
             # Урон: 12 + интеллект*2.5 + дух*0.2 (увеличено)
             base_damage = 12 + intelligence * 2.5 + spirit * 0.2
@@ -425,8 +425,8 @@ class MageShield(Skill):
         # Щит мага ВСЕГДА применяется к себе (user), не к target
         shield_target = user
 
-        # Расчет бонуса защиты: базовые 50% + интеллект/2 + ранг*10%
-        intelligence = getattr(user, 'intelligence', 1)
+        # Расчет бонуса защиты: базовые 50% + интеллект/2 + ранг*10% (с учетом экипировки)
+        intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
         defense_bonus = int(50 + intelligence / 2 + (self.rank - 1) * 10)
 
         # Длительность: 3 хода + ранг
