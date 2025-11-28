@@ -137,7 +137,7 @@ class InputHandler:
             # Клик по предмету в инвентаре
             if isinstance(item, EquipmentItem):
                 # Экипировать предмет
-                success, message = self.ctx.player.inventory.equip_item(item.name)
+                success, message = self.ctx.player.inventory.equip_item(item)
                 print(message)
                 if success:
                     self.ctx.player.update_derived_stats()
