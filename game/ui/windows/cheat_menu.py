@@ -155,8 +155,8 @@ class CheatMenuWindow:
             elif cheat_id == 'give_artifact':
                 from game.inventory import ItemGenerator, ItemQuality, EquipmentSlot, ArmorType
                 import random
-                # Генерируем случайный артефакт
-                item_type = random.choice(['weapon', 'armor'])
+                # Генерируем случайный артефакт (оружие, броня или украшение)
+                item_type = random.choice(['weapon', 'armor', 'jewelry'])
                 try:
                     if item_type == 'weapon':
                         # Правильные параметры: level, quality, max_quality
@@ -165,7 +165,7 @@ class CheatMenuWindow:
                             quality=ItemQuality.ARTIFACT,
                             max_quality=ItemQuality.ARTIFACT
                         )
-                    else:
+                    elif item_type == 'armor':
                         # Правильные параметры: level, slot, armor_type, quality
                         slot = random.choice([EquipmentSlot.HEAD, EquipmentSlot.CHEST,
                                             EquipmentSlot.HANDS, EquipmentSlot.FEET])
@@ -174,6 +174,20 @@ class CheatMenuWindow:
                             level=game.player.level,
                             slot=slot,
                             armor_type=armor_type,
+                            quality=ItemQuality.ARTIFACT
+                        )
+                    else:  # jewelry
+                        # Генерируем артефактное украшение (кольцо, амулет или браслет)
+                        jewelry_slots = [
+                            EquipmentSlot.RING_1, EquipmentSlot.RING_2,
+                            EquipmentSlot.RING_3, EquipmentSlot.RING_4,
+                            EquipmentSlot.AMULET,
+                            EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2
+                        ]
+                        slot = random.choice(jewelry_slots)
+                        artifact = ItemGenerator.generate_jewelry(
+                            level=game.player.level,
+                            slot=slot,
                             quality=ItemQuality.ARTIFACT
                         )
 

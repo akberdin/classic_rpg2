@@ -299,8 +299,8 @@ class Hunter(NPC):
             if npc == self:
                 continue
 
-            # Охотимся на бандитов и нежить
-            if npc.npc_type in ['bandit', 'undead', 'necromancer']:
+            # Охотимся на бандитов, нежить и животных
+            if npc.npc_type in ['bandit', 'undead', 'necromancer', 'wolf', 'bear', 'deer']:
                 distance = abs(self.x - npc.x) + abs(self.y - npc.y)
                 if distance <= self.detection_range:
                     return npc
