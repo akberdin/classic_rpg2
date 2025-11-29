@@ -12,7 +12,13 @@ from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
 from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow, CheatMenuWindow
-from game.ui.windows import InteractionWindow, ExitConfirmationWindow
+from game.ui.windows import (
+    InteractionWindow,
+    ExitConfirmationWindow,
+    SettlementMenuWindow,
+    InquiryMenuWindow,
+    InquiryResponseWindow
+)
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quests import (QuestManager, AchievementManager,
                         QuestGenerator, create_unique_quests, get_unique_quest_for_location,
@@ -132,6 +138,14 @@ class Game:
 
         # Окно взаимодействия с NPC
         self.interaction_window = InteractionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+
+        # Окна города/деревни
+        self.settlement_menu_window = SettlementMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler, self.game_map)
+        self.inquiry_menu_window = InquiryMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler, self.game_map)
+        self.inquiry_response_window = InquiryResponseWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.settlement_menu_open = False
+        self.inquiry_menu_open = False
+        self.inquiry_response_open = False
 
         # Окно подтверждения выхода
         self.exit_confirmation_window = ExitConfirmationWindow(self.screen, self.font, self.info_font, self.ui_scaler)
@@ -371,19 +385,27 @@ class Game:
         tile = self.game_map.get_tile(self.player.x, self.player.y)
         if tile.has_location():
             location = tile.location
-            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL]:
-                # Открываем торговое окно для города/деревни/школы магов
-                # Создаем временного торговца для этой локации
+            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
+                # Открываем меню города/деревни (НЕ школу магов - там прямая торговля)
+                # Создаем постоянного торговца для этой локации если его нет
                 if not hasattr(location, 'merchant_npc'):
-                    # Создаем постоянного торговца для этой локации
-                    if location.location_type == LOCATION_MAGIC_SCHOOL:
-                        merchant_level = 15
-                    elif location.location_type == LOCATION_CITY:
+                    if location.location_type == LOCATION_CITY:
                         merchant_level = 10
                     else:
                         merchant_level = 5
                     location.merchant_npc = Merchant(f"Торговец {location.name}", self.player.x, self.player.y, merchant_level)
-                    # Пополняем товары
+                    location.merchant_npc.restock_goods()
+
+                # Открываем окно меню города
+                self.settlement_menu_window.set_location(location)
+                self.settlement_menu_open = True
+                print(f"Добро пожаловать в {location.name}!")
+                return
+            elif location.location_type == LOCATION_MAGIC_SCHOOL:
+                # Для школы магов - прямая торговля как раньше
+                if not hasattr(location, 'merchant_npc'):
+                    merchant_level = 15
+                    location.merchant_npc = Merchant(f"Торговец {location.name}", self.player.x, self.player.y, merchant_level)
                     location.merchant_npc.restock_goods()
 
                 self.nearby_npc = location.merchant_npc
@@ -536,6 +558,18 @@ class Game:
         # Если открыто окно подтверждения выхода, отрисовываем его
         if self.exit_confirmation_open:
             self.exit_confirmation_window.render()
+
+        # Если открыто меню города/деревни, отрисовываем его
+        if self.settlement_menu_open:
+            self.settlement_menu_window.render()
+
+        # Если открыто меню расспроса, отрисовываем его
+        if self.inquiry_menu_open:
+            self.inquiry_menu_window.render()
+
+        # Если открыто окно ответа на вопрос, отрисовываем его
+        if self.inquiry_response_open:
+            self.inquiry_response_window.render()
 
         # Отрисовка окна помощи (поверх всего)
         self.help_window.render()

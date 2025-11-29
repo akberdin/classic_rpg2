@@ -90,14 +90,21 @@ class Character:
 
     def update_derived_stats(self):
         """Обновить производные характеристики (выносливость, здоровье)"""
+        # Сохраняем текущие проценты от эффективных максимумов (для учета бонусов от экипировки)
+        old_effective_max_stamina = self.get_effective_max_stamina() if hasattr(self, 'get_effective_max_stamina') else self.max_stamina
+        old_effective_max_health = self.get_effective_max_health() if hasattr(self, 'get_effective_max_health') else self.max_health
+
+        stamina_percent = self.stamina / old_effective_max_stamina if old_effective_max_stamina > 0 else 1.0
+        health_percent = self.health / old_effective_max_health if old_effective_max_health > 0 else 1.0
+
         # Выносливость = (сила + телосложение) * 10
         old_max_stamina = self.max_stamina
         self.max_stamina = (self.strength + self.constitution) * STAMINA_PER_STAT_POINT
 
-        # Если выносливость увеличилась, добавляем разницу к текущей выносливости
+        # Восстанавливаем выносливость на основе сохраненного процента от нового эффективного максимума
         if old_max_stamina > 0:
-            stamina_diff = self.max_stamina - old_max_stamina
-            self.stamina = min(self.max_stamina, self.stamina + stamina_diff)
+            new_effective_max_stamina = self.get_effective_max_stamina() if hasattr(self, 'get_effective_max_stamina') else self.max_stamina
+            self.stamina = int(new_effective_max_stamina * stamina_percent)
         else:
             self.stamina = self.max_stamina
 
@@ -109,10 +116,10 @@ class Character:
         old_max_health = self.max_health
         self.max_health = self.constitution * 20
 
-        # Если здоровье увеличилось, добавляем разницу к текущему здоровью
+        # Восстанавливаем здоровье на основе сохраненного процента от нового эффективного максимума
         if old_max_health > 0:
-            health_diff = self.max_health - old_max_health
-            self.health = min(self.max_health, self.health + health_diff)
+            new_effective_max_health = self.get_effective_max_health() if hasattr(self, 'get_effective_max_health') else self.max_health
+            self.health = int(new_effective_max_health * health_percent)
         else:
             self.health = self.max_health
 

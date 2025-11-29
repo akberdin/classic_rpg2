@@ -923,6 +923,24 @@ class InputHandler:
                 self.ctx.cheat_menu_open = False
             return True
 
+        # Меню города/деревни
+        if self.ctx.settlement_menu_open:
+            if event.type == pygame.KEYDOWN:
+                self.handle_settlement_menu_input(event.key)
+            return True
+
+        # Меню расспроса
+        if self.ctx.inquiry_menu_open:
+            if event.type == pygame.KEYDOWN:
+                self.handle_inquiry_menu_input(event.key)
+            return True
+
+        # Окно ответа на вопрос
+        if self.ctx.inquiry_response_open:
+            if event.type == pygame.KEYDOWN:
+                self.ctx.inquiry_response_open = False
+            return True
+
         return False
 
     def _handle_inventory_scroll(self, scroll_up):
@@ -944,4 +962,57 @@ class InputHandler:
             self.ctx.inventory_window.selected_inventory_index = min(
                 len(all_items) - 1, self.ctx.inventory_window.selected_inventory_index + 1
             )
+
+    def handle_settlement_menu_input(self, key):
+        """
+        Обработка ввода в меню города/деревни.
+
+        Args:
+            key: Нажатая клавиша
+        """
+        if key == pygame.K_ESCAPE:
+            self.ctx.settlement_menu_open = False
+            return
+
+        if key == pygame.K_1:
+            # Открыть магазин
+            location = self.ctx.settlement_menu_window.location
+            if hasattr(location, 'merchant_npc'):
+                self.ctx.nearby_npc = location.merchant_npc
+                self.ctx.trade_menu_open = True
+                self.ctx.trade_window.mode = "buy"
+                self.ctx.trade_window.selected_merchant_index = 0
+                self.ctx.trade_window.selected_player_index = 0
+                self.ctx.settlement_menu_open = False
+                print(f"Вы можете торговать здесь.")
+        elif key == pygame.K_2:
+            # Открыть меню расспроса
+            location = self.ctx.settlement_menu_window.location
+            self.ctx.inquiry_menu_window.set_location(location)
+            self.ctx.settlement_menu_open = False
+            self.ctx.inquiry_menu_open = True
+
+    def handle_inquiry_menu_input(self, key):
+        """
+        Обработка ввода в меню расспроса жителей.
+
+        Args:
+            key: Нажатая клавиша
+        """
+        if key == pygame.K_ESCAPE:
+            # Вернуться в меню города
+            self.ctx.inquiry_menu_open = False
+            self.ctx.settlement_menu_open = True
+            return
+
+        if key == pygame.K_1:
+            # Вопрос про академию
+            location = self.ctx.inquiry_menu_window.location
+            direction = self.ctx.inquiry_menu_window.get_direction_to_academy(location)
+
+            response_text = f"Магическая академия? Иди на {direction}, путник. Там тебя ждут великие знания!"
+
+            self.ctx.inquiry_response_window.set_response(response_text)
+            self.ctx.inquiry_menu_open = False
+            self.ctx.inquiry_response_open = True
 
