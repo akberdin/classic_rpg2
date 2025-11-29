@@ -296,9 +296,10 @@ class HUDRenderer:
         rank_text = self.info_font.render(f"R{skill.rank}", True, (255, 215, 0))
         self.screen.blit(rank_text, (slot_x + slot_size - 22, panel_y + slot_size - 18))
 
-        # Шкала прогресса кулдауна (тонкая полоска внизу слота)
+        # Шкала прогресса кулдауна (тонкая полоска под слотом)
         cooldown_bar_height = 4
-        cooldown_bar_y = panel_y + slot_size - cooldown_bar_height
+        cooldown_bar_offset = 2  # Отступ от слота
+        cooldown_bar_y = panel_y + slot_size + cooldown_bar_offset
 
         if skill.cooldown > 0:
             # Вычисляем прогресс восстановления (от 0 до 1)
