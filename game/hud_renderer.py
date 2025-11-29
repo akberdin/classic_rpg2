@@ -241,15 +241,47 @@ class HUDRenderer:
             if skill:
                 skill_id = self.player.skill_manager.get_slot_skill_id(i)
                 self._render_skill_slot(skill, skill_id, slot_x, panel_y, slot_size)
-            else:
-                # Для пустых слотов тоже показываем темный фон шкалы
-                cooldown_bar_height = 4
-                cooldown_bar_offset = 2
-                cooldown_bar_y = panel_y + slot_size + cooldown_bar_offset
+
+            # Шкала прогресса использований для повышения ранга (под всеми слотами)
+            progress_bar_height = 3
+            progress_bar_y = panel_y + slot_size  # Сразу под слотом, без отступа
+
+            # Темный фон шкалы
+            pygame.draw.rect(
+                self.screen,
+                (30, 30, 30),
+                (slot_x, progress_bar_y, slot_size, progress_bar_height)
+            )
+
+            # Заполнение шкалы если есть умение
+            if skill and skill.rank < skill.max_rank:
+                required_uses = skill.get_required_uses_for_rank()
+                current_uses = skill.use_count
+
+                if required_uses > 0:
+                    progress = min(1.0, current_uses / required_uses)
+                    filled_width = int(slot_size * progress)
+
+                    if filled_width > 0:
+                        # Цвет зависит от прогресса: желтый -> зеленый
+                        if progress >= 1.0:
+                            bar_color = (100, 255, 100)  # Зеленый - готово
+                        elif progress >= 0.5:
+                            bar_color = (255, 215, 0)  # Золотой - половина
+                        else:
+                            bar_color = (200, 150, 50)  # Темно-желтый - начало
+
+                        pygame.draw.rect(
+                            self.screen,
+                            bar_color,
+                            (slot_x, progress_bar_y, filled_width, progress_bar_height)
+                        )
+            elif skill and skill.rank >= skill.max_rank:
+                # Максимальный ранг - заполняем синим
                 pygame.draw.rect(
                     self.screen,
-                    (40, 40, 40),
-                    (slot_x, cooldown_bar_y, slot_size, cooldown_bar_height)
+                    (100, 150, 255),
+                    (slot_x, progress_bar_y, slot_size, progress_bar_height)
                 )
 
     def _get_slot_colors(self, skill, is_usable):
@@ -305,38 +337,6 @@ class HUDRenderer:
         # Ранг умения
         rank_text = self.info_font.render(f"R{skill.rank}", True, (255, 215, 0))
         self.screen.blit(rank_text, (slot_x + slot_size - 22, panel_y + slot_size - 18))
-
-        # Шкала прогресса кулдауна (тонкая полоска под слотом)
-        cooldown_bar_height = 4
-        cooldown_bar_offset = 2  # Отступ от слота
-        cooldown_bar_y = panel_y + slot_size + cooldown_bar_offset
-
-        # Фон шкалы (всегда показываем темный фон)
-        pygame.draw.rect(
-            self.screen,
-            (40, 40, 40),
-            (slot_x, cooldown_bar_y, slot_size, cooldown_bar_height)
-        )
-
-        # Заполнение шкалы (если у умения есть кулдаун)
-        if skill.cooldown > 0:
-            # Вычисляем прогресс восстановления (от 0 до 1)
-            # Если current_cooldown = 0, то умение готово (прогресс = 1)
-            # Если current_cooldown = cooldown, то умение только что использовано (прогресс = 0)
-            if skill.current_cooldown > 0:
-                cooldown_progress = 1.0 - (skill.current_cooldown / skill.cooldown)
-            else:
-                cooldown_progress = 1.0
-
-            # Заполнение шкалы (зеленое - готово, красное - на кулдауне)
-            filled_width = int(slot_size * cooldown_progress)
-            if filled_width > 0:
-                bar_color = (100, 255, 100) if cooldown_progress >= 1.0 else (255, 100, 100)
-                pygame.draw.rect(
-                    self.screen,
-                    bar_color,
-                    (slot_x, cooldown_bar_y, filled_width, cooldown_bar_height)
-                )
 
         # Перезарядка (текст если есть)
         if skill.current_cooldown > 0:
