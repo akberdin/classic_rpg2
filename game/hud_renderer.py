@@ -241,6 +241,16 @@ class HUDRenderer:
             if skill:
                 skill_id = self.player.skill_manager.get_slot_skill_id(i)
                 self._render_skill_slot(skill, skill_id, slot_x, panel_y, slot_size)
+            else:
+                # Для пустых слотов тоже показываем темный фон шкалы
+                cooldown_bar_height = 4
+                cooldown_bar_offset = 2
+                cooldown_bar_y = panel_y + slot_size + cooldown_bar_offset
+                pygame.draw.rect(
+                    self.screen,
+                    (40, 40, 40),
+                    (slot_x, cooldown_bar_y, slot_size, cooldown_bar_height)
+                )
 
     def _get_slot_colors(self, skill, is_usable):
         """
@@ -301,6 +311,14 @@ class HUDRenderer:
         cooldown_bar_offset = 2  # Отступ от слота
         cooldown_bar_y = panel_y + slot_size + cooldown_bar_offset
 
+        # Фон шкалы (всегда показываем темный фон)
+        pygame.draw.rect(
+            self.screen,
+            (40, 40, 40),
+            (slot_x, cooldown_bar_y, slot_size, cooldown_bar_height)
+        )
+
+        # Заполнение шкалы (если у умения есть кулдаун)
         if skill.cooldown > 0:
             # Вычисляем прогресс восстановления (от 0 до 1)
             # Если current_cooldown = 0, то умение готово (прогресс = 1)
@@ -309,13 +327,6 @@ class HUDRenderer:
                 cooldown_progress = 1.0 - (skill.current_cooldown / skill.cooldown)
             else:
                 cooldown_progress = 1.0
-
-            # Фон шкалы (темный)
-            pygame.draw.rect(
-                self.screen,
-                (40, 40, 40),
-                (slot_x, cooldown_bar_y, slot_size, cooldown_bar_height)
-            )
 
             # Заполнение шкалы (зеленое - готово, красное - на кулдауне)
             filled_width = int(slot_size * cooldown_progress)
