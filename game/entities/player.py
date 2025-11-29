@@ -223,15 +223,19 @@ class Player(Character):
             setattr(self, stat_map[stat_name], getattr(self, stat_map[stat_name]) + 1)
             self.stat_points -= 1
 
+            # Обновляем максимальную ману если изменился дух (сохраняем процент от эффективного максимума)
+            if stat_name == 'spirit':
+                old_effective_max_mana = self.get_effective_max_mana()
+                mana_percent = self.mana / old_effective_max_mana if old_effective_max_mana > 0 else 1.0
+
+                self.max_mana = self.spirit * 10
+
+                # Восстанавливаем ману на основе сохраненного процента от нового эффективного максимума
+                new_effective_max_mana = self.get_effective_max_mana()
+                self.mana = int(new_effective_max_mana * mana_percent)
+
             # Обновляем производные характеристики
             self.update_derived_stats()
-
-            # Обновляем максимальную ману если изменился дух (пропорционально)
-            if stat_name == 'spirit':
-                old_max_mana = self.max_mana
-                self.max_mana = self.spirit * 10
-                mana_diff = self.max_mana - old_max_mana
-                self.mana = min(self.max_mana, self.mana + mana_diff)
 
             # Обновляем грузоподъемность если изменилась сила
             if stat_name == 'strength':

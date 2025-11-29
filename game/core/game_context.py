@@ -266,6 +266,30 @@ class GameContext:
     def cheat_menu_open(self, value: bool):
         self._game.cheat_menu_open = value
 
+    @property
+    def settlement_menu_open(self) -> bool:
+        return getattr(self._game, 'settlement_menu_open', False)
+
+    @settlement_menu_open.setter
+    def settlement_menu_open(self, value: bool):
+        self._game.settlement_menu_open = value
+
+    @property
+    def inquiry_menu_open(self) -> bool:
+        return getattr(self._game, 'inquiry_menu_open', False)
+
+    @inquiry_menu_open.setter
+    def inquiry_menu_open(self, value: bool):
+        self._game.inquiry_menu_open = value
+
+    @property
+    def inquiry_response_open(self) -> bool:
+        return getattr(self._game, 'inquiry_response_open', False)
+
+    @inquiry_response_open.setter
+    def inquiry_response_open(self, value: bool):
+        self._game.inquiry_response_open = value
+
     # === UI окна ===
 
     @property
@@ -312,6 +336,21 @@ class GameContext:
     def loot_window(self):
         """Получить окно лута."""
         return getattr(self._game, 'loot_window', None)
+
+    @property
+    def settlement_menu_window(self):
+        """Получить окно меню города/деревни."""
+        return getattr(self._game, 'settlement_menu_window', None)
+
+    @property
+    def inquiry_menu_window(self):
+        """Получить окно расспроса жителей."""
+        return getattr(self._game, 'inquiry_menu_window', None)
+
+    @property
+    def inquiry_response_window(self):
+        """Получить окно ответа на вопрос."""
+        return getattr(self._game, 'inquiry_response_window', None)
 
     # === Дополнительные системы ===
 
