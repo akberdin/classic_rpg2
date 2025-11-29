@@ -1561,6 +1561,12 @@ class ItemGenerator:
                 quality = ItemGenerator.generate_quality_with_luck(luck)
                 loot.append((ItemGenerator.generate_armor(level, quality=quality), 1))
 
+            # Шанс найти ювелирные изделия (награбленные бандитами)
+            jewelry_chance = 0.15 + min(luck * 0.008, 0.12)  # 15% базовый + до 12% от удачи
+            if random.random() < jewelry_chance:
+                quality = ItemGenerator.generate_quality_with_luck(luck)
+                loot.append((ItemGenerator.generate_jewelry(level, quality=quality), 1))
+
             # Золото (бонус от удачи)
             luck_gold_bonus = 1 + min(luck * 0.02, 0.50)  # До +50% золота
             gold_amount = int(random.randint(10, 50) * level * luck_gold_bonus)
@@ -1569,11 +1575,13 @@ class ItemGenerator:
             # Дополнительный предмет от удачи
             if ItemGenerator.check_extra_item_drop(luck):
                 quality = ItemGenerator.generate_quality_with_luck(luck)
-                extra_item = random.choice(['weapon', 'armor'])
+                extra_item = random.choice(['weapon', 'armor', 'jewelry'])
                 if extra_item == 'weapon':
                     loot.append((ItemGenerator.generate_weapon(level, quality=quality), 1))
-                else:
+                elif extra_item == 'armor':
                     loot.append((ItemGenerator.generate_armor(level, quality=quality), 1))
+                else:
+                    loot.append((ItemGenerator.generate_jewelry(level, quality=quality), 1))
 
         return loot
 

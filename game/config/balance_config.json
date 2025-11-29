@@ -48,7 +48,7 @@
 
   "regeneration": {
     "rest_health_percent": 0.30,
-    "rest_mana_percent": 0.50,
+    "rest_mana_percent": 0.25,
     "passive_mana_per_hour": 3,
     "active_rest_stamina_multiplier": 2,
     "passive_stamina_recovery_divisor": 4,

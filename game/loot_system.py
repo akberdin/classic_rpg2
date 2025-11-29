@@ -61,9 +61,17 @@ class LootSystem:
                     item_level = max(1, enemy.level + random.randint(-2, 2))
                     quality = ItemGenerator.generate_quality()
 
-                    if random.random() < 0.5:
+                    # Выбираем тип экипировки: оружие, броня или ювелирка
+                    # Ювелирка встречается реже (15% шанс)
+                    equipment_roll = random.random()
+                    if equipment_roll < 0.15:
+                        # Генерируем ювелирное изделие
+                        item = ItemGenerator.generate_jewelry(item_level, quality=quality)
+                    elif equipment_roll < 0.575:
+                        # Генерируем оружие (42.5%)
                         item = ItemGenerator.generate_weapon(item_level, quality)
                     else:
+                        # Генерируем броню (42.5%)
                         item = ItemGenerator.generate_armor(item_level, quality=quality)
 
                     loot_items.append((item, 1))
