@@ -249,26 +249,57 @@ class Player(Character):
         effective_strength = self.get_effective_strength()
         self.inventory.update_max_weight(effective_strength)
 
+    def recover_mana(self, is_active_rest=False):
+        """
+        Восстановить ману (вызывается каждый игровой час)
+
+        Args:
+            is_active_rest: True если это активный отдых (команда R)
+        """
+        # Получаем эффективное значение с учетом экипировки
+        effective_max_mana = self.get_effective_max_mana()
+
+        if self.mana < effective_max_mana:
+            # Получаем эффективный дух с учетом экипировки
+            effective_spirit = self.get_effective_spirit()
+
+            # При активном отдыхе или принудительном отдыхе восстанавливаем больше
+            if is_active_rest or self.is_resting:
+                # Восстанавливаем 50% от эффективной максимальной маны (как в rest())
+                recovery = int(effective_max_mana * 0.5)
+            else:
+                # При обычном движении восстанавливаем на основе духа
+                # Базовое восстановление: дух / 20 (замедленное в 20 раз)
+                recovery = max(1, effective_spirit // 20)
+
+            self.mana = min(effective_max_mana, self.mana + recovery)
+
     def rest(self):
         """
         Отдых - восстанавливает здоровье, ману и выносливость
         Занимает 1 час игрового времени
+
+        Использует методы recover_* с флагом is_active_rest=True для восстановления
         """
         # Используем эффективные значения с учетом бонусов от экипировки
         effective_max_health = self.get_effective_max_health()
         effective_max_mana = self.get_effective_max_mana()
         effective_max_stamina = self.get_effective_max_stamina()
 
-        # Восстанавливаем 30% от эффективного максимального здоровья
-        health_restored = int(effective_max_health * 0.3)
-        self.health = min(effective_max_health, self.health + health_restored)
+        # Сохраняем текущие значения для подсчета восстановленных
+        old_health = self.health
+        old_mana = self.mana
+        old_stamina = self.stamina
 
-        # Восстанавливаем 50% от эффективной максимальной маны
-        mana_restored = int(effective_max_mana * 0.5)
-        self.mana = min(effective_max_mana, self.mana + mana_restored)
+        # Восстанавливаем здоровье используя метод recover_health
+        self.recover_health(is_active_rest=True)
+        health_restored = self.health - old_health
+
+        # Восстанавливаем ману используя метод recover_mana
+        self.recover_mana(is_active_rest=True)
+        mana_restored = self.mana - old_mana
 
         # Восстанавливаем выносливость (используя активный отдых)
-        old_stamina = self.stamina
         # Временно устанавливаем max_stamina на эффективное значение
         original_max_stamina = self.max_stamina
         self.max_stamina = effective_max_stamina
