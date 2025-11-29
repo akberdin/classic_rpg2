@@ -92,43 +92,49 @@ class Merchant(NPC):
         base_gold = 200 + self.level * 50
         self.inventory.gold = int(base_gold * (1 + rank * 0.5) * 3)  # Увеличено в 3 раза
 
-        # Генерируем зелья (больше для высокого ранга)
+        # Генерируем зелья (ограничено количество)
         potion_types = [
             "minor_health_potion", "health_potion", "greater_health_potion",
             "minor_mana_potion", "mana_potion",
             "minor_stamina_potion", "stamina_potion"
         ]
-        num_potion_types = min(4 + rank, len(potion_types))  # 5/6/7/7 видов
+        num_potion_types = min(3 + rank, 6)  # Максимум 6 видов
         for potion_type in random.sample(potion_types, num_potion_types):
-            quantity = random.randint(2 + rank, 5 + rank * 2)  # Больше зелий
+            # Ограничиваем количество каждого зелья до 3, чтобы не переполнять инвентарь
+            quantity = min(random.randint(2, 4), 3)
             self.inventory.add_item(PREDEFINED_ITEMS[potion_type], quantity)
 
-        # Генерируем оружие (больше для высокого ранга) с ограничением качества по рангу
-        num_weapons = random.randint(2 + rank, 4 + rank * 2)  # 3-6/4-8/5-10/6-12
+        # Ограничиваем количество предметов для высокоранговых торговцев, чтобы не переполнять инвентарь
+        # Максимум 25 предметов (не считая зелья и ресурсы)
+        max_items = 25 - num_potion_types  # Вычитаем количество видов зелий
+
+        # Генерируем оружие (ограничено для высокого ранга)
+        num_weapons = min(random.randint(2 + rank, 4 + rank), 6)  # Максимум 6
         for _ in range(num_weapons):
             quality = ItemGenerator.generate_quality_for_shop(rank)
             weapon = ItemGenerator.generate_weapon(self.level, quality=quality)
             self.inventory.add_item(weapon, 1)
 
-        # Генерируем доспехи (больше для высокого ранга) с ограничением качества по рангу
-        num_armors = random.randint(3 + rank, 6 + rank * 2)  # 4-8/5-10/6-12/7-14
+        # Генерируем доспехи (ограничено для высокого ранга)
+        num_armors = min(random.randint(3 + rank, 6 + rank), 7)  # Максимум 7
         for _ in range(num_armors):
             quality = ItemGenerator.generate_quality_for_shop(rank)
             armor = ItemGenerator.generate_armor(self.level, quality=quality)
             self.inventory.add_item(armor, 1)
 
-        # Генерируем украшения (больше для высокого ранга) с ограничением качества по рангу
-        num_jewelry = random.randint(1 + rank, 3 + rank * 2)  # 2-5/3-7/4-9/5-11
+        # Генерируем украшения (ограничено для высокого ранга)
+        num_jewelry = min(random.randint(1 + rank, 3 + rank), 5)  # Максимум 5
         for _ in range(num_jewelry):
             quality = ItemGenerator.generate_quality_for_shop(rank)
             jewelry = ItemGenerator.generate_jewelry(self.level, quality=quality)
             self.inventory.add_item(jewelry, 1)
 
-        # Генерируем ресурсы (больше для высокого ранга)
+        # Генерируем ресурсы (ограничено количество)
         resource_types = ["copper_ore", "iron_ore", "silver_ore", "ancient_coin", "artifact_fragment"]
         num_resources = min(2 + rank, len(resource_types))  # 3/4/5/5 видов
         for resource_type in random.sample(resource_types, num_resources):
-            quantity = random.randint(3 + rank * 2, 10 + rank * 5)  # Больше ресурсов
+            # Ограничиваем количество каждого ресурса до 5, чтобы не переполнять инвентарь
+            quantity = min(random.randint(2, 5), 5)
             self.inventory.add_item(PREDEFINED_ITEMS[resource_type], quantity)
 
         # Книги боевых умений (для всех торговцев с вероятностью)
@@ -143,7 +149,7 @@ class Merchant(NPC):
             "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance"
         ]
 
-        # Шанс зависит от ранга: 15% для ранга 1, 40% для ранга 2, 70% для ранга 3, 90% для ранга 4
+        # Шанс зависит от ранга, но ограничиваем количество книг
         if rank == 1:
             book_chance = 0.15
             num_books = 1
@@ -152,10 +158,10 @@ class Merchant(NPC):
             num_books = random.randint(1, 2)
         elif rank == 3:
             book_chance = 0.7
-            num_books = random.randint(1, 3)
+            num_books = 2  # Ограничено до 2
         else:  # rank 4
             book_chance = 0.9
-            num_books = random.randint(2, 4)
+            num_books = 2  # Ограничено до 2
 
         if random.random() < book_chance:
             for book_id in random.sample(combat_books, min(num_books, len(combat_books))):
