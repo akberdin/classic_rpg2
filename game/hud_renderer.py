@@ -296,7 +296,37 @@ class HUDRenderer:
         rank_text = self.info_font.render(f"R{skill.rank}", True, (255, 215, 0))
         self.screen.blit(rank_text, (slot_x + slot_size - 22, panel_y + slot_size - 18))
 
-        # Перезарядка (если есть)
+        # Шкала прогресса кулдауна (тонкая полоска внизу слота)
+        cooldown_bar_height = 4
+        cooldown_bar_y = panel_y + slot_size - cooldown_bar_height
+
+        if skill.cooldown > 0:
+            # Вычисляем прогресс восстановления (от 0 до 1)
+            # Если current_cooldown = 0, то умение готово (прогресс = 1)
+            # Если current_cooldown = cooldown, то умение только что использовано (прогресс = 0)
+            if skill.current_cooldown > 0:
+                cooldown_progress = 1.0 - (skill.current_cooldown / skill.cooldown)
+            else:
+                cooldown_progress = 1.0
+
+            # Фон шкалы (темный)
+            pygame.draw.rect(
+                self.screen,
+                (40, 40, 40),
+                (slot_x, cooldown_bar_y, slot_size, cooldown_bar_height)
+            )
+
+            # Заполнение шкалы (зеленое - готово, красное - на кулдауне)
+            filled_width = int(slot_size * cooldown_progress)
+            if filled_width > 0:
+                bar_color = (100, 255, 100) if cooldown_progress >= 1.0 else (255, 100, 100)
+                pygame.draw.rect(
+                    self.screen,
+                    bar_color,
+                    (slot_x, cooldown_bar_y, filled_width, cooldown_bar_height)
+                )
+
+        # Перезарядка (текст если есть)
         if skill.current_cooldown > 0:
             cooldown_text = self.info_font.render(
                 str(skill.current_cooldown), True, (255, 100, 100)
