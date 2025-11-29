@@ -884,7 +884,7 @@ def give_starting_items(player):
     Args:
         player: Игрок
     """
-    from game.inventory import ArmorType, EquipmentSlot
+    from game.inventory import ArmorType, EquipmentSlot, WeaponType, WeaponItem
 
     # Начальное золото
     player.inventory.add_gold(50)
@@ -893,8 +893,28 @@ def give_starting_items(player):
     player.inventory.add_item(PREDEFINED_ITEMS["minor_health_potion"], 2)
     player.inventory.add_item(PREDEFINED_ITEMS["minor_stamina_potion"], 1)
 
-    # Стартовое оружие - плохой топор
-    starter_weapon = ItemGenerator.generate_weapon(level=1, quality=ItemQuality.POOR)
+    # Стартовое оружие - только топор плохого качества
+    # Генерируем бонусы из конфига для топора плохого качества
+    stats_bonus, param_bonus, skill_bonus, base_damage = ItemGenerator.generate_bonuses_from_config(
+        "weapon", ItemQuality.POOR, WeaponType.AXE
+    )
+
+    # Генерируем название для топора
+    weapon_name = ItemGenerator.generate_item_name(
+        WeaponType.AXE.rus_name, WeaponType.AXE.rus_name, ItemQuality.POOR
+    )
+
+    # Рассчитываем стоимость
+    weapon_value = ItemGenerator.calculate_item_value(
+        "weapon", ItemQuality.POOR, base_damage, stats_bonus, param_bonus, skill_bonus
+    )
+
+    # Создаем топор напрямую
+    starter_weapon = WeaponItem(
+        weapon_name, WeaponType.AXE, base_damage, weapon_value,
+        ItemQuality.POOR, stats_bonus, param_bonus, skill_bonus
+    )
+
     player.inventory.add_item(starter_weapon, 1)
     player.inventory.equip_item(starter_weapon)
 
