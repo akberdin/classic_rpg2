@@ -309,17 +309,28 @@ class Character:
         Args:
             is_active_rest: True если это активный отдых (команда R)
         """
-        if self.stamina < self.max_stamina:
+        # Получаем эффективное значение с учетом экипировки
+        effective_max_stamina = self.get_effective_max_stamina()
+
+        if self.stamina < effective_max_stamina:
+            # Получаем эффективные характеристики с учетом экипировки
+            effective_strength = self.get_effective_strength()
+            effective_constitution = self.get_effective_constitution()
+            effective_dexterity = self.get_effective_dexterity()
+
             # При активном отдыхе или принудительном отдыхе восстанавливаем больше
             if is_active_rest or self.is_resting:
-                # Базовое восстановление + бонус от ловкости
-                # Каждые 2 единицы ловкости дают +1 к восстановлению
-                recovery = (self.strength + self.constitution) * 2 + (self.dexterity // 2)
+                # Базовое восстановление снижено в 5 раз
+                # Было: (strength + constitution) * 2 + (dexterity // 2)
+                # Стало: ((strength + constitution) * 2 + (dexterity // 2)) // 5
+                recovery = max(1, ((effective_strength + effective_constitution) * 2 + (effective_dexterity // 2)) // 5)
             else:
-                # При обычном движении восстанавливаем только 25% от нормы + бонус от ловкости
-                recovery = max(1, (self.strength + self.constitution) // 4 + (self.dexterity // 4))
+                # При обычном движении восстанавливаем снижено в 5 раз
+                # Было: (strength + constitution) // 4 + (dexterity // 4)
+                # Стало: ((strength + constitution) // 4 + (dexterity // 4)) // 5
+                recovery = max(1, ((effective_strength + effective_constitution) // 4 + (effective_dexterity // 4)) // 5)
 
-            self.stamina = min(self.max_stamina, self.stamina + recovery)
+            self.stamina = min(effective_max_stamina, self.stamina + recovery)
 
             # Проверяем, достаточно ли восстановились для окончания отдыха
             if self.is_resting and self.stamina >= self.rest_threshold:
@@ -332,15 +343,22 @@ class Character:
         Args:
             is_active_rest: True если это активный отдых (команда R)
         """
-        if self.health < self.max_health:
-            # При активном отдыхе восстанавливаем 30% HP (как в rest())
-            if is_active_rest or self.is_resting:
-                recovery = int(self.max_health * 0.30)
-            else:
-                # При обычном движении восстанавливаем 2% от макс. здоровья
-                recovery = max(1, int(self.max_health * 0.02))
+        # Получаем эффективное значение с учетом экипировки
+        effective_max_health = self.get_effective_max_health()
 
-            self.health = min(self.max_health, self.health + recovery)
+        if self.health < effective_max_health:
+            # Получаем эффективное телосложение с учетом экипировки
+            effective_constitution = self.get_effective_constitution()
+
+            # При активном отдыхе или принудительном отдыхе восстанавливаем больше
+            if is_active_rest or self.is_resting:
+                # Восстанавливаем 3% от эффективного максимального здоровья (снижено с 30% в 10 раз)
+                recovery = int(effective_max_health * 0.03)
+            else:
+                # При обычном движении восстанавливаем 0.2% от макс. здоровья (снижено с 2% в 10 раз)
+                recovery = max(1, int(effective_max_health * 0.002))
+
+            self.health = min(effective_max_health, self.health + recovery)
 
     def take_damage(self, damage):
         """
