@@ -9,7 +9,7 @@ class CharacterWindow(BaseWindow):
     """Окно характеристик персонажа"""
 
     BASE_WIDTH = 700
-    BASE_HEIGHT = 600
+    BASE_HEIGHT = 700
 
     def __init__(self, screen, font, info_font, scaler=None):
         super().__init__(screen, font, info_font, scaler)
