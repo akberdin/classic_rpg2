@@ -74,6 +74,7 @@ class CombatSystem:
             'stamina': 'Выносливость:',
             'damage': 'Урон:',
             'defense': 'Защита:',
+            'magic_defense': 'Маг. защ.:',
             'dodge': 'Уворот:',
             'crit': 'Крит:',
         }
@@ -102,7 +103,9 @@ class CombatSystem:
         enemy_crit = enemy.calculate_crit_chance()
         enemy_dmg = enemy.get_total_damage()
         enemy_def = enemy.get_total_defense()
-        self.add_to_log(f"  [Урон: {enemy_dmg}, Защита: {enemy_def}, Уворот: {enemy_dodge:.1f}%, Крит: {enemy_crit:.1f}%]")
+        enemy_mag_def = enemy.get_magic_defense()
+        self.add_to_log(f"  [Урон: {enemy_dmg}, Защита: {enemy_def}, Маг. защита: {enemy_mag_def}]")
+        self.add_to_log(f"  [Уворот: {enemy_dodge:.1f}%, Крит: {enemy_crit:.1f}%]")
 
         # Информация о статах игрока
         player_dodge = player.calculate_dodge_chance()
@@ -146,6 +149,17 @@ class CombatSystem:
             str: Результат боя ("continue", "victory", "defeat", "fled")
         """
         if self.turn != "player":
+            return "continue"
+
+        # Проверяем оглушение игрока
+        if hasattr(self.player, 'stunned') and self.player.stunned:
+            # Игрок оглушен и автоматически пропускает ход при любом нажатии
+            if event.type == pygame.KEYDOWN:
+                self.add_to_log(f"Вы оглушены и пропускаете ход!")
+                self.player.stunned = False  # Снимаем оглушение после пропуска хода
+                # Переход хода к врагу
+                self.turn = "enemy"
+                return self.execute_enemy_turn()
             return "continue"
 
         # Обработка клавиатуры
@@ -441,11 +455,20 @@ class CombatSystem:
                     self.add_to_log(random.choice(attack_msgs))
                     self.add_to_log(f"  [Получено урона: {attack_result['damage']}]")
 
+                # Информация об игнорировании брони
+                if attack_result.get('armor_penetration_percent', 0) > 0:
+                    armor_pen = attack_result['armor_penetration_percent']
+                    self.add_to_log(f"  [Магическая атака игнорирует {armor_pen}% вашей брони!]")
+
                 # Информация о броне игрока
                 if attack_result.get('blocked_by_armor', 0) > 0:
                     armor_blocked = attack_result['blocked_by_armor']
                     player_def = self.player.get_total_defense()
                     self.add_to_log(f"  [Ваша броня ({player_def}) заблокировала {armor_blocked} урона]")
+
+                # Проверка оглушения
+                if attack_result.get('stunned', False):
+                    self.add_to_log(f"  [ВЫ ОГЛУШЕНЫ! Пропускаете следующий ход!]")
 
                 if not self.player.is_alive:
                     self.add_to_log("Вы погибли в бою...")
@@ -838,13 +861,18 @@ class CombatSystem:
         stats = [
             f"{self.get_label('damage')} {character.get_total_damage()}",
             f"{self.get_label('defense')} {character.get_total_defense()}",
+            f"{self.get_label('magic_defense')} {character.get_magic_defense()}",
             f"{self.get_label('dodge')} {character.calculate_dodge_chance():.1f}%",
             f"{self.get_label('crit')} {character.calculate_crit_chance():.1f}%"
         ]
 
         for i, stat in enumerate(stats):
             stat_text = self.info_font.render(stat, True, (200, 200, 220))
-            # Размещаем в два столбца
-            stat_x = x if i < 2 else x + 140
-            stat_y_offset = stats_y + (i % 2) * 22  # Уменьшено с 25 до 22
+            # Размещаем в два столбца (урон, защита, маг.защ) и (уворот, крит)
+            if i < 3:
+                stat_x = x
+                stat_y_offset = stats_y + i * 22
+            else:
+                stat_x = x + 140
+                stat_y_offset = stats_y + (i - 3) * 22
             self.screen.blit(stat_text, (stat_x, stat_y_offset))
