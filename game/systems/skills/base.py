@@ -145,6 +145,7 @@ class Skill:
     def try_rank_up(self, player):
         """
         Попытаться повысить ранг умения с проверкой всех условий
+        Игрок может повысить ранг умения только до 5, но с предметами ранг может быть выше.
 
         Args:
             player: Игрок
@@ -152,6 +153,20 @@ class Skill:
         Returns:
             tuple: (bool, str) - успех и сообщение
         """
+        # Проверяем, что базовый ранг (без бонусов от предметов) не превышает 5
+        base_rank = self.rank
+
+        # Если есть бонусы от экипировки, вычисляем базовый ранг
+        if hasattr(player, 'skill_manager'):
+            skill_id = player.skill_manager.get_skill_id(self)
+            if skill_id and skill_id in player.skill_manager.equipment_skills:
+                equip_info = player.skill_manager.equipment_skills[skill_id]
+                base_rank = equip_info['original_rank']
+
+        # Проверяем лимит базового ранга (5)
+        if base_rank >= 5:
+            return False, "Достигнут максимальный базовый ранг (5). Дальнейшее повышение возможно только через предметы."
+
         can_up, reason = self.can_rank_up(player)
         if not can_up:
             return False, reason
@@ -164,6 +179,12 @@ class Skill:
         self.experience -= self.experience_to_next_rank
         self.rank += 1
         self.use_count = 0  # Сбрасываем счётчик использований
+
+        # Обновляем оригинальный ранг в equipment_skills
+        if hasattr(player, 'skill_manager'):
+            skill_id = player.skill_manager.get_skill_id(self)
+            if skill_id and skill_id in player.skill_manager.equipment_skills:
+                player.skill_manager.equipment_skills[skill_id]['original_rank'] = self.rank
 
         # Увеличиваем требуемый опыт для следующего ранга
         self.experience_to_next_rank = int(self.experience_to_next_rank * 1.5)
@@ -360,16 +381,25 @@ class SkillManager:
                 # Уже есть бонус - увеличиваем его
                 self.equipment_skills[skill_id]['equipment_rank_boost'] += skill_rank
 
-            # Повышаем ранг умения (максимум 5)
-            new_rank = min(5, self.equipment_skills[skill_id]['original_rank'] +
-                          self.equipment_skills[skill_id]['equipment_rank_boost'])
+            # Повышаем ранг умения (игрок может повысить до 5, но с предметами может быть больше)
+            # Ограничение: original_rank <= 5, но с бонусами от предметов может превысить 5
+            original_rank = self.equipment_skills[skill_id]['original_rank']
+            equipment_boost = self.equipment_skills[skill_id]['equipment_rank_boost']
+
+            # Игрок может повысить только до 5, но предметы могут повысить еще дальше
+            if original_rank > 5:
+                # Если каким-то образом original_rank > 5, ограничиваем его
+                original_rank = 5
+                self.equipment_skills[skill_id]['original_rank'] = 5
+
+            new_rank = original_rank + equipment_boost
             skill.rank = new_rank
             print(f"Ранг умения {skill.name} повышен до {skill.rank} (от экипировки)")
         else:
             # Умение не изучено - добавляем временно
             skill_class = get_available_skills()[skill_id]
             skill = skill_class()
-            skill.rank = min(5, skill_rank)  # Ранг от предмета
+            skill.rank = skill_rank  # Ранг от предмета (без ограничений)
 
             self.learned_skills[skill_id] = skill
             self.equipment_skills[skill_id] = {
@@ -425,8 +455,8 @@ class SkillManager:
                 del self.equipment_skills[skill_id]
                 print(f"Ранг умения {skill.name} вернулся к {skill.rank}")
             else:
-                # Ещё есть бонусы от других предметов
-                skill.rank = min(5, equip_info['original_rank'] + equip_info['equipment_rank_boost'])
+                # Ещё есть бонусы от других предметов (без ограничений)
+                skill.rank = equip_info['original_rank'] + equip_info['equipment_rank_boost']
                 print(f"Ранг умения {skill.name} понижен до {skill.rank}")
 
         return True

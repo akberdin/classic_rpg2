@@ -672,6 +672,20 @@ class InputHandler:
                             messages = self.ctx.quest_manager.update_gather_progress(item_key, quantity, self.ctx.player)
                             for msg in messages:
                                 print(f"  {msg}")
+
+                    # Использование рабочего умения затрачивает стандартный ход (20 минут)
+                    if result.get('success'):
+                        self.ctx.game_time.advance_time(1/3)
+                        print(f"Время: {self.ctx.game_time.get_time_string()}")
+
+                        # Обновляем системы событий
+                        if self.ctx.weather_system:
+                            weather_msg = self.ctx.weather_system.update(1/3)
+                            if weather_msg:
+                                print(weather_msg)
+
+                        if self.ctx.killstreak_system:
+                            self.ctx.killstreak_system.update(1/3)
                 else:
                     print(f"{skill.name} можно использовать только в бою!")
             else:

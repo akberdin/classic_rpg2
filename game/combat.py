@@ -268,20 +268,6 @@ class CombatSystem:
             self.turn = "enemy"
             return self.execute_enemy_turn()
 
-        elif action_type == "heal":
-            # Отдых - восстановление здоровья
-            effective_max_health = self.player.get_effective_max_health()
-            health_restored = int(effective_max_health * 0.3)
-            old_health = self.player.health
-            self.player.health = min(effective_max_health, self.player.health + health_restored)
-            actual_restored = self.player.health - old_health
-
-            self.add_to_log(f"Вы отдыхаете и восстанавливаете {actual_restored} HP!")
-
-            # Переход хода к врагу
-            self.turn = "enemy"
-            return self.execute_enemy_turn()
-
         elif action_type == "flee":
             # Попытка побега (50% шанс)
             if random.random() < 0.5:
@@ -789,8 +775,9 @@ class CombatSystem:
             (bar_x, bar_y, bar_width, bar_height)
         )
 
-        # Заполнение полосы здоровья
-        fill_width = int(bar_width * (character.health / effective_max_health)) if effective_max_health > 0 else 0
+        # Заполнение полосы здоровья (с ограничением чтобы не выходило за пределы)
+        health_ratio = min(1.0, character.health / effective_max_health) if effective_max_health > 0 else 0
+        fill_width = int(bar_width * health_ratio)
         if fill_width > 0:
             pygame.draw.rect(
                 self.screen,
