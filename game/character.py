@@ -323,22 +323,16 @@ class Character:
         effective_max_stamina = self.get_effective_max_stamina()
 
         if self.stamina < effective_max_stamina:
-            # Получаем эффективные характеристики с учетом экипировки
-            effective_strength = self.get_effective_strength()
-            effective_constitution = self.get_effective_constitution()
+            # Получаем эффективную ловкость с учетом экипировки
             effective_dexterity = self.get_effective_dexterity()
 
-            # При активном отдыхе или принудительном отдыхе восстанавливаем больше
-            if is_active_rest or self.is_resting:
-                # Базовое восстановление снижено в 5 раз
-                # Было: (strength + constitution) * 2 + (dexterity // 2)
-                # Стало: ((strength + constitution) * 2 + (dexterity // 2)) // 5
-                recovery = max(1, ((effective_strength + effective_constitution) * 2 + (effective_dexterity // 2)) // 5)
+            # При активном отдыхе восстанавливаем на основе ловкости
+            if is_active_rest:
+                # Каждая единица ловкости повышает скорость восстановления выносливости на 0.5
+                recovery = max(1, int(effective_dexterity * 0.5))
             else:
-                # При обычном движении восстанавливаем снижено в 5 раз
-                # Было: (strength + constitution) // 4 + (dexterity // 4)
-                # Стало: ((strength + constitution) // 4 + (dexterity // 4)) // 5
-                recovery = max(1, ((effective_strength + effective_constitution) // 4 + (effective_dexterity // 4)) // 5)
+                # При обычном движении восстановления нет (только отдых)
+                recovery = 0
 
             self.stamina = min(effective_max_stamina, self.stamina + recovery)
 
@@ -360,13 +354,13 @@ class Character:
             # Получаем эффективное телосложение с учетом экипировки
             effective_constitution = self.get_effective_constitution()
 
-            # При активном отдыхе или принудительном отдыхе восстанавливаем больше
-            if is_active_rest or self.is_resting:
-                # Восстанавливаем 3% от эффективного максимального здоровья (снижено с 30% в 10 раз)
-                recovery = int(effective_max_health * 0.03)
+            # При активном отдыхе восстанавливаем на основе телосложения
+            if is_active_rest:
+                # Каждая единица телосложения повышает скорость восстановления здоровья на 0.5
+                recovery = max(1, int(effective_constitution * 0.5))
             else:
-                # При обычном движении восстанавливаем 0.2% от макс. здоровья (снижено с 2% в 10 раз)
-                recovery = max(1, int(effective_max_health * 0.002))
+                # При обычном движении восстановления нет (только отдых и зелья)
+                recovery = 0
 
             self.health = min(effective_max_health, self.health + recovery)
 

@@ -267,14 +267,13 @@ class Player(Character):
             # Получаем эффективный дух с учетом экипировки
             effective_spirit = self.get_effective_spirit()
 
-            # При активном отдыхе или принудительном отдыхе восстанавливаем больше
-            if is_active_rest or self.is_resting:
-                # Восстанавливаем 25% от эффективной максимальной маны (как в rest())
-                recovery = int(effective_max_mana * 0.25)
+            # При активном отдыхе восстанавливаем на основе духа
+            if is_active_rest:
+                # Каждая единица духа повышает скорость восстановления маны на 0.5
+                recovery = max(1, int(effective_spirit * 0.5))
             else:
-                # При обычном движении восстанавливаем на основе духа
-                # Базовое восстановление: дух / 20 (замедленное в 20 раз)
-                recovery = max(1, effective_spirit // 20)
+                # При обычном движении восстановления нет (только отдых и зелья)
+                recovery = 0
 
             self.mana = min(effective_max_mana, self.mana + recovery)
 
