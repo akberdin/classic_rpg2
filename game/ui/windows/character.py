@@ -166,6 +166,35 @@ class CharacterWindow(BaseWindow):
             info_text = self.info_font.render(line, True, (180, 180, 200))
             self.screen.blit(info_text, (window_x + int(60 * scale_w), additional_y + i * int(25 * scale_h)))
 
+        # Раздел восстановления при отдыхе
+        recovery_y = additional_y + len(additional_info) * int(25 * scale_h) + int(15 * scale_h)
+
+        # Заголовок секции
+        recovery_header = self.info_font.render("Восстановление за ход отдыха:", True, (150, 200, 255))
+        self.screen.blit(recovery_header, (window_x + int(60 * scale_w), recovery_y))
+        recovery_y += int(25 * scale_h)
+
+        # Получаем эффективные характеристики с учетом экипировки
+        stats = player.get_stats()
+        effective_constitution = stats['constitution']
+        effective_spirit = stats['spirit']
+        effective_dexterity = stats['dexterity']
+
+        # Вычисляем скорость восстановления (0.5% от максимума за каждое очко характеристики)
+        health_recovery = max(1, int(effective_max_health * effective_constitution * 0.005))
+        mana_recovery = max(1, int(effective_max_mana * effective_spirit * 0.005))
+        stamina_recovery = max(1, int(effective_max_stamina * effective_dexterity * 0.005))
+
+        recovery_info = [
+            f"  Здоровье: +{health_recovery}/ход (от телосложения: {effective_constitution})",
+            f"  Мана: +{mana_recovery}/ход (от духа: {effective_spirit})",
+            f"  Выносливость: +{stamina_recovery}/ход (от ловкости: {effective_dexterity})",
+        ]
+
+        for i, line in enumerate(recovery_info):
+            info_text = self.info_font.render(line, True, (150, 255, 150))
+            self.screen.blit(info_text, (window_x + int(60 * scale_w), recovery_y + i * int(25 * scale_h)))
+
         # Подсказки внизу
         hints_y = window_y + window_height - int(40 * scale_h)
         if player.stat_points > 0:
