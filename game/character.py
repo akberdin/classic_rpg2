@@ -53,6 +53,9 @@ class Character:
         # Временные бонусы от эффектов
         self.temp_strength_boost = 0
 
+        # Состояния в бою
+        self.stunned = False  # Флаг оглушения
+
     def generate_random_stats(self, level=1):
         """
         Генерация сбалансированных характеристик на основе уровня
@@ -541,7 +544,8 @@ class Character:
                 'damage': 0,
                 'dodged': False,
                 'critical': False,
-                'hit': False
+                'hit': False,
+                'stunned': False
             }
 
         # Проверка уворота
@@ -554,7 +558,8 @@ class Character:
                 'damage': 0,
                 'dodged': True,
                 'critical': False,
-                'hit': False
+                'hit': False,
+                'stunned': False
             }
 
         # Проверка критического удара
@@ -574,20 +579,64 @@ class Character:
         # Учитываем защиту цели с улучшенными diminishing returns
         target_defense = target.get_total_defense()
 
+        # МЕХАНИКА ИГНОРИРОВАНИЯ БРОНИ для нежити и магов
+        armor_penetration = 0.0
+        if hasattr(self, 'npc_type'):
+            from game.constants import NPC_TYPE_UNDEAD, NPC_TYPE_MAGE
+            if self.npc_type in [NPC_TYPE_UNDEAD, NPC_TYPE_MAGE]:
+                # Определяем процент игнорирования брони по рангу
+                attacker_level = getattr(self, 'level', 1)
+                if 1 <= attacker_level <= 10:  # Новичок
+                    armor_penetration = 0.10
+                elif 11 <= attacker_level <= 20:  # Обычный
+                    armor_penetration = 0.20
+                elif 21 <= attacker_level <= 30:  # Опытный
+                    armor_penetration = 0.30
+                elif 31 <= attacker_level <= 40:  # Эксперт
+                    armor_penetration = 0.40
+
+        # Применяем игнорирование брони
+        effective_target_defense = target_defense * (1.0 - armor_penetration)
+
         # Улучшенные diminishing returns для баланса:
         # - Soft cap снижен до 30 для раннего ограничения
         # - После soft cap защита работает на 40%
         # - Это предотвращает ситуации когда броня полностью блокирует урон
         defense_soft_cap = 30
-        if target_defense > defense_soft_cap:
-            effective_defense = defense_soft_cap + (target_defense - defense_soft_cap) * 0.4
+        if effective_target_defense > defense_soft_cap:
+            effective_defense = defense_soft_cap + (effective_target_defense - defense_soft_cap) * 0.4
         else:
-            effective_defense = target_defense
+            effective_defense = effective_target_defense
 
         # Защита снижает урон, но не может снизить его ниже 15% от базового урона
         min_damage = max(1, int(total_damage * 0.15))
         actual_damage = max(min_damage, total_damage - int(effective_defense))
         blocked_by_armor = max(0, total_damage - actual_damage)
+
+        # МЕХАНИКА ОГЛУШЕНИЯ для бандитов
+        stunned = False
+        if hasattr(self, 'npc_type'):
+            from game.constants import NPC_TYPE_BANDIT
+            if self.npc_type == NPC_TYPE_BANDIT:
+                # Определяем шанс оглушения по рангу
+                attacker_level = getattr(self, 'level', 1)
+                stun_chance = 0.0
+                if 1 <= attacker_level <= 10:  # Новичок
+                    stun_chance = 5.0
+                elif 11 <= attacker_level <= 20:  # Обычный
+                    stun_chance = 7.0
+                elif 21 <= attacker_level <= 30:  # Опытный
+                    stun_chance = 10.0
+                elif 31 <= attacker_level <= 40:  # Эксперт
+                    stun_chance = 15.0
+
+                # Проверяем оглушение
+                stun_roll = random.uniform(0, 100)
+                if stun_roll < stun_chance:
+                    stunned = True
+                    # Применяем оглушение к цели (пропуск 1 хода)
+                    if hasattr(target, 'stunned'):
+                        target.stunned = True
 
         # Применяем урон
         damage_result = target.take_damage(actual_damage)
@@ -595,11 +644,13 @@ class Character:
         return {
             'damage': damage_result['damage'],
             'blocked_by_armor': blocked_by_armor,
+            'armor_penetration_percent': int(armor_penetration * 100) if armor_penetration > 0 else 0,
             'blocked_by_godmode': damage_result['blocked'] if damage_result['godmode'] else 0,
             'godmode': damage_result['godmode'],
             'dodged': False,
             'critical': is_critical,
-            'hit': True
+            'hit': True,
+            'stunned': stunned
         }
 
     def get_base_stats(self):

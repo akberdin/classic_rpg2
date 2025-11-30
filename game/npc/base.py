@@ -329,6 +329,7 @@ class NPC(Character):
         """
         Упрощенный бой между NPC - моментальный расчет победителя
         Рассчитывает исход боя мгновенно на основе характеристик
+        Учитывает игнорирование брони для нежити и магов
 
         Args:
             enemy: Враг для боя
@@ -337,15 +338,51 @@ class NPC(Character):
         Returns:
             bool: True если враг повержен
         """
+        # Получаем защиту врага
+        enemy_defense = enemy.get_total_defense()
+        self_defense = self.get_total_defense()
+
+        # МЕХАНИКА ИГНОРИРОВАНИЯ БРОНИ для нежити и магов
+        # Определяем эффективную защиту врага с учетом игнорирования брони
+        from game.constants import NPC_TYPE_UNDEAD, NPC_TYPE_MAGE
+        if self.npc_type in [NPC_TYPE_UNDEAD, NPC_TYPE_MAGE]:
+            # Определяем процент игнорирования брони по рангу
+            attacker_level = getattr(self, 'level', 1)
+            armor_penetration = 0.0
+            if 1 <= attacker_level <= 10:  # Новичок
+                armor_penetration = 0.10
+            elif 11 <= attacker_level <= 20:  # Обычный
+                armor_penetration = 0.20
+            elif 21 <= attacker_level <= 30:  # Опытный
+                armor_penetration = 0.30
+            elif 31 <= attacker_level <= 40:  # Эксперт
+                armor_penetration = 0.40
+            # Игнорируем часть защиты врага
+            enemy_defense = enemy_defense * (1.0 - armor_penetration)
+
+        # То же самое для врага, если он тоже маг или нежить
+        if enemy.npc_type in [NPC_TYPE_UNDEAD, NPC_TYPE_MAGE]:
+            enemy_attacker_level = getattr(enemy, 'level', 1)
+            enemy_armor_penetration = 0.0
+            if 1 <= enemy_attacker_level <= 10:
+                enemy_armor_penetration = 0.10
+            elif 11 <= enemy_attacker_level <= 20:
+                enemy_armor_penetration = 0.20
+            elif 21 <= enemy_attacker_level <= 30:
+                enemy_armor_penetration = 0.30
+            elif 31 <= enemy_attacker_level <= 40:
+                enemy_armor_penetration = 0.40
+            self_defense = self_defense * (1.0 - enemy_armor_penetration)
+
         # Моментальный расчет боя на основе характеристик
-        # Рассчитываем "силу" каждого бойца
+        # Рассчитываем "силу" каждого бойца (с учетом эффективной защиты)
         self_power = (self.get_total_damage() * 0.4 +
-                     self.get_total_defense() * 0.2 +
+                     self_defense * 0.2 +
                      self.health * 0.3 +
                      self.dexterity * 0.1)
 
         enemy_power = (enemy.get_total_damage() * 0.4 +
-                      enemy.get_total_defense() * 0.2 +
+                      enemy_defense * 0.2 +
                       enemy.health * 0.3 +
                       enemy.dexterity * 0.1)
 
