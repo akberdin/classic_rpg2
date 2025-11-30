@@ -638,31 +638,41 @@ class InputHandler:
             slot_index = key - pygame.K_1  # Преобразуем код клавиши в индекс слота (0-7)
             skill = self.ctx.player.skill_manager.get_slot_skill(slot_index)
             if skill:
-                # Используем умение вне боя (применяется только к ремесленным умениям)
-                if skill.category.value == 'crafting':
-                    # Проверяем требования к местности для ремесленных умений
-                    tile = self.ctx.game_map.get_tile(self.ctx.player.x, self.ctx.player.y)
-                    biome = tile.biome
-                    location = tile.location if tile.has_location() else None
+                skill_id = self.ctx.player.skill_manager.skill_slots[slot_index]
 
-                    skill_id = self.ctx.player.skill_manager.skill_slots[slot_index]
+                # Список магических умений, которые можно использовать вне боя
+                out_of_combat_magic_skills = ['heal', 'regeneration', 'stamina_recovery']
 
-                    # Проверяем рудокопство
-                    if skill_id == 'mining':
-                        mining = self.ctx.player.profession_manager.get_profession('mining')
-                        can_use, msg = mining.can_use(self.ctx.player, location)
-                        if not can_use:
-                            print(msg)
-                            return
+                # Проверяем, можно ли использовать умение вне боя
+                can_use_out_of_combat = (
+                    skill.category.value == 'crafting' or
+                    skill_id in out_of_combat_magic_skills
+                )
 
-                    # Проверяем лесорубство
-                    elif skill_id == 'lumberjacking':
-                        lumberjacking = self.ctx.player.profession_manager.get_profession('lumberjacking')
-                        can_use, msg = lumberjacking.can_use(self.ctx.player, biome)
-                        if not can_use:
-                            print(msg)
-                            return
+                if can_use_out_of_combat:
+                    # Для ремесленных умений - проверяем требования к местности
+                    if skill.category.value == 'crafting':
+                        tile = self.ctx.game_map.get_tile(self.ctx.player.x, self.ctx.player.y)
+                        biome = tile.biome
+                        location = tile.location if tile.has_location() else None
 
+                        # Проверяем рудокопство
+                        if skill_id == 'mining':
+                            mining = self.ctx.player.profession_manager.get_profession('mining')
+                            can_use, msg = mining.can_use(self.ctx.player, location)
+                            if not can_use:
+                                print(msg)
+                                return
+
+                        # Проверяем лесорубство
+                        elif skill_id == 'lumberjacking':
+                            lumberjacking = self.ctx.player.profession_manager.get_profession('lumberjacking')
+                            can_use, msg = lumberjacking.can_use(self.ctx.player, biome)
+                            if not can_use:
+                                print(msg)
+                                return
+
+                    # Используем умение (для магии target=None, используется на себя)
                     result = self.ctx.player.skill_manager.use_skill_from_slot(slot_index)
                     print(result['message'])
 
@@ -674,7 +684,8 @@ class InputHandler:
                                 print(f"  {msg}")
 
                     # Использование рабочего умения затрачивает стандартный ход (20 минут)
-                    if result.get('success'):
+                    # Магические умения восстановления не затрачивают дополнительное время
+                    if result.get('success') and skill.category.value == 'crafting':
                         self.ctx.game_time.advance_time(1/3)
                         print(f"Время: {self.ctx.game_time.get_time_string()}")
 
