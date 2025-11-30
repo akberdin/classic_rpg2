@@ -547,9 +547,9 @@ class CombatSystem:
 
         # ОТДЕЛЬНЫЙ БЛОК ЛОГА БОЯ (ниже статистики персонажей)
         log_block_x = combat_x + 30
-        log_block_y = combat_y + 320  # Опустили еще ниже (65 + 240 + отступ)
+        log_block_y = combat_y + 360  # Опустили еще ниже (65 + 280 + отступ)
         log_block_width = combat_width - 60
-        log_block_height = 260  # Уменьшена высота под новую позицию
+        log_block_height = 240  # Уменьшена высота под новую позицию
 
         # Фон блока лога
         pygame.draw.rect(
@@ -581,7 +581,7 @@ class CombatSystem:
 
         # Отрисовка логов с прокруткой
         log_line_height = 24
-        max_visible_logs = 8  # Подстроено под новую высоту блока
+        max_visible_logs = 7  # Подстроено под новую высоту блока
         log_start_y = log_block_y + 48
 
         # Показываем последние записи
@@ -719,7 +719,7 @@ class CombatSystem:
         """
         # Фон панели статистики (увеличен для всех элементов)
         panel_width = 320
-        panel_height = 240  # Увеличено чтобы все параметры помещались
+        panel_height = 280  # Увеличено чтобы все параметры помещались
         pygame.draw.rect(
             self.screen,
             (45, 45, 60),
