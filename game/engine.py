@@ -17,7 +17,10 @@ from game.ui.windows import (
     ExitConfirmationWindow,
     SettlementMenuWindow,
     InquiryMenuWindow,
-    InquiryResponseWindow
+    InquiryResponseWindow,
+    LootWindow,
+    SkillBookWindow,
+    CombatModeSelectionWindow,
 )
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quests import (QuestManager, AchievementManager,
@@ -108,6 +111,13 @@ class Game:
         self.interaction_menu_open = False
         self.nearby_npc = None
 
+        # Тактический бой
+        self.combat_mode_menu_open = False
+        self.tactical_combat_system = None
+        self.tactical_combat_renderer = None
+        self.tactical_combat_handler = None
+        self.in_tactical_combat = False
+
         # UI компоненты (с передачей scaler для адаптивности)
         self.help_window = HelpWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.inventory_window = InventoryWindow(self.screen, self.font, self.info_font, self.ui_scaler)
@@ -138,6 +148,9 @@ class Game:
 
         # Окно взаимодействия с NPC
         self.interaction_window = InteractionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+
+        # Окно выбора режима боя
+        self.combat_mode_window = CombatModeSelectionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
 
         # Окна города/деревни
         self.settlement_menu_window = SettlementMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler, self.game_map)
@@ -330,6 +343,33 @@ class Game:
                     self.exit_confirmation_open = False
                 continue
 
+            # Если идет тактический бой, передаем управление системе тактического боя
+            if self.in_tactical_combat and self.tactical_combat_handler:
+                result = self.tactical_combat_handler.handle_input(event)
+                if result == "victory":
+                    self.in_tactical_combat = False
+                    self.tactical_combat_system = None
+                    self.tactical_combat_renderer = None
+                    self.tactical_combat_handler = None
+                elif result == "defeat":
+                    self.in_tactical_combat = False
+                    self.tactical_combat_system = None
+                    self.tactical_combat_renderer = None
+                    self.tactical_combat_handler = None
+                    # Обработка поражения (сохранение, перезапуск и т.д.)
+                    print("Вы погибли в тактическом бою!")
+                elif result == "fled":
+                    self.in_tactical_combat = False
+                    self.tactical_combat_system = None
+                    self.tactical_combat_renderer = None
+                    self.tactical_combat_handler = None
+                continue
+
+            # Если открыто меню выбора режима боя, обрабатываем его
+            if self.combat_mode_menu_open:
+                self.input_handler.handle_combat_mode_choice(event)
+                continue
+
             # Если идет бой, передаем управление боевой системе
             if self.in_combat and self.combat_system:
                 result = self.combat_system.handle_input(event)
@@ -451,12 +491,13 @@ class Game:
         """Делегирование к ResourceSystem."""
         self.resource_system.collect_resources()
 
-    def _start_combat(self, enemy):
+    def _start_combat(self, enemy, tactical=False):
         """
         Начать бой с NPC
 
         Args:
             enemy: Враг для боя
+            tactical: Использовать тактический режим боя (по умолчанию False)
         """
         print(f"Бой начался с {enemy.name}!")
 
@@ -482,9 +523,27 @@ class Game:
         if time_bonuses['description']:
             print(f"  {time_bonuses['description']}")
 
-        self.combat_system = CombatSystem(self.player, enemy, self.screen, self.font, self.ui_scaler, self.game_map, self.respawn_manager, self.sprite_manager, self)
-        self.in_combat = True
-        self.nearby_npc = None
+        if tactical:
+            # Тактический бой
+            from game.tactical_combat import TacticalCombatSystem, TacticalCombatRenderer, TacticalCombatUIHandler
+
+            self.tactical_combat_system = TacticalCombatSystem(
+                self.player, enemy, self.screen, self.font, self.ui_scaler,
+                self.game_map, self.respawn_manager, self.sprite_manager, self
+            )
+            self.tactical_combat_renderer = TacticalCombatRenderer(
+                self.tactical_combat_system, self.screen, self.font, self.ui_scaler
+            )
+            self.tactical_combat_handler = TacticalCombatUIHandler(
+                self.tactical_combat_system, self.tactical_combat_renderer
+            )
+            self.in_tactical_combat = True
+            self.nearby_npc = None
+        else:
+            # Быстрый бой (обычная система)
+            self.combat_system = CombatSystem(self.player, enemy, self.screen, self.font, self.ui_scaler, self.game_map, self.respawn_manager, self.sprite_manager, self)
+            self.in_combat = True
+            self.nearby_npc = None
 
     def _update(self):
         """Обновление состояния игры"""
@@ -514,6 +573,15 @@ class Game:
         # Если идет бой, отрисовываем окно боя
         if self.in_combat and self.combat_system:
             self.combat_system.render()
+
+        # Если идет тактический бой, отрисовываем его
+        if self.in_tactical_combat and self.tactical_combat_renderer:
+            self.tactical_combat_renderer.render()
+            return  # Не отрисовываем остальное во время тактического боя
+
+        # Если открыто меню выбора режима боя, отрисовываем его
+        if self.combat_mode_menu_open and self.nearby_npc:
+            self.combat_mode_window.render(self.nearby_npc.name)
 
         # Если открыто меню взаимодействия, отрисовываем его
         if self.interaction_menu_open and self.nearby_npc:
