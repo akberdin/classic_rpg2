@@ -793,8 +793,12 @@ class CombatSystem:
             2
         )
 
-        # Прогресс-бар маны (только для персонажей с маной)
-        if hasattr(character, 'mana') and hasattr(character, 'max_mana'):
+        # Прогресс-бар маны (только для персонажей с маной, но не для животных)
+        # Животные не используют магию, поэтому не показываем полосу маны
+        from game.constants import NPC_TYPE_WOLF, NPC_TYPE_BEAR, NPC_TYPE_DEER
+        is_animal = hasattr(character, 'npc_type') and character.npc_type in [NPC_TYPE_WOLF, NPC_TYPE_BEAR, NPC_TYPE_DEER]
+
+        if hasattr(character, 'mana') and hasattr(character, 'max_mana') and not is_animal:
             # Получаем эффективную макс. ману с учетом экипировки
             effective_max_mana = character.get_effective_max_mana() if hasattr(character, 'get_effective_max_mana') else character.max_mana
             mana_percent = (character.mana / effective_max_mana) * 100 if effective_max_mana > 0 else 0

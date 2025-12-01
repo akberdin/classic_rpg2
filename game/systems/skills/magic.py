@@ -23,7 +23,7 @@ class Heal(Skill):
         super().__init__(
             name="Лечение",
             description="Восстанавливает HP. Эффективность растет с рангом",
-            category=SkillCategory.MAGIC,
+            category=SkillCategory.MAGE,tactical_range=6,
             mana_cost=20,
             cooldown=3
         )
@@ -73,7 +73,7 @@ class Regeneration(Skill):
         super().__init__(
             name="Регенерация",
             description="Восстанавливает HP каждый ход. Эффективность растет с рангом",
-            category=SkillCategory.MAGIC,
+            category=SkillCategory.MAGE,tactical_range=6,
             mana_cost=15,
             cooldown=5
         )
@@ -127,7 +127,7 @@ class StaminaRecovery(Skill):
         super().__init__(
             name="Восстановление выносливости",
             description="Восстанавливает выносливость каждый ход. Эффективность растет с рангом",
-            category=SkillCategory.MAGIC,
+            category=SkillCategory.MAGE,tactical_range=6,
             mana_cost=15,
             cooldown=5
         )
@@ -183,7 +183,7 @@ class Fireball(Skill):
         super().__init__(
             name="Огненный шар",
             description="Мощная огненная атака. Игнорирует броню, но снижается магической защитой. Урон растет с рангом",
-            category=SkillCategory.MAGIC,
+            category=SkillCategory.MAGE,tactical_range=6,
             mana_cost=35,
             cooldown=3
         )
@@ -241,7 +241,7 @@ class IceBolt(Skill):
         super().__init__(
             name="Ледяная стрела",
             description="Ледяная атака с шансом замедления. Игнорирует броню, снижается магической защитой",
-            category=SkillCategory.MAGIC,
+            category=SkillCategory.MAGE,tactical_range=6,
             mana_cost=25,
             cooldown=2
         )
@@ -320,7 +320,7 @@ class Lightning(Skill):
         super().__init__(
             name="Молния",
             description="Мощнейшая атака молнией. Высокий урон, игнорирует броню, снижается магической защитой",
-            category=SkillCategory.MAGIC,
+            category=SkillCategory.MAGE,tactical_range=6,
             mana_cost=50,
             cooldown=4
         )
@@ -368,7 +368,7 @@ class MagicMissile(Skill):
         super().__init__(
             name="Магическая стрела",
             description="Базовая магическая атака. Низкая стоимость, игнорирует броню, снижается магической защитой",
-            category=SkillCategory.MAGIC,
+            category=SkillCategory.MAGE,tactical_range=6,
             mana_cost=15,
             cooldown=1
         )
@@ -413,7 +413,7 @@ class MageShield(Skill):
         super().__init__(
             name="Щит мага",
             description="Создает магический щит, повышающий физическую защиту в бою. Эффект зависит от интеллекта и уровня умения",
-            category=SkillCategory.MAGIC,
+            category=SkillCategory.MAGE,tactical_range=6,
             mana_cost=25,
             cooldown=3
         )

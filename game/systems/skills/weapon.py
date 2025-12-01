@@ -64,6 +64,49 @@ class WeaponSkill(Skill):
 
 # --- УМЕНИЯ ДЛЯ ЛУКА ---
 
+class BasicShot(WeaponSkill):
+    """Выстрел - базовое умение для лука"""
+
+    def __init__(self):
+        from game.inventory import WeaponType
+        super().__init__(
+            name="Выстрел",
+            description="Базовый выстрел из лука. Доступен сразу при использовании лука",
+            category=SkillCategory.GENERAL, tactical_range=8,
+            stamina_cost=8,
+            cooldown=0
+        )
+        self.required_weapon_type = WeaponType.BOW
+
+    def use(self, user, target=None):
+        """Использовать базовый выстрел"""
+        result = super().use(user, target)
+
+        if target and user.can_attack(target):
+            # Базовый урон с небольшим бонусом от ловкости
+            base_damage = user.get_total_damage()
+            dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
+            dex_bonus = dexterity * 0.1
+            damage_multiplier = 1.0 + (self.rank - 1) * 0.1  # 1.0x -> 1.4x
+
+            total_damage = int((base_damage + dex_bonus) * damage_multiplier)
+
+            # Учитываем защиту
+            target_defense = target.get_total_defense()
+            actual_damage = max(1, total_damage - target_defense)
+
+            target.take_damage(actual_damage)
+
+            result['damage'] = actual_damage
+            result['message'] = f"{user.name} стреляет в {target.name} на {actual_damage} урона!"
+
+            if not target.is_alive:
+                result['killed'] = True
+                result['message'] += f" {target.name} повержен!"
+
+        return result
+
+
 class PreciseShot(WeaponSkill):
     """Точный выстрел - высокий шанс критического попадания"""
 
@@ -72,7 +115,7 @@ class PreciseShot(WeaponSkill):
         super().__init__(
             name="Точный выстрел",
             description="Прицельный выстрел с высоким шансом крита. Шанс растет с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.HUNTER, tactical_range=8,
             stamina_cost=12,
             cooldown=2
         )
@@ -123,7 +166,7 @@ class RapidFire(WeaponSkill):
         super().__init__(
             name="Быстрая стрельба",
             description="Выпускает несколько стрел за один ход. Количество растет с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.HUNTER, tactical_range=8,
             stamina_cost=20,
             cooldown=4
         )
@@ -167,7 +210,7 @@ class PiercingArrow(WeaponSkill):
         super().__init__(
             name="Пронзающая стрела",
             description="Стрела пробивает броню противника. Пробитие растет с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.HUNTER, tactical_range=8,
             stamina_cost=15,
             cooldown=3
         )
@@ -212,7 +255,7 @@ class Backstab(WeaponSkill):
         super().__init__(
             name="Удар в спину",
             description="Коварный удар с огромным уроном. Множитель растет с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.SHADOW,
             stamina_cost=18,
             cooldown=4
         )
@@ -254,7 +297,7 @@ class BleedingCut(WeaponSkill):
         super().__init__(
             name="Кровоточащий порез",
             description="Глубокий порез вызывает кровотечение. Длительность растет с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.SHADOW,
             stamina_cost=14,
             cooldown=3
         )
@@ -311,7 +354,7 @@ class ShadowStep(WeaponSkill):
         super().__init__(
             name="Шаг тени",
             description="Уклоняетесь и наносите контрудар. Бонус к уклонению растет с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.SHADOW,
             stamina_cost=16,
             cooldown=3
         )
@@ -378,7 +421,7 @@ class WhirlwindStrike(WeaponSkill):
         super().__init__(
             name="Вихревой удар",
             description="Мощный круговой удар мечом. Урон растет с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.WARRIOR,
             stamina_cost=22,
             cooldown=4
         )
@@ -420,7 +463,7 @@ class ShieldBreaker(WeaponSkill):
         super().__init__(
             name="Разрушитель щита",
             description="Мощный удар, снижающий защиту врага. Эффект растет с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.WARRIOR,
             stamina_cost=18,
             cooldown=4
         )
@@ -480,7 +523,7 @@ class BladeDance(WeaponSkill):
         super().__init__(
             name="Танец клинка",
             description="Серия быстрых ударов мечом. Количество ударов растет с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.WARRIOR,
             stamina_cost=25,
             cooldown=5
         )

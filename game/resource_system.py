@@ -32,7 +32,7 @@ ITEM_KEY_MAPPING = {
 class ResourceSystem:
     """Система сбора ресурсов с локаций"""
 
-    def __init__(self, player, game_map, quest_manager, game_time, start_combat_callback=None):
+    def __init__(self, player, game_map, quest_manager, game_time, start_combat_callback=None, resource_window_callback=None):
         """
         Инициализация системы ресурсов.
 
@@ -42,12 +42,14 @@ class ResourceSystem:
             quest_manager: Менеджер квестов
             game_time: Система игрового времени
             start_combat_callback: Функция для начала боя
+            resource_window_callback: Функция для показа окна сбора ресурсов
         """
         self.player = player
         self.game_map = game_map
         self.quest_manager = quest_manager
         self.game_time = game_time
         self.start_combat_callback = start_combat_callback
+        self.resource_window_callback = resource_window_callback
 
     def collect_resources(self):
         """
@@ -57,6 +59,7 @@ class ResourceSystem:
             bool: True если сбор успешен
         """
         from game.inventory import get_random_loot_from_location
+        from game.constants import LOCATION_MINE, LOCATION_RUINS, LOCATION_BANDIT_CAMP
 
         tile = self.game_map.get_tile(self.player.x, self.player.y)
 
@@ -75,7 +78,7 @@ class ResourceSystem:
             return False
 
         # Проверяем случайное событие при сборе лута
-        event_result = self._process_loot_event()
+        event_result, event_message = self._process_loot_event()
         if event_result == "combat_started":
             location.loot_collected = True
             return False
@@ -93,7 +96,6 @@ class ResourceSystem:
 
         # Бонусный лут от события
         if event_result == "bonus_loot":
-            print("Удача! Вы нашли дополнительный тайник!")
             bonus_loot = get_random_loot_from_location(
                 location.location_type,
                 self.player.level,
@@ -101,8 +103,8 @@ class ResourceSystem:
             )
             loot.extend(bonus_loot)
 
-        # Добавляем лут в инвентарь
-        self._add_loot_to_inventory(loot)
+        # Добавляем лут в инвентарь и собираем информацию
+        collected_items, collected_gold = self._add_loot_to_inventory(loot)
 
         # Помечаем локацию как обыскованную
         location.loot_collected = True
@@ -118,7 +120,23 @@ class ResourceSystem:
 
         # Продвигаем время на 20 минут (1/3 часа)
         self.game_time.advance_time(1/3)
-        print(f"Время: {self.game_time.get_time_string()}")
+
+        # Определяем отображаемый тип локации
+        location_type_display = {
+            LOCATION_MINE: "Шахта",
+            LOCATION_RUINS: "Руины",
+            LOCATION_BANDIT_CAMP: "Лагерь бандитов"
+        }.get(location.location_type, "Локация")
+
+        # Показываем окно с собранными ресурсами
+        if self.resource_window_callback:
+            self.resource_window_callback(
+                collected_items,
+                collected_gold,
+                location.name,
+                location_type_display,
+                event_message
+            )
 
         return True
 
@@ -128,37 +146,41 @@ class ResourceSystem:
 
         Args:
             loot: Список предметов [(item, quantity), ...]
+
+        Returns:
+            tuple: (collected_items, collected_gold) - списки собранных предметов и золота
         """
+        collected_items = []
+        collected_gold = 0
+
         for item, quantity in loot:
             if item == 'gold':
                 self.player.inventory.add_gold(quantity)
-                print(f"Найдено: {quantity} золота")
+                collected_gold += quantity
             elif self.player.inventory.add_item(item, quantity):
-                print(f"Найдено: {item.name} x{quantity}")
+                collected_items.append((item, quantity))
 
                 # Обновляем прогресс квестов на сбор ресурсов
                 item_key = self.get_item_key(item.name)
                 if item_key:
-                    messages = self.quest_manager.update_gather_progress(
+                    self.quest_manager.update_gather_progress(
                         item_key, quantity, self.player
                     )
-                    for msg in messages:
-                        print(f"  {msg}")
-            else:
-                print(f"Инвентарь полон! Не удалось подобрать {item.name}")
+
+        return collected_items, collected_gold
 
     def _process_loot_event(self):
         """
         Обработать случайное событие при сборе лута.
 
         Returns:
-            str: тип события ('nothing', 'trap_triggered', 'combat_started', 'bonus_loot')
+            tuple: (event_type, event_message) - тип события и сообщение для отображения
         """
         from game.npc import Bandit
 
         # Шанс события - 30%
         if random.randint(1, 100) > 30:
-            return "nothing"
+            return "nothing", None
 
         # Выбираем тип события
         event_type = random.choice(["trap", "enemy", "bonus", "nothing"])
@@ -170,21 +192,32 @@ class ResourceSystem:
             return self._spawn_enemy()
 
         elif event_type == "bonus":
-            return "bonus_loot"
+            return "bonus_loot", "Удача! Вы нашли дополнительный тайник!"
 
-        return "nothing"
+        return "nothing", None
 
     def _trigger_trap(self):
-        """Обработать попадание в ловушку."""
+        """
+        Обработать попадание в ловушку.
+
+        Returns:
+            tuple: (event_type, event_message)
+        """
         effective_max_health = self.player.get_effective_max_health()
         trap_damage = int(effective_max_health * 0.10)
         self.player.health -= trap_damage
         self.player.health = max(1, self.player.health)
-        print(f"Вы попали в ловушку! Получено {trap_damage} урона.")
-        return "trap_triggered"
+        message = f"Вы попали в ловушку! Получено {trap_damage} урона."
+        print(message)
+        return "trap_triggered", message
 
     def _spawn_enemy(self):
-        """Создать врага для боя."""
+        """
+        Создать врага для боя.
+
+        Returns:
+            tuple: (event_type, event_message)
+        """
         from game.npc import Bandit
 
         # Спавн врага на 2-5 уровней выше игрока
@@ -202,13 +235,14 @@ class ResourceSystem:
             self.player.y
         )
 
-        print(f"На вас напал {enemy.name} {enemy_level} уровня!")
+        message = f"На вас напал {enemy.name} {enemy_level} уровня!"
+        print(message)
 
         if self.start_combat_callback:
             self.start_combat_callback(enemy)
-            return "combat_started"
+            return "combat_started", None
 
-        return "nothing"
+        return "nothing", None
 
     @staticmethod
     def get_item_key(item_name):

@@ -238,11 +238,15 @@ class TacticalCombatSystem:
         if skill_id in support_skills:
             targets.append(caster_unit)
         else:
-            # Боевые умения - применяются на врага
-            # Для тактического боя используем большой радиус (все поле)
-            # В будущем можно добавить конкретные радиусы для каждого умения
+            # Боевые умения - применяются на врага с проверкой расстояния
             target_unit = self.enemy_unit if caster_unit == self.player_unit else self.player_unit
-            targets.append(target_unit)
+
+            # Получаем радиус действия умения
+            skill_range = getattr(skill, 'tactical_range', 1)
+
+            # Проверяем расстояние до цели
+            if self.is_in_range(caster_unit, target_unit.x, target_unit.y, skill_range):
+                targets.append(target_unit)
 
         return targets
 
@@ -278,45 +282,76 @@ class TacticalCombatSystem:
         Returns:
             str: Статус боя после хода
         """
-        # Простой AI: двигаемся к игроку и атакуем
+        import random
+        from game.skills import SkillCategory
+
         distance = self.get_distance(self.enemy_unit.x, self.enemy_unit.y,
                                      self.player_unit.x, self.player_unit.y)
 
         weapon_range = self.enemy_unit.get_weapon_range()
 
-        # Если враг вне дистанции атаки - приближаемся
-        if distance > weapon_range:
-            # Двигаемся к игроку
-            dx = self.player_unit.x - self.enemy_unit.x
-            dy = self.player_unit.y - self.enemy_unit.y
+        # Пытаемся использовать умения, если они есть
+        used_skill = False
+        if hasattr(self.enemy, 'skill_manager') and self.enemy.skill_manager:
+            # Получаем список боевых умений
+            combat_categories = [SkillCategory.COMBAT, SkillCategory.MAGIC,
+                               SkillCategory.SHADOW, SkillCategory.WARRIOR,
+                               SkillCategory.HUNTER, SkillCategory.MAGE]
 
-            # Нормализуем направление
-            distance_norm = math.sqrt(dx*dx + dy*dy)
-            if distance_norm > 0:
-                dx = dx / distance_norm
-                dy = dy / distance_norm
+            usable_skills = []
+            for skill in self.enemy.skill_manager.learned_skills.values():
+                # Проверяем, что умение боевое и готово к использованию
+                if (skill.category in combat_categories and
+                    self.enemy.skill_manager.can_use_skill(skill)):
 
-            # Вычисляем новую позицию
-            move_range = self.config['movement']['base_movement_range']
-            new_x = int(self.enemy_unit.x + dx * min(move_range, distance - weapon_range))
-            new_y = int(self.enemy_unit.y + dy * min(move_range, distance - weapon_range))
+                    # Проверяем, что цель в радиусе действия
+                    targets = self.get_skill_targets(skill, self.enemy_unit)
+                    if self.player_unit in targets:
+                        usable_skills.append(skill)
 
-            # Двигаемся
-            self.move_unit(self.enemy_unit, new_x, new_y)
-        else:
-            # В дистанции атаки - атакуем
-            attack_result = self.enemy.attack(self.player)
+            # Если есть доступные умения - используем случайное
+            if usable_skills:
+                skill = random.choice(usable_skills)
+                result = self.use_skill(skill, self.enemy_unit, self.player_unit)
 
-            if attack_result['dodged']:
-                self.add_to_log(f"Вы уклонились от атаки {self.enemy.name}!")
-            elif attack_result['hit']:
-                damage = attack_result['damage']
-                self.add_to_log(f"{self.enemy.name} атакует вас! Урон: {damage}")
+                if result['status'] == 'continue':
+                    used_skill = True
 
-                if not self.player.is_alive:
-                    return "defeat"
+                    if not self.player.is_alive:
+                        return "defeat"
 
-            self.enemy_unit.has_acted = True
+        # Если умение не использовали - используем базовую атаку или двигаемся
+        if not used_skill:
+            # Если враг вне дистанции атаки - приближаемся (на 1 клетку за ход)
+            if distance > weapon_range:
+                # Двигаемся к игроку на 1 клетку
+                dx = self.player_unit.x - self.enemy_unit.x
+                dy = self.player_unit.y - self.enemy_unit.y
+
+                # Нормализуем направление и ограничиваем движение до 1 клетки
+                if abs(dx) > abs(dy):
+                    new_x = self.enemy_unit.x + (1 if dx > 0 else -1)
+                    new_y = self.enemy_unit.y
+                else:
+                    new_x = self.enemy_unit.x
+                    new_y = self.enemy_unit.y + (1 if dy > 0 else -1)
+
+                # Двигаемся
+                self.move_unit(self.enemy_unit, new_x, new_y)
+            else:
+                # В дистанции атаки - атакуем базовой атакой
+                attack_result = self.enemy.attack(self.player)
+
+                if attack_result['dodged']:
+                    self.add_to_log(f"Вы уклонились от атаки {self.enemy.name}!")
+                elif attack_result['hit']:
+                    damage = attack_result['damage']
+                    self.add_to_log(f"{self.enemy.name} атакует вас! Урон: {damage}")
+
+                    if not self.player.is_alive:
+                        return "defeat"
+
+                self.enemy_unit.has_acted = True
 
         # Сбрасываем cooldown умений игрока
         self.player.skill_manager.tick_cooldowns()

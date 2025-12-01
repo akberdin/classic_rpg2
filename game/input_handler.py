@@ -956,6 +956,12 @@ class InputHandler:
                 self.ctx.loot_window_open = False
             return True
 
+        # Окно сбора ресурсов
+        if self.ctx.resource_collection_window_open:
+            if event.type == pygame.KEYDOWN:
+                self.ctx.resource_collection_window_open = False
+            return True
+
         # Окно квестов
         if self.ctx.quest_window_open:
             if event.type == pygame.KEYDOWN:

@@ -157,13 +157,32 @@ class TacticalCombatRenderer:
 
         # Отрисовка спрайта персонажа
         character = unit.character
-        if hasattr(character, 'sprite') and character.sprite:
-            # Центрируем спрайт в клетке
-            sprite_x = cell_x + (self.combat.cell_size - character.sprite.get_width()) // 2
-            sprite_y = cell_y + (self.combat.cell_size - character.sprite.get_height()) // 2
-            self.screen.blit(character.sprite, (sprite_x, sprite_y))
-        else:
-            # Fallback: метка, если спрайт недоступен
+        sprite_displayed = False
+
+        # Пытаемся получить спрайт через sprite_manager
+        if self.combat.sprite_manager:
+            # Для игрока используем спрайт "player"
+            if unit == self.combat.player_unit:
+                sprite = self.combat.sprite_manager.get_sprite('player', 'npc')
+                if sprite:
+                    sprite_x = cell_x + (self.combat.cell_size - sprite.get_width()) // 2
+                    sprite_y = cell_y + (self.combat.cell_size - sprite.get_height()) // 2
+                    self.screen.blit(sprite, (sprite_x, sprite_y))
+                    sprite_displayed = True
+            # Для NPC используем их npc_type
+            elif hasattr(character, 'npc_type'):
+                sprite = self.combat.sprite_manager.get_npc_sprite_with_rank(
+                    character.npc_type,
+                    character.level
+                )
+                if sprite:
+                    sprite_x = cell_x + (self.combat.cell_size - sprite.get_width()) // 2
+                    sprite_y = cell_y + (self.combat.cell_size - sprite.get_height()) // 2
+                    self.screen.blit(sprite, (sprite_x, sprite_y))
+                    sprite_displayed = True
+
+        # Fallback: метка, если спрайт недоступен
+        if not sprite_displayed:
             label_surface = self.font.render(label, True, (255, 255, 255))
             label_rect = label_surface.get_rect()
             label_rect.center = (cell_x + self.combat.cell_size // 2,
@@ -196,8 +215,12 @@ class TacticalCombatRenderer:
         # Рамка
         pygame.draw.rect(self.screen, (200, 200, 200), (bar_x, bar_y, bar_width, bar_height), 1)
 
-        # Mana bar (если есть)
-        if hasattr(character, 'mana'):
+        # Mana bar (только для персонажей с маной, но не для животных)
+        # Животные не используют магию, поэтому не показываем полосу маны
+        from game.constants import NPC_TYPE_WOLF, NPC_TYPE_BEAR, NPC_TYPE_DEER
+        is_animal = hasattr(character, 'npc_type') and character.npc_type in [NPC_TYPE_WOLF, NPC_TYPE_BEAR, NPC_TYPE_DEER]
+
+        if hasattr(character, 'mana') and not is_animal:
             bar_y += bar_height + 2
             max_mana = character.get_effective_max_mana() if hasattr(character, 'get_effective_max_mana') else character.max_mana
             mana_ratio = character.mana / max_mana if max_mana > 0 else 0
