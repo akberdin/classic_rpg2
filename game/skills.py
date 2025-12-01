@@ -20,6 +20,8 @@ from game.systems.skills import (
     StaminaRecoveryEffect,
     StrengthBoostEffect,
     ShieldEffect,
+    SlowEffect,
+    ArmorBreakEffect,
     # Базовые классы
     Skill,
     SkillCategory,
@@ -53,6 +55,9 @@ from game.systems.skills import (
     WhirlwindStrike,
     ShieldBreaker,
     BladeDance,
+    LungeStrike,
+    SpearSweep,
+    ArmorBreach,
     # Словарь умений
     AVAILABLE_SKILLS,
 )
@@ -60,7 +65,7 @@ from game.systems.skills import (
 __all__ = [
     # Эффекты
     'StatusEffect', 'PoisonEffect', 'StunEffect', 'RegenerationEffect',
-    'StaminaRecoveryEffect', 'StrengthBoostEffect', 'ShieldEffect',
+    'StaminaRecoveryEffect', 'StrengthBoostEffect', 'ShieldEffect', 'SlowEffect', 'ArmorBreakEffect',
     # Базовые
     'Skill', 'SkillCategory', 'SkillManager',
     # Боевые
@@ -73,6 +78,7 @@ __all__ = [
     # Оружейные
     'WeaponSkill', 'PreciseShot', 'RapidFire', 'PiercingArrow', 'Backstab',
     'BleedingCut', 'ShadowStep', 'WhirlwindStrike', 'ShieldBreaker', 'BladeDance',
+    'LungeStrike', 'SpearSweep', 'ArmorBreach',
     # Словарь
     'AVAILABLE_SKILLS',
 ]

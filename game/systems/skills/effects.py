@@ -234,3 +234,53 @@ class ShieldEffect(StatusEffect):
 
     def remove(self, character):
         return f"Магический щит исчез с {character.name}"
+
+
+class SlowEffect(StatusEffect):
+    """Эффект замедления"""
+
+    def __init__(self, duration=2):
+        super().__init__(
+            name="Замедление",
+            duration=duration,
+            description="Замедлен"
+        )
+
+    def apply(self, character):
+        return f"{character.name} замедлен!"
+
+    def tick(self, character):
+        super().tick(character)
+        return None
+
+    def remove(self, character):
+        return f"Замедление спадает с {character.name}"
+
+
+class ArmorBreakEffect(StatusEffect):
+    """Эффект снижения защиты"""
+
+    def __init__(self, duration=3, defense_reduction=5):
+        super().__init__(
+            name="Сломленная броня",
+            duration=duration,
+            description=f"-{defense_reduction} защиты"
+        )
+        self.defense_reduction = defense_reduction
+
+    def apply(self, character):
+        # Временно сохраняем снижение защиты на персонаже
+        if not hasattr(character, 'temp_defense_penalty'):
+            character.temp_defense_penalty = 0
+        character.temp_defense_penalty += self.defense_reduction
+        return f"Броня {character.name} пробита! (-{self.defense_reduction} защиты)"
+
+    def tick(self, character):
+        super().tick(character)
+        return None
+
+    def remove(self, character):
+        # Убираем снижение защиты
+        if hasattr(character, 'temp_defense_penalty'):
+            character.temp_defense_penalty = max(0, character.temp_defense_penalty - self.defense_reduction)
+        return f"Броня {character.name} восстановлена"

@@ -98,7 +98,10 @@
     "whirlwind_strike": "assets/sprites/skills/whirlwind_strike.png",
     "shield_breaker": "assets/sprites/skills/shield_breaker.png",
     "blade_dance": "assets/sprites/skills/blade_dance.png",
-    "mage_shield": "assets/sprites/skills/mage_shield.png"
+    "mage_shield": "assets/sprites/skills/mage_shield.png",
+    "lunge_strike": "assets/sprites/skills/lunge_strike.png",
+    "spear_sweep": "assets/sprites/skills/spear_sweep.png",
+    "armor_breach": "assets/sprites/skills/armor_breach.png"
   },
 
   "fallback": {

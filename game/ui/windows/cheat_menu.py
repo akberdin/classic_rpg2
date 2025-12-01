@@ -28,7 +28,7 @@ class CheatMenuWindow:
             'godmode': {'name': 'Режим бессмертия', 'enabled': False},
             'reveal_map': {'name': 'Открыть карту', 'enabled': False},
             'give_gold': {'name': 'Дать 5000 золота', 'enabled': False, 'one_time': True},
-            'give_books': {'name': 'Дать все книги умений', 'enabled': False, 'one_time': True},
+            'learn_all_skills': {'name': 'Выучить все умения', 'enabled': False, 'one_time': True},
             'teleport_academy': {'name': 'Телепорт к академии магов', 'enabled': False, 'one_time': True},
             'level_up': {'name': 'Повысить уровень на 1', 'enabled': False, 'one_time': True},
             'give_artifact': {'name': 'Дать случайный артефакт', 'enabled': False, 'one_time': True},
@@ -89,29 +89,13 @@ class CheatMenuWindow:
                 game.player.inventory.add_gold(5000)
                 print("Получено 5000 золота!")
 
-            elif cheat_id == 'give_books':
-                from game.inventory import PREDEFINED_ITEMS
-                skill_books = [
-                    # Магические поддерживающие
-                    "book_heal", "book_regeneration", "book_stamina_recovery",
-                    "book_mage_shield",
-                    # Боевые общие
-                    "book_power_strike", "book_poison_strike",
-                    "book_stun_strike", "book_battle_cry",
-                    # Магические атакующие
-                    "book_magic_missile", "book_fireball",
-                    "book_ice_bolt", "book_lightning",
-                    # Оружейные - лук
-                    "book_precise_shot", "book_rapid_fire", "book_piercing_arrow",
-                    # Оружейные - кинжал
-                    "book_backstab", "book_bleeding_cut", "book_shadow_step",
-                    # Оружейные - меч
-                    "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance"
-                ]
-                for book_id in skill_books:
-                    if book_id in PREDEFINED_ITEMS:
-                        game.player.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
-                print("Получены все книги умений!")
+            elif cheat_id == 'learn_all_skills':
+                from game.systems.skills import AVAILABLE_SKILLS
+                learned_count = 0
+                for skill_id in AVAILABLE_SKILLS.keys():
+                    if game.player.skill_manager.learn_skill(skill_id):
+                        learned_count += 1
+                print(f"Выучено умений: {learned_count}")
 
             elif cheat_id == 'teleport_academy':
                 # Ищем академию магов на карте
@@ -261,10 +245,10 @@ class CheatMenuWindow:
         # Размеры окна
         if self.scaler:
             window_width = self.scaler.scale_width(700)
-            window_height = self.scaler.scale_height(550)
+            window_height = self.scaler.scale_height(700)
         else:
             window_width = min(700, int(screen_width * 0.7))
-            window_height = min(550, int(screen_height * 0.7))
+            window_height = min(700, int(screen_height * 0.8))
 
         window_x = (screen_width - window_width) // 2
         window_y = (screen_height - window_height) // 2

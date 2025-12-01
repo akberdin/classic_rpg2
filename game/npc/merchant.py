@@ -85,7 +85,7 @@ class Merchant(NPC):
         rank = self.get_merchant_rank()
 
         # Увеличиваем инвентарь и золото торговца в зависимости от ранга
-        self.inventory.max_slots = 60  # Всегда 60 слотов для всех торговцев
+        self.inventory.max_slots = 40 + (rank * 10)  # 50/60/70/80 слотов в зависимости от ранга
         self.inventory.max_weight = 200.0 + (rank * 50)  # 250/300/350/400 веса
 
         # Даем торговцу стартовое золото (больше для высокого ранга)
@@ -98,43 +98,39 @@ class Merchant(NPC):
             "minor_mana_potion", "mana_potion",
             "minor_stamina_potion", "stamina_potion"
         ]
-        num_potion_types = min(3 + rank, 6)  # Максимум 6 видов
+        num_potion_types = min(2 + rank, 5)  # Максимум 5 видов
         for potion_type in random.sample(potion_types, num_potion_types):
-            # Ограничиваем количество каждого зелья до 3, чтобы не переполнять инвентарь
-            quantity = min(random.randint(2, 4), 3)
+            # Ограничиваем количество каждого зелья до 2-3
+            quantity = random.randint(2, 3)
             self.inventory.add_item(PREDEFINED_ITEMS[potion_type], quantity)
 
-        # Ограничиваем количество предметов для высокоранговых торговцев, чтобы не переполнять инвентарь
-        # Максимум 25 предметов (не считая зелья и ресурсы)
-        max_items = 25 - num_potion_types  # Вычитаем количество видов зелий
-
-        # Генерируем оружие (ограничено для высокого ранга)
-        num_weapons = min(random.randint(2 + rank, 4 + rank), 6)  # Максимум 6
+        # Генерируем оружие (уменьшено количество)
+        num_weapons = 2 + rank  # 3/4/5/6 штук
         for _ in range(num_weapons):
             quality = ItemGenerator.generate_quality_for_shop(rank)
             weapon = ItemGenerator.generate_weapon(self.level, quality=quality)
             self.inventory.add_item(weapon, 1)
 
-        # Генерируем доспехи (ограничено для высокого ранга)
-        num_armors = min(random.randint(3 + rank, 6 + rank), 7)  # Максимум 7
+        # Генерируем доспехи (уменьшено количество)
+        num_armors = 3 + rank  # 4/5/6/7 штук
         for _ in range(num_armors):
             quality = ItemGenerator.generate_quality_for_shop(rank)
             armor = ItemGenerator.generate_armor(self.level, quality=quality)
             self.inventory.add_item(armor, 1)
 
-        # Генерируем украшения (ограничено для высокого ранга)
-        num_jewelry = min(random.randint(1 + rank, 3 + rank), 5)  # Максимум 5
+        # Генерируем украшения (уменьшено количество)
+        num_jewelry = 1 + rank  # 2/3/4/5 штук
         for _ in range(num_jewelry):
             quality = ItemGenerator.generate_quality_for_shop(rank)
             jewelry = ItemGenerator.generate_jewelry(self.level, quality=quality)
             self.inventory.add_item(jewelry, 1)
 
-        # Генерируем ресурсы (ограничено количество)
+        # Генерируем ресурсы (уменьшено количество)
         resource_types = ["copper_ore", "iron_ore", "silver_ore", "ancient_coin", "artifact_fragment"]
         num_resources = min(2 + rank, len(resource_types))  # 3/4/5/5 видов
         for resource_type in random.sample(resource_types, num_resources):
-            # Ограничиваем количество каждого ресурса до 5, чтобы не переполнять инвентарь
-            quantity = min(random.randint(2, 5), 5)
+            # Ограничиваем количество каждого ресурса до 3
+            quantity = random.randint(2, 3)
             self.inventory.add_item(PREDEFINED_ITEMS[resource_type], quantity)
 
         # Книги боевых умений (для всех торговцев с вероятностью)
@@ -174,6 +170,24 @@ class Merchant(NPC):
 
         # Получаем ранг торговца
         rank = self.get_merchant_rank()
+
+        # Очистка старых товаров, если инвентарь близок к переполнению
+        current_slots = len(self.inventory.get_all_items())
+        if current_slots > self.inventory.max_slots * 0.8:  # Если заполнено более 80%
+            # Удаляем 20-30% случайных предметов (кроме зелий и книг)
+            items_to_remove = int(current_slots * random.uniform(0.2, 0.3))
+            all_items = self.inventory.get_all_items()
+            # Фильтруем: не удаляем зелья и книги умений
+            removable_items = [
+                item for item in all_items
+                if not (hasattr(item, 'item_type') and item.item_type in ['potion', 'skill_book'])
+            ]
+            # Удаляем случайные предметы
+            for _ in range(min(items_to_remove, len(removable_items))):
+                if removable_items:
+                    item_to_remove = random.choice(removable_items)
+                    self.inventory.remove_item(item_to_remove, 1)
+                    removable_items.remove(item_to_remove)
 
         # Добавляем золото (больше для высокого ранга)
         base_gold = random.randint(50, 150)
