@@ -152,9 +152,14 @@ class TacticalCombatUIHandler:
         # Определяем цель умения
         target_unit = None
 
-        # Лечебные умения применяются на себя
-        if skill.skill_id in ['heal', 'regeneration', 'stamina_recovery', 'mage_shield']:
+        # Получаем ID умения через SkillManager
+        skill_id = self.combat.player.skill_manager.get_skill_id(skill)
+
+        # Лечебные/поддерживающие умения применяются на себя
+        support_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield']
+        if skill_id in support_skills:
             target_unit = self.combat.player_unit
+            self.combat.add_to_log(f"Применяете {skill.name} на себя")
         else:
             # Боевые умения требуют выбранной цели
             if not self.selected_target_unit:
