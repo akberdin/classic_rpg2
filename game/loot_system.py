@@ -92,26 +92,69 @@ class LootSystem:
         book_drop_chance = min(0.05 + enemy.level * 0.005, 0.20)  # от 5% до 20%
 
         if random.random() < book_drop_chance:
-            # Список всех книг умений
-            all_skill_books = [
+            # Книги умений разделены по редкости (вес = шанс выбора)
+            # ОБЫЧНЫЕ (вес 50) - базовые умения
+            common_books = [
                 # Общие боевые умения
                 "book_power_strike", "book_poison_strike", "book_stun_strike", "book_battle_cry",
-                # Умения лука
+                # Базовые умения лука
                 "book_precise_shot", "book_rapid_fire", "book_piercing_arrow",
-                # Умения кинжала
+                # Базовые умения кинжала
                 "book_backstab", "book_bleeding_cut", "book_shadow_step",
-                # Умения меча
+                # Базовые умения меча
                 "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance",
-                # Магические умения (поддержка)
-                "book_heal", "book_regeneration", "book_stamina_recovery", "book_mage_shield",
-                # Атакующая магия
-                "book_magic_missile", "book_fireball", "book_ice_bolt", "book_lightning"
+                # Базовые магические умения
+                "book_heal", "book_regeneration", "book_stamina_recovery",
+                "book_magic_missile", "book_mage_shield",
             ]
 
-            # Выбираем случайную книгу
-            book_id = random.choice(all_skill_books)
-            if book_id in PREDEFINED_ITEMS:
-                loot_items.append((PREDEFINED_ITEMS[book_id], 1))
+            # РЕДКИЕ (вес 30) - продвинутые умения
+            uncommon_books = [
+                # Продвинутые умения SHADOW
+                "book_deadly_poison", "book_stealth", "book_shadow_agility",
+                # Продвинутые умения WARRIOR
+                "book_iron_stance", "book_intimidate", "book_counterattack",
+                # Продвинутые умения HUNTER
+                "book_hunters_mark", "book_stamina_boost", "book_eagle_eye",
+                "book_long_range_shot",
+                # Продвинутые умения для копья
+                "book_lunge_strike", "book_spear_sweep", "book_armor_breach",
+                # Продвинутая магия
+                "book_fireball", "book_ice_bolt", "book_lightning",
+            ]
+
+            # ЭПИЧЕСКИЕ (вес 10) - мощные умения
+            rare_books = [
+                # Эпические умения SHADOW
+                "book_critical_strike",
+                # Эпические умения WARRIOR
+                "book_steel_skin", "book_berserker",
+                # Эпические умения HUNTER
+                "book_explosive_arrow", "book_trap",
+            ]
+
+            # Создаем взвешенный список для выбора
+            book_pool = []
+
+            # Обычные книги (вес 50 каждая)
+            for book in common_books:
+                book_pool.extend([book] * 50)
+
+            # Редкие книги (вес 30 каждая, но только если уровень врага >= 5)
+            if enemy.level >= 5:
+                for book in uncommon_books:
+                    book_pool.extend([book] * 30)
+
+            # Эпические книги (вес 10 каждая, но только если уровень врага >= 10)
+            if enemy.level >= 10:
+                for book in rare_books:
+                    book_pool.extend([book] * 10)
+
+            # Выбираем случайную книгу из пула
+            if book_pool:
+                book_id = random.choice(book_pool)
+                if book_id in PREDEFINED_ITEMS:
+                    loot_items.append((PREDEFINED_ITEMS[book_id], 1))
 
         # Специальный лут для бандитов - древние монеты
         if enemy.npc_type == "bandit":
