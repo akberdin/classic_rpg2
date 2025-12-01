@@ -1,0 +1,103 @@
+{
+  "_description": "Конфигурация тактического боя - параметры поля боя, радиусы действия оружия и умений",
+  "_version": "1.0.0",
+
+  "battlefield": {
+    "_description": "Параметры поля боя",
+    "width": 20,
+    "height": 10,
+    "cell_size": 64,
+    "player_spawn_x": 2,
+    "enemy_spawn_x": 17
+  },
+
+  "weapon_ranges": {
+    "_description": "Радиусы действия для разных типов оружия (в клетках)",
+    "KNIFE": 1,
+    "CLUB": 1,
+    "SWORD": 1,
+    "AXE": 1,
+    "PICKAXE": 1,
+    "STAFF": 1,
+    "WAND": 1,
+    "SPEAR": 2,
+    "BOW": {
+      "_description": "Радиус зависит от качества лука",
+      "POOR": 5,
+      "COMMON": 6,
+      "UNCOMMON": 7,
+      "RARE": 8,
+      "EPIC": 9,
+      "LEGENDARY": 10,
+      "ARTIFACT": 12
+    }
+  },
+
+  "skill_ranges": {
+    "_description": "Радиусы действия для умений (в клетках)",
+
+    "combat_skills": {
+      "basic_attack": 1,
+      "power_strike": 1,
+      "poison_strike": 1,
+      "stun_strike": 1,
+      "battle_cry": 0,
+      "precise_shot": 8,
+      "rapid_fire": 7,
+      "piercing_arrow": 9,
+      "backstab": 1,
+      "bleeding_cut": 1,
+      "shadow_step": 0,
+      "whirlwind_strike": 1,
+      "shield_breaker": 1,
+      "blade_dance": 1
+    },
+
+    "magic_skills": {
+      "heal": 0,
+      "regeneration": 0,
+      "stamina_recovery": 0,
+      "mage_shield": 0,
+      "fireball": 8,
+      "ice_bolt": 7,
+      "lightning": 10,
+      "magic_missile": 6
+    },
+
+    "crafting_skills": {
+      "_description": "Крафтовые умения не используются в бою",
+      "mining": 1,
+      "lumberjacking": 1
+    }
+  },
+
+  "movement": {
+    "_description": "Параметры перемещения",
+    "base_movement_range": 3,
+    "diagonal_allowed": true,
+    "diagonal_cost": 1.4
+  },
+
+  "action_types": {
+    "_description": "Типы действий доступных за один ход",
+    "MOVE": "movement",
+    "SKILL": "skill",
+    "POTION": "potion",
+    "PASS": "pass"
+  },
+
+  "ui": {
+    "_description": "Параметры UI тактического боя",
+    "grid_color": [100, 100, 120],
+    "cell_hover_color": [150, 150, 200, 128],
+    "cell_selected_color": [100, 200, 100, 128],
+    "cell_attack_range_color": [200, 100, 100, 128],
+    "cell_move_range_color": [100, 150, 200, 128],
+    "player_unit_color": [100, 200, 100],
+    "enemy_unit_color": [200, 100, 100],
+    "healthbar_height": 6,
+    "manabar_height": 4,
+    "staminabar_height": 4,
+    "bar_offset_y": -20
+  }
+}
