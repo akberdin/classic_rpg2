@@ -351,10 +351,36 @@ class Game:
             if self.in_tactical_combat and self.tactical_combat_handler:
                 result = self.tactical_combat_handler.handle_input(event)
                 if result == "victory":
+                    # Обрабатываем победу через LootSystem
+                    defeated_enemy = self.tactical_combat_system.enemy
+                    if defeated_enemy is None:
+                        self.in_tactical_combat = False
+                        self.tactical_combat_system = None
+                        self.tactical_combat_renderer = None
+                        self.tactical_combat_handler = None
+                        continue
+
+                    # LootSystem обрабатывает: генерацию лута, бонусы killstreak,
+                    # добавление в инвентарь, статистику убийств и квесты
+                    victory_result = self.loot_system.process_victory(defeated_enemy)
+
+                    # Выводим сообщение о серии убийств
+                    if victory_result['streak_message']:
+                        print(victory_result['streak_message'])
+
+                    # Показываем окно лута
+                    self.loot_window.set_loot(
+                        victory_result['loot_items'],
+                        victory_result['loot_gold'],
+                        defeated_enemy.name
+                    )
+                    self.loot_window_open = True
+
                     self.in_tactical_combat = False
                     self.tactical_combat_system = None
                     self.tactical_combat_renderer = None
                     self.tactical_combat_handler = None
+                    print("Победа в тактическом бою!")
                 elif result == "defeat":
                     self.in_tactical_combat = False
                     self.tactical_combat_system = None
