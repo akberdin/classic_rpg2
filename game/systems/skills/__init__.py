@@ -58,6 +58,7 @@ from game.systems.skills.crafting import (
 # Оружейные умения
 from game.systems.skills.weapon import (
     WeaponSkill,
+    BasicShot,
     PreciseShot,
     RapidFire,
     PiercingArrow,
@@ -83,7 +84,7 @@ __all__ = [
     # Ремесленные
     'Mining', 'Lumberjacking',
     # Оружейные
-    'WeaponSkill', 'PreciseShot', 'RapidFire', 'PiercingArrow', 'Backstab',
+    'WeaponSkill', 'BasicShot', 'PreciseShot', 'RapidFire', 'PiercingArrow', 'Backstab',
     'BleedingCut', 'ShadowStep', 'WhirlwindStrike', 'ShieldBreaker', 'BladeDance',
     # Словарь умений
     'AVAILABLE_SKILLS',
@@ -98,6 +99,8 @@ AVAILABLE_SKILLS = {
     'poison_strike': PoisonStrike,
     'stun_strike': StunStrike,
     'battle_cry': BattleCry,
+    # Общие умения
+    'basic_shot': BasicShot,
     # Боевые (лук)
     'precise_shot': PreciseShot,
     'rapid_fire': RapidFire,

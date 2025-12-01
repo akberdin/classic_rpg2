@@ -20,7 +20,7 @@ class BasicAttack(Skill):
         super().__init__(
             name="Базовая атака",
             description="Простой удар оружием. Урон увеличивается с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.GENERAL,
             stamina_cost=5,
             cooldown=0
         )
@@ -68,7 +68,7 @@ class PowerStrike(Skill):
         super().__init__(
             name="Мощный удар",
             description="Наносит урон с увеличенным коэффициентом. Сила растет с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.WARRIOR,
             stamina_cost=10,
             cooldown=2
         )
@@ -122,7 +122,7 @@ class PoisonStrike(Skill):
         super().__init__(
             name="Отравленный удар",
             description="Наносит урон и накладывает отравление. Длительность растет с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.SHADOW,
             stamina_cost=15,
             cooldown=4
         )
@@ -191,7 +191,7 @@ class StunStrike(Skill):
         super().__init__(
             name="Оглушающий удар",
             description="Наносит урон и оглушает. Шанс оглушения растет с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.WARRIOR,
             stamina_cost=20,
             cooldown=5
         )
@@ -264,7 +264,7 @@ class BattleCry(Skill):
         super().__init__(
             name="Боевой клич",
             description="Увеличивает силу. Бонус и длительность растут с рангом",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.GENERAL,
             stamina_cost=15,
             cooldown=6
         )
