@@ -215,8 +215,12 @@ class TacticalCombatRenderer:
         # Рамка
         pygame.draw.rect(self.screen, (200, 200, 200), (bar_x, bar_y, bar_width, bar_height), 1)
 
-        # Mana bar (если есть)
-        if hasattr(character, 'mana'):
+        # Mana bar (только для персонажей с маной, но не для животных)
+        # Животные не используют магию, поэтому не показываем полосу маны
+        from game.constants import NPC_TYPE_WOLF, NPC_TYPE_BEAR, NPC_TYPE_DEER
+        is_animal = hasattr(character, 'npc_type') and character.npc_type in [NPC_TYPE_WOLF, NPC_TYPE_BEAR, NPC_TYPE_DEER]
+
+        if hasattr(character, 'mana') and not is_animal:
             bar_y += bar_height + 2
             max_mana = character.get_effective_max_mana() if hasattr(character, 'get_effective_max_mana') else character.max_mana
             mana_ratio = character.mana / max_mana if max_mana > 0 else 0

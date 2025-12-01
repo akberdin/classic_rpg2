@@ -222,12 +222,14 @@ class TacticalCombatUIHandler:
             self.combat.respawn_manager.register_death(self.combat.enemy, self.combat.game)
 
         # Оставляем лут на тайле (если есть карта и у врага есть предметы)
+        # Лут оставляется на позиции игрока, чтобы его можно было сразу поднять
         if self.combat.game_map and hasattr(self.combat.enemy, 'inventory'):
             if len(self.combat.enemy.inventory.items) > 0 or self.combat.enemy.inventory.gold > 0:
-                tile = self.combat.game_map.get_tile(self.combat.enemy.x, self.combat.enemy.y)
+                # Используем позицию игрока, чтобы лут был рядом после боя
+                tile = self.combat.game_map.get_tile(self.combat.player.x, self.combat.player.y)
                 if tile:
                     tile.set_loot(self.combat.enemy.inventory)
-                    self.combat.add_to_log("На земле остался лут!")
+                    self.combat.add_to_log(f"На земле остался лут! (Золото: {self.combat.enemy.inventory.gold}, предметов: {len(self.combat.enemy.inventory.items)})")
 
         # Даем опыт за победу (с учётом разницы уровней)
         exp_gained = calculate_combat_exp(self.combat.player.level, self.combat.enemy.level)
