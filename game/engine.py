@@ -537,6 +537,8 @@ class Game:
             self.tactical_combat_handler = TacticalCombatUIHandler(
                 self.tactical_combat_system, self.tactical_combat_renderer
             )
+            # Сохраняем ссылку на ui_handler в combat_system для доступа из renderer
+            self.tactical_combat_system._ui_handler = self.tactical_combat_handler
             self.in_tactical_combat = True
             self.nearby_npc = None
         else:

@@ -33,6 +33,10 @@ class TacticalCombatRenderer:
         self.player_color = tuple(ui_config.get('player_unit_color', [100, 200, 100]))
         self.enemy_color = tuple(ui_config.get('enemy_unit_color', [200, 100, 100]))
 
+        # Для отслеживания кнопок умений (позиции для клика)
+        self.skill_buttons = []  # Список прямоугольников кнопок умений
+        self.hovered_skill_slot = None  # Слот умения под курсором
+
     def render(self):
         """Основной метод отрисовки"""
         screen_width = self.screen.get_width()
@@ -112,12 +116,15 @@ class TacticalCombatRenderer:
     def _render_units(self, field_x, field_y):
         """Отрисовка юнитов на поле"""
         # Отрисовка игрока
-        self._render_unit(self.combat.player_unit, field_x, field_y, self.player_color, "P")
+        self._render_unit(self.combat.player_unit, field_x, field_y, self.player_color, "P", is_target=False)
 
-        # Отрисовка врага
-        self._render_unit(self.combat.enemy_unit, field_x, field_y, self.enemy_color, "E")
+        # Отрисовка врага (с подсветкой если выбран как цель)
+        from game.tactical_combat.ui_handler import TacticalCombatUIHandler
+        is_target = (hasattr(self.combat, '_ui_handler') and
+                     self.combat._ui_handler.selected_target_unit == self.combat.enemy_unit)
+        self._render_unit(self.combat.enemy_unit, field_x, field_y, self.enemy_color, "E", is_target=is_target)
 
-    def _render_unit(self, unit, field_x, field_y, color, label):
+    def _render_unit(self, unit, field_x, field_y, color, label, is_target=False):
         """
         Отрисовка юнита
 
@@ -126,26 +133,42 @@ class TacticalCombatRenderer:
             field_x, field_y: Координаты поля
             color: Цвет юнита
             label: Метка (P для игрока, E для врага)
+            is_target: True если юнит выбран как цель
         """
         cell_x = field_x + unit.x * self.combat.cell_size
         cell_y = field_y + unit.y * self.combat.cell_size
 
-        # Фон клетки юнита
-        pygame.draw.rect(self.screen, color,
+        # Фон клетки юнита (подсветка)
+        bg_color = color
+        if is_target:
+            # Яркая подсветка для выбранной цели
+            bg_color = (255, 215, 0)  # Золотой цвет
+
+        pygame.draw.rect(self.screen, bg_color,
                         (cell_x + 2, cell_y + 2,
                          self.combat.cell_size - 4, self.combat.cell_size - 4))
 
-        # Рамка
-        pygame.draw.rect(self.screen, (255, 255, 255),
+        # Рамка (более толстая для выбранной цели)
+        border_width = 4 if is_target else 2
+        border_color = (255, 215, 0) if is_target else (255, 255, 255)
+        pygame.draw.rect(self.screen, border_color,
                         (cell_x + 2, cell_y + 2,
-                         self.combat.cell_size - 4, self.combat.cell_size - 4), 2)
+                         self.combat.cell_size - 4, self.combat.cell_size - 4), border_width)
 
-        # Метка
-        label_surface = self.font.render(label, True, (255, 255, 255))
-        label_rect = label_surface.get_rect()
-        label_rect.center = (cell_x + self.combat.cell_size // 2,
-                             cell_y + self.combat.cell_size // 2)
-        self.screen.blit(label_surface, label_rect)
+        # Отрисовка спрайта персонажа
+        character = unit.character
+        if hasattr(character, 'sprite') and character.sprite:
+            # Центрируем спрайт в клетке
+            sprite_x = cell_x + (self.combat.cell_size - character.sprite.get_width()) // 2
+            sprite_y = cell_y + (self.combat.cell_size - character.sprite.get_height()) // 2
+            self.screen.blit(character.sprite, (sprite_x, sprite_y))
+        else:
+            # Fallback: метка, если спрайт недоступен
+            label_surface = self.font.render(label, True, (255, 255, 255))
+            label_rect = label_surface.get_rect()
+            label_rect.center = (cell_x + self.combat.cell_size // 2,
+                                 cell_y + self.combat.cell_size // 2)
+            self.screen.blit(label_surface, label_rect)
 
         # Прогресс-бары над юнитом
         self._render_unit_bars(unit, cell_x, cell_y)
@@ -198,37 +221,135 @@ class TacticalCombatRenderer:
             pygame.draw.rect(self.screen, (200, 180, 100), (bar_x, bar_y, bar_width, bar_height), 1)
 
     def _render_ui_panel(self, x, y, width):
-        """Отрисовка панели UI с действиями"""
-        panel_height = 140
+        """Отрисовка панели UI с панелью умений"""
+        panel_height = 160
 
         # Фон панели
         pygame.draw.rect(self.screen, (35, 35, 45), (x, y, width, panel_height))
         pygame.draw.rect(self.screen, (100, 100, 150), (x, y, width, panel_height), 2)
 
-        # Заголовок
-        title = self.info_font.render("Действия:", True, (200, 200, 220))
-        self.screen.blit(title, (x + 10, y + 10))
-
         if self.combat.current_turn == "player":
-            # Показываем доступные действия
-            actions_y = y + 35
+            # Заголовок
+            title = self.info_font.render("Умения (ЛКМ для использования):", True, (200, 200, 220))
+            self.screen.blit(title, (x + 10, y + 10))
 
-            # Кнопки действий
-            actions = [
-                ("1 - Переместиться", "MOVE"),
-                ("2 - Использовать умение", "SKILL"),
-                ("3 - Использовать зелье", "POTION"),
-                ("4 - Пропустить ход", "PASS")
-            ]
+            # Отрисовка панели умений
+            self._render_skill_panel(x + 10, y + 35, width - 20)
 
-            for i, (text, action_type) in enumerate(actions):
-                action_text = self.info_font.render(text, True, (150, 200, 150))
-                self.screen.blit(action_text, (x + 20, actions_y + i * 25))
+            # Подсказка по управлению
+            hint = self.small_font.render(
+                "ЛКМ - переместиться/применить умение | ПКМ - выбрать цель | ESC - сбежать",
+                True, (180, 180, 200)
+            )
+            self.screen.blit(hint, (x + 10, y + 135))
 
         else:
             # Ход противника
+            title = self.info_font.render("Действия:", True, (200, 200, 220))
+            self.screen.blit(title, (x + 10, y + 10))
             wait_text = self.info_font.render("Ход противника...", True, (255, 150, 150))
             self.screen.blit(wait_text, (x + 20, y + 50))
+
+    def _render_skill_panel(self, x, y, width):
+        """Отрисовка панели умений"""
+        # Очищаем список кнопок перед отрисовкой
+        self.skill_buttons = []
+
+        slot_size = 48
+        slot_spacing = 8
+        slots_per_row = 8
+
+        # Получаем позицию мыши для подсветки
+        mouse_pos = pygame.mouse.get_pos()
+        self.hovered_skill_slot = None
+
+        for i in range(8):
+            slot_x = x + i * (slot_size + slot_spacing)
+            slot_y = y
+
+            skill = self.combat.player.skill_manager.get_slot_skill(i)
+
+            # Проверяем, доступно ли умение для использования в бою
+            is_usable = False
+            if skill:
+                from game.skills import SkillCategory
+                can_use, reason = skill.can_use(self.combat.player)
+                is_usable = can_use and skill.category in [SkillCategory.COMBAT, SkillCategory.MAGIC]
+
+            # Фон слота
+            if skill:
+                if is_usable:
+                    # Яркие цвета для доступных умений
+                    if skill.category.value == 'combat':
+                        bg_color = (80, 50, 50)
+                    elif skill.category.value == 'magic':
+                        bg_color = (50, 50, 80)
+                    else:
+                        bg_color = (40, 40, 40)
+                else:
+                    # Темные цвета для недоступных умений
+                    bg_color = (30, 30, 30)
+            else:
+                bg_color = (30, 30, 30)
+
+            # Создаем rect для кнопки
+            slot_rect = pygame.Rect(slot_x, slot_y, slot_size, slot_size)
+            self.skill_buttons.append((slot_rect, i, skill, is_usable))
+
+            # Проверяем наведение мыши
+            if slot_rect.collidepoint(mouse_pos) and is_usable:
+                self.hovered_skill_slot = i
+                # Подсветка при наведении
+                bg_color = tuple(min(255, c + 30) for c in bg_color)
+
+            pygame.draw.rect(self.screen, bg_color, slot_rect)
+
+            # Рамка слота
+            if skill and is_usable:
+                border_color = (200, 200, 100)  # Яркая желтая рамка для доступных
+            elif skill:
+                border_color = (80, 80, 80)  # Темная рамка для недоступных
+            else:
+                border_color = (100, 100, 100)
+
+            pygame.draw.rect(self.screen, border_color, slot_rect, 2)
+
+            # Номер слота
+            key_text = self.info_font.render(str(i + 1), True, (200, 200, 200))
+            self.screen.blit(key_text, (slot_x + 4, slot_y + 4))
+
+            # Если есть умение, показываем его
+            if skill:
+                # Иконка умения (спрайт или первая буква названия как fallback)
+                skill_id = self.combat.player.skill_manager.get_slot_skill_id(i)
+                icon_size = slot_size - 8
+                icon_x = slot_x + 4
+                icon_y = slot_y + 4
+
+                # Пробуем отрисовать спрайт умения
+                if skill_id and self.combat.sprite_manager:
+                    self.combat.sprite_manager.render_skill_icon(
+                        self.screen,
+                        skill_id,
+                        icon_x,
+                        icon_y,
+                        icon_size,
+                        fallback_text=skill.name[0]
+                    )
+                else:
+                    # Fallback: первая буква названия
+                    icon_font = pygame.font.Font(None, 32)
+                    icon_text = icon_font.render(skill.name[0], True, (255, 255, 255))
+                    icon_rect = icon_text.get_rect()
+                    icon_rect.center = (slot_x + slot_size // 2, slot_y + slot_size // 2 + 4)
+                    self.screen.blit(icon_text, icon_rect)
+
+                # Перезарядка (если есть)
+                if skill.current_cooldown > 0:
+                    cooldown_text = self.info_font.render(str(skill.current_cooldown), True, (255, 100, 100))
+                    cooldown_rect = cooldown_text.get_rect()
+                    cooldown_rect.center = (slot_x + slot_size // 2, slot_y + slot_size // 2)
+                    self.screen.blit(cooldown_text, cooldown_rect)
 
     def _render_combat_log(self, x, y, width):
         """Отрисовка лога боя"""

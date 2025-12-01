@@ -90,6 +90,7 @@ class TacticalCombatSystem:
         self.current_turn = "player"  # player или enemy
         self.selected_unit = None
         self.selected_action = None  # move, skill, potion, pass
+        self.selected_target = None  # Выбранная цель (для умений)
         self.hovered_cell = None
         self.combat_log = []
         self.max_log_entries = 10
@@ -163,6 +164,7 @@ class TacticalCombatSystem:
     def can_move_to(self, unit, target_x, target_y):
         """
         Проверить, может ли юнит переместиться в указанную клетку
+        Перемещение возможно только в соседние 8 клеток (радиус 1)
 
         Args:
             unit: Юнит
@@ -183,11 +185,12 @@ class TacticalCombatSystem:
         if (target_x == self.enemy_unit.x and target_y == self.enemy_unit.y):
             return False
 
-        # Проверяем дистанцию перемещения
-        move_range = self.config['movement']['base_movement_range']
-        distance = self.get_distance(unit.x, unit.y, target_x, target_y)
+        # Проверяем, что перемещение только в соседние 8 клеток (радиус 1)
+        dx = abs(target_x - unit.x)
+        dy = abs(target_y - unit.y)
 
-        return distance <= move_range
+        # Допускаем перемещение только на 1 клетку по любому направлению
+        return dx <= 1 and dy <= 1 and (dx != 0 or dy != 0)
 
     def move_unit(self, unit, target_x, target_y):
         """
