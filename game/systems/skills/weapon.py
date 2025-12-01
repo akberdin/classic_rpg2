@@ -737,3 +737,213 @@ class BladeDance(WeaponSkill):
         return result
 
 
+# --- УМЕНИЯ ДЛЯ КОПЬЯ ---
+
+class LungeStrike(WeaponSkill):
+    """Пронзающий выпад - мощный выпад с увеличенной дальностью"""
+
+    def __init__(self):
+        from game.inventory import WeaponType
+        super().__init__(
+            name="Пронзающий выпад",
+            description="Мощный выпад с увеличенной дальностью. Наносит урон и отталкивает врага",
+            category=SkillCategory.HUNTER, tactical_range=2,
+            stamina_cost=16,
+            cooldown=3
+        )
+        self.required_weapon_type = WeaponType.SPEAR
+
+    def use(self, user, target=None):
+        """Использовать пронзающий выпад"""
+        result = super().use(user, target)
+
+        if target and user.can_attack(target):
+            # Получаем урон от оружия
+            weapon_damage = 0
+            if hasattr(user, 'inventory') and user.inventory:
+                from game.inventory import EquipmentSlot, WeaponItem
+                weapon = user.inventory.get_equipped_item(EquipmentSlot.WEAPON)
+                if weapon and isinstance(weapon, WeaponItem):
+                    weapon_damage = weapon.damage
+
+            # Базовый урон = урон оружия + ловкость
+            dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
+            base_damage = weapon_damage + dexterity
+
+            # Применяем множитель от ранга
+            damage_multiplier = 1.6 + (self.rank - 1) * 0.25  # 1.6x -> 2.6x
+            total_damage = int(base_damage * damage_multiplier)
+
+            # Проверяем крит
+            crit_chance = user.calculate_crit_chance() if hasattr(user, 'calculate_crit_chance') else 0
+            is_crit = random.random() < (crit_chance / 100)
+            if is_crit:
+                total_damage = int(total_damage * 2)
+
+            # Учитываем защиту
+            target_defense = target.get_total_defense()
+            actual_damage = max(1, total_damage - target_defense)
+
+            target.take_damage(actual_damage)
+
+            # Шанс отталкивания растет с рангом
+            knockback_chance = 0.5 + (self.rank - 1) * 0.1  # 50% -> 90%
+            knockback_success = random.random() < knockback_chance
+
+            result['damage'] = actual_damage
+            result['critical'] = is_crit
+            result['knockback'] = knockback_success
+            crit_text = " КРИТИЧЕСКОЕ ПОПАДАНИЕ!" if is_crit else ""
+            knockback_text = " (отброшен!)" if knockback_success else ""
+            result['message'] = f"{user.name} совершает пронзающий выпад по {target.name} на {actual_damage} урона!{crit_text}{knockback_text}"
+
+            if not target.is_alive:
+                result['killed'] = True
+                result['message'] += f" {target.name} повержен!"
+
+        return result
+
+
+class SpearSweep(WeaponSkill):
+    """Вихревое вращение - круговая атака копьем"""
+
+    def __init__(self):
+        from game.inventory import WeaponType
+        super().__init__(
+            name="Вихревое вращение",
+            description="Круговая атака копьем. Атакует всех врагов в радиусе",
+            category=SkillCategory.HUNTER, tactical_range=2,
+            stamina_cost=20,
+            cooldown=4
+        )
+        self.required_weapon_type = WeaponType.SPEAR
+        self.aoe_range = 2
+
+    def use(self, user, target=None):
+        """Использовать вихревое вращение"""
+        result = super().use(user, target)
+
+        if target and user.can_attack(target):
+            # Получаем урон от оружия
+            weapon_damage = 0
+            if hasattr(user, 'inventory') and user.inventory:
+                from game.inventory import EquipmentSlot, WeaponItem
+                weapon = user.inventory.get_equipped_item(EquipmentSlot.WEAPON)
+                if weapon and isinstance(weapon, WeaponItem):
+                    weapon_damage = weapon.damage
+
+            # Базовый урон = урон оружия + ловкость
+            dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
+            base_damage = weapon_damage + dexterity
+
+            # Применяем множитель от ранга
+            damage_multiplier = 1.3 + (self.rank - 1) * 0.2  # 1.3x -> 2.1x
+            total_damage = int(base_damage * damage_multiplier)
+
+            # Проверяем крит
+            crit_chance = user.calculate_crit_chance() if hasattr(user, 'calculate_crit_chance') else 0
+            is_crit = random.random() < (crit_chance / 100)
+            if is_crit:
+                total_damage = int(total_damage * 2)
+
+            # Учитываем защиту
+            target_defense = target.get_total_defense()
+            actual_damage = max(1, total_damage - target_defense)
+
+            target.take_damage(actual_damage)
+
+            # Шанс замедления растет с рангом
+            slow_chance = 0.3 + (self.rank - 1) * 0.1  # 30% -> 70%
+            if random.random() < slow_chance:
+                from game.systems.skills.effects import SlowEffect
+                slow_effect = SlowEffect(duration=1)
+                if hasattr(user, 'skill_manager'):
+                    user.skill_manager.add_status_effect(slow_effect)
+                elif hasattr(target, 'skill_manager'):
+                    target.skill_manager.add_status_effect(slow_effect)
+
+            result['damage'] = actual_damage
+            result['critical'] = is_crit
+            result['aoe'] = True
+            crit_text = " КРИТИЧЕСКОЕ ПОПАДАНИЕ!" if is_crit else ""
+            result['message'] = f"{user.name} вращает копье по {target.name} на {actual_damage} урона!{crit_text}"
+
+            if not target.is_alive:
+                result['killed'] = True
+                result['message'] += f" {target.name} повержен!"
+
+        return result
+
+
+class ArmorBreach(WeaponSkill):
+    """Разрыв брони - точный удар в слабое место"""
+
+    def __init__(self):
+        from game.inventory import WeaponType
+        super().__init__(
+            name="Разрыв брони",
+            description="Точный удар в слабое место. Пробивает броню и накладывает уязвимость",
+            category=SkillCategory.HUNTER, tactical_range=2,
+            stamina_cost=18,
+            cooldown=4
+        )
+        self.required_weapon_type = WeaponType.SPEAR
+
+    def use(self, user, target=None):
+        """Использовать разрыв брони"""
+        result = super().use(user, target)
+
+        if target and user.can_attack(target):
+            # Получаем урон от оружия
+            weapon_damage = 0
+            if hasattr(user, 'inventory') and user.inventory:
+                from game.inventory import EquipmentSlot, WeaponItem
+                weapon = user.inventory.get_equipped_item(EquipmentSlot.WEAPON)
+                if weapon and isinstance(weapon, WeaponItem):
+                    weapon_damage = weapon.damage
+
+            # Базовый урон = урон оружия + ловкость
+            dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
+            base_damage = weapon_damage + dexterity
+
+            # Применяем множитель от ранга
+            damage_multiplier = 1.4 + (self.rank - 1) * 0.2  # 1.4x -> 2.2x
+            total_damage = int(base_damage * damage_multiplier)
+
+            # Проверяем крит
+            crit_chance = user.calculate_crit_chance() if hasattr(user, 'calculate_crit_chance') else 0
+            is_crit = random.random() < (crit_chance / 100)
+            if is_crit:
+                total_damage = int(total_damage * 2)
+
+            # Пробитие брони растет с рангом
+            armor_penetration = 0.5 + (self.rank - 1) * 0.1  # 50% -> 90%
+
+            # Применяем пробитие брони
+            target_defense = target.get_total_defense()
+            effective_defense = int(target_defense * (1 - armor_penetration))
+            actual_damage = max(1, total_damage - effective_defense)
+
+            target.take_damage(actual_damage)
+
+            # Накладываем эффект снижения защиты
+            defense_reduction = 8 + (self.rank - 1) * 4  # 8 -> 24
+            duration = 3 + (self.rank - 1)  # 3 -> 7
+            from game.systems.skills.effects import ArmorBreakEffect
+            armor_break_effect = ArmorBreakEffect(duration=duration, defense_reduction=defense_reduction)
+            if hasattr(target, 'skill_manager'):
+                target.skill_manager.add_status_effect(armor_break_effect)
+
+            result['damage'] = actual_damage
+            result['critical'] = is_crit
+            result['armor_penetration'] = int(armor_penetration * 100)
+            crit_text = " КРИТИЧЕСКОЕ ПОПАДАНИЕ!" if is_crit else ""
+            result['message'] = f"{user.name} пробивает броню {target.name} на {actual_damage} урона!{crit_text} (пробитие {int(armor_penetration * 100)}% брони, -{defense_reduction} защиты)"
+
+            if not target.is_alive:
+                result['killed'] = True
+                result['message'] += f" {target.name} повержен!"
+
+        return result
+
+

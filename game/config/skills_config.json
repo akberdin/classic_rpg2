@@ -592,6 +592,84 @@
           "Ранг 5: 7 ударов по 50% урона"
         ]
       }
+    },
+
+    "spear_skills": {
+      "_description": "Умения для копья",
+
+      "lunge_strike": {
+        "name": "Пронзающий выпад",
+        "description": "Мощный выпад с увеличенной дальностью. Наносит урон и отталкивает врага",
+        "category": "combat",
+        "required_weapon": "spear",
+        "stamina_cost": 16,
+        "mana_cost": 0,
+        "cooldown": 3,
+        "tactical_range": 2,
+        "base_damage_multiplier": 1.6,
+        "damage_multiplier_per_rank": 0.25,
+        "dexterity_bonus_multiplier": 0.3,
+        "base_knockback_chance": 0.5,
+        "knockback_chance_per_rank": 0.1,
+        "description_per_rank": [
+          "Ранг 1: Урон x1.6, дальность 2, шанс отталкивания 50%",
+          "Ранг 2: Урон x1.85, дальность 2, шанс отталкивания 60%",
+          "Ранг 3: Урон x2.1, дальность 2, шанс отталкивания 70%",
+          "Ранг 4: Урон x2.35, дальность 2, шанс отталкивания 80%",
+          "Ранг 5: Урон x2.6, дальность 2, шанс отталкивания 90%"
+        ]
+      },
+
+      "spear_sweep": {
+        "name": "Вихревое вращение",
+        "description": "Круговая атака копьем. Атакует всех врагов в радиусе",
+        "category": "combat",
+        "required_weapon": "spear",
+        "stamina_cost": 20,
+        "mana_cost": 0,
+        "cooldown": 4,
+        "tactical_range": 2,
+        "aoe_range": 2,
+        "base_damage_multiplier": 1.3,
+        "damage_multiplier_per_rank": 0.2,
+        "dexterity_bonus_multiplier": 0.25,
+        "base_slow_chance": 0.3,
+        "slow_chance_per_rank": 0.1,
+        "slow_duration": 1,
+        "description_per_rank": [
+          "Ранг 1: Урон x1.3, радиус 2, шанс замедления 30%",
+          "Ранг 2: Урон x1.5, радиус 2, шанс замедления 40%",
+          "Ранг 3: Урон x1.7, радиус 2, шанс замедления 50%",
+          "Ранг 4: Урон x1.9, радиус 2, шанс замедления 60%",
+          "Ранг 5: Урон x2.1, радиус 2, шанс замедления 70%"
+        ]
+      },
+
+      "armor_breach": {
+        "name": "Разрыв брони",
+        "description": "Точный удар в слабое место. Пробивает броню и накладывает уязвимость",
+        "category": "combat",
+        "required_weapon": "spear",
+        "stamina_cost": 18,
+        "mana_cost": 0,
+        "cooldown": 4,
+        "tactical_range": 2,
+        "base_damage_multiplier": 1.4,
+        "damage_multiplier_per_rank": 0.2,
+        "base_armor_penetration": 0.5,
+        "armor_penetration_per_rank": 0.1,
+        "base_defense_reduction": 8,
+        "defense_reduction_per_rank": 4,
+        "base_duration": 3,
+        "duration_per_rank": 1,
+        "description_per_rank": [
+          "Ранг 1: Урон x1.4, пробитие 50%, -8 защиты на 3 хода",
+          "Ранг 2: Урон x1.6, пробитие 60%, -12 защиты на 4 хода",
+          "Ранг 3: Урон x1.8, пробитие 70%, -16 защиты на 5 ходов",
+          "Ранг 4: Урон x2.0, пробитие 80%, -20 защиты на 6 ходов",
+          "Ранг 5: Урон x2.2, пробитие 90%, -24 защиты на 7 ходов"
+        ]
+      }
     }
   },
 

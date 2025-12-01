@@ -109,8 +109,21 @@ class Mining(Profession):
         if hasattr(player, 'add_experience'):
             player.add_experience(1)
 
-        # Пробуем добыть каждый тип руды
-        for ore_type, base_chance in self.ore_chances.items():
+        # Определяем доступные типы руды на основе ранга
+        available_ores = {}
+        if self.rank >= 1:
+            available_ores["copper_ore"] = self.ore_chances["copper_ore"]
+        if self.rank >= 2:
+            available_ores["iron_ore"] = self.ore_chances["iron_ore"]
+        if self.rank >= 3:
+            available_ores["silver_ore"] = self.ore_chances["silver_ore"]
+        if self.rank >= 4:
+            available_ores["gold_ore"] = self.ore_chances["gold_ore"]
+        if self.rank >= 5:
+            available_ores["mithril_ore"] = self.ore_chances["mithril_ore"]
+
+        # Пробуем добыть каждый доступный тип руды
+        for ore_type, base_chance in available_ores.items():
             # Шанс с учетом ранга
             chance = min(95, base_chance + success_bonus)
 
