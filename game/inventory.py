@@ -54,20 +54,21 @@ class EquipmentSlot(Enum):
 # Типы оружия
 class WeaponType(Enum):
     """Тип оружия"""
-    KNIFE = ("Нож", 1.0, 0.5)
-    CLUB = ("Дубина", 1.2, 2.0)
-    SWORD = ("Меч", 1.5, 3.0)
-    SPEAR = ("Копье", 1.4, 2.5)
-    BOW = ("Лук", 1.3, 1.5)
-    STAFF = ("Посох", 1.1, 2.0)
-    WAND = ("Жезл", 1.0, 0.8)
-    AXE = ("Топор", 1.4, 2.8)
-    PICKAXE = ("Кирка", 1.1, 2.5)
+    KNIFE = ("Нож", 1.0, 0.5, 1)
+    CLUB = ("Дубина", 1.2, 2.0, 1)
+    SWORD = ("Меч", 1.5, 3.0, 1)
+    SPEAR = ("Копье", 1.4, 2.5, 2)
+    BOW = ("Лук", 1.3, 1.5, 5)  # Базовый радиус, увеличивается с качеством
+    STAFF = ("Посох", 1.1, 2.0, 1)
+    WAND = ("Жезл", 1.0, 0.8, 1)
+    AXE = ("Топор", 1.4, 2.8, 1)
+    PICKAXE = ("Кирка", 1.1, 2.5, 1)
 
-    def __init__(self, rus_name, damage_multiplier, weight):
+    def __init__(self, rus_name, damage_multiplier, weight, tactical_range):
         self.rus_name = rus_name
         self.damage_multiplier = damage_multiplier
         self.weight = weight
+        self.tactical_range = tactical_range  # Радиус действия в тактическом бою
 
 
 class Item:
@@ -361,6 +362,30 @@ class WeaponItem(EquipmentItem):
     def damage(self):
         """Урон с учетом типа оружия и качества"""
         return int(self.get_stat_bonus('damage') * self.weapon_type.damage_multiplier)
+
+    def get_tactical_range(self):
+        """
+        Получить радиус действия оружия в тактическом бою
+
+        Returns:
+            int: Радиус действия в клетках
+        """
+        base_range = self.weapon_type.tactical_range
+
+        # Для луков радиус увеличивается с качеством
+        if self.weapon_type == WeaponType.BOW:
+            quality_bonus = {
+                ItemQuality.POOR: 0,
+                ItemQuality.COMMON: 1,
+                ItemQuality.UNCOMMON: 2,
+                ItemQuality.RARE: 3,
+                ItemQuality.EPIC: 4,
+                ItemQuality.LEGENDARY: 5,
+                ItemQuality.ARTIFACT: 7
+            }
+            return base_range + quality_bonus.get(self.quality, 0)
+
+        return base_range
 
 
 class ArmorItem(EquipmentItem):
