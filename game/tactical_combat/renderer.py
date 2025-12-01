@@ -297,7 +297,12 @@ class TacticalCombatRenderer:
             if skill:
                 from game.skills import SkillCategory
                 can_use, reason = skill.can_use(self.combat.player)
-                is_usable = can_use and skill.category in [SkillCategory.COMBAT, SkillCategory.MAGIC]
+                combat_categories = [
+                    SkillCategory.COMBAT, SkillCategory.MAGIC,
+                    SkillCategory.SHADOW, SkillCategory.WARRIOR,
+                    SkillCategory.HUNTER, SkillCategory.MAGE, SkillCategory.GENERAL
+                ]
+                is_usable = can_use and skill.category in combat_categories
 
             # Фон слота
             if skill:

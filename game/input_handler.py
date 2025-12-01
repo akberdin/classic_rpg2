@@ -177,11 +177,13 @@ class InputHandler:
                 if hasattr(self.ctx.nearby_npc, 'mark_as_provoked'):
                     self.ctx.nearby_npc.mark_as_provoked()
                 # Открываем меню выбора режима боя
+                self.game.is_npc_aggression = False  # Это инициатива игрока
                 self.ctx.combat_mode_menu_open = True
                 self.ctx.interaction_menu_open = False
             elif npc_type in ["bandit", "undead", "necromancer", "miner"]:
                 # Для бандитов, нежити, некромантов и шахтёров кнопка 1 - это Агрессия
                 # Открываем меню выбора режима боя
+                self.game.is_npc_aggression = False  # Это инициатива игрока
                 self.ctx.combat_mode_menu_open = True
                 self.ctx.interaction_menu_open = False
             elif npc_type in ["merchant", "mage", "alchemist", "hunter"]:
@@ -207,6 +209,7 @@ class InputHandler:
                 self.handle_unique_npc_quest()
             else:
                 # Открываем меню выбора режима боя
+                self.game.is_npc_aggression = False  # Это инициатива игрока
                 self.ctx.combat_mode_menu_open = True
             self.ctx.interaction_menu_open = False
 
@@ -214,6 +217,7 @@ class InputHandler:
             # Действие 3: Агрессия / Уйти / Сдать квест
             if npc_type == "mage":
                 # Открываем меню выбора режима боя
+                self.game.is_npc_aggression = False  # Это инициатива игрока
                 self.ctx.combat_mode_menu_open = True
             elif npc_type in ["alchemist", "hunter"]:
                 self.handle_turn_in_quest()
@@ -242,14 +246,19 @@ class InputHandler:
             # Быстрый бой
             self.ctx.start_combat(self.ctx.nearby_npc, tactical=False)
             self.ctx.combat_mode_menu_open = False
+            self.game.is_npc_aggression = False  # Сбрасываем флаг агрессии
         elif event.key == pygame.K_2:
             # Тактический бой
             self.ctx.start_combat(self.ctx.nearby_npc, tactical=True)
             self.ctx.combat_mode_menu_open = False
+            self.game.is_npc_aggression = False  # Сбрасываем флаг агрессии
         elif event.key == pygame.K_3 or event.key == pygame.K_ESCAPE:
-            # Уйти
-            self.ctx.combat_mode_menu_open = False
-            self.ctx.nearby_npc = None
+            # Уйти (только если это не агрессия)
+            if not self.game.is_npc_aggression:
+                self.ctx.combat_mode_menu_open = False
+                self.ctx.nearby_npc = None
+            else:
+                print("Нельзя уйти! Враг уже напал на вас!")
 
     def handle_unique_npc_quest(self):
         """Обработка получения квеста от уникального NPC"""

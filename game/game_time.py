@@ -102,13 +102,16 @@ class GameTime:
                 for respawn_data in ready_to_respawn:
                     self.ctx.respawn_manager.respawn_npc(respawn_data, self.game)
 
-        # Проверяем, атаковал ли кто-то игрока (принудительное открытие окна боя)
+        # Проверяем, атаковал ли кто-то игрока (открываем меню выбора режима боя)
         if self.ctx.player.attacked_by_npc and not self.ctx.in_combat:
             attacker = self.ctx.player.attacked_by_npc
             self.ctx.player.attacked_by_npc = None  # Сбрасываем флаг
             if attacker.is_alive:  # Проверяем что атакующий еще жив
-                self.ctx.start_combat(attacker)
-                print(f"{attacker.name} напал на вас!")
+                # Открываем меню выбора режима боя с флагом агрессии
+                self.game.nearby_npc = attacker
+                self.game.is_npc_aggression = True
+                self.game.combat_mode_menu_open = True
+                print(f"{attacker.name} напал на вас! Выберите режим боя!")
 
         # Проверяем достижения
         if self.ctx.achievement_manager:

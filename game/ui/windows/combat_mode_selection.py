@@ -11,12 +11,13 @@ class CombatModeSelectionWindow(BaseWindow):
     BASE_WIDTH = 400
     BASE_HEIGHT = 250
 
-    def render(self, enemy_name="Противник"):
+    def render(self, enemy_name="Противник", is_aggression=False):
         """
         Отрисовка окна выбора режима боя
 
         Args:
             enemy_name: Имя противника
+            is_aggression: True если враг сам напал (не показывать кнопку "Уйти")
         """
         # Используем базовый класс для отрисовки окна
         win = self.begin_render(
@@ -31,8 +32,14 @@ class CombatModeSelectionWindow(BaseWindow):
 
         # Информация
         info_y = window_y + int(70 * scale_h)
-        info_text = "Выберите тип сражения:"
-        info_surface = self.font.render(info_text, True, (200, 200, 200))
+        if is_aggression:
+            info_text = "На вас напали! Выберите тип сражения:"
+            info_color = (255, 150, 150)  # Красноватый цвет для агрессии
+        else:
+            info_text = "Выберите тип сражения:"
+            info_color = (200, 200, 200)
+
+        info_surface = self.font.render(info_text, True, info_color)
         info_rect = info_surface.get_rect()
         info_rect.centerx = window_x + window_width // 2
         info_rect.y = info_y
@@ -49,11 +56,18 @@ class CombatModeSelectionWindow(BaseWindow):
 
         # Варианты действий
         actions_y = window_y + int(130 * scale_h)
-        actions = [
-            "[1] Быстрый бой",
-            "[2] Сражение",
-            "[3] Уйти"
-        ]
+        if is_aggression:
+            # При агрессии нельзя уйти
+            actions = [
+                "[1] Быстрый бой",
+                "[2] Сражение"
+            ]
+        else:
+            actions = [
+                "[1] Быстрый бой",
+                "[2] Сражение",
+                "[3] Уйти"
+            ]
 
         # Отрисовка кнопок действий
         for i, action in enumerate(actions):
