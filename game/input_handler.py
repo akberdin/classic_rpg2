@@ -173,22 +173,27 @@ class InputHandler:
             # Торговля / Магия / Зелья / Агрессия (для животных/бандитов/нежити/некромантов/шахтёров)
             if npc_type in ["wolf", "bear", "deer"]:
                 # Для животных кнопка 1 - это Агрессия
-                self.ctx.start_combat(self.ctx.nearby_npc)
                 # Помечаем животное как провоцированное
                 if hasattr(self.ctx.nearby_npc, 'mark_as_provoked'):
                     self.ctx.nearby_npc.mark_as_provoked()
+                # Открываем меню выбора режима боя
+                self.ctx.combat_mode_menu_open = True
+                self.ctx.interaction_menu_open = False
             elif npc_type in ["bandit", "undead", "necromancer", "miner"]:
                 # Для бандитов, нежити, некромантов и шахтёров кнопка 1 - это Агрессия
-                self.ctx.start_combat(self.ctx.nearby_npc)
+                # Открываем меню выбора режима боя
+                self.ctx.combat_mode_menu_open = True
+                self.ctx.interaction_menu_open = False
             elif npc_type in ["merchant", "mage", "alchemist", "hunter"]:
                 self.ctx.trade_menu_open = True
                 self.ctx.trade_window.mode = "buy"
                 self.ctx.trade_window.selected_merchant_index = 0
                 self.ctx.trade_window.selected_player_index = 0
                 print(f"Торговля с {self.ctx.nearby_npc.name}")
+                self.ctx.interaction_menu_open = False
             else:
                 print(f"{self.ctx.nearby_npc.name} не торгует")
-            self.ctx.interaction_menu_open = False
+                self.ctx.interaction_menu_open = False
 
         elif key == pygame.K_2:
             # Действие 2: Обучение / Агрессия / Квест / Уйти (для животных)
@@ -201,13 +206,15 @@ class InputHandler:
             elif npc_type in ["alchemist", "hunter"]:
                 self.handle_unique_npc_quest()
             else:
-                self.ctx.start_combat(self.ctx.nearby_npc)
+                # Открываем меню выбора режима боя
+                self.ctx.combat_mode_menu_open = True
             self.ctx.interaction_menu_open = False
 
         elif key == pygame.K_3:
             # Действие 3: Агрессия / Уйти / Сдать квест
             if npc_type == "mage":
-                self.ctx.start_combat(self.ctx.nearby_npc)
+                # Открываем меню выбора режима боя
+                self.ctx.combat_mode_menu_open = True
             elif npc_type in ["alchemist", "hunter"]:
                 self.handle_turn_in_quest()
             elif npc_type not in ["wolf", "bear", "deer"]:
@@ -224,6 +231,24 @@ class InputHandler:
 
         elif key == pygame.K_ESCAPE:
             self.ctx.interaction_menu_open = False
+            self.ctx.nearby_npc = None
+
+    def handle_combat_mode_choice(self, event):
+        """Обработка выбора режима боя"""
+        if event.type != pygame.KEYDOWN:
+            return
+
+        if event.key == pygame.K_1:
+            # Быстрый бой
+            self.ctx.start_combat(self.ctx.nearby_npc, tactical=False)
+            self.ctx.combat_mode_menu_open = False
+        elif event.key == pygame.K_2:
+            # Тактический бой
+            self.ctx.start_combat(self.ctx.nearby_npc, tactical=True)
+            self.ctx.combat_mode_menu_open = False
+        elif event.key == pygame.K_3 or event.key == pygame.K_ESCAPE:
+            # Уйти
+            self.ctx.combat_mode_menu_open = False
             self.ctx.nearby_npc = None
 
     def handle_unique_npc_quest(self):
