@@ -113,6 +113,7 @@ class Game:
 
         # Тактический бой
         self.combat_mode_menu_open = False
+        self.is_npc_aggression = False  # Флаг агрессии NPC (не дает уйти)
         self.tactical_combat_system = None
         self.tactical_combat_renderer = None
         self.tactical_combat_handler = None
@@ -608,7 +609,7 @@ class Game:
 
         # Если открыто меню выбора режима боя, отрисовываем его
         if self.combat_mode_menu_open and self.nearby_npc:
-            self.combat_mode_window.render(self.nearby_npc.name)
+            self.combat_mode_window.render(self.nearby_npc.name, self.is_npc_aggression)
 
         # Если открыто меню взаимодействия, отрисовываем его
         if self.interaction_menu_open and self.nearby_npc:

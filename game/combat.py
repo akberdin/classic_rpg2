@@ -175,9 +175,14 @@ class CombatSystem:
                 skill = self.player.skill_manager.get_slot_skill(slot_index)
 
                 if skill:
-                    # Проверяем, является ли умение боевым или магическим
+                    # Проверяем, является ли умение боевым (все кроме ремесленных)
                     from game.skills import SkillCategory
-                    if skill.category in [SkillCategory.COMBAT, SkillCategory.MAGIC]:
+                    combat_categories = [
+                        SkillCategory.COMBAT, SkillCategory.MAGIC,
+                        SkillCategory.SHADOW, SkillCategory.WARRIOR,
+                        SkillCategory.HUNTER, SkillCategory.MAGE, SkillCategory.GENERAL
+                    ]
+                    if skill.category in combat_categories:
                         return self.execute_skill_action(skill)
                     else:
                         self.add_to_log(f"{skill.name} нельзя использовать в бою!")
@@ -627,7 +632,12 @@ class CombatSystem:
             if skill:
                 from game.skills import SkillCategory
                 can_use, reason = skill.can_use(self.player)
-                is_usable = can_use and skill.category in [SkillCategory.COMBAT, SkillCategory.MAGIC]
+                combat_categories = [
+                    SkillCategory.COMBAT, SkillCategory.MAGIC,
+                    SkillCategory.SHADOW, SkillCategory.WARRIOR,
+                    SkillCategory.HUNTER, SkillCategory.MAGE, SkillCategory.GENERAL
+                ]
+                is_usable = can_use and skill.category in combat_categories
 
             # Фон слота
             if skill:
