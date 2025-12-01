@@ -290,6 +290,14 @@ class GameContext:
     def inquiry_response_open(self, value: bool):
         self._game.inquiry_response_open = value
 
+    @property
+    def combat_mode_menu_open(self) -> bool:
+        return getattr(self._game, 'combat_mode_menu_open', False)
+
+    @combat_mode_menu_open.setter
+    def combat_mode_menu_open(self, value: bool):
+        self._game.combat_mode_menu_open = value
+
     # === UI окна ===
 
     @property
@@ -433,10 +441,16 @@ class GameContext:
 
     # === Методы-делегаты ===
 
-    def start_combat(self, npc) -> None:
-        """Начать бой с NPC."""
+    def start_combat(self, npc, tactical=False) -> None:
+        """
+        Начать бой с NPC.
+
+        Args:
+            npc: Враг для боя
+            tactical: Использовать тактический режим боя (по умолчанию False)
+        """
         if hasattr(self._game, '_start_combat'):
-            self._game._start_combat(npc)
+            self._game._start_combat(npc, tactical=tactical)
 
     def check_npc_nearby(self) -> None:
         """Проверить наличие NPC поблизости."""
