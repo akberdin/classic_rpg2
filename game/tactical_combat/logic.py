@@ -346,7 +346,10 @@ class TacticalCombatSystem:
                     self.add_to_log(f"Вы уклонились от атаки {self.enemy.name}!")
                 elif attack_result['hit']:
                     damage = attack_result['damage']
-                    self.add_to_log(f"{self.enemy.name} атакует вас! Урон: {damage}")
+                    if attack_result['critical']:
+                        self.add_to_log(f"КРИТИЧЕСКИЙ УДАР! {self.enemy.name} наносит вам мощнейший удар! Урон: {damage}")
+                    else:
+                        self.add_to_log(f"{self.enemy.name} атакует вас! Урон: {damage}")
 
                     if not self.player.is_alive:
                         return "defeat"
