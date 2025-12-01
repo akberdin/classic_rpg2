@@ -826,7 +826,7 @@ class CombatSystem:
             mana_bar_y = y + 115
             pygame.draw.rect(self.screen, (30, 30, 50), (bar_x, mana_bar_y, bar_width, bar_height))
 
-            mana_fill_width = int(bar_width * (character.mana / effective_max_mana)) if effective_max_mana > 0 else 0
+            mana_fill_width = int(bar_width * min(1.0, character.mana / effective_max_mana)) if effective_max_mana > 0 else 0
             if mana_fill_width > 0:
                 pygame.draw.rect(self.screen, (100, 150, 255), (bar_x, mana_bar_y, mana_fill_width, bar_height))
 
@@ -851,7 +851,7 @@ class CombatSystem:
             stamina_bar_y = y + 158
             pygame.draw.rect(self.screen, (50, 40, 20), (bar_x, stamina_bar_y, bar_width, bar_height))
 
-            stamina_fill_width = int(bar_width * (character.stamina / effective_max_stamina)) if effective_max_stamina > 0 else 0
+            stamina_fill_width = int(bar_width * min(1.0, character.stamina / effective_max_stamina)) if effective_max_stamina > 0 else 0
             if stamina_fill_width > 0:
                 pygame.draw.rect(self.screen, (255, 220, 100), (bar_x, stamina_bar_y, stamina_fill_width, bar_height))
 

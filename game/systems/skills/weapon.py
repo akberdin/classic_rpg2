@@ -83,13 +83,27 @@ class BasicShot(WeaponSkill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Базовый урон с небольшим бонусом от ловкости
-            base_damage = user.get_total_damage()
-            dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
-            dex_bonus = dexterity * 0.1
-            damage_multiplier = 1.0 + (self.rank - 1) * 0.1  # 1.0x -> 1.4x
+            # Получаем урон от оружия (без бонуса силы)
+            weapon_damage = 0
+            if hasattr(user, 'inventory') and user.inventory:
+                from game.inventory import EquipmentSlot, WeaponItem
+                weapon = user.inventory.get_equipped_item(EquipmentSlot.WEAPON)
+                if weapon and isinstance(weapon, WeaponItem):
+                    weapon_damage = weapon.damage
 
-            total_damage = int((base_damage + dex_bonus) * damage_multiplier)
+            # Базовый урон = урон оружия + ловкость (вместо силы)
+            dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
+            base_damage = weapon_damage + dexterity
+
+            # Применяем множитель от ранга
+            damage_multiplier = 1.0 + (self.rank - 1) * 0.1  # 1.0x -> 1.4x
+            total_damage = int(base_damage * damage_multiplier)
+
+            # Проверяем крит (базовый шанс от удачи)
+            crit_chance = user.calculate_crit_chance() if hasattr(user, 'calculate_crit_chance') else 0
+            is_crit = random.random() < (crit_chance / 100)
+            if is_crit:
+                total_damage = int(total_damage * 2)
 
             # Учитываем защиту
             target_defense = target.get_total_defense()
@@ -98,7 +112,9 @@ class BasicShot(WeaponSkill):
             target.take_damage(actual_damage)
 
             result['damage'] = actual_damage
-            result['message'] = f"{user.name} стреляет в {target.name} на {actual_damage} урона!"
+            result['critical'] = is_crit
+            crit_text = " КРИТИЧЕСКОЕ ПОПАДАНИЕ!" if is_crit else ""
+            result['message'] = f"{user.name} стреляет в {target.name} на {actual_damage} урона!{crit_text}"
 
             if not target.is_alive:
                 result['killed'] = True
@@ -126,17 +142,28 @@ class PreciseShot(WeaponSkill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Базовый урон с множителем от ловкости (с учетом экипировки)
-            base_damage = user.get_total_damage()
+            # Получаем урон от оружия (без бонуса силы)
+            weapon_damage = 0
+            if hasattr(user, 'inventory') and user.inventory:
+                from game.inventory import EquipmentSlot, WeaponItem
+                weapon = user.inventory.get_equipped_item(EquipmentSlot.WEAPON)
+                if weapon and isinstance(weapon, WeaponItem):
+                    weapon_damage = weapon.damage
+
+            # Базовый урон = урон оружия + ловкость (вместо силы)
             dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
-            dex_bonus = dexterity * 0.3
+            base_damage = weapon_damage + dexterity
+
+            # Применяем множитель от ранга
             damage_multiplier = 1.2 + (self.rank - 1) * 0.2  # 1.2x -> 2.0x
+            total_damage = int(base_damage * damage_multiplier)
 
-            # Гарантированный крит с шансом, растущим от ранга
-            crit_chance = 0.3 + (self.rank - 1) * 0.15  # 30% -> 90%
-            is_crit = random.random() < crit_chance
+            # Высокий шанс крита, растущий от ранга
+            base_crit_chance = user.calculate_crit_chance() if hasattr(user, 'calculate_crit_chance') else 0
+            skill_crit_bonus = 30 + (self.rank - 1) * 15  # +30% -> +90%
+            crit_chance = min(95.0, base_crit_chance + skill_crit_bonus)  # Максимум 95%
+            is_crit = random.random() < (crit_chance / 100)
 
-            total_damage = int((base_damage + dex_bonus) * damage_multiplier)
             if is_crit:
                 total_damage = int(total_damage * 2)
 
@@ -177,23 +204,49 @@ class RapidFire(WeaponSkill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            # Количество стрел зависит от ранга
-            num_arrows = 2 + (self.rank - 1)  # 2-6 стрел
+            # Количество выстрелов = 2 + (ранг - 1)
+            num_shots = 2 + (self.rank - 1)  # 2 -> 6 выстрелов
 
-            base_damage = user.get_total_damage()
-            damage_per_arrow = int(base_damage * 0.6)  # 60% урона за стрелу
+            # Получаем урон от оружия (без бонуса силы)
+            weapon_damage = 0
+            if hasattr(user, 'inventory') and user.inventory:
+                from game.inventory import EquipmentSlot, WeaponItem
+                weapon = user.inventory.get_equipped_item(EquipmentSlot.WEAPON)
+                if weapon and isinstance(weapon, WeaponItem):
+                    weapon_damage = weapon.damage
+
+            # Базовый урон = урон оружия + ловкость
+            dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
+            base_damage_per_shot = weapon_damage + dexterity
+
+            # Получаем шанс крита игрока
+            base_crit_chance = user.calculate_crit_chance() if hasattr(user, 'calculate_crit_chance') else 0
+
             target_defense = target.get_total_defense()
-
             total_damage = 0
-            for _ in range(num_arrows):
-                arrow_damage = max(1, damage_per_arrow - target_defense // num_arrows)
-                total_damage += arrow_damage
+            crit_count = 0
+
+            # Каждый выстрел с отдельным шансом крита
+            for _ in range(num_shots):
+                shot_damage = base_damage_per_shot
+
+                # Проверяем крит для каждого выстрела отдельно
+                is_crit = random.random() < (base_crit_chance / 100)
+                if is_crit:
+                    shot_damage = int(shot_damage * 2)
+                    crit_count += 1
+
+                # Применяем защиту
+                actual_shot_damage = max(1, shot_damage - target_defense)
+                total_damage += actual_shot_damage
 
             target.take_damage(total_damage)
 
             result['damage'] = total_damage
-            result['arrows'] = num_arrows
-            result['message'] = f"{user.name} выпускает {num_arrows} стрел в {target.name} на {total_damage} общего урона!"
+            result['shots'] = num_shots
+            result['crits'] = crit_count
+            crit_text = f" ({crit_count} крит!)" if crit_count > 0 else ""
+            result['message'] = f"{user.name} выпускает {num_shots} стрел в {target.name} на {total_damage} общего урона!{crit_text}"
 
             if not target.is_alive:
                 result['killed'] = True
@@ -221,13 +274,32 @@ class PiercingArrow(WeaponSkill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
-            base_damage = user.get_total_damage()
-            damage_multiplier = 1.5 + (self.rank - 1) * 0.25  # 1.5x -> 2.5x
+            # Получаем урон от оружия (без бонуса силы)
+            weapon_damage = 0
+            if hasattr(user, 'inventory') and user.inventory:
+                from game.inventory import EquipmentSlot, WeaponItem
+                weapon = user.inventory.get_equipped_item(EquipmentSlot.WEAPON)
+                if weapon and isinstance(weapon, WeaponItem):
+                    weapon_damage = weapon.damage
 
-            # Пробитие брони
+            # Базовый урон = урон оружия + ловкость
+            dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
+            base_damage = weapon_damage + dexterity
+
+            # Применяем множитель от ранга
+            damage_multiplier = 1.5 + (self.rank - 1) * 0.25  # 1.5x -> 2.5x
+            total_damage = int(base_damage * damage_multiplier)
+
+            # Проверяем крит (базовый шанс от удачи)
+            crit_chance = user.calculate_crit_chance() if hasattr(user, 'calculate_crit_chance') else 0
+            is_crit = random.random() < (crit_chance / 100)
+            if is_crit:
+                total_damage = int(total_damage * 2)
+
+            # Пробитие брони растет с рангом
             armor_penetration = 0.4 + (self.rank - 1) * 0.1  # 40% -> 80%
 
-            total_damage = int(base_damage * damage_multiplier)
+            # Применяем пробитие брони
             target_defense = target.get_total_defense()
             effective_defense = int(target_defense * (1 - armor_penetration))
             actual_damage = max(1, total_damage - effective_defense)
@@ -235,8 +307,94 @@ class PiercingArrow(WeaponSkill):
             target.take_damage(actual_damage)
 
             result['damage'] = actual_damage
+            result['critical'] = is_crit
             result['armor_penetration'] = int(armor_penetration * 100)
-            result['message'] = f"{user.name} выпускает пронзающую стрелу в {target.name} на {actual_damage} урона (пробитие {int(armor_penetration * 100)}% брони)!"
+            crit_text = " КРИТИЧЕСКОЕ ПОПАДАНИЕ!" if is_crit else ""
+            result['message'] = f"{user.name} выпускает пронзающую стрелу в {target.name} на {actual_damage} урона{crit_text} (пробитие {int(armor_penetration * 100)}% брони)!"
+
+            if not target.is_alive:
+                result['killed'] = True
+                result['message'] += f" {target.name} повержен!"
+
+        return result
+
+
+class LongRangeShot(WeaponSkill):
+    """Дальний выстрел - удвоенная дальность, не работает вблизи"""
+
+    def __init__(self):
+        from game.inventory import WeaponType
+        super().__init__(
+            name="Дальний выстрел",
+            description="Удваивает дальность выстрела. Урон растет с рангом. Не может применяться ближе 3 клеток до цели",
+            category=SkillCategory.HUNTER, tactical_range=16,  # Удвоенная дальность от базовой 8
+            stamina_cost=15,
+            cooldown=3
+        )
+        self.required_weapon_type = WeaponType.BOW
+        self.min_range = 3  # Минимальная дистанция для использования
+
+    def can_use(self, user, target=None):
+        """Проверить возможность использования с учетом минимальной дистанции"""
+        # Проверяем базовые условия и наличие оружия
+        base_check, base_msg = super().can_use(user)
+        if not base_check:
+            return False, base_msg
+
+        # Проверяем дистанцию до цели (только если цель указана)
+        if target:
+            distance = max(abs(user.x - target.x), abs(user.y - target.y))
+            if distance < self.min_range:
+                return False, f"Слишком близко для дальнего выстрела! Минимальная дистанция: {self.min_range}"
+
+        return True, ""
+
+    def use(self, user, target=None):
+        """Использовать дальний выстрел"""
+        # Проверяем минимальную дистанцию
+        if target:
+            distance = max(abs(user.x - target.x), abs(user.y - target.y))
+            if distance < self.min_range:
+                return {
+                    'success': False,
+                    'message': f"Слишком близко! Дальний выстрел требует минимум {self.min_range} клеток дистанции"
+                }
+
+        result = super().use(user, target)
+
+        if target and user.can_attack(target):
+            # Получаем урон от оружия (без бонуса силы)
+            weapon_damage = 0
+            if hasattr(user, 'inventory') and user.inventory:
+                from game.inventory import EquipmentSlot, WeaponItem
+                weapon = user.inventory.get_equipped_item(EquipmentSlot.WEAPON)
+                if weapon and isinstance(weapon, WeaponItem):
+                    weapon_damage = weapon.damage
+
+            # Базовый урон = урон оружия + ловкость
+            dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
+            base_damage = weapon_damage + dexterity
+
+            # Применяем множитель от ранга (растет урон, но не дальность)
+            damage_multiplier = 1.5 + (self.rank - 1) * 0.3  # 1.5x -> 2.7x
+            total_damage = int(base_damage * damage_multiplier)
+
+            # Проверяем крит (базовый шанс от удачи)
+            crit_chance = user.calculate_crit_chance() if hasattr(user, 'calculate_crit_chance') else 0
+            is_crit = random.random() < (crit_chance / 100)
+            if is_crit:
+                total_damage = int(total_damage * 2)
+
+            # Учитываем защиту
+            target_defense = target.get_total_defense()
+            actual_damage = max(1, total_damage - target_defense)
+
+            target.take_damage(actual_damage)
+
+            result['damage'] = actual_damage
+            result['critical'] = is_crit
+            crit_text = " КРИТИЧЕСКОЕ ПОПАДАНИЕ!" if is_crit else ""
+            result['message'] = f"{user.name} совершает дальний выстрел по {target.name} на {actual_damage} урона!{crit_text}"
 
             if not target.is_alive:
                 result['killed'] = True
@@ -326,8 +484,11 @@ class BleedingCut(WeaponSkill):
             bleed.description = f"Теряет {bleed_damage} здоровья каждый ход"
 
             # Добавляем эффект в правильное место
-            if hasattr(target, 'skill_manager'):
-                # Для игрока - в skill_manager
+            if hasattr(target, 'skill_manager') and hasattr(target.skill_manager, 'add_status_effect'):
+                # Для игрока - используем add_status_effect для правильной инициализации
+                target.skill_manager.add_status_effect(bleed)
+            elif hasattr(target, 'skill_manager'):
+                # Для игрока - в skill_manager (fallback)
                 target.skill_manager.status_effects.append(bleed)
             else:
                 # Для NPC без skill_manager - в status_effects
@@ -391,8 +552,11 @@ class ShadowStep(WeaponSkill):
             dodge_effect.dodge_bonus = dodge_bonus
 
             # Добавляем эффект в правильное место
-            if hasattr(user, 'skill_manager'):
-                # Для игрока - в skill_manager
+            if hasattr(user, 'skill_manager') and hasattr(user.skill_manager, 'add_status_effect'):
+                # Для игрока - используем add_status_effect для правильной инициализации
+                user.skill_manager.add_status_effect(dodge_effect)
+            elif hasattr(user, 'skill_manager'):
+                # Для игрока - в skill_manager (fallback)
                 user.skill_manager.status_effects.append(dodge_effect)
             else:
                 # Для NPC без skill_manager - в status_effects
