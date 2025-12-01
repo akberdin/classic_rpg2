@@ -28,7 +28,7 @@ class SkillBookWindow:
         # Индексы для навигации
         self.selected_skill_index = 0
         self.selected_slot_index = 0
-        self.selected_tab = 0  # 0 - Боевые, 1 - Магические, 2 - Ремесленные
+        self.selected_tab = 0  # 0 - Тень, 1 - Воин, 2 - Охотник, 3 - Маг, 4 - Общие, 5 - Ремесленные
 
         # Для хранения координат элементов при рендеринге
         self.skill_rects = []  # Список прямоугольников умений
@@ -73,7 +73,8 @@ class SkillBookWindow:
             # Проверяем клик по кнопке повышения ранга
             if self.rank_up_rect and self.rank_up_rect.collidepoint(mouse_pos):
                 if event.button == 1:  # Левая кнопка
-                    categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+                    categories = [SkillCategory.SHADOW, SkillCategory.WARRIOR, SkillCategory.HUNTER,
+                                  SkillCategory.MAGE, SkillCategory.GENERAL, SkillCategory.CRAFTING]
                     current_category = categories[self.selected_tab]
                     skills_dict = player.skill_manager.get_all_skills()
                     # Создаем список пар (skill_id, skill) и сортируем
@@ -93,7 +94,8 @@ class SkillBookWindow:
 
                     # Левая кнопка мыши - назначить умение в выбранный слот
                     if event.button == 1:
-                        categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+                        categories = [SkillCategory.SHADOW, SkillCategory.WARRIOR, SkillCategory.HUNTER,
+                                      SkillCategory.MAGE, SkillCategory.GENERAL, SkillCategory.CRAFTING]
                         current_category = categories[self.selected_tab]
                         skills_dict = player.skill_manager.get_all_skills()
                         # Создаем список пар (skill_id, skill) и сортируем
@@ -106,7 +108,8 @@ class SkillBookWindow:
 
                     # Правая кнопка мыши - попытка повышения ранга
                     elif event.button == 3:
-                        categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+                        categories = [SkillCategory.SHADOW, SkillCategory.WARRIOR, SkillCategory.HUNTER,
+                                      SkillCategory.MAGE, SkillCategory.GENERAL, SkillCategory.CRAFTING]
                         current_category = categories[self.selected_tab]
                         skills_dict = player.skill_manager.get_all_skills()
                         # Создаем список пар (skill_id, skill) и сортируем
@@ -126,7 +129,8 @@ class SkillBookWindow:
 
                     # Левая кнопка мыши - назначить выбранное умение в слот
                     if event.button == 1:
-                        categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+                        categories = [SkillCategory.SHADOW, SkillCategory.WARRIOR, SkillCategory.HUNTER,
+                                      SkillCategory.MAGE, SkillCategory.GENERAL, SkillCategory.CRAFTING]
                         current_category = categories[self.selected_tab]
                         skills_dict = player.skill_manager.get_all_skills()
                         # Создаем список пар (skill_id, skill) и сортируем
@@ -145,7 +149,8 @@ class SkillBookWindow:
         # Обработка колёсика мыши для прокрутки умений
         elif event.type == pygame.MOUSEWHEEL:
             from game.skills import SkillCategory
-            categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+            categories = [SkillCategory.SHADOW, SkillCategory.WARRIOR, SkillCategory.HUNTER,
+                          SkillCategory.MAGE, SkillCategory.GENERAL, SkillCategory.CRAFTING]
             current_category = categories[self.selected_tab]
             skills_dict = player.skill_manager.get_all_skills()
             # Создаем список пар (skill_id, skill) и сортируем
@@ -216,9 +221,9 @@ class SkillBookWindow:
         title_rect.y = window_y + 15
         self.screen.blit(title_text, title_rect)
 
-        # Вкладки категорий
-        tabs = ["БОЕВЫЕ", "МАГИЧЕСКИЕ", "РЕМЕСЛЕННЫЕ"]
-        tab_width = window_width // 3
+        # Вкладки категорий (новые)
+        tabs = ["ТЕНЬ", "ВОИН", "ОХОТНИК", "МАГ", "ОБЩИЕ", "РЕМЕСЛЕННЫЕ"]
+        tab_width = window_width // 6  # 6 вкладок
         tab_height = 40
         tab_y = window_y + 60
 
@@ -256,13 +261,14 @@ class SkillBookWindow:
             )
 
             # Текст вкладки
-            tab_text = self.font.render(tab_name, True, text_color)
+            tab_text = self.info_font.render(tab_name, True, text_color)
             tab_text_rect = tab_text.get_rect()
             tab_text_rect.center = (tab_x + tab_width // 2, tab_y + tab_height // 2)
             self.screen.blit(tab_text, tab_text_rect)
 
         # Получаем умения текущей категории и сортируем
-        categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+        categories = [SkillCategory.SHADOW, SkillCategory.WARRIOR, SkillCategory.HUNTER,
+                      SkillCategory.MAGE, SkillCategory.GENERAL, SkillCategory.CRAFTING]
         current_category = categories[self.selected_tab]
         skills_dict = player.skill_manager.get_all_skills()
 
