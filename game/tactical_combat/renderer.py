@@ -22,12 +22,10 @@ class TacticalCombatRenderer:
         self.font = font
         self.scaler = scaler
 
-        # Создаем шрифты разных размеров
-        info_font_size = scaler.scale_font_size(16) if scaler else 16
-        self.info_font = pygame.font.Font(None, info_font_size)
-
-        small_font_size = scaler.scale_font_size(14) if scaler else 14
-        self.small_font = pygame.font.Font(None, small_font_size)
+        # Используем переданный шрифт для всех элементов
+        # Это избегает проблем с созданием новых шрифтов pygame
+        self.info_font = font
+        self.small_font = font
 
         # Цвета из конфига
         ui_config = self.combat.config.get('ui', {})

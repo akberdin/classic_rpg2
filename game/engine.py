@@ -577,6 +577,8 @@ class Game:
         # Если идет тактический бой, отрисовываем его
         if self.in_tactical_combat and self.tactical_combat_renderer:
             self.tactical_combat_renderer.render()
+            # Обновляем экран сразу для тактического боя
+            pygame.display.flip()
             return  # Не отрисовываем остальное во время тактического боя
 
         # Если открыто меню выбора режима боя, отрисовываем его
