@@ -259,6 +259,14 @@ class GameContext:
         self._game.loot_window_open = value
 
     @property
+    def resource_collection_window_open(self) -> bool:
+        return getattr(self._game, 'resource_collection_window_open', False)
+
+    @resource_collection_window_open.setter
+    def resource_collection_window_open(self, value: bool):
+        self._game.resource_collection_window_open = value
+
+    @property
     def cheat_menu_open(self) -> bool:
         return getattr(self._game, 'cheat_menu_open', False)
 
@@ -344,6 +352,11 @@ class GameContext:
     def loot_window(self):
         """Получить окно лута."""
         return getattr(self._game, 'loot_window', None)
+
+    @property
+    def resource_collection_window(self):
+        """Получить окно сбора ресурсов."""
+        return getattr(self._game, 'resource_collection_window', None)
 
     @property
     def settlement_menu_window(self):

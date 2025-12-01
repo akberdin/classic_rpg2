@@ -124,8 +124,10 @@ class Game:
         self.trade_window = TradeWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.character_window = CharacterWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         from game.ui import SkillBookWindow, LootWindow
+        from game.ui.windows import ResourceCollectionWindow
         self.skill_book_window = SkillBookWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.loot_window = LootWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.resource_collection_window = ResourceCollectionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
 
         # Состояния окон
         self.inventory_menu_open = False
@@ -133,6 +135,7 @@ class Game:
         self.character_menu_open = False
         self.skill_book_menu_open = False
         self.loot_window_open = False
+        self.resource_collection_window_open = False
         self.quest_window_open = False
 
         # Окно квестов
@@ -246,7 +249,7 @@ class Game:
         # Инициализация системы ресурсов
         self.resource_system = ResourceSystem(
             self.player, self.game_map, self.quest_manager,
-            self.game_time, self._start_combat
+            self.game_time, self._start_combat, self._show_resource_collection_window
         )
 
         # Инициализация контроллера квестов
@@ -547,6 +550,26 @@ class Game:
             self.in_combat = True
             self.nearby_npc = None
 
+    def _show_resource_collection_window(self, collected_items, collected_gold, location_name, location_type_display, event_message):
+        """
+        Показать окно сбора ресурсов
+
+        Args:
+            collected_items: Список собранных предметов [(item, quantity), ...]
+            collected_gold: Количество собранного золота
+            location_name: Название локации
+            location_type_display: Отображаемый тип локации
+            event_message: Сообщение о событии (опционально)
+        """
+        self.resource_collection_window.set_resources(
+            collected_items,
+            collected_gold,
+            location_name,
+            location_type_display,
+            event_message
+        )
+        self.resource_collection_window_open = True
+
     def _update(self):
         """Обновление состояния игры"""
         # AI стражников обновляется в методе advance_time
@@ -612,6 +635,10 @@ class Game:
         # Если открыто окно лута, отрисовываем его
         if self.loot_window_open:
             self.loot_window.render()
+
+        # Если открыто окно сбора ресурсов, отрисовываем его
+        if self.resource_collection_window_open:
+            self.resource_collection_window.render()
 
         # Если открыто окно квестов, отрисовываем его
         if self.quest_window_open:
