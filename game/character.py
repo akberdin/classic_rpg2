@@ -107,7 +107,7 @@ class Character:
         # Восстанавливаем выносливость на основе сохраненного процента от нового эффективного максимума
         if old_max_stamina > 0:
             new_effective_max_stamina = self.get_effective_max_stamina() if hasattr(self, 'get_effective_max_stamina') else self.max_stamina
-            self.stamina = int(new_effective_max_stamina * stamina_percent)
+            self.stamina = min(int(new_effective_max_stamina * stamina_percent), new_effective_max_stamina)
         else:
             self.stamina = self.max_stamina
 
@@ -122,7 +122,7 @@ class Character:
         # Восстанавливаем здоровье на основе сохраненного процента от нового эффективного максимума
         if old_max_health > 0:
             new_effective_max_health = self.get_effective_max_health() if hasattr(self, 'get_effective_max_health') else self.max_health
-            self.health = int(new_effective_max_health * health_percent)
+            self.health = min(int(new_effective_max_health * health_percent), new_effective_max_health)
         else:
             self.health = self.max_health
 

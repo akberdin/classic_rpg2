@@ -31,7 +31,7 @@ class Player(Character):
         self.constitution = 1
         self.spirit = 1
         self.intelligence = 1
-        self.luck = 1
+        self.luck = 5  # Increased from 1 to 5 to give 10% base crit chance
 
         # Дополнительные параметры игрока
         self.level = 1
