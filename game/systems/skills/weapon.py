@@ -72,7 +72,7 @@ class BasicShot(WeaponSkill):
         super().__init__(
             name="Выстрел",
             description="Базовый выстрел из лука. Доступен сразу при использовании лука",
-            category=SkillCategory.GENERAL,
+            category=SkillCategory.GENERAL, tactical_range=8,
             stamina_cost=8,
             cooldown=0
         )
@@ -115,7 +115,7 @@ class PreciseShot(WeaponSkill):
         super().__init__(
             name="Точный выстрел",
             description="Прицельный выстрел с высоким шансом крита. Шанс растет с рангом",
-            category=SkillCategory.HUNTER,
+            category=SkillCategory.HUNTER, tactical_range=8,
             stamina_cost=12,
             cooldown=2
         )
@@ -166,7 +166,7 @@ class RapidFire(WeaponSkill):
         super().__init__(
             name="Быстрая стрельба",
             description="Выпускает несколько стрел за один ход. Количество растет с рангом",
-            category=SkillCategory.HUNTER,
+            category=SkillCategory.HUNTER, tactical_range=8,
             stamina_cost=20,
             cooldown=4
         )
@@ -210,7 +210,7 @@ class PiercingArrow(WeaponSkill):
         super().__init__(
             name="Пронзающая стрела",
             description="Стрела пробивает броню противника. Пробитие растет с рангом",
-            category=SkillCategory.HUNTER,
+            category=SkillCategory.HUNTER, tactical_range=8,
             stamina_cost=15,
             cooldown=3
         )

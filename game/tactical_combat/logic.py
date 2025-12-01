@@ -238,11 +238,15 @@ class TacticalCombatSystem:
         if skill_id in support_skills:
             targets.append(caster_unit)
         else:
-            # Боевые умения - применяются на врага
-            # Для тактического боя используем большой радиус (все поле)
-            # В будущем можно добавить конкретные радиусы для каждого умения
+            # Боевые умения - применяются на врага с проверкой расстояния
             target_unit = self.enemy_unit if caster_unit == self.player_unit else self.player_unit
-            targets.append(target_unit)
+
+            # Получаем радиус действия умения
+            skill_range = getattr(skill, 'tactical_range', 1)
+
+            # Проверяем расстояние до цели
+            if self.is_in_range(caster_unit, target_unit.x, target_unit.y, skill_range):
+                targets.append(target_unit)
 
         return targets
 

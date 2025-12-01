@@ -39,7 +39,7 @@ class SkillCategory(Enum):
 class Skill:
     """Базовый класс для умений с системой рангов и прогресса"""
 
-    def __init__(self, name, description, category, mana_cost=0, stamina_cost=0, cooldown=0, max_rank=5):
+    def __init__(self, name, description, category, mana_cost=0, stamina_cost=0, cooldown=0, max_rank=5, tactical_range=1):
         """
         Инициализация умения
 
@@ -51,6 +51,7 @@ class Skill:
             stamina_cost: Стоимость в выносливости
             cooldown: Перезарядка в ходах
             max_rank: Максимальный ранг умения
+            tactical_range: Радиус действия в тактическом бою (в клетках)
         """
         self.name = name
         self.base_description = description
@@ -59,6 +60,7 @@ class Skill:
         self.stamina_cost = stamina_cost
         self.cooldown = cooldown
         self.current_cooldown = 0
+        self.tactical_range = tactical_range  # Радиус действия в тактическом бою
 
         # Система рангов и прогресса
         self.rank = 1
