@@ -1102,7 +1102,7 @@ class ItemGenerator:
 
             # Список доступных умений по категориям
             combat_skills = ['basic_attack', 'power_strike', 'poison_strike', 'stun_strike', 'battle_cry']
-            bow_skills = ['precise_shot', 'rapid_fire', 'piercing_arrow']
+            bow_skills = ['basic_shot', 'precise_shot', 'rapid_fire', 'piercing_arrow']
             knife_skills = ['backstab', 'bleeding_cut', 'shadow_step']
             sword_skills = ['whirlwind_strike', 'shield_breaker', 'blade_dance']
             magic_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield', 'fireball', 'ice_bolt', 'lightning', 'magic_missile']

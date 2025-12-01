@@ -336,6 +336,27 @@
     "bow_skills": {
       "_description": "Умения для лука",
 
+      "basic_shot": {
+        "name": "Выстрел",
+        "description": "Базовый выстрел из лука. Доступен сразу при использовании лука",
+        "category": "combat",
+        "required_weapon": "bow",
+        "stamina_cost": 8,
+        "mana_cost": 0,
+        "cooldown": 0,
+        "tactical_range": 8,
+        "base_damage_multiplier": 1.0,
+        "damage_multiplier_per_rank": 0.1,
+        "dexterity_bonus_multiplier": 0.1,
+        "description_per_rank": [
+          "Ранг 1: Урон x1.0 + Ловкость*0.1",
+          "Ранг 2: Урон x1.1 + Ловкость*0.1",
+          "Ранг 3: Урон x1.2 + Ловкость*0.1",
+          "Ранг 4: Урон x1.3 + Ловкость*0.1",
+          "Ранг 5: Урон x1.4 + Ловкость*0.1"
+        ]
+      },
+
       "precise_shot": {
         "name": "Точный выстрел",
         "description": "Прицельный выстрел с высоким шансом крита. Шанс растет с рангом",

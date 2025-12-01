@@ -227,13 +227,15 @@ class Game:
 
         # Даем игроку стартовые умения
         self.player.skill_manager.learn_skill('basic_attack')  # Базовая атака
+        self.player.skill_manager.learn_skill('basic_shot')  # Базовый выстрел (для луков)
         self.player.skill_manager.learn_skill('mining')  # Рудокоп ранг 1
         self.player.skill_manager.learn_skill('lumberjacking')  # Лесоруб ранг 1
 
         # Назначаем умения в слоты
         self.player.skill_manager.assign_to_slot('basic_attack', 0)  # Слот 1
-        self.player.skill_manager.assign_to_slot('mining', 1)  # Слот 2
-        self.player.skill_manager.assign_to_slot('lumberjacking', 2)  # Слот 3
+        self.player.skill_manager.assign_to_slot('basic_shot', 1)  # Слот 2
+        self.player.skill_manager.assign_to_slot('mining', 2)  # Слот 3
+        self.player.skill_manager.assign_to_slot('lumberjacking', 3)  # Слот 4
 
         # Перестраиваем spatial grid для NPC
         self.performance_optimizer.rebuild_spatial_grid(self.npc_manager.get_all_npcs())
