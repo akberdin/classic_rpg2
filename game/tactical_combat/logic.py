@@ -225,24 +225,24 @@ class TacticalCombatSystem:
         Returns:
             list: Список возможных целей
         """
-        # Получаем радиус действия умения из конфига
-        skill_range = skill.config.get('tactical_range', 1)
-
         targets = []
 
         # Определяем возможные цели в зависимости от типа умения
         from game.skills import SkillCategory
 
-        if skill.category == SkillCategory.MAGIC and skill.skill_id in ['heal', 'regeneration', 'stamina_recovery', 'mage_shield']:
-            # Лечебные умения - применяются на себя
-            if skill_range == 0:
-                targets.append(caster_unit)
+        # Получаем ID умения для определения типа
+        skill_id = caster_unit.character.skill_manager.get_skill_id(skill)
+
+        # Лечебные/поддерживающие умения - применяются на себя
+        support_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield']
+        if skill_id in support_skills:
+            targets.append(caster_unit)
         else:
             # Боевые умения - применяются на врага
+            # Для тактического боя используем большой радиус (все поле)
+            # В будущем можно добавить конкретные радиусы для каждого умения
             target_unit = self.enemy_unit if caster_unit == self.player_unit else self.player_unit
-
-            if self.is_in_range(caster_unit, target_unit.x, target_unit.y, skill_range):
-                targets.append(target_unit)
+            targets.append(target_unit)
 
         return targets
 
