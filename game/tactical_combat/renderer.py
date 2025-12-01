@@ -203,7 +203,7 @@ class TacticalCombatRenderer:
 
         # HP bar
         max_hp = character.get_effective_max_health() if hasattr(character, 'get_effective_max_health') else character.max_health
-        hp_ratio = character.health / max_hp if max_hp > 0 else 0
+        hp_ratio = min(1.0, character.health / max_hp) if max_hp > 0 else 0
 
         # Фон
         pygame.draw.rect(self.screen, (60, 60, 60), (bar_x, bar_y, bar_width, bar_height))
@@ -235,7 +235,7 @@ class TacticalCombatRenderer:
         if hasattr(character, 'stamina'):
             bar_y += bar_height + 2
             max_stamina = character.get_effective_max_stamina() if hasattr(character, 'get_effective_max_stamina') else character.max_stamina
-            stamina_ratio = character.stamina / max_stamina if max_stamina > 0 else 0
+            stamina_ratio = min(1.0, character.stamina / max_stamina) if max_stamina > 0 else 0
 
             pygame.draw.rect(self.screen, (50, 40, 20), (bar_x, bar_y, bar_width, bar_height))
             if stamina_ratio > 0:
