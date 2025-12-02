@@ -97,7 +97,8 @@ class Quest:
 
     def __init__(self, quest_id, name, description, objectives, rewards,
                  quest_type=QuestType.STORY, difficulty=QuestDifficulty.EASY,
-                 location_id=None, giver_location=None, is_unique=False, is_starter=False):
+                 location_id=None, giver_location=None, is_unique=False, is_starter=False,
+                 min_rank=1):
         """
         Инициализация квеста
 
@@ -113,6 +114,7 @@ class Quest:
             giver_location: Название локации, где был получен квест
             is_unique: Уникальный квест с особыми наградами (красная рамка в UI)
             is_starter: Стартовый квест (автоматически назначается)
+            min_rank: Минимальный ранг игрока для доступа к квесту (1-4)
         """
         self.quest_id = quest_id
         self.name = name
@@ -126,6 +128,7 @@ class Quest:
         self.status = QuestStatus.NOT_STARTED
         self.is_unique = is_unique  # Уникальный квест (красная рамка)
         self.is_starter = is_starter  # Стартовый квест
+        self.min_rank = min_rank  # Минимальный ранг для квеста
 
         # Данные для отслеживания прогресса
         self.target_item = None  # Для квестов на сбор ресурсов
@@ -1490,7 +1493,8 @@ class QuestGenerator:
                 'Ювелиры города ищут серебряную руду.',
                 'Магическая академия нуждается в серебре.',
                 'Храм заказал серебро для священных предметов.'
-            ]
+            ],
+            'min_rank': 2
         },
         'gold_ore': {
             'display_name': 'Золотая руда',
@@ -1499,7 +1503,8 @@ class QuestGenerator:
                 'Казначейство города нуждается в золоте.',
                 'Ювелирная гильдия просит добыть золотую руду.',
                 'Знатный лорд заказал золото для украшений.'
-            ]
+            ],
+            'min_rank': 2
         },
         'mithril_ore': {
             'display_name': 'Мифриловая руда',
@@ -1508,7 +1513,8 @@ class QuestGenerator:
                 'Мастер-кузнец ищет мифриловую руду.',
                 'Военный заказ на мифриловую броню.',
                 'Редкий металл нужен для королевского доспеха.'
-            ]
+            ],
+            'min_rank': 3
         },
         'bear_hide': {
             'display_name': 'Шкура медведя',
@@ -1517,7 +1523,8 @@ class QuestGenerator:
                 'Скорняк города заказал медвежьи шкуры.',
                 'Торговец мехами ищет медвежьи шкуры.',
                 'Городская гильдия готовит зимние припасы.'
-            ]
+            ],
+            'min_rank': 1
         },
         'deer_hide': {
             'display_name': 'Шкура оленя',
@@ -1526,7 +1533,8 @@ class QuestGenerator:
                 'Кожевник просит добыть оленьи шкуры.',
                 'Мастер брони нуждается в оленьей коже.',
                 'Торговая гильдия скупает оленьи шкуры.'
-            ]
+            ],
+            'min_rank': 1
         },
         'bear_meat': {
             'display_name': 'Медвежатина',
@@ -1535,7 +1543,8 @@ class QuestGenerator:
                 'Городской ресторан заказал медвежатину.',
                 'Знатная семья просит добыть медвежье мясо.',
                 'Королевский повар ищет редкое мясо.'
-            ]
+            ],
+            'min_rank': 1
         },
         'deer_meat': {
             'display_name': 'Оленина',
@@ -1544,7 +1553,8 @@ class QuestGenerator:
                 'Городской ресторан нуждается в оленине.',
                 'Знатный лорд заказал оленину для пира.',
                 'Королевский двор закупает оленину.'
-            ]
+            ],
+            'min_rank': 1
         },
         'wolf_hide': {
             'display_name': 'Шкура волка',
@@ -1553,7 +1563,8 @@ class QuestGenerator:
                 'Скорняк города скупает волчьи шкуры.',
                 'Гильдия охотников ищет волчьи шкуры.',
                 'Городская стража заказала шкуры для экипировки.'
-            ]
+            ],
+            'min_rank': 1
         },
         'bear_fang': {
             'display_name': 'Клык медведя',
@@ -1562,7 +1573,8 @@ class QuestGenerator:
                 'Городской мастер делает амулеты из клыков.',
                 'Магическая академия ищет медвежьи клыки.',
                 'Торговец редкостями скупает клыки медведей.'
-            ]
+            ],
+            'min_rank': 1
         },
         'wolf_fang': {
             'display_name': 'Клык волка',
@@ -1571,7 +1583,8 @@ class QuestGenerator:
                 'Городской мастер делает обереги из волчьих клыков.',
                 'Магическая академия ищет волчьи зубы для зелий.',
                 'Торговец амулетами скупает волчьи клыки.'
-            ]
+            ],
+            'min_rank': 1
         }
     }
 
@@ -1584,7 +1597,8 @@ class QuestGenerator:
                 'Деревенскому кузнецу нужна медная руда.',
                 'Местные ремесленники просят добыть медную руду.',
                 'Торговец заказал партию медной руды.'
-            ]
+            ],
+            'min_rank': 1
         },
         'iron_ore': {
             'display_name': 'Железная руда',
@@ -1593,7 +1607,8 @@ class QuestGenerator:
                 'Кузнец деревни нуждается в железной руде.',
                 'Деревенская стража заказала железо.',
                 'Ремесленники просят добыть железную руду.'
-            ]
+            ],
+            'min_rank': 1
         },
         'wolf_hide': {
             'display_name': 'Шкура волка',
@@ -1602,7 +1617,8 @@ class QuestGenerator:
                 'Скорняк деревни скупает волчьи шкуры.',
                 'Охотники ищут волчьи шкуры для торговли.',
                 'Деревне нужны шкуры для зимних одежд.'
-            ]
+            ],
+            'min_rank': 1
         },
         'wolf_fang': {
             'display_name': 'Клык волка',
@@ -1611,7 +1627,8 @@ class QuestGenerator:
                 'Знахарь деревни ищет волчьи клыки.',
                 'Торговец амулетами скупает волчьи зубы.',
                 'Местный мастер делает обереги из клыков.'
-            ]
+            ],
+            'min_rank': 1
         },
         'bear_meat': {
             'display_name': 'Медвежатина',
@@ -1620,7 +1637,8 @@ class QuestGenerator:
                 'Деревенский трактир закупает мясо.',
                 'Охотничий отряд ищет провизию.',
                 'Торговец мясом дает хорошую цену.'
-            ]
+            ],
+            'min_rank': 1
         },
         'deer_meat': {
             'display_name': 'Оленина',
@@ -1629,7 +1647,8 @@ class QuestGenerator:
                 'Трактир деревни закупает оленину.',
                 'Охотники просят добыть оленье мясо.',
                 'Торговец мясом ищет свежую дичь.'
-            ]
+            ],
+            'min_rank': 1
         },
         'deer_hide': {
             'display_name': 'Шкура оленя',
@@ -1638,7 +1657,8 @@ class QuestGenerator:
                 'Деревенский кожевник ищет оленьи шкуры.',
                 'Местный мастер нуждается в оленьей коже.',
                 'Торговец скупает оленьи шкуры.'
-            ]
+            ],
+            'min_rank': 1
         },
         'bear_hide': {
             'display_name': 'Шкура медведя',
@@ -1647,7 +1667,8 @@ class QuestGenerator:
                 'Скорняк деревни заказал медвежьи шкуры.',
                 'Торговец мехами ищет медвежьи шкуры.',
                 'Деревня готовит запасы на зиму.'
-            ]
+            ],
+            'min_rank': 1
         },
         'bear_fang': {
             'display_name': 'Клык медведя',
@@ -1656,16 +1677,8 @@ class QuestGenerator:
                 'Знахарь деревни ищет медвежьи клыки.',
                 'Местный мастер делает талисманы из клыков.',
                 'Торговец редкостями скупает клыки.'
-            ]
-        },
-        'deer_meat': {
-            'display_name': 'Оленина',
-            'quest_names': ['Оленина', 'Свежее мясо', 'Праздничный заказ'],
-            'descriptions': [
-                'Трактирщик просит добыть оленину.',
-                'В деревне готовится праздник - нужно мясо.',
-                'Торговец провизией скупает оленину.'
-            ]
+            ],
+            'min_rank': 1
         }
     }
 
@@ -1678,7 +1691,8 @@ class QuestGenerator:
                 'Гильдия охотников скупает волчьи шкуры.',
                 'Охотничий союз принимает шкуры.',
                 'Торговец мехами платит хорошо.'
-            ]
+            ],
+            'min_rank': 1
         },
         'bear_hide': {
             'display_name': 'Шкура медведя',
@@ -1687,7 +1701,8 @@ class QuestGenerator:
                 'Охотничья гильдия ищет медвежьи шкуры.',
                 'Опытные охотники собирают трофеи.',
                 'Знатный заказчик ищет медвежьи шкуры.'
-            ]
+            ],
+            'min_rank': 1
         },
         'deer_hide': {
             'display_name': 'Шкура оленя',
@@ -1696,7 +1711,8 @@ class QuestGenerator:
                 'Охотничья гильдия принимает оленьи шкуры.',
                 'Кожевник ищет качественные шкуры.',
                 'Торговая гильдия скупает кожу.'
-            ]
+            ],
+            'min_rank': 1
         },
         'wolf_fang': {
             'display_name': 'Клык волка',
@@ -1705,7 +1721,8 @@ class QuestGenerator:
                 'Охотники ценят волчьи клыки как трофеи.',
                 'Мастер амулетов скупает клыки.',
                 'Коллекционер охотничьих трофеев ищет клыки.'
-            ]
+            ],
+            'min_rank': 1
         },
         'bear_fang': {
             'display_name': 'Клык медведя',
@@ -1714,7 +1731,8 @@ class QuestGenerator:
                 'Медвежьи клыки - ценные трофеи.',
                 'Мастер амулетов платит за медвежьи клыки.',
                 'Опытные охотники собирают такие трофеи.'
-            ]
+            ],
+            'min_rank': 1
         },
         'bear_meat': {
             'display_name': 'Медвежатина',
@@ -1723,7 +1741,8 @@ class QuestGenerator:
                 'Трактиры охотно покупают медвежатину.',
                 'Гильдия охотников принимает мясо.',
                 'Хороший охотник всегда находит покупателя.'
-            ]
+            ],
+            'min_rank': 1
         },
         'deer_meat': {
             'display_name': 'Оленина',
@@ -1732,7 +1751,8 @@ class QuestGenerator:
                 'Трактирщики ищут свежее мясо.',
                 'Охотничья гильдия принимает оленину.',
                 'Торговец провизией дает хорошую цену.'
-            ]
+            ],
+            'min_rank': 1
         }
     }
 
@@ -1745,7 +1765,8 @@ class QuestGenerator:
                 'Некромант ищет фрагменты древних артефактов.',
                 'Темные силы требуют артефактов.',
                 'Исследования тьмы требуют материалов.'
-            ]
+            ],
+            'min_rank': 3
         },
         'ancient_coin': {
             'display_name': 'Древняя монета',
@@ -1754,7 +1775,8 @@ class QuestGenerator:
                 'Некромант собирает древние монеты.',
                 'Монеты из гробниц имеют особую силу.',
                 'Древние монеты нужны для ритуалов.'
-            ]
+            ],
+            'min_rank': 3
         }
     }
 
@@ -1767,7 +1789,8 @@ class QuestGenerator:
                 'Алхимику нужны волчьи клыки для зелий.',
                 'Клыки хищников - важный ингредиент.',
                 'Эликсиры силы требуют звериных клыков.'
-            ]
+            ],
+            'min_rank': 1
         },
         'bear_fang': {
             'display_name': 'Клык медведя',
@@ -1776,7 +1799,8 @@ class QuestGenerator:
                 'Медвежьи клыки усиливают зелья.',
                 'Алхимик ищет редкие ингредиенты.',
                 'Для мощных эликсиров нужны медвежьи клыки.'
-            ]
+            ],
+            'min_rank': 1
         },
         'old_scroll': {
             'display_name': 'Старый свиток',
@@ -1785,7 +1809,8 @@ class QuestGenerator:
                 'Алхимик изучает древние свитки.',
                 'Старые рецепты скрыты в свитках.',
                 'Поиск забытых алхимических знаний.'
-            ]
+            ],
+            'min_rank': 3
         },
         'magic_crystal': {
             'display_name': 'Магический кристалл',
@@ -1794,7 +1819,8 @@ class QuestGenerator:
                 'Алхимику нужны магические кристаллы.',
                 'Кристаллы усиливают зелья.',
                 'Магия кристаллов необходима для экспериментов.'
-            ]
+            ],
+            'min_rank': 2
         }
     }
 
@@ -1811,7 +1837,8 @@ class QuestGenerator:
                 'Стража не справляется с элитными бандитами.'
             ],
             'target': 'bandit',
-            'min_level': 15
+            'min_level': 15,
+            'min_rank': 2
         },
         'undead_elite': {
             'display_name': 'Могущественную нежить',
@@ -1822,7 +1849,8 @@ class QuestGenerator:
                 'Темные силы требуют внимания.'
             ],
             'target': 'undead',
-            'min_level': 15
+            'min_level': 15,
+            'min_rank': 2
         }
     }
 
@@ -1837,7 +1865,8 @@ class QuestGenerator:
                 'Стража просит помочь с бандитами.'
             ],
             'target': 'bandit',
-            'min_level': 1
+            'min_level': 1,
+            'min_rank': 2
         },
         'undead': {
             'display_name': 'Нежить',
@@ -1848,7 +1877,8 @@ class QuestGenerator:
                 'Священник просит помочь с нежитью.'
             ],
             'target': 'undead',
-            'min_level': 1
+            'min_level': 1,
+            'min_rank': 2
         },
         'wolf': {
             'display_name': 'Волков',
@@ -1859,7 +1889,8 @@ class QuestGenerator:
                 'Пастухи просят помочь с волками.'
             ],
             'target': 'wolf',
-            'min_level': 1
+            'min_level': 1,
+            'min_rank': 1
         },
         'bear': {
             'display_name': 'Медведей',
@@ -1870,7 +1901,8 @@ class QuestGenerator:
                 'Охотники просят помощи с медведем.'
             ],
             'target': 'bear',
-            'min_level': 5
+            'min_level': 5,
+            'min_rank': 1
         }
     }
 
@@ -1885,7 +1917,8 @@ class QuestGenerator:
                 'Хищники угрожают дичи.'
             ],
             'target': 'wolf',
-            'min_level': 1
+            'min_level': 1,
+            'min_rank': 1
         },
         'bear': {
             'display_name': 'Медведей',
@@ -1896,7 +1929,8 @@ class QuestGenerator:
                 'Опасный зверь в угодьях.'
             ],
             'target': 'bear',
-            'min_level': 5
+            'min_level': 5,
+            'min_rank': 1
         },
         'deer': {
             'display_name': 'Оленей',
@@ -1907,7 +1941,8 @@ class QuestGenerator:
                 'Нужно пополнить запасы мяса.'
             ],
             'target': 'deer',
-            'min_level': 1
+            'min_level': 1,
+            'min_rank': 1
         },
         'bandit': {
             'display_name': 'Бандитов',
@@ -1918,7 +1953,8 @@ class QuestGenerator:
                 'Охотники объединяются против бандитов.'
             ],
             'target': 'bandit',
-            'min_level': 1
+            'min_level': 1,
+            'min_rank': 2
         }
     }
 
@@ -1933,7 +1969,8 @@ class QuestGenerator:
                 'Слабая нежить мешает исследованиям.'
             ],
             'target': 'undead',
-            'min_level': 1
+            'min_level': 1,
+            'min_rank': 2
         },
         'undead_strong': {
             'display_name': 'Сильную нежить',
@@ -1944,7 +1981,8 @@ class QuestGenerator:
                 'Испытание для достойного воина.'
             ],
             'target': 'undead',
-            'min_level': 10
+            'min_level': 10,
+            'min_rank': 2
         }
     }
 
@@ -2242,24 +2280,44 @@ class QuestGenerator:
         Генерация квестов для городов
         Города: серебро, золото, мифрил, бандиты 3-4 рангов, нежить 3-4 рангов, шкуры медведей и оленей
         """
+        # Определяем ранг игрока по уровню
+        if player_level <= 10:
+            player_rank = 1
+        elif player_level <= 20:
+            player_rank = 2
+        elif player_level <= 30:
+            player_rank = 3
+        else:
+            player_rank = 4
+
+        # Фильтруем доступные ресурсы по рангу игрока
+        available_resources = {k: v for k, v in QuestGenerator.CITY_GATHER_QUESTS.items()
+                               if v.get('min_rank', 1) <= player_rank}
+        available_enemies = {k: v for k, v in QuestGenerator.CITY_KILL_QUESTS.items()
+                            if v.get('min_rank', 1) <= player_rank}
+
+        # Если нет доступных квестов, возвращаем пустой список
+        if not available_resources and not available_enemies:
+            return []
+
         quests = []
         quest_types = ['gather', 'gather', 'kill']  # Больше квестов на сбор
         random.shuffle(quest_types)
 
         # Гарантируем хотя бы один квест на части животных
         animal_parts = ['bear_hide', 'deer_hide', 'bear_meat', 'deer_meat', 'wolf_hide', 'bear_fang', 'wolf_fang']
-        other_resources = ['silver_ore', 'gold_ore', 'mithril_ore']
+        available_animal_parts = [k for k in animal_parts if k in available_resources]
         animal_quest_added = False
 
         for i in range(min(count, len(quest_types))):
-            if quest_types[i] == 'gather':
+            if quest_types[i] == 'gather' and available_resources:
                 # Если это первый квест на сбор и мы еще не добавили квест на части животных
-                if not animal_quest_added and random.random() < 0.7:  # 70% шанс на части животных
-                    resource_key = random.choice(animal_parts)
+                if not animal_quest_added and available_animal_parts and random.random() < 0.7:  # 70% шанс на части животных
+                    resource_key = random.choice(available_animal_parts)
                     animal_quest_added = True
                 else:
-                    # Выбираем из всех ресурсов
-                    resource_key = random.choice(list(QuestGenerator.CITY_GATHER_QUESTS.keys()))
+                    # Выбираем из доступных ресурсов
+                    resource_key = random.choice(list(available_resources.keys()))
                     if resource_key in animal_parts:
                         animal_quest_added = True
 
@@ -2268,13 +2326,14 @@ class QuestGenerator:
                     location_name, location_id, player_level,
                     difficulty_range=[QuestDifficulty.MEDIUM, QuestDifficulty.HARD, QuestDifficulty.VERY_HARD]
                 )
-            else:
-                enemy_key = random.choice(list(QuestGenerator.CITY_KILL_QUESTS.keys()))
+                quests.append(quest)
+            elif available_enemies:
+                enemy_key = random.choice(list(available_enemies.keys()))
                 quest = QuestGenerator._generate_specialized_kill_quest(
                     enemy_key, QuestGenerator.CITY_KILL_QUESTS[enemy_key],
                     location_name, location_id, player_level
                 )
-            quests.append(quest)
+                quests.append(quest)
         return quests
 
     @staticmethod
@@ -2283,25 +2342,44 @@ class QuestGenerator:
         Генерация квестов для деревень
         Деревни: шкуры волков, зубы и мясо животных, волки, медведи, железо, медь, бандиты 1-2, нежить 1-2
         """
+        # Определяем ранг игрока по уровню
+        if player_level <= 10:
+            player_rank = 1
+        elif player_level <= 20:
+            player_rank = 2
+        elif player_level <= 30:
+            player_rank = 3
+        else:
+            player_rank = 4
+
+        # Фильтруем доступные ресурсы по рангу игрока
+        available_resources = {k: v for k, v in QuestGenerator.VILLAGE_GATHER_QUESTS.items()
+                               if v.get('min_rank', 1) <= player_rank}
+        available_enemies = {k: v for k, v in QuestGenerator.VILLAGE_KILL_QUESTS.items()
+                            if v.get('min_rank', 1) <= player_rank}
+
+        # Если нет доступных квестов, возвращаем пустой список
+        if not available_resources and not available_enemies:
+            return []
+
         quests = []
         quest_types = ['gather', 'kill', 'gather']  # Смешанные квесты
         random.shuffle(quest_types)
 
         # Гарантируем хотя бы один квест на части животных
-        # Все части животных из VILLAGE_GATHER_QUESTS
         animal_parts = ['wolf_hide', 'wolf_fang', 'bear_meat', 'deer_meat', 'deer_hide', 'bear_hide', 'bear_fang']
-        other_resources = ['copper_ore', 'iron_ore']
+        available_animal_parts = [k for k in animal_parts if k in available_resources]
         animal_quest_added = False
 
         for i in range(min(count, len(quest_types))):
-            if quest_types[i] == 'gather':
+            if quest_types[i] == 'gather' and available_resources:
                 # Если это первый квест на сбор и мы еще не добавили квест на части животных
-                if not animal_quest_added and random.random() < 0.7:  # 70% шанс на части животных
-                    resource_key = random.choice(animal_parts)
+                if not animal_quest_added and available_animal_parts and random.random() < 0.7:  # 70% шанс на части животных
+                    resource_key = random.choice(available_animal_parts)
                     animal_quest_added = True
                 else:
-                    # Выбираем из всех ресурсов
-                    resource_key = random.choice(list(QuestGenerator.VILLAGE_GATHER_QUESTS.keys()))
+                    # Выбираем из доступных ресурсов
+                    resource_key = random.choice(list(available_resources.keys()))
                     if resource_key in animal_parts:
                         animal_quest_added = True
 
@@ -2310,13 +2388,14 @@ class QuestGenerator:
                     location_name, location_id, player_level,
                     difficulty_range=[QuestDifficulty.EASY, QuestDifficulty.MEDIUM]
                 )
-            else:
-                enemy_key = random.choice(list(QuestGenerator.VILLAGE_KILL_QUESTS.keys()))
+                quests.append(quest)
+            elif available_enemies:
+                enemy_key = random.choice(list(available_enemies.keys()))
                 quest = QuestGenerator._generate_specialized_kill_quest(
                     enemy_key, QuestGenerator.VILLAGE_KILL_QUESTS[enemy_key],
                     location_name, location_id, player_level
                 )
-            quests.append(quest)
+                quests.append(quest)
         return quests
 
     @staticmethod
@@ -2325,26 +2404,47 @@ class QuestGenerator:
         Генерация квестов для охотников
         Охотники: шкуры, зубы и мясо всех животных, убийство всех животных
         """
+        # Определяем ранг игрока по уровню
+        if player_level <= 10:
+            player_rank = 1
+        elif player_level <= 20:
+            player_rank = 2
+        elif player_level <= 30:
+            player_rank = 3
+        else:
+            player_rank = 4
+
+        # Фильтруем доступные ресурсы по рангу игрока
+        available_resources = {k: v for k, v in QuestGenerator.HUNTER_GATHER_QUESTS.items()
+                               if v.get('min_rank', 1) <= player_rank}
+        available_enemies = {k: v for k, v in QuestGenerator.HUNTER_KILL_QUESTS.items()
+                            if v.get('min_rank', 1) <= player_rank}
+
+        # Если нет доступных квестов, возвращаем пустой список
+        if not available_resources and not available_enemies:
+            return []
+
         quests = []
         quest_types = ['gather', 'kill', 'gather']
         random.shuffle(quest_types)
 
         for i in range(min(count, len(quest_types))):
-            if quest_types[i] == 'gather':
-                resource_key = random.choice(list(QuestGenerator.HUNTER_GATHER_QUESTS.keys()))
+            if quest_types[i] == 'gather' and available_resources:
+                resource_key = random.choice(list(available_resources.keys()))
                 quest = QuestGenerator._generate_specialized_gather_quest(
                     resource_key, QuestGenerator.HUNTER_GATHER_QUESTS[resource_key],
                     location_name, location_id, player_level,
                     difficulty_range=[QuestDifficulty.EASY, QuestDifficulty.MEDIUM, QuestDifficulty.HARD]
                 )
-            else:
-                enemy_key = random.choice(list(QuestGenerator.HUNTER_KILL_QUESTS.keys()))
+                quests.append(quest)
+            elif available_enemies:
+                enemy_key = random.choice(list(available_enemies.keys()))
                 quest = QuestGenerator._generate_specialized_kill_quest(
                     enemy_key, QuestGenerator.HUNTER_KILL_QUESTS[enemy_key],
                     location_name, location_id, player_level,
                     is_animal=enemy_key in ['wolf', 'bear', 'deer']
                 )
-            quests.append(quest)
+                quests.append(quest)
         return quests
 
     @staticmethod
@@ -2353,25 +2453,46 @@ class QuestGenerator:
         Генерация квестов для некроманта
         Некромант: артефакты, древние монеты, нежить 1-4 рангов
         """
+        # Определяем ранг игрока по уровню
+        if player_level <= 10:
+            player_rank = 1
+        elif player_level <= 20:
+            player_rank = 2
+        elif player_level <= 30:
+            player_rank = 3
+        else:
+            player_rank = 4
+
+        # Фильтруем доступные ресурсы по рангу игрока
+        available_resources = {k: v for k, v in QuestGenerator.NECROMANCER_GATHER_QUESTS.items()
+                               if v.get('min_rank', 1) <= player_rank}
+        available_enemies = {k: v for k, v in QuestGenerator.NECROMANCER_KILL_QUESTS.items()
+                            if v.get('min_rank', 1) <= player_rank}
+
+        # Если нет доступных квестов, возвращаем пустой список
+        if not available_resources and not available_enemies:
+            return []
+
         quests = []
         quest_types = ['gather', 'kill']
         random.shuffle(quest_types)
 
         for i in range(min(count, len(quest_types))):
-            if quest_types[i] == 'gather':
-                resource_key = random.choice(list(QuestGenerator.NECROMANCER_GATHER_QUESTS.keys()))
+            if quest_types[i] == 'gather' and available_resources:
+                resource_key = random.choice(list(available_resources.keys()))
                 quest = QuestGenerator._generate_specialized_gather_quest(
                     resource_key, QuestGenerator.NECROMANCER_GATHER_QUESTS[resource_key],
                     location_name, location_id, player_level,
                     difficulty_range=[QuestDifficulty.HARD, QuestDifficulty.VERY_HARD]
                 )
-            else:
-                enemy_key = random.choice(list(QuestGenerator.NECROMANCER_KILL_QUESTS.keys()))
+                quests.append(quest)
+            elif available_enemies:
+                enemy_key = random.choice(list(available_enemies.keys()))
                 quest = QuestGenerator._generate_specialized_kill_quest(
                     enemy_key, QuestGenerator.NECROMANCER_KILL_QUESTS[enemy_key],
                     location_name, location_id, player_level
                 )
-            quests.append(quest)
+                quests.append(quest)
         return quests
 
     @staticmethod
@@ -2380,10 +2501,28 @@ class QuestGenerator:
         Генерация квестов для алхимика
         Алхимик: зубы животных, древние свитки, магические кристаллы
         """
+        # Определяем ранг игрока по уровню
+        if player_level <= 10:
+            player_rank = 1
+        elif player_level <= 20:
+            player_rank = 2
+        elif player_level <= 30:
+            player_rank = 3
+        else:
+            player_rank = 4
+
+        # Фильтруем доступные ресурсы по рангу игрока
+        available_resources = {k: v for k, v in QuestGenerator.ALCHEMIST_GATHER_QUESTS.items()
+                               if v.get('min_rank', 1) <= player_rank}
+
+        # Если нет доступных квестов, возвращаем пустой список
+        if not available_resources:
+            return []
+
         quests = []
 
         for _ in range(count):
-            resource_key = random.choice(list(QuestGenerator.ALCHEMIST_GATHER_QUESTS.keys()))
+            resource_key = random.choice(list(available_resources.keys()))
             quest = QuestGenerator._generate_specialized_gather_quest(
                 resource_key, QuestGenerator.ALCHEMIST_GATHER_QUESTS[resource_key],
                 location_name, location_id, player_level,
@@ -2424,6 +2563,9 @@ class QuestGenerator:
             required_count=required_amount
         )
 
+        # Получаем минимальный ранг из данных ресурса
+        min_rank = resource_data.get('min_rank', 1)
+
         quest = Quest(
             quest_id=quest_id,
             name=quest_name,
@@ -2433,7 +2575,8 @@ class QuestGenerator:
             quest_type=QuestType.GATHER_RESOURCE,
             difficulty=difficulty,
             location_id=location_id,
-            giver_location=location_name
+            giver_location=location_name,
+            min_rank=min_rank
         )
         quest.target_item = resource_key
         return quest
@@ -2480,6 +2623,9 @@ class QuestGenerator:
 
         quest_type = QuestType.KILL_ANIMALS if is_animal else QuestType.KILL_ENEMIES
 
+        # Получаем минимальный ранг из данных врага
+        min_rank = enemy_data.get('min_rank', 1)
+
         quest = Quest(
             quest_id=quest_id,
             name=quest_name,
@@ -2489,7 +2635,8 @@ class QuestGenerator:
             quest_type=quest_type,
             difficulty=difficulty,
             location_id=location_id,
-            giver_location=location_name
+            giver_location=location_name,
+            min_rank=min_rank
         )
 
         if is_animal:
