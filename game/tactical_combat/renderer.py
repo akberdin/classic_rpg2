@@ -77,7 +77,7 @@ class TacticalCombatRenderer:
         self._render_ui_panel(field_x, ui_y, field_width)
 
         # Отрисовываем лог
-        log_y = ui_y + 210  # Увеличено с 150 до 210 (новая высота UI панели + 10)
+        log_y = ui_y + 170  # Высота UI панели (160) + 10
         self._render_combat_log(field_x, log_y, field_width)
 
     def _render_header(self, center_x, y):
@@ -449,45 +449,80 @@ class TacticalCombatRenderer:
             self.screen.blit(stat_text, (stat_x, stat_y))
 
     def _render_ui_panel(self, x, y, width):
-        """Отрисовка панели UI с параметрами игрока и панелью умений"""
-        panel_height = 200
+        """Отрисовка панели UI с панелью умений и параметрами игрока"""
+        panel_height = 160
 
         # Фон панели
         pygame.draw.rect(self.screen, (35, 35, 45), (x, y, width, panel_height))
         pygame.draw.rect(self.screen, (100, 100, 150), (x, y, width, panel_height), 2)
 
         if self.combat.current_turn == "player":
-            # Параметры игрока (сверху, в две колонки)
-            player = self.combat.player
+            # Заголовок умений
+            title = self.info_font.render("Умения:", True, (200, 200, 220))
+            self.screen.blit(title, (x + 10, y + 10))
 
-            # Левая колонка параметров
-            stats_left_x = x + 10
-            stats_y = y + 10
+            # Отрисовка панели умений (слева)
+            skill_panel_width = 480  # 8 слотов * (48 + 8)
+            self._render_skill_panel(x + 10, y + 35, skill_panel_width)
 
-            # Получаем эффективные характеристики с учетом экипировки
-            effective_str = player.get_effective_strength() if hasattr(player, 'get_effective_strength') else player.strength
-            effective_dex = player.get_effective_dexterity() if hasattr(player, 'get_effective_dexterity') else player.dexterity
-            effective_luck = player.get_effective_luck() if hasattr(player, 'get_effective_luck') else player.luck
+            # Параметры игрока (справа от панели умений)
+            self._render_player_stats(x + skill_panel_width + 30, y + 10, width - skill_panel_width - 40)
 
-            damage = player.get_total_damage()
-            defense = player.get_total_defense()
-            crit_chance = player.calculate_crit_chance()
-            dodge_chance = player.calculate_dodge_chance()
+            # Подсказка по управлению (внизу)
+            hint = self.small_font.render(
+                "ЛКМ - переместиться/применить умение | ПКМ - выбрать цель | ESC - сбежать",
+                True, (180, 180, 200)
+            )
+            self.screen.blit(hint, (x + 10, y + 135))
 
-            # Левая колонка
-            left_stats = [
-                f"Урон: {damage}",
-                f"Защита: {defense}",
-                f"Сила: {effective_str}",
-                f"Ловкость: {effective_dex}"
-            ]
+        else:
+            # Ход противника
+            title = self.info_font.render("Действия:", True, (200, 200, 220))
+            self.screen.blit(title, (x + 10, y + 10))
+            wait_text = self.info_font.render("Ход противника...", True, (255, 150, 150))
+            self.screen.blit(wait_text, (x + 20, y + 50))
 
-            for i, stat in enumerate(left_stats):
-                stat_text = self.small_font.render(stat, True, (200, 200, 220))
-                self.screen.blit(stat_text, (stats_left_x, stats_y + i * 16))
+    def _render_player_stats(self, x, y, width):
+        """
+        Отрисовка параметров игрока
 
-            # Правая колонка параметров
-            stats_right_x = x + width // 2
+        Args:
+            x, y: Позиция блока
+            width: Ширина блока
+        """
+        player = self.combat.player
+
+        # Заголовок
+        title = self.info_font.render("Параметры:", True, (255, 215, 0))
+        self.screen.blit(title, (x, y))
+
+        # Получаем эффективные характеристики с учетом экипировки
+        effective_str = player.get_effective_strength() if hasattr(player, 'get_effective_strength') else player.strength
+        effective_dex = player.get_effective_dexterity() if hasattr(player, 'get_effective_dexterity') else player.dexterity
+        effective_luck = player.get_effective_luck() if hasattr(player, 'get_effective_luck') else player.luck
+
+        damage = player.get_total_damage()
+        defense = player.get_total_defense()
+        crit_chance = player.calculate_crit_chance()
+        dodge_chance = player.calculate_dodge_chance()
+
+        stats_y = y + 25
+
+        # Левая колонка
+        left_stats = [
+            f"Урон: {damage}",
+            f"Защита: {defense}",
+            f"Сила: {effective_str}",
+            f"Ловкость: {effective_dex}"
+        ]
+
+        for i, stat in enumerate(left_stats):
+            stat_text = self.small_font.render(stat, True, (200, 200, 220))
+            self.screen.blit(stat_text, (x, stats_y + i * 18))
+
+        # Правая колонка (если есть место)
+        if width > 300:
+            stats_right_x = x + 150
 
             right_stats = [
                 f"Крит: {crit_chance:.1f}%",
@@ -498,37 +533,19 @@ class TacticalCombatRenderer:
 
             for i, stat in enumerate(right_stats):
                 stat_text = self.small_font.render(stat, True, (200, 200, 220))
-                self.screen.blit(stat_text, (stats_right_x, stats_y + i * 16))
-
-            # Разделитель
-            pygame.draw.line(
-                self.screen,
-                (100, 100, 150),
-                (x + 10, y + 75),
-                (x + width - 10, y + 75),
-                1
-            )
-
-            # Заголовок умений
-            title = self.info_font.render("Умения (ЛКМ для использования):", True, (200, 200, 220))
-            self.screen.blit(title, (x + 10, y + 80))
-
-            # Отрисовка панели умений
-            self._render_skill_panel(x + 10, y + 105, width - 20)
-
-            # Подсказка по управлению
-            hint = self.small_font.render(
-                "ЛКМ - переместиться/применить умение | ПКМ - выбрать цель | ESC - сбежать",
-                True, (180, 180, 200)
-            )
-            self.screen.blit(hint, (x + 10, y + 175))
-
+                self.screen.blit(stat_text, (stats_right_x, stats_y + i * 18))
         else:
-            # Ход противника
-            title = self.info_font.render("Действия:", True, (200, 200, 220))
-            self.screen.blit(title, (x + 10, y + 10))
-            wait_text = self.info_font.render("Ход противника...", True, (255, 150, 150))
-            self.screen.blit(wait_text, (x + 20, y + 50))
+            # Если мало места - все в одну колонку
+            right_stats = [
+                f"Крит: {crit_chance:.1f}%",
+                f"Уворот: {dodge_chance:.1f}%",
+                f"Удача: {effective_luck}",
+                f"Уровень: {player.level}"
+            ]
+
+            for i, stat in enumerate(right_stats):
+                stat_text = self.small_font.render(stat, True, (200, 200, 220))
+                self.screen.blit(stat_text, (x, stats_y + (i + 4) * 18))
 
     def _render_skill_panel(self, x, y, width):
         """Отрисовка панели умений"""
