@@ -77,7 +77,7 @@ class TacticalCombatRenderer:
         self._render_ui_panel(field_x, ui_y, field_width)
 
         # Отрисовываем лог
-        log_y = ui_y + 170  # Высота UI панели (160) + 10
+        log_y = ui_y + 130  # Высота UI панели (120) + 10
         self._render_combat_log(field_x, log_y, field_width)
 
     def _render_header(self, center_x, y):
@@ -450,7 +450,7 @@ class TacticalCombatRenderer:
 
     def _render_ui_panel(self, x, y, width):
         """Отрисовка панели UI с панелью умений и параметрами игрока"""
-        panel_height = 160
+        panel_height = 120
 
         # Фон панели
         pygame.draw.rect(self.screen, (35, 35, 45), (x, y, width, panel_height))
@@ -467,13 +467,6 @@ class TacticalCombatRenderer:
 
             # Параметры игрока (справа от панели умений)
             self._render_player_stats(x + skill_panel_width + 30, y + 10, width - skill_panel_width - 40)
-
-            # Подсказка по управлению (внизу)
-            hint = self.small_font.render(
-                "ЛКМ - переместиться/применить умение | ПКМ - выбрать цель | ESC - сбежать",
-                True, (180, 180, 200)
-            )
-            self.screen.blit(hint, (x + 10, y + 135))
 
         else:
             # Ход противника
@@ -655,7 +648,7 @@ class TacticalCombatRenderer:
 
     def _render_combat_log(self, x, y, width):
         """Отрисовка лога боя с цветовым выделением"""
-        log_height = 150
+        log_height = 190
 
         # Фон лога
         pygame.draw.rect(self.screen, (25, 25, 35), (x, y, width, log_height))
@@ -665,16 +658,19 @@ class TacticalCombatRenderer:
         log_title = self.info_font.render("Журнал боя", True, (150, 200, 255))
         self.screen.blit(log_title, (x + 10, y + 10))
 
-        # Логи
+        # Логи с уменьшенным шрифтом
         log_y = y + 35
-        line_height = 20
-        max_visible = 5
+        line_height = 16  # Уменьшено с 20 до 16
+        max_visible = 9  # Увеличено с 5 до 9
+
+        # Создаем мелкий шрифт для лога (размер 16)
+        log_font = pygame.font.Font(None, 18)
 
         visible_logs = self.combat.combat_log[-max_visible:]
         for i, log_entry in enumerate(visible_logs):
             # Определяем цвет сообщения по ключевым словам
             color = self._get_log_color(log_entry)
-            log_text = self.small_font.render(log_entry, True, color)
+            log_text = log_font.render(log_entry, True, color)
             self.screen.blit(log_text, (x + 10, log_y + i * line_height))
 
     def _get_log_color(self, message):
