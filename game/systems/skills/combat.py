@@ -39,10 +39,19 @@ class BasicAttack(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
+            # Проверка критического удара
+            crit_chance = user.calculate_crit_chance()
+            crit_roll = random.uniform(0, 100)
+            is_critical = crit_roll < crit_chance
+
             # Вычисляем урон с учетом ранга (20% за ранг - улучшено)
             base_damage = user.get_total_damage()
             rank_multiplier = 1.0 + (self.rank - 1) * 0.2  # 1.0x -> 1.8x на 5 ранге
             total_damage = int(base_damage * rank_multiplier)
+
+            # Удваиваем урон при крите
+            if is_critical:
+                total_damage *= 2
 
             # Учитываем защиту цели
             target_defense = target.get_total_defense()
@@ -52,7 +61,12 @@ class BasicAttack(Skill):
             target.take_damage(actual_damage)
 
             result['damage'] = actual_damage
-            result['message'] = f"{user.name} наносит базовую атаку {target.name} на {actual_damage} урона!"
+            result['critical'] = is_critical
+
+            if is_critical:
+                result['message'] = f"КРИТИЧЕСКИЙ УДАР! {user.name} наносит мощнейшую базовую атаку {target.name} на {actual_damage} урона!"
+            else:
+                result['message'] = f"{user.name} наносит базовую атаку {target.name} на {actual_damage} урона!"
 
             if not target.is_alive:
                 result['killed'] = True
@@ -87,11 +101,20 @@ class PowerStrike(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
+            # Проверка критического удара
+            crit_chance = user.calculate_crit_chance()
+            crit_roll = random.uniform(0, 100)
+            is_critical = crit_roll < crit_chance
+
             # Коэффициент урона растет с рангом (1.8x + 0.35x за ранг - улучшено)
             damage_multiplier = 1.8 + (self.rank - 1) * 0.35  # 1.8x -> 3.2x на 5 ранге
 
             base_damage = user.get_total_damage()
             total_damage = int(base_damage * damage_multiplier)
+
+            # Удваиваем урон при крите
+            if is_critical:
+                total_damage *= 2
 
             # Бонус пробития брони на высоких рангах (игнорируем часть защиты)
             armor_penetration = (self.rank - 1) * 0.1  # 0% -> 40% на 5 ранге
@@ -105,8 +128,13 @@ class PowerStrike(Skill):
             target.take_damage(actual_damage)
 
             result['damage'] = actual_damage
+            result['critical'] = is_critical
             result['armor_penetration'] = int(armor_penetration * 100)
-            result['message'] = f"{user.name} наносит мощный удар {target.name} на {actual_damage} урона!"
+
+            if is_critical:
+                result['message'] = f"КРИТИЧЕСКИЙ УДАР! {user.name} наносит разрушительный мощный удар {target.name} на {actual_damage} урона!"
+            else:
+                result['message'] = f"{user.name} наносит мощный удар {target.name} на {actual_damage} урона!"
 
             if not target.is_alive:
                 result['killed'] = True
@@ -141,10 +169,19 @@ class PoisonStrike(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
+            # Проверка критического удара
+            crit_chance = user.calculate_crit_chance()
+            crit_roll = random.uniform(0, 100)
+            is_critical = crit_roll < crit_chance
+
             # Наносим урон с множителем от ранга (улучшено)
             base_damage = user.get_total_damage()
             damage_multiplier = 1.0 + (self.rank - 1) * 0.15  # 1.0x -> 1.6x на 5 ранге
             total_damage = int(base_damage * damage_multiplier)
+
+            # Удваиваем урон при крите
+            if is_critical:
+                total_damage *= 2
 
             target_defense = target.get_total_defense()
             actual_damage = max(1, total_damage - target_defense)
@@ -172,10 +209,15 @@ class PoisonStrike(Skill):
                 target.status_effects.append(poison)
 
             result['damage'] = actual_damage
+            result['critical'] = is_critical
             result['poison_applied'] = True
             result['poison_damage'] = poison_damage
             result['poison_duration'] = poison_duration
-            result['message'] = f"{user.name} наносит отравленный удар {target.name} на {actual_damage} урона и накладывает яд ({poison_damage} урона/ход на {poison_duration} ходов)!"
+
+            if is_critical:
+                result['message'] = f"КРИТИЧЕСКИЙ УДАР! {user.name} наносит смертоносный отравленный удар {target.name} на {actual_damage} урона и накладывает сильный яд ({poison_damage} урона/ход на {poison_duration} ходов)!"
+            else:
+                result['message'] = f"{user.name} наносит отравленный удар {target.name} на {actual_damage} урона и накладывает яд ({poison_damage} урона/ход на {poison_duration} ходов)!"
 
             if not target.is_alive:
                 result['killed'] = True
@@ -210,10 +252,19 @@ class StunStrike(Skill):
         result = super().use(user, target)
 
         if target and user.can_attack(target):
+            # Проверка критического удара
+            crit_chance = user.calculate_crit_chance()
+            crit_roll = random.uniform(0, 100)
+            is_critical = crit_roll < crit_chance
+
             # Наносим урон с множителем (1.5x + 0.2x за ранг - улучшено)
             damage_multiplier = 1.5 + (self.rank - 1) * 0.2  # 1.5x -> 2.3x на 5 ранге
             base_damage = user.get_total_damage()
             total_damage = int(base_damage * damage_multiplier)
+
+            # Удваиваем урон при крите
+            if is_critical:
+                total_damage *= 2
 
             target_defense = target.get_total_defense()
             actual_damage = max(1, total_damage - target_defense)
@@ -243,9 +294,14 @@ class StunStrike(Skill):
                 stunned = True
 
             result['damage'] = actual_damage
+            result['critical'] = is_critical
             result['stunned'] = stunned
             result['stun_chance'] = int(stun_chance * 100)
-            result['message'] = f"{user.name} наносит оглушающий удар {target.name} на {actual_damage} урона!"
+
+            if is_critical:
+                result['message'] = f"КРИТИЧЕСКИЙ УДАР! {user.name} наносит сокрушительный оглушающий удар {target.name} на {actual_damage} урона!"
+            else:
+                result['message'] = f"{user.name} наносит оглушающий удар {target.name} на {actual_damage} урона!"
 
             if stunned:
                 result['message'] += f" {target.name} оглушен на {stun_duration} ход(а)!"
