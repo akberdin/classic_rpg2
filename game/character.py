@@ -775,6 +775,23 @@ class Character:
                 return rank_name
         return "Новичок"
 
+    def get_rank_number(self):
+        """
+        Получить числовой ранг персонажа на основе уровня
+
+        Returns:
+            int: Числовой ранг (1-4)
+        """
+        level = getattr(self, 'level', 1)
+        if level <= 10:
+            return 1
+        elif level <= 20:
+            return 2
+        elif level <= 30:
+            return 3
+        else:
+            return 4
+
 
 # Player вынесен в отдельный модуль, импортируем для обратной совместимости
 from game.entities.player import Player
