@@ -39,6 +39,11 @@ class TacticalCombatUIHandler:
         if self.combat.current_turn != "player":
             return "continue"
 
+        # Восстанавливаем последнюю цель в начале хода, если она жива
+        if not self.selected_target_unit and self.combat.last_selected_target:
+            if self.combat.last_selected_target.character.is_alive:
+                self.selected_target_unit = self.combat.last_selected_target
+
         if event.type == pygame.KEYDOWN:
             # ESC - попытка сбежать или снять выбор цели
             if event.key == pygame.K_ESCAPE:
@@ -48,6 +53,25 @@ class TacticalCombatUIHandler:
                     return "continue"
                 else:
                     return self._attempt_flee()
+
+            # Клавиши 1-8 для быстрого использования умений
+            elif event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4,
+                              pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8]:
+                # Определяем индекс слота (0-7)
+                slot_index = event.key - pygame.K_1
+
+                # Получаем умение из слота
+                skill = self.combat.player.skill_manager.get_slot_skill(slot_index)
+                if skill:
+                    # Проверяем, можно ли использовать умение
+                    can_use, reason = skill.can_use(self.combat.player)
+                    if can_use:
+                        return self._handle_skill_use(skill, slot_index)
+                    else:
+                        self.combat.add_to_log(reason)
+                else:
+                    self.combat.add_to_log(f"Слот {slot_index + 1} пуст")
+                return "continue"
 
         # Обработка мыши
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -82,9 +106,8 @@ class TacticalCombatUIHandler:
             str: Результат боя
         """
         # Вычисляем клетку по координатам мыши
-        screen_width = self.renderer.screen.get_width()
-        field_width = self.combat.battlefield_width * self.combat.cell_size
-        field_x = (screen_width - field_width) // 2
+        # Используем те же координаты что и в renderer
+        field_x = 20
         field_y = 100
 
         cell_x = (mouse_x - field_x) // self.combat.cell_size
@@ -110,24 +133,31 @@ class TacticalCombatUIHandler:
             str: Результат боя
         """
         # Вычисляем клетку по координатам мыши
-        screen_width = self.renderer.screen.get_width()
-        field_width = self.combat.battlefield_width * self.combat.cell_size
-        field_x = (screen_width - field_width) // 2
+        # Используем те же координаты что и в renderer
+        field_x = 20
         field_y = 100
 
         cell_x = (mouse_x - field_x) // self.combat.cell_size
         cell_y = (mouse_y - field_y) // self.combat.cell_size
 
-        # Проверяем, кликнули ли на врага
-        if cell_x == self.combat.enemy_unit.x and cell_y == self.combat.enemy_unit.y:
-            if self.selected_target_unit == self.combat.enemy_unit:
+        # Проверяем, кликнули ли на какого-либо врага
+        clicked_enemy = None
+        for enemy_unit in self.combat.enemy_units:
+            if enemy_unit.character.is_alive and cell_x == enemy_unit.x and cell_y == enemy_unit.y:
+                clicked_enemy = enemy_unit
+                break
+
+        if clicked_enemy:
+            if self.selected_target_unit == clicked_enemy:
                 # Снимаем выбор
                 self.selected_target_unit = None
+                self.combat.last_selected_target = None
                 self.combat.add_to_log("Цель снята")
             else:
                 # Выбираем цель
-                self.selected_target_unit = self.combat.enemy_unit
-                self.combat.add_to_log(f"Цель выбрана: {self.combat.enemy.name}")
+                self.selected_target_unit = clicked_enemy
+                self.combat.last_selected_target = clicked_enemy
+                self.combat.add_to_log(f"Цель выбрана: {clicked_enemy.character.name}")
 
         return "continue"
 
@@ -216,29 +246,46 @@ class TacticalCombatUIHandler:
         """
         from game.combat import calculate_combat_exp
 
-        self.combat.add_to_log(f"Вы победили {self.combat.enemy.name}!")
+        self.combat.add_to_log(f"=== ПОБЕДА ===")
 
-        # Увеличиваем счетчик убитых врагов
+        # Обрабатываем всех побежденных врагов
+        total_exp = 0
+        enemies_killed = 0
+
+        for enemy in self.combat.enemies:
+            # Пропускаем живых врагов - обрабатываем только мертвых
+            if enemy.is_alive:
+                continue
+
+            # Увеличиваем счетчик убитых врагов
+            enemies_killed += 1
+
+            # Регистрируем смерть NPC для респавна
+            if self.combat.respawn_manager:
+                self.combat.respawn_manager.register_death(enemy, self.combat.game)
+
+            # Оставляем лут на тайле (если есть карта и у врага есть предметы)
+            if self.combat.game_map and hasattr(enemy, 'inventory'):
+                if len(enemy.inventory.items) > 0 or enemy.inventory.gold > 0:
+                    # Используем позицию игрока, чтобы лут был рядом после боя
+                    tile = self.combat.game_map.get_tile(self.combat.player.x, self.combat.player.y)
+                    if tile:
+                        tile.set_loot(enemy.inventory)
+                        self.combat.add_to_log(f"Лут от {enemy.name}: Золото: {enemy.inventory.gold}, предметов: {len(enemy.inventory.items)}")
+
+            # Рассчитываем опыт за этого врага
+            exp_for_enemy = calculate_combat_exp(self.combat.player.level, enemy.level)
+            total_exp += exp_for_enemy
+
+            self.combat.add_to_log(f"За {enemy.name}: +{exp_for_enemy} опыта")
+
+        # Обновляем счетчик убитых врагов
         if hasattr(self.combat.player, 'enemies_killed'):
-            self.combat.player.enemies_killed += 1
+            self.combat.player.enemies_killed += enemies_killed
 
-        # Регистрируем смерть NPC для респавна
-        if self.combat.respawn_manager:
-            self.combat.respawn_manager.register_death(self.combat.enemy, self.combat.game)
-
-        # Оставляем лут на тайле (если есть карта и у врага есть предметы)
-        # Лут оставляется на позиции игрока, чтобы его можно было сразу поднять
-        if self.combat.game_map and hasattr(self.combat.enemy, 'inventory'):
-            if len(self.combat.enemy.inventory.items) > 0 or self.combat.enemy.inventory.gold > 0:
-                # Используем позицию игрока, чтобы лут был рядом после боя
-                tile = self.combat.game_map.get_tile(self.combat.player.x, self.combat.player.y)
-                if tile:
-                    tile.set_loot(self.combat.enemy.inventory)
-                    self.combat.add_to_log(f"На земле остался лут! (Золото: {self.combat.enemy.inventory.gold}, предметов: {len(self.combat.enemy.inventory.items)})")
-
-        # Даем опыт за победу (с учётом разницы уровней)
-        exp_gained = calculate_combat_exp(self.combat.player.level, self.combat.enemy.level)
-        self.combat.player.add_experience(exp_gained)
-        self.combat.add_to_log(f"Получено {exp_gained} опыта!")
+        # Даем общий опыт за победу
+        if total_exp > 0:
+            self.combat.player.add_experience(total_exp)
+            self.combat.add_to_log(f"Всего получено: {total_exp} опыта!")
 
         return "victory"

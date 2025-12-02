@@ -4,6 +4,7 @@
 import math
 import json
 import os
+from heapq import heappush, heappop
 
 
 class BattlefieldUnit:
@@ -44,13 +45,13 @@ class TacticalCombatSystem:
     """Система тактического боя"""
 
     def __init__(self, player, enemy, screen, font, scaler=None, game_map=None,
-                 respawn_manager=None, sprite_manager=None, game=None):
+                 respawn_manager=None, sprite_manager=None, game=None, entourage=None):
         """
         Инициализация системы тактического боя
 
         Args:
             player: Игрок
-            enemy: Враг
+            enemy: Основной враг
             screen: Pygame экран
             font: Шрифт для отображения текста
             scaler: UIScaler для адаптивного масштабирования (опционально)
@@ -58,9 +59,10 @@ class TacticalCombatSystem:
             respawn_manager: Менеджер респавна NPC
             sprite_manager: Менеджер спрайтов
             game: Объект игры
+            entourage: Список членов свиты (опционально)
         """
         self.player = player
-        self.enemy = enemy
+        self.enemy = enemy  # Основной враг (для обратной совместимости)
         self.screen = screen
         self.font = font
         self.scaler = scaler
@@ -68,6 +70,11 @@ class TacticalCombatSystem:
         self.respawn_manager = respawn_manager
         self.sprite_manager = sprite_manager
         self.game = game
+
+        # Список всех врагов (основной + свита)
+        self.enemies = [enemy]
+        if entourage:
+            self.enemies.extend(entourage)
 
         # Загружаем конфиг
         self.config = self._load_config()
@@ -83,7 +90,13 @@ class TacticalCombatSystem:
         spawn_y = self.battlefield_height // 2
 
         self.player_unit = BattlefieldUnit(player, player_x, spawn_y)
-        self.enemy_unit = BattlefieldUnit(enemy, enemy_x, spawn_y)
+
+        # Создаем юнитов врагов с размещением на поле боя
+        self.enemy_units = []
+        self._spawn_enemy_units(enemy_x, spawn_y)
+
+        # Для обратной совместимости
+        self.enemy_unit = self.enemy_units[0] if self.enemy_units else None
 
         # Состояние боя
         self.active = True
@@ -91,13 +104,97 @@ class TacticalCombatSystem:
         self.selected_unit = None
         self.selected_action = None  # move, skill, potion, pass
         self.selected_target = None  # Выбранная цель (для умений)
+        self.last_selected_target = None  # Последняя выбранная цель (запоминается между ходами)
         self.hovered_cell = None
         self.combat_log = []
         self.max_log_entries = 10
+        self.current_enemy_index = 0  # Индекс текущего врага для хода
 
         # Добавляем начальное сообщение
         self.add_to_log(f"=== ТАКТИЧЕСКИЙ БОЙ НАЧАЛСЯ ===")
         self.add_to_log(f"Противник: {enemy.name} (Уровень {enemy.level})")
+
+        if len(self.enemies) > 1:
+            self.add_to_log(f"Свита: {len(self.enemies) - 1} союзников")
+
+    def _spawn_enemy_units(self, base_x, base_y):
+        """
+        Разместить врагов на поле боя
+
+        Args:
+            base_x: Базовая координата X для размещения
+            base_y: Базовая координата Y для размещения
+        """
+        # Основной враг размещается в центре
+        main_enemy_unit = BattlefieldUnit(self.enemies[0], base_x, base_y)
+        self.enemy_units.append(main_enemy_unit)
+
+        # Свита размещается вокруг основного врага
+        if len(self.enemies) > 1:
+            # Возможные позиции вокруг основного врага (по кругу)
+            offsets = [
+                (0, -1),   # Сверху
+                (0, 1),    # Снизу
+                (-1, 0),   # Слева
+                (1, 0),    # Справа
+                (-1, -1),  # Сверху-слева
+                (1, -1),   # Сверху-справа
+                (-1, 1),   # Снизу-слева
+                (1, 1)     # Снизу-справа
+            ]
+
+            # Размещаем членов свиты
+            for i, entourage_member in enumerate(self.enemies[1:], start=0):
+                # Выбираем смещение для члена свиты
+                if i < len(offsets):
+                    offset_x, offset_y = offsets[i]
+                else:
+                    # Если членов свиты больше чем позиций, размещаем дальше
+                    offset_x = (i % 3) - 1
+                    offset_y = (i // 3) - 1
+
+                # Вычисляем позицию
+                spawn_x = base_x + offset_x
+                spawn_y = base_y + offset_y
+
+                # Проверяем границы
+                spawn_x = max(0, min(spawn_x, self.battlefield_width - 1))
+                spawn_y = max(0, min(spawn_y, self.battlefield_height - 1))
+
+                # Проверяем, не занята ли позиция
+                occupied = False
+                for existing_unit in self.enemy_units:
+                    if existing_unit.x == spawn_x and existing_unit.y == spawn_y:
+                        occupied = True
+                        break
+
+                # Если занята, ищем свободную позицию рядом
+                if occupied:
+                    for dx in range(-2, 3):
+                        for dy in range(-2, 3):
+                            new_x = base_x + dx
+                            new_y = base_y + dy
+
+                            if (new_x < 0 or new_x >= self.battlefield_width or
+                                new_y < 0 or new_y >= self.battlefield_height):
+                                continue
+
+                            occupied = False
+                            for existing_unit in self.enemy_units:
+                                if existing_unit.x == new_x and existing_unit.y == new_y:
+                                    occupied = True
+                                    break
+
+                            if not occupied:
+                                spawn_x = new_x
+                                spawn_y = new_y
+                                break
+                        if not occupied:
+                            break
+
+                # Создаем юнит члена свиты
+                entourage_unit = BattlefieldUnit(entourage_member, spawn_x, spawn_y)
+                self.enemy_units.append(entourage_unit)
 
     def _load_config(self):
         """Загрузить конфигурацию тактического боя"""
@@ -136,15 +233,17 @@ class TacticalCombatSystem:
     def get_distance(self, x1, y1, x2, y2):
         """
         Вычислить расстояние между двумя точками
+        Использует чебышевское расстояние (максимум из разниц по осям)
+        для поддержки 8 направлений движения в тактическом бою
 
         Args:
             x1, y1: Координаты первой точки
             x2, y2: Координаты второй точки
 
         Returns:
-            float: Расстояние
+            int: Расстояние (в клетках)
         """
-        return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        return max(abs(x2 - x1), abs(y2 - y1))
 
     def is_in_range(self, unit, target_x, target_y, range_distance):
         """
@@ -179,11 +278,14 @@ class TacticalCombatSystem:
         if target_y < 0 or target_y >= self.battlefield_height:
             return False
 
-        # Проверяем, не занята ли клетка
+        # Проверяем, не занята ли клетка игроком
         if (target_x == self.player_unit.x and target_y == self.player_unit.y):
             return False
-        if (target_x == self.enemy_unit.x and target_y == self.enemy_unit.y):
-            return False
+
+        # Проверяем, не занята ли клетка каким-либо живым врагом
+        for enemy_unit in self.enemy_units:
+            if enemy_unit.character.is_alive and (target_x == enemy_unit.x and target_y == enemy_unit.y):
+                return False
 
         # Проверяем, что перемещение только в соседние 8 клеток (радиус 1)
         dx = abs(target_x - unit.x)
@@ -191,6 +293,134 @@ class TacticalCombatSystem:
 
         # Допускаем перемещение только на 1 клетку по любому направлению
         return dx <= 1 and dy <= 1 and (dx != 0 or dy != 0)
+
+    def is_cell_blocked(self, x, y, ignore_unit=None):
+        """
+        Проверить, занята ли клетка препятствием или юнитом
+
+        Args:
+            x, y: Координаты клетки
+            ignore_unit: Юнит, который нужно игнорировать (например, тот кто ищет путь)
+
+        Returns:
+            bool: True если клетка заблокирована
+        """
+        # Проверяем границы поля
+        if x < 0 or x >= self.battlefield_width:
+            return True
+        if y < 0 or y >= self.battlefield_height:
+            return True
+
+        # Проверяем, не занята ли клетка игроком
+        if self.player_unit != ignore_unit and (x == self.player_unit.x and y == self.player_unit.y):
+            return True
+
+        # Проверяем, не занята ли клетка каким-либо живым врагом
+        for enemy_unit in self.enemy_units:
+            if (enemy_unit != ignore_unit and
+                enemy_unit.character.is_alive and
+                x == enemy_unit.x and y == enemy_unit.y):
+                return True
+
+        return False
+
+    def find_path(self, start_x, start_y, goal_x, goal_y, unit):
+        """
+        Найти путь от начальной позиции до цели используя A*
+        Поддерживает движение по 8 направлениям
+
+        Args:
+            start_x, start_y: Начальная позиция
+            goal_x, goal_y: Целевая позиция
+            unit: Юнит, который ищет путь
+
+        Returns:
+            list: Список координат (x, y) пути от начала до цели, или None если путь не найден
+        """
+        # Если цель заблокирована, ищем ближайшую свободную клетку рядом с целью
+        if self.is_cell_blocked(goal_x, goal_y, ignore_unit=unit):
+            # Ищем ближайшую свободную клетку вокруг цели
+            best_alternative = None
+            best_distance = float('inf')
+
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    if dx == 0 and dy == 0:
+                        continue
+
+                    alt_x = goal_x + dx
+                    alt_y = goal_y + dy
+
+                    if not self.is_cell_blocked(alt_x, alt_y, ignore_unit=unit):
+                        distance = self.get_distance(start_x, start_y, alt_x, alt_y)
+                        if distance < best_distance:
+                            best_distance = distance
+                            best_alternative = (alt_x, alt_y)
+
+            if best_alternative:
+                goal_x, goal_y = best_alternative
+            else:
+                return None  # Нет доступных клеток рядом с целью
+
+        # A* алгоритм
+        def heuristic(x, y):
+            # Используем чебышевское расстояние (максимум из разниц по осям)
+            # Это подходит для движения по 8 направлениям
+            return max(abs(x - goal_x), abs(y - goal_y))
+
+        # Приоритетная очередь: (приоритет, координаты)
+        open_set = []
+        heappush(open_set, (0, (start_x, start_y)))
+
+        # Словарь для хранения пути
+        came_from = {}
+
+        # Стоимость пути от начала до каждой клетки
+        g_score = {(start_x, start_y): 0}
+
+        # Оценочная стоимость от начала до цели через эту клетку
+        f_score = {(start_x, start_y): heuristic(start_x, start_y)}
+
+        while open_set:
+            current_f, current = heappop(open_set)
+            current_x, current_y = current
+
+            # Достигли цели
+            if current_x == goal_x and current_y == goal_y:
+                # Восстанавливаем путь
+                path = []
+                while current in came_from:
+                    path.append(current)
+                    current = came_from[current]
+                path.reverse()
+                return path
+
+            # Проверяем всех соседей (8 направлений)
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    if dx == 0 and dy == 0:
+                        continue
+
+                    neighbor_x = current_x + dx
+                    neighbor_y = current_y + dy
+                    neighbor = (neighbor_x, neighbor_y)
+
+                    # Пропускаем заблокированные клетки
+                    if self.is_cell_blocked(neighbor_x, neighbor_y, ignore_unit=unit):
+                        continue
+
+                    # Стоимость диагонального движения немного выше
+                    move_cost = 1.414 if (dx != 0 and dy != 0) else 1.0
+                    tentative_g_score = g_score[current] + move_cost
+
+                    if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
+                        came_from[neighbor] = current
+                        g_score[neighbor] = tentative_g_score
+                        f_score[neighbor] = tentative_g_score + heuristic(neighbor_x, neighbor_y)
+                        heappush(open_set, (f_score[neighbor], neighbor))
+
+        # Путь не найден
+        return None
 
     def move_unit(self, unit, target_x, target_y):
         """
@@ -238,15 +468,20 @@ class TacticalCombatSystem:
         if skill_id in support_skills:
             targets.append(caster_unit)
         else:
-            # Боевые умения - применяются на врага с проверкой расстояния
-            target_unit = self.enemy_unit if caster_unit == self.player_unit else self.player_unit
-
+            # Боевые умения - применяются на врагов
             # Получаем радиус действия умения
             skill_range = getattr(skill, 'tactical_range', 1)
 
-            # Проверяем расстояние до цели
-            if self.is_in_range(caster_unit, target_unit.x, target_unit.y, skill_range):
-                targets.append(target_unit)
+            if caster_unit == self.player_unit:
+                # Игрок может атаковать любого врага в радиусе действия
+                for enemy_unit in self.enemy_units:
+                    if enemy_unit.character.is_alive:
+                        if self.is_in_range(caster_unit, enemy_unit.x, enemy_unit.y, skill_range):
+                            targets.append(enemy_unit)
+            else:
+                # Враги атакуют только игрока
+                if self.is_in_range(caster_unit, self.player_unit.x, self.player_unit.y, skill_range):
+                    targets.append(self.player_unit)
 
         return targets
 
@@ -271,13 +506,27 @@ class TacticalCombatSystem:
 
             # Проверяем, не убит ли противник
             if 'killed' in result and result['killed']:
-                return {'status': 'victory', 'message': result['message']}
+                # Проверяем, все ли враги мертвы
+                if self._all_enemies_dead():
+                    return {'status': 'victory', 'message': result['message']}
 
         return {'status': 'continue', 'message': result.get('message', '')}
 
+    def _all_enemies_dead(self):
+        """
+        Проверить, все ли враги мертвы
+
+        Returns:
+            bool: True если все враги мертвы
+        """
+        for enemy_unit in self.enemy_units:
+            if enemy_unit.character.is_alive:
+                return False
+        return True
+
     def execute_enemy_turn(self):
         """
-        Выполнить ход врага (AI)
+        Выполнить ход врагов (AI) - все живые враги ходят по очереди
 
         Returns:
             str: Статус боя после хода
@@ -285,34 +534,64 @@ class TacticalCombatSystem:
         import random
         from game.skills import SkillCategory
 
-        distance = self.get_distance(self.enemy_unit.x, self.enemy_unit.y,
+        # Все живые враги ходят по очереди
+        for enemy_unit in self.enemy_units:
+            # Пропускаем мертвых врагов
+            if not enemy_unit.character.is_alive:
+                continue
+
+            # Выполняем ход этого врага
+            result = self._execute_single_enemy_turn(enemy_unit)
+
+            if result == "defeat":
+                return "defeat"
+
+        # Сбрасываем cooldown умений игрока после хода всех врагов
+        self.player.skill_manager.tick_cooldowns()
+
+        return "continue"
+
+    def _execute_single_enemy_turn(self, enemy_unit):
+        """
+        Выполнить ход одного врага
+
+        Args:
+            enemy_unit: Вражеский юнит
+
+        Returns:
+            str: Статус боя после хода
+        """
+        import random
+        from game.skills import SkillCategory
+
+        distance = self.get_distance(enemy_unit.x, enemy_unit.y,
                                      self.player_unit.x, self.player_unit.y)
 
-        weapon_range = self.enemy_unit.get_weapon_range()
+        weapon_range = enemy_unit.get_weapon_range()
 
         # Пытаемся использовать умения, если они есть
         used_skill = False
-        if hasattr(self.enemy, 'skill_manager') and self.enemy.skill_manager:
+        if hasattr(enemy_unit.character, 'skill_manager') and enemy_unit.character.skill_manager:
             # Получаем список боевых умений
             combat_categories = [SkillCategory.COMBAT, SkillCategory.MAGIC,
                                SkillCategory.SHADOW, SkillCategory.WARRIOR,
                                SkillCategory.HUNTER, SkillCategory.MAGE]
 
             usable_skills = []
-            for skill in self.enemy.skill_manager.learned_skills.values():
+            for skill in enemy_unit.character.skill_manager.learned_skills.values():
                 # Проверяем, что умение боевое и готово к использованию
                 if (skill.category in combat_categories and
-                    self.enemy.skill_manager.can_use_skill(skill)):
+                    enemy_unit.character.skill_manager.can_use_skill(skill)):
 
                     # Проверяем, что цель в радиусе действия
-                    targets = self.get_skill_targets(skill, self.enemy_unit)
+                    targets = self.get_skill_targets(skill, enemy_unit)
                     if self.player_unit in targets:
                         usable_skills.append(skill)
 
             # Если есть доступные умения - используем случайное
             if usable_skills:
                 skill = random.choice(usable_skills)
-                result = self.use_skill(skill, self.enemy_unit, self.player_unit)
+                result = self.use_skill(skill, enemy_unit, self.player_unit)
 
                 if result['status'] == 'continue':
                     used_skill = True
@@ -324,40 +603,57 @@ class TacticalCombatSystem:
         if not used_skill:
             # Если враг вне дистанции атаки - приближаемся (на 1 клетку за ход)
             if distance > weapon_range:
-                # Двигаемся к игроку на 1 клетку
-                dx = self.player_unit.x - self.enemy_unit.x
-                dy = self.player_unit.y - self.enemy_unit.y
+                # Используем pathfinding для поиска пути к игроку
+                path = self.find_path(
+                    enemy_unit.x, enemy_unit.y,
+                    self.player_unit.x, self.player_unit.y,
+                    enemy_unit
+                )
 
-                # Нормализуем направление и ограничиваем движение до 1 клетки
-                if abs(dx) > abs(dy):
-                    new_x = self.enemy_unit.x + (1 if dx > 0 else -1)
-                    new_y = self.enemy_unit.y
+                if path and len(path) > 0:
+                    # Берем первый шаг из найденного пути
+                    next_x, next_y = path[0]
+                    self.move_unit(enemy_unit, next_x, next_y)
                 else:
-                    new_x = self.enemy_unit.x
-                    new_y = self.enemy_unit.y + (1 if dy > 0 else -1)
+                    # Если путь не найден, пытаемся двигаться напрямую (старая логика)
+                    dx = self.player_unit.x - enemy_unit.x
+                    dy = self.player_unit.y - enemy_unit.y
 
-                # Двигаемся
-                self.move_unit(self.enemy_unit, new_x, new_y)
+                    # Нормализуем направление для движения по одной клетке
+                    # Движение по диагонали, если оба dx и dy ненулевые
+                    move_x = 1 if dx > 0 else -1 if dx < 0 else 0
+                    move_y = 1 if dy > 0 else -1 if dy < 0 else 0
+
+                    new_x = enemy_unit.x + move_x
+                    new_y = enemy_unit.y + move_y
+
+                    # Пытаемся двигаться
+                    if not self.move_unit(enemy_unit, new_x, new_y):
+                        # Если не получилось, пробуем двигаться только по одной оси
+                        if abs(dx) > abs(dy):
+                            new_x = enemy_unit.x + move_x
+                            new_y = enemy_unit.y
+                        else:
+                            new_x = enemy_unit.x
+                            new_y = enemy_unit.y + move_y
+                        self.move_unit(enemy_unit, new_x, new_y)
             else:
                 # В дистанции атаки - атакуем базовой атакой
-                attack_result = self.enemy.attack(self.player)
+                attack_result = enemy_unit.character.attack(self.player)
 
                 if attack_result['dodged']:
-                    self.add_to_log(f"Вы уклонились от атаки {self.enemy.name}!")
+                    self.add_to_log(f"Вы уклонились от атаки {enemy_unit.character.name}!")
                 elif attack_result['hit']:
                     damage = attack_result['damage']
                     if attack_result['critical']:
-                        self.add_to_log(f"КРИТИЧЕСКИЙ УДАР! {self.enemy.name} наносит вам мощнейший удар! Урон: {damage}")
+                        self.add_to_log(f"КРИТИЧЕСКИЙ УДАР! {enemy_unit.character.name} наносит вам мощнейший удар! Урон: {damage}")
                     else:
-                        self.add_to_log(f"{self.enemy.name} атакует вас! Урон: {damage}")
+                        self.add_to_log(f"{enemy_unit.character.name} атакует вас! Урон: {damage}")
 
                     if not self.player.is_alive:
                         return "defeat"
 
-                self.enemy_unit.has_acted = True
-
-        # Сбрасываем cooldown умений игрока
-        self.player.skill_manager.tick_cooldowns()
+                enemy_unit.has_acted = True
 
         return "continue"
 
@@ -367,15 +663,22 @@ class TacticalCombatSystem:
             # Сбрасываем состояние игрока
             self.player_unit.reset_turn()
 
-            # Переход к ходу врага
+            # Переход к ходу врагов
             self.current_turn = "enemy"
             result = self.execute_enemy_turn()
 
             if result == "defeat":
                 return "defeat"
 
-            # После хода врага - снова ход игрока
+            # После хода врагов - снова ход игрока
             self.current_turn = "player"
-            self.enemy_unit.reset_turn()
+
+            # Сбрасываем состояние всех вражеских юнитов
+            for enemy_unit in self.enemy_units:
+                enemy_unit.reset_turn()
+
+            # Проверяем, жива ли последняя выбранная цель
+            if self.last_selected_target and not self.last_selected_target.character.is_alive:
+                self.last_selected_target = None
 
         return "continue"

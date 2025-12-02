@@ -52,8 +52,11 @@ class TacticalCombatRenderer:
         field_width = self.combat.battlefield_width * self.combat.cell_size
         field_height = self.combat.battlefield_height * self.combat.cell_size
 
-        # Центрируем поле по горизонтали, оставляем место для UI
-        field_x = (screen_width - field_width) // 2
+        # Ширина боковой панели
+        side_panel_width = 320
+
+        # Поле боя смещено влево, чтобы освободить место для боковой панели
+        field_x = 20
         field_y = 100
 
         # Отрисовываем заголовок
@@ -65,12 +68,16 @@ class TacticalCombatRenderer:
         # Отрисовываем юнитов
         self._render_units(field_x, field_y)
 
-        # Отрисовываем UI панели
+        # Отрисовываем боковую панель с характеристиками NPC свиты
+        side_panel_x = field_x + field_width + 20
+        self._render_entourage_panel(side_panel_x, field_y, side_panel_width, field_height)
+
+        # Отрисовываем UI панели (под полем боя)
         ui_y = field_y + field_height + 20
         self._render_ui_panel(field_x, ui_y, field_width)
 
         # Отрисовываем лог
-        log_y = ui_y + 150
+        log_y = ui_y + 130  # Высота UI панели (120) + 10
         self._render_combat_log(field_x, log_y, field_width)
 
     def _render_header(self, center_x, y):
@@ -118,11 +125,21 @@ class TacticalCombatRenderer:
         # Отрисовка игрока
         self._render_unit(self.combat.player_unit, field_x, field_y, self.player_color, "P", is_target=False)
 
-        # Отрисовка врага (с подсветкой если выбран как цель)
+        # Отрисовка всех врагов (с подсветкой если выбран как цель)
         from game.tactical_combat.ui_handler import TacticalCombatUIHandler
-        is_target = (hasattr(self.combat, '_ui_handler') and
-                     self.combat._ui_handler.selected_target_unit == self.combat.enemy_unit)
-        self._render_unit(self.combat.enemy_unit, field_x, field_y, self.enemy_color, "E", is_target=is_target)
+        for i, enemy_unit in enumerate(self.combat.enemy_units):
+            # Пропускаем мертвых врагов
+            if not enemy_unit.character.is_alive:
+                continue
+
+            # Проверяем, выбран ли этот враг как цель
+            is_target = (hasattr(self.combat, '_ui_handler') and
+                         self.combat._ui_handler.selected_target_unit == enemy_unit)
+
+            # Метка врага: E для основного, E1, E2... для свиты
+            label = "E" if i == 0 else f"E{i}"
+
+            self._render_unit(enemy_unit, field_x, field_y, self.enemy_color, label, is_target=is_target)
 
     def _render_unit(self, unit, field_x, field_y, color, label, is_target=False):
         """
@@ -243,28 +260,213 @@ class TacticalCombatRenderer:
                                (bar_x, bar_y, int(bar_width * stamina_ratio), bar_height))
             pygame.draw.rect(self.screen, (200, 180, 100), (bar_x, bar_y, bar_width, bar_height), 1)
 
+    def _render_entourage_panel(self, x, y, width, max_height):
+        """
+        Отрисовка боковой панели с характеристиками NPC свиты
+
+        Args:
+            x, y: Позиция панели
+            width: Ширина панели
+            max_height: Максимальная высота панели
+        """
+        # Фон панели
+        pygame.draw.rect(self.screen, (35, 35, 45), (x, y, width, max_height))
+        pygame.draw.rect(self.screen, (100, 100, 150), (x, y, width, max_height), 3)
+
+        # Заголовок панели
+        title = self.info_font.render("Противники", True, (255, 215, 0))
+        self.screen.blit(title, (x + 10, y + 10))
+
+        # Линия под заголовком
+        pygame.draw.line(
+            self.screen,
+            (100, 100, 150),
+            (x + 10, y + 35),
+            (x + width - 10, y + 35),
+            2
+        )
+
+        # Отрисовка информации о каждом NPC
+        current_y = y + 45
+        spacing = 10
+        max_units_to_show = 5  # Максимум NPC для отображения
+
+        # Показываем только живых врагов
+        alive_enemies = [unit for unit in self.combat.enemy_units if unit.character.is_alive]
+
+        # Ограничиваем количество отображаемых врагов
+        enemies_to_show = alive_enemies[:max_units_to_show]
+
+        for i, enemy_unit in enumerate(enemies_to_show):
+            # Высота одного блока информации о NPC
+            unit_info_height = 180
+
+            # Проверяем, влезает ли еще один блок
+            if current_y + unit_info_height > y + max_height - 10:
+                # Если не влезает, показываем сообщение о том, что есть еще враги
+                remaining = len(alive_enemies) - i
+                if remaining > 0:
+                    more_text = self.small_font.render(
+                        f"... и еще {remaining} противников",
+                        True,
+                        (180, 180, 200)
+                    )
+                    self.screen.blit(more_text, (x + 10, current_y))
+                break
+
+            self._render_unit_info_compact(enemy_unit, x + 10, current_y, width - 20, i)
+            current_y += unit_info_height + spacing
+
+    def _render_unit_info_compact(self, unit, x, y, width, index):
+        """
+        Отрисовка компактной информации о юните
+
+        Args:
+            unit: Юнит для отрисовки
+            x, y: Позиция блока
+            width: Ширина блока
+            index: Индекс врага (0 для основного, 1+ для свиты)
+        """
+        character = unit.character
+
+        # Фон блока
+        pygame.draw.rect(self.screen, (45, 45, 60), (x, y, width, 175))
+        pygame.draw.rect(self.screen, (200, 100, 100), (x, y, width, 175), 2)
+
+        # Спрайт NPC (слева)
+        sprite_size = 48
+        sprite_x = x + 5
+        sprite_y = y + 5
+
+        # Отрисовываем спрайт
+        if self.combat.sprite_manager and hasattr(character, 'npc_type'):
+            sprite = self.combat.sprite_manager.get_npc_sprite_with_rank(
+                character.npc_type,
+                character.level
+            )
+            if sprite:
+                # Масштабируем спрайт до нужного размера
+                scaled_sprite = pygame.transform.scale(sprite, (sprite_size, sprite_size))
+                self.screen.blit(scaled_sprite, (sprite_x, sprite_y))
+            else:
+                # Fallback: рисуем рамку
+                pygame.draw.rect(self.screen, (80, 80, 100), (sprite_x, sprite_y, sprite_size, sprite_size), 2)
+        else:
+            # Fallback: рисуем рамку
+            pygame.draw.rect(self.screen, (80, 80, 100), (sprite_x, sprite_y, sprite_size, sprite_size), 2)
+
+        # Имя и уровень (справа от спрайта)
+        name_x = sprite_x + sprite_size + 10
+        name_y = y + 5
+
+        # Метка врага
+        label = "Гл." if index == 0 else f"С{index}"
+        label_text = self.small_font.render(label, True, (255, 100, 100))
+        self.screen.blit(label_text, (name_x, name_y))
+
+        # Имя
+        name_text = self.info_font.render(character.name, True, (255, 255, 255))
+        # Обрезаем имя если оно слишком длинное
+        max_name_width = width - sprite_size - 20
+        if name_text.get_width() > max_name_width:
+            # Обрезаем имя
+            short_name = character.name[:15] + "..."
+            name_text = self.info_font.render(short_name, True, (255, 255, 255))
+        self.screen.blit(name_text, (name_x, name_y + 18))
+
+        # Уровень
+        rank = character.get_rank() if hasattr(character, 'get_rank') else ""
+        level_text = self.small_font.render(f"Ур. {character.level} ({rank})", True, (255, 215, 0))
+        self.screen.blit(level_text, (name_x, name_y + 36))
+
+        # Прогресс-бары и статы (под спрайтом и именем)
+        bars_y = y + sprite_size + 15
+        bar_width = width - 10
+        bar_height = 8
+
+        # HP
+        max_hp = character.get_effective_max_health() if hasattr(character, 'get_effective_max_health') else character.max_health
+        hp_ratio = min(1.0, character.health / max_hp) if max_hp > 0 else 0
+        hp_percent = int(hp_ratio * 100)
+
+        hp_label = self.small_font.render(f"HP: {character.health}/{max_hp} ({hp_percent}%)", True, (255, 100, 100))
+        self.screen.blit(hp_label, (x + 5, bars_y))
+
+        bars_y += 18
+        pygame.draw.rect(self.screen, (60, 60, 60), (x + 5, bars_y, bar_width, bar_height))
+        if hp_ratio > 0:
+            hp_color = (100, 255, 100) if hp_ratio > 0.5 else (255, 165, 0) if hp_ratio > 0.25 else (255, 100, 100)
+            pygame.draw.rect(self.screen, hp_color, (x + 5, bars_y, int(bar_width * hp_ratio), bar_height))
+        pygame.draw.rect(self.screen, (200, 200, 200), (x + 5, bars_y, bar_width, bar_height), 1)
+
+        # Mana (только для персонажей с маной, но не для животных)
+        from game.constants import NPC_TYPE_WOLF, NPC_TYPE_BEAR, NPC_TYPE_DEER
+        is_animal = hasattr(character, 'npc_type') and character.npc_type in [NPC_TYPE_WOLF, NPC_TYPE_BEAR, NPC_TYPE_DEER]
+
+        if hasattr(character, 'mana') and not is_animal:
+            bars_y += bar_height + 8
+            max_mana = character.get_effective_max_mana() if hasattr(character, 'get_effective_max_mana') else character.max_mana
+            mana_ratio = min(1.0, character.mana / max_mana) if max_mana > 0 else 0
+            mana_percent = int(mana_ratio * 100)
+
+            mana_label = self.small_font.render(f"Мана: {character.mana}/{max_mana} ({mana_percent}%)", True, (100, 150, 255))
+            self.screen.blit(mana_label, (x + 5, bars_y))
+
+            bars_y += 18
+            pygame.draw.rect(self.screen, (30, 30, 50), (x + 5, bars_y, bar_width, bar_height))
+            if mana_ratio > 0:
+                pygame.draw.rect(self.screen, (100, 150, 255), (x + 5, bars_y, int(bar_width * mana_ratio), bar_height))
+            pygame.draw.rect(self.screen, (150, 150, 200), (x + 5, bars_y, bar_width, bar_height), 1)
+
+        # Stamina
+        if hasattr(character, 'stamina'):
+            bars_y += bar_height + 8
+            max_stamina = character.get_effective_max_stamina() if hasattr(character, 'get_effective_max_stamina') else character.max_stamina
+            stamina_ratio = min(1.0, character.stamina / max_stamina) if max_stamina > 0 else 0
+            stamina_percent = int(stamina_ratio * 100)
+
+            stamina_label = self.small_font.render(f"Вын.: {character.stamina}/{max_stamina} ({stamina_percent}%)", True, (255, 220, 100))
+            self.screen.blit(stamina_label, (x + 5, bars_y))
+
+            bars_y += 18
+            pygame.draw.rect(self.screen, (50, 40, 20), (x + 5, bars_y, bar_width, bar_height))
+            if stamina_ratio > 0:
+                pygame.draw.rect(self.screen, (255, 220, 100), (x + 5, bars_y, int(bar_width * stamina_ratio), bar_height))
+            pygame.draw.rect(self.screen, (200, 180, 100), (x + 5, bars_y, bar_width, bar_height), 1)
+
+        # Статы (компактно в две колонки)
+        bars_y += bar_height + 12
+        stats = [
+            f"Урон: {character.get_total_damage()}",
+            f"Защ.: {character.get_total_defense()}",
+            f"М.защ.: {character.get_magic_defense()}",
+        ]
+
+        for i, stat in enumerate(stats):
+            stat_text = self.small_font.render(stat, True, (200, 200, 220))
+            stat_x = x + 5 + (i % 2) * (width // 2)
+            stat_y = bars_y + (i // 2) * 16
+            self.screen.blit(stat_text, (stat_x, stat_y))
+
     def _render_ui_panel(self, x, y, width):
-        """Отрисовка панели UI с панелью умений"""
-        panel_height = 160
+        """Отрисовка панели UI с панелью умений и параметрами игрока"""
+        panel_height = 120
 
         # Фон панели
         pygame.draw.rect(self.screen, (35, 35, 45), (x, y, width, panel_height))
         pygame.draw.rect(self.screen, (100, 100, 150), (x, y, width, panel_height), 2)
 
         if self.combat.current_turn == "player":
-            # Заголовок
-            title = self.info_font.render("Умения (ЛКМ для использования):", True, (200, 200, 220))
+            # Заголовок умений
+            title = self.info_font.render("Умения:", True, (200, 200, 220))
             self.screen.blit(title, (x + 10, y + 10))
 
-            # Отрисовка панели умений
-            self._render_skill_panel(x + 10, y + 35, width - 20)
+            # Отрисовка панели умений (слева)
+            skill_panel_width = 480  # 8 слотов * (48 + 8)
+            self._render_skill_panel(x + 10, y + 35, skill_panel_width)
 
-            # Подсказка по управлению
-            hint = self.small_font.render(
-                "ЛКМ - переместиться/применить умение | ПКМ - выбрать цель | ESC - сбежать",
-                True, (180, 180, 200)
-            )
-            self.screen.blit(hint, (x + 10, y + 135))
+            # Параметры игрока (справа от панели умений)
+            self._render_player_stats(x + skill_panel_width + 30, y + 10, width - skill_panel_width - 40)
 
         else:
             # Ход противника
@@ -272,6 +474,71 @@ class TacticalCombatRenderer:
             self.screen.blit(title, (x + 10, y + 10))
             wait_text = self.info_font.render("Ход противника...", True, (255, 150, 150))
             self.screen.blit(wait_text, (x + 20, y + 50))
+
+    def _render_player_stats(self, x, y, width):
+        """
+        Отрисовка параметров игрока
+
+        Args:
+            x, y: Позиция блока
+            width: Ширина блока
+        """
+        player = self.combat.player
+
+        # Заголовок
+        title = self.info_font.render("Параметры:", True, (255, 215, 0))
+        self.screen.blit(title, (x, y))
+
+        # Получаем эффективные характеристики с учетом экипировки
+        effective_str = player.get_effective_strength() if hasattr(player, 'get_effective_strength') else player.strength
+        effective_dex = player.get_effective_dexterity() if hasattr(player, 'get_effective_dexterity') else player.dexterity
+        effective_luck = player.get_effective_luck() if hasattr(player, 'get_effective_luck') else player.luck
+
+        damage = player.get_total_damage()
+        defense = player.get_total_defense()
+        crit_chance = player.calculate_crit_chance()
+        dodge_chance = player.calculate_dodge_chance()
+
+        stats_y = y + 25
+
+        # Левая колонка
+        left_stats = [
+            f"Урон: {damage}",
+            f"Защита: {defense}",
+            f"Сила: {effective_str}",
+            f"Ловкость: {effective_dex}"
+        ]
+
+        for i, stat in enumerate(left_stats):
+            stat_text = self.small_font.render(stat, True, (200, 200, 220))
+            self.screen.blit(stat_text, (x, stats_y + i * 18))
+
+        # Правая колонка (если есть место)
+        if width > 300:
+            stats_right_x = x + 150
+
+            right_stats = [
+                f"Крит: {crit_chance:.1f}%",
+                f"Уворот: {dodge_chance:.1f}%",
+                f"Удача: {effective_luck}",
+                f"Уровень: {player.level}"
+            ]
+
+            for i, stat in enumerate(right_stats):
+                stat_text = self.small_font.render(stat, True, (200, 200, 220))
+                self.screen.blit(stat_text, (stats_right_x, stats_y + i * 18))
+        else:
+            # Если мало места - все в одну колонку
+            right_stats = [
+                f"Крит: {crit_chance:.1f}%",
+                f"Уворот: {dodge_chance:.1f}%",
+                f"Удача: {effective_luck}",
+                f"Уровень: {player.level}"
+            ]
+
+            for i, stat in enumerate(right_stats):
+                stat_text = self.small_font.render(stat, True, (200, 200, 220))
+                self.screen.blit(stat_text, (x, stats_y + (i + 4) * 18))
 
     def _render_skill_panel(self, x, y, width):
         """Отрисовка панели умений"""
@@ -380,8 +647,8 @@ class TacticalCombatRenderer:
                     self.screen.blit(cooldown_text, cooldown_rect)
 
     def _render_combat_log(self, x, y, width):
-        """Отрисовка лога боя"""
-        log_height = 150
+        """Отрисовка лога боя с цветовым выделением"""
+        log_height = 190
 
         # Фон лога
         pygame.draw.rect(self.screen, (25, 25, 35), (x, y, width, log_height))
@@ -391,12 +658,60 @@ class TacticalCombatRenderer:
         log_title = self.info_font.render("Журнал боя", True, (150, 200, 255))
         self.screen.blit(log_title, (x + 10, y + 10))
 
-        # Логи
+        # Логи с уменьшенным шрифтом
         log_y = y + 35
-        line_height = 20
-        max_visible = 5
+        line_height = 16  # Уменьшено с 20 до 16
+        max_visible = 9  # Увеличено с 5 до 9
+
+        # Создаем мелкий шрифт для лога (размер 16)
+        log_font = pygame.font.Font(None, 18)
 
         visible_logs = self.combat.combat_log[-max_visible:]
         for i, log_entry in enumerate(visible_logs):
-            log_text = self.small_font.render(log_entry, True, (200, 200, 200))
+            # Определяем цвет сообщения по ключевым словам
+            color = self._get_log_color(log_entry)
+            log_text = log_font.render(log_entry, True, color)
             self.screen.blit(log_text, (x + 10, log_y + i * line_height))
+
+    def _get_log_color(self, message):
+        """
+        Определить цвет сообщения лога по ключевым словам
+
+        Args:
+            message: Текст сообщения
+
+        Returns:
+            tuple: RGB цвет для отображения
+        """
+        message_lower = message.lower()
+
+        # КРИТИЧЕСКИЙ УДАР - ярко-красный/оранжевый
+        if "критический" in message_lower or "крит" in message_lower:
+            return (255, 100, 50)
+
+        # Яд/отравление - зеленый
+        if "яд" in message_lower or "отравл" in message_lower:
+            return (100, 255, 100)
+
+        # Уворот - голубой
+        if "уклон" in message_lower or "уворот" in message_lower:
+            return (100, 200, 255)
+
+        # Оглушение/заморозка - фиолетовый
+        if "оглуш" in message_lower or "заморож" in message_lower or "обморож" in message_lower:
+            return (200, 100, 255)
+
+        # Лечение/регенерация - светло-зеленый
+        if "лечен" in message_lower or "восстан" in message_lower or "регенер" in message_lower:
+            return (150, 255, 150)
+
+        # Смерть/поражение - темно-красный
+        if "повержен" in message_lower or "убит" in message_lower or "погиб" in message_lower:
+            return (200, 50, 50)
+
+        # Победа - золотой
+        if "победа" in message_lower or "===":
+            return (255, 215, 0)
+
+        # Обычное сообщение - серый
+        return (200, 200, 200)
