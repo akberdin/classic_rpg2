@@ -2079,7 +2079,8 @@ class QuestGenerator:
                 'Бандиты терроризируют окрестности города.',
                 'Караваны страдают от нападений разбойников.',
                 'Стража просит помочь в борьбе с бандитами.'
-            ]
+            ],
+            'min_rank': 2
         },
         'undead': {
             'name': 'Нежить',
@@ -2089,7 +2090,8 @@ class QuestGenerator:
                 'Нежить из руин угрожает путникам.',
                 'Священники просят очистить руины от нечисти.',
                 'Жители жалуются на появление нежити.'
-            ]
+            ],
+            'min_rank': 2
         },
         'wolf': {
             'name': 'Волк',
@@ -2132,7 +2134,11 @@ class QuestGenerator:
         if quest_type == QuestType.GATHER_RESOURCE:
             return QuestGenerator._generate_gather_quest(location_name, location_id, player_level)
         else:
-            return QuestGenerator._generate_kill_quest(location_name, location_id, player_level)
+            quest = QuestGenerator._generate_kill_quest(location_name, location_id, player_level)
+            # Если не удалось создать квест на убийство (нет доступных врагов), создаем квест на сбор
+            if quest is None:
+                quest = QuestGenerator._generate_gather_quest(location_name, location_id, player_level)
+            return quest
 
     @staticmethod
     def _generate_gather_quest(location_name, location_id, player_level):
@@ -2196,9 +2202,27 @@ class QuestGenerator:
     @staticmethod
     def _generate_kill_quest(location_name, location_id, player_level):
         """Сгенерировать квест на убийство врагов"""
-        # Выбираем тип врага случайно
-        enemy_key = random.choice(list(QuestGenerator.KILL_QUESTS.keys()))
-        enemy_data = QuestGenerator.KILL_QUESTS[enemy_key]
+        # Определяем ранг игрока по уровню
+        if player_level <= 10:
+            player_rank = 1
+        elif player_level <= 20:
+            player_rank = 2
+        elif player_level <= 30:
+            player_rank = 3
+        else:
+            player_rank = 4
+
+        # Фильтруем врагов по рангу игрока
+        available_enemies = {k: v for k, v in QuestGenerator.KILL_QUESTS.items()
+                            if v.get('min_rank', 1) <= player_rank}
+
+        # Если нет доступных врагов, возвращаем None
+        if not available_enemies:
+            return None
+
+        # Выбираем тип врага случайно из доступных
+        enemy_key = random.choice(list(available_enemies.keys()))
+        enemy_data = available_enemies[enemy_key]
 
         # Определяем сложность случайно
         difficulty = random.choice([
