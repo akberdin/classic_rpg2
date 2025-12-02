@@ -39,6 +39,11 @@ class TacticalCombatUIHandler:
         if self.combat.current_turn != "player":
             return "continue"
 
+        # Восстанавливаем последнюю цель в начале хода, если она жива
+        if not self.selected_target_unit and self.combat.last_selected_target:
+            if self.combat.last_selected_target.character.is_alive:
+                self.selected_target_unit = self.combat.last_selected_target
+
         if event.type == pygame.KEYDOWN:
             # ESC - попытка сбежать или снять выбор цели
             if event.key == pygame.K_ESCAPE:
@@ -48,6 +53,25 @@ class TacticalCombatUIHandler:
                     return "continue"
                 else:
                     return self._attempt_flee()
+
+            # Клавиши 1-8 для быстрого использования умений
+            elif event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4,
+                              pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8]:
+                # Определяем индекс слота (0-7)
+                slot_index = event.key - pygame.K_1
+
+                # Получаем умение из слота
+                skill = self.combat.player.skill_manager.get_slot_skill(slot_index)
+                if skill:
+                    # Проверяем, можно ли использовать умение
+                    can_use, reason = skill.can_use(self.combat.player)
+                    if can_use:
+                        return self._handle_skill_use(skill, slot_index)
+                    else:
+                        self.combat.add_to_log(reason)
+                else:
+                    self.combat.add_to_log(f"Слот {slot_index + 1} пуст")
+                return "continue"
 
         # Обработка мыши
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -129,10 +153,12 @@ class TacticalCombatUIHandler:
             if self.selected_target_unit == clicked_enemy:
                 # Снимаем выбор
                 self.selected_target_unit = None
+                self.combat.last_selected_target = None
                 self.combat.add_to_log("Цель снята")
             else:
                 # Выбираем цель
                 self.selected_target_unit = clicked_enemy
+                self.combat.last_selected_target = clicked_enemy
                 self.combat.add_to_log(f"Цель выбрана: {clicked_enemy.character.name}")
 
         return "continue"
@@ -229,7 +255,8 @@ class TacticalCombatUIHandler:
         enemies_killed = 0
 
         for enemy in self.combat.enemies:
-            if not enemy.is_alive:
+            # Пропускаем живых врагов - обрабатываем только мертвых
+            if enemy.is_alive:
                 continue
 
             # Увеличиваем счетчик убитых врагов
