@@ -77,7 +77,7 @@ class TacticalCombatRenderer:
         self._render_ui_panel(field_x, ui_y, field_width)
 
         # Отрисовываем лог
-        log_y = ui_y + 150
+        log_y = ui_y + 210  # Увеличено с 150 до 210 (новая высота UI панели + 10)
         self._render_combat_log(field_x, log_y, field_width)
 
     def _render_header(self, center_x, y):
@@ -449,27 +449,79 @@ class TacticalCombatRenderer:
             self.screen.blit(stat_text, (stat_x, stat_y))
 
     def _render_ui_panel(self, x, y, width):
-        """Отрисовка панели UI с панелью умений"""
-        panel_height = 160
+        """Отрисовка панели UI с параметрами игрока и панелью умений"""
+        panel_height = 200
 
         # Фон панели
         pygame.draw.rect(self.screen, (35, 35, 45), (x, y, width, panel_height))
         pygame.draw.rect(self.screen, (100, 100, 150), (x, y, width, panel_height), 2)
 
         if self.combat.current_turn == "player":
-            # Заголовок
+            # Параметры игрока (сверху, в две колонки)
+            player = self.combat.player
+
+            # Левая колонка параметров
+            stats_left_x = x + 10
+            stats_y = y + 10
+
+            # Получаем эффективные характеристики с учетом экипировки
+            effective_str = player.get_effective_strength() if hasattr(player, 'get_effective_strength') else player.strength
+            effective_dex = player.get_effective_dexterity() if hasattr(player, 'get_effective_dexterity') else player.dexterity
+            effective_luck = player.get_effective_luck() if hasattr(player, 'get_effective_luck') else player.luck
+
+            damage = player.get_total_damage()
+            defense = player.get_total_defense()
+            crit_chance = player.calculate_crit_chance()
+            dodge_chance = player.calculate_dodge_chance()
+
+            # Левая колонка
+            left_stats = [
+                f"Урон: {damage}",
+                f"Защита: {defense}",
+                f"Сила: {effective_str}",
+                f"Ловкость: {effective_dex}"
+            ]
+
+            for i, stat in enumerate(left_stats):
+                stat_text = self.small_font.render(stat, True, (200, 200, 220))
+                self.screen.blit(stat_text, (stats_left_x, stats_y + i * 16))
+
+            # Правая колонка параметров
+            stats_right_x = x + width // 2
+
+            right_stats = [
+                f"Крит: {crit_chance:.1f}%",
+                f"Уворот: {dodge_chance:.1f}%",
+                f"Удача: {effective_luck}",
+                f"Уровень: {player.level}"
+            ]
+
+            for i, stat in enumerate(right_stats):
+                stat_text = self.small_font.render(stat, True, (200, 200, 220))
+                self.screen.blit(stat_text, (stats_right_x, stats_y + i * 16))
+
+            # Разделитель
+            pygame.draw.line(
+                self.screen,
+                (100, 100, 150),
+                (x + 10, y + 75),
+                (x + width - 10, y + 75),
+                1
+            )
+
+            # Заголовок умений
             title = self.info_font.render("Умения (ЛКМ для использования):", True, (200, 200, 220))
-            self.screen.blit(title, (x + 10, y + 10))
+            self.screen.blit(title, (x + 10, y + 80))
 
             # Отрисовка панели умений
-            self._render_skill_panel(x + 10, y + 35, width - 20)
+            self._render_skill_panel(x + 10, y + 105, width - 20)
 
             # Подсказка по управлению
             hint = self.small_font.render(
                 "ЛКМ - переместиться/применить умение | ПКМ - выбрать цель | ESC - сбежать",
                 True, (180, 180, 200)
             )
-            self.screen.blit(hint, (x + 10, y + 135))
+            self.screen.blit(hint, (x + 10, y + 175))
 
         else:
             # Ход противника
@@ -585,7 +637,7 @@ class TacticalCombatRenderer:
                     self.screen.blit(cooldown_text, cooldown_rect)
 
     def _render_combat_log(self, x, y, width):
-        """Отрисовка лога боя"""
+        """Отрисовка лога боя с цветовым выделением"""
         log_height = 150
 
         # Фон лога
@@ -603,5 +655,50 @@ class TacticalCombatRenderer:
 
         visible_logs = self.combat.combat_log[-max_visible:]
         for i, log_entry in enumerate(visible_logs):
-            log_text = self.small_font.render(log_entry, True, (200, 200, 200))
+            # Определяем цвет сообщения по ключевым словам
+            color = self._get_log_color(log_entry)
+            log_text = self.small_font.render(log_entry, True, color)
             self.screen.blit(log_text, (x + 10, log_y + i * line_height))
+
+    def _get_log_color(self, message):
+        """
+        Определить цвет сообщения лога по ключевым словам
+
+        Args:
+            message: Текст сообщения
+
+        Returns:
+            tuple: RGB цвет для отображения
+        """
+        message_lower = message.lower()
+
+        # КРИТИЧЕСКИЙ УДАР - ярко-красный/оранжевый
+        if "критический" in message_lower or "крит" in message_lower:
+            return (255, 100, 50)
+
+        # Яд/отравление - зеленый
+        if "яд" in message_lower or "отравл" in message_lower:
+            return (100, 255, 100)
+
+        # Уворот - голубой
+        if "уклон" in message_lower or "уворот" in message_lower:
+            return (100, 200, 255)
+
+        # Оглушение/заморозка - фиолетовый
+        if "оглуш" in message_lower or "заморож" in message_lower or "обморож" in message_lower:
+            return (200, 100, 255)
+
+        # Лечение/регенерация - светло-зеленый
+        if "лечен" in message_lower or "восстан" in message_lower or "регенер" in message_lower:
+            return (150, 255, 150)
+
+        # Смерть/поражение - темно-красный
+        if "повержен" in message_lower or "убит" in message_lower or "погиб" in message_lower:
+            return (200, 50, 50)
+
+        # Победа - золотой
+        if "победа" in message_lower or "===":
+            return (255, 215, 0)
+
+        # Обычное сообщение - серый
+        return (200, 200, 200)

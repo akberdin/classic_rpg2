@@ -199,9 +199,15 @@ class Fireball(Skill):
 
     def use(self, user, target=None):
         """Использовать огненный шар"""
+        import random
         result = super().use(user, target)
 
         if target and user.can_attack(target):
+            # Проверка критического удара
+            crit_chance = user.calculate_crit_chance()
+            crit_roll = random.uniform(0, 100)
+            is_critical = crit_roll < crit_chance
+
             # Базовый урон зависит от интеллекта (с учетом экипировки)
             intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
             spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
@@ -212,6 +218,10 @@ class Fireball(Skill):
             damage_multiplier = 1.0 + (self.rank - 1) * 0.35  # 1.0x -> 2.4x на 5 ранге
             total_damage = int(base_damage * damage_multiplier)
 
+            # Удваиваем урон при крите
+            if is_critical:
+                total_damage *= 2
+
             # ИГНОРИРУЕМ БРОНЮ, но учитываем магическую защиту
             magic_defense = target.get_magic_defense() if hasattr(target, 'get_magic_defense') else 0
             actual_damage = max(1, total_damage - magic_defense)
@@ -220,9 +230,14 @@ class Fireball(Skill):
             target.take_damage(actual_damage)
 
             result['damage'] = actual_damage
+            result['critical'] = is_critical
             result['ignored_armor'] = True
             result['magic_blocked'] = max(0, total_damage - actual_damage)
-            result['message'] = f"{user.name} запускает огненный шар в {target.name} и наносит {actual_damage} магического урона!"
+
+            if is_critical:
+                result['message'] = f"КРИТИЧЕСКИЙ УДАР! {user.name} запускает мощнейший огненный шар в {target.name} и наносит {actual_damage} магического урона!"
+            else:
+                result['message'] = f"{user.name} запускает огненный шар в {target.name} и наносит {actual_damage} магического урона!"
 
             if magic_defense > 0:
                 result['message'] += f" (магическая защита поглотила {result['magic_blocked']} урона)"
@@ -257,9 +272,15 @@ class IceBolt(Skill):
 
     def use(self, user, target=None):
         """Использовать ледяную стрелу"""
+        import random
         result = super().use(user, target)
 
         if target and user.can_attack(target):
+            # Проверка критического удара
+            crit_chance = user.calculate_crit_chance()
+            crit_roll = random.uniform(0, 100)
+            is_critical = crit_roll < crit_chance
+
             # Урон немного меньше чем у огненного шара, но меньше кулдаун и есть замедление (с учетом экипировки)
             intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
             spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
@@ -268,6 +289,10 @@ class IceBolt(Skill):
             base_damage = 15 + intelligence * 3 + spirit * 0.3
             damage_multiplier = 1.0 + (self.rank - 1) * 0.3  # +30% за ранг
             total_damage = int(base_damage * damage_multiplier)
+
+            # Удваиваем урон при крите
+            if is_critical:
+                total_damage *= 2
 
             # ИГНОРИРУЕМ БРОНЮ, но учитываем магическую защиту
             magic_defense = target.get_magic_defense() if hasattr(target, 'get_magic_defense') else 0
@@ -298,10 +323,15 @@ class IceBolt(Skill):
                 slowed = True
 
             result['damage'] = actual_damage
+            result['critical'] = is_critical
             result['ignored_armor'] = True
             result['magic_blocked'] = max(0, total_damage - actual_damage)
             result['slowed'] = slowed
-            result['message'] = f"{user.name} запускает ледяную стрелу в {target.name} и наносит {actual_damage} магического урона!"
+
+            if is_critical:
+                result['message'] = f"КРИТИЧЕСКИЙ УДАР! {user.name} запускает смертоносную ледяную стрелу в {target.name} и наносит {actual_damage} магического урона!"
+            else:
+                result['message'] = f"{user.name} запускает ледяную стрелу в {target.name} и наносит {actual_damage} магического урона!"
 
             if slowed:
                 result['message'] += f" {target.name} заморожен на {slow_duration} ход(а)!"
@@ -327,9 +357,15 @@ class Lightning(Skill):
 
     def use(self, user, target=None):
         """Использовать молнию"""
+        import random
         result = super().use(user, target)
 
         if target and user.can_attack(target):
+            # Проверка критического удара
+            crit_chance = user.calculate_crit_chance()
+            crit_roll = random.uniform(0, 100)
+            is_critical = crit_roll < crit_chance
+
             # Самый высокий урон среди магических атак (с учетом экипировки)
             intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
             spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
@@ -339,6 +375,10 @@ class Lightning(Skill):
             damage_multiplier = 1.0 + (self.rank - 1) * 0.4  # +40% за ранг
             total_damage = int(base_damage * damage_multiplier)
 
+            # Удваиваем урон при крите
+            if is_critical:
+                total_damage *= 2
+
             # ИГНОРИРУЕМ БРОНЮ, но учитываем магическую защиту
             magic_defense = target.get_magic_defense() if hasattr(target, 'get_magic_defense') else 0
             actual_damage = max(1, total_damage - magic_defense)
@@ -347,9 +387,14 @@ class Lightning(Skill):
             target.take_damage(actual_damage)
 
             result['damage'] = actual_damage
+            result['critical'] = is_critical
             result['ignored_armor'] = True
             result['magic_blocked'] = max(0, total_damage - actual_damage)
-            result['message'] = f"{user.name} поражает {target.name} молнией и наносит {actual_damage} магического урона!"
+
+            if is_critical:
+                result['message'] = f"КРИТИЧЕСКИЙ УДАР! {user.name} поражает {target.name} разрушительной молнией и наносит {actual_damage} магического урона!"
+            else:
+                result['message'] = f"{user.name} поражает {target.name} молнией и наносит {actual_damage} магического урона!"
 
             if magic_defense > 0:
                 result['message'] += f" (магическая защита поглотила {result['magic_blocked']} урона)"
@@ -375,9 +420,15 @@ class MagicMissile(Skill):
 
     def use(self, user, target=None):
         """Использовать магическую стрелу"""
+        import random
         result = super().use(user, target)
 
         if target and user.can_attack(target):
+            # Проверка критического удара
+            crit_chance = user.calculate_crit_chance()
+            crit_roll = random.uniform(0, 100)
+            is_critical = crit_roll < crit_chance
+
             # Базовая магическая атака с низкой стоимостью (с учетом экипировки)
             intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
             spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
@@ -387,6 +438,10 @@ class MagicMissile(Skill):
             damage_multiplier = 1.0 + (self.rank - 1) * 0.25  # +25% за ранг
             total_damage = int(base_damage * damage_multiplier)
 
+            # Удваиваем урон при крите
+            if is_critical:
+                total_damage *= 2
+
             # ИГНОРИРУЕМ БРОНЮ, но учитываем магическую защиту
             magic_defense = target.get_magic_defense() if hasattr(target, 'get_magic_defense') else 0
             actual_damage = max(1, total_damage - magic_defense)
@@ -395,9 +450,14 @@ class MagicMissile(Skill):
             target.take_damage(actual_damage)
 
             result['damage'] = actual_damage
+            result['critical'] = is_critical
             result['ignored_armor'] = True
             result['magic_blocked'] = max(0, total_damage - actual_damage)
-            result['message'] = f"{user.name} запускает магическую стрелу в {target.name} и наносит {actual_damage} магического урона!"
+
+            if is_critical:
+                result['message'] = f"КРИТИЧЕСКИЙ УДАР! {user.name} запускает усиленную магическую стрелу в {target.name} и наносит {actual_damage} магического урона!"
+            else:
+                result['message'] = f"{user.name} запускает магическую стрелу в {target.name} и наносит {actual_damage} магического урона!"
 
             if not target.is_alive:
                 result['killed'] = True
