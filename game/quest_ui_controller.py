@@ -47,7 +47,7 @@ class QuestUIController:
         # Генерируем квесты для локации, если их еще нет
         if location_id not in self.quest_manager.location_quests:
             quests = QuestGenerator.generate_quests_for_location(
-                location.name, location_id, self.player.level, count=3
+                location.name, location_id, self.player.level, count=3, location_type=location.location_type
             )
             for quest in quests:
                 self.quest_manager.add_location_quest(location_id, quest)
@@ -65,6 +65,11 @@ class QuestUIController:
 
         # Получаем данные для отображения
         available_quests = self.quest_manager.get_location_quests(location_id)
+
+        # Фильтруем квесты по рангу игрока
+        player_rank = self.player.get_rank_number()
+        available_quests = [q for q in available_quests if getattr(q, 'min_rank', 1) <= player_rank]
+
         active_quests = self.quest_manager.get_active_quests()
         turn_in_quests = self.quest_manager.get_quests_ready_to_turn_in(location_id)
 

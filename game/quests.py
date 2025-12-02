@@ -880,7 +880,7 @@ class QuestManager:
         # Затем генерируем обычные квесты
         num_quests = 3 if not unique_quest else 2
         new_quests = QuestGenerator.generate_quests_for_location(
-            location_name, location_id, player_level, count=num_quests
+            location_name, location_id, player_level, count=num_quests, location_type=location_type
         )
 
         for quest in new_quests:
@@ -2251,7 +2251,7 @@ class QuestGenerator:
         return quest
 
     @staticmethod
-    def generate_quests_for_location(location_name, location_id, player_level=1, count=3):
+    def generate_quests_for_location(location_name, location_id, player_level=1, count=3, location_type=None):
         """
         Сгенерировать несколько квестов для локации
 
@@ -2260,10 +2260,20 @@ class QuestGenerator:
             location_id: ID локации
             player_level: Уровень игрока
             count: Количество квестов
+            location_type: Тип локации (для специализированных генераторов)
 
         Returns:
             list: Список квестов
         """
+        from game.constants import LOCATION_CITY, LOCATION_VILLAGE
+
+        # Используем специализированные генераторы если известен тип локации
+        if location_type == LOCATION_CITY:
+            return QuestGenerator.generate_city_quests(location_name, location_id, player_level, count)
+        elif location_type == LOCATION_VILLAGE:
+            return QuestGenerator.generate_village_quests(location_name, location_id, player_level, count)
+
+        # Fallback на старый метод для других типов локаций
         quests = []
         for _ in range(count):
             quest = QuestGenerator.generate_quest_for_location(
