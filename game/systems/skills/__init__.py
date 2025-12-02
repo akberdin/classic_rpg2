@@ -64,6 +64,7 @@ from game.systems.skills.weapon import (
     PreciseShot,
     RapidFire,
     PiercingArrow,
+    LongRangeShot,
     Backstab,
     BleedingCut,
     ShadowStep,
@@ -73,6 +74,23 @@ from game.systems.skills.weapon import (
     LungeStrike,
     SpearSweep,
     ArmorBreach,
+    # Новые умения для SHADOW
+    DeadlyPoison,
+    Stealth,
+    CriticalStrike,
+    ShadowAgility,
+    # Новые умения для WARRIOR
+    IronStance,
+    Intimidate,
+    SteelSkin,
+    Counterattack,
+    Berserker,
+    # Новые умения для HUNTER
+    HuntersMark,
+    StaminaBoost,
+    EagleEye,
+    ExplosiveArrow,
+    Trap,
 )
 
 __all__ = [
@@ -89,9 +107,15 @@ __all__ = [
     # Ремесленные
     'Mining', 'Lumberjacking',
     # Оружейные
-    'WeaponSkill', 'BasicShot', 'PreciseShot', 'RapidFire', 'PiercingArrow', 'Backstab',
-    'BleedingCut', 'ShadowStep', 'WhirlwindStrike', 'ShieldBreaker', 'BladeDance',
+    'WeaponSkill', 'BasicShot', 'PreciseShot', 'RapidFire', 'PiercingArrow', 'LongRangeShot',
+    'Backstab', 'BleedingCut', 'ShadowStep', 'WhirlwindStrike', 'ShieldBreaker', 'BladeDance',
     'LungeStrike', 'SpearSweep', 'ArmorBreach',
+    # Новые умения SHADOW
+    'DeadlyPoison', 'Stealth', 'CriticalStrike', 'ShadowAgility',
+    # Новые умения WARRIOR
+    'IronStance', 'Intimidate', 'SteelSkin', 'Counterattack', 'Berserker',
+    # Новые умения HUNTER
+    'HuntersMark', 'StaminaBoost', 'EagleEye', 'ExplosiveArrow', 'Trap',
     # Словарь умений
     'AVAILABLE_SKILLS',
 ]
@@ -111,18 +135,33 @@ AVAILABLE_SKILLS = {
     'precise_shot': PreciseShot,
     'rapid_fire': RapidFire,
     'piercing_arrow': PiercingArrow,
-    # Боевые (кинжал)
+    'long_range_shot': LongRangeShot,
+    # Боевые (кинжал) - SHADOW
     'backstab': Backstab,
     'bleeding_cut': BleedingCut,
     'shadow_step': ShadowStep,
-    # Боевые (меч)
+    'deadly_poison': DeadlyPoison,
+    'stealth': Stealth,
+    'critical_strike': CriticalStrike,
+    'shadow_agility': ShadowAgility,
+    # Боевые (меч) - WARRIOR
     'whirlwind_strike': WhirlwindStrike,
     'shield_breaker': ShieldBreaker,
     'blade_dance': BladeDance,
-    # Боевые (копье)
+    'iron_stance': IronStance,
+    'intimidate': Intimidate,
+    'steel_skin': SteelSkin,
+    'counterattack': Counterattack,
+    'berserker': Berserker,
+    # Боевые (лук/копье) - HUNTER
     'lunge_strike': LungeStrike,
     'spear_sweep': SpearSweep,
     'armor_breach': ArmorBreach,
+    'hunters_mark': HuntersMark,
+    'stamina_boost': StaminaBoost,
+    'eagle_eye': EagleEye,
+    'explosive_arrow': ExplosiveArrow,
+    'trap': Trap,
     # Магические (поддерживающие)
     'heal': Heal,
     'regeneration': Regeneration,
