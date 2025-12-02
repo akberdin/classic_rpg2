@@ -106,9 +106,8 @@ class TacticalCombatUIHandler:
             str: Результат боя
         """
         # Вычисляем клетку по координатам мыши
-        screen_width = self.renderer.screen.get_width()
-        field_width = self.combat.battlefield_width * self.combat.cell_size
-        field_x = (screen_width - field_width) // 2
+        # Используем те же координаты что и в renderer
+        field_x = 20
         field_y = 100
 
         cell_x = (mouse_x - field_x) // self.combat.cell_size
@@ -134,9 +133,8 @@ class TacticalCombatUIHandler:
             str: Результат боя
         """
         # Вычисляем клетку по координатам мыши
-        screen_width = self.renderer.screen.get_width()
-        field_width = self.combat.battlefield_width * self.combat.cell_size
-        field_x = (screen_width - field_width) // 2
+        # Используем те же координаты что и в renderer
+        field_x = 20
         field_y = 100
 
         cell_x = (mouse_x - field_x) // self.combat.cell_size
