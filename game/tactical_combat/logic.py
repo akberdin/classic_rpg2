@@ -44,13 +44,13 @@ class TacticalCombatSystem:
     """Система тактического боя"""
 
     def __init__(self, player, enemy, screen, font, scaler=None, game_map=None,
-                 respawn_manager=None, sprite_manager=None, game=None):
+                 respawn_manager=None, sprite_manager=None, game=None, entourage=None):
         """
         Инициализация системы тактического боя
 
         Args:
             player: Игрок
-            enemy: Враг
+            enemy: Основной враг
             screen: Pygame экран
             font: Шрифт для отображения текста
             scaler: UIScaler для адаптивного масштабирования (опционально)
@@ -58,9 +58,10 @@ class TacticalCombatSystem:
             respawn_manager: Менеджер респавна NPC
             sprite_manager: Менеджер спрайтов
             game: Объект игры
+            entourage: Список членов свиты (опционально)
         """
         self.player = player
-        self.enemy = enemy
+        self.enemy = enemy  # Основной враг (для обратной совместимости)
         self.screen = screen
         self.font = font
         self.scaler = scaler
@@ -68,6 +69,11 @@ class TacticalCombatSystem:
         self.respawn_manager = respawn_manager
         self.sprite_manager = sprite_manager
         self.game = game
+
+        # Список всех врагов (основной + свита)
+        self.enemies = [enemy]
+        if entourage:
+            self.enemies.extend(entourage)
 
         # Загружаем конфиг
         self.config = self._load_config()
@@ -83,7 +89,13 @@ class TacticalCombatSystem:
         spawn_y = self.battlefield_height // 2
 
         self.player_unit = BattlefieldUnit(player, player_x, spawn_y)
-        self.enemy_unit = BattlefieldUnit(enemy, enemy_x, spawn_y)
+
+        # Создаем юнитов врагов с размещением на поле боя
+        self.enemy_units = []
+        self._spawn_enemy_units(enemy_x, spawn_y)
+
+        # Для обратной совместимости
+        self.enemy_unit = self.enemy_units[0] if self.enemy_units else None
 
         # Состояние боя
         self.active = True
@@ -94,10 +106,93 @@ class TacticalCombatSystem:
         self.hovered_cell = None
         self.combat_log = []
         self.max_log_entries = 10
+        self.current_enemy_index = 0  # Индекс текущего врага для хода
 
         # Добавляем начальное сообщение
         self.add_to_log(f"=== ТАКТИЧЕСКИЙ БОЙ НАЧАЛСЯ ===")
         self.add_to_log(f"Противник: {enemy.name} (Уровень {enemy.level})")
+
+        if len(self.enemies) > 1:
+            self.add_to_log(f"Свита: {len(self.enemies) - 1} союзников")
+
+    def _spawn_enemy_units(self, base_x, base_y):
+        """
+        Разместить врагов на поле боя
+
+        Args:
+            base_x: Базовая координата X для размещения
+            base_y: Базовая координата Y для размещения
+        """
+        # Основной враг размещается в центре
+        main_enemy_unit = BattlefieldUnit(self.enemies[0], base_x, base_y)
+        self.enemy_units.append(main_enemy_unit)
+
+        # Свита размещается вокруг основного врага
+        if len(self.enemies) > 1:
+            # Возможные позиции вокруг основного врага (по кругу)
+            offsets = [
+                (0, -1),   # Сверху
+                (0, 1),    # Снизу
+                (-1, 0),   # Слева
+                (1, 0),    # Справа
+                (-1, -1),  # Сверху-слева
+                (1, -1),   # Сверху-справа
+                (-1, 1),   # Снизу-слева
+                (1, 1)     # Снизу-справа
+            ]
+
+            # Размещаем членов свиты
+            for i, entourage_member in enumerate(self.enemies[1:], start=0):
+                # Выбираем смещение для члена свиты
+                if i < len(offsets):
+                    offset_x, offset_y = offsets[i]
+                else:
+                    # Если членов свиты больше чем позиций, размещаем дальше
+                    offset_x = (i % 3) - 1
+                    offset_y = (i // 3) - 1
+
+                # Вычисляем позицию
+                spawn_x = base_x + offset_x
+                spawn_y = base_y + offset_y
+
+                # Проверяем границы
+                spawn_x = max(0, min(spawn_x, self.battlefield_width - 1))
+                spawn_y = max(0, min(spawn_y, self.battlefield_height - 1))
+
+                # Проверяем, не занята ли позиция
+                occupied = False
+                for existing_unit in self.enemy_units:
+                    if existing_unit.x == spawn_x and existing_unit.y == spawn_y:
+                        occupied = True
+                        break
+
+                # Если занята, ищем свободную позицию рядом
+                if occupied:
+                    for dx in range(-2, 3):
+                        for dy in range(-2, 3):
+                            new_x = base_x + dx
+                            new_y = base_y + dy
+
+                            if (new_x < 0 or new_x >= self.battlefield_width or
+                                new_y < 0 or new_y >= self.battlefield_height):
+                                continue
+
+                            occupied = False
+                            for existing_unit in self.enemy_units:
+                                if existing_unit.x == new_x and existing_unit.y == new_y:
+                                    occupied = True
+                                    break
+
+                            if not occupied:
+                                spawn_x = new_x
+                                spawn_y = new_y
+                                break
+                        if not occupied:
+                            break
+
+                # Создаем юнит члена свиты
+                entourage_unit = BattlefieldUnit(entourage_member, spawn_x, spawn_y)
+                self.enemy_units.append(entourage_unit)
 
     def _load_config(self):
         """Загрузить конфигурацию тактического боя"""
@@ -179,11 +274,14 @@ class TacticalCombatSystem:
         if target_y < 0 or target_y >= self.battlefield_height:
             return False
 
-        # Проверяем, не занята ли клетка
+        # Проверяем, не занята ли клетка игроком
         if (target_x == self.player_unit.x and target_y == self.player_unit.y):
             return False
-        if (target_x == self.enemy_unit.x and target_y == self.enemy_unit.y):
-            return False
+
+        # Проверяем, не занята ли клетка каким-либо врагом
+        for enemy_unit in self.enemy_units:
+            if (target_x == enemy_unit.x and target_y == enemy_unit.y):
+                return False
 
         # Проверяем, что перемещение только в соседние 8 клеток (радиус 1)
         dx = abs(target_x - unit.x)
@@ -238,15 +336,20 @@ class TacticalCombatSystem:
         if skill_id in support_skills:
             targets.append(caster_unit)
         else:
-            # Боевые умения - применяются на врага с проверкой расстояния
-            target_unit = self.enemy_unit if caster_unit == self.player_unit else self.player_unit
-
+            # Боевые умения - применяются на врагов
             # Получаем радиус действия умения
             skill_range = getattr(skill, 'tactical_range', 1)
 
-            # Проверяем расстояние до цели
-            if self.is_in_range(caster_unit, target_unit.x, target_unit.y, skill_range):
-                targets.append(target_unit)
+            if caster_unit == self.player_unit:
+                # Игрок может атаковать любого врага в радиусе действия
+                for enemy_unit in self.enemy_units:
+                    if enemy_unit.character.is_alive:
+                        if self.is_in_range(caster_unit, enemy_unit.x, enemy_unit.y, skill_range):
+                            targets.append(enemy_unit)
+            else:
+                # Враги атакуют только игрока
+                if self.is_in_range(caster_unit, self.player_unit.x, self.player_unit.y, skill_range):
+                    targets.append(self.player_unit)
 
         return targets
 
@@ -271,13 +374,27 @@ class TacticalCombatSystem:
 
             # Проверяем, не убит ли противник
             if 'killed' in result and result['killed']:
-                return {'status': 'victory', 'message': result['message']}
+                # Проверяем, все ли враги мертвы
+                if self._all_enemies_dead():
+                    return {'status': 'victory', 'message': result['message']}
 
         return {'status': 'continue', 'message': result.get('message', '')}
 
+    def _all_enemies_dead(self):
+        """
+        Проверить, все ли враги мертвы
+
+        Returns:
+            bool: True если все враги мертвы
+        """
+        for enemy_unit in self.enemy_units:
+            if enemy_unit.character.is_alive:
+                return False
+        return True
+
     def execute_enemy_turn(self):
         """
-        Выполнить ход врага (AI)
+        Выполнить ход врагов (AI) - все живые враги ходят по очереди
 
         Returns:
             str: Статус боя после хода
@@ -285,34 +402,64 @@ class TacticalCombatSystem:
         import random
         from game.skills import SkillCategory
 
-        distance = self.get_distance(self.enemy_unit.x, self.enemy_unit.y,
+        # Все живые враги ходят по очереди
+        for enemy_unit in self.enemy_units:
+            # Пропускаем мертвых врагов
+            if not enemy_unit.character.is_alive:
+                continue
+
+            # Выполняем ход этого врага
+            result = self._execute_single_enemy_turn(enemy_unit)
+
+            if result == "defeat":
+                return "defeat"
+
+        # Сбрасываем cooldown умений игрока после хода всех врагов
+        self.player.skill_manager.tick_cooldowns()
+
+        return "continue"
+
+    def _execute_single_enemy_turn(self, enemy_unit):
+        """
+        Выполнить ход одного врага
+
+        Args:
+            enemy_unit: Вражеский юнит
+
+        Returns:
+            str: Статус боя после хода
+        """
+        import random
+        from game.skills import SkillCategory
+
+        distance = self.get_distance(enemy_unit.x, enemy_unit.y,
                                      self.player_unit.x, self.player_unit.y)
 
-        weapon_range = self.enemy_unit.get_weapon_range()
+        weapon_range = enemy_unit.get_weapon_range()
 
         # Пытаемся использовать умения, если они есть
         used_skill = False
-        if hasattr(self.enemy, 'skill_manager') and self.enemy.skill_manager:
+        if hasattr(enemy_unit.character, 'skill_manager') and enemy_unit.character.skill_manager:
             # Получаем список боевых умений
             combat_categories = [SkillCategory.COMBAT, SkillCategory.MAGIC,
                                SkillCategory.SHADOW, SkillCategory.WARRIOR,
                                SkillCategory.HUNTER, SkillCategory.MAGE]
 
             usable_skills = []
-            for skill in self.enemy.skill_manager.learned_skills.values():
+            for skill in enemy_unit.character.skill_manager.learned_skills.values():
                 # Проверяем, что умение боевое и готово к использованию
                 if (skill.category in combat_categories and
-                    self.enemy.skill_manager.can_use_skill(skill)):
+                    enemy_unit.character.skill_manager.can_use_skill(skill)):
 
                     # Проверяем, что цель в радиусе действия
-                    targets = self.get_skill_targets(skill, self.enemy_unit)
+                    targets = self.get_skill_targets(skill, enemy_unit)
                     if self.player_unit in targets:
                         usable_skills.append(skill)
 
             # Если есть доступные умения - используем случайное
             if usable_skills:
                 skill = random.choice(usable_skills)
-                result = self.use_skill(skill, self.enemy_unit, self.player_unit)
+                result = self.use_skill(skill, enemy_unit, self.player_unit)
 
                 if result['status'] == 'continue':
                     used_skill = True
@@ -325,39 +472,36 @@ class TacticalCombatSystem:
             # Если враг вне дистанции атаки - приближаемся (на 1 клетку за ход)
             if distance > weapon_range:
                 # Двигаемся к игроку на 1 клетку
-                dx = self.player_unit.x - self.enemy_unit.x
-                dy = self.player_unit.y - self.enemy_unit.y
+                dx = self.player_unit.x - enemy_unit.x
+                dy = self.player_unit.y - enemy_unit.y
 
                 # Нормализуем направление и ограничиваем движение до 1 клетки
                 if abs(dx) > abs(dy):
-                    new_x = self.enemy_unit.x + (1 if dx > 0 else -1)
-                    new_y = self.enemy_unit.y
+                    new_x = enemy_unit.x + (1 if dx > 0 else -1)
+                    new_y = enemy_unit.y
                 else:
-                    new_x = self.enemy_unit.x
-                    new_y = self.enemy_unit.y + (1 if dy > 0 else -1)
+                    new_x = enemy_unit.x
+                    new_y = enemy_unit.y + (1 if dy > 0 else -1)
 
                 # Двигаемся
-                self.move_unit(self.enemy_unit, new_x, new_y)
+                self.move_unit(enemy_unit, new_x, new_y)
             else:
                 # В дистанции атаки - атакуем базовой атакой
-                attack_result = self.enemy.attack(self.player)
+                attack_result = enemy_unit.character.attack(self.player)
 
                 if attack_result['dodged']:
-                    self.add_to_log(f"Вы уклонились от атаки {self.enemy.name}!")
+                    self.add_to_log(f"Вы уклонились от атаки {enemy_unit.character.name}!")
                 elif attack_result['hit']:
                     damage = attack_result['damage']
                     if attack_result['critical']:
-                        self.add_to_log(f"КРИТИЧЕСКИЙ УДАР! {self.enemy.name} наносит вам мощнейший удар! Урон: {damage}")
+                        self.add_to_log(f"КРИТИЧЕСКИЙ УДАР! {enemy_unit.character.name} наносит вам мощнейший удар! Урон: {damage}")
                     else:
-                        self.add_to_log(f"{self.enemy.name} атакует вас! Урон: {damage}")
+                        self.add_to_log(f"{enemy_unit.character.name} атакует вас! Урон: {damage}")
 
                     if not self.player.is_alive:
                         return "defeat"
 
-                self.enemy_unit.has_acted = True
-
-        # Сбрасываем cooldown умений игрока
-        self.player.skill_manager.tick_cooldowns()
+                enemy_unit.has_acted = True
 
         return "continue"
 
@@ -367,15 +511,18 @@ class TacticalCombatSystem:
             # Сбрасываем состояние игрока
             self.player_unit.reset_turn()
 
-            # Переход к ходу врага
+            # Переход к ходу врагов
             self.current_turn = "enemy"
             result = self.execute_enemy_turn()
 
             if result == "defeat":
                 return "defeat"
 
-            # После хода врага - снова ход игрока
+            # После хода врагов - снова ход игрока
             self.current_turn = "player"
-            self.enemy_unit.reset_turn()
+
+            # Сбрасываем состояние всех вражеских юнитов
+            for enemy_unit in self.enemy_units:
+                enemy_unit.reset_turn()
 
         return "continue"
