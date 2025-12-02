@@ -103,6 +103,7 @@ class TacticalCombatSystem:
         self.selected_unit = None
         self.selected_action = None  # move, skill, potion, pass
         self.selected_target = None  # Выбранная цель (для умений)
+        self.last_selected_target = None  # Последняя выбранная цель (запоминается между ходами)
         self.hovered_cell = None
         self.combat_log = []
         self.max_log_entries = 10
@@ -231,15 +232,17 @@ class TacticalCombatSystem:
     def get_distance(self, x1, y1, x2, y2):
         """
         Вычислить расстояние между двумя точками
+        Использует чебышевское расстояние (максимум из разниц по осям)
+        для поддержки 8 направлений движения в тактическом бою
 
         Args:
             x1, y1: Координаты первой точки
             x2, y2: Координаты второй точки
 
         Returns:
-            float: Расстояние
+            int: Расстояние (в клетках)
         """
-        return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        return max(abs(x2 - x1), abs(y2 - y1))
 
     def is_in_range(self, unit, target_x, target_y, range_distance):
         """
@@ -278,9 +281,9 @@ class TacticalCombatSystem:
         if (target_x == self.player_unit.x and target_y == self.player_unit.y):
             return False
 
-        # Проверяем, не занята ли клетка каким-либо врагом
+        # Проверяем, не занята ли клетка каким-либо живым врагом
         for enemy_unit in self.enemy_units:
-            if (target_x == enemy_unit.x and target_y == enemy_unit.y):
+            if enemy_unit.character.is_alive and (target_x == enemy_unit.x and target_y == enemy_unit.y):
                 return False
 
         # Проверяем, что перемещение только в соседние 8 клеток (радиус 1)
@@ -524,5 +527,9 @@ class TacticalCombatSystem:
             # Сбрасываем состояние всех вражеских юнитов
             for enemy_unit in self.enemy_units:
                 enemy_unit.reset_turn()
+
+            # Проверяем, жива ли последняя выбранная цель
+            if self.last_selected_target and not self.last_selected_target.character.is_alive:
+                self.last_selected_target = None
 
         return "continue"
