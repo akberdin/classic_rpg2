@@ -4,6 +4,7 @@
 import math
 import json
 import os
+from heapq import heappush, heappop
 
 
 class BattlefieldUnit:
@@ -293,6 +294,134 @@ class TacticalCombatSystem:
         # Допускаем перемещение только на 1 клетку по любому направлению
         return dx <= 1 and dy <= 1 and (dx != 0 or dy != 0)
 
+    def is_cell_blocked(self, x, y, ignore_unit=None):
+        """
+        Проверить, занята ли клетка препятствием или юнитом
+
+        Args:
+            x, y: Координаты клетки
+            ignore_unit: Юнит, который нужно игнорировать (например, тот кто ищет путь)
+
+        Returns:
+            bool: True если клетка заблокирована
+        """
+        # Проверяем границы поля
+        if x < 0 or x >= self.battlefield_width:
+            return True
+        if y < 0 or y >= self.battlefield_height:
+            return True
+
+        # Проверяем, не занята ли клетка игроком
+        if self.player_unit != ignore_unit and (x == self.player_unit.x and y == self.player_unit.y):
+            return True
+
+        # Проверяем, не занята ли клетка каким-либо живым врагом
+        for enemy_unit in self.enemy_units:
+            if (enemy_unit != ignore_unit and
+                enemy_unit.character.is_alive and
+                x == enemy_unit.x and y == enemy_unit.y):
+                return True
+
+        return False
+
+    def find_path(self, start_x, start_y, goal_x, goal_y, unit):
+        """
+        Найти путь от начальной позиции до цели используя A*
+        Поддерживает движение по 8 направлениям
+
+        Args:
+            start_x, start_y: Начальная позиция
+            goal_x, goal_y: Целевая позиция
+            unit: Юнит, который ищет путь
+
+        Returns:
+            list: Список координат (x, y) пути от начала до цели, или None если путь не найден
+        """
+        # Если цель заблокирована, ищем ближайшую свободную клетку рядом с целью
+        if self.is_cell_blocked(goal_x, goal_y, ignore_unit=unit):
+            # Ищем ближайшую свободную клетку вокруг цели
+            best_alternative = None
+            best_distance = float('inf')
+
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    if dx == 0 and dy == 0:
+                        continue
+
+                    alt_x = goal_x + dx
+                    alt_y = goal_y + dy
+
+                    if not self.is_cell_blocked(alt_x, alt_y, ignore_unit=unit):
+                        distance = self.get_distance(start_x, start_y, alt_x, alt_y)
+                        if distance < best_distance:
+                            best_distance = distance
+                            best_alternative = (alt_x, alt_y)
+
+            if best_alternative:
+                goal_x, goal_y = best_alternative
+            else:
+                return None  # Нет доступных клеток рядом с целью
+
+        # A* алгоритм
+        def heuristic(x, y):
+            # Используем чебышевское расстояние (максимум из разниц по осям)
+            # Это подходит для движения по 8 направлениям
+            return max(abs(x - goal_x), abs(y - goal_y))
+
+        # Приоритетная очередь: (приоритет, координаты)
+        open_set = []
+        heappush(open_set, (0, (start_x, start_y)))
+
+        # Словарь для хранения пути
+        came_from = {}
+
+        # Стоимость пути от начала до каждой клетки
+        g_score = {(start_x, start_y): 0}
+
+        # Оценочная стоимость от начала до цели через эту клетку
+        f_score = {(start_x, start_y): heuristic(start_x, start_y)}
+
+        while open_set:
+            current_f, current = heappop(open_set)
+            current_x, current_y = current
+
+            # Достигли цели
+            if current_x == goal_x and current_y == goal_y:
+                # Восстанавливаем путь
+                path = []
+                while current in came_from:
+                    path.append(current)
+                    current = came_from[current]
+                path.reverse()
+                return path
+
+            # Проверяем всех соседей (8 направлений)
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    if dx == 0 and dy == 0:
+                        continue
+
+                    neighbor_x = current_x + dx
+                    neighbor_y = current_y + dy
+                    neighbor = (neighbor_x, neighbor_y)
+
+                    # Пропускаем заблокированные клетки
+                    if self.is_cell_blocked(neighbor_x, neighbor_y, ignore_unit=unit):
+                        continue
+
+                    # Стоимость диагонального движения немного выше
+                    move_cost = 1.414 if (dx != 0 and dy != 0) else 1.0
+                    tentative_g_score = g_score[current] + move_cost
+
+                    if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
+                        came_from[neighbor] = current
+                        g_score[neighbor] = tentative_g_score
+                        f_score[neighbor] = tentative_g_score + heuristic(neighbor_x, neighbor_y)
+                        heappush(open_set, (f_score[neighbor], neighbor))
+
+        # Путь не найден
+        return None
+
     def move_unit(self, unit, target_x, target_y):
         """
         Переместить юнита
@@ -474,20 +603,40 @@ class TacticalCombatSystem:
         if not used_skill:
             # Если враг вне дистанции атаки - приближаемся (на 1 клетку за ход)
             if distance > weapon_range:
-                # Двигаемся к игроку на 1 клетку
-                dx = self.player_unit.x - enemy_unit.x
-                dy = self.player_unit.y - enemy_unit.y
+                # Используем pathfinding для поиска пути к игроку
+                path = self.find_path(
+                    enemy_unit.x, enemy_unit.y,
+                    self.player_unit.x, self.player_unit.y,
+                    enemy_unit
+                )
 
-                # Нормализуем направление и ограничиваем движение до 1 клетки
-                if abs(dx) > abs(dy):
-                    new_x = enemy_unit.x + (1 if dx > 0 else -1)
-                    new_y = enemy_unit.y
+                if path and len(path) > 0:
+                    # Берем первый шаг из найденного пути
+                    next_x, next_y = path[0]
+                    self.move_unit(enemy_unit, next_x, next_y)
                 else:
-                    new_x = enemy_unit.x
-                    new_y = enemy_unit.y + (1 if dy > 0 else -1)
+                    # Если путь не найден, пытаемся двигаться напрямую (старая логика)
+                    dx = self.player_unit.x - enemy_unit.x
+                    dy = self.player_unit.y - enemy_unit.y
 
-                # Двигаемся
-                self.move_unit(enemy_unit, new_x, new_y)
+                    # Нормализуем направление для движения по одной клетке
+                    # Движение по диагонали, если оба dx и dy ненулевые
+                    move_x = 1 if dx > 0 else -1 if dx < 0 else 0
+                    move_y = 1 if dy > 0 else -1 if dy < 0 else 0
+
+                    new_x = enemy_unit.x + move_x
+                    new_y = enemy_unit.y + move_y
+
+                    # Пытаемся двигаться
+                    if not self.move_unit(enemy_unit, new_x, new_y):
+                        # Если не получилось, пробуем двигаться только по одной оси
+                        if abs(dx) > abs(dy):
+                            new_x = enemy_unit.x + move_x
+                            new_y = enemy_unit.y
+                        else:
+                            new_x = enemy_unit.x
+                            new_y = enemy_unit.y + move_y
+                        self.move_unit(enemy_unit, new_x, new_y)
             else:
                 # В дистанции атаки - атакуем базовой атакой
                 attack_result = enemy_unit.character.attack(self.player)
