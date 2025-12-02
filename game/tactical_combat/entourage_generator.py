@@ -163,8 +163,8 @@ class EntourageGenerator:
         from game.npc.guard import Guard
         from game.npc.merchant import Merchant
         from game.npc.hostile import Bandit, Undead
-        from game.npc.worker import Miner, Alchemist, Hunter
-        from game.npc.unique import Necromancer
+        from game.npc.worker import Miner
+        from game.npc.unique import Necromancer, Alchemist, Hunter
 
         # Определяем тип лидера
         leader_type = getattr(leader_npc, 'npc_type', None)
