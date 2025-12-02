@@ -118,11 +118,21 @@ class TacticalCombatRenderer:
         # Отрисовка игрока
         self._render_unit(self.combat.player_unit, field_x, field_y, self.player_color, "P", is_target=False)
 
-        # Отрисовка врага (с подсветкой если выбран как цель)
+        # Отрисовка всех врагов (с подсветкой если выбран как цель)
         from game.tactical_combat.ui_handler import TacticalCombatUIHandler
-        is_target = (hasattr(self.combat, '_ui_handler') and
-                     self.combat._ui_handler.selected_target_unit == self.combat.enemy_unit)
-        self._render_unit(self.combat.enemy_unit, field_x, field_y, self.enemy_color, "E", is_target=is_target)
+        for i, enemy_unit in enumerate(self.combat.enemy_units):
+            # Пропускаем мертвых врагов
+            if not enemy_unit.character.is_alive:
+                continue
+
+            # Проверяем, выбран ли этот враг как цель
+            is_target = (hasattr(self.combat, '_ui_handler') and
+                         self.combat._ui_handler.selected_target_unit == enemy_unit)
+
+            # Метка врага: E для основного, E1, E2... для свиты
+            label = "E" if i == 0 else f"E{i}"
+
+            self._render_unit(enemy_unit, field_x, field_y, self.enemy_color, label, is_target=is_target)
 
     def _render_unit(self, unit, field_x, field_y, color, label, is_target=False):
         """

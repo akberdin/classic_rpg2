@@ -1,0 +1,63 @@
+{
+  "description": "Конфигурация системы свиты NPC для тактического боя",
+
+  "entourage_rules": {
+    "0": {
+      "description": "Ранг 0 (Новичок, уровни 1-10) - свита не появляется",
+      "enabled": false,
+      "min_count": 0,
+      "max_count": 0,
+      "allowed_ranks": [],
+      "spawn_chance": 0.0
+    },
+    "1": {
+      "description": "Ранг 1 (Обычный, уровни 11-20) - может иметь 0-1 NPC ранга 0",
+      "enabled": true,
+      "min_count": 0,
+      "max_count": 1,
+      "allowed_ranks": [0],
+      "spawn_chance": 0.5,
+      "rank_weights": {
+        "0": 1.0
+      }
+    },
+    "2": {
+      "description": "Ранг 2 (Опытный, уровни 21-30) - может иметь 0-3 NPC ранга 0 и/или 1",
+      "enabled": true,
+      "min_count": 0,
+      "max_count": 3,
+      "allowed_ranks": [0, 1],
+      "spawn_chance": 0.7,
+      "rank_weights": {
+        "0": 0.4,
+        "1": 0.6
+      }
+    },
+    "3": {
+      "description": "Ранг 3 (Эксперт, уровни 31-40) - может иметь 1-4 NPC ранга 1 и/или 2",
+      "enabled": true,
+      "min_count": 1,
+      "max_count": 4,
+      "allowed_ranks": [1, 2],
+      "spawn_chance": 0.85,
+      "rank_weights": {
+        "1": 0.5,
+        "2": 0.5
+      }
+    }
+  },
+
+  "excluded_npc_types": [
+    "wolf",
+    "bear",
+    "deer",
+    "animal"
+  ],
+
+  "notes": {
+    "spawn_chance": "Вероятность появления свиты для данного ранга NPC",
+    "rank_weights": "Относительные веса для выбора ранга члена свиты",
+    "excluded_npc_types": "Типы NPC, для которых свита не создается (животные)",
+    "same_type_allowed": "Члены свиты могут быть того же типа, что и основной NPC"
+  }
+}

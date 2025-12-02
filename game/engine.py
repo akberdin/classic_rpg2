@@ -558,10 +558,19 @@ class Game:
         if tactical:
             # Тактический бой
             from game.tactical_combat import TacticalCombatSystem, TacticalCombatRenderer, TacticalCombatUIHandler
+            from game.tactical_combat.entourage_generator import EntourageGenerator
+
+            # Генерируем свиту для врага
+            entourage_generator = EntourageGenerator()
+            entourage = entourage_generator.generate_entourage(enemy)
+
+            if entourage:
+                print(f"  Противник привел свиту: {len(entourage)} союзников!")
 
             self.tactical_combat_system = TacticalCombatSystem(
                 self.player, enemy, self.screen, self.font, self.ui_scaler,
-                self.game_map, self.respawn_manager, self.sprite_manager, self
+                self.game_map, self.respawn_manager, self.sprite_manager, self,
+                entourage=entourage
             )
             self.tactical_combat_renderer = TacticalCombatRenderer(
                 self.tactical_combat_system, self.screen, self.font, self.ui_scaler
