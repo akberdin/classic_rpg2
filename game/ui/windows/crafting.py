@@ -140,7 +140,7 @@ class CraftingWindow:
         # Подсказки внизу
         help_y = window_y + window_height - int(35 * scale_h)
         help_text = self.info_font.render(
-            "[↑↓] Выбор  [ENTER] Создать  [ESC] Закрыть  [←→] Сменить станцию",
+            "[W/S] Выбор  [ENTER] Создать  [ESC] Закрыть  [A/D] Сменить станцию",
             True,
             (180, 180, 180)
         )
@@ -302,7 +302,7 @@ class CraftingWindow:
 
             # Результат
             result_text = self.info_font.render(
-                f"→ {recipe.name} x{recipe.result_quantity}",
+                f"Результат: {recipe.name} x{recipe.result_quantity}",
                 True,
                 (255, 215, 0)
             )
