@@ -80,6 +80,9 @@ class Player(Character):
         # Флаг атаки от NPC (для принудительного открытия окна боя)
         self.attacked_by_npc = None
 
+        # Изученные рецепты крафта
+        self.known_recipes = set()
+
     def get_effective_max_mana(self):
         """
         Получить эффективную максимальную ману с учетом бонусов от экипировки
