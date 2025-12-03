@@ -123,7 +123,7 @@ class CraftingWindow:
         else:
             # Отрисовка станций (левая панель)
             self._render_stations(
-                stations, window_x, window_y, window_width, window_height,
+                stations, player, window_x, window_y, window_width, window_height,
                 scale_w, scale_h
             )
 
@@ -150,7 +150,7 @@ class CraftingWindow:
         help_rect.y = help_y
         self.screen.blit(help_text, help_rect)
 
-    def _render_stations(self, stations, window_x, window_y, window_width, window_height, scale_w, scale_h):
+    def _render_stations(self, stations, player, window_x, window_y, window_width, window_height, scale_w, scale_h):
         """Отрисовка списка станций."""
         stations_x = window_x + int(20 * scale_w)
         stations_y = window_y + int(70 * scale_h)
@@ -166,6 +166,14 @@ class CraftingWindow:
         )
         self.screen.blit(stations_title, (stations_x, stations_y - int(25 * scale_h)))
 
+        # Маппинг станций на требуемые умения
+        station_skill_requirements = {
+            'workbench': 'craftsmanship',
+            'forge': 'craftsmanship',
+            'alchemy_table': 'alchemy',
+            'enchanting_table': 'enchanting'
+        }
+
         for i, station in enumerate(stations):
             rect_y = stations_y + i * (station_height + station_spacing)
 
@@ -173,8 +181,28 @@ class CraftingWindow:
             if rect_y + station_height > window_y + window_height - int(50 * scale_h):
                 break
 
-            # Цвет в зависимости от выбора
-            if i == self.selected_station_index:
+            # Проверяем, доступна ли станция для игрока
+            is_locked = False
+            required_skill_name = None
+            if station.id in station_skill_requirements:
+                required_skill_id = station_skill_requirements[station.id]
+                if hasattr(player, 'skill_manager'):
+                    skill = player.skill_manager.get_skill(required_skill_id)
+                    if not skill:
+                        is_locked = True
+                        # Названия умений для отображения
+                        skill_names = {
+                            'craftsmanship': 'Изготовление',
+                            'alchemy': 'Алхимия',
+                            'enchanting': 'Зачарование'
+                        }
+                        required_skill_name = skill_names.get(required_skill_id, required_skill_id)
+
+            # Цвет в зависимости от выбора и доступности
+            if is_locked:
+                bg_color = (40, 30, 30)
+                border_color = (100, 60, 60)
+            elif i == self.selected_station_index:
                 bg_color = (80, 80, 120)
                 border_color = (150, 150, 200)
             else:
@@ -186,22 +214,30 @@ class CraftingWindow:
             pygame.draw.rect(self.screen, bg_color, station_rect)
             pygame.draw.rect(self.screen, border_color, station_rect, 2)
 
-            # Сохраняем rect для обработки мыши
+            # Сохраняем rect для обработки мыши (вместе с флагом блокировки)
             self.station_rects.append(station_rect)
 
             # Название станции
-            name_text = self.font.render(station.name, True, (255, 255, 255))
+            name_color = (150, 100, 100) if is_locked else (255, 255, 255)
+            name_text = self.font.render(station.name, True, name_color)
             name_rect = name_text.get_rect()
             name_rect.centerx = station_rect.centerx
             name_rect.y = rect_y + int(10 * scale_h)
             self.screen.blit(name_text, name_rect)
 
-            # Описание станции (мелким шрифтом)
-            desc_text = self.info_font.render(
-                station.description[:28] + ("..." if len(station.description) > 28 else ""),
-                True,
-                (180, 180, 180)
-            )
+            # Описание станции или требование умения
+            if is_locked:
+                desc_text = self.info_font.render(
+                    f"[Требуется: {required_skill_name}]",
+                    True,
+                    (200, 100, 100)
+                )
+            else:
+                desc_text = self.info_font.render(
+                    station.description[:28] + ("..." if len(station.description) > 28 else ""),
+                    True,
+                    (180, 180, 180)
+                )
             self.screen.blit(desc_text, (stations_x + int(10 * scale_w), rect_y + int(35 * scale_h)))
 
     def _render_recipes(self, crafting_system, station, player, window_x, window_y,
@@ -314,6 +350,32 @@ class CraftingWindow:
                 (recipes_x + recipes_width - int(250 * scale_w), rect_y + int(30 * scale_h))
             )
 
+    def _is_station_locked(self, station, player):
+        """
+        Проверка, заблокирована ли станция для игрока.
+
+        Args:
+            station: Станция крафта
+            player: Объект игрока
+
+        Returns:
+            bool: True если станция заблокирована
+        """
+        station_skill_requirements = {
+            'workbench': 'craftsmanship',
+            'forge': 'craftsmanship',
+            'alchemy_table': 'alchemy',
+            'enchanting_table': 'enchanting'
+        }
+
+        if station.id in station_skill_requirements:
+            required_skill_id = station_skill_requirements[station.id]
+            if hasattr(player, 'skill_manager'):
+                skill = player.skill_manager.get_skill(required_skill_id)
+                if not skill:
+                    return True
+        return False
+
     def handle_input(self, event, crafting_system, player):
         """
         Обработка ввода пользователя.
@@ -332,7 +394,13 @@ class CraftingWindow:
             return False, None
 
         current_station = stations[self.selected_station_index]
-        all_recipes = current_station.get_available_recipes(player)
+
+        # Проверяем, не заблокирована ли текущая станция
+        if self._is_station_locked(current_station, player):
+            # Если станция заблокирована, показываем только пустой список рецептов
+            all_recipes = []
+        else:
+            all_recipes = current_station.get_available_recipes(player)
 
         # Фильтруем по категории
         if self.current_category != "all":
@@ -356,13 +424,25 @@ class CraftingWindow:
                     self.selected_recipe_index = (self.selected_recipe_index + 1) % len(recipes)
 
             elif event.key == pygame.K_LEFT:
-                # Предыдущая станция
-                self.selected_station_index = (self.selected_station_index - 1) % len(stations)
+                # Предыдущая станция (пропускаем заблокированные)
+                new_index = (self.selected_station_index - 1) % len(stations)
+                # Пропускаем заблокированные станции
+                attempts = 0
+                while self._is_station_locked(stations[new_index], player) and attempts < len(stations):
+                    new_index = (new_index - 1) % len(stations)
+                    attempts += 1
+                self.selected_station_index = new_index
                 self.selected_recipe_index = 0
 
             elif event.key == pygame.K_RIGHT:
-                # Следующая станция
-                self.selected_station_index = (self.selected_station_index + 1) % len(stations)
+                # Следующая станция (пропускаем заблокированные)
+                new_index = (self.selected_station_index + 1) % len(stations)
+                # Пропускаем заблокированные станции
+                attempts = 0
+                while self._is_station_locked(stations[new_index], player) and attempts < len(stations):
+                    new_index = (new_index + 1) % len(stations)
+                    attempts += 1
+                self.selected_station_index = new_index
                 self.selected_recipe_index = 0
 
             elif event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
@@ -379,8 +459,20 @@ class CraftingWindow:
                 # Проверяем клик по станциям
                 for i, rect in enumerate(self.station_rects):
                     if rect.collidepoint(mouse_pos):
-                        self.selected_station_index = i
-                        self.selected_recipe_index = 0
+                        # Проверяем, не заблокирована ли станция
+                        if not self._is_station_locked(stations[i], player):
+                            self.selected_station_index = i
+                            self.selected_recipe_index = 0
+                        else:
+                            # Показываем сообщение о блокировке
+                            station_skill_requirements = {
+                                'workbench': 'Изготовление',
+                                'forge': 'Изготовление',
+                                'alchemy_table': 'Алхимия',
+                                'enchanting_table': 'Зачарование'
+                            }
+                            required_skill = station_skill_requirements.get(stations[i].id, 'умение')
+                            return True, f"Станция заблокирована. Требуется умение: {required_skill}"
                         return True, None
 
                 # Проверяем клик по рецептам
