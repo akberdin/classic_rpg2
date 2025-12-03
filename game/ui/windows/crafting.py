@@ -64,10 +64,10 @@ class CraftingWindow:
 
         # Размеры окна (увеличены для 4 столбцов)
         if self.scaler:
-            window_width = self.scaler.scale_width(1400)
+            window_width = self.scaler.scale_width(1600)
             window_height = self.scaler.scale_height(900)
         else:
-            window_width = min(1400, int(screen_width * 0.95))
+            window_width = min(1600, int(screen_width * 0.95))
             window_height = min(900, int(screen_height * 0.9))
 
         window_x = (screen_width - window_width) // 2
@@ -130,6 +130,12 @@ class CraftingWindow:
             # Получаем текущую станцию
             if 0 <= self.selected_station_index < len(stations):
                 current_station = stations[self.selected_station_index]
+
+                # Отрисовка вкладок категорий (вверху справа)
+                self._render_categories(
+                    crafting_system, window_x, window_y, window_width, window_height,
+                    scale_w, scale_h
+                )
 
                 # Отрисовка рецептов (правая панель)
                 self._render_recipes(
@@ -240,20 +246,65 @@ class CraftingWindow:
                 )
             self.screen.blit(desc_text, (stations_x + int(10 * scale_w), rect_y + int(35 * scale_h)))
 
+    def _render_categories(self, crafting_system, window_x, window_y, window_width, window_height, scale_w, scale_h):
+        """Отрисовка вкладок категорий."""
+        # Определяем категории
+        categories = [
+            ("all", "Все"),
+            ("weapon", "Оружие"),
+            ("armor", "Броня"),
+            ("tool", "Инструменты"),
+            ("smelting", "Переплавка"),
+            ("potion", "Зелья"),
+            ("ammunition", "Боеприпасы"),
+            ("consumable", "Расходники"),
+            ("enchantment", "Зачарования")
+        ]
+
+        # Начальная позиция для вкладок (справа от области станций)
+        tabs_start_x = window_x + int(300 * scale_w)
+        tabs_y = window_y + int(50 * scale_h)
+        tab_height = int(35 * scale_h)
+        tab_spacing = int(5 * scale_w)
+
+        # Вычисляем ширину вкладки
+        available_width = window_width - int(320 * scale_w)
+        tab_width = (available_width - (len(categories) - 1) * tab_spacing) // len(categories)
+
+        # Отрисовываем вкладки
+        for i, (category_id, category_name) in enumerate(categories):
+            tab_x = tabs_start_x + i * (tab_width + tab_spacing)
+
+            # Определяем цвета в зависимости от выбранной категории
+            if category_id == self.current_category:
+                bg_color = (70, 70, 100)
+                border_color = (120, 120, 180)
+                text_color = (255, 255, 255)
+            else:
+                bg_color = (45, 45, 55)
+                border_color = (70, 70, 90)
+                text_color = (180, 180, 180)
+
+            # Рисуем вкладку
+            tab_rect = pygame.Rect(tab_x, tabs_y, tab_width, tab_height)
+            pygame.draw.rect(self.screen, bg_color, tab_rect)
+            pygame.draw.rect(self.screen, border_color, tab_rect, 2)
+
+            # Сохраняем rect для обработки кликов
+            self.category_rects.append((tab_rect, category_id))
+
+            # Текст категории
+            category_text = self.info_font.render(category_name, True, text_color)
+            text_rect = category_text.get_rect()
+            text_rect.center = tab_rect.center
+            self.screen.blit(category_text, text_rect)
+
     def _render_recipes(self, crafting_system, station, player, window_x, window_y,
                        window_width, window_height, scale_w, scale_h, mouse_pos):
-        """Отрисовка списка рецептов в 4 столбца."""
+        """Отрисовка списка рецептов в 4 столбца по 8 ячеек."""
         recipes_area_x = window_x + int(300 * scale_w)
-        recipes_area_y = window_y + int(70 * scale_h)
+        recipes_area_y = window_y + int(100 * scale_h)  # Увеличено для вкладок категорий
         recipes_area_width = window_width - int(320 * scale_w)
-
-        # Заголовок
-        recipes_title = self.info_font.render(
-            f"Рецепты ({station.name}):",
-            True,
-            (200, 200, 200)
-        )
-        self.screen.blit(recipes_title, (recipes_area_x, recipes_area_y - int(25 * scale_h)))
 
         # Получаем доступные рецепты
         all_recipes = station.get_available_recipes(player)
@@ -278,13 +329,13 @@ class CraftingWindow:
         if self.selected_recipe_index >= len(recipes):
             self.selected_recipe_index = max(0, len(recipes) - 1)
 
-        # Параметры сетки: 4 столбца по 10 рецептов
+        # Параметры сетки: 4 столбца по 8 рецептов
         columns = 4
-        rows_per_column = 10
+        rows_per_column = 8
         recipe_width = int((recipes_area_width - int(30 * scale_w)) / columns)
-        recipe_height = int(60 * scale_h)  # Уменьшено с 70 до 60
+        recipe_height = int(80 * scale_h)  # Увеличено для лучшей читаемости
         recipe_spacing_x = int(10 * scale_w)
-        recipe_spacing_y = int(6 * scale_h)  # Уменьшено с 8 до 6
+        recipe_spacing_y = int(8 * scale_h)
 
         # Отрисовка рецептов
         for i, recipe in enumerate(recipes):
@@ -293,7 +344,7 @@ class CraftingWindow:
             row = i % rows_per_column
 
             if column >= columns:
-                break  # Максимум 40 рецептов (4x10)
+                break  # Максимум 32 рецепта (4x8)
 
             # Позиция рецепта
             rect_x = recipes_area_x + column * (recipe_width + recipe_spacing_x)
@@ -325,7 +376,7 @@ class CraftingWindow:
             if name_text.get_width() > recipe_width - int(10 * scale_w):
                 short_name = recipe.name[:15] + "..."
                 name_text = self.info_font.render(short_name, True, name_color)
-            self.screen.blit(name_text, (rect_x + int(5 * scale_w), rect_y + int(3 * scale_h)))
+            self.screen.blit(name_text, (rect_x + int(5 * scale_w), rect_y + int(5 * scale_h)))
 
             # Категория и ранг умения
             category_name = crafting_system.get_category_name(recipe.category)
@@ -335,10 +386,10 @@ class CraftingWindow:
                 True,
                 (150, 150, 200)
             )
-            self.screen.blit(info_text, (rect_x + int(5 * scale_w), rect_y + int(18 * scale_h)))
+            self.screen.blit(info_text, (rect_x + int(5 * scale_w), rect_y + int(23 * scale_h)))
 
             # Ингредиенты (компактно)
-            ingredients_y = rect_y + int(35 * scale_h)
+            ingredients_y = rect_y + int(43 * scale_h)
             for j, ingredient in enumerate(recipe.ingredients):
                 if j >= 2:  # Максимум 2 строки ингредиентов
                     break
@@ -356,7 +407,7 @@ class CraftingWindow:
                 ingredients_text = f"{item_name}: {has}/{required}"
                 ingr_color = (100, 200, 100) if has >= required else (200, 100, 100)
                 ingr_surface = self.info_font.render(ingredients_text, True, ingr_color)
-                self.screen.blit(ingr_surface, (rect_x + int(5 * scale_w), ingredients_y + j * int(15 * scale_h)))
+                self.screen.blit(ingr_surface, (rect_x + int(5 * scale_w), ingredients_y + j * int(17 * scale_h)))
 
             # Количество результата справа внизу (только если больше 1)
             if recipe.result_quantity > 1:
@@ -515,6 +566,15 @@ class CraftingWindow:
                         self.selected_recipe_index = recipe_index
                         success, message = crafting_system.craft_item(recipe.id, player, player.inventory)
                         return True, message
+
+        # Обработка кликов по вкладкам категорий
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = pygame.mouse.get_pos()
+            for rect, category_id in self.category_rects:
+                if rect.collidepoint(mouse_pos):
+                    self.current_category = category_id
+                    self.selected_recipe_index = 0  # Сбрасываем выбор рецепта
+                    return True, None
 
         return True, None
 
