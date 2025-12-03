@@ -390,8 +390,8 @@ class Game:
                     self.tactical_combat_system = None
                     self.tactical_combat_renderer = None
                     self.tactical_combat_handler = None
-                    # Обработка поражения (сохранение, перезапуск и т.д.)
-                    print("Вы погибли в тактическом бою!")
+                    print("Поражение в тактическом бою! Игра окончена.")
+                    self.running = False
                 elif result == "fled":
                     self.in_tactical_combat = False
                     self.tactical_combat_system = None
