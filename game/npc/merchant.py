@@ -164,6 +164,31 @@ class Merchant(NPC):
                 if book_id in PREDEFINED_ITEMS:
                     self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
 
+        # Рецепты крафта (для всех торговцев с вероятностью)
+        recipes = [
+            "recipe_copper_ingot", "recipe_iron_ingot", "recipe_silver_ingot",
+            "recipe_gold_ingot", "recipe_mithril_ingot"
+        ]
+
+        # Шанс появления рецептов зависит от ранга
+        if rank == 1:
+            recipe_chance = 0.2
+            num_recipes = 1
+        elif rank == 2:
+            recipe_chance = 0.4
+            num_recipes = random.randint(1, 2)
+        elif rank == 3:
+            recipe_chance = 0.6
+            num_recipes = random.randint(1, 2)
+        else:  # rank 4
+            recipe_chance = 0.8
+            num_recipes = random.randint(2, 3)
+
+        if random.random() < recipe_chance:
+            for recipe_id in random.sample(recipes, min(num_recipes, len(recipes))):
+                if recipe_id in PREDEFINED_ITEMS:
+                    self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
+
     def restock_goods(self):
         """Пополнение товаров торговца с учетом ранга (вызывается при отдыхе в городе)"""
         from game.inventory import ItemGenerator, PREDEFINED_ITEMS
@@ -177,10 +202,10 @@ class Merchant(NPC):
             # Удаляем 20-30% случайных предметов (кроме зелий и книг)
             items_to_remove = int(current_slots * random.uniform(0.2, 0.3))
             all_items = self.inventory.get_all_items()
-            # Фильтруем: не удаляем зелья и книги умений
+            # Фильтруем: не удаляем зелья, книги умений и рецепты
             removable_items = [
                 item for item in all_items
-                if not (hasattr(item, 'item_type') and item.item_type in ['potion', 'skill_book'])
+                if not (hasattr(item, 'item_type') and item.item_type in ['potion', 'skill_book', 'recipe'])
             ]
             # Удаляем случайные предметы
             for _ in range(min(items_to_remove, len(removable_items))):
@@ -248,6 +273,27 @@ class Merchant(NPC):
             book_id = random.choice(combat_books)
             if book_id in PREDEFINED_ITEMS:
                 self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
+
+        # Шанс добавить рецепт крафта
+        recipes = [
+            "recipe_copper_ingot", "recipe_iron_ingot", "recipe_silver_ingot",
+            "recipe_gold_ingot", "recipe_mithril_ingot"
+        ]
+
+        # Шанс зависит от ранга: 15% для ранга 1, 30% для ранга 2, 50% для ранга 3, 70% для ранга 4
+        if rank == 1:
+            recipe_chance = 0.15
+        elif rank == 2:
+            recipe_chance = 0.3
+        elif rank == 3:
+            recipe_chance = 0.5
+        else:  # rank 4
+            recipe_chance = 0.7
+
+        if random.random() < recipe_chance:
+            recipe_id = random.choice(recipes)
+            if recipe_id in PREDEFINED_ITEMS:
+                self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
 
     def set_settlements(self, settlements):
         """

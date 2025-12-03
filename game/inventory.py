@@ -255,6 +255,50 @@ class SkillBookItem(Item):
             return f"Не удалось изучить умение: {self.name}"
 
 
+class RecipeItem(Item):
+    """Класс для рецептов крафта"""
+
+    def __init__(self, name, recipe_id, value=50, weight=0.1, quality=ItemQuality.COMMON, description=""):
+        """
+        Инициализация рецепта
+
+        Args:
+            name: Название рецепта
+            recipe_id: ID рецепта в системе крафта
+            value: Стоимость рецепта
+            weight: Вес рецепта
+            quality: Качество рецепта
+            description: Описание рецепта
+        """
+        if not description:
+            description = f"Рецепт крафта: {name}"
+
+        super().__init__(name, "recipe", value, weight, quality, description)
+        self.recipe_id = recipe_id
+
+    def use(self, character):
+        """
+        Использовать рецепт для изучения
+
+        Args:
+            character: Персонаж для изучения рецепта
+
+        Returns:
+            str: Сообщение о результате
+        """
+        # Проверяем наличие системы рецептов у персонажа
+        if not hasattr(character, 'known_recipes'):
+            character.known_recipes = set()
+
+        # Проверяем, изучен ли уже рецепт
+        if self.recipe_id in character.known_recipes:
+            return f"Рецепт '{self.name}' уже изучен"
+
+        # Изучаем рецепт
+        character.known_recipes.add(self.recipe_id)
+        return f"Изучен рецепт: {self.name}"
+
+
 class EquipmentItem(Item):
     """Базовый класс для экипируемых предметов"""
 
@@ -1620,6 +1664,17 @@ class ItemGenerator:
                 if book_id in PREDEFINED_ITEMS:
                     loot.append((PREDEFINED_ITEMS[book_id], 1))
 
+            # Шанс найти рецепт крафта в руинах (базовый 10% + бонус от удачи до 5%)
+            recipe_chance = 0.10 + min(luck * 0.003, 0.05)
+            if random.random() < recipe_chance:
+                recipes = [
+                    "recipe_copper_ingot", "recipe_iron_ingot", "recipe_silver_ingot",
+                    "recipe_gold_ingot", "recipe_mithril_ingot"
+                ]
+                recipe_id = random.choice(recipes)
+                if recipe_id in PREDEFINED_ITEMS:
+                    loot.append((PREDEFINED_ITEMS[recipe_id], 1))
+
         elif location_type == LOCATION_BANDIT_CAMP:
             # Бандиты могут иметь разное снаряжение
             weapon_chance = 0.3 + min(luck * 0.01, 0.15)
@@ -1945,6 +2000,13 @@ PREDEFINED_ITEMS = {
     "gold_ore": ResourceItem("Золотая руда", 100),
     "mithril_ore": ResourceItem("Мифриловая руда", 200),
 
+    # Слитки (переработанные руды)
+    "copper_ingot": ResourceItem("Медный слиток", 30),
+    "iron_ingot": ResourceItem("Железный слиток", 60),
+    "silver_ingot": ResourceItem("Серебряный слиток", 150),
+    "gold_ingot": ResourceItem("Золотой слиток", 300),
+    "mithril_ingot": ResourceItem("Мифриловый слиток", 600),
+
     # Древесина
     "wood": ResourceItem("Древесина", 5, 1.0),
 
@@ -2010,6 +2072,18 @@ PREDEFINED_ITEMS = {
     "book_whirlwind_strike": SkillBookItem("Книга Вихревого Удара", "whirlwind_strike", 450, 0.5, ItemQuality.RARE),
     "book_shield_breaker": SkillBookItem("Книга Разрушителя Щита", "shield_breaker", 400, 0.5, ItemQuality.UNCOMMON),
     "book_blade_dance": SkillBookItem("Книга Танца Клинка", "blade_dance", 600, 0.5, ItemQuality.RARE),
+
+    # Рецепты крафта (переплавка руды)
+    "recipe_copper_ingot": RecipeItem("Рецепт: Медный слиток", "copper_ingot", 50, 0.1, ItemQuality.COMMON,
+                                      "Переплавка медной руды в слиток. Требуется 5 кусков медной руды."),
+    "recipe_iron_ingot": RecipeItem("Рецепт: Железный слиток", "iron_ingot", 100, 0.1, ItemQuality.COMMON,
+                                    "Переплавка железной руды в слиток. Требуется 5 кусков железной руды."),
+    "recipe_silver_ingot": RecipeItem("Рецепт: Серебряный слиток", "silver_ingot", 250, 0.1, ItemQuality.COMMON,
+                                      "Переплавка серебряной руды в слиток. Требуется 5 кусков серебряной руды."),
+    "recipe_gold_ingot": RecipeItem("Рецепт: Золотой слиток", "gold_ingot", 500, 0.1, ItemQuality.COMMON,
+                                    "Переплавка золотой руды в слиток. Требуется 5 кусков золотой руды."),
+    "recipe_mithril_ingot": RecipeItem("Рецепт: Мифриловый слиток", "mithril_ingot", 1000, 0.1, ItemQuality.COMMON,
+                                       "Переплавка мифриловой руды в слиток. Требуется 5 кусков мифриловой руды."),
 
     # Уникальные предметы для квестов
     # Алхимические предметы
