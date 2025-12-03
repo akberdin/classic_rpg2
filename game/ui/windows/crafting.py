@@ -62,13 +62,13 @@ class CraftingWindow:
         overlay.fill((0, 0, 0))
         self.screen.blit(overlay, (0, 0))
 
-        # Размеры окна (адаптивные)
+        # Размеры окна (увеличены для 4 столбцов)
         if self.scaler:
-            window_width = self.scaler.scale_width(1000)
-            window_height = self.scaler.scale_height(700)
+            window_width = self.scaler.scale_width(1400)
+            window_height = self.scaler.scale_height(900)
         else:
-            window_width = min(1000, int(screen_width * 0.9))
-            window_height = min(700, int(screen_height * 0.8))
+            window_width = min(1400, int(screen_width * 0.95))
+            window_height = min(900, int(screen_height * 0.9))
 
         window_x = (screen_width - window_width) // 2
         window_y = (screen_height - window_height) // 2
@@ -141,7 +141,7 @@ class CraftingWindow:
         # Подсказки внизу
         help_y = window_y + window_height - int(35 * scale_h)
         help_text = self.info_font.render(
-            "[W/S] Выбор  [ENTER] Создать  [ESC] Закрыть  [A/D] Сменить станцию",
+            "[Мышь] Выбор и создание  [ENTER] Создать  [ESC] Закрыть  [←/→] Сменить станцию",
             True,
             (180, 180, 180)
         )
@@ -242,12 +242,10 @@ class CraftingWindow:
 
     def _render_recipes(self, crafting_system, station, player, window_x, window_y,
                        window_width, window_height, scale_w, scale_h, mouse_pos):
-        """Отрисовка списка рецептов."""
-        recipes_x = window_x + int(300 * scale_w)
-        recipes_y = window_y + int(70 * scale_h)
-        recipes_width = window_width - int(340 * scale_w)
-        recipe_height = int(80 * scale_h)
-        recipe_spacing = int(10 * scale_h)
+        """Отрисовка списка рецептов в 4 столбца."""
+        recipes_area_x = window_x + int(300 * scale_w)
+        recipes_area_y = window_y + int(70 * scale_h)
+        recipes_area_width = window_width - int(320 * scale_w)
 
         # Заголовок
         recipes_title = self.info_font.render(
@@ -255,7 +253,7 @@ class CraftingWindow:
             True,
             (200, 200, 200)
         )
-        self.screen.blit(recipes_title, (recipes_x, recipes_y - int(25 * scale_h)))
+        self.screen.blit(recipes_title, (recipes_area_x, recipes_area_y - int(25 * scale_h)))
 
         # Получаем доступные рецепты
         all_recipes = station.get_available_recipes(player)
@@ -273,20 +271,33 @@ class CraftingWindow:
                 True,
                 (150, 150, 150)
             )
-            self.screen.blit(no_recipes_text, (recipes_x + int(100 * scale_w), recipes_y + int(100 * scale_h)))
+            self.screen.blit(no_recipes_text, (recipes_area_x + int(200 * scale_w), recipes_area_y + int(100 * scale_h)))
             return
 
         # Корректируем выбранный индекс
         if self.selected_recipe_index >= len(recipes):
             self.selected_recipe_index = max(0, len(recipes) - 1)
 
-        # Отрисовка рецептов
-        max_visible = int((window_height - 150 * scale_h) / (recipe_height + recipe_spacing))
-        start_index = max(0, self.selected_recipe_index - max_visible + 1)
+        # Параметры сетки: 4 столбца по 10 рецептов
+        columns = 4
+        rows_per_column = 10
+        recipe_width = int((recipes_area_width - int(30 * scale_w)) / columns)
+        recipe_height = int(70 * scale_h)
+        recipe_spacing_x = int(10 * scale_w)
+        recipe_spacing_y = int(8 * scale_h)
 
-        for i in range(start_index, min(start_index + max_visible, len(recipes))):
-            recipe = recipes[i]
-            rect_y = recipes_y + (i - start_index) * (recipe_height + recipe_spacing)
+        # Отрисовка рецептов
+        for i, recipe in enumerate(recipes):
+            # Вычисляем позицию в сетке
+            column = i // rows_per_column
+            row = i % rows_per_column
+
+            if column >= columns:
+                break  # Максимум 40 рецептов (4x10)
+
+            # Позиция рецепта
+            rect_x = recipes_area_x + column * (recipe_width + recipe_spacing_x)
+            rect_y = recipes_area_y + row * (recipe_height + recipe_spacing_y)
 
             # Проверяем возможность создания
             can_craft, error_msg = recipe.can_craft(player, player.inventory)
@@ -300,54 +311,62 @@ class CraftingWindow:
                 border_color = (80, 80, 100) if can_craft else (100, 60, 60)
 
             # Фон рецепта
-            recipe_rect = pygame.Rect(recipes_x, rect_y, recipes_width, recipe_height)
+            recipe_rect = pygame.Rect(rect_x, rect_y, recipe_width, recipe_height)
             pygame.draw.rect(self.screen, bg_color, recipe_rect)
             pygame.draw.rect(self.screen, border_color, recipe_rect, 2)
 
-            # Сохраняем rect для обработки мыши
-            self.recipe_rects.append((recipe_rect, recipe))
+            # Сохраняем rect для обработки мыши (важно для правильного индекса!)
+            self.recipe_rects.append((recipe_rect, i, recipe))
 
-            # Название рецепта
+            # Название рецепта (меньший шрифт)
             name_color = (255, 255, 255) if can_craft else (200, 150, 150)
-            name_text = self.font.render(recipe.name, True, name_color)
-            self.screen.blit(name_text, (recipes_x + int(10 * scale_w), rect_y + int(5 * scale_h)))
+            name_text = self.info_font.render(recipe.name, True, name_color)
+            # Обрезаем название если слишком длинное
+            if name_text.get_width() > recipe_width - int(10 * scale_w):
+                short_name = recipe.name[:15] + "..."
+                name_text = self.info_font.render(short_name, True, name_color)
+            self.screen.blit(name_text, (rect_x + int(5 * scale_w), rect_y + int(3 * scale_h)))
 
-            # Категория и уровень
+            # Категория и ранг умения
             category_name = crafting_system.get_category_name(recipe.category)
+            skill_rank = getattr(recipe, 'required_skill_rank', 1)
             info_text = self.info_font.render(
-                f"[{category_name}] Ур. {recipe.required_level}",
+                f"[{category_name}] Р.{skill_rank}",
                 True,
                 (150, 150, 200)
             )
-            self.screen.blit(info_text, (recipes_x + int(10 * scale_w), rect_y + int(30 * scale_h)))
+            self.screen.blit(info_text, (rect_x + int(5 * scale_w), rect_y + int(18 * scale_h)))
 
-            # Ингредиенты
-            ingredients_y = rect_y + int(50 * scale_h)
-            ingredients_text = "Требуется: "
+            # Ингредиенты (компактно)
+            ingredients_y = rect_y + int(35 * scale_h)
             for j, ingredient in enumerate(recipe.ingredients):
+                if j >= 2:  # Максимум 2 строки ингредиентов
+                    break
+
                 item_id = ingredient['item']
                 required = ingredient['quantity']
                 # Преобразуем ID предмета в его имя
                 item_name = ITEM_ID_TO_NAME.get(item_id, item_id)
                 has = player.inventory.get_resource_count(item_name)
 
-                if j > 0:
-                    ingredients_text += ", "
-                ingredients_text += f"{item_name} ({has}/{required})"
+                # Сокращаем название если нужно
+                if len(item_name) > 15:
+                    item_name = item_name[:12] + "..."
 
-            ingr_color = (100, 200, 100) if can_craft else (200, 100, 100)
-            ingr_surface = self.info_font.render(ingredients_text[:80], True, ingr_color)
-            self.screen.blit(ingr_surface, (recipes_x + int(10 * scale_w), ingredients_y))
+                ingredients_text = f"{item_name}: {has}/{required}"
+                ingr_color = (100, 200, 100) if has >= required else (200, 100, 100)
+                ingr_surface = self.info_font.render(ingredients_text, True, ingr_color)
+                self.screen.blit(ingr_surface, (rect_x + int(5 * scale_w), ingredients_y + j * int(15 * scale_h)))
 
-            # Результат
-            result_text = self.info_font.render(
-                f"Результат: {recipe.name} x{recipe.result_quantity}",
+            # Количество результата справа внизу
+            quantity_text = self.info_font.render(
+                f"x{recipe.result_quantity}",
                 True,
                 (255, 215, 0)
             )
             self.screen.blit(
-                result_text,
-                (recipes_x + recipes_width - int(250 * scale_w), rect_y + int(30 * scale_h))
+                quantity_text,
+                (rect_x + recipe_width - int(35 * scale_w), rect_y + recipe_height - int(18 * scale_h))
             )
 
     def _is_station_locked(self, station, player):
@@ -476,14 +495,14 @@ class CraftingWindow:
                         return True, None
 
                 # Проверяем клик по рецептам
-                for i, (rect, recipe) in enumerate(self.recipe_rects):
+                for rect, recipe_index, recipe in self.recipe_rects:
                     if rect.collidepoint(mouse_pos):
                         # Двойной клик для крафта
-                        if i == self.selected_recipe_index:
+                        if recipe_index == self.selected_recipe_index:
                             success, message = crafting_system.craft_item(recipe.id, player, player.inventory)
                             return True, message
                         else:
-                            self.selected_recipe_index = i
+                            self.selected_recipe_index = recipe_index
                         return True, None
 
         return True, None
