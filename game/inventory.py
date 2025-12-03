@@ -934,6 +934,52 @@ class Inventory:
 
         return total_bonus
 
+    def get_resource_count(self, resource_name):
+        """
+        Получить количество ресурса в инвентаре.
+        Обертка для совместимости с системой крафта.
+
+        Args:
+            resource_name: Название ресурса
+
+        Returns:
+            int: Количество ресурса
+        """
+        return self.get_item_count(resource_name)
+
+    def remove_resource(self, resource_name, quantity):
+        """
+        Удалить ресурс из инвентаря.
+        Обертка для совместимости с системой крафта.
+
+        Args:
+            resource_name: Название ресурса
+            quantity: Количество для удаления
+
+        Returns:
+            bool: True если успешно удален
+        """
+        return self.remove_item(resource_name, quantity)
+
+    def add_resource(self, resource_name, quantity):
+        """
+        Добавить ресурс в инвентарь.
+        Обертка для совместимости с системой крафта.
+
+        Args:
+            resource_name: Название ресурса
+            quantity: Количество для добавления
+
+        Returns:
+            bool: True если успешно добавлен
+        """
+        # Для добавления ресурса нужно получить объект предмета
+        from game.inventory import PREDEFINED_ITEMS
+        if resource_name in PREDEFINED_ITEMS:
+            resource_item = PREDEFINED_ITEMS[resource_name]
+            return self.add_item(resource_item, quantity)
+        return False
+
 
 # ===== ГЕНЕРАТОР ПРЕДМЕТОВ =====
 

@@ -21,6 +21,7 @@ from game.ui.windows import (
     LootWindow,
     SkillBookWindow,
     CombatModeSelectionWindow,
+    CraftingWindow,
 )
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quest_system import (
@@ -45,6 +46,7 @@ from game.loot_system import LootSystem
 from game.hud_renderer import HUDRenderer
 from game.resource_system import ResourceSystem
 from game.quest_ui_controller import QuestUIController
+from game.crafting_system import CraftingSystem
 
 
 class Game:
@@ -148,6 +150,10 @@ class Game:
         self.random_event_window = RandomEventWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.event_window_open = False
 
+        # Окно крафта
+        self.crafting_window = CraftingWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.crafting_window_open = False
+
         # Окно чит меню
         self.cheat_menu_window = CheatMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.cheat_menu_open = False
@@ -226,6 +232,9 @@ class Game:
 
         # Инициализация системы лута
         self.loot_system = LootSystem(self.player, self.quest_manager, self.killstreak_system)
+
+        # Инициализация системы крафта
+        self.crafting_system = CraftingSystem()
 
         # Даем игроку стартовые умения
         self.player.skill_manager.learn_skill('basic_attack')  # Базовая атака
@@ -671,6 +680,11 @@ class Game:
         # Если открыто окно книги умений, отрисовываем его
         if self.skill_book_menu_open:
             self.skill_book_window.render(self.player)
+
+        # Если открыто окно крафта, отрисовываем его
+        if self.crafting_window_open:
+            mouse_pos = pygame.mouse.get_pos()
+            self.crafting_window.render(self.crafting_system, self.player, mouse_pos)
 
         # Если открыто окно лута, отрисовываем его
         if self.loot_window_open:
