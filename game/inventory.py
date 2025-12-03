@@ -2006,9 +2006,29 @@ PREDEFINED_ITEMS = {
     "silver_ingot": ResourceItem("Серебряный слиток", 150),
     "gold_ingot": ResourceItem("Золотой слиток", 300),
     "mithril_ingot": ResourceItem("Мифриловый слиток", 600),
+    "steel_ingot": ResourceItem("Стальной слиток", 120),
 
     # Древесина
     "wood": ResourceItem("Древесина", 5, 1.0),
+
+    # Деревянные компоненты
+    "long_wooden_handle": ResourceItem("Длинная деревянная рукоять", 15, 0.8),
+    "short_wooden_handle": ResourceItem("Короткая деревянная рукоять", 10, 0.5),
+    "wooden_shaft": ResourceItem("Древко", 20, 1.0),
+
+    # Уголь
+    "charcoal": ResourceItem("Древесный уголь", 8, 0.3),
+
+    # Проволока
+    "copper_wire": ResourceItem("Медная проволока", 40),
+    "iron_wire": ResourceItem("Железная проволока", 70),
+    "steel_wire": ResourceItem("Стальная проволока", 140),
+    "silver_wire": ResourceItem("Серебряная проволока", 180),
+    "gold_wire": ResourceItem("Золотая проволока", 350),
+    "mithril_wire": ResourceItem("Мифриловая проволока", 700),
+
+    # Лезвия и компоненты оружия
+    "copper_axe_blade": ResourceItem("Медное лезвие топора", 35),
 
     # Ресурсы от животных
     "wolf_fang": ResourceItem("Клык волка", 25, 0.3),
@@ -2039,6 +2059,8 @@ PREDEFINED_ITEMS = {
     # Базовое оружие
     "steel_sword": WeaponItem("Стальной меч", WeaponType.SWORD, 18, quality=ItemQuality.UNCOMMON,
                               stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "poor_axe": WeaponItem("Топор", WeaponType.AXE, 8, value=50, quality=ItemQuality.POOR,
+                          stats_bonus={}, param_bonus={}, skill_bonus={}),
 
     # Книги магических умений
     "book_heal": SkillBookItem("Книга Лечения", "heal", 150, 0.5, ItemQuality.UNCOMMON),
@@ -2084,6 +2106,40 @@ PREDEFINED_ITEMS = {
                                     "Переплавка золотой руды в слиток. Требуется 5 кусков золотой руды."),
     "recipe_mithril_ingot": RecipeItem("Рецепт: Мифриловый слиток", "mithril_ingot", 1000, 0.1, ItemQuality.COMMON,
                                        "Переплавка мифриловой руды в слиток. Требуется 5 кусков мифриловой руды."),
+
+    # Рецепты деревянных компонентов
+    "recipe_long_wooden_handle": RecipeItem("Рецепт: Длинная деревянная рукоять", "long_wooden_handle", 20, 0.1, ItemQuality.COMMON,
+                                           "Создание длинной рукояти. Требуется 2 куска древесины."),
+    "recipe_short_wooden_handle": RecipeItem("Рецепт: Короткая деревянная рукоять", "short_wooden_handle", 15, 0.1, ItemQuality.COMMON,
+                                            "Создание короткой рукояти. Требуется 1 кусок древесины."),
+    "recipe_wooden_shaft": RecipeItem("Рецепт: Древко", "wooden_shaft", 25, 0.1, ItemQuality.COMMON,
+                                     "Создание древка для копья. Требуется 3 куска древесины."),
+    "recipe_charcoal": RecipeItem("Рецепт: Древесный уголь", "charcoal", 10, 0.1, ItemQuality.COMMON,
+                                 "Производство древесного угля. Требуется 5 кусков древесины."),
+
+    # Рецепты продвинутой металлургии
+    "recipe_steel_ingot": RecipeItem("Рецепт: Стальной слиток", "steel_ingot", 150, 0.1, ItemQuality.UNCOMMON,
+                                    "Производство стального слитка. Требуется 4 железных слитка и 5 угля."),
+
+    # Рецепты проволоки
+    "recipe_copper_wire": RecipeItem("Рецепт: Медная проволока", "copper_wire", 50, 0.1, ItemQuality.UNCOMMON,
+                                    "Производство медной проволоки. Требуется 1 медный слиток и 2 угля."),
+    "recipe_iron_wire": RecipeItem("Рецепт: Железная проволока", "iron_wire", 80, 0.1, ItemQuality.UNCOMMON,
+                                  "Производство железной проволоки. Требуется 1 железный слиток и 2 угля."),
+    "recipe_steel_wire": RecipeItem("Рецепт: Стальная проволока", "steel_wire", 150, 0.1, ItemQuality.UNCOMMON,
+                                   "Производство стальной проволоки. Требуется 1 стальной слиток и 2 угля."),
+    "recipe_silver_wire": RecipeItem("Рецепт: Серебряная проволока", "silver_wire", 200, 0.1, ItemQuality.UNCOMMON,
+                                    "Производство серебряной проволоки. Требуется 1 серебряный слиток и 2 угля."),
+    "recipe_gold_wire": RecipeItem("Рецепт: Золотая проволока", "gold_wire", 400, 0.1, ItemQuality.UNCOMMON,
+                                  "Производство золотой проволоки. Требуется 1 золотой слиток и 2 угля."),
+    "recipe_mithril_wire": RecipeItem("Рецепт: Мифриловая проволока", "mithril_wire", 800, 0.1, ItemQuality.UNCOMMON,
+                                     "Производство мифриловой проволоки. Требуется 1 мифриловый слиток и 2 угля."),
+
+    # Рецепты компонентов оружия
+    "recipe_copper_axe_blade": RecipeItem("Рецепт: Медное лезвие топора", "copper_axe_blade", 40, 0.1, ItemQuality.COMMON,
+                                         "Изготовление медного лезвия для топора. Требуется 2 медных слитка и 3 угля."),
+    "recipe_poor_axe": RecipeItem("Рецепт: Топор (плохое качество)", "poor_axe", 60, 0.1, ItemQuality.COMMON,
+                                 "Изготовление простого топора. Требуется 1 длинная деревянная рукоять и 1 медное лезвие топора."),
 
     # Уникальные предметы для квестов
     # Алхимические предметы

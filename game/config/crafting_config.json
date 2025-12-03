@@ -116,6 +116,262 @@
       "category": "smelting",
       "base_price": 1000,
       "sprite": null
+    },
+    {
+      "id": "long_wooden_handle",
+      "name": "Длинная деревянная рукоять",
+      "display_name": "Рецепт: Длинная деревянная рукоять",
+      "quality": "common",
+      "description": "Создание длинной рукояти для оружия. Требуется 2 куска древесины",
+      "station": "workbench",
+      "result_item": "long_wooden_handle",
+      "result_quantity": 1,
+      "required_level": 1,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "wood", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 20,
+      "sprite": null
+    },
+    {
+      "id": "short_wooden_handle",
+      "name": "Короткая деревянная рукоять",
+      "display_name": "Рецепт: Короткая деревянная рукоять",
+      "quality": "common",
+      "description": "Создание короткой рукояти для инструментов. Требуется 1 кусок древесины",
+      "station": "workbench",
+      "result_item": "short_wooden_handle",
+      "result_quantity": 1,
+      "required_level": 1,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "wood", "quantity": 1}
+      ],
+      "category": "tool",
+      "base_price": 15,
+      "sprite": null
+    },
+    {
+      "id": "wooden_shaft",
+      "name": "Древко",
+      "display_name": "Рецепт: Древко",
+      "quality": "common",
+      "description": "Создание древка для копья. Требуется 3 куска древесины",
+      "station": "workbench",
+      "result_item": "wooden_shaft",
+      "result_quantity": 1,
+      "required_level": 1,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "wood", "quantity": 3}
+      ],
+      "category": "tool",
+      "base_price": 25,
+      "sprite": null
+    },
+    {
+      "id": "charcoal",
+      "name": "Древесный уголь",
+      "display_name": "Рецепт: Древесный уголь",
+      "quality": "common",
+      "description": "Производство древесного угля из древесины. Требуется 5 кусков древесины",
+      "station": "forge",
+      "result_item": "charcoal",
+      "result_quantity": 1,
+      "required_level": 1,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "wood", "quantity": 5}
+      ],
+      "category": "smelting",
+      "base_price": 10,
+      "sprite": null
+    },
+    {
+      "id": "steel_ingot",
+      "name": "Стальной слиток",
+      "display_name": "Рецепт: Стальной слиток",
+      "quality": "uncommon",
+      "description": "Производство стального слитка. Требуется 4 железных слитка и 5 угля",
+      "station": "forge",
+      "result_item": "steel_ingot",
+      "result_quantity": 1,
+      "required_level": 8,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "iron_ingot", "quantity": 4},
+        {"item": "charcoal", "quantity": 5}
+      ],
+      "category": "smelting",
+      "base_price": 150,
+      "sprite": null
+    },
+    {
+      "id": "copper_wire",
+      "name": "Медная проволока",
+      "display_name": "Рецепт: Медная проволока",
+      "quality": "uncommon",
+      "description": "Производство медной проволоки. Требуется 1 медный слиток и 2 угля",
+      "station": "forge",
+      "result_item": "copper_wire",
+      "result_quantity": 1,
+      "required_level": 3,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 50,
+      "sprite": null
+    },
+    {
+      "id": "iron_wire",
+      "name": "Железная проволока",
+      "display_name": "Рецепт: Железная проволока",
+      "quality": "uncommon",
+      "description": "Производство железной проволоки. Требуется 1 железный слиток и 2 угля",
+      "station": "forge",
+      "result_item": "iron_wire",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "iron_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 80,
+      "sprite": null
+    },
+    {
+      "id": "steel_wire",
+      "name": "Стальная проволока",
+      "display_name": "Рецепт: Стальная проволока",
+      "quality": "uncommon",
+      "description": "Производство стальной проволоки. Требуется 1 стальной слиток и 2 угля",
+      "station": "forge",
+      "result_item": "steel_wire",
+      "result_quantity": 1,
+      "required_level": 10,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "steel_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 150,
+      "sprite": null
+    },
+    {
+      "id": "silver_wire",
+      "name": "Серебряная проволока",
+      "display_name": "Рецепт: Серебряная проволока",
+      "quality": "uncommon",
+      "description": "Производство серебряной проволоки. Требуется 1 серебряный слиток и 2 угля",
+      "station": "forge",
+      "result_item": "silver_wire",
+      "result_quantity": 1,
+      "required_level": 12,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 200,
+      "sprite": null
+    },
+    {
+      "id": "gold_wire",
+      "name": "Золотая проволока",
+      "display_name": "Рецепт: Золотая проволока",
+      "quality": "uncommon",
+      "description": "Производство золотой проволоки. Требуется 1 золотой слиток и 2 угля",
+      "station": "forge",
+      "result_item": "gold_wire",
+      "result_quantity": 1,
+      "required_level": 16,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 400,
+      "sprite": null
+    },
+    {
+      "id": "mithril_wire",
+      "name": "Мифриловая проволока",
+      "display_name": "Рецепт: Мифриловая проволока",
+      "quality": "uncommon",
+      "description": "Производство мифриловой проволоки. Требуется 1 мифриловый слиток и 2 угля",
+      "station": "forge",
+      "result_item": "mithril_wire",
+      "result_quantity": 1,
+      "required_level": 22,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 4,
+      "ingredients": [
+        {"item": "mithril_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 800,
+      "sprite": null
+    },
+    {
+      "id": "copper_axe_blade",
+      "name": "Медное лезвие топора",
+      "display_name": "Рецепт: Медное лезвие топора",
+      "quality": "common",
+      "description": "Изготовление медного лезвия для топора. Требуется 2 медных слитка и 3 угля",
+      "station": "forge",
+      "result_item": "copper_axe_blade",
+      "result_quantity": 1,
+      "required_level": 2,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 2},
+        {"item": "charcoal", "quantity": 3}
+      ],
+      "category": "weapon",
+      "base_price": 40,
+      "sprite": null
+    },
+    {
+      "id": "poor_axe",
+      "name": "Топор (плохое качество)",
+      "display_name": "Рецепт: Топор (плохое качество)",
+      "quality": "common",
+      "description": "Изготовление простого топора. Требуется 1 длинная деревянная рукоять и 1 медное лезвие топора",
+      "station": "workbench",
+      "result_item": "poor_axe",
+      "result_quantity": 1,
+      "required_level": 3,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "long_wooden_handle", "quantity": 1},
+        {"item": "copper_axe_blade", "quantity": 1}
+      ],
+      "category": "weapon",
+      "base_price": 60,
+      "sprite": null
     }
   ],
 
