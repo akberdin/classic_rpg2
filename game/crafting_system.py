@@ -7,6 +7,22 @@ import json
 import os
 from typing import Dict, List, Optional, Tuple
 
+# Маппинг ID предметов на их имена из PREDEFINED_ITEMS
+ITEM_ID_TO_NAME = {
+    # Руды
+    "copper_ore": "Медная руда",
+    "iron_ore": "Железная руда",
+    "silver_ore": "Серебряная руда",
+    "gold_ore": "Золотая руда",
+    "mithril_ore": "Мифриловая руда",
+    # Слитки
+    "copper_ingot": "Медный слиток",
+    "iron_ingot": "Железный слиток",
+    "silver_ingot": "Серебряный слиток",
+    "gold_ingot": "Золотой слиток",
+    "mithril_ingot": "Мифриловый слиток",
+}
+
 
 class CraftingRecipe:
     """Рецепт крафта"""
@@ -69,8 +85,11 @@ class CraftingRecipe:
 
         # Проверка наличия ресурсов
         for ingredient in self.ingredients:
-            item_name = ingredient['item']
+            item_id = ingredient['item']
             required_quantity = ingredient['quantity']
+
+            # Преобразуем ID предмета в его имя из инвентаря
+            item_name = ITEM_ID_TO_NAME.get(item_id, item_id)
 
             # Получаем количество ресурса в инвентаре
             has_quantity = inventory.get_resource_count(item_name)
@@ -127,15 +146,16 @@ class CraftingStation:
         """
         available = []
         for recipe in self.recipes:
-            # Проверка уровня
-            if player.level < recipe.required_level:
-                continue
-
             # Проверка изученности рецепта
             if hasattr(player, 'known_recipes'):
                 if recipe.id not in player.known_recipes:
                     continue
+            else:
+                # Если система изученных рецептов не инициализирована, показываем все
+                pass
 
+            # Добавляем рецепт в список, даже если уровень недостаточен
+            # Проверка уровня и других требований будет происходить в can_craft
             available.append(recipe)
 
         return available
@@ -256,8 +276,10 @@ class CraftingSystem:
 
         # Удаляем ресурсы из инвентаря
         for ingredient in recipe.ingredients:
-            item_name = ingredient['item']
+            item_id = ingredient['item']
             quantity = ingredient['quantity']
+            # Преобразуем ID предмета в его имя из инвентаря
+            item_name = ITEM_ID_TO_NAME.get(item_id, item_id)
             inventory.remove_resource(item_name, quantity)
 
         # Добавляем созданный предмет
@@ -297,8 +319,10 @@ class CraftingSystem:
         else:
             # Возвращаем ресурсы, если не удалось создать предмет
             for ingredient in recipe.ingredients:
-                item_name = ingredient['item']
+                item_id = ingredient['item']
                 quantity = ingredient['quantity']
+                # Преобразуем ID предмета в его имя из инвентаря
+                item_name = ITEM_ID_TO_NAME.get(item_id, item_id)
                 inventory.add_resource(item_name, quantity)
             return False, f"Ошибка: предмет '{recipe.result_item}' не найден в системе"
 

@@ -3,6 +3,7 @@
 """
 import pygame
 from game.ui.base import UIHelper
+from game.crafting_system import ITEM_ID_TO_NAME
 
 
 class CraftingWindow:
@@ -288,8 +289,10 @@ class CraftingWindow:
             ingredients_y = rect_y + int(50 * scale_h)
             ingredients_text = "Требуется: "
             for j, ingredient in enumerate(recipe.ingredients):
-                item_name = ingredient['item']
+                item_id = ingredient['item']
                 required = ingredient['quantity']
+                # Преобразуем ID предмета в его имя
+                item_name = ITEM_ID_TO_NAME.get(item_id, item_id)
                 has = player.inventory.get_resource_count(item_name)
 
                 if j > 0:
