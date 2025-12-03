@@ -1664,6 +1664,17 @@ class ItemGenerator:
                 if book_id in PREDEFINED_ITEMS:
                     loot.append((PREDEFINED_ITEMS[book_id], 1))
 
+            # Шанс найти рецепт крафта в руинах (базовый 10% + бонус от удачи до 5%)
+            recipe_chance = 0.10 + min(luck * 0.003, 0.05)
+            if random.random() < recipe_chance:
+                recipes = [
+                    "recipe_copper_ingot", "recipe_iron_ingot", "recipe_silver_ingot",
+                    "recipe_gold_ingot", "recipe_mithril_ingot"
+                ]
+                recipe_id = random.choice(recipes)
+                if recipe_id in PREDEFINED_ITEMS:
+                    loot.append((PREDEFINED_ITEMS[recipe_id], 1))
+
         elif location_type == LOCATION_BANDIT_CAMP:
             # Бандиты могут иметь разное снаряжение
             weapon_chance = 0.3 + min(luck * 0.01, 0.15)
