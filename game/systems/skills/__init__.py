@@ -55,6 +55,10 @@ from game.systems.skills.magic import (
 from game.systems.skills.crafting import (
     Mining,
     Lumberjacking,
+    Craftsmanship,
+    Alchemy,
+    Enchanting,
+    Herbalism,
 )
 
 # Оружейные умения
@@ -105,7 +109,7 @@ __all__ = [
     'Heal', 'Regeneration', 'StaminaRecovery', 'Fireball', 'IceBolt',
     'Lightning', 'MagicMissile', 'MageShield',
     # Ремесленные
-    'Mining', 'Lumberjacking',
+    'Mining', 'Lumberjacking', 'Craftsmanship', 'Alchemy', 'Enchanting', 'Herbalism',
     # Оружейные
     'WeaponSkill', 'BasicShot', 'PreciseShot', 'RapidFire', 'PiercingArrow', 'LongRangeShot',
     'Backstab', 'BleedingCut', 'ShadowStep', 'WhirlwindStrike', 'ShieldBreaker', 'BladeDance',
@@ -175,4 +179,8 @@ AVAILABLE_SKILLS = {
     # Ремесленные
     'mining': Mining,
     'lumberjacking': Lumberjacking,
+    'craftsmanship': Craftsmanship,
+    'alchemy': Alchemy,
+    'enchanting': Enchanting,
+    'herbalism': Herbalism,
 }
