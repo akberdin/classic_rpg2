@@ -123,9 +123,22 @@ class CraftingStation:
             player: Объект игрока
 
         Returns:
-            List[CraftingRecipe]: Список доступных рецептов
+            List[CraftingRecipe]: Список доступных рецептов (изученных игроком)
         """
-        return [recipe for recipe in self.recipes if player.level >= recipe.required_level]
+        available = []
+        for recipe in self.recipes:
+            # Проверка уровня
+            if player.level < recipe.required_level:
+                continue
+
+            # Проверка изученности рецепта
+            if hasattr(player, 'known_recipes'):
+                if recipe.id not in player.known_recipes:
+                    continue
+
+            available.append(recipe)
+
+        return available
 
     def get_recipes_by_category(self, category: str) -> List[CraftingRecipe]:
         """
