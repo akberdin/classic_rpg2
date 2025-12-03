@@ -103,15 +103,19 @@ class Skill:
         if self.experience < self.experience_to_next_rank:
             return False, f"Недостаточно опыта умения ({self.experience}/{self.experience_to_next_rank})"
 
-        # Проверка использований
-        required_uses = self.get_required_uses_for_rank()
-        if self.use_count < required_uses:
-            return False, f"Недостаточно использований ({self.use_count}/{required_uses})"
+        # Проверка использований (только для активных умений)
+        # Пассивные крафтовые умения не требуют использований
+        if self.category != SkillCategory.CRAFTING or self.stamina_cost > 0:
+            required_uses = self.get_required_uses_for_rank()
+            if self.use_count < required_uses:
+                return False, f"Недостаточно использований ({self.use_count}/{required_uses})"
 
-        # Проверка уровня игрока
-        required_level = self.get_required_player_level_for_rank()
-        if player.level < required_level:
-            return False, f"Недостаточный уровень персонажа ({player.level}/{required_level})"
+        # Проверка уровня игрока (только для активных умений, не для крафтовых)
+        # Крафтовые умения (кроме Mining и Lumberjacking) растут только с опытом
+        if self.category != SkillCategory.CRAFTING or self.stamina_cost > 0:
+            required_level = self.get_required_player_level_for_rank()
+            if player.level < required_level:
+                return False, f"Недостаточный уровень персонажа ({player.level}/{required_level})"
 
         # Проверка золота
         gold_cost = self.get_gold_cost_for_rank()

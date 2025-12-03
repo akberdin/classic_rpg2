@@ -21,6 +21,24 @@ ITEM_ID_TO_NAME = {
     "silver_ingot": "Серебряный слиток",
     "gold_ingot": "Золотой слиток",
     "mithril_ingot": "Мифриловый слиток",
+    "steel_ingot": "Стальной слиток",
+    # Древесина и деревянные компоненты
+    "wood": "Древесина",
+    "long_wooden_handle": "Длинная деревянная рукоять",
+    "short_wooden_handle": "Короткая деревянная рукоять",
+    "wooden_shaft": "Древко",
+    # Уголь
+    "charcoal": "Древесный уголь",
+    # Проволока
+    "copper_wire": "Медная проволока",
+    "iron_wire": "Железная проволока",
+    "steel_wire": "Стальная проволока",
+    "silver_wire": "Серебряная проволока",
+    "gold_wire": "Золотая проволока",
+    "mithril_wire": "Мифриловая проволока",
+    # Компоненты оружия
+    "copper_axe_blade": "Медное лезвие топора",
+    "poor_axe": "Топор",
 }
 
 
@@ -60,10 +78,6 @@ class CraftingRecipe:
         if hasattr(player, 'known_recipes'):
             if self.id not in player.known_recipes:
                 return False, "Рецепт не изучен"
-
-        # Проверка уровня
-        if player.level < self.required_level:
-            return False, f"Требуется уровень {self.required_level}"
 
         # Проверка наличия требуемого умения и его ранга
         if hasattr(self, 'required_skill') and self.required_skill:
