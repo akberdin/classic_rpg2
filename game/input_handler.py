@@ -262,7 +262,7 @@ class InputHandler:
 
     def handle_unique_npc_quest(self):
         """Обработка получения квеста от уникального NPC"""
-        from game.quests import create_alchemist_quests, create_hunter_quests
+        from game.quest_system.generators.npc import create_alchemist_npc_quests, create_hunter_npc_quests
 
         if not self.ctx.nearby_npc:
             return
@@ -272,9 +272,9 @@ class InputHandler:
 
         # Генерируем квесты в зависимости от типа NPC
         if npc_type == "alchemist":
-            quests = create_alchemist_quests(npc_name)
+            quests = create_alchemist_npc_quests(npc_name)
         elif npc_type == "hunter":
-            quests = create_hunter_quests(npc_name)
+            quests = create_hunter_npc_quests(npc_name)
         else:
             print(f"{npc_name} не даёт квесты.")
             return
