@@ -613,6 +613,25 @@ class InputHandler:
             self.ctx.player.skill_manager.unassign_from_slot(self.ctx.skill_book_window.selected_slot_index)
             print(f"Слот {self.ctx.skill_book_window.selected_slot_index + 1} очищен")
 
+    def handle_crafting_input(self, event):
+        """
+        Обработка ввода в окне крафта
+
+        Args:
+            event: Событие Pygame
+        """
+        continue_open, message = self.ctx.crafting_window.handle_input(
+            event,
+            self.ctx.crafting_system,
+            self.ctx.player
+        )
+
+        if message:
+            print(message)
+
+        if not continue_open:
+            self.ctx.crafting_window_open = False
+
     def handle_key_press(self, key):
         """
         Обработка нажатия клавиш
@@ -743,6 +762,12 @@ class InputHandler:
         elif key == pygame.K_c:
             # Открыть/закрыть окно характеристик
             self.ctx.character_menu_open = not self.ctx.character_menu_open
+            return
+        elif key == pygame.K_v:
+            # Открыть/закрыть окно крафта
+            self.ctx.crafting_window_open = not self.ctx.crafting_window_open
+            if self.ctx.crafting_window_open:
+                self.ctx.crafting_window.reset_selection()
             return
         elif key == pygame.K_q:
             # Открыть окно квестов (можно просматривать активные из любого места)
@@ -957,6 +982,11 @@ class InputHandler:
                 self.handle_skill_book_input(event.key)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.ctx.skill_book_window.handle_mouse_event(event, self.ctx.player)
+            return True
+
+        # Окно крафта
+        if self.ctx.crafting_window_open:
+            self.handle_crafting_input(event)
             return True
 
         # Окно лута

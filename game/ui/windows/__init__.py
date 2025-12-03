@@ -23,6 +23,7 @@ from game.ui.windows.settlement_menu import (
     InquiryResponseWindow
 )
 from game.ui.windows.combat_mode_selection import CombatModeSelectionWindow
+from game.ui.windows.crafting import CraftingWindow
 
 __all__ = [
     'BaseWindow',
@@ -42,4 +43,5 @@ __all__ = [
     'InquiryMenuWindow',
     'InquiryResponseWindow',
     'CombatModeSelectionWindow',
+    'CraftingWindow',
 ]
