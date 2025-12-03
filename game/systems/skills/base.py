@@ -696,6 +696,18 @@ class SkillManager:
         """
         return self.learned_skills
 
+    def get_skill(self, skill_id):
+        """
+        Получить умение по его ID
+
+        Args:
+            skill_id: ID умения
+
+        Returns:
+            Skill or None: Объект умения или None если не найдено
+        """
+        return self.learned_skills.get(skill_id)
+
     def try_rank_up_skill(self, skill_id, player):
         """
         Попытаться повысить ранг умения
