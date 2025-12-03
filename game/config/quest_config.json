@@ -1,0 +1,53 @@
+{
+  "quest_limits": {
+    "max_active_quests": 5,
+    "quest_rotation_turns": 120,
+    "min_quests_per_location": 2,
+    "max_quests_per_location": 3
+  },
+  "rank_thresholds": {
+    "rank_1_max_level": 10,
+    "rank_2_max_level": 20,
+    "rank_3_max_level": 30
+  },
+  "unique_quest_probabilities": {
+    "city": 0.30,
+    "village": 0.15,
+    "magic_school": 0.40
+  },
+  "quest_amounts": {
+    "gather": {
+      "easy": [3, 5],
+      "medium": [5, 8],
+      "hard": [6, 10],
+      "very_hard": [8, 12]
+    },
+    "kill": {
+      "easy": [2, 4],
+      "medium": [3, 6],
+      "hard": [5, 8],
+      "very_hard": [6, 10]
+    }
+  },
+  "rewards": {
+    "gather_quests": {
+      "base_exp": 50,
+      "exp_per_level": 10,
+      "base_gold": 30,
+      "gold_per_level": 5,
+      "amount_divisor": 5
+    },
+    "kill_quests": {
+      "base_exp": 80,
+      "exp_per_level": 15,
+      "base_gold": 50,
+      "gold_per_level": 8,
+      "amount_divisor": 4
+    }
+  },
+  "difficulty_ranges": {
+    "easy_resources": ["copper_ore", "wood"],
+    "medium_resources": ["iron_ore", "ancient_coin", "silver_ore", "artifact_fragment"],
+    "hard_resources": ["gold_ore", "magic_crystal", "mithril_ore"]
+  }
+}

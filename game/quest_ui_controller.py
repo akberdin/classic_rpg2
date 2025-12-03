@@ -3,7 +3,8 @@
 
 Извлечено из engine.py для уменьшения сложности.
 """
-from game.quests import QuestGenerator, get_unique_quest_for_location
+from game.quest_system import get_unique_quest_for_location
+from game.quest_system.generators.location import generate_quests_for_location
 
 
 class QuestUIController:
@@ -46,7 +47,7 @@ class QuestUIController:
 
         # Генерируем квесты для локации, если их еще нет
         if location_id not in self.quest_manager.location_quests:
-            quests = QuestGenerator.generate_quests_for_location(
+            quests = generate_quests_for_location(
                 location.name, location_id, self.player.level, count=3, location_type=location.location_type
             )
             for quest in quests:

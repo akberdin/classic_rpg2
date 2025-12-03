@@ -162,7 +162,7 @@ class QuestWindow:
     def render(self, player):
         """Отрисовать окно квестов"""
         import pygame
-        from game.quests import QuestStatus
+        from game.quest_system.models import QuestStatus
 
         # Затемняем фон
         overlay = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
@@ -218,9 +218,11 @@ class QuestWindow:
         self.screen.blit(title_text, title_rect)
 
         # Информация о лимите квестов
-        from game.quests import QuestManager
+        from game.config.config_loader import get_quest_config
+        config = get_quest_config()
+        max_active = config.get_quest_limit('max_active_quests', default=5)
         limit_text = self.info_font.render(
-            f"Активных квестов: {len(self.active_quests)}/{QuestManager.MAX_ACTIVE_QUESTS}",
+            f"Активных квестов: {len(self.active_quests)}/{max_active}",
             True,
             (150, 150, 150)
         )
@@ -401,7 +403,7 @@ class QuestWindow:
 
                 # Цели и награды
                 if quest.objectives:
-                    from game.quests import QuestType
+                    from game.quest_system.models import QuestType
                     obj = quest.objectives[0]
 
                     # Для квестов на сбор ресурсов показываем количество в инвентаре
