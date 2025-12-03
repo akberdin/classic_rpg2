@@ -412,7 +412,8 @@ class InputHandler:
 
         # Проверяем, есть ли уже это умение
         if hasattr(self.ctx.player, 'skill_manager'):
-            if self.ctx.player.skill_manager.has_skill(skill_id):
+            existing_skill = self.ctx.player.skill_manager.get_skill(skill_id)
+            if existing_skill is not None:
                 print(f"У вас уже есть умение {skill_name}!")
                 return
 
