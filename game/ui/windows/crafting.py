@@ -62,16 +62,17 @@ class CraftingWindow:
         overlay.fill((0, 0, 0))
         self.screen.blit(overlay, (0, 0))
 
-        # Размеры окна (увеличены для 4 столбцов)
+        # Размеры окна (увеличены для 4 столбцов и 8 строк рецептов)
         if self.scaler:
             window_width = self.scaler.scale_width(1600)
-            window_height = self.scaler.scale_height(900)
+            window_height = self.scaler.scale_height(980)
         else:
             window_width = min(1600, int(screen_width * 0.95))
-            window_height = min(900, int(screen_height * 0.9))
+            window_height = min(980, int(screen_height * 0.95))
 
         window_x = (screen_width - window_width) // 2
-        window_y = (screen_height - window_height) // 2
+        # Поднимаем окно выше для лучшего отображения всех рецептов
+        window_y = max(10, (screen_height - window_height) // 2 - 30)
 
         # Фон окна с градиентом
         UIHelper.draw_gradient_rect(
