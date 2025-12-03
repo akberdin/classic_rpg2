@@ -91,12 +91,21 @@ class SettlementMenuWindow(BaseWindow):
         actions_title_rect.y = actions_y
         self.screen.blit(actions_title, actions_title_rect)
 
-        # Список действий
+        # Список действий (зависит от типа локации)
+        from game.constants import LOCATION_MAGIC_SCHOOL
+
         actions = [
             "[1] Магазин",
-            "[2] Расспросить жителей",
-            "[ESC] Выйти"
+            "[2] Расспросить жителей"
         ]
+
+        # Добавляем опцию покупки умения в зависимости от локации
+        if self.location.location_type == LOCATION_MAGIC_SCHOOL:
+            actions.append("[3] Купить умение Зачарование (10000 зол.)")
+        else:
+            actions.append("[3] Купить умение Изготовление (2000 зол.)")
+
+        actions.append("[ESC] Выйти")
 
         # Отрисовка кнопок действий
         buttons_y = actions_y + int(40 * scale_h)

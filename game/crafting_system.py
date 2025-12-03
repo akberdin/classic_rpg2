@@ -26,6 +26,8 @@ class CraftingRecipe:
         self.required_level = recipe_data['required_level']
         self.ingredients = recipe_data['ingredients']
         self.category = recipe_data['category']
+        self.required_skill = recipe_data.get('required_skill', None)
+        self.required_skill_rank = recipe_data.get('required_skill_rank', 1)
 
     def can_craft(self, player, inventory) -> Tuple[bool, Optional[str]]:
         """
@@ -38,9 +40,32 @@ class CraftingRecipe:
         Returns:
             Tuple[bool, Optional[str]]: (может ли создать, причина отказа)
         """
+        # Проверка известности рецепта
+        if hasattr(player, 'known_recipes'):
+            if self.id not in player.known_recipes:
+                return False, "Рецепт не изучен"
+
         # Проверка уровня
         if player.level < self.required_level:
             return False, f"Требуется уровень {self.required_level}"
+
+        # Проверка наличия требуемого умения и его ранга
+        if hasattr(self, 'required_skill') and self.required_skill:
+            if hasattr(player, 'skill_manager'):
+                skill = player.skill_manager.get_skill(self.required_skill)
+                if not skill:
+                    skill_names = {
+                        'craftsmanship': 'Изготовление',
+                        'alchemy': 'Алхимия',
+                        'enchanting': 'Зачарование',
+                        'herbalism': 'Травник'
+                    }
+                    skill_name = skill_names.get(self.required_skill, self.required_skill)
+                    return False, f"Требуется умение: {skill_name}"
+
+                required_rank = getattr(self, 'required_skill_rank', 1)
+                if skill.rank < required_rank:
+                    return False, f"Требуется ранг умения: {required_rank} (текущий: {skill.rank})"
 
         # Проверка наличия ресурсов
         for ingredient in self.ingredients:
@@ -236,6 +261,25 @@ class CraftingSystem:
 
         if result_item:
             inventory.add_item(result_item, recipe.result_quantity)
+
+            # Увеличиваем опыт умения при успешном крафте
+            if hasattr(recipe, 'required_skill') and recipe.required_skill:
+                if hasattr(player, 'skill_manager'):
+                    skill = player.skill_manager.get_skill(recipe.required_skill)
+                    if skill:
+                        # Добавляем опыт умению (10 опыта за каждый крафт)
+                        exp_gained = 10
+                        skill.add_experience(exp_gained)
+
+                        # Информация о качестве зависит от ранга умения
+                        quality_info = ""
+                        if skill.rank >= 3:
+                            quality_info = " [Высокое качество]"
+                        elif skill.rank >= 2:
+                            quality_info = " [Хорошее качество]"
+
+                        return True, f"Создано: {recipe.name} x{recipe.result_quantity}{quality_info}\n+{exp_gained} опыта к умению {skill.name}"
+
             return True, f"Создано: {recipe.name} x{recipe.result_quantity}"
         else:
             # Возвращаем ресурсы, если не удалось создать предмет

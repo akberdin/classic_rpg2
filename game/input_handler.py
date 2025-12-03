@@ -198,14 +198,17 @@ class InputHandler:
                 self.ctx.interaction_menu_open = False
 
         elif key == pygame.K_2:
-            # Действие 2: Обучение / Агрессия / Квест / Уйти (для животных)
+            # Действие 2: Обучение / Купить Алхимию / Квест / Уйти (для животных)
             if npc_type in ["wolf", "bear", "deer"]:
                 # Для животных кнопка 2 - это Уйти
                 print("Вы ушли.")
                 self.ctx.nearby_npc = None
             elif npc_type == "mage":
                 self.handle_magic_training()
-            elif npc_type in ["alchemist", "hunter"]:
+            elif npc_type == "alchemist":
+                # Купить умение Алхимия
+                self.handle_learn_skill("alchemy", 5000)
+            elif npc_type == "hunter":
                 self.handle_unique_npc_quest()
             else:
                 # Открываем меню выбора режима боя
@@ -214,12 +217,15 @@ class InputHandler:
             self.ctx.interaction_menu_open = False
 
         elif key == pygame.K_3:
-            # Действие 3: Агрессия / Уйти / Сдать квест
+            # Действие 3: Агрессия / Купить Травник / Сдать квест / Уйти
             if npc_type == "mage":
                 # Открываем меню выбора режима боя
                 self.game.is_npc_aggression = False  # Это инициатива игрока
                 self.ctx.combat_mode_menu_open = True
-            elif npc_type in ["alchemist", "hunter"]:
+            elif npc_type == "alchemist":
+                # Купить умение Травник
+                self.handle_learn_skill("herbalism", 500)
+            elif npc_type == "hunter":
                 self.handle_turn_in_quest()
             elif npc_type not in ["wolf", "bear", "deer"]:
                 print("Вы ушли от разговора.")
@@ -227,8 +233,29 @@ class InputHandler:
             self.ctx.interaction_menu_open = False
 
         elif key == pygame.K_4:
-            # Уйти (для магов и уникальных NPC)
-            if npc_type in ["mage", "alchemist", "hunter"]:
+            # Действие 4: Уйти / Взять квест
+            if npc_type == "mage":
+                print("Вы ушли от разговора.")
+                self.ctx.nearby_npc = None
+            elif npc_type == "alchemist":
+                self.handle_unique_npc_quest()
+            elif npc_type == "hunter":
+                print("Вы ушли от разговора.")
+                self.ctx.nearby_npc = None
+            else:
+                print("Вы ушли от разговора.")
+                self.ctx.nearby_npc = None
+            self.ctx.interaction_menu_open = False
+
+        elif key == pygame.K_5:
+            # Действие 5: Сдать квест (для алхимиста)
+            if npc_type == "alchemist":
+                self.handle_turn_in_quest()
+            self.ctx.interaction_menu_open = False
+
+        elif key == pygame.K_6:
+            # Действие 6: Уйти (для алхимиста)
+            if npc_type == "alchemist":
                 print("Вы ушли от разговора.")
                 self.ctx.nearby_npc = None
             self.ctx.interaction_menu_open = False
@@ -365,6 +392,51 @@ class InputHandler:
             self.ctx.player.spirit += 1
             self.ctx.player.update_derived_stats()
             print(f"Обучение завершено за {training_cost} золота! Ваш Дух повышен на 1.")
+
+    def handle_learn_skill(self, skill_id, cost):
+        """
+        Обработка покупки ремесленного умения
+
+        Args:
+            skill_id: ID умения (craftsmanship, alchemy, herbalism, enchanting)
+            cost: Стоимость покупки умения
+        """
+        skill_names = {
+            'craftsmanship': 'Изготовление',
+            'alchemy': 'Алхимия',
+            'enchanting': 'Зачарование',
+            'herbalism': 'Травник'
+        }
+
+        skill_name = skill_names.get(skill_id, skill_id)
+
+        # Проверяем, есть ли уже это умение
+        if hasattr(self.ctx.player, 'skill_manager'):
+            if self.ctx.player.skill_manager.has_skill(skill_id):
+                print(f"У вас уже есть умение {skill_name}!")
+                return
+
+        # Проверяем наличие золота
+        if self.ctx.player.inventory.gold < cost:
+            print(f"Недостаточно золота! Нужно {cost} золота для изучения {skill_name}.")
+            return
+
+        # Забираем золото
+        self.ctx.player.inventory.remove_gold(cost)
+
+        # Изучаем умение
+        if hasattr(self.ctx.player, 'skill_manager'):
+            success = self.ctx.player.skill_manager.learn_skill(skill_id)
+            if success:
+                print(f"Вы изучили умение {skill_name} за {cost} золота!")
+            else:
+                # Возвращаем золото если не удалось изучить
+                self.ctx.player.inventory.add_gold(cost)
+                print(f"Не удалось изучить умение {skill_name}.")
+        else:
+            # Возвращаем золото если нет менеджера умений
+            self.ctx.player.inventory.add_gold(cost)
+            print(f"Ошибка: у персонажа нет менеджера умений.")
 
     def handle_trade_input(self, key):
         """
@@ -764,10 +836,21 @@ class InputHandler:
             self.ctx.character_menu_open = not self.ctx.character_menu_open
             return
         elif key == pygame.K_v:
-            # Открыть/закрыть окно крафта
-            self.ctx.crafting_window_open = not self.ctx.crafting_window_open
-            if self.ctx.crafting_window_open:
-                self.ctx.crafting_window.reset_selection()
+            # Открыть/закрыть окно крафта (только в городах и деревнях)
+            if not self.ctx.crafting_window_open:
+                # Проверяем, находится ли игрок в городе или деревне
+                tile = self.ctx.game_map.get_tile(self.ctx.player.x, self.ctx.player.y)
+                if tile.has_location():
+                    location = tile.location
+                    if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
+                        self.ctx.crafting_window_open = True
+                        self.ctx.crafting_window.reset_selection()
+                    else:
+                        print("Крафт доступен только в городах и деревнях!")
+                else:
+                    print("Крафт доступен только в городах и деревнях!")
+            else:
+                self.ctx.crafting_window_open = False
             return
         elif key == pygame.K_q:
             # Открыть окно квестов (можно просматривать активные из любого места)
@@ -1092,6 +1175,17 @@ class InputHandler:
             self.ctx.inquiry_menu_window.set_location(location)
             self.ctx.settlement_menu_open = False
             self.ctx.inquiry_menu_open = True
+        elif key == pygame.K_3:
+            # Купить умение
+            from game.constants import LOCATION_MAGIC_SCHOOL
+            location = self.ctx.settlement_menu_window.location
+
+            if location.location_type == LOCATION_MAGIC_SCHOOL:
+                # В Академии магов - купить Зачарование
+                self.handle_learn_skill("enchanting", 10000)
+            else:
+                # В обычном городе/деревне - купить Изготовление
+                self.handle_learn_skill("craftsmanship", 2000)
 
     def handle_inquiry_menu_input(self, key):
         """
