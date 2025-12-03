@@ -164,28 +164,42 @@ class Merchant(NPC):
                 if book_id in PREDEFINED_ITEMS:
                     self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
 
-        # Рецепты крафта (для всех торговцев с вероятностью)
-        recipes = [
-            "recipe_copper_ingot", "recipe_iron_ingot", "recipe_silver_ingot",
-            "recipe_gold_ingot", "recipe_mithril_ingot"
-        ]
+        # Рецепты крафта (для всех торговцев с увеличенной вероятностью)
+        # Простые рецепты на изготовление материалов встречаются чаще
+        basic_recipes = ["recipe_copper_ingot", "recipe_iron_ingot"]  # Простые рецепты
+        advanced_recipes = ["recipe_silver_ingot", "recipe_gold_ingot", "recipe_mithril_ingot"]
 
-        # Шанс появления рецептов зависит от ранга
+        # Шанс появления простых рецептов значительно увеличен
         if rank == 1:
-            recipe_chance = 0.2
-            num_recipes = 1
+            basic_recipe_chance = 0.7  # Увеличено с 0.2 до 0.7
+            num_basic_recipes = random.randint(1, 2)
+            advanced_recipe_chance = 0.2
+            num_advanced_recipes = 1
         elif rank == 2:
-            recipe_chance = 0.4
-            num_recipes = random.randint(1, 2)
+            basic_recipe_chance = 0.85  # Увеличено с 0.4 до 0.85
+            num_basic_recipes = 2
+            advanced_recipe_chance = 0.4
+            num_advanced_recipes = random.randint(1, 2)
         elif rank == 3:
-            recipe_chance = 0.6
-            num_recipes = random.randint(1, 2)
+            basic_recipe_chance = 0.95  # Увеличено с 0.6 до 0.95
+            num_basic_recipes = 2
+            advanced_recipe_chance = 0.6
+            num_advanced_recipes = random.randint(1, 2)
         else:  # rank 4
-            recipe_chance = 0.8
-            num_recipes = random.randint(2, 3)
+            basic_recipe_chance = 1.0  # Увеличено с 0.8 до 1.0 (всегда есть)
+            num_basic_recipes = 2
+            advanced_recipe_chance = 0.8
+            num_advanced_recipes = random.randint(2, 3)
 
-        if random.random() < recipe_chance:
-            for recipe_id in random.sample(recipes, min(num_recipes, len(recipes))):
+        # Добавляем простые рецепты (медь и железо)
+        if random.random() < basic_recipe_chance:
+            for recipe_id in random.sample(basic_recipes, min(num_basic_recipes, len(basic_recipes))):
+                if recipe_id in PREDEFINED_ITEMS:
+                    self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
+
+        # Добавляем продвинутые рецепты (серебро, золото, мифрил)
+        if random.random() < advanced_recipe_chance:
+            for recipe_id in random.sample(advanced_recipes, min(num_advanced_recipes, len(advanced_recipes))):
                 if recipe_id in PREDEFINED_ITEMS:
                     self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
 
@@ -274,24 +288,33 @@ class Merchant(NPC):
             if book_id in PREDEFINED_ITEMS:
                 self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
 
-        # Шанс добавить рецепт крафта
-        recipes = [
-            "recipe_copper_ingot", "recipe_iron_ingot", "recipe_silver_ingot",
-            "recipe_gold_ingot", "recipe_mithril_ingot"
-        ]
+        # Шанс добавить рецепт крафта (простые рецепты встречаются чаще)
+        basic_recipes = ["recipe_copper_ingot", "recipe_iron_ingot"]
+        advanced_recipes = ["recipe_silver_ingot", "recipe_gold_ingot", "recipe_mithril_ingot"]
 
-        # Шанс зависит от ранга: 15% для ранга 1, 30% для ранга 2, 50% для ранга 3, 70% для ранга 4
+        # Шанс зависит от ранга, простые рецепты значительно чаще
         if rank == 1:
-            recipe_chance = 0.15
+            basic_recipe_chance = 0.6  # Увеличено с 0.15
+            advanced_recipe_chance = 0.15
         elif rank == 2:
-            recipe_chance = 0.3
+            basic_recipe_chance = 0.75  # Увеличено с 0.3
+            advanced_recipe_chance = 0.3
         elif rank == 3:
-            recipe_chance = 0.5
+            basic_recipe_chance = 0.85  # Увеличено с 0.5
+            advanced_recipe_chance = 0.5
         else:  # rank 4
-            recipe_chance = 0.7
+            basic_recipe_chance = 0.95  # Увеличено с 0.7
+            advanced_recipe_chance = 0.7
 
-        if random.random() < recipe_chance:
-            recipe_id = random.choice(recipes)
+        # Добавляем простой рецепт
+        if random.random() < basic_recipe_chance:
+            recipe_id = random.choice(basic_recipes)
+            if recipe_id in PREDEFINED_ITEMS:
+                self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
+
+        # Добавляем продвинутый рецепт
+        if random.random() < advanced_recipe_chance:
+            recipe_id = random.choice(advanced_recipes)
             if recipe_id in PREDEFINED_ITEMS:
                 self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
 

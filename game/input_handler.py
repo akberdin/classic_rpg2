@@ -2,7 +2,7 @@
 Модуль для обработки пользовательского ввода
 """
 import pygame
-from game.inventory import EquipmentItem, EquipmentSlot, SkillBookItem, PotionItem
+from game.inventory import EquipmentItem, EquipmentSlot, SkillBookItem, PotionItem, RecipeItem
 from game.save_system import SaveSystem
 from game.constants import LOCATION_CITY, LOCATION_VILLAGE
 from game.core.game_context import GameContext
@@ -149,6 +149,13 @@ class InputHandler:
                 print(result)
                 # Если умение успешно изучено, удаляем книгу из инвентаря
                 if "Изучено умение" in result:
+                    self.ctx.player.inventory.remove_item(item, 1)
+            elif isinstance(item, RecipeItem):
+                # Изучить рецепт
+                result = item.use(self.ctx.player)
+                print(result)
+                # Если рецепт успешно изучен, удаляем его из инвентаря
+                if "Изучен рецепт" in result:
                     self.ctx.player.inventory.remove_item(item, 1)
             elif isinstance(item, PotionItem):
                 # Использовать зелье
