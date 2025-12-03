@@ -468,35 +468,23 @@ class Game:
         tile = self.game_map.get_tile(self.player.x, self.player.y)
         if tile.has_location():
             location = tile.location
-            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
-                # Открываем меню города/деревни (НЕ школу магов - там прямая торговля)
+            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL]:
+                # Открываем меню города/деревни/академии магов
                 # Создаем постоянного торговца для этой локации если его нет
                 if not hasattr(location, 'merchant_npc'):
                     if location.location_type == LOCATION_CITY:
                         merchant_level = 10
+                    elif location.location_type == LOCATION_MAGIC_SCHOOL:
+                        merchant_level = 15
                     else:
                         merchant_level = 5
                     location.merchant_npc = Merchant(f"Торговец {location.name}", self.player.x, self.player.y, merchant_level)
                     location.merchant_npc.restock_goods()
 
-                # Открываем окно меню города
+                # Открываем окно меню локации
                 self.settlement_menu_window.set_location(location)
                 self.settlement_menu_open = True
                 print(f"Добро пожаловать в {location.name}!")
-                return
-            elif location.location_type == LOCATION_MAGIC_SCHOOL:
-                # Для школы магов - прямая торговля как раньше
-                if not hasattr(location, 'merchant_npc'):
-                    merchant_level = 15
-                    location.merchant_npc = Merchant(f"Торговец {location.name}", self.player.x, self.player.y, merchant_level)
-                    location.merchant_npc.restock_goods()
-
-                self.nearby_npc = location.merchant_npc
-                self.trade_menu_open = True
-                self.trade_window.mode = "buy"
-                self.trade_window.selected_merchant_index = 0
-                self.trade_window.selected_player_index = 0
-                print(f"Добро пожаловать в {location.name}! Вы можете торговать здесь.")
                 return
 
         # Собираем всех NPC через менеджер
