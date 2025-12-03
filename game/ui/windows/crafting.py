@@ -141,7 +141,7 @@ class CraftingWindow:
         # Подсказки внизу
         help_y = window_y + window_height - int(35 * scale_h)
         help_text = self.info_font.render(
-            "[Мышь] Выбор и создание  [ENTER] Создать  [ESC] Закрыть  [←/→] Сменить станцию",
+            "[ЛКМ] Выбор  [ПКМ/ENTER] Создать  [ESC] Закрыть  [←/→] Сменить станцию",
             True,
             (180, 180, 180)
         )
@@ -282,9 +282,9 @@ class CraftingWindow:
         columns = 4
         rows_per_column = 10
         recipe_width = int((recipes_area_width - int(30 * scale_w)) / columns)
-        recipe_height = int(70 * scale_h)
+        recipe_height = int(60 * scale_h)  # Уменьшено с 70 до 60
         recipe_spacing_x = int(10 * scale_w)
-        recipe_spacing_y = int(8 * scale_h)
+        recipe_spacing_y = int(6 * scale_h)  # Уменьшено с 8 до 6
 
         # Отрисовка рецептов
         for i, recipe in enumerate(recipes):
@@ -358,16 +358,17 @@ class CraftingWindow:
                 ingr_surface = self.info_font.render(ingredients_text, True, ingr_color)
                 self.screen.blit(ingr_surface, (rect_x + int(5 * scale_w), ingredients_y + j * int(15 * scale_h)))
 
-            # Количество результата справа внизу
-            quantity_text = self.info_font.render(
-                f"x{recipe.result_quantity}",
-                True,
-                (255, 215, 0)
-            )
-            self.screen.blit(
-                quantity_text,
-                (rect_x + recipe_width - int(35 * scale_w), rect_y + recipe_height - int(18 * scale_h))
-            )
+            # Количество результата справа внизу (только если больше 1)
+            if recipe.result_quantity > 1:
+                quantity_text = self.info_font.render(
+                    f"x{recipe.result_quantity}",
+                    True,
+                    (255, 215, 0)
+                )
+                self.screen.blit(
+                    quantity_text,
+                    (rect_x + recipe_width - int(35 * scale_w), rect_y + recipe_height - int(18 * scale_h))
+                )
 
     def _is_station_locked(self, station, player):
         """
@@ -504,6 +505,16 @@ class CraftingWindow:
                         else:
                             self.selected_recipe_index = recipe_index
                         return True, None
+
+            elif event.button == 3:  # Правая кнопка мыши
+                mouse_pos = pygame.mouse.get_pos()
+
+                # Проверяем ПКМ по рецептам - сразу крафтим
+                for rect, recipe_index, recipe in self.recipe_rects:
+                    if rect.collidepoint(mouse_pos):
+                        self.selected_recipe_index = recipe_index
+                        success, message = crafting_system.craft_item(recipe.id, player, player.inventory)
+                        return True, message
 
         return True, None
 

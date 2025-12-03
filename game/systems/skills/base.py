@@ -129,11 +129,20 @@ class Skill:
         if self.rank >= self.max_rank:
             return "Максимальный ранг достигнут"
 
-        return (f"Требования для ранга {self.rank + 1}:\n"
-                f"  Опыт: {self.experience}/{self.experience_to_next_rank}\n"
-                f"  Использований: {self.use_count}/{self.get_required_uses_for_rank()}\n"
-                f"  Уровень персонажа: {self.get_required_player_level_for_rank()}\n"
-                f"  Золото: {self.get_gold_cost_for_rank()}")
+        requirements = [f"Требования для ранга {self.rank + 1}:"]
+        requirements.append(f"  Опыт: {self.experience}/{self.experience_to_next_rank}")
+
+        # Добавляем требования по использованиям только для активных умений
+        if self.category != SkillCategory.CRAFTING or self.stamina_cost > 0:
+            requirements.append(f"  Использований: {self.use_count}/{self.get_required_uses_for_rank()}")
+
+        # Добавляем требования по уровню персонажа только для активных умений
+        if self.category != SkillCategory.CRAFTING or self.stamina_cost > 0:
+            requirements.append(f"  Уровень персонажа: {self.get_required_player_level_for_rank()}")
+
+        requirements.append(f"  Золото: {self.get_gold_cost_for_rank()}")
+
+        return "\n".join(requirements)
 
     def add_experience(self, amount):
         """
