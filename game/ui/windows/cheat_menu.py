@@ -29,6 +29,7 @@ class CheatMenuWindow:
             'reveal_map': {'name': 'Открыть карту', 'enabled': False},
             'give_gold': {'name': 'Дать 5000 золота', 'enabled': False, 'one_time': True},
             'learn_all_skills': {'name': 'Выучить все умения', 'enabled': False, 'one_time': True},
+            'learn_all_recipes': {'name': 'Изучить все рецепты', 'enabled': False, 'one_time': True},
             'teleport_academy': {'name': 'Телепорт к академии магов', 'enabled': False, 'one_time': True},
             'level_up': {'name': 'Повысить уровень на 1', 'enabled': False, 'one_time': True},
             'give_artifact': {'name': 'Дать случайный артефакт', 'enabled': False, 'one_time': True},
@@ -95,6 +96,18 @@ class CheatMenuWindow:
                     if game.player.skill_manager.learn_skill(skill_id):
                         learned_count += 1
                 print(f"Выучено умений: {learned_count}")
+
+            elif cheat_id == 'learn_all_recipes':
+                # Изучаем все рецепты из системы крафта
+                if hasattr(game, 'crafting_system') and game.crafting_system:
+                    learned_count = 0
+                    for recipe_id in game.crafting_system.recipes.keys():
+                        if recipe_id not in game.player.known_recipes:
+                            game.player.known_recipes.add(recipe_id)
+                            learned_count += 1
+                    print(f"Изучено рецептов: {learned_count}")
+                else:
+                    print("Система крафта не найдена!")
 
             elif cheat_id == 'teleport_academy':
                 # Ищем академию магов на карте

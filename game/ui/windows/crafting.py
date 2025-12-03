@@ -197,7 +197,7 @@ class CraftingWindow:
 
             # Описание станции (мелким шрифтом)
             desc_text = self.info_font.render(
-                station.description[:35] + ("..." if len(station.description) > 35 else ""),
+                station.description[:28] + ("..." if len(station.description) > 28 else ""),
                 True,
                 (180, 180, 180)
             )

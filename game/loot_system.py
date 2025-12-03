@@ -156,6 +156,35 @@ class LootSystem:
                 if book_id in PREDEFINED_ITEMS:
                     loot_items.append((PREDEFINED_ITEMS[book_id], 1))
 
+        # Шанс выпадения рецептов крафта (зависит от уровня врага)
+        # Чем выше уровень врага, тем больше шанс
+        recipe_drop_chance = min(0.03 + enemy.level * 0.003, 0.15)  # от 3% до 15%
+
+        if random.random() < recipe_drop_chance:
+            # Рецепты разделены по редкости в зависимости от уровня врага
+            recipes = []
+
+            # Базовые рецепты (всегда доступны)
+            recipes.extend(["recipe_copper_ingot", "recipe_iron_ingot"])
+
+            # Средние рецепты (уровень >= 10)
+            if enemy.level >= 10:
+                recipes.append("recipe_silver_ingot")
+
+            # Редкие рецепты (уровень >= 15)
+            if enemy.level >= 15:
+                recipes.append("recipe_gold_ingot")
+
+            # Эпические рецепты (уровень >= 20)
+            if enemy.level >= 20:
+                recipes.append("recipe_mithril_ingot")
+
+            # Выбираем случайный рецепт из доступных
+            if recipes:
+                recipe_id = random.choice(recipes)
+                if recipe_id in PREDEFINED_ITEMS:
+                    loot_items.append((PREDEFINED_ITEMS[recipe_id], 1))
+
         # Специальный лут для бандитов - древние монеты
         if enemy.npc_type == "bandit":
             coin_drop_chance = min(0.30 + enemy.level * 0.01, 0.60)  # от 30% до 60%
