@@ -306,6 +306,14 @@ class GameContext:
     def combat_mode_menu_open(self, value: bool):
         self._game.combat_mode_menu_open = value
 
+    @property
+    def crafting_window_open(self) -> bool:
+        return getattr(self._game, 'crafting_window_open', False)
+
+    @crafting_window_open.setter
+    def crafting_window_open(self, value: bool):
+        self._game.crafting_window_open = value
+
     # === UI окна ===
 
     @property
@@ -373,6 +381,11 @@ class GameContext:
         """Получить окно ответа на вопрос."""
         return getattr(self._game, 'inquiry_response_window', None)
 
+    @property
+    def crafting_window(self):
+        """Получить окно крафта."""
+        return getattr(self._game, 'crafting_window', None)
+
     # === Дополнительные системы ===
 
     @property
@@ -399,6 +412,11 @@ class GameContext:
     def random_event_system(self):
         """Получить систему случайных событий."""
         return getattr(self._game, 'random_event_system', None)
+
+    @property
+    def crafting_system(self):
+        """Получить систему крафта."""
+        return getattr(self._game, 'crafting_system', None)
 
     # === Списки NPC (через NPCManager) ===
 
