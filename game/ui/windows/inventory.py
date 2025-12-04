@@ -18,6 +18,8 @@ class InventoryWindow:
         self.selected_equipment_slot = None
         self.mode = "inventory"  # "inventory" или "equipment"
         self.equipment_slot_rects = {}  # Словарь {slot: (rect, item)} для tooltip экипировки
+        self.item_type_filter = "all"  # Фильтр по типу предметов: "all", "equipment", "potion", "resource", "skill_book"
+        self.filter_buttons = {}  # Словарь {filter_type: rect} для кнопок фильтра
 
     def render(self, player, mouse_pos=None):
         """
@@ -37,13 +39,13 @@ class InventoryWindow:
         overlay.fill((0, 0, 0))
         self.screen.blit(overlay, (0, 0))
 
-        # Размеры окна (адаптивные)
+        # Размеры окна (адаптивные) - увеличены по обеим осям
         if self.scaler:
-            window_width = self.scaler.scale_width(900)
-            window_height = self.scaler.scale_height(650)
+            window_width = self.scaler.scale_width(1200)
+            window_height = self.scaler.scale_height(800)
         else:
-            window_width = min(900, int(screen_width * 0.85))
-            window_height = min(650, int(screen_height * 0.75))
+            window_width = min(1200, int(screen_width * 0.9))
+            window_height = min(800, int(screen_height * 0.85))
 
         window_x = (screen_width - window_width) // 2
         window_y = (screen_height - window_height) // 2
@@ -66,7 +68,7 @@ class InventoryWindow:
         title_text = self.font.render("ИНВЕНТАРЬ И ЭКИПИРОВКА", True, (255, 215, 0))
         title_rect = title_text.get_rect()
         title_rect.centerx = window_x + window_width // 2
-        title_rect.y = window_y + int(10 * (window_height / 650))
+        title_rect.y = window_y + int(10 * (window_height / 800))
         self.screen.blit(title_text, title_rect)
 
         # Информация о золоте и весе
@@ -77,26 +79,26 @@ class InventoryWindow:
         )
         gold_rect = gold_text.get_rect()
         gold_rect.centerx = window_x + window_width // 2
-        gold_rect.y = window_y + int(40 * (window_height / 650))
+        gold_rect.y = window_y + int(40 * (window_height / 800))
         self.screen.blit(gold_text, gold_rect)
 
         # Разделитель
-        separator_y = int(70 * (window_height / 650))
+        separator_y = int(70 * (window_height / 800))
         pygame.draw.line(
             self.screen,
             (100, 100, 120),
-            (window_x + int(10 * (window_width / 900)), window_y + separator_y),
-            (window_x + window_width - int(10 * (window_width / 900)), window_y + separator_y),
+            (window_x + int(10 * (window_width / 1200)), window_y + separator_y),
+            (window_x + window_width - int(10 * (window_width / 1200)), window_y + separator_y),
             2
         )
 
         # Левая панель - экипировка (адаптивные размеры)
-        margin = int(20 * (window_width / 900))
-        panel_y_offset = int(85 * (window_height / 650))
+        margin = int(20 * (window_width / 1200))
+        panel_y_offset = int(85 * (window_height / 800))
         equipment_panel_x = window_x + margin
         equipment_panel_y = window_y + panel_y_offset
-        equipment_panel_width = int(400 * (window_width / 900))
-        equipment_panel_height = int(500 * (window_height / 650))
+        equipment_panel_width = int(500 * (window_width / 1200))
+        equipment_panel_height = int(650 * (window_height / 800))
 
         self._render_equipment_panel(
             player,
@@ -107,10 +109,10 @@ class InventoryWindow:
         )
 
         # Правая панель - предметы (адаптивные размеры)
-        inventory_panel_x = window_x + int(440 * (window_width / 900))
+        inventory_panel_x = window_x + int(540 * (window_width / 1200))
         inventory_panel_y = window_y + panel_y_offset
-        inventory_panel_width = int(440 * (window_width / 900))
-        inventory_panel_height = int(500 * (window_height / 650))
+        inventory_panel_width = int(640 * (window_width / 1200))
+        inventory_panel_height = int(650 * (window_height / 800))
 
         self._render_inventory_panel(
             player,
@@ -121,9 +123,9 @@ class InventoryWindow:
         )
 
         # Подсказки внизу
-        hints_y = window_y + window_height - int(40 * (window_height / 650))
+        hints_y = window_y + window_height - int(40 * (window_height / 800))
         hint_text = self.info_font.render(
-            "W/S - выбор | E - экипировать | U - использовать | D/DEL - выбросить | I/ESC - закрыть",
+            "W/S - выбор | E - экипировать | U - использовать | D/DEL - выбросить | Alt+ПКМ - в слот зелья | I/ESC - закрыть",
             True,
             (180, 180, 180)
         )
@@ -157,11 +159,22 @@ class InventoryWindow:
 
         # Заголовок (адаптивный отступ)
         title = self.font.render("Экипировка", True, (150, 200, 255))
-        self.screen.blit(title, (x + int(10 * (width / 400)), y + int(5 * (height / 500))))
+        self.screen.blit(title, (x + int(10 * (width / 500)), y + int(5 * (height / 650))))
 
         # Слоты экипировки (адаптивные размеры)
-        slot_y = y + int(40 * (height / 500))
-        slot_height = max(18, int(22 * (height / 500)))
+        slot_y = y + int(40 * (height / 650))
+        slot_height = max(18, int(22 * (height / 650)))
+
+        # Получаем количество доступных слотов зелий и талисманов из экипированного пояса
+        belt = player.inventory.get_equipped_item(EquipmentSlot.BELT)
+        potion_slots_count = belt.potion_slots if belt and hasattr(belt, 'potion_slots') else 0
+        talisman_slots_count = belt.talisman_slots if belt and hasattr(belt, 'talisman_slots') else 0
+
+        # Формируем динамические списки слотов для зелий и талисманов
+        potion_slots = [EquipmentSlot.BELT_POTION_1, EquipmentSlot.BELT_POTION_2,
+                       EquipmentSlot.BELT_POTION_3, EquipmentSlot.BELT_POTION_4][:potion_slots_count]
+        talisman_slots = [EquipmentSlot.BELT_TALISMAN_1, EquipmentSlot.BELT_TALISMAN_2,
+                         EquipmentSlot.BELT_TALISMAN_3, EquipmentSlot.BELT_TALISMAN_4][:talisman_slots_count]
 
         # Группировка слотов
         slot_groups = [
@@ -171,6 +184,12 @@ class InventoryWindow:
             ("Кольца", [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]),
             ("Украшения", [EquipmentSlot.AMULET, EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]),
         ]
+
+        # Добавляем зелья и талисманы только если есть соответствующие слоты
+        if potion_slots:
+            slot_groups.append(("Зелья", potion_slots))
+        if talisman_slots:
+            slot_groups.append(("Талисманы", talisman_slots))
 
         slot_names = {
             EquipmentSlot.WEAPON: "Оружие",
@@ -187,19 +206,27 @@ class InventoryWindow:
             EquipmentSlot.AMULET: "Амулет",
             EquipmentSlot.BRACELET_1: "Браслет 1",
             EquipmentSlot.BRACELET_2: "Браслет 2",
+            EquipmentSlot.BELT_POTION_1: "Зелье 1",
+            EquipmentSlot.BELT_POTION_2: "Зелье 2",
+            EquipmentSlot.BELT_POTION_3: "Зелье 3",
+            EquipmentSlot.BELT_POTION_4: "Зелье 4",
+            EquipmentSlot.BELT_TALISMAN_1: "Талисман 1",
+            EquipmentSlot.BELT_TALISMAN_2: "Талисман 2",
+            EquipmentSlot.BELT_TALISMAN_3: "Талисман 3",
+            EquipmentSlot.BELT_TALISMAN_4: "Талисман 4",
         }
 
         # Адаптивные отступы
-        margin_left = int(15 * (width / 400))
-        margin_sides = int(30 * (width / 400))
-        text_offset = int(130 * (width / 400))
-        text_margin = int(20 * (width / 400))
+        margin_left = int(15 * (width / 500))
+        margin_sides = int(30 * (width / 500))
+        text_offset = int(130 * (width / 500))
+        text_margin = int(20 * (width / 500))
 
         for group_name, slots in slot_groups:
             # Название группы
             group_text = self.info_font.render(f"[{group_name}]", True, (180, 180, 200))
             self.screen.blit(group_text, (x + margin_left, slot_y))
-            slot_y += max(16, int(20 * (height / 500)))
+            slot_y += max(16, int(20 * (height / 650)))
 
             for slot in slots:
                 item = player.inventory.get_equipped_item(slot)
@@ -231,7 +258,7 @@ class InventoryWindow:
                     True,
                     (150, 150, 150)
                 )
-                self.screen.blit(slot_name_text, (x + text_margin, slot_y + int(8 * (height / 500))))
+                self.screen.blit(slot_name_text, (x + text_margin, slot_y + int(8 * (height / 650))))
 
                 # Экипированный предмет
                 if item:
@@ -241,14 +268,14 @@ class InventoryWindow:
                         True,
                         item.quality.color if hasattr(item, 'quality') else (200, 200, 200)
                     )
-                    self.screen.blit(item_text, (x + text_offset, slot_y + int(8 * (height / 500))))
+                    self.screen.blit(item_text, (x + text_offset, slot_y + int(8 * (height / 650))))
                 else:
                     empty_text = self.info_font.render("---", True, (100, 100, 100))
-                    self.screen.blit(empty_text, (x + text_offset, slot_y + int(8 * (height / 500))))
+                    self.screen.blit(empty_text, (x + text_offset, slot_y + int(8 * (height / 650))))
 
                 slot_y += slot_height
 
-            slot_y += max(6, int(8 * (height / 500)))
+            slot_y += max(6, int(8 * (height / 650)))
 
     def _render_inventory_panel(self, player, x, y, width, height):
         """Отрисовка панели предметов"""
@@ -257,37 +284,81 @@ class InventoryWindow:
 
         # Заголовок (адаптивные отступы)
         title = self.font.render("Предметы", True, (150, 200, 255))
-        self.screen.blit(title, (x + int(10 * (width / 440)), y + int(5 * (height / 500))))
+        self.screen.blit(title, (x + int(10 * (width / 640)), y + int(5 * (height / 650))))
+
+        # Кнопки фильтров
+        filter_y = y + int(35 * (height / 650))
+        filter_x = x + int(10 * (width / 640))
+        filter_width = int(80 * (width / 640))
+        filter_height = int(25 * (height / 650))
+        filter_spacing = int(85 * (width / 640))
+
+        filters = [
+            ("all", "Все"),
+            ("equipment", "Снаряж."),
+            ("potion", "Зелья"),
+            ("resource", "Ресурсы"),
+            ("skill_book", "Книги")
+        ]
+
+        self.filter_buttons.clear()
+        for i, (filter_type, filter_name) in enumerate(filters):
+            button_x = filter_x + i * filter_spacing
+            button_rect = pygame.Rect(button_x, filter_y, filter_width, filter_height)
+            self.filter_buttons[filter_type] = button_rect
+
+            # Фон кнопки
+            is_active = self.item_type_filter == filter_type
+            button_color = (80, 100, 150) if is_active else (50, 50, 60)
+            pygame.draw.rect(self.screen, button_color, button_rect)
+
+            # Рамка кнопки
+            border_color = (120, 150, 200) if is_active else (80, 80, 90)
+            pygame.draw.rect(self.screen, border_color, button_rect, 2)
+
+            # Текст кнопки
+            button_text = self.info_font.render(filter_name, True, (255, 255, 255) if is_active else (180, 180, 180))
+            button_text_rect = button_text.get_rect(center=button_rect.center)
+            self.screen.blit(button_text, button_text_rect)
 
         # Информация о слотах
         all_items = player.inventory.get_all_items()
+
+        # Применяем фильтр
+        if self.item_type_filter != "all":
+            filtered_items = []
+            for item, quantity in all_items:
+                if self._match_filter(item):
+                    filtered_items.append((item, quantity))
+            all_items = filtered_items
+
         slots_text = self.info_font.render(
             f"Слотов: {len(all_items)}/{player.inventory.max_slots}",
             True,
             (180, 180, 180)
         )
-        self.screen.blit(slots_text, (x + width - int(150 * (width / 440)), y + int(10 * (height / 500))))
+        self.screen.blit(slots_text, (x + width - int(150 * (width / 640)), y + int(10 * (height / 650))))
 
         # Список предметов
         if not all_items:
-            empty_text = self.info_font.render("Инвентарь пуст", True, (150, 150, 150))
+            empty_text = self.info_font.render("Нет предметов" if self.item_type_filter != "all" else "Инвентарь пуст", True, (150, 150, 150))
             empty_rect = empty_text.get_rect()
             empty_rect.centerx = x + width // 2
-            empty_rect.y = y + int(100 * (height / 500))
+            empty_rect.y = y + int(150 * (height / 650))
             self.screen.blit(empty_text, empty_rect)
         else:
-            items_y = y + int(40 * (height / 500))
-            item_height = max(24, int(30 * (height / 500)))
-            max_visible_items = max(10, int(14 * (height / 500)))
+            items_y = y + int(70 * (height / 650))  # Увеличен отступ для фильтров
+            item_height = max(24, int(30 * (height / 650)))
+            max_visible_items = max(10, int(18 * (height / 650)))
             start_index = max(0, self.selected_inventory_index - max_visible_items + 1)
             end_index = min(len(all_items), start_index + max_visible_items)
 
             # Адаптивные отступы
-            margin_h = int(10 * (width / 440))
-            margin_sides = int(20 * (width / 440))
-            text_margin = int(20 * (width / 440))
-            weight_offset = int(120 * (width / 440))
-            value_offset = int(60 * (width / 440))
+            margin_h = int(10 * (width / 640))
+            margin_sides = int(20 * (width / 640))
+            text_margin = int(20 * (width / 640))
+            weight_offset = int(150 * (width / 640))
+            value_offset = int(70 * (width / 640))
 
             for i in range(start_index, end_index):
                 item, quantity = all_items[i]
@@ -328,7 +399,7 @@ class InventoryWindow:
                     True,
                     item_color
                 )
-                self.screen.blit(item_text, (x + text_margin, items_y + display_index * item_height + int(7 * (height / 500))))
+                self.screen.blit(item_text, (x + text_margin, items_y + display_index * item_height + int(7 * (height / 650))))
 
                 # Вес
                 weight_text = self.info_font.render(
@@ -336,7 +407,7 @@ class InventoryWindow:
                     True,
                     (150, 150, 150)
                 )
-                self.screen.blit(weight_text, (x + width - weight_offset, items_y + display_index * item_height + int(7 * (height / 500))))
+                self.screen.blit(weight_text, (x + width - weight_offset, items_y + display_index * item_height + int(7 * (height / 650))))
 
                 # Стоимость
                 value_text = self.info_font.render(
@@ -344,7 +415,7 @@ class InventoryWindow:
                     True,
                     (255, 215, 0)
                 )
-                self.screen.blit(value_text, (x + width - value_offset, items_y + display_index * item_height + int(7 * (height / 500))))
+                self.screen.blit(value_text, (x + width - value_offset, items_y + display_index * item_height + int(7 * (height / 650))))
 
     def render_item_tooltip(self, item, mouse_x, mouse_y, player=None, show_comparison=True):
         """
@@ -747,24 +818,24 @@ class InventoryWindow:
         screen_width = self.screen.get_width()
         screen_height = self.screen.get_height()
 
-        # Размеры окна (адаптивные)
+        # Размеры окна (адаптивные) - увеличены по обеим осям
         if self.scaler:
-            window_width = self.scaler.scale_width(900)
-            window_height = self.scaler.scale_height(650)
+            window_width = self.scaler.scale_width(1200)
+            window_height = self.scaler.scale_height(800)
         else:
-            window_width = min(900, int(screen_width * 0.85))
-            window_height = min(650, int(screen_height * 0.75))
+            window_width = min(1200, int(screen_width * 0.9))
+            window_height = min(800, int(screen_height * 0.85))
 
         window_x = (screen_width - window_width) // 2
         window_y = (screen_height - window_height) // 2
 
         # Правая панель - предметы
-        margin = int(20 * (window_width / 900))
-        panel_y_offset = int(85 * (window_height / 650))
-        inventory_panel_x = window_x + int(440 * (window_width / 900))
+        margin = int(20 * (window_width / 1200))
+        panel_y_offset = int(85 * (window_height / 800))
+        inventory_panel_x = window_x + int(540 * (window_width / 1200))
         inventory_panel_y = window_y + panel_y_offset
-        inventory_panel_width = int(440 * (window_width / 900))
-        inventory_panel_height = int(500 * (window_height / 650))
+        inventory_panel_width = int(640 * (window_width / 1200))
+        inventory_panel_height = int(650 * (window_height / 800))
 
         # Проверяем, находится ли курсор в области предметов
         if not (inventory_panel_x <= mouse_x <= inventory_panel_x + inventory_panel_width and
@@ -809,5 +880,76 @@ class InventoryWindow:
             if rect.collidepoint(mouse_x, mouse_y):
                 return (slot, item)
         return (None, None)
+
+    def _match_filter(self, item):
+        """
+        Проверяет, соответствует ли предмет текущему фильтру
+
+        Args:
+            item: Предмет для проверки
+
+        Returns:
+            bool: True если предмет соответствует фильтру
+        """
+        from game.inventory import EquipmentItem, PotionItem, ResourceItem, SkillBookItem
+
+        if self.item_type_filter == "all":
+            return True
+        elif self.item_type_filter == "equipment":
+            return isinstance(item, EquipmentItem)
+        elif self.item_type_filter == "potion":
+            return isinstance(item, PotionItem)
+        elif self.item_type_filter == "resource":
+            return isinstance(item, ResourceItem)
+        elif self.item_type_filter == "skill_book":
+            return isinstance(item, SkillBookItem)
+        return True
+
+    def set_filter(self, filter_type):
+        """
+        Устанавливает фильтр по типу предметов
+
+        Args:
+            filter_type: Тип фильтра ("all", "equipment", "potion", "resource", "skill_book")
+        """
+        if filter_type in ["all", "equipment", "potion", "resource", "skill_book"]:
+            self.item_type_filter = filter_type
+            self.selected_inventory_index = 0  # Сбрасываем выбор при смене фильтра
+
+    def get_filter_at_mouse(self, mouse_x, mouse_y):
+        """
+        Получить фильтр под курсором мыши
+
+        Args:
+            mouse_x: X координата мыши
+            mouse_y: Y координата мыши
+
+        Returns:
+            str или None: Тип фильтра или None
+        """
+        for filter_type, rect in self.filter_buttons.items():
+            if rect.collidepoint(mouse_x, mouse_y):
+                return filter_type
+        return None
+
+    def get_filtered_items(self, player):
+        """
+        Получить отфильтрованный список предметов
+
+        Args:
+            player: Объект игрока
+
+        Returns:
+            list: Список кортежей (item, quantity) с учетом фильтра
+        """
+        all_items = player.inventory.get_all_items()
+        if self.item_type_filter == "all":
+            return all_items
+
+        filtered_items = []
+        for item, quantity in all_items:
+            if self._match_filter(item):
+                filtered_items.append((item, quantity))
+        return filtered_items
 
 
