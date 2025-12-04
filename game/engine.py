@@ -458,6 +458,13 @@ class Game:
             if self.input_handler.route_menu_event(event, self._handle_quest_action):
                 continue
 
+            # Обработка кликов мыши на основном экране (если ни одно меню не открыто)
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 3:  # ПКМ
+                    # Проверяем клик по слотам зелий на HUD
+                    if self._handle_potion_slot_click(event.pos):
+                        continue
+
             # Обработка нажатий клавиш (если ни одно меню не открыто)
             if event.type == pygame.KEYDOWN:
                 self.input_handler.handle_key_press(event.key)
@@ -517,6 +524,39 @@ class Game:
     def _handle_quest_action(self, action):
         """Делегирование к QuestUIController."""
         self.quest_ui_controller.handle_action(action)
+
+    def _handle_potion_slot_click(self, mouse_pos):
+        """
+        Обработка клика ПКМ по слоту зелья на HUD.
+
+        Args:
+            mouse_pos: Позиция мыши (x, y)
+
+        Returns:
+            bool: True если клик был обработан
+        """
+        if not hasattr(self.hud_renderer, 'potion_slot_rects'):
+            return False
+
+        mouse_x, mouse_y = mouse_pos
+
+        for slot_index, (rect, slot, potion) in self.hud_renderer.potion_slot_rects.items():
+            if rect.collidepoint(mouse_x, mouse_y):
+                if potion:
+                    # Используем зелье
+                    result = potion.use(self.player)
+                    print(result)
+                    # Удаляем зелье из инвентаря
+                    self.player.inventory.remove_item(potion, 1)
+                    # Снимаем зелье из слота если его больше нет
+                    if self.player.inventory.get_item_count(potion) == 0:
+                        self.player.inventory.unequip_item(slot)
+                    return True
+                else:
+                    print("Слот зелья пуст")
+                    return True
+
+        return False
 
     def _collect_resources(self):
         """Делегирование к ResourceSystem."""

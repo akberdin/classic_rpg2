@@ -106,6 +106,9 @@ class HUDRenderer:
         # Панель умений (8 слотов)
         self._render_skill_panel()
 
+        # Панель зелий (рядом с умениями)
+        self._render_potion_panel()
+
     def _render_time_weather_gold(self, info_y):
         """Отрисовка времени, погоды и золота."""
         weather_str = ""
@@ -346,3 +349,73 @@ class HUDRenderer:
             cooldown_rect = cooldown_text.get_rect()
             cooldown_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2)
             self.screen.blit(cooldown_text, cooldown_rect)
+
+    def _render_potion_panel(self):
+        """Отрисовка панели быстрых зелий справа от панели умений."""
+        from game.inventory import EquipmentSlot
+
+        # Получаем пояс игрока
+        belt = self.player.inventory.get_equipped_item(EquipmentSlot.BELT)
+        if not belt or not hasattr(belt, 'potion_slots') or belt.potion_slots == 0:
+            return  # Нет пояса или нет слотов для зелий
+
+        slot_size = self.ui_scaler.scale_value(48)
+        slot_spacing = self.ui_scaler.scale_value(8)
+
+        # Позиция панели умений
+        skills_panel_x = (self.ctx.window_width - (slot_size + slot_spacing) * 8) // 2
+        ui_height = self.ui_scaler.scale_height(100)
+        ui_y = self.ctx.window_height - ui_height
+        panel_offset = self.ui_scaler.scale_value(15)
+        panel_y = ui_y - slot_size - panel_offset
+
+        # Панель зелий справа от панели умений
+        potions_panel_x = skills_panel_x + (slot_size + slot_spacing) * 8 + self.ui_scaler.scale_value(20)
+
+        # Слоты зелий
+        potion_slots = [
+            EquipmentSlot.BELT_POTION_1,
+            EquipmentSlot.BELT_POTION_2,
+            EquipmentSlot.BELT_POTION_3,
+            EquipmentSlot.BELT_POTION_4
+        ][:belt.potion_slots]
+
+        # Сохраняем координаты слотов для обработки кликов
+        if not hasattr(self, 'potion_slot_rects'):
+            self.potion_slot_rects = {}
+
+        self.potion_slot_rects.clear()
+
+        for i, slot in enumerate(potion_slots):
+            slot_x = potions_panel_x + i * (slot_size + slot_spacing)
+            potion = self.player.inventory.get_equipped_item(slot)
+
+            # Фон и рамка слота
+            bg_color = (60, 40, 60) if potion else (30, 30, 30)
+            border_color = (150, 100, 150) if potion else (100, 100, 100)
+
+            pygame.draw.rect(self.screen, bg_color, (slot_x, panel_y, slot_size, slot_size))
+            pygame.draw.rect(self.screen, border_color, (slot_x, panel_y, slot_size, slot_size), 2)
+
+            # Сохраняем rect для обработки кликов
+            self.potion_slot_rects[i] = (pygame.Rect(slot_x, panel_y, slot_size, slot_size), slot, potion)
+
+            # Метка "ПКМ"
+            label_text = self.info_font.render("ПКМ", True, (180, 180, 180))
+            self.screen.blit(label_text, (slot_x + 4, panel_y + 4))
+
+            # Если есть зелье, отображаем информацию
+            if potion:
+                # Первая буква названия зелья
+                potion_name = potion.get_full_name() if hasattr(potion, 'get_full_name') else potion.name
+                icon_font = pygame.font.Font(None, 32)
+                icon_text = icon_font.render(potion_name[0], True, (200, 100, 200))
+                icon_rect = icon_text.get_rect()
+                icon_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2 + 4)
+                self.screen.blit(icon_text, icon_rect)
+
+                # Количество зелий в инвентаре (если больше 1)
+                potion_count = self.player.inventory.get_item_count(potion)
+                if potion_count > 1:
+                    count_text = self.info_font.render(f"x{potion_count}", True, (255, 215, 0))
+                    self.screen.blit(count_text, (slot_x + slot_size - 24, panel_y + slot_size - 18))
