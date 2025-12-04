@@ -24,6 +24,7 @@ from game.ui.windows.settlement_menu import (
 )
 from game.ui.windows.combat_mode_selection import CombatModeSelectionWindow
 from game.ui.windows.crafting import CraftingWindow
+from game.ui.windows.npc_selection import NPCSelectionWindow
 
 __all__ = [
     'BaseWindow',
@@ -44,4 +45,5 @@ __all__ = [
     'InquiryResponseWindow',
     'CombatModeSelectionWindow',
     'CraftingWindow',
+    'NPCSelectionWindow',
 ]

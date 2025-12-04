@@ -22,6 +22,7 @@ from game.ui.windows import (
     SkillBookWindow,
     CombatModeSelectionWindow,
     CraftingWindow,
+    NPCSelectionWindow,
 )
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quest_system import (
@@ -160,6 +161,10 @@ class Game:
 
         # Окно взаимодействия с NPC
         self.interaction_window = InteractionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+
+        # Окно выбора NPC (если в клетке несколько NPC)
+        self.npc_selection_window = NPCSelectionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.npc_selection_menu_open = False
 
         # Окно выбора режима боя
         self.combat_mode_window = CombatModeSelectionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
@@ -408,6 +413,23 @@ class Game:
                     self.tactical_combat_handler = None
                 continue
 
+            # Если открыто меню выбора NPC, обрабатываем его
+            if self.npc_selection_menu_open:
+                result = self.npc_selection_window.handle_input(event)
+                if result == "select":
+                    # Игрок выбрал NPC - открываем меню взаимодействия
+                    selected_npc = self.npc_selection_window.get_selected_npc()
+                    if selected_npc:
+                        self.nearby_npc = selected_npc
+                        self.interaction_menu_open = True
+                        self.npc_selection_menu_open = False
+                        print(f"Вы выбрали: {selected_npc.name}")
+                elif result == "cancel":
+                    # Игрок отменил выбор
+                    self.npc_selection_menu_open = False
+                    print("Выбор отменён.")
+                continue
+
             # Если открыто меню выбора режима боя, обрабатываем его
             if self.combat_mode_menu_open:
                 self.input_handler.handle_combat_mode_choice(event)
@@ -498,18 +520,31 @@ class Game:
         all_npcs = self.npc_manager.get_all_npcs()
 
         # Ищем NPC рядом с игроком (в соседних клетках)
+        nearby_npcs = []
         for npc in all_npcs:
             if not npc.is_alive:
                 continue
 
             distance = abs(self.player.x - npc.x) + abs(self.player.y - npc.y)
             if distance <= 1:  # Соседняя клетка
-                self.nearby_npc = npc
-                self.interaction_menu_open = True
-                print(f"Вы встретили: {npc.name}")
-                return
+                nearby_npcs.append(npc)
 
-        print("Рядом нет NPC для взаимодействия и вы не находитесь в городе/деревне!")
+        # Если нет NPC рядом
+        if not nearby_npcs:
+            print("Рядом нет NPC для взаимодействия и вы не находитесь в городе/деревне!")
+            return
+
+        # Если только один NPC - сразу открываем меню взаимодействия
+        if len(nearby_npcs) == 1:
+            self.nearby_npc = nearby_npcs[0]
+            self.interaction_menu_open = True
+            print(f"Вы встретили: {self.nearby_npc.name}")
+            return
+
+        # Если несколько NPC - открываем меню выбора
+        self.npc_selection_window.set_npcs(nearby_npcs)
+        self.npc_selection_menu_open = True
+        print(f"Рядом находится {len(nearby_npcs)} NPC. Выберите с кем взаимодействовать.")
 
     def open_quest_window(self, location):
         """Делегирование к QuestUIController."""
@@ -686,6 +721,10 @@ class Game:
         # Если открыто меню выбора режима боя, отрисовываем его
         if self.combat_mode_menu_open and self.nearby_npc:
             self.combat_mode_window.render(self.nearby_npc.name, self.is_npc_aggression)
+
+        # Если открыто меню выбора NPC, отрисовываем его
+        if self.npc_selection_menu_open:
+            self.npc_selection_window.render()
 
         # Если открыто меню взаимодействия, отрисовываем его
         if self.interaction_menu_open and self.nearby_npc:
