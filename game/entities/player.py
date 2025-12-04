@@ -50,7 +50,8 @@ class Player(Character):
         self.update_derived_stats()
 
         # Инвентарь (передаём self как владельца для системы умений от предметов)
-        self.inventory = Inventory(max_slots=20, owner=self)
+        # По умолчанию 5 слотов, можно увеличить рюкзаком
+        self.inventory = Inventory(max_slots=5, owner=self)
         # Обновляем грузоподъемность на основе силы
         self.inventory.update_max_weight(self.strength)
 

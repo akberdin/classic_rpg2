@@ -166,6 +166,7 @@ class InventoryWindow:
         # Группировка слотов
         slot_groups = [
             ("Оружие", [EquipmentSlot.WEAPON]),
+            ("Снаряжение", [EquipmentSlot.BACKPACK, EquipmentSlot.BELT]),
             ("Доспехи", [EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET]),
             ("Кольца", [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]),
             ("Украшения", [EquipmentSlot.AMULET, EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]),
@@ -173,6 +174,8 @@ class InventoryWindow:
 
         slot_names = {
             EquipmentSlot.WEAPON: "Оружие",
+            EquipmentSlot.BACKPACK: "Рюкзак",
+            EquipmentSlot.BELT: "Пояс",
             EquipmentSlot.HEAD: "Голова",
             EquipmentSlot.CHEST: "Торс",
             EquipmentSlot.HANDS: "Руки",
@@ -354,7 +357,8 @@ class InventoryWindow:
             player: Игрок для сравнения с экипировкой
             show_comparison: Показывать ли окна сравнения (False для экипированных предметов)
         """
-        from game.inventory import EquipmentItem, WeaponItem, ArmorItem, JewelryItem, PotionItem, EquipmentSlot
+        from game.inventory import (EquipmentItem, WeaponItem, ArmorItem, JewelryItem, PotionItem,
+                                     BeltItem, TalismanItem, BackpackItem, EquipmentSlot)
 
         # Размеры подсказки
         tooltip_width = 320
@@ -374,6 +378,15 @@ class InventoryWindow:
             lines.append((f"Тип: {item.weapon_type}", (180, 180, 180), False))
         elif isinstance(item, ArmorItem):
             lines.append((f"Тип: {item.armor_type}", (180, 180, 180), False))
+        elif isinstance(item, BackpackItem):
+            lines.append(("Тип: Рюкзак", (180, 180, 180), False))
+            lines.append((f"+{item.bonus_slots} слотов инвентаря", (150, 255, 150), False))
+        elif isinstance(item, BeltItem):
+            lines.append(("Тип: Пояс", (180, 180, 180), False))
+            lines.append((f"Слотов зелий: {item.potion_slots}", (150, 255, 150), False))
+            lines.append((f"Слотов талисманов: {item.talisman_slots}", (150, 255, 150), False))
+        elif isinstance(item, TalismanItem):
+            lines.append(("Тип: Талисман", (180, 180, 180), False))
         elif isinstance(item, JewelryItem):
             # Определяем тип украшения по слоту
             from game.inventory import EquipmentSlot
@@ -608,6 +621,8 @@ class InventoryWindow:
             # Заголовок
             slot_names = {
                 EquipmentSlot.WEAPON: "Оружие",
+                EquipmentSlot.BACKPACK: "Рюкзак",
+                EquipmentSlot.BELT: "Пояс",
                 EquipmentSlot.HEAD: "Голова",
                 EquipmentSlot.CHEST: "Торс",
                 EquipmentSlot.HANDS: "Руки",
