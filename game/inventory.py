@@ -1684,36 +1684,28 @@ class ItemGenerator:
         Returns:
             ItemQuality: Качество предмета
         """
-        # Ранг 1 (новичок): только до UNCOMMON, больше плохого и обычного
+        # Ранг 1: ТОЛЬКО плохое качество
         if merchant_rank == 1:
             shop_quality_weights = {
-                ItemQuality.POOR: 0.15,
-                ItemQuality.COMMON: 0.65,
-                ItemQuality.UNCOMMON: 0.20,
+                ItemQuality.POOR: 1.0,
             }
-        # Ранг 2 (обычный): до RARE, меньше плохого
+        # Ранг 2: до обычного качества включительно
         elif merchant_rank == 2:
             shop_quality_weights = {
-                ItemQuality.POOR: 0.05,
-                ItemQuality.COMMON: 0.50,
-                ItemQuality.UNCOMMON: 0.35,
-                ItemQuality.RARE: 0.10
+                ItemQuality.POOR: 0.30,
+                ItemQuality.COMMON: 0.70,
             }
-        # Ранг 3 (опытный): до EPIC, больше редкого
+        # Ранг 3: до необычного качества включительно
         elif merchant_rank == 3:
             shop_quality_weights = {
-                ItemQuality.COMMON: 0.30,
-                ItemQuality.UNCOMMON: 0.40,
-                ItemQuality.RARE: 0.25,
-                ItemQuality.EPIC: 0.05
+                ItemQuality.COMMON: 0.50,
+                ItemQuality.UNCOMMON: 0.50,
             }
-        # Ранг 4 (эксперт): до LEGENDARY, много редкого и эпического
+        # Ранг 4: до редкого качества включительно
         else:
             shop_quality_weights = {
-                ItemQuality.UNCOMMON: 0.20,
-                ItemQuality.RARE: 0.40,
-                ItemQuality.EPIC: 0.30,
-                ItemQuality.LEGENDARY: 0.10
+                ItemQuality.UNCOMMON: 0.30,
+                ItemQuality.RARE: 0.70,
             }
         return ItemGenerator.generate_quality(shop_quality_weights)
 
@@ -1734,6 +1726,32 @@ class ItemGenerator:
             quality = cls.generate_quality()
 
         weapon_type = random.choice(list(WeaponType))
+
+        # Генерируем бонусы из конфига с учётом типа оружия
+        stats_bonus, param_bonus, skill_bonus, base_damage = cls.generate_bonuses_from_config("weapon", quality, weapon_type)
+
+        # Генерируем название
+        name = cls.generate_item_name(weapon_type.rus_name, weapon_type.rus_name, quality)
+
+        # Рассчитываем стоимость
+        value = cls.calculate_item_value("weapon", quality, base_damage, stats_bonus, param_bonus, skill_bonus)
+
+        return WeaponItem(name, weapon_type, base_damage, value, quality, stats_bonus, param_bonus, skill_bonus)
+
+    @classmethod
+    def generate_weapon_by_type(cls, weapon_type, quality=None):
+        """
+        Генерация оружия определенного типа
+
+        Args:
+            weapon_type: Тип оружия (WeaponType)
+            quality: Качество (если None - случайное)
+
+        Returns:
+            WeaponItem
+        """
+        if quality is None:
+            quality = cls.generate_quality()
 
         # Генерируем бонусы из конфига с учётом типа оружия
         stats_bonus, param_bonus, skill_bonus, base_damage = cls.generate_bonuses_from_config("weapon", quality, weapon_type)
