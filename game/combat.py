@@ -191,6 +191,30 @@ class CombatSystem:
 
                 return "continue"
 
+        # Обработка мыши
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_x, mouse_y = event.pos
+
+            # ПКМ - использование зелья
+            if event.button == 3:
+                if hasattr(self, 'potion_buttons'):
+                    for slot_rect, slot, potion in self.potion_buttons:
+                        if slot_rect.collidepoint(mouse_x, mouse_y):
+                            if potion:
+                                # Используем зелье
+                                result = potion.use(self.player)
+                                self.add_to_log(result)
+                                # Удаляем зелье из инвентаря
+                                self.player.inventory.remove_item(potion, 1)
+                                # Снимаем зелье из слота если его больше нет
+                                if self.player.inventory.get_item_count(potion) == 0:
+                                    self.player.inventory.unequip_item(slot)
+                                # Зелье использовано - ход продолжается (не заканчиваем ход)
+                                return "continue"
+                            else:
+                                self.add_to_log("Слот зелья пуст")
+                                return "continue"
+
         return "continue"
 
     def execute_player_action(self, action_type):
@@ -704,10 +728,13 @@ class CombatSystem:
                     cooldown_rect.center = (slot_x + slot_size // 2, slots_y + slot_size // 2)
                     self.screen.blit(cooldown_text, cooldown_rect)
 
+        # Отрисовка панели зелий (справа от умений)
+        self._render_potion_panel(slots_start_x + (slot_size + slot_spacing) * 8 + 20, slots_y, slot_size, slot_spacing)
+
         # Подсказка внизу
         hint_y = combat_y + combat_height - 35
         hint_text = self.info_font.render(
-            "Клавиши 1-8 - использовать умение | ESC - сбежать",
+            "Клавиши 1-8 - использовать умение | ПКМ на зелье - использовать | ESC - сбежать",
             True,
             (180, 180, 200)
         )
@@ -715,6 +742,66 @@ class CombatSystem:
         hint_rect.centerx = combat_x + combat_width // 2
         hint_rect.y = hint_y
         self.screen.blit(hint_text, hint_rect)
+
+    def _render_potion_panel(self, x, y, slot_size, slot_spacing):
+        """Отрисовка панели быстрых зелий в бою"""
+        from game.inventory import EquipmentSlot
+
+        # Получаем пояс игрока
+        belt = self.player.inventory.get_equipped_item(EquipmentSlot.BELT)
+        if not belt or not hasattr(belt, 'potion_slots') or belt.potion_slots == 0:
+            return  # Нет пояса или нет слотов для зелий
+
+        # Очищаем список кнопок перед отрисовкой
+        if not hasattr(self, 'potion_buttons'):
+            self.potion_buttons = []
+        else:
+            self.potion_buttons.clear()
+
+        # Слоты зелий
+        potion_slots = [
+            EquipmentSlot.BELT_POTION_1,
+            EquipmentSlot.BELT_POTION_2,
+            EquipmentSlot.BELT_POTION_3,
+            EquipmentSlot.BELT_POTION_4
+        ][:belt.potion_slots]
+
+        for i, slot in enumerate(potion_slots):
+            slot_x = x + i * (slot_size + slot_spacing)
+            slot_y = y
+
+            potion = self.player.inventory.get_equipped_item(slot)
+
+            # Фон слота
+            bg_color = (60, 40, 60) if potion else (30, 30, 30)
+            border_color = (150, 100, 150) if potion else (100, 100, 100)
+
+            # Создаем rect для кнопки
+            slot_rect = pygame.Rect(slot_x, slot_y, slot_size, slot_size)
+            self.potion_buttons.append((slot_rect, slot, potion))
+
+            pygame.draw.rect(self.screen, bg_color, slot_rect)
+            pygame.draw.rect(self.screen, border_color, slot_rect, 2)
+
+            # Метка "ПКМ"
+            label_text = self.info_font.render("ПКМ", True, (180, 180, 180))
+            self.screen.blit(label_text, (slot_x + 4, slot_y + 4))
+
+            # Если есть зелье, отображаем информацию
+            if potion:
+                # Первая буква названия зелья
+                potion_name = potion.get_full_name() if hasattr(potion, 'get_full_name') else potion.name
+                icon_font = pygame.font.Font(None, 32)
+                icon_text = icon_font.render(potion_name[0], True, (200, 100, 200))
+                icon_rect = icon_text.get_rect()
+                icon_rect.center = (slot_x + slot_size // 2, slot_y + slot_size // 2 + 4)
+                self.screen.blit(icon_text, icon_rect)
+
+                # Количество зелий в инвентаре
+                potion_count = self.player.inventory.get_item_count(potion)
+                if potion_count > 1:
+                    count_text = self.info_font.render(f"x{potion_count}", True, (255, 215, 0))
+                    self.screen.blit(count_text, (slot_x + slot_size - 24, slot_y + slot_size - 18))
 
     def _render_character_stats(self, character, x, y, label, is_player):
         """

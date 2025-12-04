@@ -465,6 +465,9 @@ class TacticalCombatRenderer:
             skill_panel_width = 480  # 8 слотов * (48 + 8)
             self._render_skill_panel(x + 10, y + 35, skill_panel_width)
 
+            # Отрисовка панели зелий (под умениями)
+            self._render_potion_panel(x + 10, y + 90, skill_panel_width)
+
             # Параметры игрока (справа от панели умений)
             self._render_player_stats(x + skill_panel_width + 30, y + 10, width - skill_panel_width - 40)
 
@@ -645,6 +648,77 @@ class TacticalCombatRenderer:
                     cooldown_rect = cooldown_text.get_rect()
                     cooldown_rect.center = (slot_x + slot_size // 2, slot_y + slot_size // 2)
                     self.screen.blit(cooldown_text, cooldown_rect)
+
+    def _render_potion_panel(self, x, y, width):
+        """Отрисовка панели быстрых зелий"""
+        from game.inventory import EquipmentSlot
+
+        # Получаем пояс игрока
+        belt = self.combat.player.inventory.get_equipped_item(EquipmentSlot.BELT)
+        if not belt or not hasattr(belt, 'potion_slots') or belt.potion_slots == 0:
+            return  # Нет пояса или нет слотов для зелий
+
+        # Очищаем список кнопок перед отрисовкой
+        if not hasattr(self, 'potion_buttons'):
+            self.potion_buttons = []
+        else:
+            self.potion_buttons.clear()
+
+        slot_size = 48
+        slot_spacing = 8
+
+        # Слоты зелий
+        potion_slots = [
+            EquipmentSlot.BELT_POTION_1,
+            EquipmentSlot.BELT_POTION_2,
+            EquipmentSlot.BELT_POTION_3,
+            EquipmentSlot.BELT_POTION_4
+        ][:belt.potion_slots]
+
+        # Получаем позицию мыши для подсветки
+        mouse_pos = pygame.mouse.get_pos()
+
+        for i, slot in enumerate(potion_slots):
+            slot_x = x + i * (slot_size + slot_spacing)
+            slot_y = y
+
+            potion = self.combat.player.inventory.get_equipped_item(slot)
+
+            # Фон слота
+            bg_color = (60, 40, 60) if potion else (30, 30, 30)
+            border_color = (150, 100, 150) if potion else (100, 100, 100)
+
+            # Создаем rect для кнопки
+            slot_rect = pygame.Rect(slot_x, slot_y, slot_size, slot_size)
+            self.potion_buttons.append((slot_rect, slot, potion))
+
+            # Проверяем наведение мыши
+            if slot_rect.collidepoint(mouse_pos) and potion:
+                # Подсветка при наведении
+                bg_color = tuple(min(255, c + 30) for c in bg_color)
+
+            pygame.draw.rect(self.screen, bg_color, slot_rect)
+            pygame.draw.rect(self.screen, border_color, slot_rect, 2)
+
+            # Метка "ПКМ"
+            label_text = self.info_font.render("ПКМ", True, (180, 180, 180))
+            self.screen.blit(label_text, (slot_x + 4, slot_y + 4))
+
+            # Если есть зелье, отображаем информацию
+            if potion:
+                # Первая буква названия зелья
+                potion_name = potion.get_full_name() if hasattr(potion, 'get_full_name') else potion.name
+                icon_font = pygame.font.Font(None, 32)
+                icon_text = icon_font.render(potion_name[0], True, (200, 100, 200))
+                icon_rect = icon_text.get_rect()
+                icon_rect.center = (slot_x + slot_size // 2, slot_y + slot_size // 2 + 4)
+                self.screen.blit(icon_text, icon_rect)
+
+                # Количество зелий в инвентаре
+                potion_count = self.combat.player.inventory.get_item_count(potion)
+                if potion_count > 1:
+                    count_text = self.info_font.render(f"x{potion_count}", True, (255, 215, 0))
+                    self.screen.blit(count_text, (slot_x + slot_size - 24, slot_y + slot_size - 18))
 
     def _render_combat_log(self, x, y, width):
         """Отрисовка лога боя с цветовым выделением"""

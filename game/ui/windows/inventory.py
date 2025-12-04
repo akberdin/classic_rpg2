@@ -228,52 +228,117 @@ class InventoryWindow:
             self.screen.blit(group_text, (x + margin_left, slot_y))
             slot_y += max(16, int(20 * (height / 650)))
 
-            for slot in slots:
-                item = player.inventory.get_equipped_item(slot)
+            # Специальная обработка для зелий и талисманов - 2 колонки
+            if group_name in ["Зелья", "Талисманы"]:
+                # Уменьшенная высота слота для 2 колонок
+                small_slot_height = max(9, int(11 * (height / 650)))
+                # Ширина колонки (половина от полной ширины)
+                col_width = (width - margin_sides) // 2 - int(5 * (width / 500))
 
-                # Создаём прямоугольник слота и сохраняем для tooltip
-                slot_rect = pygame.Rect(x + margin_left, slot_y, width - margin_sides, slot_height - 2)
-                self.equipment_slot_rects[slot] = (slot_rect, item)
+                # Отрисовка в 2 колонки
+                for i, slot in enumerate(slots):
+                    item = player.inventory.get_equipped_item(slot)
 
-                # Фон слота
-                slot_color = (60, 60, 70) if item else (40, 40, 50)
-                pygame.draw.rect(
-                    self.screen,
-                    slot_color,
-                    slot_rect
-                )
+                    # Определяем колонку (0 или 1) и строку
+                    col = i % 2
+                    row = i // 2
 
-                # Рамка слота
-                border_color = (100, 150, 200) if self.selected_equipment_slot == slot else (80, 80, 90)
-                pygame.draw.rect(
-                    self.screen,
-                    border_color,
-                    slot_rect,
-                    2 if self.selected_equipment_slot == slot else 1
-                )
+                    # Вычисляем позицию слота
+                    slot_x = x + margin_left + col * (col_width + int(10 * (width / 500)))
+                    slot_y_pos = slot_y + row * small_slot_height
 
-                # Название слота
-                slot_name_text = self.info_font.render(
-                    f"{slot_names[slot]}:",
-                    True,
-                    (150, 150, 150)
-                )
-                self.screen.blit(slot_name_text, (x + text_margin, slot_y + int(8 * (height / 650))))
+                    # Создаём прямоугольник слота и сохраняем для tooltip
+                    slot_rect = pygame.Rect(slot_x, slot_y_pos, col_width, small_slot_height - 2)
+                    self.equipment_slot_rects[slot] = (slot_rect, item)
 
-                # Экипированный предмет
-                if item:
-                    item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
-                    item_text = self.info_font.render(
-                        item_name[:30],
-                        True,
-                        item.quality.color if hasattr(item, 'quality') else (200, 200, 200)
+                    # Фон слота
+                    slot_color = (60, 60, 70) if item else (40, 40, 50)
+                    pygame.draw.rect(self.screen, slot_color, slot_rect)
+
+                    # Рамка слота
+                    border_color = (100, 150, 200) if self.selected_equipment_slot == slot else (80, 80, 90)
+                    pygame.draw.rect(
+                        self.screen,
+                        border_color,
+                        slot_rect,
+                        2 if self.selected_equipment_slot == slot else 1
                     )
-                    self.screen.blit(item_text, (x + text_offset, slot_y + int(8 * (height / 650))))
-                else:
-                    empty_text = self.info_font.render("---", True, (100, 100, 100))
-                    self.screen.blit(empty_text, (x + text_offset, slot_y + int(8 * (height / 650))))
 
-                slot_y += slot_height
+                    # Название слота (короткое)
+                    short_name = slot_names[slot].replace("Зелье ", "З").replace("Талисман ", "Т")
+                    slot_name_text = self.info_font.render(
+                        f"{short_name}:",
+                        True,
+                        (150, 150, 150)
+                    )
+                    self.screen.blit(slot_name_text, (slot_x + int(5 * (width / 500)), slot_y_pos + int(4 * (height / 650))))
+
+                    # Экипированный предмет (только иконка или короткое название)
+                    if item:
+                        item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
+                        # Берём только первые 10 символов для компактности
+                        display_name = item_name[:10] + "..." if len(item_name) > 10 else item_name
+                        item_text = self.info_font.render(
+                            display_name,
+                            True,
+                            item.quality.color if hasattr(item, 'quality') else (200, 200, 200)
+                        )
+                        self.screen.blit(item_text, (slot_x + int(45 * (width / 500)), slot_y_pos + int(4 * (height / 650))))
+                    else:
+                        empty_text = self.info_font.render("---", True, (100, 100, 100))
+                        self.screen.blit(empty_text, (slot_x + int(45 * (width / 500)), slot_y_pos + int(4 * (height / 650))))
+
+                # Переходим на следующую строку после всех слотов
+                rows_count = (len(slots) + 1) // 2  # Округление вверх
+                slot_y += rows_count * small_slot_height
+            else:
+                # Обычная отрисовка для остальных групп
+                for slot in slots:
+                    item = player.inventory.get_equipped_item(slot)
+
+                    # Создаём прямоугольник слота и сохраняем для tooltip
+                    slot_rect = pygame.Rect(x + margin_left, slot_y, width - margin_sides, slot_height - 2)
+                    self.equipment_slot_rects[slot] = (slot_rect, item)
+
+                    # Фон слота
+                    slot_color = (60, 60, 70) if item else (40, 40, 50)
+                    pygame.draw.rect(
+                        self.screen,
+                        slot_color,
+                        slot_rect
+                    )
+
+                    # Рамка слота
+                    border_color = (100, 150, 200) if self.selected_equipment_slot == slot else (80, 80, 90)
+                    pygame.draw.rect(
+                        self.screen,
+                        border_color,
+                        slot_rect,
+                        2 if self.selected_equipment_slot == slot else 1
+                    )
+
+                    # Название слота
+                    slot_name_text = self.info_font.render(
+                        f"{slot_names[slot]}:",
+                        True,
+                        (150, 150, 150)
+                    )
+                    self.screen.blit(slot_name_text, (x + text_margin, slot_y + int(8 * (height / 650))))
+
+                    # Экипированный предмет
+                    if item:
+                        item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
+                        item_text = self.info_font.render(
+                            item_name[:30],
+                            True,
+                            item.quality.color if hasattr(item, 'quality') else (200, 200, 200)
+                        )
+                        self.screen.blit(item_text, (x + text_offset, slot_y + int(8 * (height / 650))))
+                    else:
+                        empty_text = self.info_font.render("---", True, (100, 100, 100))
+                        self.screen.blit(empty_text, (x + text_offset, slot_y + int(8 * (height / 650))))
+
+                    slot_y += slot_height
 
             slot_y += max(6, int(8 * (height / 650)))
 
@@ -844,12 +909,21 @@ class InventoryWindow:
 
         # Вычисляем индекс предмета
         all_items = player.inventory.get_all_items()
+
+        # Применяем фильтр
+        if self.item_type_filter != "all":
+            filtered_items = []
+            for item, quantity in all_items:
+                if self._match_filter(item):
+                    filtered_items.append((item, quantity))
+            all_items = filtered_items
+
         if not all_items:
             return None
 
-        items_y = inventory_panel_y + int(40 * (inventory_panel_height / 500))
-        item_height = max(24, int(30 * (inventory_panel_height / 500)))
-        max_visible_items = max(10, int(14 * (inventory_panel_height / 500)))
+        items_y = inventory_panel_y + int(70 * (inventory_panel_height / 650))
+        item_height = max(24, int(30 * (inventory_panel_height / 650)))
+        max_visible_items = max(10, int(18 * (inventory_panel_height / 650)))
 
         relative_y = mouse_y - items_y
         if relative_y < 0:

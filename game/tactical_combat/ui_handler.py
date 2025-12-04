@@ -89,8 +89,28 @@ class TacticalCombatUIHandler:
                 if not self.selected_target_unit:
                     return self._handle_movement_click(mouse_x, mouse_y)
 
-            # ПКМ - выбор/снятие цели
+            # ПКМ - использование зелья или выбор/снятие цели
             elif event.button == 3:
+                # Сначала проверяем клик по панели зелий
+                if hasattr(self.renderer, 'potion_buttons'):
+                    for slot_rect, slot, potion in self.renderer.potion_buttons:
+                        if slot_rect.collidepoint(mouse_x, mouse_y):
+                            if potion:
+                                # Используем зелье
+                                result = potion.use(self.combat.player)
+                                self.combat.add_to_log(result)
+                                # Удаляем зелье из инвентаря
+                                self.combat.player.inventory.remove_item(potion, 1)
+                                # Снимаем зелье из слота если его больше нет
+                                if self.combat.player.inventory.get_item_count(potion) == 0:
+                                    self.combat.player.inventory.unequip_item(slot)
+                                # Зелье использовано - ход продолжается
+                                return "continue"
+                            else:
+                                self.combat.add_to_log("Слот зелья пуст")
+                                return "continue"
+
+                # Если не кликнули по зельям - выбор цели
                 return self._handle_target_selection(mouse_x, mouse_y)
 
         return "continue"
