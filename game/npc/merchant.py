@@ -741,11 +741,11 @@ class MagicMerchant(Merchant):
             "book_magic_missile", "book_ice_bolt", "book_fireball", "book_lightning"
         ]
 
-        # Фильтруем книги по качеству (до EPIC включительно)
+        # Фильтруем книги по качеству (до RARE включительно, без EPIC)
         for book_id in magic_books:
             if book_id in PREDEFINED_ITEMS:
                 book = PREDEFINED_ITEMS[book_id]
-                if book.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE, ItemQuality.EPIC]:
+                if book.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE]:
                     self.inventory.add_item(book, 1)
 
         # Рецепты: только рецепты для 4 ранга (UNCOMMON и RARE качества)
