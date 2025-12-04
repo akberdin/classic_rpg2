@@ -36,6 +36,7 @@ class CraftingWindow:
 
         # Фильтр по категориям
         self.current_category = "all"
+        self.current_recipe_categories = ["all"]  # Список категорий рецептов для текущей вкладки
         self.category_rects = []
 
     def render(self, crafting_system, player, mouse_pos=None):
@@ -249,17 +250,14 @@ class CraftingWindow:
 
     def _render_categories(self, crafting_system, window_x, window_y, window_width, window_height, scale_w, scale_h):
         """Отрисовка вкладок категорий."""
-        # Определяем категории
+        # Определяем категории (вкладка_id, отображаемое_имя, список_категорий_рецептов)
         categories = [
-            ("all", "Все"),
-            ("weapon", "Оружие"),
-            ("armor", "Броня"),
-            ("tool", "Инструменты"),
-            ("smelting", "Переплавка"),
-            ("potion", "Зелья"),
-            ("ammunition", "Боеприпасы"),
-            ("consumable", "Расходники"),
-            ("enchantment", "Зачарования")
+            ("all", "Все", ["all"]),
+            ("materials", "Материалы", ["materials", "smelting", "tool"]),
+            ("armor", "Броня", ["armor"]),
+            ("weapon", "Оружие", ["weapon"]),
+            ("jewelry", "Украшения", ["jewelry"]),
+            ("artifacts", "Артефакты", ["artifacts"])
         ]
 
         # Начальная позиция для вкладок (справа от области станций)
@@ -273,7 +271,7 @@ class CraftingWindow:
         tab_width = (available_width - (len(categories) - 1) * tab_spacing) // len(categories)
 
         # Отрисовываем вкладки
-        for i, (category_id, category_name) in enumerate(categories):
+        for i, (category_id, category_name, recipe_categories) in enumerate(categories):
             tab_x = tabs_start_x + i * (tab_width + tab_spacing)
 
             # Определяем цвета в зависимости от выбранной категории
@@ -291,8 +289,8 @@ class CraftingWindow:
             pygame.draw.rect(self.screen, bg_color, tab_rect)
             pygame.draw.rect(self.screen, border_color, tab_rect, 2)
 
-            # Сохраняем rect для обработки кликов
-            self.category_rects.append((tab_rect, category_id))
+            # Сохраняем rect для обработки кликов (включая список категорий рецептов)
+            self.category_rects.append((tab_rect, category_id, recipe_categories))
 
             # Текст категории
             category_text = self.info_font.render(category_name, True, text_color)
@@ -310,9 +308,9 @@ class CraftingWindow:
         # Получаем доступные рецепты
         all_recipes = station.get_available_recipes(player)
 
-        # Фильтруем по категории
-        if self.current_category != "all":
-            recipes = [r for r in all_recipes if r.category == self.current_category]
+        # Фильтруем по категориям
+        if "all" not in self.current_recipe_categories:
+            recipes = [r for r in all_recipes if r.category in self.current_recipe_categories]
         else:
             recipes = all_recipes
 
@@ -474,9 +472,9 @@ class CraftingWindow:
         else:
             all_recipes = current_station.get_available_recipes(player)
 
-        # Фильтруем по категории
-        if self.current_category != "all":
-            recipes = [r for r in all_recipes if r.category == self.current_category]
+        # Фильтруем по категориям
+        if "all" not in self.current_recipe_categories:
+            recipes = [r for r in all_recipes if r.category in self.current_recipe_categories]
         else:
             recipes = all_recipes
 
@@ -571,9 +569,10 @@ class CraftingWindow:
         # Обработка кликов по вкладкам категорий
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pygame.mouse.get_pos()
-            for rect, category_id in self.category_rects:
+            for rect, category_id, recipe_categories in self.category_rects:
                 if rect.collidepoint(mouse_pos):
                     self.current_category = category_id
+                    self.current_recipe_categories = recipe_categories
                     self.selected_recipe_index = 0  # Сбрасываем выбор рецепта
                     return True, None
 
