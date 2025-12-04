@@ -104,8 +104,8 @@ class CraftingWindow:
         pygame.draw.line(
             self.screen,
             (100, 100, 120),
-            (window_x + int(10 * scale_w), window_y + int(50 * scale_h)),
-            (window_x + window_width - int(10 * scale_w), window_y + int(50 * scale_h)),
+            (window_x + int(10 * scale_w), window_y + int(40 * scale_h)),
+            (window_x + window_width - int(10 * scale_w), window_y + int(40 * scale_h)),
             2
         )
 
@@ -161,9 +161,9 @@ class CraftingWindow:
     def _render_stations(self, stations, player, window_x, window_y, window_width, window_height, scale_w, scale_h):
         """Отрисовка списка станций."""
         stations_x = window_x + int(20 * scale_w)
-        stations_y = window_y + int(70 * scale_h)
-        station_width = int(250 * scale_w)
-        station_height = int(60 * scale_h)
+        stations_y = window_y + int(170 * scale_h)  # Смещено вниз на 100 пикселей
+        station_width = int(180 * scale_w)  # Уменьшено с 250 до 180
+        station_height = int(40 * scale_h)  # Уменьшено с 60 до 40
         station_spacing = int(10 * scale_h)
 
         # Заголовок
@@ -225,28 +225,12 @@ class CraftingWindow:
             # Сохраняем rect для обработки мыши (вместе с флагом блокировки)
             self.station_rects.append(station_rect)
 
-            # Название станции
+            # Название станции (центрированное по вертикали и горизонтали)
             name_color = (150, 100, 100) if is_locked else (255, 255, 255)
-            name_text = self.font.render(station.name, True, name_color)
+            name_text = self.info_font.render(station.name, True, name_color)
             name_rect = name_text.get_rect()
-            name_rect.centerx = station_rect.centerx
-            name_rect.y = rect_y + int(10 * scale_h)
+            name_rect.center = station_rect.center
             self.screen.blit(name_text, name_rect)
-
-            # Описание станции или требование умения
-            if is_locked:
-                desc_text = self.info_font.render(
-                    f"[Требуется: {required_skill_name}]",
-                    True,
-                    (200, 100, 100)
-                )
-            else:
-                desc_text = self.info_font.render(
-                    station.description[:28] + ("..." if len(station.description) > 28 else ""),
-                    True,
-                    (180, 180, 180)
-                )
-            self.screen.blit(desc_text, (stations_x + int(10 * scale_w), rect_y + int(35 * scale_h)))
 
     def _render_categories(self, crafting_system, window_x, window_y, window_width, window_height, scale_w, scale_h):
         """Отрисовка вкладок категорий."""
@@ -261,8 +245,8 @@ class CraftingWindow:
         ]
 
         # Начальная позиция для вкладок (справа от области станций)
-        tabs_start_x = window_x + int(300 * scale_w)
-        tabs_y = window_y + int(50 * scale_h)
+        tabs_start_x = window_x + int(220 * scale_w)  # Уменьшено с 300 из-за уменьшения ширины кнопок станций
+        tabs_y = window_y + int(60 * scale_h)
         tab_height = int(35 * scale_h)
         tab_spacing = int(5 * scale_w)
 
@@ -301,9 +285,9 @@ class CraftingWindow:
     def _render_recipes(self, crafting_system, station, player, window_x, window_y,
                        window_width, window_height, scale_w, scale_h, mouse_pos):
         """Отрисовка списка рецептов в 4 столбца по 8 ячеек."""
-        recipes_area_x = window_x + int(300 * scale_w)
-        recipes_area_y = window_y + int(100 * scale_h)  # Увеличено для вкладок категорий
-        recipes_area_width = window_width - int(320 * scale_w)
+        recipes_area_x = window_x + int(220 * scale_w)  # Уменьшено с 300 из-за уменьшения ширины кнопок станций
+        recipes_area_y = window_y + int(110 * scale_h)  # Увеличено для вкладок категорий
+        recipes_area_width = window_width - int(240 * scale_w)  # Уменьшено с 320
 
         # Получаем доступные рецепты
         all_recipes = station.get_available_recipes(player)
@@ -313,6 +297,9 @@ class CraftingWindow:
             recipes = [r for r in all_recipes if r.category in self.current_recipe_categories]
         else:
             recipes = all_recipes
+
+        # Сортировка по качеству (required_skill_rank) по возрастанию
+        recipes = sorted(recipes, key=lambda r: getattr(r, 'required_skill_rank', 1))
 
         if not recipes:
             # Если нет рецептов
@@ -328,13 +315,13 @@ class CraftingWindow:
         if self.selected_recipe_index >= len(recipes):
             self.selected_recipe_index = max(0, len(recipes) - 1)
 
-        # Параметры сетки: 4 столбца по 8 рецептов
-        columns = 4
-        rows_per_column = 8
-        recipe_width = int((recipes_area_width - int(30 * scale_w)) / columns)
-        recipe_height = int(80 * scale_h)  # Увеличено для лучшей читаемости
-        recipe_spacing_x = int(10 * scale_w)
-        recipe_spacing_y = int(8 * scale_h)
+        # Параметры сетки: 2 столбца, много рядов
+        columns = 2
+        rows_per_column = 20  # Увеличено количество рядов
+        recipe_width = int((recipes_area_width - int(20 * scale_w)) / columns)
+        recipe_height = int(30 * scale_h)  # Уменьшено для компактности (только название)
+        recipe_spacing_x = int(20 * scale_w)
+        recipe_spacing_y = int(5 * scale_h)
 
         # Отрисовка рецептов
         for i, recipe in enumerate(recipes):
@@ -343,7 +330,7 @@ class CraftingWindow:
             row = i % rows_per_column
 
             if column >= columns:
-                break  # Максимум 32 рецепта (4x8)
+                break  # Максимум 40 рецептов (2x20)
 
             # Позиция рецепта
             rect_x = recipes_area_x + column * (recipe_width + recipe_spacing_x)
@@ -368,57 +355,142 @@ class CraftingWindow:
             # Сохраняем rect для обработки мыши (важно для правильного индекса!)
             self.recipe_rects.append((recipe_rect, i, recipe))
 
-            # Название рецепта (меньший шрифт)
+            # Название рецепта (только название, центрированное по вертикали)
             name_color = (255, 255, 255) if can_craft else (200, 150, 150)
             name_text = self.info_font.render(recipe.name, True, name_color)
+
             # Обрезаем название если слишком длинное
-            if name_text.get_width() > recipe_width - int(10 * scale_w):
-                short_name = recipe.name[:15] + "..."
-                name_text = self.info_font.render(short_name, True, name_color)
-            self.screen.blit(name_text, (rect_x + int(5 * scale_w), rect_y + int(5 * scale_h)))
+            max_width = recipe_width - int(10 * scale_w)
+            if name_text.get_width() > max_width:
+                # Подбираем длину названия, чтобы оно поместилось
+                short_name = recipe.name
+                while len(short_name) > 0 and self.info_font.render(short_name + "...", True, name_color).get_width() > max_width:
+                    short_name = short_name[:-1]
+                name_text = self.info_font.render(short_name + "...", True, name_color)
 
-            # Категория и ранг умения
-            category_name = crafting_system.get_category_name(recipe.category)
-            skill_rank = getattr(recipe, 'required_skill_rank', 1)
-            info_text = self.info_font.render(
-                f"[{category_name}] Р.{skill_rank}",
-                True,
-                (150, 150, 200)
-            )
-            self.screen.blit(info_text, (rect_x + int(5 * scale_w), rect_y + int(23 * scale_h)))
+            # Центрируем по вертикали
+            name_rect = name_text.get_rect()
+            name_rect.left = rect_x + int(5 * scale_w)
+            name_rect.centery = recipe_rect.centery
+            self.screen.blit(name_text, name_rect)
 
-            # Ингредиенты (компактно)
-            ingredients_y = rect_y + int(43 * scale_h)
-            for j, ingredient in enumerate(recipe.ingredients):
-                if j >= 2:  # Максимум 2 строки ингредиентов
+        # Проверяем наведение мыши и отрисовываем tooltip
+        if mouse_pos:
+            for rect, recipe_index, recipe in self.recipe_rects:
+                if rect.collidepoint(mouse_pos):
+                    self._render_recipe_tooltip(recipe, player, crafting_system, mouse_pos, rect, scale_w, scale_h)
                     break
 
-                item_id = ingredient['item']
-                required = ingredient['quantity']
-                # Преобразуем ID предмета в его имя
-                item_name = ITEM_ID_TO_NAME.get(item_id, item_id)
-                has = player.inventory.get_resource_count(item_name)
+    def _render_recipe_tooltip(self, recipe, player, crafting_system, mouse_pos, recipe_rect, scale_w, scale_h):
+        """Отрисовка всплывающего окна с информацией о рецепте."""
+        # Размеры tooltip
+        tooltip_width = int(350 * scale_w)
+        tooltip_padding = int(10 * scale_w)
+        line_height = int(20 * scale_h)
 
-                # Сокращаем название если нужно
-                if len(item_name) > 15:
-                    item_name = item_name[:12] + "..."
+        # Подготовка информации
+        lines = []
 
-                ingredients_text = f"{item_name}: {has}/{required}"
-                ingr_color = (100, 200, 100) if has >= required else (200, 100, 100)
-                ingr_surface = self.info_font.render(ingredients_text, True, ingr_color)
-                self.screen.blit(ingr_surface, (rect_x + int(5 * scale_w), ingredients_y + j * int(17 * scale_h)))
+        # Название (жирным)
+        lines.append(("title", recipe.name))
 
-            # Количество результата справа внизу (только если больше 1)
-            if recipe.result_quantity > 1:
-                quantity_text = self.info_font.render(
-                    f"x{recipe.result_quantity}",
-                    True,
-                    (255, 215, 0)
+        # Категория и ранг
+        category_name = crafting_system.get_category_name(recipe.category)
+        skill_rank = getattr(recipe, 'required_skill_rank', 1)
+        lines.append(("info", f"Категория: {category_name}"))
+        lines.append(("info", f"Требуемый ранг: {skill_rank}"))
+
+        # Разделитель
+        lines.append(("separator", None))
+
+        # Ингредиенты
+        lines.append(("header", "Ингредиенты:"))
+        for ingredient in recipe.ingredients:
+            item_id = ingredient['item']
+            required = ingredient['quantity']
+            item_name = ITEM_ID_TO_NAME.get(item_id, item_id)
+            has = player.inventory.get_resource_count(item_name)
+
+            has_enough = has >= required
+            lines.append(("ingredient", f"  {item_name}: {has}/{required}", has_enough))
+
+        # Результат
+        lines.append(("separator", None))
+        result_text = f"Результат: {recipe.name}"
+        if recipe.result_quantity > 1:
+            result_text += f" x{recipe.result_quantity}"
+        lines.append(("result", result_text))
+
+        # Проверка возможности создания
+        can_craft, error_msg = recipe.can_craft(player, player.inventory)
+        if not can_craft:
+            lines.append(("separator", None))
+            lines.append(("error", f"Невозможно: {error_msg}"))
+
+        # Вычисляем высоту tooltip
+        tooltip_height = len([l for l in lines if l[0] != "separator"]) * line_height + tooltip_padding * 2
+
+        # Определяем позицию tooltip (справа или слева от рецепта)
+        screen_width = self.screen.get_width()
+
+        # Пытаемся разместить справа
+        tooltip_x = recipe_rect.right + int(10 * scale_w)
+        if tooltip_x + tooltip_width > screen_width - int(20 * scale_w):
+            # Размещаем слева
+            tooltip_x = recipe_rect.left - tooltip_width - int(10 * scale_w)
+
+        tooltip_y = recipe_rect.top
+
+        # Убеждаемся, что tooltip не выходит за границы экрана
+        if tooltip_y + tooltip_height > self.screen.get_height():
+            tooltip_y = self.screen.get_height() - tooltip_height - int(10 * scale_h)
+        if tooltip_y < int(10 * scale_h):
+            tooltip_y = int(10 * scale_h)
+
+        # Фон tooltip
+        tooltip_rect = pygame.Rect(tooltip_x, tooltip_y, tooltip_width, tooltip_height)
+        pygame.draw.rect(self.screen, (25, 25, 35), tooltip_rect)
+        pygame.draw.rect(self.screen, (150, 150, 180), tooltip_rect, 2)
+
+        # Отрисовка содержимого
+        current_y = tooltip_y + tooltip_padding
+        for line_type, *line_data in lines:
+            if line_type == "separator":
+                # Горизонтальная линия
+                pygame.draw.line(
+                    self.screen,
+                    (100, 100, 120),
+                    (tooltip_x + tooltip_padding, current_y + line_height // 2),
+                    (tooltip_x + tooltip_width - tooltip_padding, current_y + line_height // 2),
+                    1
                 )
-                self.screen.blit(
-                    quantity_text,
-                    (rect_x + recipe_width - int(35 * scale_w), rect_y + recipe_height - int(18 * scale_h))
-                )
+                current_y += line_height // 2
+            elif line_type == "title":
+                text = self.font.render(line_data[0], True, (255, 215, 0))
+                self.screen.blit(text, (tooltip_x + tooltip_padding, current_y))
+                current_y += line_height
+            elif line_type == "info":
+                text = self.info_font.render(line_data[0], True, (200, 200, 200))
+                self.screen.blit(text, (tooltip_x + tooltip_padding, current_y))
+                current_y += line_height
+            elif line_type == "header":
+                text = self.info_font.render(line_data[0], True, (180, 180, 220))
+                self.screen.blit(text, (tooltip_x + tooltip_padding, current_y))
+                current_y += line_height
+            elif line_type == "ingredient":
+                has_enough = line_data[1]
+                color = (100, 200, 100) if has_enough else (200, 100, 100)
+                text = self.info_font.render(line_data[0], True, color)
+                self.screen.blit(text, (tooltip_x + tooltip_padding, current_y))
+                current_y += line_height
+            elif line_type == "result":
+                text = self.info_font.render(line_data[0], True, (150, 255, 150))
+                self.screen.blit(text, (tooltip_x + tooltip_padding, current_y))
+                current_y += line_height
+            elif line_type == "error":
+                text = self.info_font.render(line_data[0], True, (255, 100, 100))
+                self.screen.blit(text, (tooltip_x + tooltip_padding, current_y))
+                current_y += line_height
 
     def _is_station_locked(self, station, player):
         """

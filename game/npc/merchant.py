@@ -125,12 +125,15 @@ class Merchant(NPC):
             jewelry = ItemGenerator.generate_jewelry(self.level, quality=quality)
             self.inventory.add_item(jewelry, 1)
 
-        # Генерируем ресурсы (уменьшено количество)
-        resource_types = ["copper_ore", "iron_ore", "silver_ore", "ancient_coin", "artifact_fragment"]
-        num_resources = min(2 + rank, len(resource_types))  # 3/4/5/5 видов
+        # Генерируем ресурсы (увеличено количество и добавлены новые типы)
+        resource_types = [
+            "copper_ore", "iron_ore", "silver_ore", "gold_ore", "mithril_ore",
+            "ancient_coin", "artifact_fragment", "magic_crystal", "old_scroll"
+        ]
+        num_resources = min(3 + rank * 2, len(resource_types))  # 5/7/9/9 видов
         for resource_type in random.sample(resource_types, num_resources):
-            # Ограничиваем количество каждого ресурса до 3
-            quantity = random.randint(2, 3)
+            # Увеличено количество каждого ресурса до 5-15
+            quantity = random.randint(5, 10 + rank * 2)  # 5-12 для ранга 1, 5-18 для ранга 4
             self.inventory.add_item(PREDEFINED_ITEMS[resource_type], quantity)
 
         # Книги боевых умений (для всех торговцев с вероятностью)
@@ -317,6 +320,21 @@ class Merchant(NPC):
             recipe_id = random.choice(advanced_recipes)
             if recipe_id in PREDEFINED_ITEMS:
                 self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
+
+        # Добавляем ресурсы (новое - увеличенное количество)
+        resource_types = [
+            "copper_ore", "iron_ore", "silver_ore", "gold_ore", "mithril_ore",
+            "ancient_coin", "artifact_fragment", "magic_crystal", "old_scroll"
+        ]
+        # Шанс добавления ресурсов зависит от ранга
+        resource_chance = 0.6 + (rank * 0.1)  # 70%/80%/90%/100%
+        if random.random() < resource_chance:
+            # Добавляем 1-3 типа ресурсов
+            num_resource_types = random.randint(1, 2 + rank)  # 1-3 для ранга 1, 1-6 для ранга 4
+            for resource_type in random.sample(resource_types, min(num_resource_types, len(resource_types))):
+                # Увеличено количество каждого ресурса
+                quantity = random.randint(3, 5 + rank * 2)  # 3-7 для ранга 1, 3-13 для ранга 4
+                self.inventory.add_item(PREDEFINED_ITEMS[resource_type], quantity)
 
     def set_settlements(self, settlements):
         """
