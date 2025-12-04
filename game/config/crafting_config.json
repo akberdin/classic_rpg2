@@ -376,13 +376,12 @@
   ],
 
   "categories": {
-    "weapon": "Оружие",
+    "materials": "Материалы",
     "armor": "Броня",
-    "potion": "Зелья",
-    "tool": "Инструменты",
-    "ammunition": "Боеприпасы",
-    "consumable": "Расходники",
+    "weapon": "Оружие",
+    "jewelry": "Украшения",
+    "artifacts": "Артефакты",
     "smelting": "Переплавка",
-    "enchantment": "Зачарования"
+    "tool": "Инструменты"
   }
 }
