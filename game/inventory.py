@@ -49,6 +49,18 @@ class EquipmentSlot(Enum):
     AMULET = "amulet"
     BRACELET_1 = "bracelet_1"
     BRACELET_2 = "bracelet_2"
+    BELT = "belt"
+    BACKPACK = "backpack"
+    # Слоты для зелий в поясе
+    BELT_POTION_1 = "belt_potion_1"
+    BELT_POTION_2 = "belt_potion_2"
+    BELT_POTION_3 = "belt_potion_3"
+    BELT_POTION_4 = "belt_potion_4"
+    # Слоты для талисманов в поясе
+    BELT_TALISMAN_1 = "belt_talisman_1"
+    BELT_TALISMAN_2 = "belt_talisman_2"
+    BELT_TALISMAN_3 = "belt_talisman_3"
+    BELT_TALISMAN_4 = "belt_talisman_4"
 
 
 # Типы оружия
@@ -543,19 +555,155 @@ class ArtifactItem(EquipmentItem):
         self.special_effect = special_effect
 
 
+class BeltItem(EquipmentItem):
+    """Класс пояса - предмет с слотами для зелий и талисманов"""
+
+    # Конфигурация слотов в зависимости от качества
+    SLOTS_CONFIG = {
+        ItemQuality.POOR: (1, 0),       # зелья, талисманы
+        ItemQuality.COMMON: (2, 0),
+        ItemQuality.UNCOMMON: (2, 1),
+        ItemQuality.RARE: (2, 2),
+        ItemQuality.EPIC: (3, 2),
+        ItemQuality.LEGENDARY: (3, 3),
+        ItemQuality.ARTIFACT: (4, 4)
+    }
+
+    def __init__(self, name, value=100, quality=ItemQuality.COMMON, param_bonus=None):
+        """
+        Инициализация пояса
+
+        Args:
+            name: Название пояса
+            value: Стоимость
+            quality: Качество пояса
+            param_bonus: Процентные бонусы к health/mana/stamina (только для необычного и выше)
+        """
+        weight = 1.2
+
+        # Пояс не дает бонусов на плохом и обычном уровне
+        if quality in [ItemQuality.POOR, ItemQuality.COMMON]:
+            param_bonus = None
+
+        # Получаем количество слотов для данного качества
+        potion_slots, talisman_slots = self.SLOTS_CONFIG.get(quality, (1, 0))
+
+        description = f"Пояс. Слотов для зелий: {potion_slots}, Слотов для талисманов: {talisman_slots}"
+        if param_bonus:
+            bonus_desc = ", ".join([f"+{v}% {k}" for k, v in param_bonus.items()])
+            description += f". {bonus_desc}"
+
+        super().__init__(name, EquipmentSlot.BELT, value, weight, quality, None, param_bonus, None, description)
+        self.potion_slots = potion_slots
+        self.talisman_slots = talisman_slots
+
+    def get_available_potion_slots(self):
+        """Получить количество доступных слотов для зелий"""
+        return self.potion_slots
+
+    def get_available_talisman_slots(self):
+        """Получить количество доступных слотов для талисманов"""
+        return self.talisman_slots
+
+
+class TalismanItem(EquipmentItem):
+    """Класс талисмана - предмет для слотов талисманов в поясе"""
+
+    def __init__(self, name, value=50, quality=ItemQuality.COMMON, stats_bonus=None, param_bonus=None):
+        """
+        Инициализация талисмана
+
+        Args:
+            name: Название талисмана
+            value: Стоимость
+            quality: Качество
+            stats_bonus: Бонусы к характеристикам
+            param_bonus: Процентные бонусы к параметрам
+        """
+        weight = 0.2
+        stats = stats_bonus or {}
+
+        description = "Талисман"
+        if stats or param_bonus:
+            desc_parts = []
+            if stats:
+                desc_parts.append(self._get_bonus_description(stats))
+            if param_bonus:
+                desc_parts.append(", ".join([f"+{v}% {k}" for k, v in param_bonus.items()]))
+            description = f"Талисман. {', '.join(desc_parts)}"
+
+        # Талисман может быть помещен в любой из слотов талисманов
+        super().__init__(name, EquipmentSlot.BELT_TALISMAN_1, value, weight, quality, stats, param_bonus, None, description)
+
+    def _get_bonus_description(self, stats):
+        """Создать описание бонусов"""
+        stat_names = {
+            'strength': 'Силы',
+            'dexterity': 'Ловкости',
+            'constitution': 'Телосложения',
+            'spirit': 'Духа',
+            'intelligence': 'Интеллекта',
+            'luck': 'Удачи'
+        }
+        parts = []
+        for stat, bonus in stats.items():
+            stat_name = stat_names.get(stat, stat)
+            parts.append(f"+{bonus} {stat_name}")
+        return ", ".join(parts)
+
+
+class BackpackItem(EquipmentItem):
+    """Класс рюкзака - увеличивает размер инвентаря"""
+
+    # Конфигурация дополнительных слотов в зависимости от качества
+    SLOTS_CONFIG = {
+        ItemQuality.POOR: 5,
+        ItemQuality.COMMON: 10,
+        ItemQuality.UNCOMMON: 15,
+        ItemQuality.RARE: 20,
+        ItemQuality.EPIC: 25,
+        ItemQuality.LEGENDARY: 30,
+        ItemQuality.ARTIFACT: 35
+    }
+
+    def __init__(self, name, value=200, quality=ItemQuality.COMMON):
+        """
+        Инициализация рюкзака
+
+        Args:
+            name: Название рюкзака
+            value: Стоимость
+            quality: Качество
+        """
+        weight = 3.0
+
+        # Получаем количество дополнительных слотов для данного качества
+        bonus_slots = self.SLOTS_CONFIG.get(quality, 10)
+
+        description = f"Рюкзак. Добавляет {bonus_slots} слотов к инвентарю"
+
+        super().__init__(name, EquipmentSlot.BACKPACK, value, weight, quality, None, None, None, description)
+        self.bonus_slots = bonus_slots
+
+    def get_bonus_slots(self):
+        """Получить количество дополнительных слотов"""
+        return self.bonus_slots
+
+
 class Inventory:
     """Класс инвентаря для хранения предметов"""
 
-    def __init__(self, max_slots=20, max_weight=100.0, owner=None):
+    def __init__(self, max_slots=5, max_weight=100.0, owner=None):
         """
         Инициализация инвентаря
 
         Args:
-            max_slots: Максимальное количество слотов
+            max_slots: Максимальное количество слотов (по умолчанию 5)
             max_weight: Максимальный вес (кг)
             owner: Владелец инвентаря (персонаж)
         """
         self.items = {}  # {item_name: (item, quantity)}
+        self.base_max_slots = max_slots  # Базовый размер инвентаря без рюкзака
         self.max_slots = max_slots
         self.max_weight = max_weight
         self.gold = 0
@@ -837,6 +985,19 @@ class Inventory:
         if not isinstance(item, EquipmentItem):
             return (False, "Этот предмет нельзя экипировать")
 
+        # СПЕЦИАЛЬНАЯ ПРОВЕРКА ДЛЯ РЮКЗАКА
+        if isinstance(item, BackpackItem):
+            # Проверяем, есть ли уже экипированный рюкзак
+            old_backpack = self.equipment.get(EquipmentSlot.BACKPACK)
+            if old_backpack and isinstance(old_backpack, BackpackItem):
+                # Новый размер = базовый + бонус от нового рюкзака
+                new_max_slots = self.base_max_slots + item.get_bonus_slots()
+                current_items_count = len(self.items)
+
+                # Проверяем, поместятся ли все текущие предметы в новый рюкзак
+                if current_items_count > new_max_slots:
+                    return (False, f"Не могу сменить рюкзак: занято {current_items_count} слотов, а в новом рюкзаке будет доступно только {new_max_slots} слотов. Освободите {current_items_count - new_max_slots} слотов.")
+
         # Определяем слот
         slot = item.slot
 
@@ -874,6 +1035,36 @@ class Inventory:
             else:
                 slot = EquipmentSlot.BRACELET_1
 
+        # Для талисманов ищем первый свободный слот среди доступных
+        elif slot in [EquipmentSlot.BELT_TALISMAN_1, EquipmentSlot.BELT_TALISMAN_2, EquipmentSlot.BELT_TALISMAN_3, EquipmentSlot.BELT_TALISMAN_4]:
+            # Проверяем, есть ли экипированный пояс и сколько слотов он предоставляет
+            belt = self.equipment.get(EquipmentSlot.BELT)
+            if not belt or not isinstance(belt, BeltItem):
+                return (False, "Сначала экипируйте пояс")
+
+            available_slots_count = belt.get_available_talisman_slots()
+            if available_slots_count == 0:
+                return (False, "Экипированный пояс не имеет слотов для талисманов")
+
+            # Определяем доступные слоты
+            all_talisman_slots = [EquipmentSlot.BELT_TALISMAN_1, EquipmentSlot.BELT_TALISMAN_2,
+                                  EquipmentSlot.BELT_TALISMAN_3, EquipmentSlot.BELT_TALISMAN_4]
+            available_slots = all_talisman_slots[:available_slots_count]
+
+            # Ищем первый пустой слот
+            empty_slot = None
+            for talisman_slot in available_slots:
+                if not self.equipment[talisman_slot]:
+                    empty_slot = talisman_slot
+                    break
+
+            # Если нашли пустой слот, используем его
+            if empty_slot:
+                slot = empty_slot
+            # Если все слоты заняты, используем первый доступный слот
+            else:
+                slot = available_slots[0]
+
         # Если слот занят, снимаем старый предмет
         old_item = self.equipment[slot]
         if old_item:
@@ -898,6 +1089,13 @@ class Inventory:
                 for skill_id, skill_rank in item.skill_bonus.items():
                     self.owner.skill_manager.grant_equipment_skill(skill_id, skill_rank)
 
+        # Обновляем max_slots если экипирован рюкзак
+        if isinstance(item, BackpackItem):
+            self.max_slots = self.base_max_slots + item.get_bonus_slots()
+        # Или если снимаем рюкзак и надеваем что-то другое
+        elif isinstance(old_item, BackpackItem):
+            self.max_slots = self.base_max_slots
+
         return (True, f"{item.get_full_name()} экипирован в слот {slot.value}")
 
     def unequip_item(self, slot):
@@ -917,6 +1115,35 @@ class Inventory:
         if not item:
             return (False, "Слот пуст")
 
+        # СПЕЦИАЛЬНАЯ ПРОВЕРКА ДЛЯ РЮКЗАКА
+        if isinstance(item, BackpackItem):
+            # Проверяем, поместятся ли предметы в базовый размер инвентаря
+            new_max_slots = self.base_max_slots
+            current_items_count = len(self.items)
+
+            # +1 слот нужен будет для самого рюкзака
+            if current_items_count + 1 > new_max_slots:
+                return (False, f"Не могу снять рюкзак: занято {current_items_count} слотов, а без рюкзака будет доступно только {new_max_slots} слотов. Освободите {current_items_count + 1 - new_max_slots} слотов.")
+
+        # СПЕЦИАЛЬНАЯ ПРОВЕРКА ДЛЯ ПОЯСА
+        if isinstance(item, BeltItem):
+            # Проверяем, есть ли предметы в слотах талисманов или зелий
+            talisman_slots = [EquipmentSlot.BELT_TALISMAN_1, EquipmentSlot.BELT_TALISMAN_2,
+                             EquipmentSlot.BELT_TALISMAN_3, EquipmentSlot.BELT_TALISMAN_4]
+            potion_slots = [EquipmentSlot.BELT_POTION_1, EquipmentSlot.BELT_POTION_2,
+                           EquipmentSlot.BELT_POTION_3, EquipmentSlot.BELT_POTION_4]
+
+            occupied_slots = []
+            for t_slot in talisman_slots:
+                if self.equipment.get(t_slot):
+                    occupied_slots.append(t_slot)
+            for p_slot in potion_slots:
+                if self.equipment.get(p_slot):
+                    occupied_slots.append(p_slot)
+
+            if occupied_slots:
+                return (False, "Сначала освободите все слоты пояса (талисманы и зелья)")
+
         # Пытаемся добавить в инвентарь
         if not self.add_item(item, 1):
             return (False, "Инвентарь переполнен")
@@ -929,6 +1156,10 @@ class Inventory:
 
         # Снимаем предмет
         self.equipment[slot] = None
+
+        # Обновляем max_slots если снят рюкзак
+        if isinstance(item, BackpackItem):
+            self.max_slots = self.base_max_slots
 
         return (True, f"{item.get_full_name()} снят")
 
@@ -1184,50 +1415,27 @@ class ItemGenerator:
 
         # Генерация бонусов к навыкам
         skill_bonus = {}
-        skills_count_range = params.get('skills_count_range', [0, 0])
-        skills_count = random.randint(skills_count_range[0], skills_count_range[1])
 
-        if skills_count > 0:
-            skill_bonus_range = params.get('skill_bonus_range', [1, 1])
+        # НОВАЯ ЛОГИКА: Оружие и броня больше НЕ дают бонусы к умениям
+        if item_type in ["weapon", "armor", "light_armor", "medium_armor", "heavy_armor"]:
+            # Оружие и броня больше не добавляют умения
+            pass
+        elif item_type in ["ring", "amulet", "bracelet", "jewelry"]:
+            # Ювелирные изделия: только одно умение, максимум 1 пункт (легендарное) или 2 пункта (артефакт)
+            if quality in [ItemQuality.LEGENDARY, ItemQuality.ARTIFACT]:
+                # Определяем максимальный бонус
+                max_bonus = 1 if quality == ItemQuality.LEGENDARY else 2
 
-            # Список доступных умений по категориям
-            combat_skills = ['basic_attack', 'power_strike', 'poison_strike', 'stun_strike', 'battle_cry']
-            bow_skills = ['basic_shot', 'precise_shot', 'rapid_fire', 'piercing_arrow']
-            knife_skills = ['backstab', 'bleeding_cut', 'shadow_step']
-            sword_skills = ['whirlwind_strike', 'shield_breaker', 'blade_dance']
-            magic_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield', 'fireball', 'ice_bolt', 'lightning', 'magic_missile']
-
-            # Выбираем подходящие умения в зависимости от типа предмета
-            if item_type == "weapon":
-                # Для посохов и жезлов - только магические умения
-                if weapon_type in [WeaponType.STAFF, WeaponType.WAND]:
-                    available_skills = magic_skills.copy()
-                else:
-                    # Для остального оружия - общие боевые умения + профильные умения только для своего типа
-                    available_skills = combat_skills.copy()
-
-                    # Добавляем профильные умения только для соответствующего типа оружия
-                    if weapon_type == WeaponType.BOW:
-                        available_skills += bow_skills
-                    elif weapon_type == WeaponType.KNIFE:
-                        available_skills += knife_skills
-                    elif weapon_type == WeaponType.SWORD:
-                        available_skills += sword_skills
-                    # Для остальных типов оружия - только общие боевые умения
-            elif item_type == "armor":
-                # Для брони - защитные и боевые умения
-                available_skills = combat_skills + ['heal', 'regeneration', 'mage_shield']
-            elif item_type == "jewelry":
-                # Для украшений - магические и поддерживающие умения
+                # Список доступных умений (магические и поддерживающие)
+                magic_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield', 'fireball', 'ice_bolt', 'lightning', 'magic_missile']
+                combat_skills = ['basic_attack', 'power_strike', 'poison_strike', 'stun_strike', 'battle_cry']
                 available_skills = magic_skills + combat_skills
-            else:
-                available_skills = combat_skills + magic_skills
 
-            # Выбираем случайные умения
-            selected_skills = random.sample(available_skills, min(skills_count, len(available_skills)))
-            for skill_id in selected_skills:
-                bonus = random.randint(skill_bonus_range[0], skill_bonus_range[1])
-                skill_bonus[skill_id] = bonus
+                # Выбираем одно случайное умение
+                if available_skills:
+                    skill_id = random.choice(available_skills)
+                    # Бонус всегда равен максимуму для данного качества
+                    skill_bonus[skill_id] = max_bonus
 
         return stats_bonus, param_bonus, skill_bonus, damage_or_defense
 
