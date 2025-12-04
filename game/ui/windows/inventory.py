@@ -230,8 +230,8 @@ class InventoryWindow:
 
             # Специальная обработка для зелий и талисманов - 2 колонки
             if group_name in ["Зелья", "Талисманы"]:
-                # Уменьшенная высота слота для 2 колонок
-                small_slot_height = max(9, int(11 * (height / 650)))
+                # Стандартная высота слота (как у остальных слотов)
+                small_slot_height = slot_height
                 # Ширина колонки (половина от полной ширины)
                 col_width = (width - margin_sides) // 2 - int(5 * (width / 500))
 
@@ -264,29 +264,28 @@ class InventoryWindow:
                         2 if self.selected_equipment_slot == slot else 1
                     )
 
-                    # Название слота (короткое)
-                    short_name = slot_names[slot].replace("Зелье ", "З").replace("Талисман ", "Т")
+                    # Название слота
                     slot_name_text = self.info_font.render(
-                        f"{short_name}:",
+                        f"{slot_names[slot]}:",
                         True,
                         (150, 150, 150)
                     )
-                    self.screen.blit(slot_name_text, (slot_x + int(5 * (width / 500)), slot_y_pos + int(4 * (height / 650))))
+                    self.screen.blit(slot_name_text, (slot_x + int(5 * (width / 500)), slot_y_pos + int(8 * (height / 650))))
 
-                    # Экипированный предмет (только иконка или короткое название)
+                    # Экипированный предмет
                     if item:
                         item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
-                        # Берём только первые 10 символов для компактности
-                        display_name = item_name[:10] + "..." if len(item_name) > 10 else item_name
+                        # Берём только первые 15 символов для компактности
+                        display_name = item_name[:15] + "..." if len(item_name) > 15 else item_name
                         item_text = self.info_font.render(
                             display_name,
                             True,
                             item.quality.color if hasattr(item, 'quality') else (200, 200, 200)
                         )
-                        self.screen.blit(item_text, (slot_x + int(45 * (width / 500)), slot_y_pos + int(4 * (height / 650))))
+                        self.screen.blit(item_text, (slot_x + int(80 * (width / 500)), slot_y_pos + int(8 * (height / 650))))
                     else:
                         empty_text = self.info_font.render("---", True, (100, 100, 100))
-                        self.screen.blit(empty_text, (slot_x + int(45 * (width / 500)), slot_y_pos + int(4 * (height / 650))))
+                        self.screen.blit(empty_text, (slot_x + int(80 * (width / 500)), slot_y_pos + int(8 * (height / 650))))
 
                 # Переходим на следующую строку после всех слотов
                 rows_count = (len(slots) + 1) // 2  # Округление вверх
