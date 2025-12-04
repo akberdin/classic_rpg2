@@ -49,33 +49,80 @@ class Alchemist(Merchant):
         # Очищаем стандартные товары торговца
         self.inventory.items.clear()
 
-        # Добавляем зелья (много и разных)
+        # Зелья: Большие зелье здоровья, маны и выносливости
         potions = [
-            ("minor_health_potion", random.randint(8, 15)),
-            ("health_potion", random.randint(5, 10)),
-            ("greater_health_potion", random.randint(2, 5)),
-            ("minor_mana_potion", random.randint(5, 10)),
-            ("mana_potion", random.randint(3, 6)),
-            ("minor_stamina_potion", random.randint(5, 8)),
-            ("stamina_potion", random.randint(3, 5)),
+            ("greater_health_potion", random.randint(4, 8)),
+            ("mana_potion", random.randint(5, 10)),
+            ("stamina_potion", random.randint(4, 8)),
         ]
 
         for potion_key, quantity in potions:
             if potion_key in PREDEFINED_ITEMS:
                 self.inventory.add_item(PREDEFINED_ITEMS[potion_key], quantity)
 
-        # Добавляем магические ингредиенты
+        # Ресурсы: магические кристаллы, осколки артефактов
         ingredients = [
-            ("magic_crystal", random.randint(1, 3)),
-            ("artifact_fragment", random.randint(1, 3)),
+            ("magic_crystal", random.randint(2, 4)),
+            ("artifact_fragment", random.randint(2, 4)),
         ]
 
         for ing_key, quantity in ingredients:
             if ing_key in PREDEFINED_ITEMS:
                 self.inventory.add_item(PREDEFINED_ITEMS[ing_key], quantity)
 
+        # Книги: только рецепты для любого ранга
+        all_recipe_ids = [key for key in PREDEFINED_ITEMS.keys() if key.startswith("recipe_")]
+        # Добавляем 3-6 случайных рецептов любого ранга
+        num_recipes = random.randint(3, 6)
+        if all_recipe_ids:
+            selected_recipes = random.sample(all_recipe_ids, min(num_recipes, len(all_recipe_ids)))
+            for recipe_id in selected_recipes:
+                self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
+
         # Добавляем золото для торговли
-        self.inventory.add_gold(random.randint(500, 1500) * 3)  # Увеличено в 3 раза
+        self.inventory.add_gold(random.randint(500, 1500) * 3)
+
+    def restock_goods(self):
+        """
+        Пополнение товаров алхимика.
+        Полная ротация происходит раз в 5 дней (120 часов).
+        """
+        from game.inventory import PREDEFINED_ITEMS
+
+        # Инициализируем счетчик ротации, если его нет
+        if not hasattr(self, 'restock_hours'):
+            self.restock_hours = 0
+
+        # Увеличиваем счетчик (каждый вызов = 2 часа)
+        self.restock_hours += 2
+
+        # Проверяем, нужна ли полная ротация товаров (раз в 5 дней = 120 часов)
+        if self.restock_hours >= 120:
+            # Полная ротация: очищаем весь инвентарь и генерируем заново
+            self._generate_alchemist_goods()
+            self.restock_hours = 0
+            return
+
+        # Частичное пополнение товаров между полными ротациями
+        # Добавляем золото
+        self.inventory.gold += random.randint(200, 500) * 3
+
+        # Случайно добавляем зелья
+        if random.random() < 0.6:
+            potion_type = random.choice(["greater_health_potion", "mana_potion", "stamina_potion"])
+            self.inventory.add_item(PREDEFINED_ITEMS[potion_type], random.randint(1, 3))
+
+        # Случайно добавляем ресурсы
+        if random.random() < 0.3:
+            resource_type = random.choice(["magic_crystal", "artifact_fragment"])
+            self.inventory.add_item(PREDEFINED_ITEMS[resource_type], random.randint(1, 2))
+
+        # Случайно добавляем рецепт
+        if random.random() < 0.4:
+            all_recipe_ids = [key for key in PREDEFINED_ITEMS.keys() if key.startswith("recipe_")]
+            if all_recipe_ids:
+                recipe_id = random.choice(all_recipe_ids)
+                self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
 
 
 class Hunter(NPC):
