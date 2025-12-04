@@ -1104,6 +1104,77 @@ class Inventory:
 
         return (True, f"{item.get_full_name()} экипирован в слот {slot.value}")
 
+    def equip_item_to_slot(self, item_name_or_object, target_slot):
+        """
+        Экипировать предмет в указанный слот
+
+        Args:
+            item_name_or_object: Название предмета (строка) или объект предмета
+            target_slot: Целевой слот экипировки (EquipmentSlot)
+
+        Returns:
+            tuple: (success, message)
+        """
+        # Поддерживаем два варианта: строку (ключ) или объект предмета
+        if isinstance(item_name_or_object, str):
+            item_key = item_name_or_object
+            if item_key not in self.items:
+                return (False, "Предмет не найден в инвентаре")
+            item, quantity = self.items[item_key]
+        else:
+            # Передан объект предмета - ищем его в инвентаре
+            item = item_name_or_object
+            item_key = None
+
+            # Ищем предмет по объекту
+            for key, (stored_item, qty) in self.items.items():
+                if stored_item is item:
+                    item_key = key
+                    quantity = qty
+                    break
+
+            if item_key is None:
+                return (False, "Предмет не найден в инвентаре")
+
+        # Проверяем совместимость предмета и слота
+        if isinstance(item, PotionItem):
+            # Зелье может быть помещено только в слоты зелий
+            if target_slot not in [EquipmentSlot.BELT_POTION_1, EquipmentSlot.BELT_POTION_2,
+                                   EquipmentSlot.BELT_POTION_3, EquipmentSlot.BELT_POTION_4]:
+                return (False, "Зелье можно поместить только в слот зелий")
+        elif isinstance(item, TalismanItem):
+            # Талисман может быть помещён только в слоты талисманов
+            if target_slot not in [EquipmentSlot.BELT_TALISMAN_1, EquipmentSlot.BELT_TALISMAN_2,
+                                   EquipmentSlot.BELT_TALISMAN_3, EquipmentSlot.BELT_TALISMAN_4]:
+                return (False, "Талисман можно поместить только в слот талисманов")
+        elif isinstance(item, EquipmentItem):
+            # Для обычной экипировки проверяем соответствие слота
+            if item.slot != target_slot:
+                # Исключение для колец и браслетов
+                if item.slot in [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]:
+                    if target_slot not in [EquipmentSlot.RING_1, EquipmentSlot.RING_2, EquipmentSlot.RING_3, EquipmentSlot.RING_4]:
+                        return (False, "Кольцо можно поместить только в слот колец")
+                elif item.slot in [EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]:
+                    if target_slot not in [EquipmentSlot.BRACELET_1, EquipmentSlot.BRACELET_2]:
+                        return (False, "Браслет можно поместить только в слот браслетов")
+                else:
+                    return (False, f"Предмет не подходит для этого слота")
+        else:
+            return (False, "Этот предмет нельзя экипировать")
+
+        # Снимаем старый предмет из целевого слота
+        old_item = self.equipment[target_slot]
+        if old_item:
+            self.add_item(old_item)
+
+        # Удаляем предмет из инвентаря
+        self.remove_item(item, 1)
+
+        # Экипируем предмет в целевой слот
+        self.equipment[target_slot] = item
+
+        return (True, f"{item.get_full_name() if hasattr(item, 'get_full_name') else item.name} экипирован в слот {target_slot.value}")
+
     def unequip_item(self, slot):
         """
         Снять предмет из слота экипировки

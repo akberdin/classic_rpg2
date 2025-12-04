@@ -32,7 +32,8 @@ class InputHandler:
             self.ctx.inventory_menu_open = False
             return
 
-        all_items = self.ctx.player.inventory.get_all_items()
+        # Получаем отфильтрованный список предметов
+        all_items = self.ctx.inventory_window.get_filtered_items(self.ctx.player)
 
         if key == pygame.K_UP or key == pygame.K_w:
             if all_items:
@@ -121,6 +122,18 @@ class InputHandler:
         # Сначала проверяем клик по экипированному предмету (используем сохраненные rect'ы)
         slot, equipped_item = self.ctx.inventory_window.get_equipment_slot_at_mouse(mouse_x, mouse_y)
         if slot is not None:
+            # Проверяем, если это слот зелья - извлекаем зелье
+            if slot in [EquipmentSlot.BELT_POTION_1, EquipmentSlot.BELT_POTION_2,
+                       EquipmentSlot.BELT_POTION_3, EquipmentSlot.BELT_POTION_4]:
+                if equipped_item:
+                    success, message = self.ctx.player.inventory.unequip_item(slot)
+                    print(message)
+                    if success:
+                        print(f"Зелье извлечено из слота")
+                else:
+                    print("Слот зелья пуст")
+                return
+
             if equipped_item:
                 success, message = self.ctx.player.inventory.unequip_item(slot)
                 print(message)
@@ -166,6 +179,52 @@ class InputHandler:
             else:
                 print("Этот предмет нельзя использовать таким образом")
             return
+
+    def handle_inventory_alt_right_click(self, mouse_pos):
+        """
+        Обработка Alt+ПКМ в инвентаре (для помещения зелий в слоты)
+
+        Args:
+            mouse_pos: Позиция мыши (x, y)
+        """
+        mouse_x, mouse_y = mouse_pos
+
+        # Получаем предмет под курсором
+        item = self.ctx.inventory_window.get_item_at_mouse(self.ctx.player, mouse_x, mouse_y, check_equipment=True)
+
+        if item and isinstance(item, PotionItem):
+            # Это зелье, пытаемся поместить в свободный слот зелий
+            belt = self.ctx.player.inventory.get_equipped_item(EquipmentSlot.BELT)
+            if not belt or not hasattr(belt, 'potion_slots'):
+                print("Экипируйте пояс для использования слотов зелий")
+                return
+
+            # Проверяем доступные слоты
+            potion_slot_list = [
+                EquipmentSlot.BELT_POTION_1,
+                EquipmentSlot.BELT_POTION_2,
+                EquipmentSlot.BELT_POTION_3,
+                EquipmentSlot.BELT_POTION_4
+            ][:belt.potion_slots]
+
+            # Ищем первый свободный слот
+            free_slot = None
+            for slot in potion_slot_list:
+                if self.ctx.player.inventory.get_equipped_item(slot) is None:
+                    free_slot = slot
+                    break
+
+            if free_slot:
+                # Помещаем зелье в свободный слот
+                success, message = self.ctx.player.inventory.equip_item_to_slot(item, free_slot)
+                print(message)
+                if success:
+                    item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
+                    print(f"{item_name} помещено в слот зелья")
+            else:
+                print("Нет свободных слотов для зелий")
+        else:
+            print("Выберите зелье для помещения в слот")
 
     def handle_interaction_choice(self, key):
         """
@@ -1042,8 +1101,19 @@ class InputHandler:
             if event.type == pygame.KEYDOWN:
                 self.handle_inventory_input(event.key)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 3:  # ПКМ
-                    self.handle_inventory_right_click(event.pos)
+                if event.button == 1:  # ЛКМ
+                    # Проверяем клик по фильтрам
+                    filter_type = self.ctx.inventory_window.get_filter_at_mouse(*event.pos)
+                    if filter_type:
+                        self.ctx.inventory_window.set_filter(filter_type)
+                elif event.button == 3:  # ПКМ
+                    mods = pygame.key.get_mods()
+                    if mods & pygame.KMOD_ALT:
+                        # Alt+ПКМ - помещаем зелье в слот
+                        self.handle_inventory_alt_right_click(event.pos)
+                    else:
+                        # Обычный ПКМ - экипировка/снятие предметов
+                        self.handle_inventory_right_click(event.pos)
                 elif event.button in (4, 5):  # Колесо мыши
                     self._handle_inventory_scroll(event.button == 4)
             elif event.type == pygame.MOUSEWHEEL:
