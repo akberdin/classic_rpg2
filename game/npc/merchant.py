@@ -147,20 +147,20 @@ class Merchant(NPC):
 
             # Определяем ранг рецепта по качеству
             if rank == 1:
-                # Ранг 1: рецепты для POOR качества
-                if recipe_quality in [ItemQuality.POOR, ItemQuality.COMMON]:
+                # Ранг 1: только рецепты для POOR качества
+                if recipe_quality == ItemQuality.POOR:
                     rank_recipes.append(recipe_id)
             elif rank == 2:
-                # Ранг 2: рецепты для COMMON и UNCOMMON качества
-                if recipe_quality in [ItemQuality.COMMON, ItemQuality.UNCOMMON]:
+                # Ранг 2: рецепты для POOR и COMMON качества
+                if recipe_quality in [ItemQuality.POOR, ItemQuality.COMMON]:
                     rank_recipes.append(recipe_id)
             elif rank == 3:
-                # Ранг 3: рецепты для UNCOMMON и RARE качества
-                if recipe_quality in [ItemQuality.UNCOMMON, ItemQuality.RARE]:
+                # Ранг 3: рецепты для COMMON и UNCOMMON качества
+                if recipe_quality in [ItemQuality.COMMON, ItemQuality.UNCOMMON]:
                     rank_recipes.append(recipe_id)
             elif rank == 4:
-                # Ранг 4: рецепты для RARE и EPIC качества
-                if recipe_quality in [ItemQuality.RARE, ItemQuality.EPIC]:
+                # Ранг 4: рецепты для UNCOMMON и RARE качества
+                if recipe_quality in [ItemQuality.UNCOMMON, ItemQuality.RARE]:
                     rank_recipes.append(recipe_id)
 
         return rank_recipes
@@ -748,12 +748,12 @@ class MagicMerchant(Merchant):
                 if book.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE, ItemQuality.EPIC]:
                     self.inventory.add_item(book, 1)
 
-        # Рецепты: только рецепты для 4 ранга (RARE и EPIC качества)
+        # Рецепты: только рецепты для 4 ранга (UNCOMMON и RARE качества)
         all_recipe_ids = [key for key in PREDEFINED_ITEMS.keys() if key.startswith("recipe_")]
         rank4_recipes = []
         for recipe_id in all_recipe_ids:
             recipe_item = PREDEFINED_ITEMS[recipe_id]
-            if recipe_item.quality in [ItemQuality.RARE, ItemQuality.EPIC]:
+            if recipe_item.quality in [ItemQuality.UNCOMMON, ItemQuality.RARE]:
                 rank4_recipes.append(recipe_id)
 
         # Добавляем 2-4 рецепта 4 ранга
