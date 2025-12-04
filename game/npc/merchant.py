@@ -125,6 +125,27 @@ class Merchant(NPC):
             jewelry = ItemGenerator.generate_jewelry(self.level, quality=quality)
             self.inventory.add_item(jewelry, 1)
 
+        # Генерируем пояса
+        num_belts = 1 + rank // 2  # 1/1/2/2 штуки
+        for _ in range(num_belts):
+            quality = ItemGenerator.generate_quality_for_shop(rank)
+            belt = ItemGenerator.generate_belt(self.level, quality=quality)
+            self.inventory.add_item(belt, 1)
+
+        # Генерируем рюкзаки
+        num_backpacks = 1 + rank // 2  # 1/1/2/2 штуки
+        for _ in range(num_backpacks):
+            quality = ItemGenerator.generate_quality_for_shop(rank)
+            backpack = ItemGenerator.generate_backpack(self.level, quality=quality)
+            self.inventory.add_item(backpack, 1)
+
+        # Генерируем талисманы
+        num_talismans = 1 + rank  # 2/3/4/5 штук
+        for _ in range(num_talismans):
+            quality = ItemGenerator.generate_quality_for_shop(rank)
+            talisman = ItemGenerator.generate_talisman(self.level, quality=quality)
+            self.inventory.add_item(talisman, 1)
+
         # Генерируем ресурсы (увеличено количество и добавлены новые типы)
         resource_types = [
             "copper_ore", "iron_ore", "silver_ore", "gold_ore", "mithril_ore",

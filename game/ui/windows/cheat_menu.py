@@ -152,8 +152,8 @@ class CheatMenuWindow:
             elif cheat_id == 'give_artifact':
                 from game.inventory import ItemGenerator, ItemQuality, EquipmentSlot, ArmorType
                 import random
-                # Генерируем случайный артефакт (оружие, броня или украшение)
-                item_type = random.choice(['weapon', 'armor', 'jewelry'])
+                # Генерируем случайный артефакт (оружие, броня, украшение, пояс, рюкзак или талисман)
+                item_type = random.choice(['weapon', 'armor', 'jewelry', 'belt', 'backpack', 'talisman'])
                 try:
                     if item_type == 'weapon':
                         # Правильные параметры: level, quality, max_quality
@@ -173,7 +173,7 @@ class CheatMenuWindow:
                             armor_type=armor_type,
                             quality=ItemQuality.ARTIFACT
                         )
-                    else:  # jewelry
+                    elif item_type == 'jewelry':
                         # Генерируем артефактное украшение (кольцо, амулет или браслет)
                         jewelry_slots = [
                             EquipmentSlot.RING_1, EquipmentSlot.RING_2,
@@ -185,6 +185,21 @@ class CheatMenuWindow:
                         artifact = ItemGenerator.generate_jewelry(
                             level=game.player.level,
                             slot=slot,
+                            quality=ItemQuality.ARTIFACT
+                        )
+                    elif item_type == 'belt':
+                        artifact = ItemGenerator.generate_belt(
+                            level=game.player.level,
+                            quality=ItemQuality.ARTIFACT
+                        )
+                    elif item_type == 'backpack':
+                        artifact = ItemGenerator.generate_backpack(
+                            level=game.player.level,
+                            quality=ItemQuality.ARTIFACT
+                        )
+                    elif item_type == 'talisman':
+                        artifact = ItemGenerator.generate_talisman(
+                            level=game.player.level,
                             quality=ItemQuality.ARTIFACT
                         )
 

@@ -930,7 +930,13 @@ class Inventory:
                     item_type = 'weapon'
                 elif isinstance(item, ArmorItem):
                     item_type = 'armor'
+                elif isinstance(item, (BeltItem, BackpackItem)):
+                    # Пояса и рюкзаки относятся к категории броня
+                    item_type = 'armor'
                 elif isinstance(item, JewelryItem):
+                    item_type = 'jewelry'
+                elif isinstance(item, TalismanItem):
+                    # Талисманы относятся к категории украшения
                     item_type = 'jewelry'
                 elif isinstance(item, PotionItem):
                     item_type = 'potion'
@@ -1768,6 +1774,148 @@ class ItemGenerator:
 
         return JewelryItem(name, slot, value, quality, stats_bonus, param_bonus, skill_bonus)
 
+    @classmethod
+    def generate_belt(cls, level=1, quality=None, max_quality=None):
+        """
+        Генерировать случайный пояс
+
+        Args:
+            level: Уровень (влияет на параметры)
+            quality: Качество предмета (если None - генерируется случайно)
+            max_quality: Максимальное качество (ограничение)
+
+        Returns:
+            BeltItem: Сгенерированный пояс
+        """
+        # Определяем качество
+        if quality is None:
+            quality = cls.generate_quality(max_quality)
+
+        # Генерируем процентные бонусы к параметрам (только для необычного и выше)
+        param_bonus = None
+        if quality not in [ItemQuality.POOR, ItemQuality.COMMON]:
+            param_bonus = {}
+            # Количество бонусов зависит от качества
+            bonus_count = {
+                ItemQuality.UNCOMMON: 1,
+                ItemQuality.RARE: 1,
+                ItemQuality.EPIC: 2,
+                ItemQuality.LEGENDARY: 2,
+                ItemQuality.ARTIFACT: 3
+            }.get(quality, 1)
+
+            # Диапазон бонусов зависит от качества
+            bonus_range = {
+                ItemQuality.UNCOMMON: (2, 4),
+                ItemQuality.RARE: (4, 6),
+                ItemQuality.EPIC: (6, 8),
+                ItemQuality.LEGENDARY: (8, 10),
+                ItemQuality.ARTIFACT: (10, 15)
+            }.get(quality, (2, 4))
+
+            available_params = ['health', 'mana', 'stamina']
+            selected_params = random.sample(available_params, min(bonus_count, len(available_params)))
+            for param in selected_params:
+                param_bonus[param] = random.randint(bonus_range[0], bonus_range[1])
+
+        # Генерируем название
+        name = cls.generate_item_name("Пояс", "Пояс", quality)
+
+        # Рассчитываем стоимость
+        base_value = 100
+        value = int(base_value * quality.multiplier)
+        if param_bonus:
+            value += sum(param_bonus.values()) * 10
+
+        return BeltItem(name, value, quality, param_bonus)
+
+    @classmethod
+    def generate_backpack(cls, level=1, quality=None, max_quality=None):
+        """
+        Генерировать случайный рюкзак
+
+        Args:
+            level: Уровень (влияет на параметры)
+            quality: Качество предмета (если None - генерируется случайно)
+            max_quality: Максимальное качество (ограничение)
+
+        Returns:
+            BackpackItem: Сгенерированный рюкзак
+        """
+        # Определяем качество
+        if quality is None:
+            quality = cls.generate_quality(max_quality)
+
+        # Генерируем название
+        name = cls.generate_item_name("Рюкзак", "Рюкзак", quality)
+
+        # Рассчитываем стоимость (базово + за слоты)
+        base_value = 200
+        bonus_slots = BackpackItem.SLOTS_CONFIG.get(quality, 10)
+        value = int(base_value * quality.multiplier + bonus_slots * 5)
+
+        return BackpackItem(name, value, quality)
+
+    @classmethod
+    def generate_talisman(cls, level=1, quality=None, max_quality=None):
+        """
+        Генерировать случайный талисман
+
+        Args:
+            level: Уровень (влияет на параметры)
+            quality: Качество предмета (если None - генерируется случайно)
+            max_quality: Максимальное качество (ограничение)
+
+        Returns:
+            TalismanItem: Сгенерированный талисман
+        """
+        # Определяем качество
+        if quality is None:
+            quality = cls.generate_quality(max_quality)
+
+        # Генерируем бонусы к характеристикам
+        stats_bonus = {}
+        param_bonus = {}
+
+        # Количество бонусов зависит от качества
+        bonus_count = {
+            ItemQuality.POOR: 0,
+            ItemQuality.COMMON: 1,
+            ItemQuality.UNCOMMON: 1,
+            ItemQuality.RARE: 2,
+            ItemQuality.EPIC: 2,
+            ItemQuality.LEGENDARY: 3,
+            ItemQuality.ARTIFACT: 3
+        }.get(quality, 1)
+
+        # Диапазон бонусов зависит от качества
+        bonus_range = {
+            ItemQuality.POOR: (1, 2),
+            ItemQuality.COMMON: (1, 2),
+            ItemQuality.UNCOMMON: (2, 3),
+            ItemQuality.RARE: (3, 5),
+            ItemQuality.EPIC: (5, 7),
+            ItemQuality.LEGENDARY: (7, 10),
+            ItemQuality.ARTIFACT: (10, 15)
+        }.get(quality, (1, 2))
+
+        if bonus_count > 0:
+            available_stats = ['strength', 'dexterity', 'constitution', 'spirit', 'intelligence', 'luck']
+            selected_stats = random.sample(available_stats, min(bonus_count, len(available_stats)))
+            for stat in selected_stats:
+                stats_bonus[stat] = random.randint(bonus_range[0], bonus_range[1])
+
+        # Генерируем название
+        name = cls.generate_item_name("Талисман", "Талисман", quality)
+
+        # Рассчитываем стоимость
+        base_value = 50
+        value = int(base_value * quality.multiplier)
+        if stats_bonus:
+            value += sum(stats_bonus.values()) * 5
+
+        return TalismanItem(name, value, quality, stats_bonus, param_bonus)
+
     @staticmethod
     def generate_loot_for_location(location_type, level=1, luck=1):
         """
@@ -1827,14 +1975,20 @@ class ItemGenerator:
             # Шанс найти экипировку (базовый + бонус от удачи)
             equip_chance = 0.4 + min(luck * 0.01, 0.20)  # Макс +20%
             if random.random() < equip_chance:
-                item_type = random.choice(['weapon', 'armor', 'jewelry'])
+                item_type = random.choice(['weapon', 'armor', 'jewelry', 'belt', 'backpack', 'talisman'])
                 quality = ItemGenerator.generate_quality_with_luck(luck)
                 if item_type == 'weapon':
                     loot.append((ItemGenerator.generate_weapon(level, quality=quality), 1))
                 elif item_type == 'armor':
                     loot.append((ItemGenerator.generate_armor(level, quality=quality), 1))
-                else:
+                elif item_type == 'jewelry':
                     loot.append((ItemGenerator.generate_jewelry(level, quality=quality), 1))
+                elif item_type == 'belt':
+                    loot.append((ItemGenerator.generate_belt(level, quality=quality), 1))
+                elif item_type == 'backpack':
+                    loot.append((ItemGenerator.generate_backpack(level, quality=quality), 1))
+                elif item_type == 'talisman':
+                    loot.append((ItemGenerator.generate_talisman(level, quality=quality), 1))
 
             # Шанс найти зелье
             potion_chance = 0.3 + min(luck * 0.005, 0.15)
