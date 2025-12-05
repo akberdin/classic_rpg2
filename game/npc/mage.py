@@ -108,6 +108,10 @@ class MagePatrol(NPC):
             jewelry = ItemGenerator.generate_jewelry(self.level)
             self.inventory.add_item(jewelry, 1)
 
+        # Отличная ткань для магических облачений
+        if self.level >= 8:
+            self.inventory.add_item(PREDEFINED_ITEMS["fine_fabric"], random.randint(1, 3))
+
     def _generate_patrol_points(self):
         """Генерация точек патрулирования вокруг академии"""
         points = []

@@ -2513,6 +2513,11 @@ PREDEFINED_ITEMS = {
     "leather": ResourceItem("Кожа", 40, 0.4),
     "leather_strips": ResourceItem("Полоски кожи", 10, 0.1),
 
+    # Ткани
+    "poor_fabric": ResourceItem("Плохая ткань", 15, 0.3, ItemQuality.POOR),
+    "fabric": ResourceItem("Ткань", 30, 0.3, ItemQuality.COMMON),
+    "fine_fabric": ResourceItem("Отличная ткань", 60, 0.3, ItemQuality.UNCOMMON),
+
     # Наконечники
     "copper_spearhead": ResourceItem("Медный наконечник", 35, 0.3),
 
