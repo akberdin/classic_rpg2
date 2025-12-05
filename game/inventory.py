@@ -2393,12 +2393,13 @@ class ItemGenerator:
         return equipment
 
     @staticmethod
-    def generate_animal_loot(npc_type):
+    def generate_animal_loot(npc_type, npc_level=1):
         """
         Генерация лута от животных после смерти
 
         Args:
             npc_type: Тип животного (wolf, bear, deer)
+            npc_level: Уровень животного (для особых дропов)
 
         Returns:
             list: Список предметов лута
@@ -2415,6 +2416,10 @@ class ItemGenerator:
             if random.random() < 0.5:
                 loot.append(PREDEFINED_ITEMS["wolf_hide"])
 
+            # Звериные жилы - 40% шанс
+            if random.random() < 0.4:
+                loot.append(PREDEFINED_ITEMS["animal_sinew"])
+
         elif npc_type == "bear":
             # Медведи дают: зубы медведя, мясо, шкура медведя
             # Клык медведя - 60% шанс
@@ -2429,6 +2434,10 @@ class ItemGenerator:
             if random.random() < 0.5:
                 loot.append(PREDEFINED_ITEMS["bear_hide"])
 
+            # Звериные жилы - 50% шанс
+            if random.random() < 0.5:
+                loot.append(PREDEFINED_ITEMS["animal_sinew"])
+
         elif npc_type == "deer":
             # Олени дают: мясо, шкура оленя
             # Мясо - 90% шанс
@@ -2438,6 +2447,14 @@ class ItemGenerator:
             # Шкура оленя - 60% шанс
             if random.random() < 0.6:
                 loot.append(PREDEFINED_ITEMS["deer_hide"])
+
+            # Звериные жилы - 30% шанс
+            if random.random() < 0.3:
+                loot.append(PREDEFINED_ITEMS["animal_sinew"])
+
+            # Рога оленя - только у оленей уровня 2 и выше, 50% шанс
+            if npc_level >= 2 and random.random() < 0.5:
+                loot.append(PREDEFINED_ITEMS["deer_antlers"])
 
         return loot
 
@@ -2489,6 +2506,15 @@ PREDEFINED_ITEMS = {
     "bear_meat": ResourceItem("Медвежатина", 30, 0.4),
     "deer_hide": ResourceItem("Шкура оленя", 45, 0.5),
     "deer_meat": ResourceItem("Оленина", 25, 0.4),
+    "animal_sinew": ResourceItem("Звериные жилы", 20, 0.2),
+    "deer_antlers": ResourceItem("Рога оленя", 50, 0.8),
+
+    # Обработанные материалы от животных
+    "leather": ResourceItem("Кожа", 40, 0.4),
+    "leather_strips": ResourceItem("Полоски кожи", 10, 0.1),
+
+    # Наконечники
+    "copper_spearhead": ResourceItem("Медный наконечник", 35, 0.3),
 
     # Ресурсы из руин
     "ancient_coin": ResourceItem("Древняя монета", 30),
@@ -2512,6 +2538,8 @@ PREDEFINED_ITEMS = {
                               stats_bonus={}, param_bonus={}, skill_bonus={}),
     "poor_axe": WeaponItem("Топор", WeaponType.AXE, 8, value=50, quality=ItemQuality.POOR,
                           stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "poor_spear": WeaponItem("Копье", WeaponType.SPEAR, 9, value=60, quality=ItemQuality.POOR,
+                            stats_bonus={}, param_bonus={}, skill_bonus={}),
 
     # Книги магических умений
     "book_heal": SkillBookItem("Книга Лечения", "heal", 150, 0.5, ItemQuality.UNCOMMON),

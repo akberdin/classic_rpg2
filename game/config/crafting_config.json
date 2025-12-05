@@ -4,8 +4,8 @@
 
   "crafting_stations": {
     "workbench": {
-      "name": "Верстак",
-      "description": "Базовый верстак для создания простых предметов"
+      "name": "Мастерская",
+      "description": "Базовая мастерская для создания простых предметов"
     },
     "forge": {
       "name": "Кузница",
@@ -371,6 +371,123 @@
       ],
       "category": "weapon",
       "base_price": 60,
+      "sprite": null
+    },
+    {
+      "id": "leather_from_wolf_hide",
+      "name": "Кожа из шкуры волка",
+      "display_name": "Рецепт: Кожа",
+      "quality": "common",
+      "description": "Обработка шкуры волка в кожу. Требуется 1 шкура волка",
+      "station": "workbench",
+      "result_item": "leather",
+      "result_quantity": 1,
+      "required_level": 1,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "wolf_hide", "quantity": 1}
+      ],
+      "category": "tool",
+      "base_price": 40,
+      "sprite": null
+    },
+    {
+      "id": "leather_from_bear_hide",
+      "name": "Кожа из шкуры медведя",
+      "display_name": "Рецепт: Кожа",
+      "quality": "common",
+      "description": "Обработка шкуры медведя в кожу. Требуется 1 шкура медведя",
+      "station": "workbench",
+      "result_item": "leather",
+      "result_quantity": 1,
+      "required_level": 1,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "bear_hide", "quantity": 1}
+      ],
+      "category": "tool",
+      "base_price": 60,
+      "sprite": null
+    },
+    {
+      "id": "leather_from_deer_hide",
+      "name": "Кожа из шкуры оленя",
+      "display_name": "Рецепт: Кожа",
+      "quality": "common",
+      "description": "Обработка шкуры оленя в кожу. Требуется 1 шкура оленя",
+      "station": "workbench",
+      "result_item": "leather",
+      "result_quantity": 1,
+      "required_level": 1,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "deer_hide", "quantity": 1}
+      ],
+      "category": "tool",
+      "base_price": 50,
+      "sprite": null
+    },
+    {
+      "id": "leather_strips",
+      "name": "Полоски кожи",
+      "display_name": "Рецепт: Полоски кожи",
+      "quality": "common",
+      "description": "Нарезка кожи на полоски. Требуется 1 кожа. Получается 5 полосок",
+      "station": "workbench",
+      "result_item": "leather_strips",
+      "result_quantity": 5,
+      "required_level": 1,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "leather", "quantity": 1}
+      ],
+      "category": "tool",
+      "base_price": 50,
+      "sprite": null
+    },
+    {
+      "id": "copper_spearhead",
+      "name": "Медный наконечник",
+      "display_name": "Рецепт: Медный наконечник",
+      "quality": "common",
+      "description": "Изготовление медного наконечника для копья. Требуется 1 медный слиток и 2 угля",
+      "station": "forge",
+      "result_item": "copper_spearhead",
+      "result_quantity": 1,
+      "required_level": 2,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "weapon",
+      "base_price": 35,
+      "sprite": null
+    },
+    {
+      "id": "poor_spear",
+      "name": "Копье (плохое качество)",
+      "display_name": "Рецепт: Копье (плохое качество)",
+      "quality": "common",
+      "description": "Изготовление простого копья. Требуется 1 медный наконечник, 3 полоски кожи и 1 древко",
+      "station": "workbench",
+      "result_item": "poor_spear",
+      "result_quantity": 1,
+      "required_level": 3,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_spearhead", "quantity": 1},
+        {"item": "leather_strips", "quantity": 3},
+        {"item": "wooden_shaft", "quantity": 1}
+      ],
+      "category": "weapon",
+      "base_price": 70,
       "sprite": null
     }
   ],
