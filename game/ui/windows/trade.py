@@ -77,10 +77,10 @@ class TradeWindow:
 
         # Размеры окна (адаптивные)
         if self.scaler:
-            window_width = self.scaler.scale_width(900)
+            window_width = self.scaler.scale_width(1080)
             window_height = self.scaler.scale_height(750)
         else:
-            window_width = min(900, int(screen_width * 0.85))
+            window_width = min(1080, int(screen_width * 0.85))
             window_height = min(750, int(screen_height * 0.80))
 
         window_x = (screen_width - window_width) // 2
@@ -101,7 +101,7 @@ class TradeWindow:
         )
 
         # Коэффициенты масштабирования для адаптивности
-        scale_w = window_width / 900
+        scale_w = window_width / 1080
         scale_h = window_height / 650
 
         # Заголовок
