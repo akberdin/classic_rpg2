@@ -2497,6 +2497,29 @@ PREDEFINED_ITEMS = {
 
     # Лезвия и компоненты оружия
     "copper_axe_blade": ResourceItem("Медное лезвие топора", 35),
+    "iron_axe_blade": ResourceItem("Железное лезвие топора", 65),
+    "steel_axe_blade": ResourceItem("Стальное лезвие топора", 110),
+
+    # Бойки для кирок
+    "copper_hammer_head": ResourceItem("Медный боёк", 30),
+    "iron_hammer_head": ResourceItem("Железный боёк", 55),
+    "steel_hammer_head": ResourceItem("Стальной боёк", 95),
+
+    # Металлические полоски
+    "copper_strips": ResourceItem("Медные полоски", 8, 0.1),
+    "iron_strips": ResourceItem("Железные полоски", 14, 0.1),
+    "steel_strips": ResourceItem("Стальные полоски", 24, 0.1),
+    "silver_strips": ResourceItem("Серебряные полоски", 36, 0.1),
+
+    # Короткие лезвия для ножей
+    "copper_short_blade": ResourceItem("Медное короткое лезвие", 28),
+    "iron_short_blade": ResourceItem("Железное короткое лезвие", 52),
+    "steel_short_blade": ResourceItem("Стальное короткое лезвие", 90),
+
+    # Длинные лезвия для мечей
+    "copper_long_blade": ResourceItem("Медное длинное лезвие", 42),
+    "iron_long_blade": ResourceItem("Железное длинное лезвие", 78),
+    "steel_long_blade": ResourceItem("Стальное длинное лезвие", 135),
 
     # Ресурсы от животных
     "wolf_fang": ResourceItem("Клык волка", 25, 0.3),
@@ -2518,8 +2541,14 @@ PREDEFINED_ITEMS = {
     "fabric": ResourceItem("Ткань", 30, 0.3, ItemQuality.COMMON),
     "fine_fabric": ResourceItem("Отличная ткань", 60, 0.3, ItemQuality.UNCOMMON),
 
-    # Наконечники
+    # Наконечники копий
     "copper_spearhead": ResourceItem("Медный наконечник", 35, 0.3),
+    "iron_spearhead": ResourceItem("Железный наконечник", 65, 0.3),
+    "steel_spearhead": ResourceItem("Стальной наконечник", 110, 0.3),
+
+    # Тетива и роговые компоненты
+    "bowstring": ResourceItem("Тетива", 25, 0.2),
+    "short_horn_handle": ResourceItem("Короткая роговая рукоять", 70, 0.6),
 
     # Ресурсы из руин
     "ancient_coin": ResourceItem("Древняя монета", 30),
@@ -2545,6 +2574,78 @@ PREDEFINED_ITEMS = {
                           stats_bonus={}, param_bonus={}, skill_bonus={}),
     "poor_spear": WeaponItem("Копье", WeaponType.SPEAR, 9, value=60, quality=ItemQuality.POOR,
                             stats_bonus={}, param_bonus={}, skill_bonus={}),
+
+    # Кирки
+    "poor_pickaxe": WeaponItem("Кирка", WeaponType.PICKAXE, 6, value=45, quality=ItemQuality.POOR,
+                              stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "pickaxe": WeaponItem("Кирка", WeaponType.PICKAXE, 10, value=80, quality=ItemQuality.COMMON,
+                         stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "fine_pickaxe": WeaponItem("Кирка", WeaponType.PICKAXE, 15, value=140, quality=ItemQuality.UNCOMMON,
+                              stats_bonus={}, param_bonus={}, skill_bonus={}),
+
+    # Ножи
+    "poor_knife": WeaponItem("Нож", WeaponType.KNIFE, 5, value=35, quality=ItemQuality.POOR,
+                            stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "knife": WeaponItem("Нож", WeaponType.KNIFE, 8, value=65, quality=ItemQuality.COMMON,
+                       stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "fine_knife": WeaponItem("Нож", WeaponType.KNIFE, 12, value=115, quality=ItemQuality.UNCOMMON,
+                            stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "rare_knife": WeaponItem("Нож", WeaponType.KNIFE, 17, value=200, quality=ItemQuality.RARE,
+                            stats_bonus={'dexterity': 2}, param_bonus={}, skill_bonus={}),
+
+    # Мечи
+    "poor_sword": WeaponItem("Меч", WeaponType.SWORD, 7, value=50, quality=ItemQuality.POOR,
+                            stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "sword": WeaponItem("Меч", WeaponType.SWORD, 12, value=95, quality=ItemQuality.COMMON,
+                       stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "fine_sword": WeaponItem("Меч", WeaponType.SWORD, 18, value=165, quality=ItemQuality.UNCOMMON,
+                            stats_bonus={'strength': 1}, param_bonus={}, skill_bonus={}),
+    "rare_sword": WeaponItem("Меч", WeaponType.SWORD, 25, value=290, quality=ItemQuality.RARE,
+                            stats_bonus={'strength': 3, 'dexterity': 1}, param_bonus={}, skill_bonus={}),
+
+    # Легкие перчатки
+    "poor_light_gloves": ArmorItem("Легкие перчатки", EquipmentSlot.HANDS, ArmorType.LIGHT, 2, value=30,
+                                   quality=ItemQuality.POOR, stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "light_gloves": ArmorItem("Легкие перчатки", EquipmentSlot.HANDS, ArmorType.LIGHT, 3, value=55,
+                              quality=ItemQuality.COMMON, stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "fine_light_gloves": ArmorItem("Легкие перчатки", EquipmentSlot.HANDS, ArmorType.LIGHT, 5, value=95,
+                                   quality=ItemQuality.UNCOMMON, stats_bonus={'dexterity': 1}, param_bonus={}, skill_bonus={}),
+
+    # Легкая обувь
+    "poor_light_boots": ArmorItem("Легкая обувь", EquipmentSlot.FEET, ArmorType.LIGHT, 2, value=40,
+                                  quality=ItemQuality.POOR, stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "light_boots": ArmorItem("Легкая обувь", EquipmentSlot.FEET, ArmorType.LIGHT, 4, value=70,
+                            quality=ItemQuality.COMMON, stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "fine_light_boots": ArmorItem("Легкая обувь", EquipmentSlot.FEET, ArmorType.LIGHT, 6, value=120,
+                                  quality=ItemQuality.UNCOMMON, stats_bonus={'dexterity': 1}, param_bonus={}, skill_bonus={}),
+
+    # Легкие шлемы
+    "poor_light_helmet": ArmorItem("Легкий шлем", EquipmentSlot.HEAD, ArmorType.LIGHT, 2, value=35,
+                                   quality=ItemQuality.POOR, stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "light_helmet": ArmorItem("Легкий шлем", EquipmentSlot.HEAD, ArmorType.LIGHT, 3, value=65,
+                              quality=ItemQuality.COMMON, stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "fine_light_helmet": ArmorItem("Легкий шлем", EquipmentSlot.HEAD, ArmorType.LIGHT, 5, value=110,
+                                   quality=ItemQuality.UNCOMMON, stats_bonus={'spirit': 1}, param_bonus={}, skill_bonus={}),
+
+    # Ремни
+    "poor_belt": ArmorItem("Ремень", EquipmentSlot.BELT, ArmorType.LIGHT, 1, value=25,
+                          quality=ItemQuality.POOR, stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "belt": ArmorItem("Ремень", EquipmentSlot.BELT, ArmorType.LIGHT, 2, value=50,
+                     quality=ItemQuality.COMMON, stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "fine_belt": ArmorItem("Ремень", EquipmentSlot.BELT, ArmorType.LIGHT, 3, value=90,
+                          quality=ItemQuality.UNCOMMON, stats_bonus={'constitution': 1}, param_bonus={}, skill_bonus={}),
+    "rare_belt": ArmorItem("Ремень", EquipmentSlot.BELT, ArmorType.LIGHT, 5, value=160,
+                          quality=ItemQuality.RARE, stats_bonus={'constitution': 2, 'strength': 1}, param_bonus={}, skill_bonus={}),
+
+    # Рюкзаки
+    "poor_backpack": ArmorItem("Рюкзак", EquipmentSlot.BACKPACK, ArmorType.LIGHT, 1, value=30,
+                              quality=ItemQuality.POOR, stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "backpack": ArmorItem("Рюкзак", EquipmentSlot.BACKPACK, ArmorType.LIGHT, 2, value=60,
+                         quality=ItemQuality.COMMON, stats_bonus={}, param_bonus={}, skill_bonus={}),
+    "fine_backpack": ArmorItem("Рюкзак", EquipmentSlot.BACKPACK, ArmorType.LIGHT, 3, value=110,
+                              quality=ItemQuality.UNCOMMON, stats_bonus={'strength': 1}, param_bonus={}, skill_bonus={}),
+    "rare_backpack": ArmorItem("Рюкзак", EquipmentSlot.BACKPACK, ArmorType.LIGHT, 5, value=190,
+                              quality=ItemQuality.RARE, stats_bonus={'strength': 2, 'constitution': 1}, param_bonus={}, skill_bonus={}),
 
     # Книги магических умений
     "book_heal": SkillBookItem("Книга Лечения", "heal", 150, 0.5, ItemQuality.UNCOMMON),

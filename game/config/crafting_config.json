@@ -349,7 +349,7 @@
         {"item": "copper_ingot", "quantity": 2},
         {"item": "charcoal", "quantity": 3}
       ],
-      "category": "weapon",
+      "category": "tool",
       "base_price": 40,
       "sprite": null
     },
@@ -465,7 +465,7 @@
         {"item": "copper_ingot", "quantity": 1},
         {"item": "charcoal", "quantity": 2}
       ],
-      "category": "weapon",
+      "category": "tool",
       "base_price": 35,
       "sprite": null
     },
@@ -488,6 +488,947 @@
       ],
       "category": "weapon",
       "base_price": 70,
+      "sprite": null
+    },
+    {
+      "id": "copper_hammer_head",
+      "name": "Медный боёк",
+      "display_name": "Рецепт: Медный боёк",
+      "quality": "common",
+      "description": "Изготовление медного бойка для кирки. Требуется 2 медных слитка и 2 угля",
+      "station": "forge",
+      "result_item": "copper_hammer_head",
+      "result_quantity": 1,
+      "required_level": 2,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 2},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 35,
+      "sprite": null
+    },
+    {
+      "id": "iron_hammer_head",
+      "name": "Железный боёк",
+      "display_name": "Рецепт: Железный боёк",
+      "quality": "common",
+      "description": "Изготовление железного бойка для кирки. Требуется 2 железных слитка и 2 угля",
+      "station": "forge",
+      "result_item": "iron_hammer_head",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "iron_ingot", "quantity": 2},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 60,
+      "sprite": null
+    },
+    {
+      "id": "steel_hammer_head",
+      "name": "Стальной боёк",
+      "display_name": "Рецепт: Стальной боёк",
+      "quality": "uncommon",
+      "description": "Изготовление стального бойка для кирки. Требуется 2 стальных слитка и 2 угля",
+      "station": "forge",
+      "result_item": "steel_hammer_head",
+      "result_quantity": 1,
+      "required_level": 10,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "steel_ingot", "quantity": 2},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 105,
+      "sprite": null
+    },
+    {
+      "id": "copper_strips",
+      "name": "Медные полоски",
+      "display_name": "Рецепт: Медные полоски",
+      "quality": "common",
+      "description": "Изготовление медных полосок. Требуется 1 медный слиток и 1 уголь. Получаем 5 полосок",
+      "station": "forge",
+      "result_item": "copper_strips",
+      "result_quantity": 5,
+      "required_level": 2,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 1}
+      ],
+      "category": "tool",
+      "base_price": 25,
+      "sprite": null
+    },
+    {
+      "id": "iron_strips",
+      "name": "Железные полоски",
+      "display_name": "Рецепт: Железные полоски",
+      "quality": "common",
+      "description": "Изготовление железных полосок. Требуется 1 железный слиток и 1 уголь. Получаем 5 полосок",
+      "station": "forge",
+      "result_item": "iron_strips",
+      "result_quantity": 5,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "iron_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 1}
+      ],
+      "category": "tool",
+      "base_price": 45,
+      "sprite": null
+    },
+    {
+      "id": "steel_strips",
+      "name": "Стальные полоски",
+      "display_name": "Рецепт: Стальные полоски",
+      "quality": "uncommon",
+      "description": "Изготовление стальных полосок. Требуется 1 стальной слиток и 1 уголь. Получаем 5 полосок",
+      "station": "forge",
+      "result_item": "steel_strips",
+      "result_quantity": 5,
+      "required_level": 10,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "steel_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 1}
+      ],
+      "category": "tool",
+      "base_price": 80,
+      "sprite": null
+    },
+    {
+      "id": "silver_strips",
+      "name": "Серебряные полоски",
+      "display_name": "Рецепт: Серебряные полоски",
+      "quality": "uncommon",
+      "description": "Изготовление серебряных полосок. Требуется 1 серебряный слиток и 1 уголь. Получаем 5 полосок",
+      "station": "forge",
+      "result_item": "silver_strips",
+      "result_quantity": 5,
+      "required_level": 12,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 1}
+      ],
+      "category": "tool",
+      "base_price": 120,
+      "sprite": null
+    },
+    {
+      "id": "copper_short_blade",
+      "name": "Медное короткое лезвие",
+      "display_name": "Рецепт: Медное короткое лезвие",
+      "quality": "common",
+      "description": "Изготовление медного короткого лезвия для ножа. Требуется 1 медный слиток и 2 угля",
+      "station": "forge",
+      "result_item": "copper_short_blade",
+      "result_quantity": 1,
+      "required_level": 2,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 32,
+      "sprite": null
+    },
+    {
+      "id": "iron_short_blade",
+      "name": "Железное короткое лезвие",
+      "display_name": "Рецепт: Железное короткое лезвие",
+      "quality": "common",
+      "description": "Изготовление железного короткого лезвия для ножа. Требуется 1 железный слиток и 2 угля",
+      "station": "forge",
+      "result_item": "iron_short_blade",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "iron_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 58,
+      "sprite": null
+    },
+    {
+      "id": "steel_short_blade",
+      "name": "Стальное короткое лезвие",
+      "display_name": "Рецепт: Стальное короткое лезвие",
+      "quality": "uncommon",
+      "description": "Изготовление стального короткого лезвия для ножа. Требуется 1 стальной слиток и 2 угля",
+      "station": "forge",
+      "result_item": "steel_short_blade",
+      "result_quantity": 1,
+      "required_level": 10,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "steel_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 100,
+      "sprite": null
+    },
+    {
+      "id": "copper_long_blade",
+      "name": "Медное длинное лезвие",
+      "display_name": "Рецепт: Медное длинное лезвие",
+      "quality": "common",
+      "description": "Изготовление медного длинного лезвия для меча. Требуется 2 медных слитка и 3 угля",
+      "station": "forge",
+      "result_item": "copper_long_blade",
+      "result_quantity": 1,
+      "required_level": 3,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 2},
+        {"item": "charcoal", "quantity": 3}
+      ],
+      "category": "tool",
+      "base_price": 48,
+      "sprite": null
+    },
+    {
+      "id": "iron_long_blade",
+      "name": "Железное длинное лезвие",
+      "display_name": "Рецепт: Железное длинное лезвие",
+      "quality": "common",
+      "description": "Изготовление железного длинного лезвия для меча. Требуется 2 железных слитка и 3 угля",
+      "station": "forge",
+      "result_item": "iron_long_blade",
+      "result_quantity": 1,
+      "required_level": 7,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "iron_ingot", "quantity": 2},
+        {"item": "charcoal", "quantity": 3}
+      ],
+      "category": "tool",
+      "base_price": 85,
+      "sprite": null
+    },
+    {
+      "id": "steel_long_blade",
+      "name": "Стальное длинное лезвие",
+      "display_name": "Рецепт: Стальное длинное лезвие",
+      "quality": "uncommon",
+      "description": "Изготовление стального длинного лезвия для меча. Требуется 2 стальных слитка и 3 угля",
+      "station": "forge",
+      "result_item": "steel_long_blade",
+      "result_quantity": 1,
+      "required_level": 11,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "steel_ingot", "quantity": 2},
+        {"item": "charcoal", "quantity": 3}
+      ],
+      "category": "tool",
+      "base_price": 150,
+      "sprite": null
+    },
+    {
+      "id": "iron_spearhead",
+      "name": "Железный наконечник",
+      "display_name": "Рецепт: Железный наконечник",
+      "quality": "common",
+      "description": "Изготовление железного наконечника для копья. Требуется 1 железный слиток и 2 угля",
+      "station": "forge",
+      "result_item": "iron_spearhead",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "iron_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 70,
+      "sprite": null
+    },
+    {
+      "id": "steel_spearhead",
+      "name": "Стальной наконечник",
+      "display_name": "Рецепт: Стальной наконечник",
+      "quality": "uncommon",
+      "description": "Изготовление стального наконечника для копья. Требуется 1 стальной слиток и 2 угля",
+      "station": "forge",
+      "result_item": "steel_spearhead",
+      "result_quantity": 1,
+      "required_level": 10,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "steel_ingot", "quantity": 1},
+        {"item": "charcoal", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 120,
+      "sprite": null
+    },
+    {
+      "id": "iron_axe_blade",
+      "name": "Железное лезвие топора",
+      "display_name": "Рецепт: Железное лезвие топора",
+      "quality": "common",
+      "description": "Изготовление железного лезвия для топора. Требуется 2 железных слитка и 3 угля",
+      "station": "forge",
+      "result_item": "iron_axe_blade",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "iron_ingot", "quantity": 2},
+        {"item": "charcoal", "quantity": 3}
+      ],
+      "category": "tool",
+      "base_price": 72,
+      "sprite": null
+    },
+    {
+      "id": "steel_axe_blade",
+      "name": "Стальное лезвие топора",
+      "display_name": "Рецепт: Стальное лезвие топора",
+      "quality": "uncommon",
+      "description": "Изготовление стального лезвия для топора. Требуется 2 стальных слитка и 3 угля",
+      "station": "forge",
+      "result_item": "steel_axe_blade",
+      "result_quantity": 1,
+      "required_level": 11,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "steel_ingot", "quantity": 2},
+        {"item": "charcoal", "quantity": 3}
+      ],
+      "category": "tool",
+      "base_price": 125,
+      "sprite": null
+    },
+    {
+      "id": "poor_pickaxe",
+      "name": "Кирка (плохое качество)",
+      "display_name": "Рецепт: Кирка (плохое качество)",
+      "quality": "poor",
+      "description": "Изготовление простой кирки. Требуется 1 медный боёк и 1 длинная рукоять",
+      "station": "workbench",
+      "result_item": "poor_pickaxe",
+      "result_quantity": 1,
+      "required_level": 3,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_hammer_head", "quantity": 1},
+        {"item": "long_wooden_handle", "quantity": 1}
+      ],
+      "category": "weapon",
+      "base_price": 55,
+      "sprite": null
+    },
+    {
+      "id": "pickaxe",
+      "name": "Кирка (обычное качество)",
+      "display_name": "Рецепт: Кирка (обычное качество)",
+      "quality": "common",
+      "description": "Изготовление кирки обычного качества. Требуется 1 железный боёк и 1 длинная рукоять",
+      "station": "workbench",
+      "result_item": "pickaxe",
+      "result_quantity": 1,
+      "required_level": 7,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "iron_hammer_head", "quantity": 1},
+        {"item": "long_wooden_handle", "quantity": 1}
+      ],
+      "category": "weapon",
+      "base_price": 95,
+      "sprite": null
+    },
+    {
+      "id": "fine_pickaxe",
+      "name": "Кирка (необычное качество)",
+      "display_name": "Рецепт: Кирка (необычное качество)",
+      "quality": "uncommon",
+      "description": "Изготовление кирки необычного качества. Требуется 1 стальной боёк и 1 длинная рукоять",
+      "station": "workbench",
+      "result_item": "fine_pickaxe",
+      "result_quantity": 1,
+      "required_level": 11,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "steel_hammer_head", "quantity": 1},
+        {"item": "long_wooden_handle", "quantity": 1}
+      ],
+      "category": "weapon",
+      "base_price": 160,
+      "sprite": null
+    },
+    {
+      "id": "poor_light_gloves",
+      "name": "Легкие перчатки (плохое качество)",
+      "display_name": "Рецепт: Легкие перчатки (плохое качество)",
+      "quality": "poor",
+      "description": "Пошив легких перчаток. Требуется 2 плохой ткани",
+      "station": "workbench",
+      "result_item": "poor_light_gloves",
+      "result_quantity": 1,
+      "required_level": 2,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "poor_fabric", "quantity": 2}
+      ],
+      "category": "armor",
+      "base_price": 35,
+      "sprite": null
+    },
+    {
+      "id": "light_gloves",
+      "name": "Легкие перчатки (обычное качество)",
+      "display_name": "Рецепт: Легкие перчатки (обычное качество)",
+      "quality": "common",
+      "description": "Пошив легких перчаток. Требуется 2 обычной ткани",
+      "station": "workbench",
+      "result_item": "light_gloves",
+      "result_quantity": 1,
+      "required_level": 5,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "fabric", "quantity": 2}
+      ],
+      "category": "armor",
+      "base_price": 60,
+      "sprite": null
+    },
+    {
+      "id": "fine_light_gloves",
+      "name": "Легкие перчатки (необычное качество)",
+      "display_name": "Рецепт: Легкие перчатки (необычное качество)",
+      "quality": "uncommon",
+      "description": "Пошив легких перчаток с укреплением. Требуется 2 обычной ткани и 3 кожаных полоски",
+      "station": "workbench",
+      "result_item": "fine_light_gloves",
+      "result_quantity": 1,
+      "required_level": 8,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "fabric", "quantity": 2},
+        {"item": "leather_strips", "quantity": 3}
+      ],
+      "category": "armor",
+      "base_price": 105,
+      "sprite": null
+    },
+    {
+      "id": "poor_light_boots",
+      "name": "Легкая обувь (плохое качество)",
+      "display_name": "Рецепт: Легкая обувь (плохое качество)",
+      "quality": "poor",
+      "description": "Пошив легкой обуви. Требуется 1 шкура оленя",
+      "station": "workbench",
+      "result_item": "poor_light_boots",
+      "result_quantity": 1,
+      "required_level": 2,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "deer_hide", "quantity": 1}
+      ],
+      "category": "armor",
+      "base_price": 45,
+      "sprite": null
+    },
+    {
+      "id": "light_boots",
+      "name": "Легкая обувь (обычное качество)",
+      "display_name": "Рецепт: Легкая обувь (обычное качество)",
+      "quality": "common",
+      "description": "Пошив легкой обуви. Требуется 1 кожа",
+      "station": "workbench",
+      "result_item": "light_boots",
+      "result_quantity": 1,
+      "required_level": 4,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "leather", "quantity": 1}
+      ],
+      "category": "armor",
+      "base_price": 75,
+      "sprite": null
+    },
+    {
+      "id": "fine_light_boots",
+      "name": "Легкая обувь (необычное качество)",
+      "display_name": "Рецепт: Легкая обувь (необычное качество)",
+      "quality": "uncommon",
+      "description": "Пошив легкой обуви с укреплением. Требуется 1 кожа и 4 кожаных полоски",
+      "station": "workbench",
+      "result_item": "fine_light_boots",
+      "result_quantity": 1,
+      "required_level": 7,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "leather", "quantity": 1},
+        {"item": "leather_strips", "quantity": 4}
+      ],
+      "category": "armor",
+      "base_price": 130,
+      "sprite": null
+    },
+    {
+      "id": "poor_backpack",
+      "name": "Рюкзак (плохое качество)",
+      "display_name": "Рецепт: Рюкзак (плохое качество)",
+      "quality": "poor",
+      "description": "Пошив простого рюкзака. Требуется 3 плохой ткани",
+      "station": "workbench",
+      "result_item": "poor_backpack",
+      "result_quantity": 1,
+      "required_level": 2,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "poor_fabric", "quantity": 3}
+      ],
+      "category": "armor",
+      "base_price": 35,
+      "sprite": null
+    },
+    {
+      "id": "backpack",
+      "name": "Рюкзак (обычное качество)",
+      "display_name": "Рецепт: Рюкзак (обычное качество)",
+      "quality": "common",
+      "description": "Пошив рюкзака с укреплением. Требуется 3 плохой ткани и 4 кожаных полоски",
+      "station": "workbench",
+      "result_item": "backpack",
+      "result_quantity": 1,
+      "required_level": 5,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "poor_fabric", "quantity": 3},
+        {"item": "leather_strips", "quantity": 4}
+      ],
+      "category": "armor",
+      "base_price": 70,
+      "sprite": null
+    },
+    {
+      "id": "fine_backpack",
+      "name": "Рюкзак (необычное качество)",
+      "display_name": "Рецепт: Рюкзак (необычное качество)",
+      "quality": "uncommon",
+      "description": "Пошив качественного рюкзака. Требуется 3 обычной ткани, 5 кожаных полосок и 3 медных полоски",
+      "station": "workbench",
+      "result_item": "fine_backpack",
+      "result_quantity": 1,
+      "required_level": 8,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "fabric", "quantity": 3},
+        {"item": "leather_strips", "quantity": 5},
+        {"item": "copper_strips", "quantity": 3}
+      ],
+      "category": "armor",
+      "base_price": 125,
+      "sprite": null
+    },
+    {
+      "id": "rare_backpack",
+      "name": "Рюкзак (редкое качество)",
+      "display_name": "Рецепт: Рюкзак (редкое качество)",
+      "quality": "rare",
+      "description": "Пошив редкого рюкзака. Требуется 2 кожи, 6 кожаных полосок и 3 медных полоски",
+      "station": "workbench",
+      "result_item": "rare_backpack",
+      "result_quantity": 1,
+      "required_level": 12,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "leather", "quantity": 2},
+        {"item": "leather_strips", "quantity": 6},
+        {"item": "copper_strips", "quantity": 3}
+      ],
+      "category": "armor",
+      "base_price": 210,
+      "sprite": null
+    },
+    {
+      "id": "poor_light_helmet",
+      "name": "Легкий шлем (плохое качество)",
+      "display_name": "Рецепт: Легкий шлем (плохое качество)",
+      "quality": "poor",
+      "description": "Пошив легкого шлема. Требуется 2 плохой ткани",
+      "station": "workbench",
+      "result_item": "poor_light_helmet",
+      "result_quantity": 1,
+      "required_level": 3,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "poor_fabric", "quantity": 2}
+      ],
+      "category": "armor",
+      "base_price": 40,
+      "sprite": null
+    },
+    {
+      "id": "light_helmet",
+      "name": "Легкий шлем (обычное качество)",
+      "display_name": "Рецепт: Легкий шлем (обычное качество)",
+      "quality": "common",
+      "description": "Пошив легкого шлема. Требуется 2 обычной ткани",
+      "station": "workbench",
+      "result_item": "light_helmet",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "fabric", "quantity": 2}
+      ],
+      "category": "armor",
+      "base_price": 70,
+      "sprite": null
+    },
+    {
+      "id": "fine_light_helmet",
+      "name": "Легкий шлем (необычное качество)",
+      "display_name": "Рецепт: Легкий шлем (необычное качество)",
+      "quality": "uncommon",
+      "description": "Пошив легкого шлема с укреплением. Требуется 2 обычной ткани и 4 кожаных полоски",
+      "station": "workbench",
+      "result_item": "fine_light_helmet",
+      "result_quantity": 1,
+      "required_level": 9,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "fabric", "quantity": 2},
+        {"item": "leather_strips", "quantity": 4}
+      ],
+      "category": "armor",
+      "base_price": 120,
+      "sprite": null
+    },
+    {
+      "id": "poor_belt",
+      "name": "Ремень (плохое качество)",
+      "display_name": "Рецепт: Ремень (плохое качество)",
+      "quality": "poor",
+      "description": "Пошив простого ремня. Требуется 1 плохая ткань",
+      "station": "workbench",
+      "result_item": "poor_belt",
+      "result_quantity": 1,
+      "required_level": 1,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "poor_fabric", "quantity": 1}
+      ],
+      "category": "armor",
+      "base_price": 28,
+      "sprite": null
+    },
+    {
+      "id": "belt",
+      "name": "Ремень (обычное качество)",
+      "display_name": "Рецепт: Ремень (обычное качество)",
+      "quality": "common",
+      "description": "Пошив ремня с укреплением. Требуется 1 плохая ткань и 3 кожаных полоски",
+      "station": "workbench",
+      "result_item": "belt",
+      "result_quantity": 1,
+      "required_level": 4,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "poor_fabric", "quantity": 1},
+        {"item": "leather_strips", "quantity": 3}
+      ],
+      "category": "armor",
+      "base_price": 55,
+      "sprite": null
+    },
+    {
+      "id": "fine_belt",
+      "name": "Ремень (необычное качество)",
+      "display_name": "Рецепт: Ремень (необычное качество)",
+      "quality": "uncommon",
+      "description": "Пошив качественного ремня. Требуется 1 обычная ткань, 4 кожаных полоски и 2 медных полоски",
+      "station": "workbench",
+      "result_item": "fine_belt",
+      "result_quantity": 1,
+      "required_level": 7,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "fabric", "quantity": 1},
+        {"item": "leather_strips", "quantity": 4},
+        {"item": "copper_strips", "quantity": 2}
+      ],
+      "category": "armor",
+      "base_price": 100,
+      "sprite": null
+    },
+    {
+      "id": "rare_belt",
+      "name": "Ремень (редкое качество)",
+      "display_name": "Рецепт: Ремень (редкое качество)",
+      "quality": "rare",
+      "description": "Пошив редкого ремня. Требуется 1 кожа, 5 кожаных полосок, 3 медных полоски и 2 серебряных полоски",
+      "station": "workbench",
+      "result_item": "rare_belt",
+      "result_quantity": 1,
+      "required_level": 13,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "leather", "quantity": 1},
+        {"item": "leather_strips", "quantity": 5},
+        {"item": "copper_strips", "quantity": 3},
+        {"item": "silver_strips", "quantity": 2}
+      ],
+      "category": "armor",
+      "base_price": 180,
+      "sprite": null
+    },
+    {
+      "id": "bowstring",
+      "name": "Тетива",
+      "display_name": "Рецепт: Тетива",
+      "quality": "common",
+      "description": "Изготовление тетивы для лука. Требуется 3 звериных жилы",
+      "station": "workbench",
+      "result_item": "bowstring",
+      "result_quantity": 1,
+      "required_level": 2,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "animal_sinew", "quantity": 3}
+      ],
+      "category": "tool",
+      "base_price": 30,
+      "sprite": null
+    },
+    {
+      "id": "short_horn_handle",
+      "name": "Короткая роговая рукоять",
+      "display_name": "Рецепт: Короткая роговая рукоять",
+      "quality": "uncommon",
+      "description": "Изготовление роговой рукояти. Требуется 1 рога оленя",
+      "station": "workbench",
+      "result_item": "short_horn_handle",
+      "result_quantity": 1,
+      "required_level": 8,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "deer_antlers", "quantity": 1}
+      ],
+      "category": "tool",
+      "base_price": 75,
+      "sprite": null
+    },
+    {
+      "id": "poor_knife",
+      "name": "Нож (плохое качество)",
+      "display_name": "Рецепт: Нож (плохое качество)",
+      "quality": "poor",
+      "description": "Изготовление простого ножа. Требуется 1 медное короткое лезвие и 1 короткая деревянная рукоять",
+      "station": "workbench",
+      "result_item": "poor_knife",
+      "result_quantity": 1,
+      "required_level": 3,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_short_blade", "quantity": 1},
+        {"item": "short_wooden_handle", "quantity": 1}
+      ],
+      "category": "weapon",
+      "base_price": 40,
+      "sprite": null
+    },
+    {
+      "id": "knife",
+      "name": "Нож (обычное качество)",
+      "display_name": "Рецепт: Нож (обычное качество)",
+      "quality": "common",
+      "description": "Изготовление ножа. Требуется 1 железное короткое лезвие, 1 короткая деревянная рукоять и 2 медных полоски",
+      "station": "workbench",
+      "result_item": "knife",
+      "result_quantity": 1,
+      "required_level": 7,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "iron_short_blade", "quantity": 1},
+        {"item": "short_wooden_handle", "quantity": 1},
+        {"item": "copper_strips", "quantity": 2}
+      ],
+      "category": "weapon",
+      "base_price": 75,
+      "sprite": null
+    },
+    {
+      "id": "fine_knife",
+      "name": "Нож (необычное качество)",
+      "display_name": "Рецепт: Нож (необычное качество)",
+      "quality": "uncommon",
+      "description": "Изготовление качественного ножа. Требуется 1 стальное короткое лезвие, 1 короткая деревянная рукоять и 2 железных полоски",
+      "station": "workbench",
+      "result_item": "fine_knife",
+      "result_quantity": 1,
+      "required_level": 11,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "steel_short_blade", "quantity": 1},
+        {"item": "short_wooden_handle", "quantity": 1},
+        {"item": "iron_strips", "quantity": 2}
+      ],
+      "category": "weapon",
+      "base_price": 130,
+      "sprite": null
+    },
+    {
+      "id": "rare_knife",
+      "name": "Нож (редкое качество)",
+      "display_name": "Рецепт: Нож (редкое качество)",
+      "quality": "rare",
+      "description": "Изготовление редкого ножа. Требуется 1 стальное короткое лезвие, 1 короткая роговая рукоять и 2 серебряных полоски",
+      "station": "workbench",
+      "result_item": "rare_knife",
+      "result_quantity": 1,
+      "required_level": 15,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "steel_short_blade", "quantity": 1},
+        {"item": "short_horn_handle", "quantity": 1},
+        {"item": "silver_strips", "quantity": 2}
+      ],
+      "category": "weapon",
+      "base_price": 220,
+      "sprite": null
+    },
+    {
+      "id": "poor_sword",
+      "name": "Меч (плохое качество)",
+      "display_name": "Рецепт: Меч (плохое качество)",
+      "quality": "poor",
+      "description": "Изготовление простого меча. Требуется 1 медное длинное лезвие и 1 короткая деревянная рукоять",
+      "station": "workbench",
+      "result_item": "poor_sword",
+      "result_quantity": 1,
+      "required_level": 4,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_long_blade", "quantity": 1},
+        {"item": "short_wooden_handle", "quantity": 1}
+      ],
+      "category": "weapon",
+      "base_price": 58,
+      "sprite": null
+    },
+    {
+      "id": "sword",
+      "name": "Меч (обычное качество)",
+      "display_name": "Рецепт: Меч (обычное качество)",
+      "quality": "common",
+      "description": "Изготовление меча. Требуется 1 железное длинное лезвие, 1 короткая деревянная рукоять и 3 медных полоски",
+      "station": "workbench",
+      "result_item": "sword",
+      "result_quantity": 1,
+      "required_level": 8,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "iron_long_blade", "quantity": 1},
+        {"item": "short_wooden_handle", "quantity": 1},
+        {"item": "copper_strips", "quantity": 3}
+      ],
+      "category": "weapon",
+      "base_price": 110,
+      "sprite": null
+    },
+    {
+      "id": "fine_sword",
+      "name": "Меч (необычное качество)",
+      "display_name": "Рецепт: Меч (необычное качество)",
+      "quality": "uncommon",
+      "description": "Изготовление качественного меча. Требуется 1 стальное длинное лезвие, 1 короткая деревянная рукоять и 3 железных полоски",
+      "station": "workbench",
+      "result_item": "fine_sword",
+      "result_quantity": 1,
+      "required_level": 12,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "steel_long_blade", "quantity": 1},
+        {"item": "short_wooden_handle", "quantity": 1},
+        {"item": "iron_strips", "quantity": 3}
+      ],
+      "category": "weapon",
+      "base_price": 185,
+      "sprite": null
+    },
+    {
+      "id": "rare_sword",
+      "name": "Меч (редкое качество)",
+      "display_name": "Рецепт: Меч (редкое качество)",
+      "quality": "rare",
+      "description": "Изготовление редкого меча. Требуется 1 стальное длинное лезвие, 1 короткая роговая рукоять и 3 серебряных полоски",
+      "station": "workbench",
+      "result_item": "rare_sword",
+      "result_quantity": 1,
+      "required_level": 16,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "steel_long_blade", "quantity": 1},
+        {"item": "short_horn_handle", "quantity": 1},
+        {"item": "silver_strips", "quantity": 3}
+      ],
+      "category": "weapon",
+      "base_price": 320,
       "sprite": null
     }
   ],

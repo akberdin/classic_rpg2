@@ -36,9 +36,78 @@ ITEM_ID_TO_NAME = {
     "silver_wire": "Серебряная проволока",
     "gold_wire": "Золотая проволока",
     "mithril_wire": "Мифриловая проволока",
-    # Компоненты оружия
+    # Компоненты оружия - лезвия топоров
     "copper_axe_blade": "Медное лезвие топора",
+    "iron_axe_blade": "Железное лезвие топора",
+    "steel_axe_blade": "Стальное лезвие топора",
+    # Бойки для кирок
+    "copper_hammer_head": "Медный боёк",
+    "iron_hammer_head": "Железный боёк",
+    "steel_hammer_head": "Стальной боёк",
+    # Металлические полоски
+    "copper_strips": "Медные полоски",
+    "iron_strips": "Железные полоски",
+    "steel_strips": "Стальные полоски",
+    "silver_strips": "Серебряные полоски",
+    # Короткие лезвия для ножей
+    "copper_short_blade": "Медное короткое лезвие",
+    "iron_short_blade": "Железное короткое лезвие",
+    "steel_short_blade": "Стальное короткое лезвие",
+    # Длинные лезвия для мечей
+    "copper_long_blade": "Медное длинное лезвие",
+    "iron_long_blade": "Железное длинное лезвие",
+    "steel_long_blade": "Стальное длинное лезвие",
+    # Наконечники копий
+    "copper_spearhead": "Медный наконечник",
+    "iron_spearhead": "Железный наконечник",
+    "steel_spearhead": "Стальной наконечник",
+    # Материалы от животных
+    "leather": "Кожа",
+    "leather_strips": "Полоски кожи",
+    "deer_hide": "Шкура оленя",
+    "wolf_hide": "Шкура волка",
+    "bear_hide": "Шкура медведя",
+    "animal_sinew": "Звериные жилы",
+    "deer_antlers": "Рога оленя",
+    # Ткань
+    "poor_fabric": "Плохая ткань",
+    "fabric": "Ткань",
+    "fine_fabric": "Отличная ткань",
+    # Дополнительные компоненты
+    "bowstring": "Тетива",
+    "short_horn_handle": "Короткая роговая рукоять",
+    # Готовые изделия - оружие
     "poor_axe": "Топор",
+    "poor_spear": "Копье",
+    "poor_pickaxe": "Кирка",
+    "pickaxe": "Кирка",
+    "fine_pickaxe": "Кирка",
+    "poor_knife": "Нож",
+    "knife": "Нож",
+    "fine_knife": "Нож",
+    "rare_knife": "Нож",
+    "poor_sword": "Меч",
+    "sword": "Меч",
+    "fine_sword": "Меч",
+    "rare_sword": "Меч",
+    # Готовые изделия - броня
+    "poor_light_gloves": "Легкие перчатки",
+    "light_gloves": "Легкие перчатки",
+    "fine_light_gloves": "Легкие перчатки",
+    "poor_light_boots": "Легкая обувь",
+    "light_boots": "Легкая обувь",
+    "fine_light_boots": "Легкая обувь",
+    "poor_backpack": "Рюкзак",
+    "backpack": "Рюкзак",
+    "fine_backpack": "Рюкзак",
+    "rare_backpack": "Рюкзак",
+    "poor_light_helmet": "Легкий шлем",
+    "light_helmet": "Легкий шлем",
+    "fine_light_helmet": "Легкий шлем",
+    "poor_belt": "Ремень",
+    "belt": "Ремень",
+    "fine_belt": "Ремень",
+    "rare_belt": "Ремень",
 }
 
 
