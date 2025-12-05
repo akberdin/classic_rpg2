@@ -315,12 +315,12 @@ class CraftingWindow:
         if self.selected_recipe_index >= len(recipes):
             self.selected_recipe_index = max(0, len(recipes) - 1)
 
-        # Параметры сетки: 2 столбца, много рядов
-        columns = 2
-        rows_per_column = 20  # Увеличено количество рядов
-        recipe_width = int((recipes_area_width - int(20 * scale_w)) / columns)
+        # Параметры сетки: 4 столбца по 16 рядов
+        columns = 4
+        rows_per_column = 16
+        recipe_width = int((recipes_area_width - int(30 * scale_w)) / columns)
         recipe_height = int(30 * scale_h)  # Уменьшено для компактности (только название)
-        recipe_spacing_x = int(20 * scale_w)
+        recipe_spacing_x = int(10 * scale_w)
         recipe_spacing_y = int(5 * scale_h)
 
         # Отрисовка рецептов
