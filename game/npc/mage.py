@@ -70,47 +70,16 @@ class MagePatrol(NPC):
         self.mana = self.max_mana
 
     def _generate_magical_goods(self):
-        """Генерация магических товаров для продажи"""
-        from game.inventory import PREDEFINED_ITEMS, ItemGenerator
+        """Генерация базовых товаров для мага (без книг умений)"""
+        from game.inventory import PREDEFINED_ITEMS
 
-        # Стартовое золото
-        self.inventory.add_gold(500 + self.level * 50)
+        # Стартовое золото (небольшое, маги не торговцы)
+        self.inventory.add_gold(100 + self.level * 20)
 
-        # Книги лечебной магии
-        self.inventory.add_item(PREDEFINED_ITEMS["book_heal"], 1)
-
-        if self.level >= 5:
-            self.inventory.add_item(PREDEFINED_ITEMS["book_regeneration"], 1)
-
-        # Книги атакующей магии (зависят от уровня мага)
-        if self.level >= 8:
-            self.inventory.add_item(PREDEFINED_ITEMS["book_magic_missile"], 1)
-
-        if self.level >= 12:
-            if random.random() < 0.5:
-                self.inventory.add_item(PREDEFINED_ITEMS["book_ice_bolt"], 1)
-
-        if self.level >= 15:
-            if random.random() < 0.3:
-                self.inventory.add_item(PREDEFINED_ITEMS["book_fireball"], 1)
-
-        if self.level >= 20:
-            if random.random() < 0.1:
-                self.inventory.add_item(PREDEFINED_ITEMS["book_lightning"], 1)
-
-        # Зелья маны
-        self.inventory.add_item(PREDEFINED_ITEMS["minor_mana_potion"], random.randint(2, 4))
+        # Зелья маны (небольшое количество)
+        self.inventory.add_item(PREDEFINED_ITEMS["minor_mana_potion"], random.randint(1, 2))
         if self.level >= 10:
             self.inventory.add_item(PREDEFINED_ITEMS["mana_potion"], random.randint(1, 2))
-
-        # Магические украшения
-        if random.random() < 0.5:
-            jewelry = ItemGenerator.generate_jewelry(self.level)
-            self.inventory.add_item(jewelry, 1)
-
-        # Отличная ткань для магических облачений
-        if self.level >= 8:
-            self.inventory.add_item(PREDEFINED_ITEMS["fine_fabric"], random.randint(1, 3))
 
     def _generate_patrol_points(self):
         """Генерация точек патрулирования вокруг академии"""
