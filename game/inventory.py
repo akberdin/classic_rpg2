@@ -1684,17 +1684,15 @@ class ItemGenerator:
         Returns:
             ItemQuality: Качество предмета
         """
-        # Ранг 1: плохое и обычное качество
+        # Ранг 1: только плохое качество (деревни)
         if merchant_rank == 1:
             shop_quality_weights = {
-                ItemQuality.POOR: 0.4,
-                ItemQuality.COMMON: 0.6,
+                ItemQuality.POOR: 1.0,
             }
-        # Ранг 2: до обычного качества включительно
+        # Ранг 2: только обычное качество (города)
         elif merchant_rank == 2:
             shop_quality_weights = {
-                ItemQuality.POOR: 0.30,
-                ItemQuality.COMMON: 0.70,
+                ItemQuality.COMMON: 1.0,
             }
         # Ранг 3: до необычного качества включительно
         elif merchant_rank == 3:

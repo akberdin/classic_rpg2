@@ -28,6 +28,10 @@ class Alchemist(Merchant):
         """
         super().__init__(name, x, y, level)
         self.npc_type = "alchemist"
+        # Алхимики не путешествуют, всегда отдыхают (для ротации товаров)
+        self.state = "rest"
+        self.rest_counter = 0
+        self.rest_duration = 999999  # Бесконечный отдых
         self._adjust_alchemist_stats()
         self._generate_alchemist_goods()
 
