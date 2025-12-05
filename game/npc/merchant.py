@@ -150,8 +150,8 @@ class Merchant(NPC):
 
             # Определяем ранг рецепта по качеству
             if rank == 1:
-                # Ранг 1: только рецепты для POOR качества
-                if recipe_quality == ItemQuality.POOR:
+                # Ранг 1: рецепты для POOR и COMMON качества
+                if recipe_quality in [ItemQuality.POOR, ItemQuality.COMMON]:
                     rank_recipes.append(recipe_id)
             elif rank == 2:
                 # Ранг 2: рецепты для POOR и COMMON качества
@@ -188,8 +188,9 @@ class Merchant(NPC):
 
                 # Фильтруем по качеству в зависимости от ранга
                 if rank == 1:
-                    # Ранг 1: не продают книги
-                    pass
+                    # Ранг 1: только POOR и COMMON качество
+                    if book_quality in [ItemQuality.POOR, ItemQuality.COMMON]:
+                        allowed_books.append(book_id)
                 elif rank == 2:
                     # Ранг 2: до необычного качества
                     if book_quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON]:
@@ -305,7 +306,9 @@ class Merchant(NPC):
         # Генерируем книги умений (только не магические)
         allowed_books = self._get_books_for_rank(rank)
         if allowed_books:
-            if rank == 2:
+            if rank == 1:
+                num_books = random.randint(0, 1)  # 0-1 книга для ранга 1
+            elif rank == 2:
                 num_books = random.randint(0, 1)  # 0-1 книга
             elif rank == 3:
                 num_books = random.randint(1, 2)  # 1-2 книги
