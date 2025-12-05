@@ -70,14 +70,7 @@ class Alchemist(Merchant):
             if ing_key in PREDEFINED_ITEMS:
                 self.inventory.add_item(PREDEFINED_ITEMS[ing_key], quantity)
 
-        # Книги: только рецепты для любого ранга
-        all_recipe_ids = [key for key in PREDEFINED_ITEMS.keys() if key.startswith("recipe_")]
-        # Добавляем 3-6 случайных рецептов любого ранга
-        num_recipes = random.randint(3, 6)
-        if all_recipe_ids:
-            selected_recipes = random.sample(all_recipe_ids, min(num_recipes, len(all_recipe_ids)))
-            for recipe_id in selected_recipes:
-                self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
+        # Алхимики НЕ продают рецепты
 
         # Добавляем золото для торговли
         self.inventory.add_gold(random.randint(500, 1500) * 3)
@@ -117,12 +110,7 @@ class Alchemist(Merchant):
             resource_type = random.choice(["magic_crystal", "artifact_fragment"])
             self.inventory.add_item(PREDEFINED_ITEMS[resource_type], random.randint(1, 2))
 
-        # Случайно добавляем рецепт
-        if random.random() < 0.4:
-            all_recipe_ids = [key for key in PREDEFINED_ITEMS.keys() if key.startswith("recipe_")]
-            if all_recipe_ids:
-                recipe_id = random.choice(all_recipe_ids)
-                self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
+        # Алхимики НЕ продают рецепты
 
 
 class Hunter(NPC):
