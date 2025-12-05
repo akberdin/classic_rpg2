@@ -502,11 +502,11 @@ class Game:
                 # Создаем постоянного торговца для этой локации если его нет
                 if not hasattr(location, 'merchant_npc'):
                     if location.location_type == LOCATION_CITY:
-                        merchant_level = 10
+                        merchant_level = 15  # Ранг 2: 11-20 уровень
                     elif location.location_type == LOCATION_MAGIC_SCHOOL:
-                        merchant_level = 15
+                        merchant_level = 20  # Ранг 2: магическая академия
                     else:
-                        merchant_level = 5
+                        merchant_level = 5  # Ранг 1: деревни
                     location.merchant_npc = Merchant(f"Торговец {location.name}", self.player.x, self.player.y, merchant_level)
 
                 # Открываем окно меню локации
