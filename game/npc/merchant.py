@@ -690,39 +690,41 @@ class MagicMerchant(Merchant):
         # Увеличенное золото для скупки (больше для дорогих книг)
         self.inventory.gold = (random.randint(2000, 5000) + self.level * 200) * 3
 
-        # Оружие: только жезлы и посохи (до редкого качества), не более 10
+        # Оружие: только жезлы и посохи (необычного и редкого качества), не более 10
         magic_weapon_types = [WeaponType.STAFF, WeaponType.WAND]
         num_weapons = random.randint(5, 10)
         for _ in range(num_weapons):
-            # Генерируем качество до RARE включительно
-            quality = ItemGenerator.generate_quality_for_shop(merchant_rank=4)
+            # Генерируем качество только UNCOMMON и RARE
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
             weapon_type = random.choice(magic_weapon_types)
             weapon = ItemGenerator.generate_weapon_by_type(weapon_type, quality=quality)
             self.inventory.add_item(weapon, 1)
 
-        # Броня: только легкая, пояса и рюкзаки (до редкого качества), не более 10
-        num_armors = random.randint(4, 8)
-        for _ in range(num_armors):
-            quality = ItemGenerator.generate_quality_for_shop(merchant_rank=4)
+        # Броня: только легкая броня, пояса и рюкзаки (необычного и редкого качества), не более 10
+        # Легкая броня (4-8 штук)
+        num_light_armors = random.randint(4, 8)
+        for _ in range(num_light_armors):
+            # Генерируем качество только UNCOMMON и RARE
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
             slot = random.choice([EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET])
             armor = ItemGenerator.generate_armor(self.level, slot=slot, armor_type=ArmorType.LIGHT, quality=quality)
             self.inventory.add_item(armor, 1)
 
-        # Пояса и рюкзаки
+        # Пояса и рюкзаки (1-2 штуки каждого, качество UNCOMMON и RARE)
         for _ in range(random.randint(1, 2)):
-            quality = ItemGenerator.generate_quality_for_shop(merchant_rank=4)
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
             belt = ItemGenerator.generate_belt(self.level, quality=quality)
             self.inventory.add_item(belt, 1)
 
         for _ in range(random.randint(1, 2)):
-            quality = ItemGenerator.generate_quality_for_shop(merchant_rank=4)
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
             backpack = ItemGenerator.generate_backpack(self.level, quality=quality)
             self.inventory.add_item(backpack, 1)
 
-        # Украшения: не более 5 позиций (до редкого качества)
+        # Украшения: не более 5 позиций (необычного и редкого качества)
         num_jewelry = random.randint(2, 5)
         for _ in range(num_jewelry):
-            quality = ItemGenerator.generate_quality_for_shop(merchant_rank=4)
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
             jewelry = ItemGenerator.generate_jewelry(self.level + 2, quality=quality)
             self.inventory.add_item(jewelry, 1)
 
@@ -736,7 +738,7 @@ class MagicMerchant(Merchant):
         self.inventory.add_item(PREDEFINED_ITEMS["mana_potion"], random.randint(4, 8))
         self.inventory.add_item(PREDEFINED_ITEMS["stamina_potion"], random.randint(3, 6))
 
-        # Книги: только магические умения до эпического качества
+        # Книги: только магические умения до эпического качества включительно
         magic_books = [
             # Магические умения поддержки
             "book_heal", "book_regeneration", "book_mage_shield", "book_stamina_recovery",
@@ -744,18 +746,20 @@ class MagicMerchant(Merchant):
             "book_magic_missile", "book_ice_bolt", "book_fireball", "book_lightning"
         ]
 
-        # Фильтруем книги по качеству (до RARE включительно, без EPIC)
+        # Фильтруем книги по качеству (до EPIC включительно)
         for book_id in magic_books:
             if book_id in PREDEFINED_ITEMS:
                 book = PREDEFINED_ITEMS[book_id]
-                if book.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE]:
+                if book.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE, ItemQuality.EPIC]:
                     self.inventory.add_item(book, 1)
 
         # Рецепты: только рецепты для 4 ранга (UNCOMMON и RARE качества)
+        # Автоматический механизм - фильтруем по качеству рецепта
         all_recipe_ids = [key for key in PREDEFINED_ITEMS.keys() if key.startswith("recipe_")]
         rank4_recipes = []
         for recipe_id in all_recipe_ids:
             recipe_item = PREDEFINED_ITEMS[recipe_id]
+            # Рецепты 4 ранга имеют качество UNCOMMON и RARE
             if recipe_item.quality in [ItemQuality.UNCOMMON, ItemQuality.RARE]:
                 rank4_recipes.append(recipe_id)
 
@@ -770,7 +774,7 @@ class MagicMerchant(Merchant):
         Пополнение товаров магического торговца.
         Полная ротация происходит раз в 5 дней (120 часов).
         """
-        from game.inventory import PREDEFINED_ITEMS, ItemGenerator, WeaponType, ItemQuality
+        from game.inventory import PREDEFINED_ITEMS, ItemGenerator, WeaponType, ArmorType, EquipmentSlot, ItemQuality
 
         # Инициализируем счетчик ротации, если его нет
         if not hasattr(self, 'restock_hours'):
@@ -790,13 +794,28 @@ class MagicMerchant(Merchant):
         # Добавляем золото
         self.inventory.gold += random.randint(500, 1000) * 3
 
-        # Случайно добавляем магическую книгу
+        # Случайно добавляем оружие (жезлы и посохи, UNCOMMON и RARE)
+        if random.random() < 0.3:
+            magic_weapon_types = [WeaponType.STAFF, WeaponType.WAND]
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
+            weapon_type = random.choice(magic_weapon_types)
+            weapon = ItemGenerator.generate_weapon_by_type(weapon_type, quality=quality)
+            self.inventory.add_item(weapon, 1)
+
+        # Случайно добавляем легкую броню (UNCOMMON и RARE)
+        if random.random() < 0.3:
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
+            slot = random.choice([EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET])
+            armor = ItemGenerator.generate_armor(self.level, slot=slot, armor_type=ArmorType.LIGHT, quality=quality)
+            self.inventory.add_item(armor, 1)
+
+        # Случайно добавляем магическую книгу (до EPIC включительно)
         if random.random() < 0.3:
             magic_books = [
                 "book_heal", "book_regeneration", "book_mage_shield", "book_stamina_recovery",
                 "book_magic_missile", "book_ice_bolt", "book_fireball", "book_lightning"
             ]
-            # Фильтруем по качеству (до EPIC)
+            # Фильтруем по качеству (до EPIC включительно)
             allowed_books = []
             for book_id in magic_books:
                 if book_id in PREDEFINED_ITEMS:
@@ -817,6 +836,14 @@ class MagicMerchant(Merchant):
         if random.random() < 0.3:
             resource_type = random.choice(["magic_crystal", "artifact_fragment", "ancient_coin"])
             self.inventory.add_item(PREDEFINED_ITEMS[resource_type], random.randint(1, 2))
+
+        # Случайно добавляем рецепт 4 ранга (UNCOMMON и RARE)
+        if random.random() < 0.2:
+            all_recipe_ids = [key for key in PREDEFINED_ITEMS.keys() if key.startswith("recipe_")]
+            rank4_recipes = [rid for rid in all_recipe_ids if PREDEFINED_ITEMS[rid].quality in [ItemQuality.UNCOMMON, ItemQuality.RARE]]
+            if rank4_recipes:
+                recipe_id = random.choice(rank4_recipes)
+                self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
 
     def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
         # Поддержка AIContext и старого способа вызова
