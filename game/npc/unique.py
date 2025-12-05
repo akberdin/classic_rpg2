@@ -79,42 +79,6 @@ class Alchemist(Merchant):
         # Добавляем золото для торговли
         self.inventory.add_gold(random.randint(500, 1500) * 3)
 
-    def restock_goods(self):
-        """
-        Пополнение товаров алхимика.
-        Полная ротация происходит раз в 5 дней (120 часов).
-        """
-        from game.inventory import PREDEFINED_ITEMS
-
-        # Увеличиваем счетчик (каждый вызов = 2 часа)
-        self.restock_hours += 2
-
-        # Отладочное сообщение
-        print(f"[RESTOCK] {self.name} (Алхимик): restock_hours = {self.restock_hours}/120")
-
-        # Проверяем, нужна ли полная ротация товаров (раз в 5 дней = 120 часов)
-        if self.restock_hours >= 120:
-            # Полная ротация: очищаем весь инвентарь и генерируем заново
-            print(f"[РОТАЦИЯ] {self.name} (Алхимик): Полная ротация товаров! Инвентарь обновлен.")
-            self._generate_alchemist_goods()
-            self.restock_hours = 0
-            return
-
-        # Частичное пополнение товаров между полными ротациями
-        # Добавляем золото
-        self.inventory.gold += random.randint(200, 500) * 3
-
-        # Случайно добавляем зелья
-        if random.random() < 0.6:
-            potion_type = random.choice(["greater_health_potion", "mana_potion", "stamina_potion"])
-            self.inventory.add_item(PREDEFINED_ITEMS[potion_type], random.randint(1, 3))
-
-        # Случайно добавляем ресурсы
-        if random.random() < 0.3:
-            resource_type = random.choice(["magic_crystal", "artifact_fragment"])
-            self.inventory.add_item(PREDEFINED_ITEMS[resource_type], random.randint(1, 2))
-
-        # Алхимики НЕ продают рецепты
 
 
 class Hunter(NPC):

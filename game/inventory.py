@@ -1684,28 +1684,11 @@ class ItemGenerator:
         Returns:
             ItemQuality: Качество предмета
         """
-        # Ранг 1: только плохое качество (деревни)
-        if merchant_rank == 1:
-            shop_quality_weights = {
-                ItemQuality.POOR: 1.0,
-            }
-        # Ранг 2: только обычное качество (города)
-        elif merchant_rank == 2:
-            shop_quality_weights = {
-                ItemQuality.COMMON: 1.0,
-            }
-        # Ранг 3: до необычного качества включительно
-        elif merchant_rank == 3:
-            shop_quality_weights = {
-                ItemQuality.COMMON: 0.50,
-                ItemQuality.UNCOMMON: 0.50,
-            }
-        # Ранг 4: до редкого качества включительно
-        else:
-            shop_quality_weights = {
-                ItemQuality.UNCOMMON: 0.30,
-                ItemQuality.RARE: 0.70,
-            }
+        from game.config.merchant_config import MERCHANT_QUALITY_WEIGHTS
+
+        # Получаем веса из конфига
+        shop_quality_weights = MERCHANT_QUALITY_WEIGHTS.get(merchant_rank, {ItemQuality.POOR: 1.0})
+
         return ItemGenerator.generate_quality(shop_quality_weights)
 
     @classmethod
