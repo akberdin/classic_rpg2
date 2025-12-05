@@ -354,16 +354,16 @@ class Merchant(NPC):
         # Получаем ранг торговца
         rank = self.get_merchant_rank()
 
-        # Инициализируем счетчик ротации, если его нет
-        if not hasattr(self, 'restock_hours'):
-            self.restock_hours = 0
-
         # Увеличиваем счетчик (каждый вызов = 2 часа)
         self.restock_hours += 2
+
+        # Отладочное сообщение
+        print(f"[RESTOCK] {self.name} (ранг {rank}): restock_hours = {self.restock_hours}/120")
 
         # Проверяем, нужна ли полная ротация товаров (раз в 5 дней = 120 часов)
         if self.restock_hours >= 120:
             # Полная ротация: очищаем весь инвентарь и генерируем заново
+            print(f"[РОТАЦИЯ] {self.name} (ранг {rank}): Полная ротация товаров! Инвентарь обновлен.")
             self.inventory.items.clear()
             self._generate_merchant_goods()
             self.restock_hours = 0
@@ -662,6 +662,7 @@ class Merchant(NPC):
         if self.rest_counter >= self.rest_duration:
             # Закончили отдых, выбираем новый город
             self.state = "travel"
+            self.rest_counter = 0  # Сбрасываем счетчик для следующего отдыха
             self._choose_new_destination()
 
 
@@ -791,16 +792,16 @@ class MagicMerchant(Merchant):
         """
         from game.inventory import PREDEFINED_ITEMS, ItemGenerator, WeaponType, ArmorType, EquipmentSlot, ItemQuality
 
-        # Инициализируем счетчик ротации, если его нет
-        if not hasattr(self, 'restock_hours'):
-            self.restock_hours = 0
-
         # Увеличиваем счетчик (каждый вызов = 2 часа)
         self.restock_hours += 2
+
+        # Отладочное сообщение
+        print(f"[RESTOCK] {self.name} (Академия): restock_hours = {self.restock_hours}/120")
 
         # Проверяем, нужна ли полная ротация товаров (раз в 5 дней = 120 часов)
         if self.restock_hours >= 120:
             # Полная ротация: очищаем весь инвентарь и генерируем заново
+            print(f"[РОТАЦИЯ] {self.name} (Академия): Полная ротация товаров! Инвентарь обновлен.")
             self._generate_magic_goods()
             self.restock_hours = 0
             return
