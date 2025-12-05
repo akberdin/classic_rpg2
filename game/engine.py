@@ -508,7 +508,6 @@ class Game:
                     else:
                         merchant_level = 5
                     location.merchant_npc = Merchant(f"Торговец {location.name}", self.player.x, self.player.y, merchant_level)
-                    location.merchant_npc.restock_goods()
 
                 # Открываем окно меню локации
                 self.settlement_menu_window.set_location(location)
