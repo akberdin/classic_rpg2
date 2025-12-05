@@ -113,6 +113,7 @@ class Merchant(NPC):
                 "bear_meat": (2, 4),
                 "deer_hide": (1, 3),
                 "deer_meat": (2, 4),
+                "poor_fabric": (2, 5),
             }
         elif rank == 2:
             # Ранг 2: медная, железная, серебряная и золотая руды, древесный уголь
@@ -122,6 +123,7 @@ class Merchant(NPC):
                 "silver_ore": (2, 5),
                 "gold_ore": (1, 3),
                 "charcoal": (3, 8),
+                "fabric": (2, 5),
             }
         elif rank in [3, 4]:
             # Ранги 3-4: медные, железные, серебряные и золотые слитки
@@ -130,6 +132,7 @@ class Merchant(NPC):
                 "iron_ingot": (2, 5),
                 "silver_ingot": (1, 3),
                 "gold_ingot": (1, 2),
+                "fine_fabric": (1, 3),
             }
         return {}
 
