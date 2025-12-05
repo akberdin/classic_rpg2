@@ -1684,10 +1684,11 @@ class ItemGenerator:
         Returns:
             ItemQuality: Качество предмета
         """
-        # Ранг 1: ТОЛЬКО плохое качество
+        # Ранг 1: плохое и обычное качество
         if merchant_rank == 1:
             shop_quality_weights = {
-                ItemQuality.POOR: 1.0,
+                ItemQuality.POOR: 0.4,
+                ItemQuality.COMMON: 0.6,
             }
         # Ранг 2: до обычного качества включительно
         elif merchant_rank == 2:
@@ -2324,19 +2325,30 @@ class ItemGenerator:
         # Определяем ранг по уровню
         if level <= 10:
             rank = "novice"
-            quality_weights = {ItemQuality.POOR: 0.3, ItemQuality.COMMON: 0.6, ItemQuality.UNCOMMON: 0.1}
+            # Ранг 1: плохие, обычные
+            quality_weights = {ItemQuality.POOR: 0.4, ItemQuality.COMMON: 0.6}
             num_items = random.randint(1, 2)
         elif level <= 20:
             rank = "regular"
-            quality_weights = {ItemQuality.COMMON: 0.4, ItemQuality.UNCOMMON: 0.4, ItemQuality.RARE: 0.2}
+            # Ранг 2: обычные, необычные
+            quality_weights = {ItemQuality.COMMON: 0.5, ItemQuality.UNCOMMON: 0.5}
             num_items = random.randint(2, 3)
         elif level <= 30:
             rank = "veteran"
-            quality_weights = {ItemQuality.UNCOMMON: 0.3, ItemQuality.RARE: 0.5, ItemQuality.EPIC: 0.2}
+            # Ранг 3: обычные, необычные, редкие
+            quality_weights = {ItemQuality.COMMON: 0.3, ItemQuality.UNCOMMON: 0.4, ItemQuality.RARE: 0.3}
             num_items = random.randint(3, 5)
         else:
             rank = "expert"
-            quality_weights = {ItemQuality.RARE: 0.3, ItemQuality.EPIC: 0.5, ItemQuality.LEGENDARY: 0.2}
+            # Ранг 4: любого качества
+            quality_weights = {
+                ItemQuality.POOR: 0.05,
+                ItemQuality.COMMON: 0.15,
+                ItemQuality.UNCOMMON: 0.25,
+                ItemQuality.RARE: 0.3,
+                ItemQuality.EPIC: 0.2,
+                ItemQuality.LEGENDARY: 0.05
+            }
             num_items = random.randint(4, 6)
 
         equipment = []

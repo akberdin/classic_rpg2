@@ -103,7 +103,7 @@ class SettlementMenuWindow(BaseWindow):
         if self.location.location_type == LOCATION_MAGIC_SCHOOL:
             actions.append("[3] Купить умение Зачарование (10000 зол.)")
         else:
-            actions.append("[3] Купить умение Изготовление (2000 зол.)")
+            actions.append("[3] Купить умение Изготовление (500 зол.)")
 
         actions.append("[ESC] Выйти")
 
