@@ -59,7 +59,31 @@ class LootSystem:
 
                 if item_type == 'equipment':
                     item_level = max(1, enemy.level + random.randint(-2, 2))
-                    quality = ItemGenerator.generate_quality()
+
+                    # Определяем качество на основе ранга NPC (уровня)
+                    from game.inventory import ItemQuality
+
+                    if enemy.level <= 10:
+                        # Ранг 1: плохие, обычные
+                        quality_weights = {ItemQuality.POOR: 0.4, ItemQuality.COMMON: 0.6}
+                    elif enemy.level <= 20:
+                        # Ранг 2: обычные, необычные
+                        quality_weights = {ItemQuality.COMMON: 0.5, ItemQuality.UNCOMMON: 0.5}
+                    elif enemy.level <= 30:
+                        # Ранг 3: обычные, необычные, редкие
+                        quality_weights = {ItemQuality.COMMON: 0.3, ItemQuality.UNCOMMON: 0.4, ItemQuality.RARE: 0.3}
+                    else:
+                        # Ранг 4: любого качества
+                        quality_weights = {
+                            ItemQuality.POOR: 0.05,
+                            ItemQuality.COMMON: 0.15,
+                            ItemQuality.UNCOMMON: 0.25,
+                            ItemQuality.RARE: 0.3,
+                            ItemQuality.EPIC: 0.2,
+                            ItemQuality.LEGENDARY: 0.05
+                        }
+
+                    quality = ItemGenerator.generate_quality(quality_weights)
 
                     # Выбираем тип экипировки: оружие, броня или ювелирка
                     # Ювелирка встречается реже (15% шанс)
