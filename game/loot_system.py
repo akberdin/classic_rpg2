@@ -244,6 +244,12 @@ class LootSystem:
         for item, quantity in loot_items:
             self.player.inventory.add_item(item, quantity)
 
+            # Обновляем прогресс квестов на сбор для частей животных
+            if self.quest_manager and hasattr(item, 'name'):
+                item_key = self._get_item_key_by_name(item.name)
+                if item_key:
+                    self.quest_manager.update_gather_progress(item_key, quantity, self.player)
+
         # Обновляем статистику игрока
         self._update_kill_stats(enemy)
 
@@ -276,6 +282,38 @@ class LootSystem:
             if not hasattr(self.player, stat_name):
                 setattr(self.player, stat_name, 0)
             setattr(self.player, stat_name, getattr(self.player, stat_name) + 1)
+
+    def _get_item_key_by_name(self, item_name):
+        """
+        Получить ключ предмета по его имени для квестов.
+
+        Args:
+            item_name: Название предмета
+
+        Returns:
+            str: Ключ предмета или None
+        """
+        # Словарь соответствия имён предметов и их ключей
+        item_name_to_key = {
+            'Клык волка': 'wolf_fang',
+            'Шкура волка': 'wolf_hide',
+            'Клык медведя': 'bear_fang',
+            'Шкура медведя': 'bear_hide',
+            'Медвежатина': 'bear_meat',
+            'Шкура оленя': 'deer_hide',
+            'Оленина': 'deer_meat',
+            'Медная руда': 'copper_ore',
+            'Железная руда': 'iron_ore',
+            'Серебряная руда': 'silver_ore',
+            'Золотая руда': 'gold_ore',
+            'Мифриловая руда': 'mithril_ore',
+            'Древесина': 'wood',
+            'Магический кристалл': 'magic_crystal',
+            'Фрагмент артефакта': 'artifact_fragment',
+            'Древняя монета': 'ancient_coin',
+            'Старый свиток': 'old_scroll',
+        }
+        return item_name_to_key.get(item_name)
 
     def _update_quest_progress(self, enemy_type):
         """Обновить прогресс квестов на убийство."""

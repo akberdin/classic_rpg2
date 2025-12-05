@@ -78,10 +78,10 @@ class TradeWindow:
         # Размеры окна (адаптивные)
         if self.scaler:
             window_width = self.scaler.scale_width(900)
-            window_height = self.scaler.scale_height(650)
+            window_height = self.scaler.scale_height(750)
         else:
             window_width = min(900, int(screen_width * 0.85))
-            window_height = min(650, int(screen_height * 0.75))
+            window_height = min(750, int(screen_height * 0.80))
 
         window_x = (screen_width - window_width) // 2
         window_y = (screen_height - window_height) // 2
@@ -306,8 +306,8 @@ class TradeWindow:
             )
             self.screen.blit(name_text, (x + 10, items_y + display_index * item_height + 5))
 
-            # Цена (наценка 50%)
-            buy_price = int(item.value * 1.5)
+            # Цена (наценка 350%)
+            buy_price = int(item.value * 4.5)
             price_text = self.info_font.render(
                 f"{buy_price}з",
                 True,
@@ -664,7 +664,7 @@ class TradeWindow:
 
         # Показываем цену покупки/продажи
         if self.mode == "buy":
-            buy_price = int(item.value * 1.5)
+            buy_price = int(item.value * 4.5)
             lines.append((f"Цена покупки: {buy_price} золота", (255, 215, 0), False))
         else:
             sell_price = int(item.value * 0.7)

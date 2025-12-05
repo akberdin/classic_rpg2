@@ -131,6 +131,30 @@ class Bandit(NPC):
         elif self.state == "rest":
             self._rest()
 
+    def _is_near_settlement(self, game_map, x, y, safe_distance=2):
+        """
+        Проверить, находится ли позиция рядом с городом или деревней
+
+        Args:
+            game_map: Карта игры
+            x: Координата X
+            y: Координата Y
+            safe_distance: Безопасное расстояние от поселения
+
+        Returns:
+            bool: True если позиция слишком близко к поселению
+        """
+        from game.constants import LOCATION_CITY, LOCATION_VILLAGE
+        if not hasattr(game_map, 'locations'):
+            return False
+
+        for location in game_map.locations:
+            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
+                distance = abs(x - location.x) + abs(y - location.y)
+                if distance <= safe_distance:
+                    return True
+        return False
+
     def _check_for_enemies(self, all_npcs, player=None):
         """
         Проверить наличие врагов поблизости (включая игрока)
@@ -212,6 +236,15 @@ class Bandit(NPC):
             self.pursuit_counter = 0
             return
 
+        # Проверяем, не находится ли цель слишком близко к городу/деревне
+        if hasattr(self.target_enemy, 'x') and hasattr(self.target_enemy, 'y'):
+            if self._is_near_settlement(game_map, self.target_enemy.x, self.target_enemy.y, safe_distance=2):
+                # Цель в безопасной зоне, прекращаем преследование
+                self.target_enemy = None
+                self.state = "patrol"
+                self.pursuit_counter = 0
+                return
+
         # Проверяем лимит преследования
         if self.pursuit_counter >= self.max_pursuit_steps:
             # Не сбрасываем цель сразу, пытаемся найти её снова
@@ -256,6 +289,14 @@ class Bandit(NPC):
             if (dx != 0 or dy != 0):
                 new_x = self.x + dx
                 new_y = self.y + dy
+
+                # Проверяем, не приближаемся ли мы к городу/деревне
+                if self._is_near_settlement(game_map, new_x, new_y, safe_distance=2):
+                    # Не можем идти туда - слишком близко к поселению
+                    self.target_enemy = None
+                    self.state = "patrol"
+                    self.pursuit_counter = 0
+                    return
 
                 # Проверяем, не выходим ли за пределы территории (с запасом)
                 distance_to_camp_new = abs(new_x - self.camp_x) + abs(new_y - self.camp_y)
@@ -363,6 +404,30 @@ class Undead(NPC):
 
         # Состояние по умолчанию для расписания
         self.default_state = "patrol"
+
+    def _is_near_settlement(self, game_map, x, y, safe_distance=2):
+        """
+        Проверить, находится ли позиция рядом с городом или деревней
+
+        Args:
+            game_map: Карта игры
+            x: Координата X
+            y: Координата Y
+            safe_distance: Безопасное расстояние от поселения
+
+        Returns:
+            bool: True если позиция слишком близко к поселению
+        """
+        from game.constants import LOCATION_CITY, LOCATION_VILLAGE
+        if not hasattr(game_map, 'locations'):
+            return False
+
+        for location in game_map.locations:
+            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
+                distance = abs(x - location.x) + abs(y - location.y)
+                if distance <= safe_distance:
+                    return True
+        return False
 
     def update_ai(self, context_or_map, all_npcs=None, player=None, current_hour=12):
         """
@@ -506,6 +571,15 @@ class Undead(NPC):
             self.pursuit_counter = 0
             return
 
+        # Проверяем, не находится ли цель слишком близко к городу/деревне
+        if hasattr(self.target_enemy, 'x') and hasattr(self.target_enemy, 'y'):
+            if self._is_near_settlement(game_map, self.target_enemy.x, self.target_enemy.y, safe_distance=2):
+                # Цель в безопасной зоне, прекращаем преследование
+                self.target_enemy = None
+                self.state = "patrol"
+                self.pursuit_counter = 0
+                return
+
         # Проверяем лимит преследования
         if self.pursuit_counter >= self.max_pursuit_steps:
             # Не сбрасываем цель сразу, пытаемся найти её снова
@@ -550,6 +624,14 @@ class Undead(NPC):
             if (dx != 0 or dy != 0):
                 new_x = self.x + dx
                 new_y = self.y + dy
+
+                # Проверяем, не приближаемся ли мы к городу/деревне
+                if self._is_near_settlement(game_map, new_x, new_y, safe_distance=2):
+                    # Не можем идти туда - слишком близко к поселению
+                    self.target_enemy = None
+                    self.state = "patrol"
+                    self.pursuit_counter = 0
+                    return
 
                 # Проверяем, не выходим ли за пределы территории (с запасом)
                 distance_to_ruins_new = abs(new_x - self.ruins_x) + abs(new_y - self.ruins_y)

@@ -16,7 +16,7 @@
 
   "trade": {
     "_comment": "Множители цен в магазинах",
-    "buy_multiplier": 1.5,
+    "buy_multiplier": 4.5,
     "sell_multiplier": 0.5
   },
 
