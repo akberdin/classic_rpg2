@@ -43,6 +43,7 @@ class Merchant(NPC):
         self.default_state = "travel"
 
         # Торговая система
+        self.restock_hours = 0  # Счетчик часов для ротации товаров
         self._generate_merchant_goods()
 
     def _adjust_merchant_stats(self):
@@ -681,6 +682,7 @@ class MagicMerchant(Merchant):
         # Торговец магией не путешествует
         self.state = "rest"
         self.settlements = []
+        self.update_counter = 0  # Счетчик для вызова restock_goods каждые 2 часа
         # Перегенерируем товары для магического торговца
         self._generate_magic_goods()
 
@@ -879,3 +881,8 @@ class MagicMerchant(Merchant):
         # Восстанавливаем энергию стоя на месте
         if self.stamina < self.max_stamina:
             self.stamina = min(self.max_stamina, self.stamina + 2)
+
+        # Пополняем товары каждые 2 часа (для ротации раз в 5 дней)
+        self.update_counter += 1
+        if self.update_counter % 2 == 0:
+            self.restock_goods()
