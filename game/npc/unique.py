@@ -86,16 +86,16 @@ class Alchemist(Merchant):
         """
         from game.inventory import PREDEFINED_ITEMS
 
-        # Инициализируем счетчик ротации, если его нет
-        if not hasattr(self, 'restock_hours'):
-            self.restock_hours = 0
-
         # Увеличиваем счетчик (каждый вызов = 2 часа)
         self.restock_hours += 2
+
+        # Отладочное сообщение
+        print(f"[RESTOCK] {self.name} (Алхимик): restock_hours = {self.restock_hours}/120")
 
         # Проверяем, нужна ли полная ротация товаров (раз в 5 дней = 120 часов)
         if self.restock_hours >= 120:
             # Полная ротация: очищаем весь инвентарь и генерируем заново
+            print(f"[РОТАЦИЯ] {self.name} (Алхимик): Полная ротация товаров! Инвентарь обновлен.")
             self._generate_alchemist_goods()
             self.restock_hours = 0
             return
