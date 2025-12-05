@@ -60,18 +60,21 @@ class MerchantRotationManager:
         # Получаем все локации на карте
         if hasattr(game, 'game_map') and game.game_map:
             for location in game.game_map.locations:
-                # Проходим по всем NPC в локации
-                for npc in location.npcs:
-                    if isinstance(npc, (Merchant, MagicMerchant, Alchemist)):
-                        # Регенерируем товары торговца
-                        if isinstance(npc, MagicMerchant):
-                            npc._generate_magic_goods()
-                        elif isinstance(npc, Alchemist):
-                            npc._generate_alchemist_goods()
-                        else:
-                            npc._generate_merchant_goods()
+                # Проверяем, есть ли у локации торговец
+                if hasattr(location, 'merchant_npc') and location.merchant_npc:
+                    npc = location.merchant_npc
 
-                        rotated_count += 1
+                    # Регенерируем товары торговца
+                    if isinstance(npc, MagicMerchant):
+                        npc._generate_magic_goods()
+                    elif isinstance(npc, Alchemist):
+                        npc._generate_alchemist_goods()
+                    elif isinstance(npc, Merchant):
+                        npc._generate_merchant_goods()
+                    else:
+                        continue
+
+                    rotated_count += 1
 
         # Выводим информацию о ротации
         print(f"\n[РОТАЦИЯ ТОВАРОВ] Прошло {self.rotation_period} часов ({self.rotation_period // 24} дней)")
