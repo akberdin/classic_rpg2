@@ -43,7 +43,6 @@ class Merchant(NPC):
         self.default_state = "travel"
 
         # Торговая система
-        self.restock_hours = 0  # Счетчик часов для ротации товаров
         self._generate_merchant_goods()
 
     def _adjust_merchant_stats(self):
@@ -343,95 +342,6 @@ class Merchant(NPC):
                 for recipe_id in selected_recipes:
                     self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
 
-    def restock_goods(self):
-        """
-        Пополнение товаров торговца с учетом ранга.
-        Вызывается при отдыхе в городе (каждые 2 часа).
-        Полная ротация товаров происходит раз в 5 дней (120 часов игрового времени).
-        """
-        from game.inventory import ItemGenerator, PREDEFINED_ITEMS, EquipmentSlot
-
-        # Получаем ранг торговца
-        rank = self.get_merchant_rank()
-
-        # Увеличиваем счетчик (каждый вызов = 2 часа)
-        self.restock_hours += 2
-
-        # Отладочное сообщение
-        print(f"[RESTOCK] {self.name} (ранг {rank}): restock_hours = {self.restock_hours}/120")
-
-        # Проверяем, нужна ли полная ротация товаров (раз в 5 дней = 120 часов)
-        if self.restock_hours >= 120:
-            # Полная ротация: очищаем весь инвентарь и генерируем заново
-            print(f"[РОТАЦИЯ] {self.name} (ранг {rank}): Полная ротация товаров! Инвентарь обновлен.")
-            self.inventory.items.clear()
-            self._generate_merchant_goods()
-            self.restock_hours = 0
-            return
-
-        # Частичное пополнение товаров (между полными ротациями)
-        # Добавляем золото
-        base_gold = random.randint(50, 150)
-        self.inventory.gold += int(base_gold * (1 + rank * 0.3) * 3)
-
-        # Случайно добавляем зелья (с учетом ранга)
-        potion_chance = 0.5
-        if random.random() < potion_chance:
-            if rank == 1:
-                potion_types = ["minor_health_potion", "minor_stamina_potion"]
-            elif rank == 2:
-                potion_types = ["minor_health_potion", "health_potion", "minor_mana_potion", "mana_potion", "minor_stamina_potion", "stamina_potion"]
-            else:
-                potion_types = ["health_potion", "mana_potion", "stamina_potion"]
-
-            potion_type = random.choice(potion_types)
-            quantity = random.randint(1, 2)
-            self.inventory.add_item(PREDEFINED_ITEMS[potion_type], quantity)
-
-        # Случайно добавляем оружие (с учетом разрешенных типов)
-        weapon_chance = 0.3
-        if random.random() < weapon_chance:
-            allowed_weapon_types = self._get_allowed_weapon_types(rank)
-            quality = ItemGenerator.generate_quality_for_shop(rank)
-            weapon_type = random.choice(allowed_weapon_types)
-            weapon = ItemGenerator.generate_weapon_by_type(weapon_type, quality=quality)
-            self.inventory.add_item(weapon, 1)
-
-        # Случайно добавляем броню (с учетом разрешенных типов)
-        armor_chance = 0.3
-        if random.random() < armor_chance:
-            allowed_armor_types = self._get_allowed_armor_types(rank)
-            quality = ItemGenerator.generate_quality_for_shop(rank)
-            armor_type = random.choice(allowed_armor_types)
-            slot = random.choice([EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET])
-            armor = ItemGenerator.generate_armor(self.level, slot=slot, armor_type=armor_type, quality=quality)
-            self.inventory.add_item(armor, 1)
-
-        # Случайно добавляем ресурсы
-        resource_chance = 0.4
-        if random.random() < resource_chance:
-            resources = self._get_resources_for_rank(rank)
-            if resources:
-                resource_id = random.choice(list(resources.keys()))
-                min_qty, max_qty = resources[resource_id]
-                quantity = random.randint(min_qty, max_qty)
-                self.inventory.add_item(PREDEFINED_ITEMS[resource_id], quantity)
-
-        # Случайно добавляем рецепт
-        recipe_chance = 0.2
-        if random.random() < recipe_chance:
-            allowed_recipes = self._get_recipes_for_rank(rank)
-            if allowed_recipes:
-                recipe_id = random.choice(allowed_recipes)
-                self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
-
-        # Случайно добавляем книгу (если доступны для ранга)
-        book_chance = 0.15
-        if random.random() < book_chance:
-            allowed_books = self._get_books_for_rank(rank)
-            if allowed_books:
-                book_id = random.choice(allowed_books)
-                self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
 
     def set_settlements(self, settlements):
         """
@@ -655,10 +565,6 @@ class Merchant(NPC):
         """Отдых/торговля в городе"""
         self.rest_counter += 1
 
-        # Пополняем товары каждые 2 часа отдыха
-        if self.rest_counter % 2 == 0:
-            self.restock_goods()
-
         if self.rest_counter >= self.rest_duration:
             # Закончили отдых, выбираем новый город
             self.state = "travel"
@@ -683,7 +589,6 @@ class MagicMerchant(Merchant):
         # Торговец магией не путешествует
         self.state = "rest"
         self.settlements = []
-        self.update_counter = 0  # Счетчик для вызова restock_goods каждые 2 часа
         # Перегенерируем товары для магического торговца
         self._generate_magic_goods()
 
@@ -785,81 +690,6 @@ class MagicMerchant(Merchant):
             for recipe_id in random.sample(all_rank_recipes, num_recipes):
                 self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
 
-    def restock_goods(self):
-        """
-        Пополнение товаров магического торговца.
-        Полная ротация происходит раз в 5 дней (120 часов).
-        """
-        from game.inventory import PREDEFINED_ITEMS, ItemGenerator, WeaponType, ArmorType, EquipmentSlot, ItemQuality
-
-        # Увеличиваем счетчик (каждый вызов = 2 часа)
-        self.restock_hours += 2
-
-        # Отладочное сообщение
-        print(f"[RESTOCK] {self.name} (Академия): restock_hours = {self.restock_hours}/120")
-
-        # Проверяем, нужна ли полная ротация товаров (раз в 5 дней = 120 часов)
-        if self.restock_hours >= 120:
-            # Полная ротация: очищаем весь инвентарь и генерируем заново
-            print(f"[РОТАЦИЯ] {self.name} (Академия): Полная ротация товаров! Инвентарь обновлен.")
-            self._generate_magic_goods()
-            self.restock_hours = 0
-            return
-
-        # Частичное пополнение товаров между полными ротациями
-        # Добавляем золото
-        self.inventory.gold += random.randint(500, 1000) * 3
-
-        # Случайно добавляем оружие (жезлы и посохи, UNCOMMON и RARE)
-        if random.random() < 0.3:
-            magic_weapon_types = [WeaponType.STAFF, WeaponType.WAND]
-            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
-            weapon_type = random.choice(magic_weapon_types)
-            weapon = ItemGenerator.generate_weapon_by_type(weapon_type, quality=quality)
-            self.inventory.add_item(weapon, 1)
-
-        # Случайно добавляем легкую броню (UNCOMMON и RARE)
-        if random.random() < 0.3:
-            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
-            slot = random.choice([EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET])
-            armor = ItemGenerator.generate_armor(self.level, slot=slot, armor_type=ArmorType.LIGHT, quality=quality)
-            self.inventory.add_item(armor, 1)
-
-        # Случайно добавляем магическую книгу (до EPIC включительно)
-        if random.random() < 0.3:
-            magic_books = [
-                "book_heal", "book_regeneration", "book_mage_shield", "book_stamina_recovery",
-                "book_magic_missile", "book_ice_bolt", "book_fireball", "book_lightning"
-            ]
-            # Фильтруем по качеству (до EPIC включительно)
-            allowed_books = []
-            for book_id in magic_books:
-                if book_id in PREDEFINED_ITEMS:
-                    book = PREDEFINED_ITEMS[book_id]
-                    if book.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE, ItemQuality.EPIC]:
-                        allowed_books.append(book_id)
-
-            if allowed_books:
-                book_id = random.choice(allowed_books)
-                self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
-
-        # Случайно добавляем зелья
-        if random.random() < 0.5:
-            potion_type = random.choice(["greater_health_potion", "mana_potion", "stamina_potion"])
-            self.inventory.add_item(PREDEFINED_ITEMS[potion_type], random.randint(1, 3))
-
-        # Случайно добавляем ресурсы
-        if random.random() < 0.3:
-            resource_type = random.choice(["magic_crystal", "artifact_fragment", "ancient_coin"])
-            self.inventory.add_item(PREDEFINED_ITEMS[resource_type], random.randint(1, 2))
-
-        # Случайно добавляем рецепт всех рангов (POOR, COMMON, UNCOMMON, RARE)
-        if random.random() < 0.2:
-            all_recipe_ids = [key for key in PREDEFINED_ITEMS.keys() if key.startswith("recipe_")]
-            all_rank_recipes = [rid for rid in all_recipe_ids if PREDEFINED_ITEMS[rid].quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE]]
-            if all_rank_recipes:
-                recipe_id = random.choice(all_rank_recipes)
-                self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
 
     def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
         # Поддержка AIContext и старого способа вызова
@@ -882,8 +712,3 @@ class MagicMerchant(Merchant):
         # Восстанавливаем энергию стоя на месте
         if self.stamina < self.max_stamina:
             self.stamina = min(self.max_stamina, self.stamina + 2)
-
-        # Пополняем товары каждые 2 часа (для ротации раз в 5 дней)
-        self.update_counter += 1
-        if self.update_counter % 2 == 0:
-            self.restock_goods()

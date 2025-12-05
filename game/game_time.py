@@ -21,6 +21,10 @@ class GameTime:
         self.game_turn = 0  # Счетчик ходов для ротации квестов
         self.accumulated_hours = 0.0  # Накопленные дробные часы для обновления AI
 
+        # Менеджер ротации товаров торговцев
+        from game.merchant_rotation import MerchantRotationManager
+        self.merchant_rotation_manager = MerchantRotationManager()
+
     @property
     def hour(self):
         """
@@ -66,6 +70,9 @@ class GameTime:
 
         # Обновляем AI всех NPC только при прохождении полных часов
         for _ in range(full_hours_passed):
+            # Проверяем необходимость ротации товаров торговцев
+            self.merchant_rotation_manager.check_and_rotate(self.game)
+
             # Восстановление здоровья, маны и выносливости происходит только при активном отдыхе (R)
             # При обычном движении восстановления нет (кроме зелий)
 
