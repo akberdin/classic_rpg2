@@ -461,10 +461,14 @@ class TradeWindow:
 
     def _get_item_type(self, item):
         """Определить тип предмета для фильтрации"""
-        from game.inventory import WeaponItem, ArmorItem, JewelryItem, PotionItem, ResourceItem, SkillBookItem, RecipeItem
+        from game.inventory import WeaponItem, ArmorItem, JewelryItem, PotionItem, ResourceItem, SkillBookItem, RecipeItem, BeltItem, BackpackItem, EquipmentSlot
         if isinstance(item, WeaponItem):
             return "weapon"
-        elif isinstance(item, ArmorItem):
+        elif isinstance(item, (ArmorItem, BeltItem, BackpackItem)):
+            # Броня включает обычную броню, пояса и рюкзаки
+            return "armor"
+        elif hasattr(item, 'slot') and item.slot in [EquipmentSlot.BELT, EquipmentSlot.BACKPACK]:
+            # Дополнительная проверка на случай, если пояса/рюкзаки имеют только слот
             return "armor"
         elif isinstance(item, JewelryItem):
             return "jewelry"
