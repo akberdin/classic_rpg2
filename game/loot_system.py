@@ -38,7 +38,7 @@ class LootSystem:
 
         # Животные дают специфичный лут без золота
         if enemy.npc_type in ["wolf", "bear", "deer"]:
-            animal_loot = ItemGenerator.generate_animal_loot(enemy.npc_type)
+            animal_loot = ItemGenerator.generate_animal_loot(enemy.npc_type, enemy.level)
             for item in animal_loot:
                 loot_items.append((item, 1))
             return loot_items, 0
