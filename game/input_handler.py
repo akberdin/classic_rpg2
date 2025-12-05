@@ -1263,7 +1263,7 @@ class InputHandler:
                 self.handle_learn_skill("enchanting", 10000)
             else:
                 # В обычном городе/деревне - купить Изготовление
-                self.handle_learn_skill("craftsmanship", 2000)
+                self.handle_learn_skill("craftsmanship", 500)
 
     def handle_inquiry_menu_input(self, key):
         """
