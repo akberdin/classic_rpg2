@@ -538,7 +538,7 @@ class InputHandler:
                 # Купить выбранный предмет
                 if 0 <= self.ctx.trade_window.selected_merchant_index < len(merchant_items):
                     item, quantity = merchant_items[self.ctx.trade_window.selected_merchant_index]
-                    buy_price = int(item.value * 1.5)  # Торговец продает с наценкой 50%
+                    buy_price = int(item.value * 4.5)  # Торговец продает с наценкой 350%
 
                     if self.ctx.player.inventory.gold >= buy_price:
                         if self.ctx.nearby_npc.inventory.remove_item(item, 1):
@@ -624,7 +624,7 @@ class InputHandler:
             if not hasattr(self.ctx.nearby_npc, 'inventory'):
                 return
 
-            buy_price = int(item.value * 1.5)
+            buy_price = int(item.value * 4.5)  # Торговец продает с наценкой 350%
 
             if self.ctx.player.inventory.gold >= buy_price:
                 if self.ctx.nearby_npc.inventory.remove_item(item, 1):

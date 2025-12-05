@@ -306,8 +306,8 @@ class TradeWindow:
             )
             self.screen.blit(name_text, (x + 10, items_y + display_index * item_height + 5))
 
-            # Цена (наценка 50%)
-            buy_price = int(item.value * 1.5)
+            # Цена (наценка 350%)
+            buy_price = int(item.value * 4.5)
             price_text = self.info_font.render(
                 f"{buy_price}з",
                 True,
@@ -668,7 +668,7 @@ class TradeWindow:
 
         # Показываем цену покупки/продажи
         if self.mode == "buy":
-            buy_price = int(item.value * 1.5)
+            buy_price = int(item.value * 4.5)
             lines.append((f"Цена покупки: {buy_price} золота", (255, 215, 0), False))
         else:
             sell_price = int(item.value * 0.7)
