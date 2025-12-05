@@ -10,7 +10,7 @@ class TradeWindow:
     """Окно торговли с NPC"""
 
     # Типы фильтров
-    FILTER_TYPES = ["all", "weapon", "armor", "jewelry", "potion", "resource", "book"]
+    FILTER_TYPES = ["all", "weapon", "armor", "jewelry", "potion", "resource", "book", "recipe"]
     FILTER_NAMES = {
         "all": "Все",
         "weapon": "Оружие",
@@ -18,7 +18,8 @@ class TradeWindow:
         "jewelry": "Украш.",
         "potion": "Зелья",
         "resource": "Ресурсы",
-        "book": "Книги"
+        "book": "Книги",
+        "recipe": "Рецепты"
     }
 
     # Типы сортировки
@@ -460,7 +461,7 @@ class TradeWindow:
 
     def _get_item_type(self, item):
         """Определить тип предмета для фильтрации"""
-        from game.inventory import WeaponItem, ArmorItem, JewelryItem, PotionItem, ResourceItem, SkillBookItem
+        from game.inventory import WeaponItem, ArmorItem, JewelryItem, PotionItem, ResourceItem, SkillBookItem, RecipeItem
         if isinstance(item, WeaponItem):
             return "weapon"
         elif isinstance(item, ArmorItem):
@@ -473,6 +474,8 @@ class TradeWindow:
             return "resource"
         elif isinstance(item, SkillBookItem):
             return "book"
+        elif isinstance(item, RecipeItem):
+            return "recipe"
         return "other"
 
     def _get_quality_value(self, item):
