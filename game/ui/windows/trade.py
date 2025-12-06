@@ -207,7 +207,7 @@ class TradeWindow:
         goods_height = int(425 * scale_h)
 
         if self.mode == "buy":
-            self._render_merchant_goods(merchant, window_x + int(30 * scale_w), goods_y, window_width - int(60 * scale_w), goods_height)
+            self._render_merchant_goods(merchant, player, window_x + int(30 * scale_w), goods_y, window_width - int(60 * scale_w), goods_height)
         else:
             self._render_player_goods(player, window_x + int(30 * scale_w), goods_y, window_width - int(60 * scale_w), goods_height)
 
@@ -231,7 +231,7 @@ class TradeWindow:
             if item:
                 self.render_item_tooltip(item, mouse_x, mouse_y, player)
 
-    def _render_merchant_goods(self, merchant, x, y, width, height):
+    def _render_merchant_goods(self, merchant, player, x, y, width, height):
         """Отрисовка товаров торговца"""
         # Заголовок
         title = self.font.render("Товары торговца", True, (150, 200, 255))
@@ -296,8 +296,27 @@ class TradeWindow:
             item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
             item_color = item.quality.color if hasattr(item, 'quality') else (200, 200, 200)
 
+            # Проверяем, является ли предмет рецептом или книгой и изучен ли он
+            from game.inventory import RecipeItem, SkillBookItem
+            is_learned = False
+
+            if isinstance(item, RecipeItem):
+                # Проверяем, изучен ли рецепт
+                if hasattr(player, 'known_recipes') and hasattr(item, 'recipe_id'):
+                    if item.recipe_id in player.known_recipes:
+                        is_learned = True
+            elif isinstance(item, SkillBookItem):
+                # Проверяем, изучена ли книга (имеет ли игрок это умение)
+                if hasattr(player, 'skill_manager') and hasattr(item, 'skill_id'):
+                    skill = player.skill_manager.get_skill(item.skill_id)
+                    if skill is not None:
+                        is_learned = True
+
             # Показываем количество только если > 1
             display_name = f"{item_name} x{quantity}" if quantity > 1 else item_name
+            # Добавляем пометку, если уже изучено
+            if is_learned:
+                display_name += " [Изучено]"
 
             name_text = self.info_font.render(
                 display_name,

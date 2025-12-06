@@ -1430,6 +1430,123 @@
       "category": "weapon",
       "base_price": 320,
       "sprite": null
+    },
+    {
+      "id": "minor_health_potion_recipe",
+      "name": "Малое зелье здоровья",
+      "display_name": "Рецепт: Малое зелье здоровья",
+      "quality": "poor",
+      "description": "Изготовление малого зелья здоровья. Восстанавливает 30 здоровья. Требуется 2 ромашки",
+      "station": "alchemy_table",
+      "result_item": "minor_health_potion",
+      "result_quantity": 1,
+      "required_level": 1,
+      "required_skill": "alchemy",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "chamomile", "quantity": 2}
+      ],
+      "category": "alchemy",
+      "base_price": 25,
+      "sprite": null
+    },
+    {
+      "id": "health_potion_recipe",
+      "name": "Среднее зелье здоровья",
+      "display_name": "Рецепт: Среднее зелье здоровья",
+      "quality": "common",
+      "description": "Изготовление среднего зелья здоровья. Восстанавливает 50 здоровья. Требуется 3 ромашки и 1 мята",
+      "station": "alchemy_table",
+      "result_item": "health_potion",
+      "result_quantity": 1,
+      "required_level": 5,
+      "required_skill": "alchemy",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "chamomile", "quantity": 3},
+        {"item": "mint", "quantity": 1}
+      ],
+      "category": "alchemy",
+      "base_price": 60,
+      "sprite": null
+    },
+    {
+      "id": "minor_mana_potion_recipe",
+      "name": "Малое зелье маны",
+      "display_name": "Рецепт: Малое зелье маны",
+      "quality": "poor",
+      "description": "Изготовление малого зелья маны. Восстанавливает 30 маны. Требуется 2 шалфея",
+      "station": "alchemy_table",
+      "result_item": "minor_mana_potion",
+      "result_quantity": 1,
+      "required_level": 3,
+      "required_skill": "alchemy",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "sage", "quantity": 2}
+      ],
+      "category": "alchemy",
+      "base_price": 35,
+      "sprite": null
+    },
+    {
+      "id": "mana_potion_recipe",
+      "name": "Среднее зелье маны",
+      "display_name": "Рецепт: Среднее зелье маны",
+      "quality": "common",
+      "description": "Изготовление среднего зелья маны. Восстанавливает 50 маны. Требуется 3 шалфея и 1 женьшень",
+      "station": "alchemy_table",
+      "result_item": "mana_potion",
+      "result_quantity": 1,
+      "required_level": 8,
+      "required_skill": "alchemy",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "sage", "quantity": 3},
+        {"item": "ginseng", "quantity": 1}
+      ],
+      "category": "alchemy",
+      "base_price": 90,
+      "sprite": null
+    },
+    {
+      "id": "minor_stamina_potion_recipe",
+      "name": "Малое зелье выносливости",
+      "display_name": "Рецепт: Малое зелье выносливости",
+      "quality": "poor",
+      "description": "Изготовление малого зелья выносливости. Восстанавливает 30 выносливости. Требуется 2 мяты",
+      "station": "alchemy_table",
+      "result_item": "minor_stamina_potion",
+      "result_quantity": 1,
+      "required_level": 2,
+      "required_skill": "alchemy",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "mint", "quantity": 2}
+      ],
+      "category": "alchemy",
+      "base_price": 30,
+      "sprite": null
+    },
+    {
+      "id": "stamina_potion_recipe",
+      "name": "Среднее зелье выносливости",
+      "display_name": "Рецепт: Среднее зелье выносливости",
+      "quality": "common",
+      "description": "Изготовление среднего зелья выносливости. Восстанавливает 50 выносливости. Требуется 3 мяты и 1 женьшень",
+      "station": "alchemy_table",
+      "result_item": "stamina_potion",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "alchemy",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "mint", "quantity": 3},
+        {"item": "ginseng", "quantity": 1}
+      ],
+      "category": "alchemy",
+      "base_price": 85,
+      "sprite": null
     }
   ],
 
@@ -1440,6 +1557,7 @@
     "jewelry": "Украшения",
     "artifacts": "Артефакты",
     "smelting": "Переплавка",
-    "tool": "Инструменты"
+    "tool": "Инструменты",
+    "alchemy": "Алхимия"
   }
 }
