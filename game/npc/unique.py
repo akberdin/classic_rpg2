@@ -74,7 +74,20 @@ class Alchemist(Merchant):
             if ing_key in PREDEFINED_ITEMS:
                 self.inventory.add_item(PREDEFINED_ITEMS[ing_key], quantity)
 
-        # Алхимики НЕ продают рецепты
+        # Рецепты алхимии: зелья здоровья, маны и выносливости (малые и средние)
+        alchemy_recipes = [
+            "recipe_minor_health_potion_recipe",
+            "recipe_health_potion_recipe",
+            "recipe_minor_mana_potion_recipe",
+            "recipe_mana_potion_recipe",
+            "recipe_minor_stamina_potion_recipe",
+            "recipe_stamina_potion_recipe"
+        ]
+
+        # Добавляем все рецепты алхимии (по 1 штуке каждого)
+        for recipe_key in alchemy_recipes:
+            if recipe_key in PREDEFINED_ITEMS:
+                self.inventory.add_item(PREDEFINED_ITEMS[recipe_key], 1)
 
         # Добавляем золото для торговли
         self.inventory.add_gold(random.randint(500, 1500) * 3)
