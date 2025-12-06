@@ -105,10 +105,11 @@ class WorldRenderer:
                     # В чит-режиме все тайлы видимы
                     is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(map_x, map_y, self.ctx.player.x, self.ctx.player.y)
 
-                    # Применяем оттенок времени суток только к видимым тайлам
-                    if is_visible:
-                        color = self.apply_time_of_day_tint(color)
-                    else:
+                    # Применяем оттенок времени суток ко всем исследованным тайлам
+                    color = self.apply_time_of_day_tint(color)
+
+                    # Дополнительно затемняем тайлы в тумане войны
+                    if not is_visible:
                         color = tuple(c // 2 for c in color)  # Затемняем цвет для тумана войны
 
                     # ВСЕГДА рисуем базовый цвет клетки

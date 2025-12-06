@@ -566,6 +566,16 @@ class InputHandler:
                 # Продать выбранный предмет
                 if 0 <= self.ctx.trade_window.selected_player_index < len(player_items):
                     item, quantity = player_items[self.ctx.trade_window.selected_player_index]
+
+                    # Проверяем ограничение на продажу трав
+                    herbs = ["chamomile", "mint", "sage", "ginseng", "mandrake"]
+                    is_herb = item.name.lower() in herbs or any(herb in item.name.lower() for herb in herbs)
+                    is_alchemist = hasattr(self.ctx.nearby_npc, 'npc_type') and self.ctx.nearby_npc.npc_type == "alchemist"
+
+                    if is_herb and not is_alchemist:
+                        print(f"Травы можно продавать только алхимикам!")
+                        return
+
                     sell_price = int(item.value * 0.7)  # Торговец покупает за 70% от стоимости
 
                     if self.ctx.nearby_npc.inventory.gold >= sell_price:
@@ -639,6 +649,15 @@ class InputHandler:
                 print(f"Недостаточно золота! Нужно {buy_price}, у вас {self.ctx.player.inventory.gold}")
         else:
             # Режим продажи
+            # Проверяем ограничение на продажу трав
+            herbs = ["chamomile", "mint", "sage", "ginseng", "mandrake"]
+            is_herb = item.name.lower() in herbs or any(herb in item.name.lower() for herb in herbs)
+            is_alchemist = hasattr(self.ctx.nearby_npc, 'npc_type') and self.ctx.nearby_npc.npc_type == "alchemist"
+
+            if is_herb and not is_alchemist:
+                print(f"Травы можно продавать только алхимикам!")
+                return
+
             sell_price = int(item.value * 0.7)
 
             if self.ctx.nearby_npc.inventory.gold >= sell_price:
