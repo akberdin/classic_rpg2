@@ -45,6 +45,12 @@ class QuestUIController:
         """
         location_id = f"{location.x}_{location.y}"
 
+        # Отслеживаем посещение новых типов локаций для квеста "Исследователь"
+        if location.location_type not in self.player.visited_location_types:
+            self.player.visited_location_types.add(location.location_type)
+            # Обновляем прогресс квеста "Исследователь"
+            self.quest_manager.update_quest_progress("explorer_start", 0, 1)
+
         # Генерируем квесты для локации, если их еще нет
         if location_id not in self.quest_manager.location_quests:
             quests = generate_quests_for_location(

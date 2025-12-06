@@ -414,19 +414,41 @@ class QuestManager:
         Returns:
             list: Список сообщений о прогрессе
         """
+        from .quest_data import RESOURCE_KEYWORDS
+
         messages = []
         for quest in self.active_quests:
             if quest.quest_type == QuestType.GATHER_RESOURCE:
+                was_ready = quest.is_ready_to_turn_in()
+
+                # Проверяем основной target_item если он установлен
                 if quest.target_item and quest.objectives:
                     current_count = self._get_item_count_in_inventory(player, quest.target_item)
-                    old_count = quest.objectives[0].current_count
                     quest.objectives[0].current_count = min(current_count, quest.objectives[0].required_count)
                     quest.objectives[0].completed = quest.objectives[0].current_count >= quest.objectives[0].required_count
 
-                    quest.check_completion()
+                # Для квестов с несколькими целями проверяем каждую цель
+                # Это важно для уникальных квестов с несколькими типами ресурсов
+                if len(quest.objectives) > 1 or not quest.target_item:
+                    for objective in quest.objectives:
+                        if objective.completed:
+                            continue
 
-                    if quest.is_ready_to_turn_in() and old_count < quest.objectives[0].required_count:
-                        messages.append(f"Квест '{quest.name}' готов к сдаче в {quest.giver_location}!")
+                        # Пытаемся найти соответствующий ресурс по описанию цели
+                        desc_lower = objective.description.lower()
+                        for item_key, keywords in RESOURCE_KEYWORDS.items():
+                            if any(kw in desc_lower for kw in keywords):
+                                current_count = self._get_item_count_in_inventory(player, item_key)
+                                objective.current_count = min(current_count, objective.required_count)
+                                objective.completed = objective.current_count >= objective.required_count
+                                break
+
+                quest.check_completion()
+
+                # Сообщаем если квест стал готов к сдаче
+                if quest.is_ready_to_turn_in() and not was_ready:
+                    messages.append(f"Квест '{quest.name}' готов к сдаче в {quest.giver_location}!")
+
         return messages
 
     def get_active_quests(self):
