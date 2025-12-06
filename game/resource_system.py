@@ -26,6 +26,12 @@ ITEM_KEY_MAPPING = {
     'Шкура оленя': 'deer_hide',
     'Медвежатина': 'bear_meat',
     'Оленина': 'deer_meat',
+    # Травы
+    'Ромашка': 'chamomile',
+    'Мята': 'mint',
+    'Шалфей': 'sage',
+    'Женьшень': 'ginseng',
+    'Мандрагора': 'mandrake',
 }
 
 
