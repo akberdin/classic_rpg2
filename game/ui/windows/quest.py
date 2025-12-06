@@ -406,8 +406,9 @@ class QuestWindow:
                     from game.quest_system.models import QuestType
                     obj = quest.objectives[0]
 
-                    # Для квестов на сбор ресурсов показываем количество в инвентаре
-                    if quest.quest_type == QuestType.GATHER_RESOURCE and quest.target_item and player:
+                    # Для квестов где требуются предметы, показываем количество в инвентаре
+                    # Это включает квесты на сбор ресурсов и квесты на убийство животных (части животных)
+                    if quest.target_item and player:
                         inventory_count = player.inventory.get_item_count(quest.target_item)
                         progress = f"{inventory_count}/{obj.required_count}"
                     else:

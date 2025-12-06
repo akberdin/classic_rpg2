@@ -938,15 +938,5 @@ def give_starting_items(player):
     player.inventory.add_item(starter_feet, 1)
     player.inventory.equip_item(starter_feet)
 
-    # Легкие плохие перчатки
-    starter_hands = ItemGenerator.generate_armor(
-        level=1,
-        slot=EquipmentSlot.HANDS,
-        armor_type=ArmorType.LIGHT,
-        quality=ItemQuality.POOR
-    )
-    player.inventory.add_item(starter_hands, 1)
-    player.inventory.equip_item(starter_hands)
-
     # Обновляем производные характеристики после экипировки
     player.update_derived_stats()

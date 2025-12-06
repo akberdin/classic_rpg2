@@ -178,9 +178,12 @@ class TacticalCombatRenderer:
 
         # Пытаемся получить спрайт через sprite_manager
         if self.combat.sprite_manager:
-            # Для игрока используем спрайт "player"
+            # Для игрока используем спрайт "player" с учетом ранга
             if unit == self.combat.player_unit:
-                sprite = self.combat.sprite_manager.get_sprite('player', 'npc')
+                sprite = self.combat.sprite_manager.get_npc_sprite_with_rank(
+                    'player',
+                    character.level
+                )
                 if sprite:
                     sprite_x = cell_x + (self.combat.cell_size - sprite.get_width()) // 2
                     sprite_y = cell_y + (self.combat.cell_size - sprite.get_height()) // 2
