@@ -2472,6 +2472,13 @@ PREDEFINED_ITEMS = {
     # Древесина
     "wood": ResourceItem("Древесина", 5, 1.0),
 
+    # Травы (для травничества)
+    "chamomile": ResourceItem("Ромашка", 8, 0.1),
+    "mint": ResourceItem("Мята", 15, 0.1),
+    "sage": ResourceItem("Шалфей", 30, 0.15),
+    "ginseng": ResourceItem("Женьшень", 60, 0.2),
+    "mandrake": ResourceItem("Мандрагора", 120, 0.25),
+
     # Деревянные компоненты
     "long_wooden_handle": ResourceItem("Длинная деревянная рукоять", 15, 0.8),
     "short_wooden_handle": ResourceItem("Короткая деревянная рукоять", 10, 0.5),

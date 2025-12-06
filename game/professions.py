@@ -3,7 +3,7 @@
 """
 import random
 from game.inventory import PREDEFINED_ITEMS, WeaponType, EquipmentSlot
-from game.constants import BIOME_FOREST, LOCATION_MINE
+from game.constants import BIOME_FOREST, BIOME_PLAINS, LOCATION_MINE
 
 
 class Profession:
@@ -250,6 +250,110 @@ class Lumberjacking(Profession):
         return resources
 
 
+class HerbalismProfession(Profession):
+    """Профессия Травник"""
+
+    def __init__(self):
+        super().__init__("Травник", max_rank=10)
+        # Шансы сбора трав (базовые значения)
+        self.herb_chances = {
+            "chamomile": 55,
+            "mint": 50,
+            "sage": 35,
+            "ginseng": 25,
+            "mandrake": 12
+        }
+
+    def can_use(self, player, biome):
+        """
+        Проверить, можно ли использовать умение
+
+        Args:
+            player: Игрок
+            biome: Биом
+
+        Returns:
+            tuple: (bool, str) - можно ли использовать и сообщение
+        """
+        # Проверяем, что игрок на равнине или в лесу
+        if biome not in [BIOME_PLAINS, BIOME_FOREST]:
+            return False, "Травы можно собирать только на равнинах или в лесу!"
+
+        return True, ""
+
+    def gather(self, player):
+        """
+        Собрать травы
+
+        Args:
+            player: Игрок
+
+        Returns:
+            list: Список собранных ресурсов [(item, quantity), ...]
+        """
+        resources = []
+        success_bonus = self.get_success_bonus()
+
+        # Добавляем 1 опыт персонажу за каждое использование навыка
+        if hasattr(player, 'add_experience'):
+            player.add_experience(1)
+
+        # Определяем доступные типы трав на основе ранга
+        available_herbs = {}
+        if self.rank >= 1:
+            available_herbs["chamomile"] = self.herb_chances["chamomile"]
+        if self.rank >= 2:
+            available_herbs["mint"] = self.herb_chances["mint"]
+        if self.rank >= 3:
+            available_herbs["sage"] = self.herb_chances["sage"]
+        if self.rank >= 4:
+            available_herbs["ginseng"] = self.herb_chances["ginseng"]
+        if self.rank >= 5:
+            available_herbs["mandrake"] = self.herb_chances["mandrake"]
+
+        # Пробуем собрать каждый доступный тип травы
+        for herb_type, base_chance in available_herbs.items():
+            # Шанс с учетом ранга
+            chance = min(95, base_chance + success_bonus)
+
+            if random.random() * 100 < chance:
+                # Количество зависит от ранга (1-2 на низких рангах, до 4 на высоких)
+                quantity = random.randint(1, min(4, 1 + self.rank // 3))
+                resources.append((PREDEFINED_ITEMS[herb_type], quantity))
+
+        # Случайные события при сборе трав (10% шанс)
+        event_roll = random.randint(1, 100)
+        if event_roll <= 10:
+            events = [
+                ("Вы наткнулись на ядовитый плющ и получили раздражение!", -8, None),
+                ("Вы нашли скрытый тайник травника с монетами!", 0, 35),
+                ("Вас ужалила пчела! Больно!", -10, None),
+                ("Удача! Вы нашли редкий пучок трав!", 0, "extra_herbs"),
+            ]
+            event = random.choice(events)
+            print(event[0])
+
+            # Применяем эффект события
+            if event[1] < 0:  # Урон
+                player.take_damage(abs(event[1]))
+            elif event[2] == "extra_herbs":  # Дополнительные травы
+                bonus_herb = random.choice(list(self.herb_chances.keys()))
+                resources.append((PREDEFINED_ITEMS[bonus_herb], random.randint(1, 2)))
+            elif event[2] is not None:  # Золото
+                player.inventory.add_gold(event[2])
+
+        # Даем опыт только при успешном сборе (улучшенная формула)
+        if resources:
+            # Базовый опыт + бонус за количество + бонус за ранг
+            exp_gained = 12 + len(resources) * 8 + self.rank * 2
+            leveled_up = self.add_experience(exp_gained)
+
+            if leveled_up:
+                print(f"Профессия {self.name} повышена до ранга {self.rank}!")
+
+        return resources
+
+
 class ProfessionManager:
     """Менеджер профессий игрока"""
 
@@ -257,7 +361,8 @@ class ProfessionManager:
         """Инициализация менеджера профессий"""
         self.professions = {
             'mining': Mining(),
-            'lumberjacking': Lumberjacking()
+            'lumberjacking': Lumberjacking(),
+            'herbalism': HerbalismProfession()
         }
 
     def get_profession(self, name):

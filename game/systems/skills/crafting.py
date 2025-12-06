@@ -240,41 +240,55 @@ class Enchanting(Skill):
 
 
 class Herbalism(Skill):
-    """Травник - улучшает сбор и обработку трав"""
+    """Травник - сбор трав"""
 
     def __init__(self):
         super().__init__(
             name="Травник",
-            description="Умение собирать и обрабатывать травы. Количество и качество трав зависят от ранга",
+            description="Позволяет собирать травы на равнинах и в лесах. Эффективность растет с рангом",
             category=SkillCategory.CRAFTING,
-            stamina_cost=0,
-            mana_cost=0,
+            stamina_cost=10,
             cooldown=0
         )
 
-    def get_gathering_bonus(self):
-        """Получить бонус к количеству собранных трав"""
-        return 0.15 * (self.rank - 1)  # 0%, 15%, 30%, 45%, 60% для рангов 1-5
-
-    def get_rare_chance_bonus(self):
-        """Получить бонус к шансу найти редкие травы"""
-        return 0.05 * (self.rank - 1)  # 0%, 5%, 10%, 15%, 20% для рангов 1-5
-
-    def get_rank_progression_info(self):
-        """Информация о прогрессии по рангам"""
-        return [
-            "Ранг 1: Базовый сбор трав",
-            "Ранг 2: +15% к количеству, +5% к редким травам",
-            "Ранг 3: +30% к количеству, +10% к редким травам",
-            "Ранг 4: +45% к количеству, +15% к редким травам",
-            "Ранг 5: +60% к количеству, +20% к редким травам"
-        ]
-
     def use(self, user, target=None):
-        """Пассивное умение, используется автоматически при сборе трав"""
+        """Использовать умение травника"""
+        # Получаем профессию травника
+        if not hasattr(user, 'profession_manager'):
+            result = super().use(user, target)
+            result['success'] = False
+            result['message'] = f"У {user.name} нет менеджера профессий"
+            return result
+
+        herbalism_profession = user.profession_manager.get_profession('herbalism')
+        if not herbalism_profession:
+            result = super().use(user, target)
+            result['success'] = False
+            result['message'] = f"Профессия Травник не найдена"
+            return result
+
+        # Вызываем базовый метод для списания ресурсов
         result = super().use(user, target)
-        result['success'] = False
-        result['message'] = "Травник - пассивное умение, влияет на сбор трав"
+
+        # Используем профессию для сбора ресурсов
+        resources = herbalism_profession.gather(user)
+
+        if resources:
+            result['success'] = True
+            result['resources'] = resources
+            messages = []
+            for item, quantity in resources:
+                if user.inventory.add_item(item, quantity):
+                    messages.append(f"Собрано: {item.name} x{quantity}")
+                    if hasattr(user, 'resources_collected'):
+                        user.resources_collected += 1
+                else:
+                    messages.append(f"Инвентарь полон! Не удалось добавить {item.name}")
+            result['message'] = "\n".join(messages) if messages else f"{user.name} собрал травы!"
+        else:
+            result['success'] = False
+            result['message'] = f"{user.name} не смог ничего собрать в этот раз"
+
         return result
 
 
