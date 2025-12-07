@@ -209,6 +209,9 @@ class Merchant(NPC):
         """Генерация начальных товаров торговца с учетом ранга"""
         from game.inventory import ItemGenerator, PREDEFINED_ITEMS, EquipmentSlot
 
+        # Очищаем старый ассортимент перед генерацией нового
+        self.inventory.items.clear()
+
         # Получаем ранг торговца
         rank = self.get_merchant_rank()
 
