@@ -25,6 +25,7 @@ LOCATION_MINE = 'mine'
 LOCATION_BANDIT_CAMP = 'bandit_camp'
 LOCATION_RUINS = 'ruins'
 LOCATION_MAGIC_SCHOOL = 'magic_school'
+LOCATION_WARRIOR_ACADEMY = 'warrior_academy'
 
 # Проходимые биомы
 PASSABLE_BIOMES = [BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST]
@@ -302,6 +303,10 @@ MAGIC_SCHOOL_NAMES = [
     "Академия Высшей Магии", "Школа Чародейства", "Башня Мудрецов"
 ]
 
+WARRIOR_ACADEMY_NAMES = [
+    "Военная Академия", "Школа Воинского Искусства", "Цитадель Воинов"
+]
+
 MINE_NAMES = [
     "Медная Шахта", "Медный Рудник", "Великий Медный Рудник",
     "Железная Шахта", "Железный Рудник", "Глубокая Железная Шахта",
@@ -404,6 +409,7 @@ def _init_dynamic_constants():
         'bandit_camp': tuple(ui_config.get_color('locations', 'bandit_camp', [178, 34, 34])),
         'ruins': tuple(ui_config.get_color('locations', 'ruins', [128, 128, 128])),
         'magic_school': tuple(ui_config.get_color('locations', 'magic_school', [138, 43, 226])),
+        'warrior_academy': tuple(ui_config.get_color('locations', 'warrior_academy', [178, 34, 34])),
 
         # Общие
         'player': tuple(ui_config.get_color('general', 'player', [255, 215, 0])),
@@ -593,6 +599,7 @@ COLORS = {
     'bandit_camp': (178, 34, 34),
     'ruins': (128, 128, 128),
     'magic_school': (138, 43, 226),
+    'warrior_academy': (178, 34, 34),
     'player': (255, 215, 0),
     'fog': (40, 40, 45),
     'background': (20, 20, 25),

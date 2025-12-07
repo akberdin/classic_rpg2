@@ -62,7 +62,8 @@
     "mine": "assets/objects/mines/mine.png",
     "bandit_camp": "assets/objects/camps/bandit.png",
     "ruins": "assets/objects/ruins/ruins.png",
-    "magic_school": "assets/objects/magic_school/magic_school.png"
+    "magic_school": "assets/objects/magic_school/magic_school.png",
+    "warrior_academy": "assets/objects/warrior_academy/warrior_academy.png"
   },
 
   "biomes": {

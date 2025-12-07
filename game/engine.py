@@ -32,7 +32,7 @@ from game.quest_system import (
 )
 from game.constants import (
     FPS, TILE_SIZE, COLORS,
-    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL
+    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY
 )
 
 # Импорт новых модулей
@@ -497,14 +497,16 @@ class Game:
         tile = self.game_map.get_tile(self.player.x, self.player.y)
         if tile.has_location():
             location = tile.location
-            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL]:
-                # Открываем меню города/деревни/академии магов
+            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY]:
+                # Открываем меню города/деревни/академии магов/военной академии
                 # Создаем постоянного торговца для этой локации если его нет
                 if not hasattr(location, 'merchant_npc'):
                     if location.location_type == LOCATION_CITY:
                         merchant_level = 15  # Ранг 2: 11-20 уровень
                     elif location.location_type == LOCATION_MAGIC_SCHOOL:
                         merchant_level = 20  # Ранг 2: магическая академия
+                    elif location.location_type == LOCATION_WARRIOR_ACADEMY:
+                        merchant_level = 20  # Ранг 2: военная академия
                     else:
                         merchant_level = 5  # Ранг 1: деревни
                     location.merchant_npc = Merchant(f"Торговец {location.name}", self.player.x, self.player.y, merchant_level)

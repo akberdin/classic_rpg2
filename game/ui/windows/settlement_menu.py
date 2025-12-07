@@ -187,6 +187,7 @@ class InquiryMenuWindow(BaseWindow):
         questions_y = window_y + int(140 * scale_h)
         questions = [
             "[1] Где находится магическая академия?",
+            "[2] Где находится военная академия?",
             "[ESC] Назад"
         ]
 
@@ -224,6 +225,54 @@ class InquiryMenuWindow(BaseWindow):
 
         if academy_x is None:
             return "Неизвестно где находится академия..."
+
+        # Определяем направление
+        dx = academy_x - from_location.x
+        dy = academy_y - from_location.y
+
+        # Определяем основное направление
+        if abs(dx) > abs(dy):
+            # Горизонтальное направление доминирует
+            if dx > 0:
+                direction = "восток"
+            else:
+                direction = "запад"
+        else:
+            # Вертикальное направление доминирует
+            if dy > 0:
+                direction = "юг"
+            else:
+                direction = "север"
+
+        return direction
+
+    def get_direction_to_warrior_academy(self, from_location):
+        """
+        Получить направление к военной академии от текущей локации.
+
+        Args:
+            from_location: Объект локации, откуда ищем
+
+        Returns:
+            str: Направление (север, юг, запад, восток)
+        """
+        from game.constants import LOCATION_WARRIOR_ACADEMY
+
+        # Ищем военную академию на карте
+        academy_x, academy_y = None, None
+
+        for y in range(self.game_map.height):
+            for x in range(self.game_map.width):
+                tile = self.game_map.get_tile(x, y)
+                if tile.has_location():
+                    if tile.location.location_type == LOCATION_WARRIOR_ACADEMY:
+                        academy_x, academy_y = x, y
+                        break
+            if academy_x is not None:
+                break
+
+        if academy_x is None:
+            return "Неизвестно где находится военная академия..."
 
         # Определяем направление
         dx = academy_x - from_location.x

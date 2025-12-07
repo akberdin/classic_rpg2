@@ -2,11 +2,11 @@
 Модуль для создания и размещения NPC на карте
 """
 import random
-from game.npc import Guard, Merchant, MagicMerchant, MagePatrol, Bandit, Miner, Undead, Alchemist, Hunter, Necromancer, Wolf, Bear, Deer
+from game.npc import Guard, Merchant, MagicMerchant, WarriorMerchant, MagePatrol, Bandit, Miner, Undead, Alchemist, Hunter, Necromancer, Wolf, Bear, Deer
 from game.inventory import PREDEFINED_ITEMS, ItemGenerator, ItemQuality
 from game.constants import (
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
-    LOCATION_MINE, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, BIOME_FOREST
+    LOCATION_MINE, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, BIOME_FOREST
 )
 
 
@@ -46,6 +46,16 @@ class NPCSpawner:
         magic_merchant = self.spawn_magic_merchant()
         if magic_merchant:
             npcs['merchants'].append(magic_merchant)
+
+        # Добавляем воинского торговца к торговцам
+        warrior_merchant = self.spawn_warrior_merchant()
+        if warrior_merchant:
+            npcs['merchants'].append(warrior_merchant)
+
+        # Добавляем воинов возле Военной академии к стражникам
+        warriors = self.spawn_warriors()
+        if warriors:
+            npcs['guards'].extend(warriors)
 
         return npcs
 
@@ -226,6 +236,128 @@ class NPCSpawner:
             return magic_merchant
 
         return None
+
+    def spawn_warrior_merchant(self):
+        """
+        Создание военного торговца в военной академии
+
+        Returns:
+            WarriorMerchant or None: Военный торговец или None
+        """
+        # Находим военную академию
+        warrior_academy = None
+        for loc in self.game_map.locations:
+            if loc.location_type == LOCATION_WARRIOR_ACADEMY:
+                warrior_academy = loc
+                break
+
+        if not warrior_academy:
+            return None
+
+        # Находим позицию рядом с академией
+        merchant_pos = self._find_npc_position(warrior_academy.x, warrior_academy.y)
+
+        if merchant_pos:
+            mx, my = merchant_pos
+            merchant_names = [
+                "Мастер Оружия Артур", "Командир Леонидас", "Наставник Спартак",
+                "Генерал Македон", "Воевода Ярослав", "Маршал Дмитрий"
+            ]
+            merchant_name = random.choice(merchant_names)
+
+            warrior_merchant = WarriorMerchant(merchant_name, mx, my, level=8)
+            print(f"Создан военный торговец '{merchant_name}' в военной академии")
+            return warrior_merchant
+
+        return None
+
+    def spawn_warriors(self):
+        """
+        Создание воинов возле военной академии
+        4 воина 3 ранга (уровень 21-30) и 4 воина 4 ранга (уровень 31-40)
+
+        Returns:
+            list: Список воинов
+        """
+        warriors = []
+        # Находим военную академию
+        warrior_academy = None
+        for loc in self.game_map.locations:
+            if loc.location_type == LOCATION_WARRIOR_ACADEMY:
+                warrior_academy = loc
+                break
+
+        if not warrior_academy:
+            return warriors
+
+        warrior_names = [
+            "Воин", "Боец", "Ветеран", "Рыцарь",
+            "Защитник", "Страж", "Воитель", "Гвардеец"
+        ]
+
+        # Создаем 4 воина 3 ранга (уровень 21-30)
+        for i in range(4):
+            # Находим позицию рядом с академией (в пределах 10 клеток)
+            warrior_pos = None
+            for attempt in range(20):
+                offset_x = random.randint(-10, 10)
+                offset_y = random.randint(-10, 10)
+                wx = warrior_academy.x + offset_x
+                wy = warrior_academy.y + offset_y
+
+                if self.game_map.is_valid_position(wx, wy):
+                    tile = self.game_map.get_tile(wx, wy)
+                    if tile.is_passable():
+                        warrior_pos = (wx, wy)
+                        break
+
+            if warrior_pos:
+                wx, wy = warrior_pos
+                # Уровень воина 3 ранга
+                warrior_level = random.randint(21, 30)
+                warrior_name = f"{random.choice(warrior_names)} {warrior_academy.name}"
+
+                # Создаем воина (используем класс Guard)
+                warrior = Guard(warrior_name, wx, wy, warrior_level)
+
+                # Создаем маршрут патрулирования вокруг академии
+                patrol_route = self._create_patrol_route(wx, wy, radius=8)
+                warrior.set_patrol_route(patrol_route)
+
+                warriors.append(warrior)
+
+        # Создаем 4 воина 4 ранга (уровень 31-40)
+        for i in range(4):
+            # Находим позицию рядом с академией (в пределах 10 клеток)
+            warrior_pos = None
+            for attempt in range(20):
+                offset_x = random.randint(-10, 10)
+                offset_y = random.randint(-10, 10)
+                wx = warrior_academy.x + offset_x
+                wy = warrior_academy.y + offset_y
+
+                if self.game_map.is_valid_position(wx, wy):
+                    tile = self.game_map.get_tile(wx, wy)
+                    if tile.is_passable():
+                        warrior_pos = (wx, wy)
+                        break
+
+            if warrior_pos:
+                wx, wy = warrior_pos
+                # Уровень воина 4 ранга
+                warrior_level = random.randint(31, 40)
+                warrior_name = f"{random.choice(warrior_names)} {warrior_academy.name}"
+
+                # Создаем воина (используем класс Guard)
+                warrior = Guard(warrior_name, wx, wy, warrior_level)
+
+                # Создаем маршрут патрулирования вокруг академии
+                patrol_route = self._create_patrol_route(wx, wy, radius=8)
+                warrior.set_patrol_route(patrol_route)
+
+                warriors.append(warrior)
+
+        return warriors
 
     def spawn_mages(self):
         """

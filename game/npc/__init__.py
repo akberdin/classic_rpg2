@@ -5,7 +5,7 @@
 """
 from game.npc.base import NPC
 from game.npc.guard import Guard
-from game.npc.merchant import Merchant, MagicMerchant
+from game.npc.merchant import Merchant, MagicMerchant, WarriorMerchant
 from game.npc.mage import MagePatrol
 from game.npc.hostile import Bandit, Undead
 from game.npc.worker import Miner
@@ -17,6 +17,7 @@ __all__ = [
     'Guard',
     'Merchant',
     'MagicMerchant',
+    'WarriorMerchant',
     'MagePatrol',
     'Bandit',
     'Undead',
