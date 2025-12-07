@@ -715,3 +715,150 @@ class MagicMerchant(Merchant):
         # Восстанавливаем энергию стоя на месте
         if self.stamina < self.max_stamina:
             self.stamina = min(self.max_stamina, self.stamina + 2)
+
+
+class WarriorMerchant(Merchant):
+    """Класс Торговца воинскими книгами для военной академии"""
+
+    def __init__(self, name, x=0, y=0, level=5):
+        """
+        Инициализация Торговца книгами воинского искусства
+
+        Args:
+            name: Имя торговца
+            x: Позиция X
+            y: Позиция Y
+            level: Уровень торговца
+        """
+        super().__init__(name, x, y, level)
+        # Торговец не путешествует
+        self.state = "rest"
+        self.settlements = []
+        # Перегенерируем товары для военного торговца
+        self._generate_warrior_goods()
+
+    def _generate_warrior_goods(self):
+        """Генерация товаров военного торговца Военной академии"""
+        from game.inventory import PREDEFINED_ITEMS, ItemGenerator, WeaponType, ArmorType, EquipmentSlot, ItemQuality
+
+        # Очищаем стандартные товары
+        self.inventory.items.clear()
+
+        # Увеличенное золото для скупки (больше для дорогих книг)
+        self.inventory.gold = (random.randint(2000, 5000) + self.level * 200) * 3
+
+        # Оружие: ближний и дальний бой (необычного и редкого качества), не более 10
+        warrior_weapon_types = [
+            WeaponType.SWORD, WeaponType.AXE, WeaponType.SPEAR,
+            WeaponType.BOW, WeaponType.CLUB, WeaponType.KNIFE
+        ]
+        num_weapons = random.randint(5, 10)
+        for _ in range(num_weapons):
+            # Генерируем качество только UNCOMMON и RARE
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
+            weapon_type = random.choice(warrior_weapon_types)
+            weapon = ItemGenerator.generate_weapon_by_type(weapon_type, quality=quality)
+            self.inventory.add_item(weapon, 1)
+
+        # Броня: средняя и тяжелая броня (необычного и редкого качества), не более 10
+        warrior_armor_types = [ArmorType.MEDIUM, ArmorType.HEAVY]
+        num_armors = random.randint(4, 8)
+        for _ in range(num_armors):
+            # Генерируем качество только UNCOMMON и RARE
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
+            armor_type = random.choice(warrior_armor_types)
+            slot = random.choice([EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET])
+            armor = ItemGenerator.generate_armor(self.level, slot=slot, armor_type=armor_type, quality=quality)
+            self.inventory.add_item(armor, 1)
+
+        # Пояса и рюкзаки (1-2 штуки каждого, качество UNCOMMON и RARE)
+        for _ in range(random.randint(1, 2)):
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
+            belt = ItemGenerator.generate_belt(self.level, quality=quality)
+            self.inventory.add_item(belt, 1)
+
+        for _ in range(random.randint(1, 2)):
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
+            backpack = ItemGenerator.generate_backpack(self.level, quality=quality)
+            self.inventory.add_item(backpack, 1)
+
+        # Украшения: не более 5 позиций (необычного и редкого качества)
+        num_jewelry = random.randint(2, 5)
+        for _ in range(num_jewelry):
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
+            jewelry = ItemGenerator.generate_jewelry(self.level + 2, quality=quality)
+            self.inventory.add_item(jewelry, 1)
+
+        # Ресурсы: металлы для ковки
+        self.inventory.add_item(PREDEFINED_ITEMS["iron_ingot"], random.randint(5, 10))
+        self.inventory.add_item(PREDEFINED_ITEMS["silver_ingot"], random.randint(3, 6))
+        self.inventory.add_item(PREDEFINED_ITEMS["gold_ingot"], random.randint(2, 4))
+
+        # Зелья: Зелья здоровья и выносливости (не маны)
+        self.inventory.add_item(PREDEFINED_ITEMS["greater_health_potion"], random.randint(3, 6))
+        self.inventory.add_item(PREDEFINED_ITEMS["stamina_potion"], random.randint(4, 8))
+
+        # Книги: только воинские умения всех видов, не менее 5
+        warrior_books = [
+            # Воинские умения ближнего боя
+            "book_power_strike", "book_poison_strike", "book_stun_strike", "book_battle_cry",
+            "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance",
+            # Воинские умения дальнего боя
+            "book_precise_shot", "book_rapid_fire", "book_piercing_arrow",
+            # Воинские умения скрытности
+            "book_backstab", "book_bleeding_cut", "book_shadow_step"
+        ]
+
+        # Добавляем все доступные воинские книги (гарантируем минимум 5)
+        books_added = 0
+        for book_id in warrior_books:
+            if book_id in PREDEFINED_ITEMS:
+                book = PREDEFINED_ITEMS[book_id]
+                if book.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE, ItemQuality.EPIC]:
+                    self.inventory.add_item(book, 1)
+                    books_added += 1
+
+        # Если меньше 5 книг, добавляем дубликаты
+        if books_added < 5:
+            available_books = [bid for bid in warrior_books if bid in PREDEFINED_ITEMS]
+            while books_added < 5 and available_books:
+                book_id = random.choice(available_books)
+                self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
+                books_added += 1
+
+        # Рецепты: все ранги (POOR, COMMON, UNCOMMON, RARE), не менее 10
+        all_recipe_ids = [key for key in PREDEFINED_ITEMS.keys() if key.startswith("recipe_")]
+        all_rank_recipes = []
+        for recipe_id in all_recipe_ids:
+            recipe_item = PREDEFINED_ITEMS[recipe_id]
+            # Рецепты всех рангов (POOR, COMMON, UNCOMMON, RARE)
+            if recipe_item.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE]:
+                all_rank_recipes.append(recipe_id)
+
+        # Добавляем 10-15 рецептов всех рангов
+        if all_rank_recipes:
+            num_recipes = random.randint(10, min(15, len(all_rank_recipes)))
+            for recipe_id in random.sample(all_rank_recipes, num_recipes):
+                self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
+
+    def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
+        # Поддержка AIContext и старого способа вызова
+        from game.core.ai_context import AIContext
+        if isinstance(context_or_map, AIContext):
+            context = context_or_map
+            game_map = context.game_map
+            all_npcs = context.all_npcs
+            current_hour = context.current_hour
+        else:
+            game_map = context_or_map
+        """Военный торговец не перемещается"""
+        # Обновляем расписание
+        self.update_schedule(current_hour, game_map)
+
+        # Если NPC скрыт (в локации), не обновляем AI
+        if self.is_hidden():
+            return
+
+        # Восстанавливаем энергию стоя на месте
+        if self.stamina < self.max_stamina:
+            self.stamina = min(self.max_stamina, self.stamina + 2)

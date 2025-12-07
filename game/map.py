@@ -7,9 +7,9 @@ from game.tile import Tile, Location
 from game.constants import (
     MAP_WIDTH, MAP_HEIGHT,
     BIOME_WATER, BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST,
-    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MINE, LOCATION_BANDIT_CAMP, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL,
+    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MINE, LOCATION_BANDIT_CAMP, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY,
     PASSABLE_BIOMES,
-    CITY_NAMES, VILLAGE_NAMES, MAGIC_SCHOOL_NAMES, MINE_NAMES, BANDIT_CAMP_NAMES, RUIN_NAMES
+    CITY_NAMES, VILLAGE_NAMES, MAGIC_SCHOOL_NAMES, WARRIOR_ACADEMY_NAMES, MINE_NAMES, BANDIT_CAMP_NAMES, RUIN_NAMES
 )
 
 
@@ -87,6 +87,9 @@ class GameMap:
         # Генерация школы магов и деревень рядом с ней
         self._generate_magic_school_cluster()
 
+        # Генерация военной академии
+        self._generate_warrior_academy_cluster()
+
         # Генерация компактных кластеров городов (увеличено с 10 до 15)
         self._generate_compact_locations(LOCATION_CITY, 15, CITY_NAMES, min_distance=5, max_distance=15)
 
@@ -127,6 +130,42 @@ class GameMap:
                 village = Location(vx, vy, LOCATION_VILLAGE, village_name)
                 self.tiles[vy][vx].set_location(village)
                 self.locations.append(village)
+
+    def _generate_warrior_academy_cluster(self):
+        """Генерация военной академии на расстоянии >= 20 клеток от руин и лагерей бандитов"""
+        max_attempts = 1000
+
+        for attempt in range(max_attempts):
+            # Находим случайную позицию
+            academy_x, academy_y = self._find_random_passable_position()
+            if academy_x is None:
+                continue
+
+            # Проверяем расстояние до руин и лагерей бандитов
+            min_distance_to_dangerous = float('inf')
+            for loc in self.locations:
+                if loc.location_type in [LOCATION_RUINS, LOCATION_BANDIT_CAMP]:
+                    distance = abs(academy_x - loc.x) + abs(academy_y - loc.y)
+                    min_distance_to_dangerous = min(min_distance_to_dangerous, distance)
+
+            # Если слишком близко к опасной зоне, пробуем другую позицию
+            if min_distance_to_dangerous < 20:
+                continue
+
+            # Создаем военную академию
+            academy_name = random.choice(WARRIOR_ACADEMY_NAMES)
+            academy = Location(academy_x, academy_y, LOCATION_WARRIOR_ACADEMY, academy_name)
+            self.tiles[academy_y][academy_x].set_location(academy)
+            self.locations.append(academy)
+            return
+
+        # Если не удалось найти подходящее место, создаем в случайном месте
+        academy_x, academy_y = self._find_random_passable_position()
+        if academy_x is not None:
+            academy_name = random.choice(WARRIOR_ACADEMY_NAMES)
+            academy = Location(academy_x, academy_y, LOCATION_WARRIOR_ACADEMY, academy_name)
+            self.tiles[academy_y][academy_x].set_location(academy)
+            self.locations.append(academy)
 
     def _generate_compact_locations(self, location_type, count, name_list, min_distance=5, max_distance=15):
         """

@@ -1298,11 +1298,22 @@ class InputHandler:
             return
 
         if key == pygame.K_1:
-            # Вопрос про академию
+            # Вопрос про магическую академию
             location = self.ctx.inquiry_menu_window.location
             direction = self.ctx.inquiry_menu_window.get_direction_to_academy(location)
 
             response_text = f"Магическая академия? Иди на {direction}, путник. Там тебя ждут великие знания!"
+
+            self.ctx.inquiry_response_window.set_response(response_text)
+            self.ctx.inquiry_menu_open = False
+            self.ctx.inquiry_response_open = True
+
+        if key == pygame.K_2:
+            # Вопрос про военную академию
+            location = self.ctx.inquiry_menu_window.location
+            direction = self.ctx.inquiry_menu_window.get_direction_to_warrior_academy(location)
+
+            response_text = f"Военная академия? Иди на {direction}, путник. Там тебя обучат воинскому мастерству!"
 
             self.ctx.inquiry_response_window.set_response(response_text)
             self.ctx.inquiry_menu_open = False
