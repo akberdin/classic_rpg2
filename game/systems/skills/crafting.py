@@ -14,11 +14,21 @@ class Mining(Skill):
     def __init__(self):
         super().__init__(
             name="Рудокоп",
-            description="Позволяет добывать руду в шахтах. Эффективность растет с рангом",
+            description="Позволяет добывать руду в шахтах. Доступные руды зависят от ранга",
             category=SkillCategory.CRAFTING,
             stamina_cost=10,
             cooldown=0
         )
+
+    def get_rank_progression_info(self):
+        """Информация о прогрессии по рангам"""
+        return [
+            "Ранг 1: Добыча меди",
+            "Ранг 2: Добыча меди и железа",
+            "Ранг 3: Добыча меди, железа и серебра",
+            "Ранг 4: Добыча меди, железа, серебра и золота",
+            "Ранг 5: Добыча меди, железа, серебра, золота и мифрила"
+        ]
 
     def use(self, user, target=None):
         """Использовать умение рудокопа"""
@@ -47,8 +57,8 @@ class Mining(Skill):
         # Вызываем базовый метод для списания ресурсов
         result = super().use(user, target)
 
-        # Используем профессию для сбора ресурсов
-        resources = mining_profession.gather(user)
+        # Используем профессию для сбора ресурсов, передаем ранг УМЕНИЯ
+        resources = mining_profession.gather(user, skill_rank=self.rank)
 
         if resources:
             result['success'] = True

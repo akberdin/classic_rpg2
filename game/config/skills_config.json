@@ -744,14 +744,21 @@
 
     "mining": {
       "name": "Добыча руды",
-      "description": "Добыча полезных ископаемых. Эффективность растет с рангом",
+      "description": "Добыча полезных ископаемых. Доступные руды зависят от ранга",
       "category": "crafting",
       "stamina_cost": 10,
       "mana_cost": 0,
       "cooldown": 0,
       "base_resource_amount": 1,
       "resource_amount_per_rank": 1,
-      "quality_chance_per_rank": 0.1
+      "quality_chance_per_rank": 0.1,
+      "description_per_rank": [
+        "Ранг 1: Добыча меди",
+        "Ранг 2: Добыча меди и железа",
+        "Ранг 3: Добыча меди, железа и серебра",
+        "Ранг 4: Добыча меди, железа, серебра и золота",
+        "Ранг 5: Добыча меди, железа, серебра, золота и мифрила"
+      ]
     },
 
     "lumberjacking": {
