@@ -27,7 +27,7 @@
       "name": "Медный слиток",
       "display_name": "Рецепт: Медный слиток",
       "quality": "common",
-      "description": "Переплавка медной руды в слиток. Требуется 5 кусков медной руды",
+      "description": "Переплавка медной руды в слиток. Требуется 5 кусков медной руды и 2 древесного угля",
       "station": "forge",
       "result_item": "copper_ingot",
       "result_quantity": 1,
@@ -35,7 +35,8 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ore", "quantity": 5}
+        {"item": "copper_ore", "quantity": 5},
+        {"item": "charcoal", "quantity": 2}
       ],
       "category": "smelting",
       "base_price": 50,
@@ -46,7 +47,7 @@
       "name": "Железный слиток",
       "display_name": "Рецепт: Железный слиток",
       "quality": "common",
-      "description": "Переплавка железной руды в слиток. Требуется 5 кусков железной руды",
+      "description": "Переплавка железной руды в слиток. Требуется 5 кусков железной руды и 2 древесного угля",
       "station": "forge",
       "result_item": "iron_ingot",
       "result_quantity": 1,
@@ -54,7 +55,8 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_ore", "quantity": 5}
+        {"item": "iron_ore", "quantity": 5},
+        {"item": "charcoal", "quantity": 2}
       ],
       "category": "smelting",
       "base_price": 100,
@@ -65,7 +67,7 @@
       "name": "Серебряный слиток",
       "display_name": "Рецепт: Серебряный слиток",
       "quality": "common",
-      "description": "Переплавка серебряной руды в слиток. Требуется 5 кусков серебряной руды",
+      "description": "Переплавка серебряной руды в слиток. Требуется 5 кусков серебряной руды и 3 древесного угля",
       "station": "forge",
       "result_item": "silver_ingot",
       "result_quantity": 1,
@@ -73,7 +75,8 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ore", "quantity": 5}
+        {"item": "silver_ore", "quantity": 5},
+        {"item": "charcoal", "quantity": 3}
       ],
       "category": "smelting",
       "base_price": 250,
@@ -84,7 +87,7 @@
       "name": "Золотой слиток",
       "display_name": "Рецепт: Золотой слиток",
       "quality": "common",
-      "description": "Переплавка золотой руды в слиток. Требуется 5 кусков золотой руды",
+      "description": "Переплавка золотой руды в слиток. Требуется 5 кусков золотой руды и 3 древесного угля",
       "station": "forge",
       "result_item": "gold_ingot",
       "result_quantity": 1,
@@ -92,7 +95,8 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ore", "quantity": 5}
+        {"item": "gold_ore", "quantity": 5},
+        {"item": "charcoal", "quantity": 3}
       ],
       "category": "smelting",
       "base_price": 500,
@@ -103,7 +107,7 @@
       "name": "Мифриловый слиток",
       "display_name": "Рецепт: Мифриловый слиток",
       "quality": "common",
-      "description": "Переплавка мифриловой руды в слиток. Требуется 5 кусков мифриловой руды",
+      "description": "Переплавка мифриловой руды в слиток. Требуется 5 кусков мифриловой руды и 4 древесного угля",
       "station": "forge",
       "result_item": "mithril_ingot",
       "result_quantity": 1,
@@ -111,7 +115,8 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 4,
       "ingredients": [
-        {"item": "mithril_ore", "quantity": 5}
+        {"item": "mithril_ore", "quantity": 5},
+        {"item": "charcoal", "quantity": 4}
       ],
       "category": "smelting",
       "base_price": 1000,
