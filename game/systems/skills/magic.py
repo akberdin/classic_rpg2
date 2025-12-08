@@ -414,7 +414,7 @@ class MagicMissile(Skill):
             name="Магическая стрела",
             description="Базовая магическая атака. Низкая стоимость, игнорирует броню, снижается магической защитой",
             category=SkillCategory.MAGE,tactical_range=6,
-            mana_cost=15,
+            mana_cost=4,
             cooldown=1
         )
 

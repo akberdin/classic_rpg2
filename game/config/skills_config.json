@@ -212,7 +212,7 @@
       "name": "Магическая стрела",
       "description": "Базовая магическая атака. Низкая стоимость, игнорирует броню, снижается магической защитой",
       "category": "magic",
-      "mana_cost": 15,
+      "mana_cost": 4,
       "stamina_cost": 0,
       "cooldown": 1,
       "tactical_range": 6,
