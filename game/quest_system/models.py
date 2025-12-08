@@ -261,7 +261,7 @@ class Quest:
         if 'skills' in self.rewards:
             for skill_key in self.rewards['skills']:
                 if hasattr(player, 'skill_manager'):
-                    success = player.skill_manager.unlock_skill(skill_key)
+                    success = player.skill_manager.learn_skill(skill_key)
                     if success:
                         # Получаем название умения для сообщения
                         skill = player.skill_manager.get_skill(skill_key)
