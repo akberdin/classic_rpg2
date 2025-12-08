@@ -31,6 +31,7 @@ class CheatMenuWindow:
             'learn_all_skills': {'name': 'Выучить все умения', 'enabled': False, 'one_time': True},
             'learn_all_recipes': {'name': 'Изучить все рецепты', 'enabled': False, 'one_time': True},
             'teleport_academy': {'name': 'Телепорт к академии магов', 'enabled': False, 'one_time': True},
+            'teleport_warrior_academy': {'name': 'Телепорт к военной академии', 'enabled': False, 'one_time': True},
             'level_up': {'name': 'Повысить уровень на 1', 'enabled': False, 'one_time': True},
             'give_artifact': {'name': 'Дать случайный артефакт', 'enabled': False, 'one_time': True},
         }
@@ -139,6 +140,37 @@ class CheatMenuWindow:
 
                 if not academy_found:
                     print("Не удалось найти свободное место возле академии!")
+
+            elif cheat_id == 'teleport_warrior_academy':
+                # Ищем военную академию на карте
+                academy_found = False
+                for location in game.game_map.locations:
+                    if location.location_type == 'warrior_academy':
+                        # Ищем свободную клетку в радиусе 10 от академии
+                        import random
+                        for _ in range(100):  # 100 попыток
+                            dx = random.randint(-10, 10)
+                            dy = random.randint(-10, 10)
+                            new_x = location.x + dx
+                            new_y = location.y + dy
+
+                            if game.game_map.is_valid_position(new_x, new_y):
+                                tile = game.game_map.get_tile(new_x, new_y)
+                                if tile.is_passable():
+                                    # Телепортируемся без проверки на NPC - сущности могут находиться на одной клетке
+                                    game.player.x = new_x
+                                    game.player.y = new_y
+                                    game.fog_of_war.update_vision(game.player.x, game.player.y)
+                                    game.camera.update()
+                                    academy_found = True
+                                    print(f"Телепортация к {location.name}!")
+                                    break
+
+                        if academy_found:
+                            break
+
+                if not academy_found:
+                    print("Не удалось найти свободное место возле военной академии!")
 
             elif cheat_id == 'level_up':
                 if game.player.level < 40:
