@@ -57,7 +57,7 @@ def create_starter_quests():
     objectives = [
         QuestObjective("Добыть Медная руда x5", required_count=5),
     ]
-    rewards = {'exp': 100, 'gold': 50}
+    rewards = {'exp': 100, 'skills': ['craftsmanship']}
     quest3 = Quest(
         quest_id="resource_gatherer",
         name="Сборщик ресурсов",
@@ -72,12 +72,34 @@ def create_starter_quests():
     quest3.target_item = "copper_ore"
     quests.append(quest3)
 
-    # Квест 4: Исследователь - автоматически назначается
+    # Квест 4: Лесоруб - автоматически назначается
+    objectives = [
+        QuestObjective("Добыть Древесина x30", required_count=30),
+    ]
+    rewards = {
+        'exp': 120,
+        'items': [(PREDEFINED_ITEMS["poor_pickaxe"], 1)]
+    }
+    quest4 = Quest(
+        quest_id="lumberjack_start",
+        name="Лесоруб",
+        description="Добудьте древесину для строительства.",
+        objectives=objectives,
+        rewards=rewards,
+        quest_type=QuestType.GATHER_RESOURCE,
+        difficulty=QuestDifficulty.EASY,
+        is_starter=True,
+        giver_location="Любая локация"
+    )
+    quest4.target_item = "wood"
+    quests.append(quest4)
+
+    # Квест 5: Исследователь - автоматически назначается
     objectives = [
         QuestObjective("Посетите 3 разных локации", required_count=3),
     ]
     rewards = {'exp': 200, 'gold': 100}
-    quest4 = Quest(
+    quest5 = Quest(
         quest_id="explorer_start",
         name="Исследователь",
         description="Исследуйте мир и посетите различные локации.",
@@ -88,7 +110,7 @@ def create_starter_quests():
         is_starter=True,
         giver_location="Любая локация"
     )
-    quests.append(quest4)
+    quests.append(quest5)
 
     return quests
 

@@ -246,6 +246,19 @@ class Quest:
                 else:
                     messages.append(f"Инвентарь полон! Не удалось получить {item.name}")
 
+        # Умения
+        if 'skills' in self.rewards:
+            for skill_key in self.rewards['skills']:
+                if hasattr(player, 'skill_manager'):
+                    success = player.skill_manager.unlock_skill(skill_key)
+                    if success:
+                        # Получаем название умения для сообщения
+                        skill = player.skill_manager.get_skill(skill_key)
+                        skill_name = skill.name if skill else skill_key
+                        messages.append(f"Получено умение: {skill_name}")
+                    else:
+                        messages.append(f"Умение {skill_key} уже изучено")
+
         # Устанавливаем статус завершённого квеста
         self.status = QuestStatus.COMPLETED
 
