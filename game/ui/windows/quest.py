@@ -407,16 +407,19 @@ class QuestWindow:
                         from game.quest_system.models import QuestType
                         obj = quest.objectives[0]
 
+                        # Для квестов на сбор ресурсов всегда показываем количество из инвентаря
                         if quest.target_item and player:
                             inventory_count = player.inventory.get_item_count(quest.target_item)
                             progress = f"{inventory_count}/{obj.required_count}"
+                            is_objective_complete = inventory_count >= obj.required_count
                         else:
                             progress = f"{obj.current_count}/{obj.required_count}"
+                            is_objective_complete = obj.is_completed()
 
                         obj_text = self.info_font.render(
                             f"({progress})",
                             True,
-                            (100, 255, 100) if obj.is_completed() else (200, 200, 100)
+                            (100, 255, 100) if is_objective_complete else (200, 200, 100)
                         )
                         self.screen.blit(obj_text, (quest_x + 10, quest_y + 54))
 
@@ -543,14 +546,16 @@ class QuestWindow:
                         if quest.target_item and player:
                             inventory_count = player.inventory.get_item_count(quest.target_item)
                             progress = f"{inventory_count}/{obj.required_count}"
+                            is_objective_complete = inventory_count >= obj.required_count
                         else:
                             progress = f"{obj.current_count}/{obj.required_count}"
+                            is_objective_complete = obj.is_completed()
 
                         obj_text = self.info_font.render(
                             f"Цель: {obj.description[:30]}... ({progress})" if len(obj.description) > 30
                             else f"Цель: {obj.description} ({progress})",
                             True,
-                            (100, 255, 100) if obj.is_completed() else (200, 200, 100)
+                            (100, 255, 100) if is_objective_complete else (200, 200, 100)
                         )
                         obj_y_offset = desc_y_offset + 22
                         self.screen.blit(obj_text, (window_x + 35, quest_y + obj_y_offset))
