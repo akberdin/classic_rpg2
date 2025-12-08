@@ -3,6 +3,7 @@
 """
 import random
 from game.config.config_loader import get_quest_config
+from game.inventory import PREDEFINED_ITEMS
 from .models import Quest, QuestObjective, QuestType, QuestDifficulty
 
 
