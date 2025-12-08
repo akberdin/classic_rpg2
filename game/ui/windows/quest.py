@@ -405,11 +405,14 @@ class QuestWindow:
                     # Цели
                     if quest.objectives:
                         from game.quest_system.models import QuestType
+                        from game.quest_system.quest_data import ITEM_KEY_TO_NAME
                         obj = quest.objectives[0]
 
                         # Для квестов на сбор ресурсов всегда показываем количество из инвентаря
                         if quest.target_item and player:
-                            inventory_count = player.inventory.get_item_count(quest.target_item)
+                            # Конвертируем английский ключ в русское название для поиска в инвентаре
+                            item_name = ITEM_KEY_TO_NAME.get(quest.target_item, quest.target_item)
+                            inventory_count = player.inventory.get_item_count(item_name)
                             progress = f"{inventory_count}/{obj.required_count}"
                             is_objective_complete = inventory_count >= obj.required_count
                         else:
@@ -539,12 +542,15 @@ class QuestWindow:
                     # Цели и награды
                     if quest.objectives:
                         from game.quest_system.models import QuestType
+                        from game.quest_system.quest_data import ITEM_KEY_TO_NAME
                         obj = quest.objectives[0]
 
                         # Для квестов где требуются предметы, показываем количество в инвентаре
                         # Это включает квесты на сбор ресурсов и квесты на убийство животных (части животных)
                         if quest.target_item and player:
-                            inventory_count = player.inventory.get_item_count(quest.target_item)
+                            # Конвертируем английский ключ в русское название для поиска в инвентаре
+                            item_name = ITEM_KEY_TO_NAME.get(quest.target_item, quest.target_item)
+                            inventory_count = player.inventory.get_item_count(item_name)
                             progress = f"{inventory_count}/{obj.required_count}"
                             is_objective_complete = inventory_count >= obj.required_count
                         else:
