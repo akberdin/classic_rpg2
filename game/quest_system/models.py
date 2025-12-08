@@ -233,11 +233,11 @@ class Quest:
             for objective in self.objectives:
                 if objective.is_completed():
                     # Удаляем требуемое количество предмета из инвентаря
-                    removed = player.inventory.remove_item_by_key(self.target_item, objective.required_count)
-                    if removed > 0:
+                    success = player.inventory.remove_item(self.target_item, objective.required_count)
+                    if success:
                         from .quest_data import ITEM_KEY_TO_NAME
                         item_name = ITEM_KEY_TO_NAME.get(self.target_item, self.target_item)
-                        messages.append(f"Сдано: {item_name} x{removed}")
+                        messages.append(f"Сдано: {item_name} x{objective.required_count}")
 
         # Опыт
         if 'exp' in self.rewards and self.rewards['exp'] > 0:
