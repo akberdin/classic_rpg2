@@ -92,12 +92,13 @@ class Mining(Profession):
 
         return True, ""
 
-    def gather(self, player):
+    def gather(self, player, skill_rank=None):
         """
         Добыть ресурсы
 
         Args:
             player: Игрок
+            skill_rank: Ранг умения "Рудокоп" (если None, используется ранг профессии)
 
         Returns:
             list: Список добытых ресурсов [(item, quantity), ...]
@@ -105,31 +106,34 @@ class Mining(Profession):
         resources = []
         success_bonus = self.get_success_bonus()
 
+        # Используем ранг умения, если передан, иначе ранг профессии
+        effective_rank = skill_rank if skill_rank is not None else self.rank
+
         # Добавляем 1 опыт персонажу за каждое использование навыка
         if hasattr(player, 'add_experience'):
             player.add_experience(1)
 
-        # Определяем доступные типы руды на основе ранга
+        # Определяем доступные типы руды на основе ранга УМЕНИЯ
         available_ores = {}
-        if self.rank >= 1:
+        if effective_rank >= 1:
             available_ores["copper_ore"] = self.ore_chances["copper_ore"]
-        if self.rank >= 2:
+        if effective_rank >= 2:
             available_ores["iron_ore"] = self.ore_chances["iron_ore"]
-        if self.rank >= 3:
+        if effective_rank >= 3:
             available_ores["silver_ore"] = self.ore_chances["silver_ore"]
-        if self.rank >= 4:
+        if effective_rank >= 4:
             available_ores["gold_ore"] = self.ore_chances["gold_ore"]
-        if self.rank >= 5:
+        if effective_rank >= 5:
             available_ores["mithril_ore"] = self.ore_chances["mithril_ore"]
 
         # Пробуем добыть каждый доступный тип руды
         for ore_type, base_chance in available_ores.items():
-            # Шанс с учетом ранга
+            # Шанс с учетом ранга профессии (бонус от профессии)
             chance = min(95, base_chance + success_bonus)
 
             if random.random() * 100 < chance:
-                # Количество зависит от ранга (1-3 на низких рангах, до 5 на высоких)
-                quantity = random.randint(1, min(5, 1 + self.rank // 2))
+                # Количество зависит от ранга умения (1-3 на низких рангах, до 5 на высоких)
+                quantity = random.randint(1, min(5, 1 + effective_rank // 2))
                 resources.append((PREDEFINED_ITEMS[ore_type], quantity))
 
         # Случайные события при добыче (10% шанс)
@@ -148,14 +152,16 @@ class Mining(Profession):
             if event[1] < 0:  # Урон
                 player.take_damage(abs(event[1]))
             elif event[2] == "extra_ore":  # Дополнительная руда
-                bonus_ore = random.choice(list(self.ore_chances.keys()))
-                resources.append((PREDEFINED_ITEMS[bonus_ore], random.randint(1, 3)))
+                # Дополнительная руда только из доступных на текущем ранге
+                if available_ores:
+                    bonus_ore = random.choice(list(available_ores.keys()))
+                    resources.append((PREDEFINED_ITEMS[bonus_ore], random.randint(1, 3)))
             elif event[2] is not None:  # Золото
                 player.inventory.add_gold(event[2])
 
         # Даем опыт только при успешной добыче (улучшенная формула)
         if resources:
-            # Базовый опыт + бонус за количество + бонус за ранг
+            # Базовый опыт + бонус за количество + бонус за ранг профессии
             exp_gained = 15 + len(resources) * 10 + self.rank * 2
             leveled_up = self.add_experience(exp_gained)
 
