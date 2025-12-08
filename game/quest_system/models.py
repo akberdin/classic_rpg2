@@ -228,15 +228,20 @@ class Quest:
 
         messages = []
 
+        # ВАЖНО: Сначала удаляем ресурсы (освобождаем место), потом выдаём награды!
         # Для квестов на сбор ресурсов - удаляем собранные предметы из инвентаря
         if self.quest_type == QuestType.GATHER_RESOURCE and self.target_item:
+            from .quest_data import ITEM_KEY_TO_NAME
+            # Конвертируем английский ключ в русское название для работы с инвентарем
+            item_name = ITEM_KEY_TO_NAME.get(self.target_item, self.target_item)
+
             for objective in self.objectives:
-                if objective.is_completed():
+                # Проверяем фактическое количество в инвентаре, а не objective.is_completed()
+                inventory_count = player.inventory.get_item_count(item_name)
+                if inventory_count >= objective.required_count:
                     # Удаляем требуемое количество предмета из инвентаря
-                    success = player.inventory.remove_item(self.target_item, objective.required_count)
+                    success = player.inventory.remove_item(item_name, objective.required_count)
                     if success:
-                        from .quest_data import ITEM_KEY_TO_NAME
-                        item_name = ITEM_KEY_TO_NAME.get(self.target_item, self.target_item)
                         messages.append(f"Сдано: {item_name} x{objective.required_count}")
 
         # Опыт
