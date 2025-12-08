@@ -175,11 +175,11 @@ class QuestWindow:
         screen_height = self.screen.get_height()
 
         if self.ui_scaler:
-            window_width = self.ui_scaler.scale_width(900)
-            window_height = self.ui_scaler.scale_height(650)
+            window_width = self.ui_scaler.scale_width(1260)
+            window_height = self.ui_scaler.scale_height(780)
         else:
-            window_width = min(900, int(screen_width * 0.85))
-            window_height = min(650, int(screen_height * 0.75))
+            window_width = min(1260, int(screen_width * 0.85))
+            window_height = min(780, int(screen_height * 0.75))
 
         window_x = (screen_width - window_width) // 2
         window_y = (screen_height - window_height) // 2
@@ -304,142 +304,274 @@ class QuestWindow:
         else:
             # Отображаем список квестов
             quest_height = 95
-            visible_quests = list_height // quest_height
 
-            for i in range(min(visible_quests, len(quests))):
-                quest_idx = i + self.scroll_offset
-                if quest_idx >= len(quests):
-                    break
+            # Для активных квестов используем два столбца
+            if self.mode == "active":
+                # Два столбца по 5 квестов
+                column_width = (list_width - 30) // 2
+                quests_per_column = 5
+                visible_quests = quests_per_column * 2
 
-                quest = quests[quest_idx]
-                quest_y = list_y + i * quest_height
+                for i in range(min(visible_quests, len(quests))):
+                    quest_idx = i + self.scroll_offset
+                    if quest_idx >= len(quests):
+                        break
 
-                # Сохраняем прямоугольник квеста
-                quest_rect = pygame.Rect(window_x + 25, quest_y + 5, list_width - 10, quest_height - 10)
-                self.quest_rects.append(quest_rect)
+                    quest = quests[quest_idx]
 
-                # Фон элемента
-                is_selected = quest_idx == self.selected_index
-                is_unique = getattr(quest, 'is_unique', False)
-                is_starter = getattr(quest, 'is_starter', False)
+                    # Определяем столбец и позицию в столбце
+                    column = i // quests_per_column
+                    row = i % quests_per_column
 
-                # Цвет фона: уникальные - темно-красный, стартовые - темно-зеленый, обычные - серый
-                if is_unique:
-                    bg_color = (70, 40, 40) if is_selected else (50, 30, 30)
-                elif is_starter:
-                    bg_color = (40, 60, 40) if is_selected else (30, 45, 30)
-                else:
-                    bg_color = (60, 60, 70) if is_selected else (40, 40, 45)
+                    quest_x = window_x + 25 + column * (column_width + 10)
+                    quest_y = list_y + row * quest_height
 
-                pygame.draw.rect(
-                    self.screen,
-                    bg_color,
-                    (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10)
-                )
+                    # Сохраняем прямоугольник квеста
+                    quest_rect = pygame.Rect(quest_x, quest_y + 5, column_width - 10, quest_height - 10)
+                    self.quest_rects.append(quest_rect)
 
-                # Рамка: уникальные - красная, стартовые - зеленая, выбранные - золотая
-                if is_unique:
-                    # Красная рамка для уникальных квестов (всегда)
-                    border_color = (255, 100, 100) if is_selected else (200, 50, 50)
-                    pygame.draw.rect(
-                        self.screen,
-                        border_color,
-                        (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10),
-                        3 if is_selected else 2
-                    )
-                elif is_starter:
-                    # Зеленая рамка для стартовых квестов (всегда)
-                    border_color = (100, 255, 100) if is_selected else (50, 200, 50)
-                    pygame.draw.rect(
-                        self.screen,
-                        border_color,
-                        (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10),
-                        3 if is_selected else 2
-                    )
-                elif is_selected:
-                    # Золотая рамка только для выбранных обычных квестов
-                    pygame.draw.rect(
-                        self.screen,
-                        (255, 215, 0),
-                        (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10),
-                        2
-                    )
+                    # Фон элемента
+                    is_selected = quest_idx == self.selected_index
+                    is_unique = getattr(quest, 'is_unique', False)
+                    is_starter = getattr(quest, 'is_starter', False)
 
-                # Название квеста с цветом по типу
-                difficulty_str = f" [{quest.difficulty.display_name}]" if hasattr(quest.difficulty, 'display_name') else ""
-                if is_unique:
-                    name_color = (255, 150, 150)  # Красноватый для уникальных
-                elif is_starter:
-                    name_color = (150, 255, 150)  # Зеленоватый для стартовых
-                else:
-                    name_color = (255, 255, 255)  # Белый для обычных
-
-                name_text = self.font.render(
-                    f"{quest.name}{difficulty_str}",
-                    True,
-                    name_color
-                )
-                self.screen.blit(name_text, (window_x + 35, quest_y + 10))
-
-                # Место выдачи квеста (если есть)
-                if quest.giver_location:
-                    giver_text = self.info_font.render(
-                        f"Место: {quest.giver_location}",
-                        True,
-                        (150, 200, 255)
-                    )
-                    self.screen.blit(giver_text, (window_x + 35, quest_y + 32))
-                    desc_y_offset = 50
-                else:
-                    desc_y_offset = 32
-
-                # Описание
-                desc_text = self.info_font.render(
-                    quest.description[:60] + "..." if len(quest.description) > 60 else quest.description,
-                    True,
-                    (180, 180, 180)
-                )
-                self.screen.blit(desc_text, (window_x + 35, quest_y + desc_y_offset))
-
-                # Цели и награды
-                if quest.objectives:
-                    from game.quest_system.models import QuestType
-                    obj = quest.objectives[0]
-
-                    # Для квестов где требуются предметы, показываем количество в инвентаре
-                    # Это включает квесты на сбор ресурсов и квесты на убийство животных (части животных)
-                    if quest.target_item and player:
-                        inventory_count = player.inventory.get_item_count(quest.target_item)
-                        progress = f"{inventory_count}/{obj.required_count}"
+                    # Цвет фона: уникальные - темно-красный, стартовые - темно-зеленый, обычные - серый
+                    if is_unique:
+                        bg_color = (70, 40, 40) if is_selected else (50, 30, 30)
+                    elif is_starter:
+                        bg_color = (40, 60, 40) if is_selected else (30, 45, 30)
                     else:
-                        progress = f"{obj.current_count}/{obj.required_count}"
+                        bg_color = (60, 60, 70) if is_selected else (40, 40, 45)
 
-                    obj_text = self.info_font.render(
-                        f"Цель: {obj.description[:30]}... ({progress})" if len(obj.description) > 30
-                        else f"Цель: {obj.description} ({progress})",
-                        True,
-                        (100, 255, 100) if obj.is_completed() else (200, 200, 100)
+                    pygame.draw.rect(
+                        self.screen,
+                        bg_color,
+                        (quest_x, quest_y + 5, column_width - 10, quest_height - 10)
                     )
-                    obj_y_offset = desc_y_offset + 22
-                    self.screen.blit(obj_text, (window_x + 35, quest_y + obj_y_offset))
 
-                # Награды (справа)
-                rewards_parts = []
-                if 'exp' in quest.rewards:
-                    rewards_parts.append(f"{quest.rewards['exp']} XP")
-                if 'gold' in quest.rewards:
-                    rewards_parts.append(f"{quest.rewards['gold']}g")
-                rewards_str = " | ".join(rewards_parts)
+                    # Рамка: уникальные - красная, стартовые - зеленая, выбранные - золотая
+                    if is_unique:
+                        border_color = (255, 100, 100) if is_selected else (200, 50, 50)
+                        pygame.draw.rect(
+                            self.screen,
+                            border_color,
+                            (quest_x, quest_y + 5, column_width - 10, quest_height - 10),
+                            3 if is_selected else 2
+                        )
+                    elif is_starter:
+                        border_color = (100, 255, 100) if is_selected else (50, 200, 50)
+                        pygame.draw.rect(
+                            self.screen,
+                            border_color,
+                            (quest_x, quest_y + 5, column_width - 10, quest_height - 10),
+                            3 if is_selected else 2
+                        )
+                    elif is_selected:
+                        pygame.draw.rect(
+                            self.screen,
+                            (255, 215, 0),
+                            (quest_x, quest_y + 5, column_width - 10, quest_height - 10),
+                            2
+                        )
 
-                rewards_text = self.info_font.render(
-                    rewards_str,
-                    True,
-                    (255, 215, 0)
-                )
-                rewards_rect = rewards_text.get_rect()
-                rewards_rect.right = window_x + window_width - 35
-                rewards_rect.y = quest_y + 32
-                self.screen.blit(rewards_text, rewards_rect)
+                    # Название квеста с цветом по типу
+                    difficulty_str = f" [{quest.difficulty.display_name}]" if hasattr(quest.difficulty, 'display_name') else ""
+                    if is_unique:
+                        name_color = (255, 150, 150)
+                    elif is_starter:
+                        name_color = (150, 255, 150)
+                    else:
+                        name_color = (255, 255, 255)
+
+                    # Укорачиваем название для компактности в двух столбцах
+                    max_name_len = 20
+                    quest_name = quest.name[:max_name_len] + "..." if len(quest.name) > max_name_len else quest.name
+                    name_text = self.font.render(
+                        f"{quest_name}",
+                        True,
+                        name_color
+                    )
+                    self.screen.blit(name_text, (quest_x + 10, quest_y + 10))
+
+                    # Описание (укороченное)
+                    max_desc_len = 30
+                    desc_text = self.info_font.render(
+                        quest.description[:max_desc_len] + "..." if len(quest.description) > max_desc_len else quest.description,
+                        True,
+                        (180, 180, 180)
+                    )
+                    self.screen.blit(desc_text, (quest_x + 10, quest_y + 32))
+
+                    # Цели
+                    if quest.objectives:
+                        from game.quest_system.models import QuestType
+                        obj = quest.objectives[0]
+
+                        if quest.target_item and player:
+                            inventory_count = player.inventory.get_item_count(quest.target_item)
+                            progress = f"{inventory_count}/{obj.required_count}"
+                        else:
+                            progress = f"{obj.current_count}/{obj.required_count}"
+
+                        obj_text = self.info_font.render(
+                            f"({progress})",
+                            True,
+                            (100, 255, 100) if obj.is_completed() else (200, 200, 100)
+                        )
+                        self.screen.blit(obj_text, (quest_x + 10, quest_y + 54))
+
+                    # Награды
+                    rewards_parts = []
+                    if 'exp' in quest.rewards:
+                        rewards_parts.append(f"{quest.rewards['exp']} XP")
+                    if 'gold' in quest.rewards:
+                        rewards_parts.append(f"{quest.rewards['gold']}g")
+                    rewards_str = " | ".join(rewards_parts)
+
+                    rewards_text = self.info_font.render(
+                        rewards_str,
+                        True,
+                        (255, 215, 0)
+                    )
+                    self.screen.blit(rewards_text, (quest_x + 10, quest_y + 76))
+            else:
+                # Для остальных режимов - один столбец
+                visible_quests = list_height // quest_height
+
+                for i in range(min(visible_quests, len(quests))):
+                    quest_idx = i + self.scroll_offset
+                    if quest_idx >= len(quests):
+                        break
+
+                    quest = quests[quest_idx]
+                    quest_y = list_y + i * quest_height
+
+                    # Сохраняем прямоугольник квеста
+                    quest_rect = pygame.Rect(window_x + 25, quest_y + 5, list_width - 10, quest_height - 10)
+                    self.quest_rects.append(quest_rect)
+
+                    # Фон элемента
+                    is_selected = quest_idx == self.selected_index
+                    is_unique = getattr(quest, 'is_unique', False)
+                    is_starter = getattr(quest, 'is_starter', False)
+
+                    # Цвет фона: уникальные - темно-красный, стартовые - темно-зеленый, обычные - серый
+                    if is_unique:
+                        bg_color = (70, 40, 40) if is_selected else (50, 30, 30)
+                    elif is_starter:
+                        bg_color = (40, 60, 40) if is_selected else (30, 45, 30)
+                    else:
+                        bg_color = (60, 60, 70) if is_selected else (40, 40, 45)
+
+                    pygame.draw.rect(
+                        self.screen,
+                        bg_color,
+                        (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10)
+                    )
+
+                    # Рамка: уникальные - красная, стартовые - зеленая, выбранные - золотая
+                    if is_unique:
+                        # Красная рамка для уникальных квестов (всегда)
+                        border_color = (255, 100, 100) if is_selected else (200, 50, 50)
+                        pygame.draw.rect(
+                            self.screen,
+                            border_color,
+                            (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10),
+                            3 if is_selected else 2
+                        )
+                    elif is_starter:
+                        # Зеленая рамка для стартовых квестов (всегда)
+                        border_color = (100, 255, 100) if is_selected else (50, 200, 50)
+                        pygame.draw.rect(
+                            self.screen,
+                            border_color,
+                            (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10),
+                            3 if is_selected else 2
+                        )
+                    elif is_selected:
+                        # Золотая рамка только для выбранных обычных квестов
+                        pygame.draw.rect(
+                            self.screen,
+                            (255, 215, 0),
+                            (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10),
+                            2
+                        )
+
+                    # Название квеста с цветом по типу
+                    difficulty_str = f" [{quest.difficulty.display_name}]" if hasattr(quest.difficulty, 'display_name') else ""
+                    if is_unique:
+                        name_color = (255, 150, 150)  # Красноватый для уникальных
+                    elif is_starter:
+                        name_color = (150, 255, 150)  # Зеленоватый для стартовых
+                    else:
+                        name_color = (255, 255, 255)  # Белый для обычных
+
+                    name_text = self.font.render(
+                        f"{quest.name}{difficulty_str}",
+                        True,
+                        name_color
+                    )
+                    self.screen.blit(name_text, (window_x + 35, quest_y + 10))
+
+                    # Место выдачи квеста (если есть)
+                    if quest.giver_location:
+                        giver_text = self.info_font.render(
+                            f"Место: {quest.giver_location}",
+                            True,
+                            (150, 200, 255)
+                        )
+                        self.screen.blit(giver_text, (window_x + 35, quest_y + 32))
+                        desc_y_offset = 50
+                    else:
+                        desc_y_offset = 32
+
+                    # Описание
+                    desc_text = self.info_font.render(
+                        quest.description[:60] + "..." if len(quest.description) > 60 else quest.description,
+                        True,
+                        (180, 180, 180)
+                    )
+                    self.screen.blit(desc_text, (window_x + 35, quest_y + desc_y_offset))
+
+                    # Цели и награды
+                    if quest.objectives:
+                        from game.quest_system.models import QuestType
+                        obj = quest.objectives[0]
+
+                        # Для квестов где требуются предметы, показываем количество в инвентаре
+                        # Это включает квесты на сбор ресурсов и квесты на убийство животных (части животных)
+                        if quest.target_item and player:
+                            inventory_count = player.inventory.get_item_count(quest.target_item)
+                            progress = f"{inventory_count}/{obj.required_count}"
+                        else:
+                            progress = f"{obj.current_count}/{obj.required_count}"
+
+                        obj_text = self.info_font.render(
+                            f"Цель: {obj.description[:30]}... ({progress})" if len(obj.description) > 30
+                            else f"Цель: {obj.description} ({progress})",
+                            True,
+                            (100, 255, 100) if obj.is_completed() else (200, 200, 100)
+                        )
+                        obj_y_offset = desc_y_offset + 22
+                        self.screen.blit(obj_text, (window_x + 35, quest_y + obj_y_offset))
+
+                    # Награды (справа)
+                    rewards_parts = []
+                    if 'exp' in quest.rewards:
+                        rewards_parts.append(f"{quest.rewards['exp']} XP")
+                    if 'gold' in quest.rewards:
+                        rewards_parts.append(f"{quest.rewards['gold']}g")
+                    rewards_str = " | ".join(rewards_parts)
+
+                    rewards_text = self.info_font.render(
+                        rewards_str,
+                        True,
+                        (255, 215, 0)
+                    )
+                    rewards_rect = rewards_text.get_rect()
+                    rewards_rect.right = window_x + window_width - 35
+                    rewards_rect.y = quest_y + 32
+                    self.screen.blit(rewards_text, rewards_rect)
 
         # Подсказки управления
         controls_y = window_y + window_height - 50

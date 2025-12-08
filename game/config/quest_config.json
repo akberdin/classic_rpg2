@@ -1,6 +1,6 @@
 {
   "quest_limits": {
-    "max_active_quests": 5,
+    "max_active_quests": 10,
     "quest_rotation_turns": 120,
     "min_quests_per_location": 2,
     "max_quests_per_location": 3
