@@ -2660,7 +2660,7 @@ PREDEFINED_ITEMS = {
     "book_battle_cry": SkillBookItem("Книга Боевого Клича", "battle_cry", 400, 0.5, ItemQuality.EPIC),
 
     # Книги атакующих магических умений (очень дорогие)
-    "book_magic_missile": SkillBookItem("Книга Магической Стрелы", "magic_missile", 800, 0.5, ItemQuality.RARE),
+    "book_magic_missile": SkillBookItem("Книга Магической Стрелы", "magic_missile", 200, 0.5, ItemQuality.UNCOMMON),
     "book_fireball": SkillBookItem("Книга Огненного Шара", "fireball", 2000, 0.5, ItemQuality.EPIC),
     "book_ice_bolt": SkillBookItem("Книга Ледяной Стрелы", "ice_bolt", 1500, 0.5, ItemQuality.EPIC),
     "book_lightning": SkillBookItem("Книга Молнии", "lightning", 3500, 0.5, ItemQuality.LEGENDARY),

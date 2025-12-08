@@ -763,8 +763,8 @@ class WorldRenderer:
 
     def render_minimap(self):
         """Отрисовка мини-карты"""
-        # Размеры мини-карты (масштабируются под разрешение, увеличено на 30%)
-        base_size = 150 * 1.3  # 195 пикселей базовый размер
+        # Размеры мини-карты (масштабируются под разрешение, увеличено на 40% для лучшей видимости)
+        base_size = 150 * 1.4  # 210 пикселей базовый размер (было 195)
         minimap_size = self.ctx.ui_scaler.scale_value(int(base_size))
         margin = self.ctx.ui_scaler.scale_value(10)
         panel_height = self.ctx.ui_scaler.scale_value(100)  # Высота нижней панели
@@ -772,7 +772,12 @@ class WorldRenderer:
         # Позиция в правом нижнем углу над панелью
         minimap_x = self.ctx.window_width - minimap_size - margin
         minimap_y = self.ctx.window_height - minimap_size - panel_height - margin
-        pixel_per_tile = minimap_size / 100  # Адаптивный размер тайла
+
+        # Статичная карта: показываем всю карту целиком, масштабируя её
+        # Вычисляем масштаб для отображения всей карты
+        map_width = self.ctx.game_map.width
+        map_height = self.ctx.game_map.height
+        pixel_per_tile = min(minimap_size / map_width, minimap_size / map_height)
 
         # Фон мини-карты
         pygame.draw.rect(
@@ -781,22 +786,17 @@ class WorldRenderer:
             (minimap_x, minimap_y, minimap_size, minimap_size)
         )
 
-        # Рамка мини-карты
+        # Рамка мини-карты (увеличена толщина до 3 пикселей)
         pygame.draw.rect(
             self.ctx.screen,
             COLORS['text'],
             (minimap_x, minimap_y, minimap_size, minimap_size),
-            2
+            3
         )
 
-        # Вычисляем область карты для отображения (вокруг игрока)
-        map_view_radius = int(minimap_size / pixel_per_tile / 2)
-
-        for dy in range(-map_view_radius, map_view_radius):
-            for dx in range(-map_view_radius, map_view_radius):
-                map_x = self.ctx.player.x + dx
-                map_y = self.ctx.player.y + dy
-
+        # Отображаем всю карту статично
+        for map_y in range(map_height):
+            for map_x in range(map_width):
                 if not self.ctx.game_map.is_valid_position(map_x, map_y):
                     continue
 
@@ -804,9 +804,9 @@ class WorldRenderer:
 
                 # Отображаем только исследованные тайлы
                 if tile.explored:
-                    # Позиция на мини-карте
-                    minimap_px = minimap_x + int((dx + map_view_radius) * pixel_per_tile)
-                    minimap_py = minimap_y + int((dy + map_view_radius) * pixel_per_tile)
+                    # Позиция на мини-карте (статичная, без центрирования на игроке)
+                    minimap_px = minimap_x + int(map_x * pixel_per_tile)
+                    minimap_py = minimap_y + int(map_y * pixel_per_tile)
 
                     # Определяем цвет
                     if tile.has_location():
@@ -818,16 +818,16 @@ class WorldRenderer:
                     color = tuple(c // 2 for c in color)
 
                     # Отрисовка пикселя тайла (размер +1 для устранения зазоров-сетки)
-                    tile_draw_size = int(pixel_per_tile) + 1
+                    tile_draw_size = max(1, int(pixel_per_tile))
                     pygame.draw.rect(
                         self.ctx.screen,
                         color,
                         (minimap_px, minimap_py, tile_draw_size, tile_draw_size)
                     )
 
-        # Отметка игрока на мини-карте (в центре)
-        player_minimap_x = minimap_x + minimap_size // 2
-        player_minimap_y = minimap_y + minimap_size // 2
+        # Отметка игрока на мини-карте (в соответствующей позиции на статичной карте)
+        player_minimap_x = minimap_x + int(self.ctx.player.x * pixel_per_tile)
+        player_minimap_y = minimap_y + int(self.ctx.player.y * pixel_per_tile)
 
         pygame.draw.circle(
             self.ctx.screen,
