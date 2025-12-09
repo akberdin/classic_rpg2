@@ -441,8 +441,9 @@ class TacticalCombatSystem:
             unit.y = target_y
             unit.has_acted = True
 
-            name = "Вы" if unit == self.player_unit else unit.character.name
-            self.add_to_log(f"{name} переместился с ({old_x}, {old_y}) на ({target_x}, {target_y})")
+            # Сообщение только для игрока, NPC перемещаются без лога
+            if unit == self.player_unit:
+                self.add_to_log(f"Вы переместились с ({old_x}, {old_y}) на ({target_x}, {target_y})")
             return True
         return False
 
