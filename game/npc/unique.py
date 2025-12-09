@@ -15,6 +15,7 @@ class Alchemist(Merchant):
     """
     Алхимик - специализируется на зельях и магических ингредиентах.
     Дает уникальные квесты на сбор редких материалов.
+    Бродит вокруг своей лавки и убегает от врагов.
     """
 
     def __init__(self, name, x=0, y=0, level=10):
@@ -29,10 +30,22 @@ class Alchemist(Merchant):
         """
         super().__init__(name, x, y, level)
         self.npc_type = "alchemist"
-        # Алхимики не путешествуют, всегда отдыхают (для ротации товаров)
-        self.state = "rest"
+
+        # AI параметры для активного поведения
+        self.state = "wander"  # wander, rest, flee
+        self.home_x = x  # Базовая позиция (лавка)
+        self.home_y = y
+        self.max_distance_from_home = 15  # Максимальная дистанция от лавки
+        self.detection_range = 10  # Дальность обнаружения угроз
+        self.threat = None  # Текущая угроза от которой убегаем
+        self.wander_target = None  # Целевая точка для блуждания
         self.rest_counter = 0
-        self.rest_duration = 999999  # Бесконечный отдых
+        self.rest_duration = random.randint(2, 4)  # Короткий отдых 2-4 часа
+        self.steps_in_current_state = 0
+
+        # Состояние по умолчанию для расписания
+        self.default_state = "wander"
+
         self._adjust_alchemist_stats()
         self._generate_alchemist_goods()
 
@@ -96,6 +109,221 @@ class Alchemist(Merchant):
         # Добавляем золото для торговли
         self.inventory.add_gold(random.randint(500, 1500) * 3)
 
+    def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
+        """
+        Обновление AI алхимика за 1 час игрового времени
+
+        Args:
+            context_or_map: AIContext или карта игры
+            all_npcs: Список всех NPC для обнаружения угроз
+            current_hour: Текущий час суток (0-23)
+        """
+        # Поддержка AIContext и старого способа вызова
+        from game.core.ai_context import AIContext
+        if isinstance(context_or_map, AIContext):
+            context = context_or_map
+            game_map = context.game_map
+            all_npcs = context.all_npcs
+            current_hour = context.current_hour
+        else:
+            game_map = context_or_map
+
+        if not self.is_alive:
+            return
+
+        # Обновляем расписание (проверка времени активности)
+        self.update_schedule(current_hour, game_map)
+
+        # Если NPC скрыт (в локации), не обновляем AI
+        if self.is_hidden():
+            return
+
+        # Восстанавливаем выносливость
+        self.recover_stamina()
+
+        # Если отдыхаем из-за выносливости, ничего не делаем
+        if self.is_resting:
+            return
+
+        # Проверяем наличие угроз поблизости
+        if all_npcs:
+            self._check_for_threats(all_npcs)
+
+        self.steps_in_current_state += 1
+
+        if self.state == "flee":
+            self._flee_step(game_map)
+        elif self.state == "wander":
+            self._wander_step(game_map)
+        elif self.state == "rest":
+            self._rest_step()
+
+    def _check_for_threats(self, all_npcs):
+        """
+        Проверить наличие угроз поблизости
+
+        Args:
+            all_npcs: Список всех NPC
+        """
+        from game.constants import NPC_RELATIONSHIPS, RELATIONSHIP_NEUTRAL, RELATIONSHIP_HOSTILE, RELATIONSHIP_UNFRIENDLY
+
+        # Ищем ближайшую угрозу
+        closest_threat = None
+        closest_distance = float('inf')
+
+        for npc in all_npcs:
+            if not npc.is_alive:
+                continue
+            if npc == self:
+                continue
+
+            # Проверяем отношение к этому NPC
+            relationship = NPC_RELATIONSHIPS.get((self.npc_type, npc.npc_type), RELATIONSHIP_NEUTRAL)
+
+            if relationship in [RELATIONSHIP_HOSTILE, RELATIONSHIP_UNFRIENDLY]:
+                distance = abs(self.x - npc.x) + abs(self.y - npc.y)
+
+                # Если враг в зоне обнаружения
+                if distance <= self.detection_range and distance < closest_distance:
+                    closest_threat = npc
+                    closest_distance = distance
+
+        # Если есть угроза и есть выносливость для бегства, убегаем
+        if closest_threat and self.stamina > 0:
+            self.threat = closest_threat
+            self.state = "flee"
+            self.steps_in_current_state = 0
+        elif self.state == "flee" and not closest_threat:
+            # Если угрозы больше нет, возвращаемся к блужданию
+            self.threat = None
+            self.state = "wander"
+            self.steps_in_current_state = 0
+
+    def _flee_step(self, game_map):
+        """
+        Один шаг побега от угрозы
+
+        Args:
+            game_map: Объект карты игры
+        """
+        # Если угроза исчезла или мертва, возвращаемся к блужданию
+        if not self.threat or not self.threat.is_alive:
+            self.threat = None
+            self.state = "wander"
+            self.steps_in_current_state = 0
+            return
+
+        # Если нет выносливости, переходим в отдых
+        if self.stamina <= 0:
+            self.state = "rest"
+            self.steps_in_current_state = 0
+            return
+
+        # Убегаем в противоположную от угрозы сторону
+        dx_away = self.x - self.threat.x
+        dy_away = self.y - self.threat.y
+
+        # Нормализуем направление
+        if dx_away > 0:
+            dx = 1
+        elif dx_away < 0:
+            dx = -1
+        else:
+            dx = 0
+
+        if dy_away > 0:
+            dy = 1
+        elif dy_away < 0:
+            dy = -1
+        else:
+            dy = 0
+
+        # Если оба направления 0, выбираем случайное
+        if dx == 0 and dy == 0:
+            dx = random.choice([-1, 0, 1])
+            dy = random.choice([-1, 0, 1])
+
+        # Пытаемся двигаться (тратим выносливость)
+        if self.consume_stamina():
+            new_x = self.x + dx
+            new_y = self.y + dy
+
+            if self._can_move(new_x, new_y, game_map):
+                self.x = new_x
+                self.y = new_y
+            else:
+                # Если не можем идти прямо, пробуем другие направления
+                directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+                random.shuffle(directions)
+                for alt_dx, alt_dy in directions:
+                    new_x = self.x + alt_dx
+                    new_y = self.y + alt_dy
+                    if self._can_move(new_x, new_y, game_map):
+                        self.x = new_x
+                        self.y = new_y
+                        break
+
+    def _wander_step(self, game_map):
+        """
+        Один шаг блуждания вокруг лавки
+
+        Args:
+            game_map: Объект карты игры
+        """
+        # Проверяем расстояние до дома (лавки)
+        distance_to_home = abs(self.x - self.home_x) + abs(self.y - self.home_y)
+
+        # Если слишком далеко от дома, возвращаемся
+        if distance_to_home > self.max_distance_from_home:
+            dx, dy = self._find_next_step(self.home_x, self.home_y, game_map, max_search_distance=50)
+            if dx != 0 or dy != 0:
+                if self.consume_stamina():
+                    if self._can_move(self.x + dx, self.y + dy, game_map):
+                        self.x += dx
+                        self.y += dy
+            return
+
+        # Если достигли цели блуждания или цели нет, выбираем новую
+        if not self.wander_target or (self.x == self.wander_target[0] and self.y == self.wander_target[1]):
+            self._choose_wander_target()
+
+        # Идем к цели блуждания
+        if self.wander_target:
+            dx, dy = self._find_next_step(self.wander_target[0], self.wander_target[1], game_map, max_search_distance=30)
+            if dx != 0 or dy != 0:
+                if self.consume_stamina():
+                    if self._can_move(self.x + dx, self.y + dy, game_map):
+                        self.x += dx
+                        self.y += dy
+
+        # Случайный отдых (15% шанс - алхимики любят отдыхать и работать над зельями)
+        if random.random() < 0.15:
+            self.state = "rest"
+            self.rest_counter = 0
+            self.rest_duration = random.randint(2, 4)
+            self.steps_in_current_state = 0
+
+    def _choose_wander_target(self):
+        """Выбрать случайную точку для блуждания в пределах территории лавки"""
+        # Выбираем случайную точку в пределах радиуса от дома
+        max_offset = min(self.max_distance_from_home, 10)  # Ограничиваем радиус блуждания
+
+        target_x = self.home_x + random.randint(-max_offset, max_offset)
+        target_y = self.home_y + random.randint(-max_offset, max_offset)
+
+        self.wander_target = (target_x, target_y)
+
+    def _rest_step(self):
+        """Отдых - обновляется каждый игровой час"""
+        # Восстанавливаем выносливость активно во время отдыха
+        self.recover_stamina(is_active_rest=True)
+
+        self.rest_counter += 1
+        if self.rest_counter >= self.rest_duration:
+            self.state = "wander"
+            self.rest_counter = 0
+            self.steps_in_current_state = 0
+            self.rest_duration = random.randint(2, 4)
 
 
 class Hunter(NPC):
