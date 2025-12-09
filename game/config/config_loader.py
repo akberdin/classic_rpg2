@@ -336,7 +336,7 @@ class UIConfig(ConfigLoader):
 
 
 class AssetsConfig(ConfigLoader):
-    """Конфигурация ассетов - спрайты"""
+    """Конфигурация ассетов - спрайты NPC, локаций, биомов, навыков, зелий"""
 
     def __init__(self):
         super().__init__('assets_config')
@@ -356,6 +356,10 @@ class AssetsConfig(ConfigLoader):
     def get_skill_sprite(self, skill_name: str, default=None):
         """Получить путь к спрайту навыка"""
         return self.get('skills', skill_name, default=default)
+
+    def get_potion_sprite(self, potion_id: str, default=None):
+        """Получить путь к спрайту зелья"""
+        return self.get('potions', potion_id, default=default)
 
     def get_sprite_size(self, default=64):
         """Получить размер спрайта"""

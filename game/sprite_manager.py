@@ -9,12 +9,15 @@ import os
 class SpriteManager:
     """Класс для загрузки и управления спрайтами"""
 
-    def __init__(self, config_path="sprites_config.json", tile_size=32):
+    # Путь к единому конфигу ассетов
+    DEFAULT_CONFIG_PATH = "game/config/assets_config.json"
+
+    def __init__(self, config_path=None, tile_size=32):
         """
         Инициализация менеджера спрайтов
 
         Args:
-            config_path: Путь к конфигурационному файлу
+            config_path: Путь к конфигурационному файлу (по умолчанию game/config/assets_config.json)
             tile_size: Размер клетки в пикселях
         """
         self.tile_size = tile_size
@@ -23,7 +26,8 @@ class SpriteManager:
         self.sprite_size = 64  # Размер исходных спрайтов
 
         # Загружаем конфигурацию
-        self.load_config(config_path)
+        actual_config_path = config_path if config_path else self.DEFAULT_CONFIG_PATH
+        self.load_config(actual_config_path)
 
         # Загружаем спрайты
         self.load_sprites()
@@ -54,9 +58,18 @@ class SpriteManager:
         if not self.config:
             return
 
-        # Загружаем спрайты NPC
-        for npc_type, sprite_path in self.config.get('npcs', {}).items():
-            self.load_sprite(npc_type, sprite_path, 'npc')
+        # Загружаем спрайты NPC (с поддержкой вложенной структуры)
+        for npc_type, sprite_data in self.config.get('npcs', {}).items():
+            if isinstance(sprite_data, dict):
+                # Новая вложенная структура: {default: ..., novice: ..., regular: ...}
+                for rank, sprite_path in sprite_data.items():
+                    if rank == 'default':
+                        self.load_sprite(npc_type, sprite_path, 'npc')
+                    else:
+                        self.load_sprite(f"{npc_type}_{rank}", sprite_path, 'npc')
+            else:
+                # Старая плоская структура: строка с путем
+                self.load_sprite(npc_type, sprite_data, 'npc')
 
         # Загружаем спрайты локаций
         for location_type, sprite_path in self.config.get('locations', {}).items():
@@ -70,6 +83,10 @@ class SpriteManager:
         for skill_id, sprite_path in self.config.get('skills', {}).items():
             self.load_skill_sprite(skill_id, sprite_path)
 
+        # Загружаем спрайты зелий
+        for potion_id, sprite_path in self.config.get('potions', {}).items():
+            self.load_sprite(potion_id, sprite_path, 'potion')
+
         print(f"Загружено спрайтов: {len(self.sprites)}")
 
     def load_sprite(self, sprite_type, sprite_path, category):
@@ -79,7 +96,7 @@ class SpriteManager:
         Args:
             sprite_type: Тип спрайта (guard, city, forest и т.д.)
             sprite_path: Путь к файлу спрайта
-            category: Категория (npc, location, biome)
+            category: Категория (npc, location, biome, potion)
         """
         if not os.path.exists(sprite_path):
             # Спрайт не найден, будет использоваться fallback
@@ -105,7 +122,7 @@ class SpriteManager:
 
         Args:
             sprite_type: Тип спрайта
-            category: Категория (npc, location, biome)
+            category: Категория (npc, location, biome, potion)
 
         Returns:
             pygame.Surface или None если спрайт не найден
@@ -160,7 +177,7 @@ class SpriteManager:
 
         Args:
             sprite_type: Тип спрайта
-            category: Категория (npc, location, biome)
+            category: Категория (npc, location, biome, potion)
 
         Returns:
             bool: True если спрайт загружен
@@ -336,6 +353,37 @@ class SpriteManager:
             icon_rect.center = (x + size // 2, y + size // 2)
             screen.blit(icon_text, icon_rect)
         return False
+
+    def get_potion_sprite(self, potion_id, icon_size=None):
+        """
+        Получить спрайт зелья
+
+        Args:
+            potion_id: ID зелья (minor_health_potion, mana_potion, etc.)
+            icon_size: Размер иконки (если нужен масштабированный вариант)
+
+        Returns:
+            pygame.Surface или None если спрайт не найден
+        """
+        sprite = self.get_sprite(potion_id, 'potion')
+
+        # Если нужен конкретный размер, масштабируем
+        if sprite and icon_size:
+            return pygame.transform.scale(sprite, (icon_size, icon_size))
+
+        return sprite
+
+    def has_potion_sprite(self, potion_id):
+        """
+        Проверить, есть ли спрайт для зелья
+
+        Args:
+            potion_id: ID зелья
+
+        Returns:
+            bool: True если спрайт загружен
+        """
+        return self.has_sprite(potion_id, 'potion')
 
     def update_tile_size(self, new_tile_size):
         """
