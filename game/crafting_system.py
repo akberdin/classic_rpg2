@@ -270,7 +270,7 @@ class CraftingSystem:
 
         if result_item is None:
             # Fallback на PREDEFINED_ITEMS
-            from game.inventory import PREDEFINED_ITEMS
+            from game.item_registry import get_item
             result_item = PREDEFINED_ITEMS.get(recipe.result_item)
 
         if result_item:

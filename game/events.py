@@ -572,7 +572,7 @@ class RandomEventSystem:
 
     def _lucky_find(self, player, game):
         """Удачная находка - получить случайный предмет"""
-        from game.inventory import PREDEFINED_ITEMS
+        from game.item_registry import get_item
 
         # Список возможных находок
         possible_items = [
@@ -581,8 +581,8 @@ class RandomEventSystem:
         ]
 
         item_id = random.choice(possible_items)
-        if item_id in PREDEFINED_ITEMS:
-            item = PREDEFINED_ITEMS[item_id]
+        item = get_item(item_id)
+        if item:
             player.inventory.add_item(item, 1)
             return [f"  Получено: {item.name}"]
         return []
@@ -670,14 +670,14 @@ class RandomEventSystem:
 
     def _rare_herb(self, player, game):
         """Редкая трава"""
-        from game.inventory import PREDEFINED_ITEMS
+        from game.item_registry import get_item
 
         # Даём несколько зелий
         potions = ["health_potion", "mana_potion"]
         results = []
         for potion_id in potions:
-            if potion_id in PREDEFINED_ITEMS:
-                item = PREDEFINED_ITEMS[potion_id]
+            item = get_item(potion_id)
+            if item:
                 quantity = random.randint(1, 3)
                 player.inventory.add_item(item, quantity)
                 results.append(f"  Получено: {item.name} x{quantity}")
@@ -739,7 +739,7 @@ class RandomEventSystem:
 
     def _ancient_artifact(self, player, game):
         """Древний артефакт"""
-        from game.inventory import PREDEFINED_ITEMS
+        from game.item_registry import get_item
 
         gold = random.randint(50, 100) * player.level
         exp = random.randint(40, 70) * player.level
@@ -747,8 +747,8 @@ class RandomEventSystem:
         player.add_experience(exp)
 
         # Шанс на особый предмет
-        if random.random() < 0.3 and "artifact_fragment" in PREDEFINED_ITEMS:
-            item = PREDEFINED_ITEMS["artifact_fragment"]
+        item = get_item("artifact_fragment")
+        if random.random() < 0.3 and item:
             player.inventory.add_item(item, 1)
             return [f"  Получено {gold} золота, {exp} опыта и {item.name}"]
         return [f"  Получено {gold} золота и {exp} опыта"]

@@ -6,7 +6,7 @@
 import json
 import os
 import random
-from game.inventory import ItemGenerator, PREDEFINED_ITEMS
+from game.inventory import ItemGenerator
 from game.item_registry import get_item, has_item
 
 
@@ -53,7 +53,7 @@ class LootSystem:
 
     def _get_item_safe(self, item_id):
         """
-        Безопасно получить предмет по ID с fallback на PREDEFINED_ITEMS.
+        Безопасно получить предмет по ID.
 
         Args:
             item_id: Идентификатор предмета
@@ -61,12 +61,7 @@ class LootSystem:
         Returns:
             Item: Объект предмета или None
         """
-        # Сначала пробуем ItemRegistry
-        item = get_item(item_id)
-        if item:
-            return item
-        # Fallback на PREDEFINED_ITEMS
-        return PREDEFINED_ITEMS.get(item_id)
+        return get_item(item_id)
 
     def _get_quality_weights(self, enemy_level):
         """Получить веса качества для уровня врага из конфига."""

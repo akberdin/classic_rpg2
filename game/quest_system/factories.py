@@ -3,7 +3,7 @@
 """
 import random
 from game.config.config_loader import get_quest_config
-from game.inventory import PREDEFINED_ITEMS
+from game.item_registry import get_item
 from .models import Quest, QuestObjective, QuestType, QuestDifficulty
 
 
@@ -79,7 +79,7 @@ def create_starter_quests():
     ]
     rewards = {
         'exp': 120,
-        'items': [(PREDEFINED_ITEMS["poor_pickaxe"], 1)]
+        'items': [(get_item("poor_pickaxe"), 1)]
     }
     quest4 = Quest(
         quest_id="lumberjack_start",
@@ -146,7 +146,7 @@ def create_unique_quests():
     Returns:
         list: Список уникальных квестов
     """
-    from game.inventory import PREDEFINED_ITEMS
+    from game.item_registry import get_item
 
     quests = []
 
@@ -161,8 +161,8 @@ def create_unique_quests():
         'exp': 500,
         'gold': 300,
         'items': [
-            (PREDEFINED_ITEMS["elixir_of_life"], 2),
-            (PREDEFINED_ITEMS["elixir_of_power"], 3),
+            (get_item("elixir_of_life"), 2),
+            (get_item("elixir_of_power"), 3),
         ]
     }
     quest = Quest(
@@ -189,8 +189,8 @@ def create_unique_quests():
         'exp': 1500,
         'gold': 1200,
         'items': [
-            (PREDEFINED_ITEMS["alchemists_staff"], 1),
-            (PREDEFINED_ITEMS["book_heal"], 1),
+            (get_item("alchemists_staff"), 1),
+            (get_item("book_heal"), 1),
         ]
     }
     quest = Quest(
@@ -217,7 +217,7 @@ def create_unique_quests():
         'exp': 600,
         'gold': 400,
         'items': [
-            (PREDEFINED_ITEMS["hunters_bow"], 1),
+            (get_item("hunters_bow"), 1),
         ]
     }
     quest = Quest(
@@ -243,8 +243,8 @@ def create_unique_quests():
         'exp': 800,
         'gold': 600,
         'items': [
-            (PREDEFINED_ITEMS["shadow_blade"], 1),
-            (PREDEFINED_ITEMS["greater_health_potion"], 5),
+            (get_item("shadow_blade"), 1),
+            (get_item("greater_health_potion"), 5),
         ]
     }
     quest = Quest(
@@ -272,8 +272,8 @@ def create_unique_quests():
         'exp': 2500,
         'gold': 1500,
         'items': [
-            (PREDEFINED_ITEMS["book_power_strike"], 1),
-            (PREDEFINED_ITEMS["book_battle_cry"], 1),
+            (get_item("book_power_strike"), 1),
+            (get_item("book_battle_cry"), 1),
         ]
     }
     quest = Quest(
@@ -299,8 +299,8 @@ def create_unique_quests():
         'exp': 3000,
         'gold': 2000,
         'items': [
-            (PREDEFINED_ITEMS["book_fireball"], 1),
-            (PREDEFINED_ITEMS["book_lightning"], 1),
+            (get_item("book_fireball"), 1),
+            (get_item("book_lightning"), 1),
         ]
     }
     quest = Quest(
@@ -330,7 +330,7 @@ def create_unique_quests():
         'exp': 1000,
         'gold': 1200,
         'items': [
-            (PREDEFINED_ITEMS["book_regeneration"], 1),
+            (get_item("book_regeneration"), 1),
         ]
     }
     quest = Quest(
@@ -356,8 +356,8 @@ def create_unique_quests():
         'exp': 1500,
         'gold': 1000,
         'items': [
-            (PREDEFINED_ITEMS["book_magic_missile"], 1),
-            (PREDEFINED_ITEMS["book_ice_bolt"], 1),
+            (get_item("book_magic_missile"), 1),
+            (get_item("book_ice_bolt"), 1),
         ]
     }
     quest = Quest(
@@ -383,7 +383,7 @@ def create_unique_quests():
         'exp': 700,
         'gold': 500,
         'items': [
-            (PREDEFINED_ITEMS["stamina_potion"], 5),
+            (get_item("stamina_potion"), 5),
         ]
     }
     quest = Quest(
@@ -414,7 +414,7 @@ def get_unique_quest_for_location(location_type, location_name):
     Returns:
         Quest или None: Уникальный квест или None если не повезло
     """
-    from game.inventory import PREDEFINED_ITEMS
+    from game.item_registry import get_item
     from game.constants import LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL
 
     config = get_quest_config()
@@ -438,7 +438,7 @@ def get_unique_quest_for_location(location_type, location_name):
             'rewards': {
                 'exp': 400,
                 'gold': 350,
-                'items': [(PREDEFINED_ITEMS["steel_sword"], 1)]
+                'items': [(get_item("steel_sword"), 1)]
             },
             'quest_type': QuestType.GATHER_RESOURCE,
             'difficulty': QuestDifficulty.MEDIUM,
@@ -455,7 +455,7 @@ def get_unique_quest_for_location(location_type, location_name):
             'rewards': {
                 'exp': 600,
                 'gold': 500,
-                'items': [(PREDEFINED_ITEMS["greater_health_potion"], 3)]
+                'items': [(get_item("greater_health_potion"), 3)]
             },
             'quest_type': QuestType.KILL_ENEMIES,
             'difficulty': QuestDifficulty.HARD,
@@ -473,7 +473,7 @@ def get_unique_quest_for_location(location_type, location_name):
             'rewards': {
                 'exp': 500,
                 'gold': 600,
-                'items': [(PREDEFINED_ITEMS["elixir_of_power"], 2)]
+                'items': [(get_item("elixir_of_power"), 2)]
             },
             'quest_type': QuestType.GATHER_RESOURCE,
             'difficulty': QuestDifficulty.HARD,
@@ -493,7 +493,7 @@ def get_unique_quest_for_location(location_type, location_name):
             'rewards': {
                 'exp': 250,
                 'gold': 150,
-                'items': [(PREDEFINED_ITEMS["health_potion"], 5)]
+                'items': [(get_item("health_potion"), 5)]
             },
             'quest_type': QuestType.GATHER_RESOURCE,
             'difficulty': QuestDifficulty.EASY,
@@ -510,7 +510,7 @@ def get_unique_quest_for_location(location_type, location_name):
             'rewards': {
                 'exp': 300,
                 'gold': 200,
-                'items': [(PREDEFINED_ITEMS["hunters_bow"], 1)]
+                'items': [(get_item("hunters_bow"), 1)]
             },
             'quest_type': QuestType.KILL_ENEMIES,
             'difficulty': QuestDifficulty.MEDIUM,
@@ -527,7 +527,7 @@ def get_unique_quest_for_location(location_type, location_name):
             'rewards': {
                 'exp': 200,
                 'gold': 180,
-                'items': [(PREDEFINED_ITEMS["mana_potion"], 3)]
+                'items': [(get_item("mana_potion"), 3)]
             },
             'quest_type': QuestType.GATHER_RESOURCE,
             'difficulty': QuestDifficulty.EASY,
@@ -548,7 +548,7 @@ def get_unique_quest_for_location(location_type, location_name):
             'rewards': {
                 'exp': 800,
                 'gold': 600,
-                'items': [(PREDEFINED_ITEMS["book_magic_missile"], 1)]
+                'items': [(get_item("book_magic_missile"), 1)]
             },
             'quest_type': QuestType.GATHER_RESOURCE,
             'difficulty': QuestDifficulty.HARD,
@@ -565,7 +565,7 @@ def get_unique_quest_for_location(location_type, location_name):
             'rewards': {
                 'exp': 700,
                 'gold': 400,
-                'items': [(PREDEFINED_ITEMS["book_fireball"], 1)]
+                'items': [(get_item("book_fireball"), 1)]
             },
             'quest_type': QuestType.KILL_ENEMIES,
             'difficulty': QuestDifficulty.HARD,
@@ -582,7 +582,7 @@ def get_unique_quest_for_location(location_type, location_name):
             'rewards': {
                 'exp': 600,
                 'gold': 500,
-                'items': [(PREDEFINED_ITEMS["book_ice_bolt"], 1)]
+                'items': [(get_item("book_ice_bolt"), 1)]
             },
             'quest_type': QuestType.GATHER_RESOURCE,
             'difficulty': QuestDifficulty.HARD,
@@ -600,8 +600,8 @@ def get_unique_quest_for_location(location_type, location_name):
                 'exp': 1500,
                 'gold': 1000,
                 'items': [
-                    (PREDEFINED_ITEMS["book_lightning"], 1),
-                    (PREDEFINED_ITEMS["elixir_of_life"], 2)
+                    (get_item("book_lightning"), 1),
+                    (get_item("elixir_of_life"), 2)
                 ]
             },
             'quest_type': QuestType.KILL_ENEMIES,

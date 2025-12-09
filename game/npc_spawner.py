@@ -3,7 +3,8 @@
 """
 import random
 from game.npc import Guard, Merchant, MagicMerchant, WarriorMerchant, MagePatrol, Bandit, Miner, Undead, Alchemist, Hunter, Necromancer, Wolf, Bear, Deer
-from game.inventory import PREDEFINED_ITEMS, ItemGenerator, ItemQuality
+from game.inventory import ItemGenerator, ItemQuality
+from game.item_registry import get_item
 from game.constants import (
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
     LOCATION_MINE, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, BIOME_FOREST
@@ -1022,8 +1023,8 @@ def give_starting_items(player):
     player.inventory.add_gold(50)
 
     # Стартовые зелья
-    player.inventory.add_item(PREDEFINED_ITEMS["minor_health_potion"], 2)
-    player.inventory.add_item(PREDEFINED_ITEMS["minor_stamina_potion"], 1)
+    player.inventory.add_item(get_item("minor_health_potion"), 2)
+    player.inventory.add_item(get_item("minor_stamina_potion"), 1)
 
     # Стартовое оружие - только топор плохого качества
     # Генерируем бонусы из конфига для топора плохого качества
