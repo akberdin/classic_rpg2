@@ -1341,6 +1341,7 @@ class Inventory:
         Returns:
             bool: True если успешно добавлен
         """
+        from game.item_registry import get_item
         # Для добавления ресурса нужно получить объект предмета
         if get_item(resource_name):
             resource_item = get_item(resource_name)
@@ -2015,9 +2016,9 @@ class ItemGenerator:
         Returns:
             list: Список (item, quantity)
         """
-        loot = []
-
+        from game.item_registry import get_item
         from game.constants import LOCATION_MINE, LOCATION_RUINS, LOCATION_BANDIT_CAMP
+        loot = []
 
         if location_type == LOCATION_MINE:
             # Руда из шахт - удача влияет на тип руды
@@ -2412,6 +2413,7 @@ class ItemGenerator:
         Returns:
             list: Список предметов лута
         """
+        from game.item_registry import get_item
         loot = []
 
         if npc_type == "wolf":
@@ -2496,6 +2498,7 @@ def get_predefined_item(item_id):
     Returns:
         Item: Объект предмета или None
     """
+    from game.item_registry import get_item
     return get_item(item_id)
 
 
