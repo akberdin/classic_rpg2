@@ -1342,9 +1342,8 @@ class Inventory:
             bool: True если успешно добавлен
         """
         # Для добавления ресурса нужно получить объект предмета
-        from game.inventory import PREDEFINED_ITEMS
-        if resource_name in PREDEFINED_ITEMS:
-            resource_item = PREDEFINED_ITEMS[resource_name]
+        if get_item(resource_name):
+            resource_item = get_item(resource_name)
             return self.add_item(resource_item, quantity)
         return False
 
@@ -2038,12 +2037,12 @@ class ItemGenerator:
                 ]
                 ore_type = random.choices(ores, weights=weights)[0]
                 quantity = random.randint(1, 3)
-                loot.append((PREDEFINED_ITEMS[ore_type], quantity))
+                loot.append((get_item(ore_type), quantity))
 
                 # Шанс доп. руды от удачи (также уменьшен)
                 if ItemGenerator.check_extra_item_drop(luck) and random.random() < 0.1:
                     extra_ore = random.choices(ores, weights=weights)[0]
-                    loot.append((PREDEFINED_ITEMS[extra_ore], 1))
+                    loot.append((get_item(extra_ore), 1))
 
         elif location_type == LOCATION_RUINS:
             # Артефакты из руин
@@ -2057,7 +2056,7 @@ class ItemGenerator:
             ]
             artifact_type = random.choices(artifacts, weights=weights)[0]
             quantity = random.randint(1, 2)
-            loot.append((PREDEFINED_ITEMS[artifact_type], quantity))
+            loot.append((get_item(artifact_type), quantity))
 
             # Шанс найти экипировку (базовый + бонус от удачи)
             equip_chance = 0.4 + min(luck * 0.01, 0.20)  # Макс +20%
@@ -2082,12 +2081,12 @@ class ItemGenerator:
             if random.random() < potion_chance:
                 potions = ["minor_health_potion", "health_potion", "minor_mana_potion"]
                 potion_type = random.choice(potions)
-                loot.append((PREDEFINED_ITEMS[potion_type], 1))
+                loot.append((get_item(potion_type), 1))
 
             # Дополнительный предмет от удачи
             if ItemGenerator.check_extra_item_drop(luck):
                 extra_artifact = random.choices(artifacts, weights=weights)[0]
-                loot.append((PREDEFINED_ITEMS[extra_artifact], 1))
+                loot.append((get_item(extra_artifact), 1))
 
             # Шанс найти книгу умений в руинах (базовый 15% + бонус от удачи до 10%)
             book_chance = 0.15 + min(luck * 0.005, 0.10)
@@ -2110,8 +2109,8 @@ class ItemGenerator:
 
                 # Выбираем случайную книгу
                 book_id = random.choice(all_skill_books)
-                if book_id in PREDEFINED_ITEMS:
-                    loot.append((PREDEFINED_ITEMS[book_id], 1))
+                if get_item(book_id):
+                    loot.append((get_item(book_id), 1))
 
             # Шанс найти рецепт крафта в руинах (базовый 10% + бонус от удачи до 5%)
             recipe_chance = 0.10 + min(luck * 0.003, 0.05)
@@ -2121,8 +2120,8 @@ class ItemGenerator:
                     "recipe_gold_ingot", "recipe_mithril_ingot"
                 ]
                 recipe_id = random.choice(recipes)
-                if recipe_id in PREDEFINED_ITEMS:
-                    loot.append((PREDEFINED_ITEMS[recipe_id], 1))
+                if get_item(recipe_id):
+                    loot.append((get_item(recipe_id), 1))
 
         elif location_type == LOCATION_BANDIT_CAMP:
             # Бандиты могут иметь разное снаряжение
