@@ -140,13 +140,14 @@ class Merchant(NPC):
     def _get_recipes_for_rank(self, rank):
         """Получить рецепты для данного ранга с механизмом автоматического определения ранга"""
         from game.inventory import ItemQuality
+        from game.item_registry import ItemRegistry
 
         # Группируем все рецепты по качеству предмета, который они создают
-        all_recipe_ids = [key for key in PREDEFINED_ITEMS.keys() if key.startswith("recipe_")]
+        all_recipe_ids = ItemRegistry.get_instance().get_items_by_type('recipes')
 
         rank_recipes = []
         for recipe_id in all_recipe_ids:
-            recipe_item = PREDEFINED_ITEMS[recipe_id]
+            recipe_item = get_item(recipe_id)
             recipe_quality = recipe_item.quality
 
             # Определяем ранг рецепта по качеству
@@ -183,8 +184,8 @@ class Merchant(NPC):
 
         allowed_books = []
         for book_id in combat_books:
-            if get_item(book_id):
-                book = PREDEFINED_ITEMS[book_id]
+            book = get_item(book_id)
+            if book:
                 book_quality = book.quality
 
                 # Фильтруем по качеству в зависимости от ранга
@@ -306,7 +307,7 @@ class Merchant(NPC):
         for resource_id, (min_qty, max_qty) in resources.items():
             if get_item(resource_id):
                 quantity = random.randint(min_qty, max_qty)
-                self.inventory.add_item(PREDEFINED_ITEMS[resource_id], quantity)
+                self.inventory.add_item(get_item(resource_id), quantity)
 
         # Генерируем книги умений (только не магические)
         allowed_books = self._get_books_for_rank(rank)
@@ -325,7 +326,7 @@ class Merchant(NPC):
             if num_books > 0:
                 selected_books = random.sample(allowed_books, min(num_books, len(allowed_books)))
                 for book_id in selected_books:
-                    self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
+                    self.inventory.add_item(get_item(book_id), 1)
 
         # Генерируем рецепты
         allowed_recipes = self._get_recipes_for_rank(rank)
@@ -344,7 +345,7 @@ class Merchant(NPC):
             if num_recipes > 0:
                 selected_recipes = random.sample(allowed_recipes, min(num_recipes, len(allowed_recipes)))
                 for recipe_id in selected_recipes:
-                    self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
+                    self.inventory.add_item(get_item(recipe_id), 1)
 
 
     def set_settlements(self, settlements):
@@ -665,25 +666,26 @@ class MagicMerchant(Merchant):
         # Добавляем все доступные магические книги (гарантируем минимум 5)
         books_added = 0
         for book_id in magic_books:
-            if get_item(book_id):
-                book = PREDEFINED_ITEMS[book_id]
+            book = get_item(book_id)
+            if book:
                 if book.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE, ItemQuality.EPIC]:
                     self.inventory.add_item(book, 1)
                     books_added += 1
 
         # Если меньше 5 книг, добавляем дубликаты
         if books_added < 5:
-            available_books = [bid for bid in magic_books if bid in PREDEFINED_ITEMS]
+            available_books = [bid for bid in magic_books if get_item(bid)]
             while books_added < 5 and available_books:
                 book_id = random.choice(available_books)
-                self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
+                self.inventory.add_item(get_item(book_id), 1)
                 books_added += 1
 
         # Рецепты: все ранги (POOR, COMMON, UNCOMMON, RARE), не менее 10
-        all_recipe_ids = [key for key in PREDEFINED_ITEMS.keys() if key.startswith("recipe_")]
+        from game.item_registry import ItemRegistry
+        all_recipe_ids = ItemRegistry.get_instance().get_items_by_type('recipes')
         all_rank_recipes = []
         for recipe_id in all_recipe_ids:
-            recipe_item = PREDEFINED_ITEMS[recipe_id]
+            recipe_item = get_item(recipe_id)
             # Рецепты всех рангов (POOR, COMMON, UNCOMMON, RARE)
             if recipe_item.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE]:
                 all_rank_recipes.append(recipe_id)
@@ -692,7 +694,7 @@ class MagicMerchant(Merchant):
         if all_rank_recipes:
             num_recipes = random.randint(10, min(15, len(all_rank_recipes)))
             for recipe_id in random.sample(all_rank_recipes, num_recipes):
-                self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
+                self.inventory.add_item(get_item(recipe_id), 1)
 
 
     def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
@@ -813,25 +815,26 @@ class WarriorMerchant(Merchant):
         # Добавляем все доступные воинские книги (гарантируем минимум 5)
         books_added = 0
         for book_id in warrior_books:
-            if get_item(book_id):
-                book = PREDEFINED_ITEMS[book_id]
+            book = get_item(book_id)
+            if book:
                 if book.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE, ItemQuality.EPIC]:
                     self.inventory.add_item(book, 1)
                     books_added += 1
 
         # Если меньше 5 книг, добавляем дубликаты
         if books_added < 5:
-            available_books = [bid for bid in warrior_books if bid in PREDEFINED_ITEMS]
+            available_books = [bid for bid in warrior_books if get_item(bid)]
             while books_added < 5 and available_books:
                 book_id = random.choice(available_books)
-                self.inventory.add_item(PREDEFINED_ITEMS[book_id], 1)
+                self.inventory.add_item(get_item(book_id), 1)
                 books_added += 1
 
         # Рецепты: все ранги (POOR, COMMON, UNCOMMON, RARE), не менее 10
-        all_recipe_ids = [key for key in PREDEFINED_ITEMS.keys() if key.startswith("recipe_")]
+        from game.item_registry import ItemRegistry
+        all_recipe_ids = ItemRegistry.get_instance().get_items_by_type('recipes')
         all_rank_recipes = []
         for recipe_id in all_recipe_ids:
-            recipe_item = PREDEFINED_ITEMS[recipe_id]
+            recipe_item = get_item(recipe_id)
             # Рецепты всех рангов (POOR, COMMON, UNCOMMON, RARE)
             if recipe_item.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE]:
                 all_rank_recipes.append(recipe_id)
@@ -840,7 +843,7 @@ class WarriorMerchant(Merchant):
         if all_rank_recipes:
             num_recipes = random.randint(10, min(15, len(all_rank_recipes)))
             for recipe_id in random.sample(all_rank_recipes, num_recipes):
-                self.inventory.add_item(PREDEFINED_ITEMS[recipe_id], 1)
+                self.inventory.add_item(get_item(recipe_id), 1)
 
     def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
         # Поддержка AIContext и старого способа вызова

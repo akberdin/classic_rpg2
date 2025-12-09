@@ -265,13 +265,7 @@ class CraftingSystem:
             inventory.remove_resource(item_name, quantity)
 
         # Добавляем созданный предмет
-        # Пытаемся получить предмет из ItemRegistry (или fallback на PREDEFINED_ITEMS)
         result_item = get_item(recipe.result_item)
-
-        if result_item is None:
-            # Fallback на PREDEFINED_ITEMS
-            from game.item_registry import get_item
-            result_item = PREDEFINED_ITEMS.get(recipe.result_item)
 
         if result_item:
             inventory.add_item(result_item, recipe.result_quantity)
