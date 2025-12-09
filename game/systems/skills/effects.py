@@ -8,6 +8,7 @@
 - StaminaRecoveryEffect - восстановление выносливости
 - StrengthBoostEffect - усиление силы
 - ShieldEffect - магический щит
+- BurnEffect - горение (урон от огня)
 """
 
 
@@ -284,3 +285,36 @@ class ArmorBreakEffect(StatusEffect):
         if hasattr(character, 'temp_defense_penalty'):
             character.temp_defense_penalty = max(0, character.temp_defense_penalty - self.defense_reduction)
         return f"Броня {character.name} восстановлена"
+
+
+class BurnEffect(StatusEffect):
+    """Эффект горения - наносит урон от огня каждый ход"""
+
+    def __init__(self, duration=2, damage_per_turn=5):
+        """
+        Инициализация эффекта горения
+
+        Args:
+            duration: Длительность в ходах (1-3)
+            damage_per_turn: Урон за ход
+        """
+        super().__init__(
+            name="Горение",
+            duration=duration,
+            description=f"Наносит {damage_per_turn} урона от огня каждый ход"
+        )
+        self.damage_per_turn = damage_per_turn
+
+    def apply(self, character):
+        """Применить эффект горения"""
+        return f"{character.name} охвачен пламенем! ({self.damage_per_turn} урона/ход на {self.duration} ходов)"
+
+    def tick(self, character):
+        """Нанести урон от огня"""
+        super().tick(character)
+        character.take_damage(self.damage_per_turn)
+        return f"{character.name} получает {self.damage_per_turn} урона от огня"
+
+    def remove(self, character):
+        """Снять эффект горения"""
+        return f"Пламя на {character.name} погасло"
