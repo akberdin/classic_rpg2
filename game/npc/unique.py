@@ -5,10 +5,10 @@ import random
 from game.npc.base import NPC
 from game.npc.merchant import Merchant
 from game.constants import (
-from game.item_registry import get_item
     RELATIONSHIP_HOSTILE, RELATIONSHIP_FRIENDLY, RELATIONSHIP_NEUTRAL,
     NPC_TYPE_UNDEAD
 )
+from game.item_registry import get_item
 
 
 class Alchemist(Merchant):
