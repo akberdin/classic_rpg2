@@ -1,58 +1,100 @@
 {
-  "_description": "Конфигурация ассетов - спрайты NPC, локаций, биомов, навыков",
-  "_version": "1.0.0",
+  "_description": "Единая конфигурация ассетов - спрайты NPC, локаций, биомов, навыков, предметов",
+  "_version": "2.0.0",
 
   "sprite_size": 64,
 
   "npcs": {
     "guard": {
-      "default": "assets/sprites/npcs/guard.png",
-      "novice": "assets/soldier/soldier1.png",
-      "regular": "assets/soldier/soldier2.png",
-      "veteran": "assets/soldier/soldier3.png",
-      "expert": "assets/soldier/soldier4.png"
+      "default": "assets/actors/soldier/soldier1.png",
+      "novice": "assets/actors/soldier/soldier1.png",
+      "regular": "assets/actors/soldier/soldier2.png",
+      "veteran": "assets/actors/soldier/soldier3.png",
+      "expert": "assets/actors/soldier/soldier4.png"
     },
     "merchant": {
-      "default": "assets/sprites/npcs/merchant.png",
-      "novice": "assets/trader/trader1.png",
-      "regular": "assets/trader/trader2.png",
-      "veteran": "assets/trader/trader3.png",
-      "expert": "assets/trader/trader4.png"
+      "default": "assets/actors/trader/trader1.png",
+      "novice": "assets/actors/trader/trader1.png",
+      "regular": "assets/actors/trader/trader2.png",
+      "veteran": "assets/actors/trader/trader3.png",
+      "expert": "assets/actors/trader/trader4.png"
     },
     "bandit": {
-      "default": "assets/sprites/npcs/bandit.png",
+      "default": "assets/actors/bandits/bandit1.png",
       "novice": "assets/actors/bandits/bandit1.png",
       "regular": "assets/actors/bandits/bandit2.png",
       "veteran": "assets/actors/bandits/bandit3.png",
       "expert": "assets/actors/bandits/bandit4.png"
     },
     "miner": {
-      "default": "assets/sprites/npcs/miner.png",
+      "default": "assets/actors/miners/miner1.png",
       "novice": "assets/actors/miners/miner1.png",
       "regular": "assets/actors/miners/miner2.png",
       "veteran": "assets/actors/miners/miner3.png",
       "expert": "assets/actors/miners/miner4.png"
     },
     "undead": {
-      "default": "assets/sprites/npcs/undead.png",
+      "default": "assets/actors/skeletons/skeleton1.png",
       "novice": "assets/actors/skeletons/skeleton1.png",
       "regular": "assets/actors/skeletons/skeleton2.png",
       "veteran": "assets/actors/skeletons/skeleton3.png",
       "expert": "assets/actors/skeletons/skeleton4.png"
     },
     "mage": {
-      "default": "assets/sprites/npcs/mage.png",
-      "novice": "assets/sprites/npcs/mage_novice.png",
-      "regular": "assets/sprites/npcs/mage_regular.png",
-      "veteran": "assets/sprites/npcs/mage_veteran.png",
-      "expert": "assets/sprites/npcs/mage_expert.png"
+      "default": "assets/actors/mage/mage1.png",
+      "novice": "assets/actors/mage/mage1.png",
+      "regular": "assets/actors/mage/mage2.png",
+      "veteran": "assets/actors/mage/mage3.png",
+      "expert": "assets/actors/mage/mage4.png"
     },
     "player": {
-      "default": "assets/sprites/player.png",
-      "novice": "assets/sprites/player_novice.png",
-      "regular": "assets/sprites/player_regular.png",
-      "veteran": "assets/sprites/player_veteran.png",
-      "expert": "assets/sprites/player_expert.png"
+      "default": "assets/actors/player/player1.png",
+      "novice": "assets/actors/player/player1.png",
+      "regular": "assets/actors/player/player2.png",
+      "veteran": "assets/actors/player/player3.png",
+      "expert": "assets/actors/player/player4.png"
+    },
+    "alchemist": {
+      "default": "assets/actors/alchemist/alchemist1.png",
+      "novice": "assets/actors/alchemist/alchemist1.png",
+      "regular": "assets/actors/alchemist/alchemist2.png",
+      "veteran": "assets/actors/alchemist/alchemist3.png",
+      "expert": "assets/actors/alchemist/alchemist4.png"
+    },
+    "hunter": {
+      "default": "assets/actors/hunter/hunter1.png",
+      "novice": "assets/actors/hunter/hunter1.png",
+      "regular": "assets/actors/hunter/hunter2.png",
+      "veteran": "assets/actors/hunter/hunter3.png",
+      "expert": "assets/actors/hunter/hunter4.png"
+    },
+    "necromancer": {
+      "default": "assets/actors/necro/necro1.png",
+      "novice": "assets/actors/necro/necro1.png",
+      "regular": "assets/actors/necro/necro2.png",
+      "veteran": "assets/actors/necro/necro3.png",
+      "expert": "assets/actors/necro/necro4.png"
+    },
+    "wolf": {
+      "default": "assets/actors/wolf/wolf1.png",
+      "novice": "assets/actors/wolf/wolf1.png",
+      "regular": "assets/actors/wolf/wolf2.png",
+      "veteran": "assets/actors/wolf/wolf3.png",
+      "expert": "assets/actors/wolf/wolf4.png"
+    },
+    "bear": {
+      "default": "assets/actors/bear/bear1.png",
+      "novice": "assets/actors/bear/bear1.png",
+      "regular": "assets/actors/bear/bear2.png",
+      "veteran": "assets/actors/bear/bear3.png",
+      "expert": "assets/actors/bear/bear4.png"
+    },
+    "deer": {
+      "default": "assets/actors/deer/deer1.png",
+      "novice": "assets/actors/deer/deer1.png",
+      "regular": "assets/actors/deer/deer2.png",
+      "veteran": "assets/actors/deer/deer3.png",
+      "expert": "assets/actors/deer/deer4.png"
     }
   },
 
@@ -75,34 +117,45 @@
   },
 
   "skills": {
-    "basic_attack": "assets/sprites/skills/basic_attack.png",
-    "power_strike": "assets/sprites/skills/power_strike.png",
-    "poison_strike": "assets/sprites/skills/poison_strike.png",
-    "stun_strike": "assets/sprites/skills/stun_strike.png",
-    "battle_cry": "assets/sprites/skills/battle_cry.png",
-    "heal": "assets/sprites/skills/heal.png",
-    "regeneration": "assets/sprites/skills/regeneration.png",
-    "stamina_recovery": "assets/sprites/skills/stamina_recovery.png",
-    "fireball": "assets/sprites/skills/fireball.png",
-    "ice_bolt": "assets/sprites/skills/ice_bolt.png",
-    "lightning": "assets/sprites/skills/lightning.png",
-    "magic_missile": "assets/sprites/skills/magic_missile.png",
-    "mining": "assets/sprites/skills/mining.png",
-    "lumberjacking": "assets/sprites/skills/lumberjacking.png",
-    "basic_shot": "assets/sprites/skills/basic_shot.png",
-    "precise_shot": "assets/sprites/skills/precise_shot.png",
-    "rapid_fire": "assets/sprites/skills/rapid_fire.png",
-    "piercing_arrow": "assets/sprites/skills/piercing_arrow.png",
-    "backstab": "assets/sprites/skills/backstab.png",
-    "bleeding_cut": "assets/sprites/skills/bleeding_cut.png",
-    "shadow_step": "assets/sprites/skills/shadow_step.png",
-    "whirlwind_strike": "assets/sprites/skills/whirlwind_strike.png",
-    "shield_breaker": "assets/sprites/skills/shield_breaker.png",
-    "blade_dance": "assets/sprites/skills/blade_dance.png",
-    "mage_shield": "assets/sprites/skills/mage_shield.png",
-    "lunge_strike": "assets/sprites/skills/lunge_strike.png",
-    "spear_sweep": "assets/sprites/skills/spear_sweep.png",
-    "armor_breach": "assets/sprites/skills/armor_breach.png"
+    "basic_attack": "assets/skills/basic.png",
+    "power_strike": "assets/skills/power_strike.png",
+    "poison_strike": "assets/skills/poison_strike.png",
+    "stun_strike": "assets/skills/stun_strike.png",
+    "battle_cry": "assets/skills/battle_cry.png",
+    "heal": "assets/skills/heal.png",
+    "regeneration": "assets/skills/regeneration.png",
+    "stamina_recovery": "assets/skills/stamina_recovery.png",
+    "mage_shield": "assets/skills/mage_shield.png",
+    "fireball": "assets/skills/fireball.png",
+    "ice_bolt": "assets/skills/ice_bolt.png",
+    "lightning": "assets/skills/lightning.png",
+    "magic_missile": "assets/skills/magic_missile.png",
+    "precise_shot": "assets/skills/precise_shot.png",
+    "rapid_fire": "assets/skills/rapid_fire.png",
+    "piercing_arrow": "assets/skills/piercing_arrow.png",
+    "backstab": "assets/skills/backstab.png",
+    "bleeding_cut": "assets/skills/bleeding_cut.png",
+    "shadow_step": "assets/skills/shadow_step.png",
+    "whirlwind_strike": "assets/skills/whirlwind_strike.png",
+    "shield_breaker": "assets/skills/shield_breaker.png",
+    "blade_dance": "assets/skills/blade_dance.png",
+    "mining": "assets/skills/mining.png",
+    "lumberjacking": "assets/skills/lumberjacking.png",
+    "lunge_strike": "assets/skills/lunge_strike.png",
+    "spear_sweep": "assets/skills/spear_sweep.png",
+    "armor_breach": "assets/skills/armor_breach.png"
+  },
+
+  "potions": {
+    "minor_health_potion": "assets/items/potions/minor_health_potion.png",
+    "health_potion": "assets/items/potions/health_potion.png",
+    "greater_health_potion": "assets/items/potions/greater_health_potion.png",
+    "minor_mana_potion": "assets/items/potions/minor_mana_potion.png",
+    "mana_potion": "assets/items/potions/mana_potion.png",
+    "minor_stamina_potion": "assets/items/potions/minor_stamina_potion.png",
+    "stamina_potion": "assets/items/potions/stamina_potion.png",
+    "elixir_of_life": "assets/items/potions/elixir_of_life.png",
+    "elixir_of_power": "assets/items/potions/elixir_of_power.png"
   },
 
   "fallback": {
