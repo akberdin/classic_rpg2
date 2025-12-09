@@ -362,21 +362,39 @@ class SkillBookWindow:
                 # Прогресс до следующего ранга (компактная версия для колонок)
                 info_y = skill_y + 60
                 if skill.rank < skill.max_rank:
-                    # Опыт и использования
-                    cond_text1 = self.info_font.render(
-                        f"Опыт: {skill.experience}/{skill.experience_to_next_rank} | Исп: {skill.use_count}/{skill.get_required_uses_for_rank()}",
-                        True,
-                        (180, 180, 180)
-                    )
-                    self.screen.blit(cond_text1, (skill_x + 10, info_y))
+                    # Опыт и использования (для пассивных крафтовых умений только опыт)
+                    if hasattr(skill, 'is_assignable_to_quickbar') and not skill.is_assignable_to_quickbar():
+                        # Пассивное крафтовое умение - только опыт
+                        cond_text1 = self.info_font.render(
+                            f"Опыт: {skill.experience}/{skill.experience_to_next_rank}",
+                            True,
+                            (180, 180, 180)
+                        )
+                        self.screen.blit(cond_text1, (skill_x + 10, info_y))
 
-                    # Уровень и золото
-                    cond_text2 = self.info_font.render(
-                        f"Ур: {skill.get_required_player_level_for_rank()} | Золото: {skill.get_gold_cost_for_rank()}",
-                        True,
-                        (255, 200, 100)
-                    )
-                    self.screen.blit(cond_text2, (skill_x + 10, info_y + 16))
+                        # Только золото для пассивных умений
+                        cond_text2 = self.info_font.render(
+                            f"Золото: {skill.get_gold_cost_for_rank()}",
+                            True,
+                            (255, 200, 100)
+                        )
+                        self.screen.blit(cond_text2, (skill_x + 10, info_y + 16))
+                    else:
+                        # Активное умение - опыт и использования
+                        cond_text1 = self.info_font.render(
+                            f"Опыт: {skill.experience}/{skill.experience_to_next_rank} | Исп: {skill.use_count}/{skill.get_required_uses_for_rank()}",
+                            True,
+                            (180, 180, 180)
+                        )
+                        self.screen.blit(cond_text1, (skill_x + 10, info_y))
+
+                        # Уровень и золото
+                        cond_text2 = self.info_font.render(
+                            f"Ур: {skill.get_required_player_level_for_rank()} | Золото: {skill.get_gold_cost_for_rank()}",
+                            True,
+                            (255, 200, 100)
+                        )
+                        self.screen.blit(cond_text2, (skill_x + 10, info_y + 16))
                 else:
                     max_rank_text = self.info_font.render(
                         "МАКС. РАНГ",

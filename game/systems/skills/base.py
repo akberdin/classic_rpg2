@@ -309,6 +309,16 @@ class Skill:
             return progression[self.rank - 1]
         return "Максимальный уровень"
 
+    def is_assignable_to_quickbar(self):
+        """
+        Проверить, можно ли умение назначить на панель быстрого доступа.
+        По умолчанию можно все умения, кроме пассивных крафтовых.
+
+        Returns:
+            bool: True если умение можно назначить на панель
+        """
+        return True
+
 
 # ==================== БОЕВЫЕ УМЕНИЯ ====================
 
@@ -505,6 +515,12 @@ class SkillManager:
             return False
 
         if skill_id not in self.learned_skills:
+            return False
+
+        # Проверяем, можно ли умение назначить на панель быстрого доступа
+        skill = self.learned_skills[skill_id]
+        if not skill.is_assignable_to_quickbar():
+            print(f"Умение '{skill.name}' нельзя поместить на панель быстрого доступа (пассивное умение)")
             return False
 
         self.skill_slots[slot_index] = skill_id
