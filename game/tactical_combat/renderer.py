@@ -784,6 +784,12 @@ class TacticalCombatRenderer:
         if "критический" in message_lower or "крит" in message_lower:
             return (255, 100, 50)
 
+        # Горение/огонь/кровотечение - оранжевый (DoT эффекты)
+        if ("горен" in message_lower or "огон" in message_lower or "пламен" in message_lower or
+            "загора" in message_lower or "поджог" in message_lower or "перекинул" in message_lower or
+            "кровотеч" in message_lower or "урона от огня" in message_lower):
+            return (255, 165, 0)
+
         # Яд/отравление - зеленый
         if "яд" in message_lower or "отравл" in message_lower:
             return (100, 255, 100)

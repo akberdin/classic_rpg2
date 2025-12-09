@@ -13,7 +13,7 @@
 """
 import random
 from game.systems.skills.base import Skill, SkillCategory
-from game.systems.skills.effects import RegenerationEffect, StaminaRecoveryEffect, ShieldEffect, StunEffect
+from game.systems.skills.effects import RegenerationEffect, StaminaRecoveryEffect, ShieldEffect, StunEffect, BurnEffect
 
 
 class Heal(Skill):
@@ -177,24 +177,24 @@ class StaminaRecovery(Skill):
 # ==================== АТАКУЮЩИЕ МАГИЧЕСКИЕ УМЕНИЯ ====================
 
 class Fireball(Skill):
-    """Огненный шар - мощная магическая атака огнем"""
+    """Огненный шар - мощная магическая атака огнем с эффектом поджога"""
 
     def __init__(self):
         super().__init__(
             name="Огненный шар",
-            description="Мощная огненная атака. Игнорирует броню, но снижается магической защитой. Урон растет с рангом",
-            category=SkillCategory.MAGE,tactical_range=6,
+            description="Мощная огненная атака. Поджигает цель (1-3 хода, 10% урона). Огонь может перекинуться на соседей (20% шанс). Игнорирует броню",
+            category=SkillCategory.MAGE, tactical_range=6,
             mana_cost=35,
             cooldown=3
         )
 
     def get_rank_progression_info(self):
         return [
-            "Ранг 1: Множитель урона x1.0 (20 + Интеллект*4)",
-            "Ранг 2: Множитель урона x1.35",
-            "Ранг 3: Множитель урона x1.7",
-            "Ранг 4: Множитель урона x2.05",
-            "Ранг 5: Множитель урона x2.4"
+            "Ранг 1: Урон x1.0, горение 10% урона, шанс поджога соседей 20%",
+            "Ранг 2: Урон x1.35, горение 15% урона, шанс поджога соседей 25%",
+            "Ранг 3: Урон x1.7, горение 20% урона, шанс поджога соседей 30%",
+            "Ранг 4: Урон x2.05, горение 25% урона, шанс поджога соседей 35%",
+            "Ранг 5: Урон x2.4, горение 30% урона, шанс поджога соседей 40%"
         ]
 
     def use(self, user, target=None):
@@ -234,10 +234,47 @@ class Fireball(Skill):
             result['ignored_armor'] = True
             result['magic_blocked'] = max(0, total_damage - actual_damage)
 
+            # === МЕХАНИКА ПОДЖОГА ЦЕЛИ ===
+            # Урон от горения: 10% + 5% за каждый ранг сверх первого
+            burn_damage_percent = 0.10 + (self.rank - 1) * 0.05  # 10% -> 30% на 5 ранге
+            burn_damage_per_turn = max(1, int(actual_damage * burn_damage_percent))
+
+            # Длительность горения: 1-3 хода (случайно)
+            burn_duration = random.randint(1, 3)
+
+            # Применяем эффект горения на цель
+            burn_effect = BurnEffect(duration=burn_duration, damage_per_turn=burn_damage_per_turn)
+
+            # Добавляем эффект в правильное место
+            if hasattr(target, 'skill_manager') and target.skill_manager:
+                target.skill_manager.status_effects.append(burn_effect)
+            else:
+                if not hasattr(target, 'status_effects'):
+                    target.status_effects = []
+                target.status_effects.append(burn_effect)
+
+            result['burn_applied'] = True
+            result['burn_damage'] = burn_damage_per_turn
+            result['burn_duration'] = burn_duration
+
+            # === МЕХАНИКА РАСПРОСТРАНЕНИЯ ОГНЯ НА СОСЕДЕЙ ===
+            # Шанс поджога соседей: 20% + 5% за каждый ранг сверх первого
+            spread_chance = 0.20 + (self.rank - 1) * 0.05  # 20% -> 40% на 5 ранге
+
+            # Передаем информацию для обработки в тактическом бою
+            result['burn_spread'] = {
+                'chance': spread_chance,
+                'damage_per_turn': burn_damage_per_turn,
+                'duration_range': (1, 3)  # Случайная длительность 1-3 хода
+            }
+
+            # Формируем сообщение
             if is_critical:
                 result['message'] = f"КРИТИЧЕСКИЙ УДАР! {user.name} запускает мощнейший огненный шар в {target.name} и наносит {actual_damage} магического урона!"
             else:
                 result['message'] = f"{user.name} запускает огненный шар в {target.name} и наносит {actual_damage} магического урона!"
+
+            result['message'] += f" {target.name} загорается! ({burn_damage_per_turn} урона/ход на {burn_duration} ход(а))"
 
             if magic_defense > 0:
                 result['message'] += f" (магическая защита поглотила {result['magic_blocked']} урона)"

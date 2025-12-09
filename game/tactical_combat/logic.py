@@ -4,7 +4,9 @@
 import math
 import json
 import os
+import random
 from heapq import heappush, heappop
+from game.systems.skills.effects import BurnEffect
 
 
 class BattlefieldUnit:
@@ -439,8 +441,9 @@ class TacticalCombatSystem:
             unit.y = target_y
             unit.has_acted = True
 
-            name = "Вы" if unit == self.player_unit else unit.character.name
-            self.add_to_log(f"{name} переместился с ({old_x}, {old_y}) на ({target_x}, {target_y})")
+            # Сообщение только для игрока, NPC перемещаются без лога
+            if unit == self.player_unit:
+                self.add_to_log(f"Вы переместились с ({old_x}, {old_y}) на ({target_x}, {target_y})")
             return True
         return False
 
@@ -485,6 +488,48 @@ class TacticalCombatSystem:
 
         return targets
 
+    def get_adjacent_units(self, target_unit, exclude_caster=None):
+        """
+        Получить всех живых юнитов в радиусе 1 клетки от цели (8 соседних клеток)
+
+        Args:
+            target_unit: Целевой юнит, вокруг которого ищем соседей
+            exclude_caster: Юнит заклинателя, которого нужно исключить
+
+        Returns:
+            list: Список юнитов в соседних клетках
+        """
+        adjacent_units = []
+        target_x, target_y = target_unit.x, target_unit.y
+
+        # Проверяем все 8 соседних клеток
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if dx == 0 and dy == 0:
+                    continue  # Пропускаем саму цель
+
+                check_x = target_x + dx
+                check_y = target_y + dy
+
+                # Проверяем игрока
+                if (self.player_unit != exclude_caster and
+                    self.player_unit != target_unit and
+                    self.player_unit.x == check_x and
+                    self.player_unit.y == check_y and
+                    self.player.is_alive):
+                    adjacent_units.append(self.player_unit)
+
+                # Проверяем врагов
+                for enemy_unit in self.enemy_units:
+                    if (enemy_unit != exclude_caster and
+                        enemy_unit != target_unit and
+                        enemy_unit.x == check_x and
+                        enemy_unit.y == check_y and
+                        enemy_unit.character.is_alive):
+                        adjacent_units.append(enemy_unit)
+
+        return adjacent_units
+
     def use_skill(self, skill, caster_unit, target_unit):
         """
         Использовать умение
@@ -503,6 +548,34 @@ class TacticalCombatSystem:
         if result['success']:
             self.add_to_log(result['message'])
             caster_unit.has_acted = True
+
+            # === ОБРАБОТКА РАСПРОСТРАНЕНИЯ ОГНЯ НА СОСЕДЕЙ ===
+            if 'burn_spread' in result:
+                burn_spread = result['burn_spread']
+                spread_chance = burn_spread['chance']
+                burn_damage = burn_spread['damage_per_turn']
+                duration_min, duration_max = burn_spread['duration_range']
+
+                # Получаем всех живых юнитов в соседних клетках
+                adjacent_units = self.get_adjacent_units(target_unit, exclude_caster=caster_unit)
+
+                # Проверяем шанс поджога для каждого соседа
+                for adjacent_unit in adjacent_units:
+                    if random.random() < spread_chance:
+                        # Огонь перекинулся на соседа!
+                        burn_duration = random.randint(duration_min, duration_max)
+                        spread_burn = BurnEffect(duration=burn_duration, damage_per_turn=burn_damage)
+
+                        # Добавляем эффект горения
+                        adjacent_char = adjacent_unit.character
+                        if hasattr(adjacent_char, 'skill_manager') and adjacent_char.skill_manager:
+                            adjacent_char.skill_manager.status_effects.append(spread_burn)
+                        else:
+                            if not hasattr(adjacent_char, 'status_effects'):
+                                adjacent_char.status_effects = []
+                            adjacent_char.status_effects.append(spread_burn)
+
+                        self.add_to_log(f"Огонь перекинулся на {adjacent_char.name}! ({burn_damage} урона/ход на {burn_duration} ход(а))")
 
             # Проверяем, не убит ли противник
             if 'killed' in result and result['killed']:
