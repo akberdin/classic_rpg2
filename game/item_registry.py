@@ -7,13 +7,14 @@
 import json
 import os
 from functools import lru_cache
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, TYPE_CHECKING
 
-from game.inventory import (
-    Item, ResourceItem, PotionItem, SkillBookItem, RecipeItem,
-    WeaponItem, ArmorItem, WeaponType, ArmorType, EquipmentSlot,
-    ItemQuality
-)
+if TYPE_CHECKING:
+    from game.inventory import (
+        Item, ResourceItem, PotionItem, SkillBookItem, RecipeItem,
+        WeaponItem, ArmorItem, WeaponType, ArmorType, EquipmentSlot,
+        ItemQuality
+    )
 
 
 class ItemRegistry:
@@ -39,7 +40,7 @@ class ItemRegistry:
             return
 
         self._data: Dict[str, Dict] = {}
-        self._item_cache: Dict[str, Item] = {}
+        self._item_cache: Dict[str, Any] = {}  # Item objects
         self._name_cache: Dict[str, str] = {}
         self._type_index: Dict[str, List[str]] = {}
         self._quality_index: Dict[str, List[str]] = {}
@@ -108,7 +109,7 @@ class ItemRegistry:
                     self._quality_index[quality] = []
                 self._quality_index[quality].append(item_id)
 
-    def get_item(self, item_id: str) -> Optional[Item]:
+    def get_item(self, item_id: str):
         """
         Получить предмет по ID.
 
@@ -148,7 +149,7 @@ class ItemRegistry:
         """
         return self._name_cache.get(item_id)
 
-    def get_items(self, item_ids: List[str]) -> List[Tuple[str, Optional[Item]]]:
+    def get_items(self, item_ids: List[str]):
         """
         Получить несколько предметов одним вызовом (batch).
 
@@ -160,7 +161,7 @@ class ItemRegistry:
         """
         return [(item_id, self.get_item(item_id)) for item_id in item_ids]
 
-    def get_items_dict(self, item_ids: List[str]) -> Dict[str, Optional[Item]]:
+    def get_items_dict(self, item_ids: List[str]):
         """
         Получить несколько предметов как словарь (batch).
 
@@ -266,8 +267,9 @@ class ItemRegistry:
         """Получить сырые данные предмета (для отладки)."""
         return self._data.get(item_id)
 
-    def _get_quality(self, quality_str: str) -> ItemQuality:
+    def _get_quality(self, quality_str: str):
         """Преобразовать строку качества в enum."""
+        from game.inventory import ItemQuality
         quality_map = {
             'POOR': ItemQuality.POOR,
             'COMMON': ItemQuality.COMMON,
@@ -279,8 +281,9 @@ class ItemRegistry:
         }
         return quality_map.get(quality_str, ItemQuality.COMMON)
 
-    def _get_weapon_type(self, type_str: str) -> WeaponType:
+    def _get_weapon_type(self, type_str: str):
         """Преобразовать строку типа оружия в enum."""
+        from game.inventory import WeaponType
         type_map = {
             'KNIFE': WeaponType.KNIFE,
             'CLUB': WeaponType.CLUB,
@@ -294,8 +297,9 @@ class ItemRegistry:
         }
         return type_map.get(type_str, WeaponType.SWORD)
 
-    def _get_armor_type(self, type_str: str) -> ArmorType:
+    def _get_armor_type(self, type_str: str):
         """Преобразовать строку типа брони в enum."""
+        from game.inventory import ArmorType
         type_map = {
             'LIGHT': ArmorType.LIGHT,
             'MEDIUM': ArmorType.MEDIUM,
@@ -303,8 +307,9 @@ class ItemRegistry:
         }
         return type_map.get(type_str, ArmorType.LIGHT)
 
-    def _get_equipment_slot(self, slot_str: str) -> EquipmentSlot:
+    def _get_equipment_slot(self, slot_str: str):
         """Преобразовать строку слота в enum."""
+        from game.inventory import EquipmentSlot
         slot_map = {
             'WEAPON': EquipmentSlot.WEAPON,
             'HEAD': EquipmentSlot.HEAD,
@@ -323,7 +328,7 @@ class ItemRegistry:
         }
         return slot_map.get(slot_str, EquipmentSlot.CHEST)
 
-    def _create_item(self, item_id: str, data: Dict) -> Optional[Item]:
+    def _create_item(self, item_id: str, data: Dict):
         """
         Создать объект предмета из данных JSON.
 
@@ -334,6 +339,10 @@ class ItemRegistry:
         Returns:
             Объект предмета соответствующего типа
         """
+        from game.inventory import (
+            Item, ResourceItem, PotionItem, SkillBookItem, RecipeItem,
+            WeaponItem, ArmorItem
+        )
         category = data.get('_category', '')
         name = data.get('name', item_id)
         value = data.get('value', 0)
@@ -402,7 +411,7 @@ class ItemRegistry:
 
 # Глобальные функции для удобства использования
 
-def get_item(item_id: str) -> Optional[Item]:
+def get_item(item_id: str):
     """Получить предмет по ID (shortcut для ItemRegistry.get_instance().get_item())."""
     return ItemRegistry.get_instance().get_item(item_id)
 

@@ -10,7 +10,7 @@ from game.character import Player
 from game.npc import Merchant
 from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
-from game.inventory import get_random_loot_from_location, PREDEFINED_ITEMS
+from game.inventory import get_random_loot_from_location
 from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow, CheatMenuWindow
 from game.ui.windows import (
     InteractionWindow,
