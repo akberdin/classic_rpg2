@@ -3,12 +3,39 @@
 
 Извлечено из engine.py для уменьшения сложности.
 """
+import json
+import os
 import random
 from game.inventory import ItemGenerator, PREDEFINED_ITEMS
+from game.item_registry import get_item, has_item
 
 
 class LootSystem:
     """Система генерации лута с врагов"""
+
+    # Кэш конфигурации лута
+    _config_cache = None
+
+    @classmethod
+    def _load_config(cls):
+        """Загрузить конфигурацию лута (ленивая загрузка)."""
+        if cls._config_cache is not None:
+            return cls._config_cache
+
+        config_path = os.path.join(
+            os.path.dirname(__file__),
+            'config',
+            'loot_config.json'
+        )
+
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                cls._config_cache = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"[LootSystem] Ошибка загрузки конфига: {e}")
+            cls._config_cache = {}
+
+        return cls._config_cache
 
     def __init__(self, player, quest_manager=None, killstreak_system=None):
         """
@@ -22,6 +49,92 @@ class LootSystem:
         self.player = player
         self.quest_manager = quest_manager
         self.killstreak_system = killstreak_system
+        self.config = self._load_config()
+
+    def _get_item_safe(self, item_id):
+        """
+        Безопасно получить предмет по ID с fallback на PREDEFINED_ITEMS.
+
+        Args:
+            item_id: Идентификатор предмета
+
+        Returns:
+            Item: Объект предмета или None
+        """
+        # Сначала пробуем ItemRegistry
+        item = get_item(item_id)
+        if item:
+            return item
+        # Fallback на PREDEFINED_ITEMS
+        return PREDEFINED_ITEMS.get(item_id)
+
+    def _get_quality_weights(self, enemy_level):
+        """Получить веса качества для уровня врага из конфига."""
+        from game.inventory import ItemQuality
+
+        quality_config = self.config.get('quality_by_level', {})
+
+        # Определяем ранг по уровню
+        for rank_key in ['rank_1', 'rank_2', 'rank_3', 'rank_4']:
+            rank_data = quality_config.get(rank_key, {})
+            max_level = rank_data.get('max_level', 999)
+            if enemy_level <= max_level:
+                weights_str = rank_data.get('weights', {})
+                # Преобразуем строковые ключи в ItemQuality
+                quality_map = {
+                    'POOR': ItemQuality.POOR,
+                    'COMMON': ItemQuality.COMMON,
+                    'UNCOMMON': ItemQuality.UNCOMMON,
+                    'RARE': ItemQuality.RARE,
+                    'EPIC': ItemQuality.EPIC,
+                    'LEGENDARY': ItemQuality.LEGENDARY,
+                }
+                return {quality_map[k]: v for k, v in weights_str.items() if k in quality_map}
+
+        # Fallback - обычное качество
+        return {ItemQuality.COMMON: 1.0}
+
+    def _get_potion_choices(self, enemy_level):
+        """Получить список зелий для уровня врага из конфига."""
+        potions_config = self.config.get('potions', {})
+        choices = list(potions_config.get('base', [
+            'minor_health_potion', 'minor_stamina_potion', 'minor_mana_potion'
+        ]))
+        if enemy_level >= 10:
+            choices.extend(potions_config.get('level_10', [
+                'health_potion', 'stamina_potion', 'mana_potion'
+            ]))
+        return choices
+
+    def _get_book_pool(self, enemy_level):
+        """Получить взвешенный пул книг умений для уровня врага."""
+        books_config = self.config.get('skill_books', {})
+        book_pool = []
+
+        for tier in ['common', 'uncommon', 'rare']:
+            tier_config = books_config.get(tier, {})
+            min_level = tier_config.get('min_level', 1)
+            weight = tier_config.get('weight', 10)
+            books = tier_config.get('books', [])
+
+            if enemy_level >= min_level:
+                for book in books:
+                    book_pool.extend([book] * weight)
+
+        return book_pool
+
+    def _get_available_recipes(self, enemy_level):
+        """Получить список доступных рецептов для уровня врага."""
+        recipes_config = self.config.get('recipes', {})
+        tiers = recipes_config.get('tiers', [])
+        available = []
+
+        for tier in tiers:
+            min_level = tier.get('min_level', 1)
+            if enemy_level >= min_level:
+                available.extend(tier.get('recipes', []))
+
+        return available
 
     def generate_loot(self, enemy):
         """
@@ -43,15 +156,23 @@ class LootSystem:
                 loot_items.append((item, 1))
             return loot_items, 0
 
-        # Золото зависит от уровня врага
-        base_gold = enemy.level * 5
-        loot_gold = random.randint(base_gold, base_gold * 2)
+        # Золото зависит от уровня врага (из конфига)
+        gold_config = self.config.get('gold', {})
+        base_gold = enemy.level * gold_config.get('base_per_level', 5)
+        loot_gold = random.randint(base_gold, int(base_gold * gold_config.get('multiplier_max', 2.0)))
 
-        # Шанс выпадения предметов зависит от уровня врага
-        drop_chance = min(0.3 + enemy.level * 0.02, 0.8)
+        # Шанс выпадения предметов (из конфига)
+        drop_config = self.config.get('drop_chance', {})
+        drop_chance = min(
+            drop_config.get('base', 0.3) + enemy.level * drop_config.get('per_level', 0.02),
+            drop_config.get('max', 0.8)
+        )
 
-        # Количество предметов (1-3)
-        num_items = random.randint(1, 3)
+        # Количество предметов
+        num_items = random.randint(
+            drop_config.get('items_min', 1),
+            drop_config.get('items_max', 3)
+        )
 
         for _ in range(num_items):
             if random.random() < drop_chance:
@@ -60,175 +181,86 @@ class LootSystem:
                 if item_type == 'equipment':
                     item_level = max(1, enemy.level + random.randint(-2, 2))
 
-                    # Определяем качество на основе ранга NPC (уровня)
-                    from game.inventory import ItemQuality
-
-                    if enemy.level <= 10:
-                        # Ранг 1: плохие, обычные
-                        quality_weights = {ItemQuality.POOR: 0.4, ItemQuality.COMMON: 0.6}
-                    elif enemy.level <= 20:
-                        # Ранг 2: обычные, необычные
-                        quality_weights = {ItemQuality.COMMON: 0.5, ItemQuality.UNCOMMON: 0.5}
-                    elif enemy.level <= 30:
-                        # Ранг 3: обычные, необычные, редкие
-                        quality_weights = {ItemQuality.COMMON: 0.3, ItemQuality.UNCOMMON: 0.4, ItemQuality.RARE: 0.3}
-                    else:
-                        # Ранг 4: любого качества
-                        quality_weights = {
-                            ItemQuality.POOR: 0.05,
-                            ItemQuality.COMMON: 0.15,
-                            ItemQuality.UNCOMMON: 0.25,
-                            ItemQuality.RARE: 0.3,
-                            ItemQuality.EPIC: 0.2,
-                            ItemQuality.LEGENDARY: 0.05
-                        }
-
+                    # Качество из конфига
+                    quality_weights = self._get_quality_weights(enemy.level)
                     quality = ItemGenerator.generate_quality(quality_weights)
 
-                    # Выбираем тип экипировки: оружие, броня или ювелирка
-                    # Ювелирка встречается реже (15% шанс)
+                    # Типы экипировки из конфига
+                    equip_config = self.config.get('equipment_types', {})
                     equipment_roll = random.random()
-                    if equipment_roll < 0.15:
-                        # Генерируем ювелирное изделие
+
+                    jewelry_threshold = equip_config.get('jewelry_chance', 0.15)
+                    weapon_threshold = jewelry_threshold + equip_config.get('weapon_chance', 0.425)
+
+                    if equipment_roll < jewelry_threshold:
                         item = ItemGenerator.generate_jewelry(item_level, quality=quality)
-                    elif equipment_roll < 0.575:
-                        # Генерируем оружие (42.5%)
+                    elif equipment_roll < weapon_threshold:
                         item = ItemGenerator.generate_weapon(item_level, quality)
                     else:
-                        # Генерируем броню (42.5%)
                         item = ItemGenerator.generate_armor(item_level, quality=quality)
 
                     loot_items.append((item, 1))
 
                 elif item_type == 'potion':
-                    potion_choices = ['minor_health_potion', 'minor_stamina_potion', 'minor_mana_potion']
-                    if enemy.level >= 10:
-                        potion_choices.extend(['health_potion', 'stamina_potion', 'mana_potion'])
-
+                    potion_choices = self._get_potion_choices(enemy.level)
                     potion_name = random.choice(potion_choices)
-                    if potion_name in PREDEFINED_ITEMS:
-                        potion = PREDEFINED_ITEMS[potion_name]
-                        quantity = random.randint(1, 2)
+
+                    potion = self._get_item_safe(potion_name)
+                    if potion:
+                        potions_config = self.config.get('potions', {})
+                        quantity = random.randint(
+                            potions_config.get('quantity_min', 1),
+                            potions_config.get('quantity_max', 2)
+                        )
                         loot_items.append((potion, quantity))
 
-        # Шанс выпадения книг умений (зависит от уровня врага)
-        # Чем выше уровень врага, тем больше шанс
-        book_drop_chance = min(0.05 + enemy.level * 0.005, 0.20)  # от 5% до 20%
+        # Книги умений (из конфига)
+        books_config = self.config.get('skill_books', {})
+        book_drop_chance = min(
+            books_config.get('drop_chance_base', 0.05) + enemy.level * books_config.get('drop_chance_per_level', 0.005),
+            books_config.get('drop_chance_max', 0.20)
+        )
 
         if random.random() < book_drop_chance:
-            # Книги умений разделены по редкости (вес = шанс выбора)
-            # ОБЫЧНЫЕ (вес 50) - базовые умения
-            common_books = [
-                # Общие боевые умения
-                "book_power_strike", "book_poison_strike", "book_stun_strike", "book_battle_cry",
-                # Базовые умения лука
-                "book_precise_shot", "book_rapid_fire", "book_piercing_arrow",
-                # Базовые умения кинжала
-                "book_backstab", "book_bleeding_cut", "book_shadow_step",
-                # Базовые умения меча
-                "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance",
-                # Базовые магические умения
-                "book_heal", "book_regeneration", "book_stamina_recovery",
-                "book_magic_missile", "book_mage_shield",
-            ]
-
-            # РЕДКИЕ (вес 30) - продвинутые умения
-            uncommon_books = [
-                # Продвинутые умения SHADOW
-                "book_deadly_poison", "book_stealth", "book_shadow_agility",
-                # Продвинутые умения WARRIOR
-                "book_iron_stance", "book_intimidate", "book_counterattack",
-                # Продвинутые умения HUNTER
-                "book_hunters_mark", "book_stamina_boost", "book_eagle_eye",
-                "book_long_range_shot",
-                # Продвинутые умения для копья
-                "book_lunge_strike", "book_spear_sweep", "book_armor_breach",
-                # Продвинутая магия
-                "book_fireball", "book_ice_bolt", "book_lightning",
-            ]
-
-            # ЭПИЧЕСКИЕ (вес 10) - мощные умения
-            rare_books = [
-                # Эпические умения SHADOW
-                "book_critical_strike",
-                # Эпические умения WARRIOR
-                "book_steel_skin", "book_berserker",
-                # Эпические умения HUNTER
-                "book_explosive_arrow", "book_trap",
-            ]
-
-            # Создаем взвешенный список для выбора
-            book_pool = []
-
-            # Обычные книги (вес 50 каждая)
-            for book in common_books:
-                book_pool.extend([book] * 50)
-
-            # Редкие книги (вес 30 каждая, но только если уровень врага >= 5)
-            if enemy.level >= 5:
-                for book in uncommon_books:
-                    book_pool.extend([book] * 30)
-
-            # Эпические книги (вес 10 каждая, но только если уровень врага >= 10)
-            if enemy.level >= 10:
-                for book in rare_books:
-                    book_pool.extend([book] * 10)
-
-            # Выбираем случайную книгу из пула
+            book_pool = self._get_book_pool(enemy.level)
             if book_pool:
                 book_id = random.choice(book_pool)
-                if book_id in PREDEFINED_ITEMS:
-                    loot_items.append((PREDEFINED_ITEMS[book_id], 1))
+                book = self._get_item_safe(book_id)
+                if book:
+                    loot_items.append((book, 1))
 
-        # Шанс выпадения рецептов крафта (зависит от уровня врага)
-        # Чем выше уровень врага, тем больше шанс
-        recipe_drop_chance = min(0.03 + enemy.level * 0.003, 0.15)  # от 3% до 15%
+        # Рецепты крафта (из конфига)
+        recipes_config = self.config.get('recipes', {})
+        recipe_drop_chance = min(
+            recipes_config.get('drop_chance_base', 0.03) + enemy.level * recipes_config.get('drop_chance_per_level', 0.003),
+            recipes_config.get('drop_chance_max', 0.15)
+        )
 
         if random.random() < recipe_drop_chance:
-            # Рецепты разделены по редкости в зависимости от уровня врага
-            recipes = []
+            available_recipes = self._get_available_recipes(enemy.level)
+            if available_recipes:
+                recipe_id = random.choice(available_recipes)
+                recipe = self._get_item_safe(recipe_id)
+                if recipe:
+                    loot_items.append((recipe, 1))
 
-            # Базовые рецепты (всегда доступны)
-            recipes.extend(["recipe_copper_ingot", "recipe_iron_ingot"])
+        # Специальный лут по типам врагов (из конфига)
+        special_loot = self.config.get('special_loot', {})
 
-            # Средние рецепты (уровень >= 10)
-            if enemy.level >= 10:
-                recipes.append("recipe_silver_ingot")
-
-            # Редкие рецепты (уровень >= 15)
-            if enemy.level >= 15:
-                recipes.append("recipe_gold_ingot")
-
-            # Эпические рецепты (уровень >= 20)
-            if enemy.level >= 20:
-                recipes.append("recipe_mithril_ingot")
-
-            # Выбираем случайный рецепт из доступных
-            if recipes:
-                recipe_id = random.choice(recipes)
-                if recipe_id in PREDEFINED_ITEMS:
-                    loot_items.append((PREDEFINED_ITEMS[recipe_id], 1))
-
-        # Специальный лут для бандитов - древние монеты
-        if enemy.npc_type == "bandit":
-            coin_drop_chance = min(0.30 + enemy.level * 0.01, 0.60)  # от 30% до 60%
-            if random.random() < coin_drop_chance:
-                quantity = random.randint(1, 3)
-                loot_items.append((PREDEFINED_ITEMS["ancient_coin"], quantity))
-
-        # Специальный лут для нежити - магические кристаллы и древние свитки
-        if enemy.npc_type == "undead":
-            # Магические кристаллы (40-70% шанс)
-            crystal_drop_chance = min(0.40 + enemy.level * 0.01, 0.70)
-            if random.random() < crystal_drop_chance:
-                quantity = random.randint(1, 2)
-                loot_items.append((PREDEFINED_ITEMS["magic_crystal"], quantity))
-
-            # Древние свитки (35-65% шанс)
-            scroll_drop_chance = min(0.35 + enemy.level * 0.01, 0.65)
-            if random.random() < scroll_drop_chance:
-                quantity = random.randint(1, 3)
-                loot_items.append((PREDEFINED_ITEMS["old_scroll"], quantity))
+        if enemy.npc_type in special_loot:
+            for item_id, drop_data in special_loot[enemy.npc_type].items():
+                drop_chance = min(
+                    drop_data.get('base_chance', 0.3) + enemy.level * drop_data.get('per_level', 0.01),
+                    drop_data.get('max_chance', 0.6)
+                )
+                if random.random() < drop_chance:
+                    quantity = random.randint(
+                        drop_data.get('quantity_min', 1),
+                        drop_data.get('quantity_max', 3)
+                    )
+                    special_item = self._get_item_safe(item_id)
+                    if special_item:
+                        loot_items.append((special_item, quantity))
 
         return loot_items, loot_gold
 
@@ -317,26 +349,8 @@ class LootSystem:
         Returns:
             str: Ключ предмета или None
         """
-        # Словарь соответствия имён предметов и их ключей
-        item_name_to_key = {
-            'Клык волка': 'wolf_fang',
-            'Шкура волка': 'wolf_hide',
-            'Клык медведя': 'bear_fang',
-            'Шкура медведя': 'bear_hide',
-            'Медвежатина': 'bear_meat',
-            'Шкура оленя': 'deer_hide',
-            'Оленина': 'deer_meat',
-            'Медная руда': 'copper_ore',
-            'Железная руда': 'iron_ore',
-            'Серебряная руда': 'silver_ore',
-            'Золотая руда': 'gold_ore',
-            'Мифриловая руда': 'mithril_ore',
-            'Древесина': 'wood',
-            'Магический кристалл': 'magic_crystal',
-            'Фрагмент артефакта': 'artifact_fragment',
-            'Древняя монета': 'ancient_coin',
-            'Старый свиток': 'old_scroll',
-        }
+        # Маппинг из конфига
+        item_name_to_key = self.config.get('item_name_to_key', {})
         return item_name_to_key.get(item_name)
 
     def _update_quest_progress(self, enemy_type):
