@@ -2,8 +2,9 @@
 Система профессиональных умений (добыча ресурсов)
 """
 import random
-from game.inventory import PREDEFINED_ITEMS, WeaponType, EquipmentSlot
+from game.inventory import WeaponType, EquipmentSlot
 from game.constants import BIOME_FOREST, BIOME_PLAINS, LOCATION_MINE
+from game.item_registry import get_item
 
 
 class Profession:
@@ -224,7 +225,7 @@ class Lumberjacking(Profession):
         if random.random() * 100 < chance:
             # Количество зависит от ранга (1-4 на низких рангах, до 8 на высоких)
             quantity = random.randint(2, min(8, 2 + self.rank))
-            resources.append((PREDEFINED_ITEMS["wood"], quantity))
+            resources.append((get_item("wood"), quantity))
 
             # Даем опыт только при успешной добыче (улучшенная формула)
             exp_gained = 15 + quantity * 3 + self.rank * 2
@@ -249,7 +250,7 @@ class Lumberjacking(Profession):
             if event[1] < 0:  # Урон
                 player.take_damage(abs(event[1]))
             elif event[2] == "extra_wood":  # Дополнительная древесина
-                resources.append((PREDEFINED_ITEMS["wood"], random.randint(3, 6)))
+                resources.append((get_item("wood"), random.randint(3, 6)))
             elif event[2] is not None:  # Золото
                 player.inventory.add_gold(event[2])
 

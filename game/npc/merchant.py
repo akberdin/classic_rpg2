@@ -4,6 +4,7 @@
 import random
 from game.npc.base import NPC
 from game.constants import (
+from game.item_registry import get_item
     NPC_TYPE_MERCHANT, NPC_RELATIONSHIPS, RELATIONSHIP_NEUTRAL,
     RELATIONSHIP_HOSTILE, RELATIONSHIP_UNFRIENDLY
 )
@@ -138,7 +139,7 @@ class Merchant(NPC):
 
     def _get_recipes_for_rank(self, rank):
         """Получить рецепты для данного ранга с механизмом автоматического определения ранга"""
-        from game.inventory import PREDEFINED_ITEMS, ItemQuality
+        from game.inventory import ItemQuality
 
         # Группируем все рецепты по качеству предмета, который они создают
         all_recipe_ids = [key for key in PREDEFINED_ITEMS.keys() if key.startswith("recipe_")]
@@ -170,7 +171,7 @@ class Merchant(NPC):
 
     def _get_books_for_rank(self, rank):
         """Получить книги умений для данного ранга (только не магические)"""
-        from game.inventory import PREDEFINED_ITEMS, ItemQuality
+        from game.inventory import ItemQuality
 
         # Только боевые книги (не магические)
         combat_books = [
@@ -182,7 +183,7 @@ class Merchant(NPC):
 
         allowed_books = []
         for book_id in combat_books:
-            if book_id in PREDEFINED_ITEMS:
+            if get_item(book_id):
                 book = PREDEFINED_ITEMS[book_id]
                 book_quality = book.quality
 
@@ -207,7 +208,7 @@ class Merchant(NPC):
 
     def _generate_merchant_goods(self):
         """Генерация начальных товаров торговца с учетом ранга"""
-        from game.inventory import ItemGenerator, PREDEFINED_ITEMS, EquipmentSlot
+        from game.inventory import ItemGenerator, EquipmentSlot
 
         # Очищаем старый ассортимент перед генерацией нового
         self.inventory.items.clear()
@@ -226,21 +227,21 @@ class Merchant(NPC):
         # Генерируем зелья
         if rank == 1:
             # Ранг 1: малые зелья здоровья и выносливости
-            self.inventory.add_item(PREDEFINED_ITEMS["minor_health_potion"], random.randint(2, 4))
-            self.inventory.add_item(PREDEFINED_ITEMS["minor_stamina_potion"], random.randint(1, 3))
+            self.inventory.add_item(get_item("minor_health_potion"), random.randint(2, 4))
+            self.inventory.add_item(get_item("minor_stamina_potion"), random.randint(1, 3))
         elif rank == 2:
             # Ранг 2: зелье здоровья, маны, выносливости (не большие)
-            self.inventory.add_item(PREDEFINED_ITEMS["minor_health_potion"], random.randint(2, 4))
-            self.inventory.add_item(PREDEFINED_ITEMS["health_potion"], random.randint(2, 4))
-            self.inventory.add_item(PREDEFINED_ITEMS["minor_mana_potion"], random.randint(2, 3))
-            self.inventory.add_item(PREDEFINED_ITEMS["mana_potion"], random.randint(1, 2))
-            self.inventory.add_item(PREDEFINED_ITEMS["minor_stamina_potion"], random.randint(2, 3))
-            self.inventory.add_item(PREDEFINED_ITEMS["stamina_potion"], random.randint(1, 2))
+            self.inventory.add_item(get_item("minor_health_potion"), random.randint(2, 4))
+            self.inventory.add_item(get_item("health_potion"), random.randint(2, 4))
+            self.inventory.add_item(get_item("minor_mana_potion"), random.randint(2, 3))
+            self.inventory.add_item(get_item("mana_potion"), random.randint(1, 2))
+            self.inventory.add_item(get_item("minor_stamina_potion"), random.randint(2, 3))
+            self.inventory.add_item(get_item("stamina_potion"), random.randint(1, 2))
         elif rank in [3, 4]:
             # Ранги 3-4: зелье здоровья, маны, выносливости (не большие)
-            self.inventory.add_item(PREDEFINED_ITEMS["health_potion"], random.randint(2, 4))
-            self.inventory.add_item(PREDEFINED_ITEMS["mana_potion"], random.randint(2, 3))
-            self.inventory.add_item(PREDEFINED_ITEMS["stamina_potion"], random.randint(2, 3))
+            self.inventory.add_item(get_item("health_potion"), random.randint(2, 4))
+            self.inventory.add_item(get_item("mana_potion"), random.randint(2, 3))
+            self.inventory.add_item(get_item("stamina_potion"), random.randint(2, 3))
 
         # Генерируем оружие (с ограничениями по типам для ранга 1)
         allowed_weapon_types = self._get_allowed_weapon_types(rank)
@@ -303,7 +304,7 @@ class Merchant(NPC):
         # Генерируем ресурсы
         resources = self._get_resources_for_rank(rank)
         for resource_id, (min_qty, max_qty) in resources.items():
-            if resource_id in PREDEFINED_ITEMS:
+            if get_item(resource_id):
                 quantity = random.randint(min_qty, max_qty)
                 self.inventory.add_item(PREDEFINED_ITEMS[resource_id], quantity)
 
@@ -597,7 +598,7 @@ class MagicMerchant(Merchant):
 
     def _generate_magic_goods(self):
         """Генерация товаров магического торговца Академии магов"""
-        from game.inventory import PREDEFINED_ITEMS, ItemGenerator, WeaponType, ArmorType, EquipmentSlot, ItemQuality
+        from game.inventory import ItemGenerator, WeaponType, ArmorType, EquipmentSlot, ItemQuality
 
         # Очищаем стандартные товары
         self.inventory.items.clear()
@@ -644,14 +645,14 @@ class MagicMerchant(Merchant):
             self.inventory.add_item(jewelry, 1)
 
         # Ресурсы: магические кристаллы, осколки артефактов, древние монеты
-        self.inventory.add_item(PREDEFINED_ITEMS["magic_crystal"], random.randint(3, 6))
-        self.inventory.add_item(PREDEFINED_ITEMS["artifact_fragment"], random.randint(2, 4))
-        self.inventory.add_item(PREDEFINED_ITEMS["ancient_coin"], random.randint(3, 6))
+        self.inventory.add_item(get_item("magic_crystal"), random.randint(3, 6))
+        self.inventory.add_item(get_item("artifact_fragment"), random.randint(2, 4))
+        self.inventory.add_item(get_item("ancient_coin"), random.randint(3, 6))
 
         # Зелья: Большие зелье здоровья, маны и выносливости
-        self.inventory.add_item(PREDEFINED_ITEMS["greater_health_potion"], random.randint(3, 6))
-        self.inventory.add_item(PREDEFINED_ITEMS["mana_potion"], random.randint(4, 8))
-        self.inventory.add_item(PREDEFINED_ITEMS["stamina_potion"], random.randint(3, 6))
+        self.inventory.add_item(get_item("greater_health_potion"), random.randint(3, 6))
+        self.inventory.add_item(get_item("mana_potion"), random.randint(4, 8))
+        self.inventory.add_item(get_item("stamina_potion"), random.randint(3, 6))
 
         # Книги: только магические умения всех видов, не менее 5
         magic_books = [
@@ -664,7 +665,7 @@ class MagicMerchant(Merchant):
         # Добавляем все доступные магические книги (гарантируем минимум 5)
         books_added = 0
         for book_id in magic_books:
-            if book_id in PREDEFINED_ITEMS:
+            if get_item(book_id):
                 book = PREDEFINED_ITEMS[book_id]
                 if book.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE, ItemQuality.EPIC]:
                     self.inventory.add_item(book, 1)
@@ -739,7 +740,7 @@ class WarriorMerchant(Merchant):
 
     def _generate_warrior_goods(self):
         """Генерация товаров военного торговца Военной академии"""
-        from game.inventory import PREDEFINED_ITEMS, ItemGenerator, WeaponType, ArmorType, EquipmentSlot, ItemQuality
+        from game.inventory import ItemGenerator, WeaponType, ArmorType, EquipmentSlot, ItemQuality
 
         # Очищаем стандартные товары
         self.inventory.items.clear()
@@ -790,13 +791,13 @@ class WarriorMerchant(Merchant):
             self.inventory.add_item(jewelry, 1)
 
         # Ресурсы: металлы для ковки
-        self.inventory.add_item(PREDEFINED_ITEMS["iron_ingot"], random.randint(5, 10))
-        self.inventory.add_item(PREDEFINED_ITEMS["silver_ingot"], random.randint(3, 6))
-        self.inventory.add_item(PREDEFINED_ITEMS["gold_ingot"], random.randint(2, 4))
+        self.inventory.add_item(get_item("iron_ingot"), random.randint(5, 10))
+        self.inventory.add_item(get_item("silver_ingot"), random.randint(3, 6))
+        self.inventory.add_item(get_item("gold_ingot"), random.randint(2, 4))
 
         # Зелья: Зелья здоровья и выносливости (не маны)
-        self.inventory.add_item(PREDEFINED_ITEMS["greater_health_potion"], random.randint(3, 6))
-        self.inventory.add_item(PREDEFINED_ITEMS["stamina_potion"], random.randint(4, 8))
+        self.inventory.add_item(get_item("greater_health_potion"), random.randint(3, 6))
+        self.inventory.add_item(get_item("stamina_potion"), random.randint(4, 8))
 
         # Книги: только воинские умения всех видов, не менее 5
         warrior_books = [
@@ -812,7 +813,7 @@ class WarriorMerchant(Merchant):
         # Добавляем все доступные воинские книги (гарантируем минимум 5)
         books_added = 0
         for book_id in warrior_books:
-            if book_id in PREDEFINED_ITEMS:
+            if get_item(book_id):
                 book = PREDEFINED_ITEMS[book_id]
                 if book.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE, ItemQuality.EPIC]:
                     self.inventory.add_item(book, 1)

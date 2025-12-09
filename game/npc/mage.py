@@ -71,15 +71,15 @@ class MagePatrol(NPC):
 
     def _generate_magical_goods(self):
         """Генерация базовых товаров для мага (без книг умений)"""
-        from game.inventory import PREDEFINED_ITEMS
+        from game.item_registry import get_item
 
         # Стартовое золото (небольшое, маги не торговцы)
         self.inventory.add_gold(100 + self.level * 20)
 
         # Зелья маны (небольшое количество)
-        self.inventory.add_item(PREDEFINED_ITEMS["minor_mana_potion"], random.randint(1, 2))
+        self.inventory.add_item(get_item("minor_mana_potion"), random.randint(1, 2))
         if self.level >= 10:
-            self.inventory.add_item(PREDEFINED_ITEMS["mana_potion"], random.randint(1, 2))
+            self.inventory.add_item(get_item("mana_potion"), random.randint(1, 2))
 
     def _generate_patrol_points(self):
         """Генерация точек патрулирования вокруг академии"""

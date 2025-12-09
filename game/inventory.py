@@ -2419,394 +2419,55 @@ class ItemGenerator:
             # Волки дают: зубы волка, шкура волка
             # Клык волка - 70% шанс
             if random.random() < 0.7:
-                loot.append(PREDEFINED_ITEMS["wolf_fang"])
+                loot.append(get_item("wolf_fang"))
 
             # Шкура волка - 50% шанс
             if random.random() < 0.5:
-                loot.append(PREDEFINED_ITEMS["wolf_hide"])
+                loot.append(get_item("wolf_hide"))
 
             # Звериные жилы - 40% шанс
             if random.random() < 0.4:
-                loot.append(PREDEFINED_ITEMS["animal_sinew"])
+                loot.append(get_item("animal_sinew"))
 
         elif npc_type == "bear":
             # Медведи дают: зубы медведя, мясо, шкура медведя
             # Клык медведя - 60% шанс
             if random.random() < 0.6:
-                loot.append(PREDEFINED_ITEMS["bear_fang"])
+                loot.append(get_item("bear_fang"))
 
             # Мясо - 80% шанс
             if random.random() < 0.8:
-                loot.append(PREDEFINED_ITEMS["bear_meat"])
+                loot.append(get_item("bear_meat"))
 
             # Шкура медведя - 50% шанс
             if random.random() < 0.5:
-                loot.append(PREDEFINED_ITEMS["bear_hide"])
+                loot.append(get_item("bear_hide"))
 
             # Звериные жилы - 50% шанс
             if random.random() < 0.5:
-                loot.append(PREDEFINED_ITEMS["animal_sinew"])
+                loot.append(get_item("animal_sinew"))
 
         elif npc_type == "deer":
             # Олени дают: мясо, шкура оленя
             # Мясо - 90% шанс
             if random.random() < 0.9:
-                loot.append(PREDEFINED_ITEMS["deer_meat"])
+                loot.append(get_item("deer_meat"))
 
             # Шкура оленя - 60% шанс
             if random.random() < 0.6:
-                loot.append(PREDEFINED_ITEMS["deer_hide"])
+                loot.append(get_item("deer_hide"))
 
             # Звериные жилы - 30% шанс
             if random.random() < 0.3:
-                loot.append(PREDEFINED_ITEMS["animal_sinew"])
+                loot.append(get_item("animal_sinew"))
 
             # Рога оленя - только у оленей уровня 2 и выше, 50% шанс
             if npc_level >= 2 and random.random() < 0.5:
-                loot.append(PREDEFINED_ITEMS["deer_antlers"])
+                loot.append(get_item("deer_antlers"))
 
         return loot
 
 
-# Предопределенные предметы
-PREDEFINED_ITEMS = {
-    # Ресурсы из шахт
-    "copper_ore": ResourceItem("Медная руда", 10),
-    "iron_ore": ResourceItem("Железная руда", 20),
-    "silver_ore": ResourceItem("Серебряная руда", 50),
-    "gold_ore": ResourceItem("Золотая руда", 100),
-    "mithril_ore": ResourceItem("Мифриловая руда", 200),
-
-    # Слитки (переработанные руды)
-    "copper_ingot": ResourceItem("Медный слиток", 30),
-    "iron_ingot": ResourceItem("Железный слиток", 60),
-    "silver_ingot": ResourceItem("Серебряный слиток", 150),
-    "gold_ingot": ResourceItem("Золотой слиток", 300),
-    "mithril_ingot": ResourceItem("Мифриловый слиток", 600),
-    "steel_ingot": ResourceItem("Стальной слиток", 120),
-
-    # Древесина
-    "wood": ResourceItem("Древесина", 5, 1.0),
-
-    # Травы (для травничества)
-    "chamomile": ResourceItem("Ромашка", 8, 0.1),
-    "mint": ResourceItem("Мята", 15, 0.1),
-    "sage": ResourceItem("Шалфей", 30, 0.15),
-    "ginseng": ResourceItem("Женьшень", 60, 0.2),
-    "mandrake": ResourceItem("Мандрагора", 120, 0.25),
-
-    # Деревянные компоненты
-    "long_wooden_handle": ResourceItem("Длинная деревянная рукоять", 15, 0.8),
-    "short_wooden_handle": ResourceItem("Короткая деревянная рукоять", 10, 0.5),
-    "wooden_shaft": ResourceItem("Древко", 20, 1.0),
-
-    # Уголь
-    "charcoal": ResourceItem("Древесный уголь", 8, 0.3),
-
-    # Проволока
-    "copper_wire": ResourceItem("Медная проволока", 40),
-    "iron_wire": ResourceItem("Железная проволока", 70),
-    "steel_wire": ResourceItem("Стальная проволока", 140),
-    "silver_wire": ResourceItem("Серебряная проволока", 180),
-    "gold_wire": ResourceItem("Золотая проволока", 350),
-    "mithril_wire": ResourceItem("Мифриловая проволока", 700),
-
-    # Лезвия и компоненты оружия
-    "copper_axe_blade": ResourceItem("Медное лезвие топора", 35),
-    "iron_axe_blade": ResourceItem("Железное лезвие топора", 65),
-    "steel_axe_blade": ResourceItem("Стальное лезвие топора", 110),
-
-    # Бойки для кирок
-    "copper_hammer_head": ResourceItem("Медный боёк", 30),
-    "iron_hammer_head": ResourceItem("Железный боёк", 55),
-    "steel_hammer_head": ResourceItem("Стальной боёк", 95),
-
-    # Металлические полоски
-    "copper_strips": ResourceItem("Медные полоски", 8, 0.1),
-    "iron_strips": ResourceItem("Железные полоски", 14, 0.1),
-    "steel_strips": ResourceItem("Стальные полоски", 24, 0.1),
-    "silver_strips": ResourceItem("Серебряные полоски", 36, 0.1),
-
-    # Короткие лезвия для ножей
-    "copper_short_blade": ResourceItem("Медное короткое лезвие", 28),
-    "iron_short_blade": ResourceItem("Железное короткое лезвие", 52),
-    "steel_short_blade": ResourceItem("Стальное короткое лезвие", 90),
-
-    # Длинные лезвия для мечей
-    "copper_long_blade": ResourceItem("Медное длинное лезвие", 42),
-    "iron_long_blade": ResourceItem("Железное длинное лезвие", 78),
-    "steel_long_blade": ResourceItem("Стальное длинное лезвие", 135),
-
-    # Ресурсы от животных
-    "wolf_fang": ResourceItem("Клык волка", 25, 0.3),
-    "wolf_hide": ResourceItem("Шкура волка", 35, 0.5),
-    "bear_fang": ResourceItem("Клык медведя", 40, 0.3),
-    "bear_hide": ResourceItem("Шкура медведя", 60, 0.6),
-    "bear_meat": ResourceItem("Медвежатина", 30, 0.4),
-    "deer_hide": ResourceItem("Шкура оленя", 45, 0.5),
-    "deer_meat": ResourceItem("Оленина", 25, 0.4),
-    "animal_sinew": ResourceItem("Звериные жилы", 20, 0.2),
-    "deer_antlers": ResourceItem("Рога оленя", 50, 0.8),
-
-    # Обработанные материалы от животных
-    "leather": ResourceItem("Кожа", 40, 0.4),
-    "leather_strips": ResourceItem("Полоски кожи", 10, 0.1),
-
-    # Ткани
-    "poor_fabric": ResourceItem("Плохая ткань", 15, 0.3, ItemQuality.POOR),
-    "fabric": ResourceItem("Ткань", 30, 0.3, ItemQuality.COMMON),
-    "fine_fabric": ResourceItem("Отличная ткань", 60, 0.3, ItemQuality.UNCOMMON),
-
-    # Наконечники копий
-    "copper_spearhead": ResourceItem("Медный наконечник", 35, 0.3),
-    "iron_spearhead": ResourceItem("Железный наконечник", 65, 0.3),
-    "steel_spearhead": ResourceItem("Стальной наконечник", 110, 0.3),
-
-    # Тетива и роговые компоненты
-    "bowstring": ResourceItem("Тетива", 25, 0.2),
-    "short_horn_handle": ResourceItem("Короткая роговая рукоять", 70, 0.6),
-
-    # Ресурсы из руин
-    "ancient_coin": ResourceItem("Древняя монета", 30),
-    "artifact_fragment": ResourceItem("Фрагмент артефакта", 80),
-    "magic_crystal": ResourceItem("Магический кристалл", 150),
-    "old_scroll": ResourceItem("Старый свиток", 40),
-
-    # Зелья
-    "minor_health_potion": PotionItem("Малое зелье здоровья", "health", 50, 30),
-    "health_potion": PotionItem("Зелье здоровья", "health", 100, 60),
-    "greater_health_potion": PotionItem("Большое зелье здоровья", "health", 200, 120),
-
-    "minor_mana_potion": PotionItem("Малое зелье маны", "mana", 30, 25),
-    "mana_potion": PotionItem("Зелье маны", "mana", 60, 50),
-
-    "minor_stamina_potion": PotionItem("Малое зелье выносливости", "stamina", 50, 20),
-    "stamina_potion": PotionItem("Зелье выносливости", "stamina", 100, 40),
-
-    # Базовое оружие
-    "steel_sword": WeaponItem("Стальной меч", WeaponType.SWORD, 18, quality=ItemQuality.UNCOMMON,
-                              stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "poor_axe": WeaponItem("Топор", WeaponType.AXE, 8, value=50, quality=ItemQuality.POOR,
-                          stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "poor_spear": WeaponItem("Копье", WeaponType.SPEAR, 9, value=60, quality=ItemQuality.POOR,
-                            stats_bonus={}, param_bonus={}, skill_bonus={}),
-
-    # Кирки
-    "poor_pickaxe": WeaponItem("Кирка", WeaponType.PICKAXE, 6, value=45, quality=ItemQuality.POOR,
-                              stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "pickaxe": WeaponItem("Кирка", WeaponType.PICKAXE, 10, value=80, quality=ItemQuality.COMMON,
-                         stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "fine_pickaxe": WeaponItem("Кирка", WeaponType.PICKAXE, 15, value=140, quality=ItemQuality.UNCOMMON,
-                              stats_bonus={}, param_bonus={}, skill_bonus={}),
-
-    # Ножи
-    "poor_knife": WeaponItem("Нож", WeaponType.KNIFE, 5, value=35, quality=ItemQuality.POOR,
-                            stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "knife": WeaponItem("Нож", WeaponType.KNIFE, 8, value=65, quality=ItemQuality.COMMON,
-                       stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "fine_knife": WeaponItem("Нож", WeaponType.KNIFE, 12, value=115, quality=ItemQuality.UNCOMMON,
-                            stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "rare_knife": WeaponItem("Нож", WeaponType.KNIFE, 17, value=200, quality=ItemQuality.RARE,
-                            stats_bonus={'dexterity': 2}, param_bonus={}, skill_bonus={}),
-
-    # Мечи
-    "poor_sword": WeaponItem("Меч", WeaponType.SWORD, 7, value=50, quality=ItemQuality.POOR,
-                            stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "sword": WeaponItem("Меч", WeaponType.SWORD, 12, value=95, quality=ItemQuality.COMMON,
-                       stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "fine_sword": WeaponItem("Меч", WeaponType.SWORD, 18, value=165, quality=ItemQuality.UNCOMMON,
-                            stats_bonus={'strength': 1}, param_bonus={}, skill_bonus={}),
-    "rare_sword": WeaponItem("Меч", WeaponType.SWORD, 25, value=290, quality=ItemQuality.RARE,
-                            stats_bonus={'strength': 3, 'dexterity': 1}, param_bonus={}, skill_bonus={}),
-
-    # Легкие перчатки
-    "poor_light_gloves": ArmorItem("Легкие перчатки", EquipmentSlot.HANDS, ArmorType.LIGHT, 2, value=30,
-                                   quality=ItemQuality.POOR, stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "light_gloves": ArmorItem("Легкие перчатки", EquipmentSlot.HANDS, ArmorType.LIGHT, 3, value=55,
-                              quality=ItemQuality.COMMON, stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "fine_light_gloves": ArmorItem("Легкие перчатки", EquipmentSlot.HANDS, ArmorType.LIGHT, 5, value=95,
-                                   quality=ItemQuality.UNCOMMON, stats_bonus={'dexterity': 1}, param_bonus={}, skill_bonus={}),
-
-    # Легкая обувь
-    "poor_light_boots": ArmorItem("Легкая обувь", EquipmentSlot.FEET, ArmorType.LIGHT, 2, value=40,
-                                  quality=ItemQuality.POOR, stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "light_boots": ArmorItem("Легкая обувь", EquipmentSlot.FEET, ArmorType.LIGHT, 4, value=70,
-                            quality=ItemQuality.COMMON, stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "fine_light_boots": ArmorItem("Легкая обувь", EquipmentSlot.FEET, ArmorType.LIGHT, 6, value=120,
-                                  quality=ItemQuality.UNCOMMON, stats_bonus={'dexterity': 1}, param_bonus={}, skill_bonus={}),
-
-    # Легкие шлемы
-    "poor_light_helmet": ArmorItem("Легкий шлем", EquipmentSlot.HEAD, ArmorType.LIGHT, 2, value=35,
-                                   quality=ItemQuality.POOR, stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "light_helmet": ArmorItem("Легкий шлем", EquipmentSlot.HEAD, ArmorType.LIGHT, 3, value=65,
-                              quality=ItemQuality.COMMON, stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "fine_light_helmet": ArmorItem("Легкий шлем", EquipmentSlot.HEAD, ArmorType.LIGHT, 5, value=110,
-                                   quality=ItemQuality.UNCOMMON, stats_bonus={'spirit': 1}, param_bonus={}, skill_bonus={}),
-
-    # Ремни
-    "poor_belt": ArmorItem("Ремень", EquipmentSlot.BELT, ArmorType.LIGHT, 1, value=25,
-                          quality=ItemQuality.POOR, stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "belt": ArmorItem("Ремень", EquipmentSlot.BELT, ArmorType.LIGHT, 2, value=50,
-                     quality=ItemQuality.COMMON, stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "fine_belt": ArmorItem("Ремень", EquipmentSlot.BELT, ArmorType.LIGHT, 3, value=90,
-                          quality=ItemQuality.UNCOMMON, stats_bonus={'constitution': 1}, param_bonus={}, skill_bonus={}),
-    "rare_belt": ArmorItem("Ремень", EquipmentSlot.BELT, ArmorType.LIGHT, 5, value=160,
-                          quality=ItemQuality.RARE, stats_bonus={'constitution': 2, 'strength': 1}, param_bonus={}, skill_bonus={}),
-
-    # Рюкзаки
-    "poor_backpack": ArmorItem("Рюкзак", EquipmentSlot.BACKPACK, ArmorType.LIGHT, 1, value=30,
-                              quality=ItemQuality.POOR, stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "backpack": ArmorItem("Рюкзак", EquipmentSlot.BACKPACK, ArmorType.LIGHT, 2, value=60,
-                         quality=ItemQuality.COMMON, stats_bonus={}, param_bonus={}, skill_bonus={}),
-    "fine_backpack": ArmorItem("Рюкзак", EquipmentSlot.BACKPACK, ArmorType.LIGHT, 3, value=110,
-                              quality=ItemQuality.UNCOMMON, stats_bonus={'strength': 1}, param_bonus={}, skill_bonus={}),
-    "rare_backpack": ArmorItem("Рюкзак", EquipmentSlot.BACKPACK, ArmorType.LIGHT, 5, value=190,
-                              quality=ItemQuality.RARE, stats_bonus={'strength': 2, 'constitution': 1}, param_bonus={}, skill_bonus={}),
-
-    # Книги магических умений
-    "book_heal": SkillBookItem("Книга Лечения", "heal", 150, 0.5, ItemQuality.UNCOMMON),
-    "book_regeneration": SkillBookItem("Книга Регенерации", "regeneration", 250, 0.5, ItemQuality.RARE),
-    "book_stamina_recovery": SkillBookItem("Книга Восстановления Выносливости", "stamina_recovery", 200, 0.5, ItemQuality.UNCOMMON),
-    "book_mage_shield": SkillBookItem("Книга Щита Мага", "mage_shield", 400, 0.5, ItemQuality.RARE),
-
-    # Книги боевых умений
-    "book_power_strike": SkillBookItem("Книга Мощного Удара", "power_strike", 200, 0.5, ItemQuality.UNCOMMON),
-    "book_poison_strike": SkillBookItem("Книга Отравленного Удара", "poison_strike", 300, 0.5, ItemQuality.RARE),
-    "book_stun_strike": SkillBookItem("Книга Оглушающего Удара", "stun_strike", 350, 0.5, ItemQuality.RARE),
-    "book_battle_cry": SkillBookItem("Книга Боевого Клича", "battle_cry", 400, 0.5, ItemQuality.EPIC),
-
-    # Книги атакующих магических умений (очень дорогие)
-    "book_magic_missile": SkillBookItem("Книга Магической Стрелы", "magic_missile", 200, 0.5, ItemQuality.UNCOMMON),
-    "book_fireball": SkillBookItem("Книга Огненного Шара", "fireball", 2000, 0.5, ItemQuality.EPIC),
-    "book_ice_bolt": SkillBookItem("Книга Ледяной Стрелы", "ice_bolt", 1500, 0.5, ItemQuality.EPIC),
-    "book_lightning": SkillBookItem("Книга Молнии", "lightning", 3500, 0.5, ItemQuality.LEGENDARY),
-
-    # Книги оружейных умений (для лука)
-    "book_precise_shot": SkillBookItem("Книга Точного Выстрела", "precise_shot", 350, 0.5, ItemQuality.UNCOMMON),
-    "book_rapid_fire": SkillBookItem("Книга Быстрой Стрельбы", "rapid_fire", 500, 0.5, ItemQuality.RARE),
-    "book_piercing_arrow": SkillBookItem("Книга Пронзающей Стрелы", "piercing_arrow", 450, 0.5, ItemQuality.RARE),
-
-    # Книги оружейных умений (для кинжала)
-    "book_backstab": SkillBookItem("Книга Удара в Спину", "backstab", 400, 0.5, ItemQuality.UNCOMMON),
-    "book_bleeding_cut": SkillBookItem("Книга Кровоточащего Пореза", "bleeding_cut", 350, 0.5, ItemQuality.UNCOMMON),
-    "book_shadow_step": SkillBookItem("Книга Шага Тени", "shadow_step", 550, 0.5, ItemQuality.RARE),
-
-    # Книги оружейных умений (для меча)
-    "book_whirlwind_strike": SkillBookItem("Книга Вихревого Удара", "whirlwind_strike", 450, 0.5, ItemQuality.RARE),
-    "book_shield_breaker": SkillBookItem("Книга Разрушителя Щита", "shield_breaker", 400, 0.5, ItemQuality.UNCOMMON),
-    "book_blade_dance": SkillBookItem("Книга Танца Клинка", "blade_dance", 600, 0.5, ItemQuality.RARE),
-
-    # Рецепты крафта (переплавка руды)
-    "recipe_copper_ingot": RecipeItem("Рецепт: Медный слиток", "copper_ingot", 50, 0.1, ItemQuality.COMMON,
-                                      "Переплавка медной руды в слиток. Требуется 5 кусков медной руды."),
-    "recipe_iron_ingot": RecipeItem("Рецепт: Железный слиток", "iron_ingot", 100, 0.1, ItemQuality.COMMON,
-                                    "Переплавка железной руды в слиток. Требуется 5 кусков железной руды."),
-    "recipe_silver_ingot": RecipeItem("Рецепт: Серебряный слиток", "silver_ingot", 250, 0.1, ItemQuality.COMMON,
-                                      "Переплавка серебряной руды в слиток. Требуется 5 кусков серебряной руды."),
-    "recipe_gold_ingot": RecipeItem("Рецепт: Золотой слиток", "gold_ingot", 500, 0.1, ItemQuality.COMMON,
-                                    "Переплавка золотой руды в слиток. Требуется 5 кусков золотой руды."),
-    "recipe_mithril_ingot": RecipeItem("Рецепт: Мифриловый слиток", "mithril_ingot", 1000, 0.1, ItemQuality.COMMON,
-                                       "Переплавка мифриловой руды в слиток. Требуется 5 кусков мифриловой руды."),
-
-    # Рецепты деревянных компонентов
-    "recipe_long_wooden_handle": RecipeItem("Рецепт: Длинная деревянная рукоять", "long_wooden_handle", 20, 0.1, ItemQuality.COMMON,
-                                           "Создание длинной рукояти. Требуется 2 куска древесины."),
-    "recipe_short_wooden_handle": RecipeItem("Рецепт: Короткая деревянная рукоять", "short_wooden_handle", 15, 0.1, ItemQuality.COMMON,
-                                            "Создание короткой рукояти. Требуется 1 кусок древесины."),
-    "recipe_wooden_shaft": RecipeItem("Рецепт: Древко", "wooden_shaft", 25, 0.1, ItemQuality.COMMON,
-                                     "Создание древка для копья. Требуется 3 куска древесины."),
-    "recipe_charcoal": RecipeItem("Рецепт: Древесный уголь", "charcoal", 10, 0.1, ItemQuality.COMMON,
-                                 "Производство древесного угля. Требуется 5 кусков древесины."),
-
-    # Рецепты продвинутой металлургии
-    "recipe_steel_ingot": RecipeItem("Рецепт: Стальной слиток", "steel_ingot", 150, 0.1, ItemQuality.UNCOMMON,
-                                    "Производство стального слитка. Требуется 4 железных слитка и 5 угля."),
-
-    # Рецепты проволоки
-    "recipe_copper_wire": RecipeItem("Рецепт: Медная проволока", "copper_wire", 50, 0.1, ItemQuality.UNCOMMON,
-                                    "Производство медной проволоки. Требуется 1 медный слиток и 2 угля."),
-    "recipe_iron_wire": RecipeItem("Рецепт: Железная проволока", "iron_wire", 80, 0.1, ItemQuality.UNCOMMON,
-                                  "Производство железной проволоки. Требуется 1 железный слиток и 2 угля."),
-    "recipe_steel_wire": RecipeItem("Рецепт: Стальная проволока", "steel_wire", 150, 0.1, ItemQuality.UNCOMMON,
-                                   "Производство стальной проволоки. Требуется 1 стальной слиток и 2 угля."),
-    "recipe_silver_wire": RecipeItem("Рецепт: Серебряная проволока", "silver_wire", 200, 0.1, ItemQuality.UNCOMMON,
-                                    "Производство серебряной проволоки. Требуется 1 серебряный слиток и 2 угля."),
-    "recipe_gold_wire": RecipeItem("Рецепт: Золотая проволока", "gold_wire", 400, 0.1, ItemQuality.UNCOMMON,
-                                  "Производство золотой проволоки. Требуется 1 золотой слиток и 2 угля."),
-    "recipe_mithril_wire": RecipeItem("Рецепт: Мифриловая проволока", "mithril_wire", 800, 0.1, ItemQuality.UNCOMMON,
-                                     "Производство мифриловой проволоки. Требуется 1 мифриловый слиток и 2 угля."),
-
-    # Рецепты компонентов оружия
-    "recipe_copper_axe_blade": RecipeItem("Рецепт: Медное лезвие топора", "copper_axe_blade", 40, 0.1, ItemQuality.COMMON,
-                                         "Изготовление медного лезвия для топора. Требуется 2 медных слитка и 3 угля."),
-    "recipe_poor_axe": RecipeItem("Рецепт: Топор (плохое качество)", "poor_axe", 60, 0.1, ItemQuality.COMMON,
-                                 "Изготовление простого топора. Требуется 1 длинная деревянная рукоять и 1 медное лезвие топора."),
-
-    # Уникальные предметы для квестов
-    # Алхимические предметы
-    "elixir_of_life": PotionItem("Эликсир Жизни", "health", 500, 500, ItemQuality.LEGENDARY),
-    "elixir_of_power": PotionItem("Эликсир Силы", "stamina", 300, 400, ItemQuality.EPIC),
-    "philosophers_stone_fragment": ResourceItem("Осколок Философского Камня", 1000, 0.1),
-
-    # Охотничьи трофеи
-    "beast_fang": ResourceItem("Клык Зверя", 150, 0.2),
-    "shadow_essence": ResourceItem("Эссенция Тени", 300, 0.1),
-    "hunter_medal": ResourceItem("Медаль Охотника", 500, 0.1),
-
-    # Артефакты некроманта
-    "dark_crystal": ResourceItem("Темный Кристалл", 400, 0.3),
-    "soul_gem": ResourceItem("Камень Душ", 800, 0.2),
-    "necronomicon_page": ResourceItem("Страница Некрономикона", 1500, 0.1),
-
-    # Уникальное оружие для наград (с бонусами к умениям)
-    "hunters_bow": WeaponItem(
-        "Лук Следопыта",
-        WeaponType.BOW,
-        25,
-        quality=ItemQuality.EPIC,
-        stats_bonus={'dexterity': 5, 'luck': 3},
-        param_bonus={'stamina': 5},
-        skill_bonus={'precise_shot': 2}  # Даёт умение "Точный выстрел" ранг 2
-    ),
-    "alchemists_staff": WeaponItem(
-        "Посох Алхимика",
-        WeaponType.STAFF,
-        20,
-        quality=ItemQuality.EPIC,
-        stats_bonus={'intelligence': 6, 'spirit': 4},
-        param_bonus={'mana': 5},
-        skill_bonus={'heal': 1, 'regeneration': 1}  # Даёт умения лечения
-    ),
-    "shadow_blade": WeaponItem(
-        "Клинок Теней",
-        WeaponType.SWORD,
-        30,
-        quality=ItemQuality.LEGENDARY,
-        stats_bonus={'strength': 5, 'dexterity': 4, 'luck': 3},
-        param_bonus={'health': 8, 'stamina': 5},
-        skill_bonus={'blade_dance': 2, 'shadow_step': 1}  # Даёт умения "Танец клинка" и "Шаг тени"
-    ),
-    # Кинжал с умениями
-    "assassins_dagger": WeaponItem(
-        "Кинжал Убийцы",
-        WeaponType.KNIFE,
-        22,
-        quality=ItemQuality.EPIC,
-        stats_bonus={'dexterity': 6, 'luck': 4},
-        param_bonus={'stamina': 3},
-        skill_bonus={'backstab': 2, 'bleeding_cut': 1}  # Даёт умения кинжала
-    ),
-    # Лук с множественными умениями
-    "windrunners_bow": WeaponItem(
-        "Лук Бегущего по Ветру",
-        WeaponType.BOW,
-        28,
-        quality=ItemQuality.LEGENDARY,
-        stats_bonus={'dexterity': 7, 'luck': 5},
-        param_bonus={'stamina': 8},
-        skill_bonus={'rapid_fire': 2, 'piercing_arrow': 2}  # Даёт все умения лука
-    ),
-}
 
 
 def get_random_loot_from_location(location_type, level=1, luck=1):
@@ -2826,10 +2487,9 @@ def get_random_loot_from_location(location_type, level=1, luck=1):
 
 def get_predefined_item(item_id):
     """
-    Получить предопределённый предмет по ID.
+    Получить предмет по ID.
 
-    Рекомендуемый способ получения предметов вместо прямого доступа к PREDEFINED_ITEMS.
-    Сначала пробует получить из ItemRegistry, затем fallback на PREDEFINED_ITEMS.
+    Рекомендуемый способ: используйте game.item_registry.get_item() напрямую.
 
     Args:
         item_id: Идентификатор предмета
@@ -2837,17 +2497,7 @@ def get_predefined_item(item_id):
     Returns:
         Item: Объект предмета или None
     """
-    # Сначала пробуем ItemRegistry (новый способ)
-    try:
-        from game.item_registry import get_item
-        item = get_item(item_id)
-        if item:
-            return item
-    except ImportError:
-        pass
-
-    # Fallback на PREDEFINED_ITEMS
-    return PREDEFINED_ITEMS.get(item_id)
+    return get_item(item_id)
 
 
 def get_item_by_id(item_id):

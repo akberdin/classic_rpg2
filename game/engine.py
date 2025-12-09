@@ -48,6 +48,7 @@ from game.hud_renderer import HUDRenderer
 from game.resource_system import ResourceSystem
 from game.quest_ui_controller import QuestUIController
 from game.crafting_system import CraftingSystem
+from game.item_registry import get_item
 
 
 class Game:

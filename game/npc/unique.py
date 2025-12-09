@@ -5,6 +5,7 @@ import random
 from game.npc.base import NPC
 from game.npc.merchant import Merchant
 from game.constants import (
+from game.item_registry import get_item
     RELATIONSHIP_HOSTILE, RELATIONSHIP_FRIENDLY, RELATIONSHIP_NEUTRAL,
     NPC_TYPE_UNDEAD
 )
@@ -48,7 +49,7 @@ class Alchemist(Merchant):
 
     def _generate_alchemist_goods(self):
         """Генерация товаров алхимика"""
-        from game.inventory import PREDEFINED_ITEMS, ItemGenerator, ItemQuality
+        from game.inventory import ItemGenerator, ItemQuality
 
         # Очищаем стандартные товары торговца
         self.inventory.items.clear()
@@ -61,7 +62,7 @@ class Alchemist(Merchant):
         ]
 
         for potion_key, quantity in potions:
-            if potion_key in PREDEFINED_ITEMS:
+            if get_item(potion_key):
                 self.inventory.add_item(PREDEFINED_ITEMS[potion_key], quantity)
 
         # Ресурсы: магические кристаллы, осколки артефактов
@@ -71,7 +72,7 @@ class Alchemist(Merchant):
         ]
 
         for ing_key, quantity in ingredients:
-            if ing_key in PREDEFINED_ITEMS:
+            if get_item(ing_key):
                 self.inventory.add_item(PREDEFINED_ITEMS[ing_key], quantity)
 
         # Рецепты алхимии: зелья здоровья, маны и выносливости (малые и средние)
@@ -86,7 +87,7 @@ class Alchemist(Merchant):
 
         # Добавляем все рецепты алхимии (по 1 штуке каждого)
         for recipe_key in alchemy_recipes:
-            if recipe_key in PREDEFINED_ITEMS:
+            if get_item(recipe_key):
                 self.inventory.add_item(PREDEFINED_ITEMS[recipe_key], 1)
 
         # Добавляем золото для торговли
