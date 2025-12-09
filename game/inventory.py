@@ -104,6 +104,7 @@ class Item:
         self.weight = weight
         self.quality = quality
         self.description = description
+        self.item_id = None  # Устанавливается реестром при создании
 
     @property
     def value(self):

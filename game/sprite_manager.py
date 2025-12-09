@@ -385,6 +385,34 @@ class SpriteManager:
         """
         return self.has_sprite(potion_id, 'potion')
 
+    def render_potion_icon(self, screen, potion_id, x, y, size, fallback_text=None):
+        """
+        Отрисовка иконки зелья (спрайт или fallback текст)
+
+        Args:
+            screen: Pygame экран
+            potion_id: ID зелья (minor_health_potion, mana_potion, etc.)
+            x: X координата
+            y: Y координата
+            size: Размер иконки
+            fallback_text: Текст для отображения если спрайт не найден (обычно первая буква)
+
+        Returns:
+            bool: True если спрайт был отрисован, False если использован fallback
+        """
+        sprite = self.get_potion_sprite(potion_id, icon_size=size)
+        if sprite:
+            screen.blit(sprite, (x, y))
+            return True
+        elif fallback_text:
+            # Fallback - рисуем текст (первую букву названия)
+            icon_font = pygame.font.Font(None, int(size * 0.7))
+            icon_text = icon_font.render(fallback_text, True, (200, 100, 200))
+            icon_rect = icon_text.get_rect()
+            icon_rect.center = (x + size // 2, y + size // 2)
+            screen.blit(icon_text, icon_rect)
+        return False
+
     def update_tile_size(self, new_tile_size):
         """
         Обновить размер клетки и перезагрузить спрайты
