@@ -7,114 +7,7 @@ import json
 import os
 from typing import Dict, List, Optional, Tuple
 
-# Маппинг ID предметов на их имена из PREDEFINED_ITEMS
-ITEM_ID_TO_NAME = {
-    # Руды
-    "copper_ore": "Медная руда",
-    "iron_ore": "Железная руда",
-    "silver_ore": "Серебряная руда",
-    "gold_ore": "Золотая руда",
-    "mithril_ore": "Мифриловая руда",
-    # Слитки
-    "copper_ingot": "Медный слиток",
-    "iron_ingot": "Железный слиток",
-    "silver_ingot": "Серебряный слиток",
-    "gold_ingot": "Золотой слиток",
-    "mithril_ingot": "Мифриловый слиток",
-    "steel_ingot": "Стальной слиток",
-    # Древесина и деревянные компоненты
-    "wood": "Древесина",
-    "long_wooden_handle": "Длинная деревянная рукоять",
-    "short_wooden_handle": "Короткая деревянная рукоять",
-    "wooden_shaft": "Древко",
-    # Уголь
-    "charcoal": "Древесный уголь",
-    # Проволока
-    "copper_wire": "Медная проволока",
-    "iron_wire": "Железная проволока",
-    "steel_wire": "Стальная проволока",
-    "silver_wire": "Серебряная проволока",
-    "gold_wire": "Золотая проволока",
-    "mithril_wire": "Мифриловая проволока",
-    # Компоненты оружия - лезвия топоров
-    "copper_axe_blade": "Медное лезвие топора",
-    "iron_axe_blade": "Железное лезвие топора",
-    "steel_axe_blade": "Стальное лезвие топора",
-    # Бойки для кирок
-    "copper_hammer_head": "Медный боёк",
-    "iron_hammer_head": "Железный боёк",
-    "steel_hammer_head": "Стальной боёк",
-    # Металлические полоски
-    "copper_strips": "Медные полоски",
-    "iron_strips": "Железные полоски",
-    "steel_strips": "Стальные полоски",
-    "silver_strips": "Серебряные полоски",
-    # Короткие лезвия для ножей
-    "copper_short_blade": "Медное короткое лезвие",
-    "iron_short_blade": "Железное короткое лезвие",
-    "steel_short_blade": "Стальное короткое лезвие",
-    # Длинные лезвия для мечей
-    "copper_long_blade": "Медное длинное лезвие",
-    "iron_long_blade": "Железное длинное лезвие",
-    "steel_long_blade": "Стальное длинное лезвие",
-    # Наконечники копий
-    "copper_spearhead": "Медный наконечник",
-    "iron_spearhead": "Железный наконечник",
-    "steel_spearhead": "Стальной наконечник",
-    # Материалы от животных
-    "leather": "Кожа",
-    "leather_strips": "Полоски кожи",
-    "deer_hide": "Шкура оленя",
-    "wolf_hide": "Шкура волка",
-    "bear_hide": "Шкура медведя",
-    "animal_sinew": "Звериные жилы",
-    "deer_antlers": "Рога оленя",
-    # Ткань
-    "poor_fabric": "Плохая ткань",
-    "fabric": "Ткань",
-    "fine_fabric": "Отличная ткань",
-    # Травы для алхимии
-    "chamomile": "Ромашка",
-    "mint": "Мята",
-    "sage": "Шалфей",
-    "ginseng": "Женьшень",
-    "mandrake": "Мандрагора",
-    # Дополнительные компоненты
-    "bowstring": "Тетива",
-    "short_horn_handle": "Короткая роговая рукоять",
-    # Готовые изделия - оружие
-    "poor_axe": "Топор",
-    "poor_spear": "Копье",
-    "poor_pickaxe": "Кирка",
-    "pickaxe": "Кирка",
-    "fine_pickaxe": "Кирка",
-    "poor_knife": "Нож",
-    "knife": "Нож",
-    "fine_knife": "Нож",
-    "rare_knife": "Нож",
-    "poor_sword": "Меч",
-    "sword": "Меч",
-    "fine_sword": "Меч",
-    "rare_sword": "Меч",
-    # Готовые изделия - броня
-    "poor_light_gloves": "Легкие перчатки",
-    "light_gloves": "Легкие перчатки",
-    "fine_light_gloves": "Легкие перчатки",
-    "poor_light_boots": "Легкая обувь",
-    "light_boots": "Легкая обувь",
-    "fine_light_boots": "Легкая обувь",
-    "poor_backpack": "Рюкзак",
-    "backpack": "Рюкзак",
-    "fine_backpack": "Рюкзак",
-    "rare_backpack": "Рюкзак",
-    "poor_light_helmet": "Легкий шлем",
-    "light_helmet": "Легкий шлем",
-    "fine_light_helmet": "Легкий шлем",
-    "poor_belt": "Ремень",
-    "belt": "Ремень",
-    "fine_belt": "Ремень",
-    "rare_belt": "Ремень",
-}
+from game.item_registry import get_item_name, get_item, has_item
 
 
 class CraftingRecipe:
@@ -178,7 +71,7 @@ class CraftingRecipe:
             required_quantity = ingredient['quantity']
 
             # Преобразуем ID предмета в его имя из инвентаря
-            item_name = ITEM_ID_TO_NAME.get(item_id, item_id)
+            item_name = get_item_name(item_id) or item_id
 
             # Получаем количество ресурса в инвентаре
             has_quantity = inventory.get_resource_count(item_name)
@@ -368,20 +261,17 @@ class CraftingSystem:
             item_id = ingredient['item']
             quantity = ingredient['quantity']
             # Преобразуем ID предмета в его имя из инвентаря
-            item_name = ITEM_ID_TO_NAME.get(item_id, item_id)
+            item_name = get_item_name(item_id) or item_id
             inventory.remove_resource(item_name, quantity)
 
         # Добавляем созданный предмет
-        # Пытаемся получить предмет из предопределенных
-        from game.inventory import PREDEFINED_ITEMS, ItemGenerator
+        # Пытаемся получить предмет из ItemRegistry (или fallback на PREDEFINED_ITEMS)
+        result_item = get_item(recipe.result_item)
 
-        result_item = None
-        if recipe.result_item in PREDEFINED_ITEMS:
-            result_item = PREDEFINED_ITEMS[recipe.result_item]
-        else:
-            # Если предмет не найден в предопределенных, пытаемся сгенерировать
-            # Это для будущего расширения системы
-            pass
+        if result_item is None:
+            # Fallback на PREDEFINED_ITEMS
+            from game.inventory import PREDEFINED_ITEMS
+            result_item = PREDEFINED_ITEMS.get(recipe.result_item)
 
         if result_item:
             inventory.add_item(result_item, recipe.result_quantity)
@@ -411,7 +301,7 @@ class CraftingSystem:
                 item_id = ingredient['item']
                 quantity = ingredient['quantity']
                 # Преобразуем ID предмета в его имя из инвентаря
-                item_name = ITEM_ID_TO_NAME.get(item_id, item_id)
+                item_name = get_item_name(item_id) or item_id
                 inventory.add_resource(item_name, quantity)
             return False, f"Ошибка: предмет '{recipe.result_item}' не найден в системе"
 

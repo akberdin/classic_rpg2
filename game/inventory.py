@@ -191,33 +191,46 @@ class PotionItem(Item):
 class SkillBookItem(Item):
     """Класс для книг умений"""
 
-    # Словарь описаний умений
-    SKILL_DESCRIPTIONS = {
-        'basic_attack': ("Базовая атака", "combat", "Простой удар оружием. Урон растёт с рангом (x1.0 - x1.8). Применяется: на противника. Требует: любое оружие."),
-        'power_strike': ("Мощный удар", "combat", "Усиленный удар с пробитием брони (x1.8 - x3.2, брони 0-40%). Применяется: на противника. Требует: любое оружие."),
-        'poison_strike': ("Отравленный удар", "combat", "Накладывает яд (5-21 урона/ход, 3-7 ходов). Применяется: на противника. Требует: любое оружие."),
-        'stun_strike': ("Оглушающий удар", "combat", "Шанс оглушения 50-90% на 1-3 хода. Применяется: на противника. Требует: любое оружие."),
-        'battle_cry': ("Боевой клич", "combat", "Бонус к силе +9 - +25 на 4-8 ходов. Применяется: на себя."),
-        'precise_shot': ("Точный выстрел", "combat", "Меткая стрельба с бонусом крит. урона. Применяется: на противника. Требует: лук."),
-        'rapid_fire': ("Скорострельность", "combat", "Серия быстрых выстрелов. Применяется: на противника. Требует: лук."),
-        'piercing_arrow': ("Пронзающая стрела", "combat", "Стрела пробивает броню врага. Применяется: на противника. Требует: лук."),
-        'backstab': ("Удар в спину", "combat", "Мощный удар (x2.5 - x4.5 урона). Применяется: на противника. Требует: кинжал."),
-        'bleeding_cut': ("Кровоточащий порез", "combat", "Накладывает кровотечение на цель. Применяется: на противника. Требует: кинжал."),
-        'shadow_step': ("Шаг сквозь тень", "combat", "Уклонение и контратака. Применяется: на себя. Требует: кинжал."),
-        'whirlwind_strike': ("Вихревой удар", "combat", "Круговая атака. Применяется: на противника. Требует: меч."),
-        'shield_breaker': ("Сокрушение щита", "combat", "Пробивает защиту противника. Применяется: на противника. Требует: меч."),
-        'blade_dance': ("Танец клинков", "combat", "Серия быстрых ударов. Применяется: на противника. Требует: меч."),
-        'heal': ("Исцеление", "magic", "Восстановление HP (35-83% макс. здоровья). Применяется: на себя. Требует: посох или без оружия."),
-        'regeneration': ("Регенерация", "magic", "Постепенное восстановление HP каждый ход (21-45 HP/ход, 5-9 ходов). Применяется: на себя. Требует: посох или без оружия."),
-        'stamina_recovery': ("Восстановление сил", "magic", "Восстановление выносливости каждый ход (20-40/ход, 5-9 ходов). Применяется: на себя. Требует: посох или без оружия."),
-        'mage_shield': ("Магический щит", "magic", "Временная защита от урона (50 + Интеллект/2 + Ранг×10% защиты, 4-8 ходов). Применяется: на себя. Требует: посох или без оружия."),
-        'fireball': ("Огненный шар", "magic", "Мощная огненная атака (x1.0 - x2.4). Игнорирует броню. Применяется: на противника. Требует: посох или без оружия."),
-        'ice_bolt': ("Ледяная стрела", "magic", "Ледяной урон + шанс замедления 40-80%. Применяется: на противника. Требует: посох или без оружия."),
-        'lightning': ("Молния", "magic", "Мощнейшая электрическая атака (x1.0 - x2.6). Применяется: на противника. Требует: посох или без оружия."),
-        'magic_missile': ("Магическая стрела", "magic", "Базовая магическая атака (x1.0 - x2.0). Применяется: на противника. Требует: посох или без оружия."),
-        'mining': ("Рудокопство", "crafting", "Добыча руды в шахтах. Применяется: на ресурсные точки. Требует: кирка."),
-        'lumberjacking': ("Лесорубство", "crafting", "Заготовка древесины в лесах. Применяется: на ресурсные точки. Требует: топор.")
-    }
+    # Кэш описаний умений (загружается из конфига)
+    _skill_descriptions_cache = None
+
+    @classmethod
+    def _load_skill_descriptions(cls):
+        """Загрузить описания умений из конфига (ленивая загрузка)."""
+        if cls._skill_descriptions_cache is not None:
+            return cls._skill_descriptions_cache
+
+        import json
+        import os
+
+        config_path = os.path.join(
+            os.path.dirname(__file__),
+            'config',
+            'skill_book_descriptions.json'
+        )
+
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                cls._skill_descriptions_cache = {
+                    'skills': data.get('skills', {}),
+                    'category_names': data.get('category_names', {
+                        'combat': 'Боевое',
+                        'magic': 'Магическое',
+                        'crafting': 'Ремесленное'
+                    })
+                }
+        except (FileNotFoundError, json.JSONDecodeError):
+            # Fallback если конфиг не найден
+            cls._skill_descriptions_cache = {'skills': {}, 'category_names': {}}
+
+        return cls._skill_descriptions_cache
+
+    @classmethod
+    def get_skill_description(cls, skill_id):
+        """Получить описание умения по ID."""
+        cache = cls._load_skill_descriptions()
+        return cache['skills'].get(skill_id)
 
     def __init__(self, name, skill_id, value=100, weight=0.5, quality=ItemQuality.COMMON):
         """
@@ -230,12 +243,15 @@ class SkillBookItem(Item):
             weight: Вес книги
             quality: Качество книги
         """
-        # Генерируем подробное описание книги
-        skill_info = self.SKILL_DESCRIPTIONS.get(skill_id)
+        # Генерируем подробное описание книги из конфига
+        cache = self._load_skill_descriptions()
+        skill_info = cache['skills'].get(skill_id)
+
         if skill_info:
-            skill_name, category, effect_desc = skill_info
-            category_names = {'combat': 'Боевое', 'magic': 'Магическое', 'crafting': 'Ремесленное'}
-            cat_name = category_names.get(category, 'Умение')
+            skill_name = skill_info.get('name', skill_id)
+            category = skill_info.get('category', 'combat')
+            effect_desc = skill_info.get('description', '')
+            cat_name = cache['category_names'].get(category, 'Умение')
             description = f"{cat_name} умение: {skill_name}. {effect_desc}"
         else:
             description = f"Книга умения: {name}"
@@ -2806,3 +2822,38 @@ def get_random_loot_from_location(location_type, level=1, luck=1):
         list: Список (item, quantity)
     """
     return ItemGenerator.generate_loot_for_location(location_type, level, luck)
+
+
+def get_predefined_item(item_id):
+    """
+    Получить предопределённый предмет по ID.
+
+    Рекомендуемый способ получения предметов вместо прямого доступа к PREDEFINED_ITEMS.
+    Сначала пробует получить из ItemRegistry, затем fallback на PREDEFINED_ITEMS.
+
+    Args:
+        item_id: Идентификатор предмета
+
+    Returns:
+        Item: Объект предмета или None
+    """
+    # Сначала пробуем ItemRegistry (новый способ)
+    try:
+        from game.item_registry import get_item
+        item = get_item(item_id)
+        if item:
+            return item
+    except ImportError:
+        pass
+
+    # Fallback на PREDEFINED_ITEMS
+    return PREDEFINED_ITEMS.get(item_id)
+
+
+def get_item_by_id(item_id):
+    """
+    Алиас для get_predefined_item для совместимости.
+
+    DEPRECATED: Используйте game.item_registry.get_item() напрямую.
+    """
+    return get_predefined_item(item_id)

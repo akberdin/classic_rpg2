@@ -1,0 +1,226 @@
+{
+  "_description": "Конфигурация системы лута - книги, зелья, рецепты, качество по уровням",
+  "_version": "1.0.0",
+
+  "gold": {
+    "_comment": "Настройки золота с врагов",
+    "base_per_level": 5,
+    "multiplier_min": 1.0,
+    "multiplier_max": 2.0
+  },
+
+  "drop_chance": {
+    "_comment": "Шансы выпадения предметов",
+    "base": 0.3,
+    "per_level": 0.02,
+    "max": 0.8,
+    "items_min": 1,
+    "items_max": 3
+  },
+
+  "quality_by_level": {
+    "_comment": "Веса качества предметов по уровням врагов",
+    "rank_1": {
+      "max_level": 10,
+      "weights": {
+        "POOR": 0.4,
+        "COMMON": 0.6
+      }
+    },
+    "rank_2": {
+      "max_level": 20,
+      "weights": {
+        "COMMON": 0.5,
+        "UNCOMMON": 0.5
+      }
+    },
+    "rank_3": {
+      "max_level": 30,
+      "weights": {
+        "COMMON": 0.3,
+        "UNCOMMON": 0.4,
+        "RARE": 0.3
+      }
+    },
+    "rank_4": {
+      "max_level": 999,
+      "weights": {
+        "POOR": 0.05,
+        "COMMON": 0.15,
+        "UNCOMMON": 0.25,
+        "RARE": 0.3,
+        "EPIC": 0.2,
+        "LEGENDARY": 0.05
+      }
+    }
+  },
+
+  "equipment_types": {
+    "_comment": "Распределение типов экипировки",
+    "jewelry_chance": 0.15,
+    "weapon_chance": 0.425,
+    "armor_chance": 0.425
+  },
+
+  "potions": {
+    "_comment": "Списки зелий по уровням врагов",
+    "base": [
+      "minor_health_potion",
+      "minor_stamina_potion",
+      "minor_mana_potion"
+    ],
+    "level_10": [
+      "health_potion",
+      "stamina_potion",
+      "mana_potion"
+    ],
+    "quantity_min": 1,
+    "quantity_max": 2
+  },
+
+  "skill_books": {
+    "_comment": "Книги умений с весами для выпадения",
+    "drop_chance_base": 0.05,
+    "drop_chance_per_level": 0.005,
+    "drop_chance_max": 0.20,
+
+    "common": {
+      "_comment": "Базовые умения (вес 50)",
+      "weight": 50,
+      "min_level": 1,
+      "books": [
+        "book_power_strike",
+        "book_poison_strike",
+        "book_stun_strike",
+        "book_battle_cry",
+        "book_precise_shot",
+        "book_rapid_fire",
+        "book_piercing_arrow",
+        "book_backstab",
+        "book_bleeding_cut",
+        "book_shadow_step",
+        "book_whirlwind_strike",
+        "book_shield_breaker",
+        "book_blade_dance",
+        "book_heal",
+        "book_regeneration",
+        "book_stamina_recovery",
+        "book_magic_missile",
+        "book_mage_shield"
+      ]
+    },
+    "uncommon": {
+      "_comment": "Продвинутые умения (вес 30)",
+      "weight": 30,
+      "min_level": 5,
+      "books": [
+        "book_deadly_poison",
+        "book_stealth",
+        "book_shadow_agility",
+        "book_iron_stance",
+        "book_intimidate",
+        "book_counterattack",
+        "book_hunters_mark",
+        "book_stamina_boost",
+        "book_eagle_eye",
+        "book_long_range_shot",
+        "book_lunge_strike",
+        "book_spear_sweep",
+        "book_armor_breach",
+        "book_fireball",
+        "book_ice_bolt",
+        "book_lightning"
+      ]
+    },
+    "rare": {
+      "_comment": "Эпические умения (вес 10)",
+      "weight": 10,
+      "min_level": 10,
+      "books": [
+        "book_critical_strike",
+        "book_steel_skin",
+        "book_berserker",
+        "book_explosive_arrow",
+        "book_trap"
+      ]
+    }
+  },
+
+  "recipes": {
+    "_comment": "Рецепты крафта с уровнями",
+    "drop_chance_base": 0.03,
+    "drop_chance_per_level": 0.003,
+    "drop_chance_max": 0.15,
+
+    "tiers": [
+      {
+        "min_level": 1,
+        "recipes": ["recipe_copper_ingot", "recipe_iron_ingot"]
+      },
+      {
+        "min_level": 10,
+        "recipes": ["recipe_silver_ingot"]
+      },
+      {
+        "min_level": 15,
+        "recipes": ["recipe_gold_ingot"]
+      },
+      {
+        "min_level": 20,
+        "recipes": ["recipe_mithril_ingot"]
+      }
+    ]
+  },
+
+  "special_loot": {
+    "_comment": "Специальный лут по типам врагов",
+
+    "bandit": {
+      "ancient_coin": {
+        "base_chance": 0.30,
+        "per_level": 0.01,
+        "max_chance": 0.60,
+        "quantity_min": 1,
+        "quantity_max": 3
+      }
+    },
+
+    "undead": {
+      "magic_crystal": {
+        "base_chance": 0.40,
+        "per_level": 0.01,
+        "max_chance": 0.70,
+        "quantity_min": 1,
+        "quantity_max": 2
+      },
+      "old_scroll": {
+        "base_chance": 0.35,
+        "per_level": 0.01,
+        "max_chance": 0.65,
+        "quantity_min": 1,
+        "quantity_max": 3
+      }
+    }
+  },
+
+  "item_name_to_key": {
+    "_comment": "Маппинг названий предметов на их ключи (для квестов)",
+    "Клык волка": "wolf_fang",
+    "Шкура волка": "wolf_hide",
+    "Клык медведя": "bear_fang",
+    "Шкура медведя": "bear_hide",
+    "Медвежатина": "bear_meat",
+    "Шкура оленя": "deer_hide",
+    "Оленина": "deer_meat",
+    "Медная руда": "copper_ore",
+    "Железная руда": "iron_ore",
+    "Серебряная руда": "silver_ore",
+    "Золотая руда": "gold_ore",
+    "Мифриловая руда": "mithril_ore",
+    "Древесина": "wood",
+    "Магический кристалл": "magic_crystal",
+    "Фрагмент артефакта": "artifact_fragment",
+    "Древняя монета": "ancient_coin",
+    "Старый свиток": "old_scroll"
+  }
+}
