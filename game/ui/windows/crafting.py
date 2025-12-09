@@ -3,7 +3,7 @@
 """
 import pygame
 from game.ui.base import UIHelper
-from game.crafting_system import ITEM_ID_TO_NAME
+from game.item_registry import get_item_name
 
 
 class CraftingWindow:
@@ -408,7 +408,7 @@ class CraftingWindow:
         for ingredient in recipe.ingredients:
             item_id = ingredient['item']
             required = ingredient['quantity']
-            item_name = ITEM_ID_TO_NAME.get(item_id, item_id)
+            item_name = get_item_name(item_id) or item_id
             has = player.inventory.get_resource_count(item_name)
 
             has_enough = has >= required
