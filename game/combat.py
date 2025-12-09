@@ -789,13 +789,31 @@ class CombatSystem:
 
             # Если есть зелье, отображаем информацию
             if potion:
-                # Первая буква названия зелья
+                # Иконка зелья (спрайт или первая буква названия как fallback)
+                icon_size = slot_size - 8  # Немного меньше слота для отступов
+                icon_x = slot_x + 4
+                icon_y = slot_y + 4
+
                 potion_name = potion.get_full_name() if hasattr(potion, 'get_full_name') else potion.name
-                icon_font = pygame.font.Font(None, 32)
-                icon_text = icon_font.render(potion_name[0], True, (200, 100, 200))
-                icon_rect = icon_text.get_rect()
-                icon_rect.center = (slot_x + slot_size // 2, slot_y + slot_size // 2 + 4)
-                self.screen.blit(icon_text, icon_rect)
+                potion_id = potion.item_id if hasattr(potion, 'item_id') else None
+
+                # Пробуем отрисовать спрайт зелья
+                if potion_id and self.sprite_manager:
+                    self.sprite_manager.render_potion_icon(
+                        self.screen,
+                        potion_id,
+                        icon_x,
+                        icon_y,
+                        icon_size,
+                        fallback_text=potion_name[0]
+                    )
+                else:
+                    # Fallback: первая буква названия
+                    icon_font = pygame.font.Font(None, 32)
+                    icon_text = icon_font.render(potion_name[0], True, (200, 100, 200))
+                    icon_rect = icon_text.get_rect()
+                    icon_rect.center = (slot_x + slot_size // 2, slot_y + slot_size // 2 + 4)
+                    self.screen.blit(icon_text, icon_rect)
 
                 # Количество зелий в инвентаре
                 potion_count = self.player.inventory.get_item_count(potion)

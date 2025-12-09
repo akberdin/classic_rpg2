@@ -350,13 +350,15 @@ class ItemRegistry:
         quality = self._get_quality(data.get('quality', 'COMMON'))
 
         try:
+            item = None
+
             if category == 'resources':
-                return ResourceItem(name, value, weight, quality)
+                item = ResourceItem(name, value, weight, quality)
 
             elif category == 'potions':
                 effect_type = data.get('effect_type', 'health')
                 effect_value = data.get('effect_value', 50)
-                return PotionItem(name, effect_type, effect_value, value, weight, quality)
+                item = PotionItem(name, effect_type, effect_value, value, weight, quality)
 
             elif category == 'weapons':
                 weapon_type = self._get_weapon_type(data.get('weapon_type', 'SWORD'))
@@ -365,7 +367,7 @@ class ItemRegistry:
                 param_bonus = data.get('param_bonus', {})
                 skill_bonus = data.get('skill_bonus', {})
 
-                return WeaponItem(
+                item = WeaponItem(
                     name, weapon_type, damage,
                     value=value,
                     quality=quality,
@@ -382,7 +384,7 @@ class ItemRegistry:
                 param_bonus = data.get('param_bonus', {})
                 skill_bonus = data.get('skill_bonus', {})
 
-                return ArmorItem(
+                item = ArmorItem(
                     name, slot, armor_type, defense,
                     value=value,
                     quality=quality,
@@ -393,16 +395,21 @@ class ItemRegistry:
 
             elif category == 'skill_books':
                 skill_id = data.get('skill_id', '')
-                return SkillBookItem(name, skill_id, value, 0.5, quality)
+                item = SkillBookItem(name, skill_id, value, 0.5, quality)
 
             elif category == 'recipes':
                 recipe_id = data.get('recipe_id', '')
                 description = data.get('description', '')
-                return RecipeItem(name, recipe_id, value, 0.1, quality, description)
+                item = RecipeItem(name, recipe_id, value, 0.1, quality, description)
 
             else:
                 # Базовый предмет
-                return Item(name, 'misc', value, weight, quality)
+                item = Item(name, 'misc', value, weight, quality)
+
+            # Устанавливаем item_id для всех предметов
+            if item:
+                item.item_id = item_id
+            return item
 
         except Exception as e:
             print(f"[ItemRegistry] Ошибка создания предмета {item_id}: {e}")
