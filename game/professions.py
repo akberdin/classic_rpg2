@@ -135,7 +135,7 @@ class Mining(Profession):
             if random.random() * 100 < chance:
                 # Количество зависит от ранга умения (1-3 на низких рангах, до 5 на высоких)
                 quantity = random.randint(1, min(5, 1 + effective_rank // 2))
-                resources.append((PREDEFINED_ITEMS[ore_type], quantity))
+                resources.append((get_item(ore_type), quantity))
 
         # Случайные события при добыче (10% шанс)
         event_roll = random.randint(1, 100)
@@ -156,7 +156,7 @@ class Mining(Profession):
                 # Дополнительная руда только из доступных на текущем ранге
                 if available_ores:
                     bonus_ore = random.choice(list(available_ores.keys()))
-                    resources.append((PREDEFINED_ITEMS[bonus_ore], random.randint(1, 3)))
+                    resources.append((get_item(bonus_ore), random.randint(1, 3)))
             elif event[2] is not None:  # Золото
                 player.inventory.add_gold(event[2])
 
@@ -326,7 +326,7 @@ class HerbalismProfession(Profession):
             if random.random() * 100 < chance:
                 # Количество зависит от ранга (1-2 на низких рангах, до 4 на высоких)
                 quantity = random.randint(1, min(4, 1 + self.rank // 3))
-                resources.append((PREDEFINED_ITEMS[herb_type], quantity))
+                resources.append((get_item(herb_type), quantity))
 
         # Случайные события при сборе трав (10% шанс)
         event_roll = random.randint(1, 100)
@@ -345,7 +345,7 @@ class HerbalismProfession(Profession):
                 player.take_damage(abs(event[1]))
             elif event[2] == "extra_herbs":  # Дополнительные травы
                 bonus_herb = random.choice(list(self.herb_chances.keys()))
-                resources.append((PREDEFINED_ITEMS[bonus_herb], random.randint(1, 2)))
+                resources.append((get_item(bonus_herb), random.randint(1, 2)))
             elif event[2] is not None:  # Золото
                 player.inventory.add_gold(event[2])
 

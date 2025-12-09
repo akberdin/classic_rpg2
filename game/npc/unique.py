@@ -62,8 +62,9 @@ class Alchemist(Merchant):
         ]
 
         for potion_key, quantity in potions:
-            if get_item(potion_key):
-                self.inventory.add_item(PREDEFINED_ITEMS[potion_key], quantity)
+            potion_item = get_item(potion_key)
+            if potion_item:
+                self.inventory.add_item(potion_item, quantity)
 
         # Ресурсы: магические кристаллы, осколки артефактов
         ingredients = [
@@ -72,8 +73,9 @@ class Alchemist(Merchant):
         ]
 
         for ing_key, quantity in ingredients:
-            if get_item(ing_key):
-                self.inventory.add_item(PREDEFINED_ITEMS[ing_key], quantity)
+            ing_item = get_item(ing_key)
+            if ing_item:
+                self.inventory.add_item(ing_item, quantity)
 
         # Рецепты алхимии: зелья здоровья, маны и выносливости (малые и средние)
         alchemy_recipes = [
@@ -87,8 +89,9 @@ class Alchemist(Merchant):
 
         # Добавляем все рецепты алхимии (по 1 штуке каждого)
         for recipe_key in alchemy_recipes:
-            if get_item(recipe_key):
-                self.inventory.add_item(PREDEFINED_ITEMS[recipe_key], 1)
+            recipe_item = get_item(recipe_key)
+            if recipe_item:
+                self.inventory.add_item(recipe_item, 1)
 
         # Добавляем золото для торговли
         self.inventory.add_gold(random.randint(500, 1500) * 3)
