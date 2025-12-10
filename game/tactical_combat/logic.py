@@ -121,82 +121,84 @@ class TacticalCombatSystem:
 
     def _spawn_enemy_units(self, base_x, base_y):
         """
-        Разместить врагов на поле боя
+        Разместить врагов на поле боя по правой стороне карты,
+        распределяя их равномерно чтобы избежать кучкования
 
         Args:
             base_x: Базовая координата X для размещения
             base_y: Базовая координата Y для размещения
         """
-        # Основной враг размещается в центре
-        main_enemy_unit = BattlefieldUnit(self.enemies[0], base_x, base_y)
-        self.enemy_units.append(main_enemy_unit)
+        total_enemies = len(self.enemies)
 
-        # Свита размещается вокруг основного врага
-        if len(self.enemies) > 1:
-            # Возможные позиции вокруг основного врага (по кругу)
-            offsets = [
-                (0, -1),   # Сверху
-                (0, 1),    # Снизу
-                (-1, 0),   # Слева
-                (1, 0),    # Справа
-                (-1, -1),  # Сверху-слева
-                (1, -1),   # Сверху-справа
-                (-1, 1),   # Снизу-слева
-                (1, 1)     # Снизу-справа
-            ]
+        if total_enemies == 1:
+            # Один враг - размещаем в центре правой стороны
+            main_enemy_unit = BattlefieldUnit(self.enemies[0], base_x, base_y)
+            self.enemy_units.append(main_enemy_unit)
+        else:
+            # Распределяем врагов по правой стороне карты
+            # Используем несколько колонок справа (X: base_x, base_x+1, base_x-1)
+            # и равномерно распределяем по высоте
 
-            # Размещаем членов свиты
-            for i, entourage_member in enumerate(self.enemies[1:], start=0):
-                # Выбираем смещение для члена свиты
-                if i < len(offsets):
-                    offset_x, offset_y = offsets[i]
+            # Определяем доступные колонки (от base_x влево и вправо в пределах карты)
+            available_columns = []
+            for offset in [0, 1, -1, 2, -2]:
+                col_x = base_x + offset
+                if 0 <= col_x < self.battlefield_width:
+                    available_columns.append(col_x)
+
+            # Вычисляем равномерное распределение по Y
+            height = self.battlefield_height
+            # Отступы сверху и снизу для лучшего распределения
+            margin = 1
+            usable_height = height - 2 * margin
+
+            # Если врагов больше чем позиций в одной колонке, используем несколько колонок
+            enemies_per_column = usable_height
+
+            # Размещаем всех врагов
+            for i, enemy in enumerate(self.enemies):
+                # Определяем колонку для этого врага
+                column_index = i // enemies_per_column
+                position_in_column = i % enemies_per_column
+
+                # Выбираем X координату колонки
+                if column_index < len(available_columns):
+                    spawn_x = available_columns[column_index]
                 else:
-                    # Если членов свиты больше чем позиций, размещаем дальше
-                    offset_x = (i % 3) - 1
-                    offset_y = (i // 3) - 1
+                    # Если колонок не хватает, используем последнюю доступную
+                    spawn_x = available_columns[-1]
 
-                # Вычисляем позицию
-                spawn_x = base_x + offset_x
-                spawn_y = base_y + offset_y
+                # Вычисляем Y координату с равномерным распределением
+                enemies_in_this_column = min(
+                    total_enemies - column_index * enemies_per_column,
+                    enemies_per_column
+                )
+                if enemies_in_this_column > 1:
+                    step = usable_height / (enemies_in_this_column - 1) if enemies_in_this_column > 1 else 0
+                    spawn_y = margin + int(position_in_column * step)
+                else:
+                    spawn_y = height // 2  # Центр если один враг в колонке
 
                 # Проверяем границы
                 spawn_x = max(0, min(spawn_x, self.battlefield_width - 1))
                 spawn_y = max(0, min(spawn_y, self.battlefield_height - 1))
 
                 # Проверяем, не занята ли позиция
-                occupied = False
-                for existing_unit in self.enemy_units:
-                    if existing_unit.x == spawn_x and existing_unit.y == spawn_y:
-                        occupied = True
-                        break
-
-                # Если занята, ищем свободную позицию рядом
-                if occupied:
-                    for dx in range(-2, 3):
-                        for dy in range(-2, 3):
-                            new_x = base_x + dx
-                            new_y = base_y + dy
-
-                            if (new_x < 0 or new_x >= self.battlefield_width or
-                                new_y < 0 or new_y >= self.battlefield_height):
-                                continue
-
-                            occupied = False
-                            for existing_unit in self.enemy_units:
-                                if existing_unit.x == new_x and existing_unit.y == new_y:
-                                    occupied = True
-                                    break
-
-                            if not occupied:
-                                spawn_x = new_x
-                                spawn_y = new_y
-                                break
-                        if not occupied:
+                occupied = True
+                attempts = 0
+                while occupied and attempts < 20:
+                    occupied = False
+                    for existing_unit in self.enemy_units:
+                        if existing_unit.x == spawn_x and existing_unit.y == spawn_y:
+                            occupied = True
+                            # Ищем ближайшую свободную позицию
+                            spawn_y = (spawn_y + 1) % self.battlefield_height
+                            attempts += 1
                             break
 
-                # Создаем юнит члена свиты
-                entourage_unit = BattlefieldUnit(entourage_member, spawn_x, spawn_y)
-                self.enemy_units.append(entourage_unit)
+                # Создаем юнит врага
+                enemy_unit = BattlefieldUnit(enemy, spawn_x, spawn_y)
+                self.enemy_units.append(enemy_unit)
 
     def _load_config(self):
         """Загрузить конфигурацию тактического боя"""

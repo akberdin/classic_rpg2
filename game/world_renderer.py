@@ -95,11 +95,9 @@ class WorldRenderer:
 
                 # Проверяем, исследован ли тайл
                 if tile.explored:
-                    # Определяем цвет тайла
-                    if tile.has_location():
-                        color = COLORS.get(tile.location.location_type, COLORS['background'])
-                    else:
-                        color = COLORS.get(tile.biome, COLORS['background'])
+                    # Определяем цвет тайла - всегда используем цвет биома
+                    # Спрайты объектов отрисовываются поверх
+                    color = COLORS.get(tile.biome, COLORS['background'])
 
                     # Если тайл не в текущей видимости, затемняем его
                     # В чит-режиме все тайлы видимы

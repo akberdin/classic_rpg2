@@ -24,8 +24,8 @@ class RespawnManager:
         self.game_map = game_map
         # Очередь респавна: [(npc_data, turns_remaining), ...]
         self.respawn_queue = []
-        # Фиксированное время респавна (в игровых часах) - 10 часов = 30 ходов
-        self.respawn_time = 10
+        # Фиксированное время респавна (в игровых часах) - 48 часов = 2 дня
+        self.respawn_time = 48
         # Счетчик успешных респавнов
         self.total_respawns = 0
 
@@ -170,6 +170,21 @@ class RespawnManager:
                 return (npc.ruins_x, npc.ruins_y, LOCATION_RUINS)
         elif npc_class == 'Alchemist':
             # Алхимики стационарны
+            return (npc.x, npc.y, None)
+        elif npc_class == 'Merchant':
+            # Торговцы странствуют между населенными пунктами
+            # Спавним в случайном населенном пункте
+            settlements = [loc for loc in self.game_map.locations
+                          if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]]
+            if settlements:
+                spawn_loc = random.choice(settlements)
+                return (spawn_loc.x, spawn_loc.y, spawn_loc.location_type)
+            return (npc.x, npc.y, None)
+        elif npc_class == 'MagicMerchant':
+            # Магический торговец привязан к магической академии
+            for loc in self.game_map.locations:
+                if loc.location_type == LOCATION_MAGIC_SCHOOL:
+                    return (loc.x, loc.y, LOCATION_MAGIC_SCHOOL)
             return (npc.x, npc.y, None)
 
         # Для остальных NPC используем их текущую позицию
@@ -327,6 +342,28 @@ class RespawnManager:
             new_npc = Alchemist(name, x, y, level)
             from game.core.npc_manager import NPCType
             game.npc_manager.add_npc(new_npc, NPCType.ALCHEMIST)
+
+        elif npc_class == 'Merchant':
+            merchant_names = [
+                "Торговец", "Купец", "Торговка", "Купчиха"
+            ]
+            name = f"{random.choice(merchant_names)} {location_name}"
+            new_npc = Merchant(name, x, y, level)
+            # Устанавливаем населенные пункты для торговца
+            settlements = [loc for loc in self.game_map.locations
+                          if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]]
+            new_npc.set_settlements(settlements)
+            from game.core.npc_manager import NPCType
+            game.npc_manager.add_npc(new_npc, NPCType.MERCHANT)
+
+        elif npc_class == 'MagicMerchant':
+            magic_merchant_names = [
+                "Архимаг", "Чародей", "Волшебница", "Мудрец", "Маг"
+            ]
+            name = f"{random.choice(magic_merchant_names)} {location_name}"
+            new_npc = MagicMerchant(name, x, y, level)
+            from game.core.npc_manager import NPCType
+            game.npc_manager.add_npc(new_npc, NPCType.MERCHANT)
 
         elif npc_class == 'Hunter':
             hunter_names = ["Охотник", "Следопыт", "Егерь", "Ловчий"]
