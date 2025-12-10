@@ -314,6 +314,14 @@ class GameContext:
     def crafting_window_open(self, value: bool):
         self._game.crafting_window_open = value
 
+    @property
+    def companion_window_open(self) -> bool:
+        return getattr(self._game, 'companion_window_open', False)
+
+    @companion_window_open.setter
+    def companion_window_open(self, value: bool):
+        self._game.companion_window_open = value
+
     # === UI окна ===
 
     @property
@@ -385,6 +393,11 @@ class GameContext:
     def crafting_window(self):
         """Получить окно крафта."""
         return getattr(self._game, 'crafting_window', None)
+
+    @property
+    def companion_window(self):
+        """Получить окно спутников."""
+        return getattr(self._game, 'companion_window', None)
 
     # === Дополнительные системы ===
 
