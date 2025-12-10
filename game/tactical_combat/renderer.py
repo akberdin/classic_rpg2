@@ -451,6 +451,111 @@ class TacticalCombatRenderer:
             stat_y = bars_y + (i // 2) * 16
             self.screen.blit(stat_text, (stat_x, stat_y))
 
+        # === ОТОБРАЖЕНИЕ ПИКТОГРАММ DoT ЭФФЕКТОВ ===
+        self._render_status_effect_icons(character, x + sprite_size + 15, y + 5)
+
+    def _render_status_effect_icons(self, character, x, y):
+        """
+        Отрисовка пиктограмм активных статус-эффектов (DoT, баффы, дебаффы)
+
+        Args:
+            character: Персонаж с эффектами
+            x, y: Позиция для отрисовки иконок (справа от спрайта)
+        """
+        # Получаем список активных эффектов
+        effects = []
+        if hasattr(character, 'skill_manager') and character.skill_manager:
+            effects = character.skill_manager.status_effects
+        elif hasattr(character, 'status_effects'):
+            effects = character.status_effects
+
+        if not effects:
+            return
+
+        # Параметры иконок
+        icon_size = 16
+        icon_spacing = 2
+        max_icons_per_row = 4
+        current_x = x
+        current_y = y
+
+        # Отрисовываем иконки для каждого эффекта
+        for i, effect in enumerate(effects):
+            if not hasattr(effect, 'icon_id') or not effect.icon_id:
+                continue
+
+            # Вычисляем позицию иконки
+            row = i // max_icons_per_row
+            col = i % max_icons_per_row
+            icon_x = current_x + col * (icon_size + icon_spacing)
+            icon_y = current_y + row * (icon_size + icon_spacing)
+
+            # Пытаемся загрузить спрайт эффекта
+            icon_sprite = self._load_effect_icon(effect.icon_id, icon_size)
+
+            if icon_sprite:
+                # Отрисовываем спрайт
+                self.screen.blit(icon_sprite, (icon_x, icon_y))
+            else:
+                # Fallback: рисуем цветной квадратик
+                color = self._get_effect_fallback_color(effect.icon_id)
+                pygame.draw.rect(self.screen, color, (icon_x, icon_y, icon_size, icon_size))
+                pygame.draw.rect(self.screen, (255, 255, 255), (icon_x, icon_y, icon_size, icon_size), 1)
+
+            # Отрисовываем счетчик длительности в правом нижнем углу иконки
+            if hasattr(effect, 'remaining_duration'):
+                duration_text = self.small_font.render(str(effect.remaining_duration), True, (255, 255, 255))
+                duration_text = pygame.transform.scale(
+                    duration_text,
+                    (int(duration_text.get_width() * 0.5), int(duration_text.get_height() * 0.5))
+                )
+                self.screen.blit(duration_text, (icon_x + icon_size - 8, icon_y + icon_size - 8))
+
+    def _load_effect_icon(self, icon_id, size):
+        """
+        Загрузить спрайт иконки эффекта
+
+        Args:
+            icon_id: ID иконки из конфига (например, 'burn', 'poison')
+            size: Размер иконки
+
+        Returns:
+            pygame.Surface или None
+        """
+        if not self.combat.sprite_manager:
+            return None
+
+        try:
+            # Пытаемся получить спрайт через sprite_manager
+            return self.combat.sprite_manager.get_effect_icon(icon_id, icon_size=size)
+        except Exception:
+            pass
+
+        return None
+
+    def _get_effect_fallback_color(self, icon_id):
+        """
+        Получить цвет для fallback отображения эффекта
+
+        Args:
+            icon_id: ID иконки эффекта
+
+        Returns:
+            tuple: RGB цвет
+        """
+        colors = {
+            'burn': (255, 100, 0),      # Оранжевый
+            'poison': (100, 255, 100),  # Зеленый
+            'bleed': (200, 0, 0),       # Красный
+            'regeneration': (100, 255, 200),  # Светло-зеленый
+            'shield': (100, 150, 255),  # Синий
+            'stun': (200, 200, 0),      # Желтый
+            'slow': (150, 150, 255),    # Голубой
+            'strength_boost': (255, 150, 0),  # Оранжевый
+            'armor_break': (150, 150, 150)    # Серый
+        }
+        return colors.get(icon_id, (200, 200, 200))
+
     def _render_ui_panel(self, x, y, width):
         """Отрисовка панели UI с панелью умений и параметрами игрока"""
         panel_height = 120

@@ -441,9 +441,7 @@ class TacticalCombatSystem:
             unit.y = target_y
             unit.has_acted = True
 
-            # Сообщение только для игрока, NPC перемещаются без лога
-            if unit == self.player_unit:
-                self.add_to_log(f"Вы переместились с ({old_x}, {old_y}) на ({target_x}, {target_y})")
+            # Перемещение не логируется для улучшения читаемости лога боя
             return True
         return False
 
@@ -549,33 +547,48 @@ class TacticalCombatSystem:
             self.add_to_log(result['message'])
             caster_unit.has_acted = True
 
-            # === ОБРАБОТКА РАСПРОСТРАНЕНИЯ ОГНЯ НА СОСЕДЕЙ ===
-            if 'burn_spread' in result:
-                burn_spread = result['burn_spread']
-                spread_chance = burn_spread['chance']
-                burn_damage = burn_spread['damage_per_turn']
-                duration_min, duration_max = burn_spread['duration_range']
+            # === УНИВЕРСАЛЬНАЯ ОБРАБОТКА РАСПРОСТРАНЕНИЯ DoT ЭФФЕКТОВ НА СОСЕДЕЙ ===
+            # Поддерживаем как новый универсальный формат 'effect_spread', так и старый 'burn_spread' для совместимости
+            spread_config = result.get('effect_spread') or result.get('burn_spread')
+
+            if spread_config:
+                spread_chance = spread_config['chance']
+                duration_min, duration_max = spread_config['duration_range']
+                effect_type = spread_config.get('effect_type', 'burn')  # По умолчанию горение для совместимости
 
                 # Получаем всех живых юнитов в соседних клетках
                 adjacent_units = self.get_adjacent_units(target_unit, exclude_caster=caster_unit)
 
-                # Проверяем шанс поджога для каждого соседа
+                # Проверяем шанс распространения для каждого соседа
                 for adjacent_unit in adjacent_units:
                     if random.random() < spread_chance:
-                        # Огонь перекинулся на соседа!
-                        burn_duration = random.randint(duration_min, duration_max)
-                        spread_burn = BurnEffect(duration=burn_duration, damage_per_turn=burn_damage)
+                        # Эффект перекинулся на соседа!
+                        effect_duration = random.randint(duration_min, duration_max)
 
-                        # Добавляем эффект горения
+                        # Создаем соответствующий эффект в зависимости от типа
+                        if effect_type == 'burn':
+                            damage_per_turn = spread_config['damage_per_turn']
+                            spread_effect = BurnEffect(duration=effect_duration, damage_per_turn=damage_per_turn)
+                            spread_message = f"Огонь перекинулся на {adjacent_unit.character.name}! ({damage_per_turn} урона/ход на {effect_duration} ход(а))"
+                        elif effect_type == 'poison':
+                            from game.systems.skills.effects import PoisonEffect
+                            damage_per_turn = spread_config['damage_per_turn']
+                            spread_effect = PoisonEffect(duration=effect_duration, damage_per_turn=damage_per_turn)
+                            spread_message = f"Яд перекинулся на {adjacent_unit.character.name}! ({damage_per_turn} урона/ход на {effect_duration} ход(а))"
+                        else:
+                            # Для других типов эффектов можно добавить обработку
+                            continue
+
+                        # Добавляем эффект
                         adjacent_char = adjacent_unit.character
                         if hasattr(adjacent_char, 'skill_manager') and adjacent_char.skill_manager:
-                            adjacent_char.skill_manager.status_effects.append(spread_burn)
+                            adjacent_char.skill_manager.status_effects.append(spread_effect)
                         else:
                             if not hasattr(adjacent_char, 'status_effects'):
                                 adjacent_char.status_effects = []
-                            adjacent_char.status_effects.append(spread_burn)
+                            adjacent_char.status_effects.append(spread_effect)
 
-                        self.add_to_log(f"Огонь перекинулся на {adjacent_char.name}! ({burn_damage} урона/ход на {burn_duration} ход(а))")
+                        self.add_to_log(spread_message)
 
             # Проверяем, не убит ли противник
             if 'killed' in result and result['killed']:
