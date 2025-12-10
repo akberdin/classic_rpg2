@@ -2,6 +2,7 @@
 Окно управления спутниками
 """
 import pygame
+import os
 from game.ui.windows.base import BaseWindow
 
 
@@ -16,6 +17,7 @@ class CompanionWindow(BaseWindow):
         self.selected_companion_index = 0
         self.show_dismiss_confirmation = False
         self.companion_to_dismiss = None
+        self.sprite_cache = {}  # Кэш загруженных спрайтов
 
     def render(self, companion_manager):
         """
@@ -149,6 +151,29 @@ class CompanionWindow(BaseWindow):
                     scale_h
                 )
 
+    def _load_companion_sprite(self, sprite_path):
+        """
+        Загрузить спрайт спутника с кэшированием
+
+        Args:
+            sprite_path: Путь к файлу спрайта
+
+        Returns:
+            pygame.Surface: Загруженный спрайт или None
+        """
+        if sprite_path in self.sprite_cache:
+            return self.sprite_cache[sprite_path]
+
+        try:
+            if os.path.exists(sprite_path):
+                sprite = pygame.image.load(sprite_path).convert_alpha()
+                self.sprite_cache[sprite_path] = sprite
+                return sprite
+        except:
+            pass
+
+        return None
+
     def _render_companion_details(self, companion, x, y, width, scale_w, scale_h):
         """
         Отрисовка детальной информации о спутнике
@@ -159,9 +184,21 @@ class CompanionWindow(BaseWindow):
             width: Ширина области
             scale_w, scale_h: Масштабы
         """
+        # Загружаем и отображаем спрайт спутника
+        sprite_path = companion.get_sprite_path()
+        sprite = self._load_companion_sprite(sprite_path)
+
+        if sprite:
+            sprite_size = int(64 * min(scale_w, scale_h))
+            scaled_sprite = pygame.transform.scale(sprite, (sprite_size, sprite_size))
+            self.screen.blit(scaled_sprite, (x, y))
+            sprite_x_offset = sprite_size + int(20 * scale_w)
+        else:
+            sprite_x_offset = 0
+
         # Имя и ранг
         name_text = self.font.render(companion.name, True, (220, 220, 220))
-        self.screen.blit(name_text, (x, y))
+        self.screen.blit(name_text, (x + sprite_x_offset, y))
 
         y += int(35 * scale_h)
 
@@ -299,6 +336,44 @@ class CompanionWindow(BaseWindow):
             self.screen.blit(stat_text, (x, y))
             y += int(22 * scale_h)
 
+        y += int(20 * scale_h)
+
+        # Разделитель
+        pygame.draw.line(
+            self.screen,
+            (100, 100, 120),
+            (x, y),
+            (x + width - int(20 * scale_w), y),
+            1
+        )
+
+        y += int(15 * scale_h)
+
+        # Переключатель участия в боях
+        combat_status = "АКТИВЕН" if companion.participate_in_combat else "НЕАКТИВЕН"
+        combat_color = (100, 255, 100) if companion.participate_in_combat else (255, 100, 100)
+
+        combat_label = self.info_font.render("Участие в боях:", True, (200, 200, 200))
+        self.screen.blit(combat_label, (x, y))
+
+        y += int(25 * scale_h)
+
+        combat_status_text = self.info_font.render(
+            f"Статус: {combat_status}",
+            True,
+            combat_color
+        )
+        self.screen.blit(combat_status_text, (x, y))
+
+        y += int(25 * scale_h)
+
+        toggle_text = self.info_font.render(
+            "[T] Переключить участие в боях",
+            True,
+            (150, 200, 255)
+        )
+        self.screen.blit(toggle_text, (x, y))
+
     def _render_dismiss_confirmation(self, center_x, center_y, scale_w, scale_h):
         """
         Отрисовка подтверждения прогнания спутника
@@ -374,3 +449,12 @@ class CompanionWindow(BaseWindow):
         """Отменить прогнание спутника"""
         self.show_dismiss_confirmation = False
         self.companion_to_dismiss = None
+
+    def toggle_combat_participation(self, companion_manager):
+        """Переключить участие текущего спутника в боях"""
+        companions = companion_manager.get_all_companions()
+        if companions and self.selected_companion_index < len(companions):
+            companion = companions[self.selected_companion_index]
+            companion.participate_in_combat = not companion.participate_in_combat
+            return True
+        return False

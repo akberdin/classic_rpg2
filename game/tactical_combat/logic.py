@@ -47,7 +47,7 @@ class TacticalCombatSystem:
     """Система тактического боя"""
 
     def __init__(self, player, enemy, screen, font, scaler=None, game_map=None,
-                 respawn_manager=None, sprite_manager=None, game=None, entourage=None):
+                 respawn_manager=None, sprite_manager=None, game=None, entourage=None, companions=None):
         """
         Инициализация системы тактического боя
 
@@ -62,6 +62,7 @@ class TacticalCombatSystem:
             sprite_manager: Менеджер спрайтов
             game: Объект игры
             entourage: Список членов свиты (опционально)
+            companions: Список спутников игрока (опционально)
         """
         self.player = player
         self.enemy = enemy  # Основной враг (для обратной совместимости)
@@ -78,6 +79,12 @@ class TacticalCombatSystem:
         if entourage:
             self.enemies.extend(entourage)
 
+        # Список спутников игрока, участвующих в бою
+        self.companions = []
+        if companions:
+            # Фильтруем только тех спутников, которые участвуют в боях
+            self.companions = [c for c in companions if c.participate_in_combat]
+
         # Загружаем конфиг
         self.config = self._load_config()
 
@@ -92,6 +99,11 @@ class TacticalCombatSystem:
         spawn_y = self.battlefield_height // 2
 
         self.player_unit = BattlefieldUnit(player, player_x, spawn_y)
+
+        # Создаем юнитов спутников (размещаем рядом с игроком)
+        self.companion_units = []
+        if self.companions:
+            self._spawn_companion_units(player_x, spawn_y)
 
         # Создаем юнитов врагов с размещением на поле боя
         self.enemy_units = []
@@ -118,6 +130,41 @@ class TacticalCombatSystem:
 
         if len(self.enemies) > 1:
             self.add_to_log(f"Свита: {len(self.enemies) - 1} союзников")
+
+    def _spawn_companion_units(self, base_x, base_y):
+        """
+        Разместить спутников на поле боя рядом с игроком
+
+        Args:
+            base_x: Базовая координата X игрока
+            base_y: Базовая координата Y игрока
+        """
+        # Размещаем спутников рядом с игроком
+        # Используем позиции: (x-1, y), (x-1, y+1), (x-1, y-1), (x, y+1), (x, y-1)
+        companion_positions = [
+            (base_x - 1, base_y),      # Слева от игрока
+            (base_x - 1, base_y + 1),  # Слева-снизу
+            (base_x - 1, base_y - 1),  # Слева-сверху
+            (base_x, base_y + 1),      # Снизу
+            (base_x, base_y - 1),      # Сверху
+        ]
+
+        for i, companion in enumerate(self.companions):
+            if i < len(companion_positions):
+                spawn_x, spawn_y = companion_positions[i]
+
+                # Проверяем границы
+                spawn_x = max(0, min(spawn_x, self.battlefield_width - 1))
+                spawn_y = max(0, min(spawn_y, self.battlefield_height - 1))
+
+                # Создаем юнит спутника
+                companion_unit = BattlefieldUnit(companion, spawn_x, spawn_y)
+                self.companion_units.append(companion_unit)
+
+        # Логируем спутников
+        if self.companion_units:
+            companion_names = ", ".join([unit.character.name for unit in self.companion_units])
+            self.add_to_log(f"Спутники: {companion_names}")
 
     def _spawn_enemy_units(self, base_x, base_y):
         """

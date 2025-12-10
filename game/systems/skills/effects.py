@@ -221,6 +221,38 @@ class StrengthBoostEffect(StatusEffect):
         return f"Усиление спадает с {character.name}"
 
 
+class DexterityBoostEffect(StatusEffect):
+    """Эффект усиления ловкости"""
+
+    def __init__(self, duration=3, boost_amount=5):
+        """
+        Инициализация усиления
+
+        Args:
+            duration: Длительность в ходах
+            boost_amount: Бонус к ловкости
+        """
+        super().__init__(
+            name="Ловкость",
+            duration=duration,
+            description=f"+{boost_amount} к ловкости",
+            icon_id="strength_boost"  # Можно использовать другую иконку
+        )
+        self.boost_amount = boost_amount
+
+    def apply(self, character):
+        """Применить усиление"""
+        if not hasattr(character, 'temp_dexterity_boost'):
+            character.temp_dexterity_boost = 0
+        character.temp_dexterity_boost = self.boost_amount
+        return f"{character.name} получает +{self.boost_amount} к ловкости!"
+
+    def remove(self, character):
+        """Снять усиление"""
+        character.temp_dexterity_boost = 0
+        return f"Усиление ловкости спадает с {character.name}"
+
+
 class ShieldEffect(StatusEffect):
     """Эффект магического щита"""
 
