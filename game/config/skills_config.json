@@ -253,7 +253,7 @@
       "burn_base_chance": 0.20,
       "burn_chance_per_rank": 0.10,
       "burn_duration": 3,
-      "burn_damage_percent": 0.10,
+      "burn_damage_percent": 0.50,
       "ignores_armor": true,
       "description_per_rank": [
         "Ранг 1: Урон 5 + Интеллект*2%, дальность 4, мана 5, шанс поджога 20%",

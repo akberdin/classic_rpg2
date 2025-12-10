@@ -626,8 +626,8 @@ class FireArrow(Skill):
 
             burn_applied = False
             if random.random() < burn_chance:
-                # Урон от горения: 10% от нанесенного урона
-                burn_damage_per_turn = max(1, int(actual_damage * 0.10))
+                # Урон от горения: 50% от нанесенного урона
+                burn_damage_per_turn = max(1, int(actual_damage * 0.50))
                 burn_duration = 3  # Фиксированная длительность 3 хода
 
                 # Применяем эффект горения на цель
