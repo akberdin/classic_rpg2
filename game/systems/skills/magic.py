@@ -553,5 +553,113 @@ class MageShield(Skill):
         return result
 
 
+class FireArrow(Skill):
+    """Огненная стрела - дистанционная огненная атака с шансом поджога"""
+
+    def __init__(self):
+        super().__init__(
+            name="Огненная стрела",
+            description="Дистанционная огненная атака. Игнорирует физическую броню, может поджечь цель",
+            category=SkillCategory.MAGE,
+            tactical_range=4,
+            mana_cost=15,
+            cooldown=2
+        )
+
+    def get_rank_progression_info(self):
+        return [
+            "Ранг 1: Урон 5 + Интеллект*2%, дальность 4, шанс поджога 20%",
+            "Ранг 2: Урон 10 + Интеллект*2%, дальность 5, шанс поджога 30%",
+            "Ранг 3: Урон 15 + Интеллект*2%, дальность 6, шанс поджога 40%",
+            "Ранг 4: Урон 20 + Интеллект*2%, дальность 7, шанс поджога 50%",
+            "Ранг 5: Урон 25 + Интеллект*2%, дальность 8, шанс поджога 60%"
+        ]
+
+    def get_tactical_range(self):
+        """Дальность увеличивается с рангом: 4 + ранг"""
+        return 4 + self.rank
+
+    def use(self, user, target=None):
+        """Использовать огненную стрелу"""
+        import random
+        result = super().use(user, target)
+
+        if target and user.can_attack(target):
+            # Проверка критического удара
+            crit_chance = user.calculate_crit_chance()
+            crit_roll = random.uniform(0, 100)
+            is_critical = crit_roll < crit_chance
+
+            # Урон: базовый урон зависит от ранга (5 за каждый ранг)
+            intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
+
+            # Базовый урон: 5 * ранг
+            base_damage = 5 * self.rank
+
+            # Бонус от интеллекта: +2% за каждое очко интеллекта
+            intelligence_multiplier = 1.0 + (intelligence * 0.02)
+            total_damage = int(base_damage * intelligence_multiplier)
+
+            # Удваиваем урон при крите
+            if is_critical:
+                total_damage *= 2
+
+            # ИГНОРИРУЕМ ФИЗИЧЕСКУЮ БРОНЮ, но учитываем магическую защиту
+            magic_defense = target.get_magic_defense() if hasattr(target, 'get_magic_defense') else 0
+            actual_damage = max(1, total_damage - magic_defense)
+
+            # Применяем урон
+            target.take_damage(actual_damage)
+
+            result['damage'] = actual_damage
+            result['critical'] = is_critical
+            result['ignored_armor'] = True
+            result['magic_blocked'] = max(0, total_damage - actual_damage)
+
+            # === МЕХАНИКА ПОДЖОГА ===
+            # Шанс поджога: 20% + 10% за каждый ранг сверх первого
+            burn_chance = 0.20 + (self.rank - 1) * 0.10  # 20% -> 60% на 5 ранге
+
+            burn_applied = False
+            if random.random() < burn_chance:
+                # Урон от горения: 10% от нанесенного урона
+                burn_damage_per_turn = max(1, int(actual_damage * 0.10))
+                burn_duration = 3  # Фиксированная длительность 3 хода
+
+                # Применяем эффект горения на цель
+                burn_effect = BurnEffect(duration=burn_duration, damage_per_turn=burn_damage_per_turn)
+
+                # Добавляем эффект в правильное место
+                if hasattr(target, 'skill_manager') and target.skill_manager:
+                    target.skill_manager.status_effects.append(burn_effect)
+                else:
+                    if not hasattr(target, 'status_effects'):
+                        target.status_effects = []
+                    target.status_effects.append(burn_effect)
+
+                burn_applied = True
+                result['burn_applied'] = True
+                result['burn_damage'] = burn_damage_per_turn
+                result['burn_duration'] = burn_duration
+
+            # Формируем сообщение
+            if is_critical:
+                result['message'] = f"КРИТИЧЕСКИЙ УДАР! {user.name} запускает мощнейшую огненную стрелу в {target.name} и наносит {actual_damage} магического урона!"
+            else:
+                result['message'] = f"{user.name} запускает огненную стрелу в {target.name} и наносит {actual_damage} магического урона!"
+
+            if burn_applied:
+                result['message'] += f" {target.name} загорается! ({burn_damage_per_turn} урона/ход на {burn_duration} ход(а))"
+
+            if magic_defense > 0:
+                result['message'] += f" (магическая защита поглотила {result['magic_blocked']} урона)"
+
+            if not target.is_alive:
+                result['killed'] = True
+                result['message'] += f" {target.name} повержен!"
+
+        return result
+
+
 # ==================== РЕМЕСЛЕННЫЕ УМЕНИЯ ====================
 
