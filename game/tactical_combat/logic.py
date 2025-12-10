@@ -247,9 +247,26 @@ class TacticalCombatSystem:
         """
         return max(abs(x2 - x1), abs(y2 - y1))
 
+    def get_euclidean_distance(self, x1, y1, x2, y2):
+        """
+        Вычислить евклидово расстояние между двумя точками
+        Используется для радиальной области действия умений
+
+        Args:
+            x1, y1: Координаты первой точки
+            x2, y2: Координаты второй точки
+
+        Returns:
+            float: Евклидово расстояние
+        """
+        dx = x2 - x1
+        dy = y2 - y1
+        return (dx * dx + dy * dy) ** 0.5
+
     def is_in_range(self, unit, target_x, target_y, range_distance):
         """
-        Проверить, находится ли цель в радиусе действия
+        Проверить, находится ли цель в радиусе действия умения
+        Использует евклидово расстояние для радиальной области
 
         Args:
             unit: Юнит
@@ -259,7 +276,7 @@ class TacticalCombatSystem:
         Returns:
             bool: True если в радиусе
         """
-        distance = self.get_distance(unit.x, unit.y, target_x, target_y)
+        distance = self.get_euclidean_distance(unit.x, unit.y, target_x, target_y)
         return distance <= range_distance
 
     def can_move_to(self, unit, target_x, target_y):
