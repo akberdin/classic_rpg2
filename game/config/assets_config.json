@@ -173,6 +173,22 @@
     "armor_break": "assets/effects/armor_break_icon.png"
   },
 
+  "companions": {
+    "_description": "Спрайты спутников по рангам (0-3)",
+    "wolf": {
+      "0": "assets/actors/wolf/wolf1.png",
+      "1": "assets/actors/wolf/wolf2.png",
+      "2": "assets/actors/wolf/wolf3.png",
+      "3": "assets/actors/wolf/wolf4.png"
+    }
+  },
+
+  "companion_skills": {
+    "_description": "Спрайты умений спутников",
+    "wolf_bite": "assets/skills/companion/wolf_bite.png",
+    "wolf_howl": "assets/skills/companion/wolf_howl.png"
+  },
+
   "fallback": {
     "_comment": "Если спрайт не найден, используется геометрическая фигура или текст",
     "use_placeholder": true,

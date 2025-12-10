@@ -8,6 +8,8 @@ import json
 import os
 import uuid
 from game.character import Character
+from game.systems.skills.base import SkillManager
+from game.systems.skills.companion import WolfBite, WolfHowl
 
 
 class Companion(Character):
@@ -27,6 +29,7 @@ class Companion(Character):
         self.level = level
         self.experience = 0
         self.rank = 0
+        self.participate_in_combat = True  # Участвует ли спутник в боях
 
         # Загружаем конфигурацию
         self.config = self._load_config()
@@ -44,6 +47,12 @@ class Companion(Character):
 
         # Генерируем характеристики на основе уровня и ранга
         self._calculate_stats()
+
+        # Инициализируем систему умений
+        self.skill_manager = SkillManager(self)
+
+        # Загружаем умения для текущего ранга
+        self._update_skills()
 
     def _load_config(self):
         """Загрузить конфигурацию спутников"""
@@ -84,11 +93,37 @@ class Companion(Character):
 
         return 0
 
+    def _update_skills(self):
+        """Обновить умения спутника на основе типа и ранга"""
+        if self.companion_type == 'wolf':
+            # Создаем умения волка
+            bite = WolfBite(self.rank)
+            bite.set_companion_rank(self.rank)
+
+            # Добавляем Укус (доступен на всех рангах)
+            if 'wolf_bite' not in self.skill_manager.learned_skills:
+                self.skill_manager.learned_skills['wolf_bite'] = bite
+            else:
+                # Обновляем ранг существующего умения
+                self.skill_manager.learned_skills['wolf_bite'].set_companion_rank(self.rank)
+
+            # Добавляем Вой (доступен со 2 ранга, т.е. rank >= 1)
+            if self.rank >= 1:
+                howl = WolfHowl(self.rank)
+                howl.set_companion_rank(self.rank)
+
+                if 'wolf_howl' not in self.skill_manager.learned_skills:
+                    self.skill_manager.learned_skills['wolf_howl'] = howl
+                else:
+                    # Обновляем ранг существующего умения
+                    self.skill_manager.learned_skills['wolf_howl'].set_companion_rank(self.rank)
+
     def _calculate_stats(self):
         """Вычислить характеристики спутника на основе уровня и ранга"""
         # Обновляем ранг на основе уровня
         new_rank = self._calculate_rank_from_level()
-        if new_rank != self.rank:
+        rank_changed = new_rank != self.rank
+        if rank_changed:
             self.rank = new_rank
             # Обновляем имя при смене ранга
             self.name = self._get_display_name()
@@ -117,6 +152,10 @@ class Companion(Character):
 
         # Обновляем производные характеристики
         self.update_derived_stats()
+
+        # Обновляем умения если ранг изменился
+        if rank_changed and hasattr(self, 'skill_manager'):
+            self._update_skills()
 
     def add_experience(self, exp):
         """
@@ -187,6 +226,33 @@ class Companion(Character):
             'level_range': rank_info.get('level_range', [1, 1])
         }
 
+    def get_sprite_path(self):
+        """
+        Получить путь к спрайту спутника на основе ранга
+
+        Returns:
+            str: Путь к файлу спрайта
+        """
+        assets_config_path = os.path.join('game', 'config', 'assets_config.json')
+        try:
+            with open(assets_config_path, 'r', encoding='utf-8') as f:
+                assets_config = json.load(f)
+
+            companions = assets_config.get('companions', {})
+            companion_sprites = companions.get(self.companion_type, {})
+
+            # Получаем спрайт для текущего ранга
+            sprite_path = companion_sprites.get(str(self.rank))
+
+            if sprite_path:
+                return sprite_path
+
+            # Fallback на первый ранг если спрайт не найден
+            return companion_sprites.get('0', 'assets/actors/wolf/wolf1.png')
+        except:
+            # Fallback на дефолтный спрайт
+            return 'assets/actors/wolf/wolf1.png'
+
     def get_stats_summary(self):
         """
         Получить сводку характеристик
@@ -210,7 +276,9 @@ class Companion(Character):
                 'spirit': self.spirit,
                 'intelligence': self.intelligence,
                 'luck': self.luck
-            }
+            },
+            'sprite_path': self.get_sprite_path(),
+            'participate_in_combat': self.participate_in_combat
         }
 
     def serialize(self):
@@ -231,7 +299,8 @@ class Companion(Character):
             'stamina': self.stamina,
             'max_stamina': self.max_stamina,
             'x': self.x,
-            'y': self.y
+            'y': self.y,
+            'participate_in_combat': self.participate_in_combat
         }
 
     @staticmethod
@@ -257,5 +326,11 @@ class Companion(Character):
         companion.stamina = data.get('stamina', companion.max_stamina)
         companion.x = data.get('x', 0)
         companion.y = data.get('y', 0)
+        companion.participate_in_combat = data.get('participate_in_combat', True)
+
+        # Восстанавливаем skill_manager если он был сохранен
+        if 'skill_manager' in data and hasattr(companion, 'skill_manager'):
+            # Обновляем умения после восстановления
+            companion._update_skills()
 
         return companion

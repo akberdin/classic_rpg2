@@ -809,6 +809,15 @@ class InputHandler:
         elif key == pygame.K_n:
             self.ctx.companion_window.cancel_dismiss()
 
+        # Переключить участие в боях (T)
+        elif key == pygame.K_t:
+            if self.ctx.companion_window.toggle_combat_participation(self.ctx.player.companion_manager):
+                companions = self.ctx.player.companion_manager.get_all_companions()
+                if companions:
+                    companion = companions[self.ctx.companion_window.selected_companion_index]
+                    status = "будет участвовать" if companion.participate_in_combat else "не будет участвовать"
+                    print(f"{companion.name} теперь {status} в боях")
+
     def handle_crafting_input(self, event):
         """
         Обработка ввода в окне крафта
