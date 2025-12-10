@@ -660,7 +660,7 @@ class MagicMerchant(Merchant):
             # Магические умения поддержки
             "book_heal", "book_regeneration", "book_mage_shield", "book_stamina_recovery",
             # Магические умения атаки
-            "book_magic_missile", "book_ice_bolt", "book_fireball", "book_lightning"
+            "book_magic_missile", "book_ice_bolt", "book_fireball", "book_lightning", "book_fire_arrow"
         ]
 
         # Добавляем все доступные магические книги (гарантируем минимум 5)
