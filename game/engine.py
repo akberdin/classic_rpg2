@@ -505,7 +505,7 @@ class Game:
                     if location.location_type == LOCATION_CITY:
                         merchant_level = 15  # Ранг 2: 11-20 уровень
                     elif location.location_type == LOCATION_MAGIC_SCHOOL:
-                        merchant_level = 20  # Ранг 2: магическая академия
+                        merchant_level = 35  # Ранг 4: магическая академия (уровень 31+)
                     elif location.location_type == LOCATION_WARRIOR_ACADEMY:
                         merchant_level = 20  # Ранг 2: военная академия
                     else:
