@@ -118,6 +118,7 @@
 
   "skills": {
     "basic_attack": "assets/skills/basic.png",
+    "basic_shot": "assets/skills/basic.png",
     "power_strike": "assets/skills/power_strike.png",
     "poison_strike": "assets/skills/poison_strike.png",
     "stun_strike": "assets/skills/stun_strike.png",
