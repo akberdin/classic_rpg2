@@ -87,6 +87,10 @@ class SpriteManager:
         for potion_id, sprite_path in self.config.get('potions', {}).items():
             self.load_sprite(potion_id, sprite_path, 'potion')
 
+        # Загружаем спрайты статус-эффектов (DoT, баффы, дебаффы)
+        for effect_id, sprite_path in self.config.get('status_effects', {}).items():
+            self.load_effect_icon(effect_id, sprite_path)
+
         print(f"Загружено спрайтов: {len(self.sprites)}")
 
     def load_sprite(self, sprite_type, sprite_path, category):
@@ -412,6 +416,76 @@ class SpriteManager:
             icon_rect.center = (x + size // 2, y + size // 2)
             screen.blit(icon_text, icon_rect)
         return False
+
+    def load_effect_icon(self, effect_id, sprite_path, target_size=16):
+        """
+        Загрузка спрайта иконки статус-эффекта
+
+        Args:
+            effect_id: ID эффекта (burn, poison, bleed, etc.)
+            sprite_path: Путь к файлу спрайта
+            target_size: Целевой размер иконки (по умолчанию 16)
+        """
+        if not os.path.exists(sprite_path):
+            # Спрайт не найден, будет использоваться fallback
+            return
+
+        try:
+            # Загружаем изображение
+            original_sprite = pygame.image.load(sprite_path).convert_alpha()
+
+            # Сохраняем масштабированную версию для иконок
+            scaled_sprite = pygame.transform.scale(original_sprite, (target_size, target_size))
+            key = f"effect_{effect_id}"
+            self.sprites[key] = scaled_sprite
+
+        except Exception as e:
+            print(f"Ошибка загрузки иконки эффекта {sprite_path}: {e}")
+
+    def get_effect_icon(self, effect_id, icon_size=None):
+        """
+        Получить спрайт иконки статус-эффекта
+
+        Args:
+            effect_id: ID эффекта (burn, poison, etc.)
+            icon_size: Размер иконки (если нужен масштабированный вариант)
+
+        Returns:
+            pygame.Surface или None если спрайт не найден
+        """
+        key = f"effect_{effect_id}"
+        sprite = self.sprites.get(key)
+
+        # Если нужен конкретный размер, масштабируем
+        if sprite and icon_size:
+            return pygame.transform.scale(sprite, (icon_size, icon_size))
+
+        return sprite
+
+    def get_effect_icon_path(self, effect_id):
+        """
+        Получить путь к спрайту иконки статус-эффекта из конфига
+
+        Args:
+            effect_id: ID эффекта (burn, poison, etc.)
+
+        Returns:
+            str: Путь к файлу спрайта или None
+        """
+        return self.config.get('status_effects', {}).get(effect_id)
+
+    def has_effect_icon(self, effect_id):
+        """
+        Проверить, есть ли иконка для статус-эффекта
+
+        Args:
+            effect_id: ID эффекта
+
+        Returns:
+            bool: True если иконка загружена
+        """
+        key = f"effect_{effect_id}"
+        return key in self.sprites
 
     def update_tile_size(self, new_tile_size):
         """

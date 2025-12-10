@@ -158,6 +158,19 @@
     "elixir_of_power": "assets/items/potions/elixir_of_power.png"
   },
 
+  "status_effects": {
+    "_description": "Пиктограммы статус-эффектов (DoT, баффы, дебаффы) для отображения на юнитах",
+    "burn": "assets/effects/burn_icon.png",
+    "poison": "assets/effects/poison_icon.png",
+    "bleed": "assets/effects/bleed_icon.png",
+    "regeneration": "assets/effects/regeneration_icon.png",
+    "shield": "assets/effects/shield_icon.png",
+    "stun": "assets/effects/stun_icon.png",
+    "slow": "assets/effects/slow_icon.png",
+    "strength_boost": "assets/effects/strength_icon.png",
+    "armor_break": "assets/effects/armor_break_icon.png"
+  },
+
   "fallback": {
     "_comment": "Если спрайт не найден, используется геометрическая фигура или текст",
     "use_placeholder": true,

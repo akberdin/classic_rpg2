@@ -15,7 +15,7 @@
 class StatusEffect:
     """Базовый класс для статус-эффектов"""
 
-    def __init__(self, name, duration, description=""):
+    def __init__(self, name, duration, description="", icon_id=None):
         """
         Инициализация статус-эффекта
 
@@ -23,11 +23,13 @@ class StatusEffect:
             name: Название эффекта
             duration: Длительность в ходах
             description: Описание эффекта
+            icon_id: ID иконки эффекта из конфига assets (например, 'burn', 'poison')
         """
         self.name = name
         self.duration = duration
         self.remaining_duration = duration
         self.description = description
+        self.icon_id = icon_id  # ID для поиска спрайта в assets_config.json
 
     def apply(self, character):
         """
@@ -90,7 +92,8 @@ class PoisonEffect(StatusEffect):
         super().__init__(
             name="Отравление",
             duration=duration,
-            description=f"Наносит {damage_per_turn} урона каждый ход"
+            description=f"Наносит {damage_per_turn} урона каждый ход",
+            icon_id="poison"
         )
         self.damage_per_turn = damage_per_turn
 
@@ -114,7 +117,8 @@ class StunEffect(StatusEffect):
         super().__init__(
             name="Оглушение",
             duration=duration,
-            description="Пропуск хода"
+            description="Пропуск хода",
+            icon_id="stun"
         )
 
     def apply(self, character):
@@ -142,7 +146,8 @@ class RegenerationEffect(StatusEffect):
         super().__init__(
             name="Регенерация",
             duration=duration,
-            description=f"Восстанавливает {heal_per_turn} HP каждый ход"
+            description=f"Восстанавливает {heal_per_turn} HP каждый ход",
+            icon_id="regeneration"
         )
         self.heal_per_turn = heal_per_turn
 
@@ -200,7 +205,8 @@ class StrengthBoostEffect(StatusEffect):
         super().__init__(
             name="Усиление",
             duration=duration,
-            description=f"+{boost_amount} к силе"
+            description=f"+{boost_amount} к силе",
+            icon_id="strength_boost"
         )
         self.boost_amount = boost_amount
 
@@ -222,7 +228,8 @@ class ShieldEffect(StatusEffect):
         super().__init__(
             name="Магический щит",
             duration=duration,
-            description=f"+{defense_bonus}% защита"
+            description=f"+{defense_bonus}% защита",
+            icon_id="shield"
         )
         self.defense_bonus = defense_bonus
 
@@ -244,7 +251,8 @@ class SlowEffect(StatusEffect):
         super().__init__(
             name="Замедление",
             duration=duration,
-            description="Замедлен"
+            description="Замедлен",
+            icon_id="slow"
         )
 
     def apply(self, character):
@@ -265,7 +273,8 @@ class ArmorBreakEffect(StatusEffect):
         super().__init__(
             name="Сломленная броня",
             duration=duration,
-            description=f"-{defense_reduction} защиты"
+            description=f"-{defense_reduction} защиты",
+            icon_id="armor_break"
         )
         self.defense_reduction = defense_reduction
 
@@ -301,7 +310,8 @@ class BurnEffect(StatusEffect):
         super().__init__(
             name="Горение",
             duration=duration,
-            description=f"Наносит {damage_per_turn} урона от огня каждый ход"
+            description=f"Наносит {damage_per_turn} урона от огня каждый ход",
+            icon_id="burn"
         )
         self.damage_per_turn = damage_per_turn
 
