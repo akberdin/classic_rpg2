@@ -24,6 +24,7 @@ from game.ui.windows import (
     CraftingWindow,
     NPCSelectionWindow,
 )
+from game.ui.windows.companion import CompanionWindow
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quest_system import (
     QuestManager, AchievementManager,
@@ -135,6 +136,7 @@ class Game:
         self.skill_book_window = SkillBookWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.loot_window = LootWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.resource_collection_window = ResourceCollectionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.companion_window = CompanionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
 
         # Состояния окон
         self.inventory_menu_open = False
@@ -144,6 +146,7 @@ class Game:
         self.loot_window_open = False
         self.resource_collection_window_open = False
         self.quest_window_open = False
+        self.companion_window_open = False
 
         # Окно квестов
         self.quest_window = QuestWindow(self.screen, self.font, self.info_font, self.ui_scaler)
@@ -749,6 +752,10 @@ class Game:
         # Если открыто окно книги умений, отрисовываем его
         if self.skill_book_menu_open:
             self.skill_book_window.render(self.player)
+
+        # Если открыто окно спутников, отрисовываем его
+        if self.companion_window_open:
+            self.companion_window.render(self.player.companion_manager)
 
         # Если открыто окно крафта, отрисовываем его
         if self.crafting_window_open:

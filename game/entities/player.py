@@ -63,6 +63,10 @@ class Player(Character):
         from game.professions import ProfessionManager
         self.profession_manager = ProfessionManager()
 
+        # Менеджер спутников
+        from game.companion_manager import CompanionManager
+        self.companion_manager = CompanionManager()
+
         # Чит-мод (бессмертие)
         self.godmode = False
 
@@ -164,6 +168,17 @@ class Player(Character):
         while self.experience >= self.experience_to_next_level:
             leveled_up = True
             self.level_up()
+
+        # Добавляем опыт спутникам (30% от полученного опыта)
+        if hasattr(self, 'companion_manager'):
+            companion_exp = int(amount * 0.3)
+            if companion_exp > 0:
+                leveled_companions = self.companion_manager.add_experience_to_all(companion_exp)
+                for companion_id, companion_leveled in leveled_companions:
+                    if companion_leveled:
+                        companion = self.companion_manager.get_companion(companion_id)
+                        if companion:
+                            print(f"{companion.name} повысил уровень! Теперь {companion.level} уровень")
 
         return leveled_up
 

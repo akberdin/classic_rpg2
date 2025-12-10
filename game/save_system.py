@@ -228,6 +228,10 @@ class SaveSystem:
             if hasattr(game, 'achievement_manager'):
                 save_data['achievements'] = SaveSystem._serialize_achievement_manager(game.achievement_manager)
 
+            # Добавляем данные спутников если есть
+            if hasattr(game.player, 'companion_manager'):
+                save_data['companions'] = game.player.companion_manager.serialize()
+
             save_path = os.path.join(
                 SaveSystem.SAVE_DIR,
                 save_name + SaveSystem.SAVE_EXTENSION
