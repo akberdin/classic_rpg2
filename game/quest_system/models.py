@@ -275,6 +275,15 @@ class Quest:
                     else:
                         messages.append(f"Умение {skill_key} уже изучено")
 
+        # Спутники
+        if 'companions' in self.rewards:
+            if hasattr(player, 'companion_manager'):
+                for companion_data in self.rewards['companions']:
+                    companion_type = companion_data.get('type', 'wolf')
+                    companion_level = companion_data.get('level', 1)
+                    companion = player.companion_manager.add_companion(companion_type, companion_level)
+                    messages.append(f"К вам присоединился: {companion.name}!")
+
         # Устанавливаем статус завершённого квеста
         self.status = QuestStatus.COMPLETED
 

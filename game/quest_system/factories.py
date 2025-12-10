@@ -39,11 +39,15 @@ def create_starter_quests():
     objectives = [
         QuestObjective("Убейте 3 волков", required_count=3),
     ]
-    rewards = {'exp': 120, 'gold': 60}
+    rewards = {
+        'exp': 120,
+        'gold': 60,
+        'companions': [{'type': 'wolf', 'level': 1}]
+    }
     quest2 = Quest(
         quest_id="first_hunt",
         name="Первая охота",
-        description="Охотьтесь на волков в лесах.",
+        description="Охотьтесь на волков в лесах. Возможно, один из них присоединится к вам.",
         objectives=objectives,
         rewards=rewards,
         quest_type=QuestType.KILL_ANIMALS,

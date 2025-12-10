@@ -771,6 +771,44 @@ class InputHandler:
             self.ctx.player.skill_manager.unassign_from_slot(self.ctx.skill_book_window.selected_slot_index)
             print(f"Слот {self.ctx.skill_book_window.selected_slot_index + 1} очищен")
 
+    def handle_companion_input(self, key):
+        """
+        Обработка ввода в окне спутников
+
+        Args:
+            key: Нажатая клавиша
+        """
+        if key == pygame.K_ESCAPE or key == pygame.K_p:
+            self.ctx.companion_window_open = False
+            return
+
+        # Навигация по списку спутников (W/S или UP/DOWN)
+        if key == pygame.K_UP or key == pygame.K_w:
+            self.ctx.companion_window.move_selection_up(self.ctx.player.companion_manager)
+        elif key == pygame.K_DOWN or key == pygame.K_s:
+            self.ctx.companion_window.move_selection_down(self.ctx.player.companion_manager)
+
+        # Прогнать спутника (D)
+        elif key == pygame.K_d:
+            if not self.ctx.companion_window.show_dismiss_confirmation:
+                self.ctx.companion_window.request_dismiss(self.ctx.player.companion_manager)
+            else:
+                # Отмена подтверждения
+                self.ctx.companion_window.cancel_dismiss()
+
+        # Подтверждение прогнания (Y)
+        elif key == pygame.K_y:
+            if self.ctx.companion_window.show_dismiss_confirmation:
+                companions = self.ctx.player.companion_manager.get_all_companions()
+                if companions:
+                    dismissed_companion = companions[self.ctx.companion_window.selected_companion_index]
+                    self.ctx.companion_window.confirm_dismiss(self.ctx.player.companion_manager)
+                    print(f"{dismissed_companion.name} покинул вас!")
+
+        # Отмена прогнания (N)
+        elif key == pygame.K_n:
+            self.ctx.companion_window.cancel_dismiss()
+
     def handle_crafting_input(self, event):
         """
         Обработка ввода в окне крафта
@@ -920,6 +958,10 @@ class InputHandler:
         elif key == pygame.K_c:
             # Открыть/закрыть окно характеристик
             self.ctx.character_menu_open = not self.ctx.character_menu_open
+            return
+        elif key == pygame.K_p:
+            # Открыть/закрыть окно спутников
+            self.ctx.companion_window_open = not self.ctx.companion_window_open
             return
         elif key == pygame.K_v:
             # Открыть/закрыть окно крафта (только в городах и деревнях)
@@ -1154,6 +1196,12 @@ class InputHandler:
         if self.ctx.character_menu_open:
             if event.type == pygame.KEYDOWN:
                 self.handle_character_input(event.key)
+            return True
+
+        # Окно спутников
+        if self.ctx.companion_window_open:
+            if event.type == pygame.KEYDOWN:
+                self.handle_companion_input(event.key)
             return True
 
         # Книга умений

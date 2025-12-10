@@ -1,0 +1,73 @@
+{
+  "description": "Конфигурация системы спутников",
+
+  "companions": {
+    "wolf": {
+      "display_name": "Волк",
+      "description": "Преданный волк, который будет сражаться рядом с вами",
+      "max_level": 20,
+      "max_rank": 3,
+
+      "ranks": {
+        "0": {
+          "name": "Щенок волка",
+          "level_range": [1, 5],
+          "description": "Маленький щенок, только начинающий познавать мир"
+        },
+        "1": {
+          "name": "Подросток волка",
+          "level_range": [6, 10],
+          "description": "Молодой волк, набирающийся опыта"
+        },
+        "2": {
+          "name": "Волк",
+          "level_range": [11, 15],
+          "description": "Взрослый волк, опытный охотник"
+        },
+        "3": {
+          "name": "Матерый волк",
+          "level_range": [16, 20],
+          "description": "Могучий матерый волк, грозный боец"
+        }
+      },
+
+      "base_stats": {
+        "strength": 8,
+        "dexterity": 12,
+        "constitution": 10,
+        "spirit": 5,
+        "intelligence": 3,
+        "luck": 6
+      },
+
+      "stats_per_level": {
+        "strength": 1.2,
+        "dexterity": 1.5,
+        "constitution": 1.0,
+        "spirit": 0.3,
+        "intelligence": 0.2,
+        "luck": 0.5
+      },
+
+      "rank_stat_multipliers": {
+        "0": 1.0,
+        "1": 1.2,
+        "2": 1.5,
+        "3": 2.0
+      }
+    }
+  },
+
+  "experience": {
+    "base_exp_per_level": 100,
+    "exp_multiplier_per_level": 1.15,
+    "exp_from_combat": 0.3,
+    "description": "Спутники получают 30% опыта от боев игрока"
+  },
+
+  "notes": {
+    "max_companions": "В будущем можно добавить лимит на количество активных спутников",
+    "combat_integration": "Спутники могут участвовать в тактических боях",
+    "rank_progression": "Ранг автоматически повышается при достижении нужного уровня"
+  }
+}
