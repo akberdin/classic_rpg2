@@ -355,6 +355,11 @@ class TacticalCombatSystem:
             if enemy_unit.character.is_alive and (target_x == enemy_unit.x and target_y == enemy_unit.y):
                 return False
 
+        # Проверяем, не занята ли клетка каким-либо живым спутником
+        for companion_unit in self.companion_units:
+            if companion_unit != unit and companion_unit.character.is_alive and (target_x == companion_unit.x and target_y == companion_unit.y):
+                return False
+
         # Проверяем, что перемещение только в соседние 8 клеток (радиус 1)
         dx = abs(target_x - unit.x)
         dy = abs(target_y - unit.y)
@@ -388,6 +393,13 @@ class TacticalCombatSystem:
             if (enemy_unit != ignore_unit and
                 enemy_unit.character.is_alive and
                 x == enemy_unit.x and y == enemy_unit.y):
+                return True
+
+        # Проверяем, не занята ли клетка каким-либо живым спутником
+        for companion_unit in self.companion_units:
+            if (companion_unit != ignore_unit and
+                companion_unit.character.is_alive and
+                x == companion_unit.x and y == companion_unit.y):
                 return True
 
         return False
@@ -542,16 +554,26 @@ class TacticalCombatSystem:
             else:
                 skill_range = getattr(skill, 'tactical_range', 1)
 
-            if caster_unit == self.player_unit:
-                # Игрок может атаковать любого врага в радиусе действия
+            # Определяем, кто является заклинателем - игрок/спутник или враг
+            is_player_side = (caster_unit == self.player_unit or
+                             caster_unit in self.companion_units)
+
+            if is_player_side:
+                # Игрок и спутники могут атаковать любого врага в радиусе действия
                 for enemy_unit in self.enemy_units:
                     if enemy_unit.character.is_alive:
                         if self.is_in_range(caster_unit, enemy_unit.x, enemy_unit.y, skill_range):
                             targets.append(enemy_unit)
             else:
-                # Враги атакуют только игрока
-                if self.is_in_range(caster_unit, self.player_unit.x, self.player_unit.y, skill_range):
+                # Враги могут атаковать игрока и спутников
+                # Проверяем игрока
+                if self.player.is_alive and self.is_in_range(caster_unit, self.player_unit.x, self.player_unit.y, skill_range):
                     targets.append(self.player_unit)
+                # Проверяем спутников
+                for companion_unit in self.companion_units:
+                    if companion_unit.character.is_alive:
+                        if self.is_in_range(caster_unit, companion_unit.x, companion_unit.y, skill_range):
+                            targets.append(companion_unit)
 
         return targets
 
@@ -594,6 +616,15 @@ class TacticalCombatSystem:
                         enemy_unit.y == check_y and
                         enemy_unit.character.is_alive):
                         adjacent_units.append(enemy_unit)
+
+                # Проверяем спутников
+                for companion_unit in self.companion_units:
+                    if (companion_unit != exclude_caster and
+                        companion_unit != target_unit and
+                        companion_unit.x == check_x and
+                        companion_unit.y == check_y and
+                        companion_unit.character.is_alive):
+                        adjacent_units.append(companion_unit)
 
         return adjacent_units
 
@@ -719,8 +750,13 @@ class TacticalCombatSystem:
         import random
         from game.skills import SkillCategory
 
+        # Находим ближайшую цель (игрок или спутник)
+        target_unit = self._find_closest_target_for_enemy(enemy_unit)
+        if not target_unit:
+            return "continue"  # Нет живых целей
+
         distance = self.get_distance(enemy_unit.x, enemy_unit.y,
-                                     self.player_unit.x, self.player_unit.y)
+                                     target_unit.x, target_unit.y)
 
         weapon_range = enemy_unit.get_weapon_range()
 
@@ -740,13 +776,20 @@ class TacticalCombatSystem:
 
                     # Проверяем, что цель в радиусе действия
                     targets = self.get_skill_targets(skill, enemy_unit)
-                    if self.player_unit in targets:
-                        usable_skills.append(skill)
+                    if targets:
+                        # Выбираем цель из доступных
+                        usable_skills.append((skill, targets))
 
             # Если есть доступные умения - используем случайное
             if usable_skills:
-                skill = random.choice(usable_skills)
-                result = self.use_skill(skill, enemy_unit, self.player_unit)
+                skill, targets = random.choice(usable_skills)
+                # Предпочитаем атаковать игрока, но если его нет в целях - выбираем случайную
+                if self.player_unit in targets:
+                    chosen_target = self.player_unit
+                else:
+                    chosen_target = random.choice(targets)
+
+                result = self.use_skill(skill, enemy_unit, chosen_target)
 
                 if result['status'] == 'continue':
                     used_skill = True
@@ -758,10 +801,10 @@ class TacticalCombatSystem:
         if not used_skill:
             # Если враг вне дистанции атаки - приближаемся (на 1 клетку за ход)
             if distance > weapon_range:
-                # Используем pathfinding для поиска пути к игроку
+                # Используем pathfinding для поиска пути к цели
                 path = self.find_path(
                     enemy_unit.x, enemy_unit.y,
-                    self.player_unit.x, self.player_unit.y,
+                    target_unit.x, target_unit.y,
                     enemy_unit
                 )
 
@@ -771,8 +814,8 @@ class TacticalCombatSystem:
                     self.move_unit(enemy_unit, next_x, next_y)
                 else:
                     # Если путь не найден, пытаемся двигаться напрямую (старая логика)
-                    dx = self.player_unit.x - enemy_unit.x
-                    dy = self.player_unit.y - enemy_unit.y
+                    dx = target_unit.x - enemy_unit.x
+                    dy = target_unit.y - enemy_unit.y
 
                     # Нормализуем направление для движения по одной клетке
                     # Движение по диагонали, если оба dx и dy ненулевые
@@ -794,29 +837,327 @@ class TacticalCombatSystem:
                         self.move_unit(enemy_unit, new_x, new_y)
             else:
                 # В дистанции атаки - атакуем базовой атакой
-                attack_result = enemy_unit.character.attack(self.player)
+                target_char = target_unit.character
+                attack_result = enemy_unit.character.attack(target_char)
+
+                is_player = target_unit == self.player_unit
+                target_name = "вас" if is_player else target_char.name
 
                 if attack_result['dodged']:
-                    self.add_to_log(f"Вы уклонились от атаки {enemy_unit.character.name}!")
+                    if is_player:
+                        self.add_to_log(f"Вы уклонились от атаки {enemy_unit.character.name}!")
+                    else:
+                        self.add_to_log(f"{target_char.name} уклонился от атаки {enemy_unit.character.name}!")
                 elif attack_result['hit']:
                     damage = attack_result['damage']
                     if attack_result['critical']:
-                        self.add_to_log(f"КРИТИЧЕСКИЙ УДАР! {enemy_unit.character.name} наносит вам мощнейший удар! Урон: {damage}")
+                        if is_player:
+                            self.add_to_log(f"КРИТИЧЕСКИЙ УДАР! {enemy_unit.character.name} наносит вам мощнейший удар! Урон: {damage}")
+                        else:
+                            self.add_to_log(f"КРИТИЧЕСКИЙ УДАР! {enemy_unit.character.name} атакует {target_name}! Урон: {damage}")
                     else:
-                        self.add_to_log(f"{enemy_unit.character.name} атакует вас! Урон: {damage}")
+                        if is_player:
+                            self.add_to_log(f"{enemy_unit.character.name} атакует вас! Урон: {damage}")
+                        else:
+                            self.add_to_log(f"{enemy_unit.character.name} атакует {target_name}! Урон: {damage}")
 
-                    if not self.player.is_alive:
-                        return "defeat"
+                    # Проверяем смерть цели
+                    if not target_char.is_alive:
+                        if is_player:
+                            return "defeat"
+                        else:
+                            self.add_to_log(f"{target_char.name} погиб!")
 
                 enemy_unit.has_acted = True
 
         return "continue"
+
+    def _find_closest_target_for_enemy(self, enemy_unit):
+        """
+        Найти ближайшую живую цель (игрок или спутник) для врага
+
+        Args:
+            enemy_unit: Вражеский юнит
+
+        Returns:
+            BattlefieldUnit или None: Ближайшая живая цель
+        """
+        closest_target = None
+        min_distance = float('inf')
+
+        # Проверяем игрока
+        if self.player.is_alive:
+            distance = self.get_distance(
+                enemy_unit.x, enemy_unit.y,
+                self.player_unit.x, self.player_unit.y
+            )
+            if distance < min_distance:
+                min_distance = distance
+                closest_target = self.player_unit
+
+        # Проверяем спутников
+        for companion_unit in self.companion_units:
+            if companion_unit.character.is_alive:
+                distance = self.get_distance(
+                    enemy_unit.x, enemy_unit.y,
+                    companion_unit.x, companion_unit.y
+                )
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_target = companion_unit
+
+        return closest_target
+
+    def execute_companion_turns(self):
+        """
+        Выполнить ходы спутников (AI) - все живые спутники ходят по очереди
+
+        Returns:
+            str: Статус боя после ходов
+        """
+        import random
+        from game.skills import SkillCategory
+
+        # Все живые спутники ходят по очереди
+        for companion_unit in self.companion_units:
+            # Пропускаем мертвых спутников
+            if not companion_unit.character.is_alive:
+                continue
+
+            # Выполняем ход этого спутника
+            result = self._execute_single_companion_turn(companion_unit)
+
+            if result == "victory":
+                return "victory"
+
+        # Сбрасываем cooldown умений спутников
+        for companion_unit in self.companion_units:
+            if companion_unit.character.is_alive and hasattr(companion_unit.character, 'skill_manager'):
+                companion_unit.character.skill_manager.tick_cooldowns()
+
+        return "continue"
+
+    def _execute_single_companion_turn(self, companion_unit):
+        """
+        Выполнить ход одного спутника
+
+        Args:
+            companion_unit: Юнит спутника
+
+        Returns:
+            str: Статус боя после хода
+        """
+        import random
+        from game.skills import SkillCategory
+
+        # Находим ближайшего живого врага
+        closest_enemy = None
+        min_distance = float('inf')
+
+        for enemy_unit in self.enemy_units:
+            if enemy_unit.character.is_alive:
+                distance = self.get_distance(
+                    companion_unit.x, companion_unit.y,
+                    enemy_unit.x, enemy_unit.y
+                )
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_enemy = enemy_unit
+
+        if not closest_enemy:
+            return "continue"  # Нет живых врагов
+
+        # Получаем боевые категории
+        combat_categories = [SkillCategory.COMBAT, SkillCategory.MAGIC,
+                           SkillCategory.SHADOW, SkillCategory.WARRIOR,
+                           SkillCategory.HUNTER, SkillCategory.MAGE,
+                           SkillCategory.GENERAL]
+
+        # Пытаемся использовать умения
+        used_skill = False
+        if hasattr(companion_unit.character, 'skill_manager') and companion_unit.character.skill_manager:
+            usable_skills = []
+            support_skills = []
+
+            for skill_id, skill in companion_unit.character.skill_manager.learned_skills.items():
+                # Проверяем, можно ли использовать умение
+                can_use, _ = skill.can_use(companion_unit.character)
+                if not can_use:
+                    continue
+
+                # Проверяем категорию
+                if skill.category not in combat_categories:
+                    continue
+
+                # Получаем радиус действия умения
+                if hasattr(skill, 'get_tactical_range'):
+                    skill_range = skill.get_tactical_range()
+                else:
+                    skill_range = getattr(skill, 'tactical_range', 1)
+
+                # Проверяем, является ли умение поддерживающим (например Вой)
+                if skill_id == 'wolf_howl':
+                    support_skills.append(skill)
+                elif self.is_in_range(companion_unit, closest_enemy.x, closest_enemy.y, skill_range):
+                    usable_skills.append((skill, closest_enemy))
+
+            # Сначала проверяем поддерживающие умения (Вой) - используем с вероятностью 30%
+            if support_skills and random.random() < 0.3:
+                skill = random.choice(support_skills)
+                result = self._use_companion_skill(skill, companion_unit, companion_unit)
+                if result['success']:
+                    used_skill = True
+                    self.add_to_log(result['message'])
+
+            # Затем пробуем использовать атакующие умения
+            if not used_skill and usable_skills:
+                skill, target = random.choice(usable_skills)
+                result = self._use_companion_skill(skill, companion_unit, target)
+
+                if result['success']:
+                    used_skill = True
+                    companion_unit.has_acted = True
+
+                    # Проверяем победу
+                    if self._all_enemies_dead():
+                        return "victory"
+
+        # Если умение не использовали - двигаемся к ближайшему врагу или атакуем
+        if not used_skill:
+            weapon_range = 1  # Спутники атакуют в ближнем бою
+
+            if min_distance > weapon_range:
+                # Двигаемся к врагу
+                path = self.find_path(
+                    companion_unit.x, companion_unit.y,
+                    closest_enemy.x, closest_enemy.y,
+                    companion_unit
+                )
+
+                if path and len(path) > 0:
+                    next_x, next_y = path[0]
+                    self.move_unit(companion_unit, next_x, next_y)
+                else:
+                    # Fallback - двигаемся напрямую
+                    dx = closest_enemy.x - companion_unit.x
+                    dy = closest_enemy.y - companion_unit.y
+                    move_x = 1 if dx > 0 else -1 if dx < 0 else 0
+                    move_y = 1 if dy > 0 else -1 if dy < 0 else 0
+
+                    new_x = companion_unit.x + move_x
+                    new_y = companion_unit.y + move_y
+
+                    if not self.move_unit(companion_unit, new_x, new_y):
+                        if abs(dx) > abs(dy):
+                            self.move_unit(companion_unit, companion_unit.x + move_x, companion_unit.y)
+                        else:
+                            self.move_unit(companion_unit, companion_unit.x, companion_unit.y + move_y)
+            else:
+                # В дистанции атаки - атакуем
+                attack_result = companion_unit.character.attack(closest_enemy.character)
+
+                if attack_result['hit']:
+                    damage = attack_result['damage']
+                    if attack_result['critical']:
+                        self.add_to_log(f"КРИТИЧЕСКИЙ УДАР! {companion_unit.character.name} яростно атакует {closest_enemy.character.name}! Урон: {damage}")
+                    else:
+                        self.add_to_log(f"{companion_unit.character.name} атакует {closest_enemy.character.name}! Урон: {damage}")
+
+                    if not closest_enemy.character.is_alive:
+                        self.add_to_log(f"{closest_enemy.character.name} повержен!")
+                        if self._all_enemies_dead():
+                            return "victory"
+                elif attack_result.get('dodged'):
+                    self.add_to_log(f"{closest_enemy.character.name} уклонился от атаки {companion_unit.character.name}!")
+
+                companion_unit.has_acted = True
+
+        return "continue"
+
+    def _use_companion_skill(self, skill, companion_unit, target_unit):
+        """
+        Использовать умение спутника с обработкой специальных эффектов
+
+        Args:
+            skill: Умение для использования
+            companion_unit: Юнит спутника
+            target_unit: Цель умения
+
+        Returns:
+            dict: Результат использования умения
+        """
+        from game.systems.skills.companion import WolfHowlStrengthEffect, WolfHowlDexterityEffect
+
+        # Используем умение
+        result = skill.use(companion_unit.character, target_unit.character if target_unit else None)
+
+        if not result.get('success', True):
+            return result
+
+        # Обрабатываем специальный эффект Воя
+        if result.get('buff_type') == 'howl':
+            boost_percentage = result.get('boost_percentage', 10)
+            duration = result.get('duration', 3)
+
+            # Применяем бафф к игроку
+            self._apply_howl_buff(self.player, boost_percentage, duration)
+
+            # Применяем бафф ко всем живым спутникам
+            for other_companion_unit in self.companion_units:
+                if other_companion_unit.character.is_alive:
+                    self._apply_howl_buff(other_companion_unit.character, boost_percentage, duration)
+
+            self.add_to_log(result['message'])
+            companion_unit.has_acted = True
+            result['success'] = True
+            return result
+
+        # Обычное умение (например укус)
+        if result.get('message'):
+            self.add_to_log(result['message'])
+
+        return result
+
+    def _apply_howl_buff(self, character, boost_percentage, duration):
+        """
+        Применить бафф от воя волка к персонажу
+
+        Args:
+            character: Персонаж для применения баффа
+            boost_percentage: Процент усиления
+            duration: Длительность в ходах
+        """
+        from game.systems.skills.companion import WolfHowlStrengthEffect, WolfHowlDexterityEffect
+
+        # Создаем эффекты
+        strength_effect = WolfHowlStrengthEffect(duration, boost_percentage)
+        dexterity_effect = WolfHowlDexterityEffect(duration, boost_percentage)
+
+        # Применяем эффекты к персонажу
+        if hasattr(character, 'skill_manager') and character.skill_manager:
+            # Удаляем старые эффекты Воя если есть
+            character.skill_manager.status_effects = [
+                e for e in character.skill_manager.status_effects
+                if not (hasattr(e, 'name') and 'Вой волка' in e.name)
+            ]
+            # Добавляем новые эффекты
+            character.skill_manager.status_effects.append(strength_effect)
+            character.skill_manager.status_effects.append(dexterity_effect)
+            # Применяем эффекты
+            strength_effect.apply(character)
+            dexterity_effect.apply(character)
 
     def end_turn(self):
         """Завершить текущий ход"""
         if self.current_turn == "player":
             # Сбрасываем состояние игрока
             self.player_unit.reset_turn()
+
+            # === ХОД СПУТНИКОВ (AI) ===
+            companion_result = self.execute_companion_turns()
+
+            if companion_result == "victory":
+                return "victory"
 
             # Переход к ходу врагов
             self.current_turn = "enemy"
@@ -832,6 +1173,10 @@ class TacticalCombatSystem:
             for enemy_unit in self.enemy_units:
                 enemy_unit.reset_turn()
 
+            # Сбрасываем состояние всех спутников
+            for companion_unit in self.companion_units:
+                companion_unit.reset_turn()
+
             # === ОБРАБОТКА СТАТУС-ЭФФЕКТОВ (DoT) ДЛЯ ВСЕХ ЮНИТОВ ===
             self._process_all_status_effects()
 
@@ -842,6 +1187,9 @@ class TacticalCombatSystem:
             # Проверяем поражение после DoT урона
             if not self.player.is_alive:
                 return "defeat"
+
+            # Проверяем, все ли спутники погибли (не влияет на исход боя, но нужно знать)
+            # Спутники могут умереть, но бой продолжается пока жив игрок
 
             # Проверяем, жива ли последняя выбранная цель
             if self.last_selected_target and not self.last_selected_target.character.is_alive:
@@ -859,6 +1207,36 @@ class TacticalCombatSystem:
             messages = self.player.skill_manager.tick_status_effects()
             for msg in messages:
                 self.add_to_log(msg)
+
+        # Обрабатываем эффекты всех спутников
+        for companion_unit in self.companion_units:
+            if not companion_unit.character.is_alive:
+                continue
+
+            companion = companion_unit.character
+
+            # Если у спутника есть skill_manager - используем его
+            if hasattr(companion, 'skill_manager') and companion.skill_manager:
+                messages = companion.skill_manager.tick_status_effects()
+                for msg in messages:
+                    self.add_to_log(msg)
+            # Иначе обрабатываем status_effects напрямую
+            elif hasattr(companion, 'status_effects') and companion.status_effects:
+                for effect in companion.status_effects[:]:
+                    message = effect.tick(companion)
+                    if message:
+                        self.add_to_log(message)
+
+                    # Удаляем истекшие эффекты
+                    if effect.is_expired():
+                        remove_message = effect.remove(companion)
+                        if remove_message:
+                            self.add_to_log(remove_message)
+                        companion.status_effects.remove(effect)
+
+                # Проверяем, жив ли спутник после DoT
+                if not companion.is_alive:
+                    self.add_to_log(f"{companion.name} погиб!")
 
         # Обрабатываем эффекты всех врагов
         for enemy_unit in self.enemy_units:

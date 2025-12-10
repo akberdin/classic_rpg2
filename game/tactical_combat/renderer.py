@@ -382,6 +382,18 @@ class TacticalCombatRenderer:
         # Отрисовка игрока
         self._render_unit(self.combat.player_unit, field_x, field_y, self.player_color, "P", is_target=False)
 
+        # Отрисовка спутников (зеленый цвет, как у игрока)
+        companion_color = (100, 200, 150)  # Чуть другой оттенок зеленого
+        for i, companion_unit in enumerate(self.combat.companion_units):
+            # Пропускаем мертвых спутников
+            if not companion_unit.character.is_alive:
+                continue
+
+            # Метка спутника: C для первого, C1, C2... для остальных
+            label = "C" if i == 0 else f"C{i}"
+
+            self._render_unit(companion_unit, field_x, field_y, companion_color, label, is_target=False, is_companion=True)
+
         # Отрисовка всех врагов (с подсветкой если выбран как цель)
         from game.tactical_combat.ui_handler import TacticalCombatUIHandler
         for i, enemy_unit in enumerate(self.combat.enemy_units):
@@ -398,7 +410,7 @@ class TacticalCombatRenderer:
 
             self._render_unit(enemy_unit, field_x, field_y, self.enemy_color, label, is_target=is_target)
 
-    def _render_unit(self, unit, field_x, field_y, color, label, is_target=False):
+    def _render_unit(self, unit, field_x, field_y, color, label, is_target=False, is_companion=False):
         """
         Отрисовка юнита
 
@@ -406,8 +418,9 @@ class TacticalCombatRenderer:
             unit: Юнит для отрисовки
             field_x, field_y: Координаты поля
             color: Цвет юнита
-            label: Метка (P для игрока, E для врага)
+            label: Метка (P для игрока, E для врага, C для спутника)
             is_target: True если юнит выбран как цель
+            is_companion: True если юнит является спутником
         """
         cell_x = field_x + unit.x * self.combat.cell_size
         cell_y = field_y + unit.y * self.combat.cell_size
@@ -440,6 +453,17 @@ class TacticalCombatRenderer:
                 sprite = self.combat.sprite_manager.get_npc_sprite_with_rank(
                     'player',
                     character.level
+                )
+                if sprite:
+                    sprite_x = cell_x + (self.combat.cell_size - sprite.get_width()) // 2
+                    sprite_y = cell_y + (self.combat.cell_size - sprite.get_height()) // 2
+                    self.screen.blit(sprite, (sprite_x, sprite_y))
+                    sprite_displayed = True
+            # Для спутников используем companion_type для получения спрайта
+            elif is_companion and hasattr(character, 'companion_type'):
+                sprite = self.combat.sprite_manager.get_companion_sprite(
+                    character.companion_type,
+                    character.rank
                 )
                 if sprite:
                     sprite_x = cell_x + (self.combat.cell_size - sprite.get_width()) // 2
@@ -522,7 +546,7 @@ class TacticalCombatRenderer:
 
     def _render_entourage_panel(self, x, y, width, max_height):
         """
-        Отрисовка боковой панели с характеристиками NPC свиты
+        Отрисовка боковой панели с характеристиками спутников и врагов
 
         Args:
             x, y: Позиция панели
@@ -533,39 +557,161 @@ class TacticalCombatRenderer:
         pygame.draw.rect(self.screen, (35, 35, 45), (x, y, width, max_height))
         pygame.draw.rect(self.screen, (100, 100, 150), (x, y, width, max_height), 3)
 
-        # Отрисовка информации о каждом NPC (без заголовка для экономии места)
         current_y = y + 8
-        spacing = 8
-        max_units_to_show = 5  # Максимум NPC для отображения
+        spacing = 6
 
-        # Показываем только живых врагов
+        # Показываем живых спутников (союзники)
+        alive_companions = [unit for unit in self.combat.companion_units if unit.character.is_alive]
+        # Показываем живых врагов
         alive_enemies = [unit for unit in self.combat.enemy_units if unit.character.is_alive]
 
-        # Ограничиваем количество отображаемых врагов
-        enemies_to_show = alive_enemies[:max_units_to_show]
+        # Вычисляем количество юнитов для отображения
+        total_units = len(alive_companions) + len(alive_enemies)
+        max_units_to_show = 6  # Максимум юнитов для отображения
 
-        # Рассчитываем высоту блока для размещения до 5 противников
-        available_height = max_height - 20  # Отступы сверху и снизу
-        num_enemies = max(len(enemies_to_show), 1)
-        # Высота блока: минимум 120, но не более чем позволяет пространство
-        unit_info_height = min(160, (available_height - spacing * (num_enemies - 1)) // num_enemies)
+        # Рассчитываем высоту блока
+        available_height = max_height - 20
+        num_units = min(max(total_units, 1), max_units_to_show)
+        unit_info_height = min(140, (available_height - spacing * (num_units - 1)) // num_units)
 
-        for i, enemy_unit in enumerate(enemies_to_show):
-            # Проверяем, влезает ли еще один блок
-            if current_y + unit_info_height > y + max_height - 5:
-                # Если не влезает, показываем сообщение о том, что есть еще враги
-                remaining = len(alive_enemies) - i
-                if remaining > 0:
-                    more_text = self.small_font.render(
-                        f"... и еще {remaining}",
-                        True,
-                        (180, 180, 200)
-                    )
-                    self.screen.blit(more_text, (x + 10, current_y))
-                break
+        # === ОТОБРАЖЕНИЕ СПУТНИКОВ (СОЮЗНИКИ) ===
+        if alive_companions:
+            # Заголовок секции спутников
+            allies_title = self.small_font.render("СОЮЗНИКИ", True, (100, 255, 150))
+            self.screen.blit(allies_title, (x + 10, current_y))
+            current_y += 20
 
-            self._render_unit_info_compact(enemy_unit, x + 5, current_y, width - 10, i, unit_info_height)
-            current_y += unit_info_height + spacing
+            for i, companion_unit in enumerate(alive_companions):
+                if current_y + unit_info_height > y + max_height - 30:
+                    break
+
+                self._render_companion_info_compact(companion_unit, x + 5, current_y, width - 10, i, unit_info_height)
+                current_y += unit_info_height + spacing
+
+        # === РАЗДЕЛИТЕЛЬ ===
+        if alive_companions and alive_enemies:
+            current_y += 5
+            pygame.draw.line(self.screen, (100, 100, 120),
+                           (x + 10, current_y), (x + width - 10, current_y), 2)
+            current_y += 10
+
+        # === ОТОБРАЖЕНИЕ ВРАГОВ ===
+        if alive_enemies:
+            # Заголовок секции врагов
+            enemies_title = self.small_font.render("ПРОТИВНИКИ", True, (255, 100, 100))
+            self.screen.blit(enemies_title, (x + 10, current_y))
+            current_y += 20
+
+            for i, enemy_unit in enumerate(alive_enemies):
+                # Проверяем, влезает ли еще один блок
+                if current_y + unit_info_height > y + max_height - 5:
+                    # Если не влезает, показываем сообщение о том, что есть еще враги
+                    remaining = len(alive_enemies) - i
+                    if remaining > 0:
+                        more_text = self.small_font.render(
+                            f"... и еще {remaining}",
+                            True,
+                            (180, 180, 200)
+                        )
+                        self.screen.blit(more_text, (x + 10, current_y))
+                    break
+
+                self._render_unit_info_compact(enemy_unit, x + 5, current_y, width - 10, i, unit_info_height)
+                current_y += unit_info_height + spacing
+
+    def _render_companion_info_compact(self, unit, x, y, width, index, block_height=140):
+        """
+        Отрисовка компактной информации о спутнике
+
+        Args:
+            unit: Юнит спутника
+            x, y: Позиция блока
+            width: Ширина блока
+            index: Индекс спутника
+            block_height: Высота блока информации
+        """
+        character = unit.character
+
+        # Фон блока (зеленоватый для союзников)
+        pygame.draw.rect(self.screen, (45, 55, 50), (x, y, width, block_height))
+        pygame.draw.rect(self.screen, (100, 200, 150), (x, y, width, block_height), 2)
+
+        # Спрайт спутника (слева)
+        sprite_size = min(48, block_height - 20)
+        sprite_x = x + 5
+        sprite_y = y + 5
+
+        # Отрисовываем спрайт спутника
+        if self.combat.sprite_manager and hasattr(character, 'companion_type'):
+            sprite = self.combat.sprite_manager.get_companion_sprite(
+                character.companion_type,
+                character.rank
+            )
+            if sprite:
+                scaled_sprite = pygame.transform.scale(sprite, (sprite_size, sprite_size))
+                self.screen.blit(scaled_sprite, (sprite_x, sprite_y))
+            else:
+                pygame.draw.rect(self.screen, (80, 100, 80), (sprite_x, sprite_y, sprite_size, sprite_size), 2)
+        else:
+            pygame.draw.rect(self.screen, (80, 100, 80), (sprite_x, sprite_y, sprite_size, sprite_size), 2)
+
+        # Информация справа от спрайта
+        info_x = sprite_x + sprite_size + 8
+        info_y = y + 5
+
+        # Метка спутника
+        label = f"C{index}" if index > 0 else "C"
+        label_text = self.small_font.render(label, True, (100, 255, 150))
+        self.screen.blit(label_text, (info_x, info_y))
+
+        # Имя
+        short_name = character.name[:15] + ".." if len(character.name) > 17 else character.name
+        name_text = self.info_font.render(short_name, True, (255, 255, 255))
+        self.screen.blit(name_text, (info_x, info_y + 16))
+
+        # Уровень и ранг
+        rank = character.rank if hasattr(character, 'rank') else 0
+        rank_info = character.get_rank_info() if hasattr(character, 'get_rank_info') else {'name': f'Ранг {rank}'}
+        level_text = self.small_font.render(f"Ур. {character.level} ({rank_info.get('name', '')})", True, (255, 215, 0))
+        self.screen.blit(level_text, (info_x, info_y + 34))
+
+        # Прогресс-бары под спрайтом и именем
+        bar_y = y + sprite_size + 12
+        bar_width = width - 10
+        bar_height = 8
+
+        # HP
+        max_hp = character.get_effective_max_health() if hasattr(character, 'get_effective_max_health') else character.max_health
+        hp_ratio = min(1.0, character.health / max_hp) if max_hp > 0 else 0
+        hp_percent = int(hp_ratio * 100)
+
+        hp_label = self.small_font.render(f"HP: {character.health}/{max_hp} ({hp_percent}%)", True, (100, 255, 150))
+        self.screen.blit(hp_label, (x + 5, bar_y))
+        bar_y += 14
+
+        pygame.draw.rect(self.screen, (60, 60, 60), (x + 5, bar_y, bar_width, bar_height))
+        if hp_ratio > 0:
+            hp_color = (100, 255, 100) if hp_ratio > 0.5 else (255, 165, 0) if hp_ratio > 0.25 else (255, 100, 100)
+            pygame.draw.rect(self.screen, hp_color, (x + 5, bar_y, int(bar_width * hp_ratio), bar_height))
+        pygame.draw.rect(self.screen, (200, 200, 200), (x + 5, bar_y, bar_width, bar_height), 1)
+
+        # Stamina
+        if block_height >= 100 and hasattr(character, 'stamina'):
+            bar_y += bar_height + 6
+            max_stamina = character.get_effective_max_stamina() if hasattr(character, 'get_effective_max_stamina') else character.max_stamina
+            stamina_ratio = min(1.0, character.stamina / max_stamina) if max_stamina > 0 else 0
+
+            stamina_label = self.small_font.render(f"Вын.: {character.stamina}/{max_stamina}", True, (255, 220, 100))
+            self.screen.blit(stamina_label, (x + 5, bar_y))
+            bar_y += 14
+
+            pygame.draw.rect(self.screen, (50, 40, 20), (x + 5, bar_y, bar_width, bar_height))
+            if stamina_ratio > 0:
+                pygame.draw.rect(self.screen, (255, 220, 100), (x + 5, bar_y, int(bar_width * stamina_ratio), bar_height))
+            pygame.draw.rect(self.screen, (200, 180, 100), (x + 5, bar_y, bar_width, bar_height), 1)
+
+        # Пиктограммы статус-эффектов (справа от имени)
+        self._render_status_effect_icons(character, x + width - 45, y + 5)
 
     def _render_unit_info_compact(self, unit, x, y, width, index, block_height=160):
         """
