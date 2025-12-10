@@ -750,8 +750,60 @@ class TacticalCombatSystem:
             for enemy_unit in self.enemy_units:
                 enemy_unit.reset_turn()
 
+            # === ОБРАБОТКА СТАТУС-ЭФФЕКТОВ (DoT) ДЛЯ ВСЕХ ЮНИТОВ ===
+            self._process_all_status_effects()
+
+            # Проверяем победу после DoT урона
+            if self._all_enemies_dead():
+                return "victory"
+
+            # Проверяем поражение после DoT урона
+            if not self.player.is_alive:
+                return "defeat"
+
             # Проверяем, жива ли последняя выбранная цель
             if self.last_selected_target and not self.last_selected_target.character.is_alive:
                 self.last_selected_target = None
 
         return "continue"
+
+    def _process_all_status_effects(self):
+        """
+        Обработать статус-эффекты (DoT, регенерация и т.д.) для всех юнитов.
+        Вызывается в конце каждого раунда.
+        """
+        # Обрабатываем эффекты игрока
+        if hasattr(self.player, 'skill_manager') and self.player.skill_manager:
+            messages = self.player.skill_manager.tick_status_effects()
+            for msg in messages:
+                self.add_to_log(msg)
+
+        # Обрабатываем эффекты всех врагов
+        for enemy_unit in self.enemy_units:
+            if not enemy_unit.character.is_alive:
+                continue
+
+            enemy = enemy_unit.character
+
+            # Если у врага есть skill_manager - используем его
+            if hasattr(enemy, 'skill_manager') and enemy.skill_manager:
+                messages = enemy.skill_manager.tick_status_effects()
+                for msg in messages:
+                    self.add_to_log(msg)
+            # Иначе обрабатываем status_effects напрямую
+            elif hasattr(enemy, 'status_effects') and enemy.status_effects:
+                for effect in enemy.status_effects[:]:
+                    message = effect.tick(enemy)
+                    if message:
+                        self.add_to_log(message)
+
+                    # Удаляем истекшие эффекты
+                    if effect.is_expired():
+                        remove_message = effect.remove(enemy)
+                        if remove_message:
+                            self.add_to_log(remove_message)
+                        enemy.status_effects.remove(effect)
+
+                # Проверяем, жив ли враг после DoT
+                if not enemy.is_alive:
+                    self.add_to_log(f"{enemy.name} повержен от горения!")
