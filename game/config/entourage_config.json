@@ -34,15 +34,27 @@
       }
     },
     "3": {
-      "description": "Ранг 3 (Эксперт, уровни 31-40) - может иметь 1-4 NPC ранга 1 и/или 2",
+      "description": "Ранг 3 (Эксперт, уровни 31-40) - минимум 2 NPC ранга 1 и/или 2",
       "enabled": true,
-      "min_count": 1,
+      "min_count": 2,
       "max_count": 4,
       "allowed_ranks": [1, 2],
-      "spawn_chance": 0.85,
+      "spawn_chance": 1.0,
       "rank_weights": {
         "1": 0.5,
         "2": 0.5
+      }
+    },
+    "4": {
+      "description": "Ранг 4 (Мастер, уровни 40+) - минимум 3 NPC ранга 2 и/или 3",
+      "enabled": true,
+      "min_count": 3,
+      "max_count": 5,
+      "allowed_ranks": [2, 3],
+      "spawn_chance": 1.0,
+      "rank_weights": {
+        "2": 0.4,
+        "3": 0.6
       }
     }
   },
