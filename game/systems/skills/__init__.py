@@ -49,6 +49,7 @@ from game.systems.skills.magic import (
     Lightning,
     MagicMissile,
     MageShield,
+    FireArrow,
 )
 
 # Ремесленные умения
@@ -107,7 +108,7 @@ __all__ = [
     'BasicAttack', 'PowerStrike', 'PoisonStrike', 'StunStrike', 'BattleCry',
     # Магические
     'Heal', 'Regeneration', 'StaminaRecovery', 'Fireball', 'IceBolt',
-    'Lightning', 'MagicMissile', 'MageShield',
+    'Lightning', 'MagicMissile', 'MageShield', 'FireArrow',
     # Ремесленные
     'Mining', 'Lumberjacking', 'Craftsmanship', 'Alchemy', 'Enchanting', 'Herbalism',
     # Оружейные
@@ -176,6 +177,7 @@ AVAILABLE_SKILLS = {
     'ice_bolt': IceBolt,
     'lightning': Lightning,
     'magic_missile': MagicMissile,
+    'fire_arrow': FireArrow,
     # Ремесленные
     'mining': Mining,
     'lumberjacking': Lumberjacking,

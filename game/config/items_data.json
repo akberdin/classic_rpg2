@@ -491,6 +491,7 @@
     "book_fireball": {"name": "Книга Огненного Шара", "skill_id": "fireball", "value": 2000, "quality": "EPIC"},
     "book_ice_bolt": {"name": "Книга Ледяной Стрелы", "skill_id": "ice_bolt", "value": 1500, "quality": "EPIC"},
     "book_lightning": {"name": "Книга Молнии", "skill_id": "lightning", "value": 3500, "quality": "LEGENDARY"},
+    "book_fire_arrow": {"name": "Книга Огненной Стрелы", "skill_id": "fire_arrow", "value": 200, "quality": "UNCOMMON"},
 
     "book_precise_shot": {"name": "Книга Точного Выстрела", "skill_id": "precise_shot", "value": 350, "quality": "UNCOMMON"},
     "book_rapid_fire": {"name": "Книга Быстрой Стрельбы", "skill_id": "rapid_fire", "value": 500, "quality": "RARE"},
