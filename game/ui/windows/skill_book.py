@@ -405,8 +405,10 @@ class SkillBookWindow:
 
                 # Стоимость и перезарядка
                 cost_parts = []
-                if skill.mana_cost > 0:
-                    cost_parts.append(f"MP:{skill.mana_cost}")
+                # Используем get_mana_cost() если доступен, иначе mana_cost
+                mana_cost = skill.get_mana_cost() if hasattr(skill, 'get_mana_cost') else skill.mana_cost
+                if mana_cost > 0:
+                    cost_parts.append(f"MP:{mana_cost}")
                 if skill.stamina_cost > 0:
                     cost_parts.append(f"ST:{skill.stamina_cost}")
                 if skill.cooldown > 0:
@@ -585,8 +587,10 @@ class SkillBookWindow:
         # Добавляем информацию о стоимости
         lines.append(("", (0, 0, 0), False))
         cost_info = []
-        if skill.mana_cost > 0:
-            cost_info.append(f"Мана: {skill.mana_cost}")
+        # Используем get_mana_cost() если доступен, иначе mana_cost
+        mana_cost = skill.get_mana_cost() if hasattr(skill, 'get_mana_cost') else skill.mana_cost
+        if mana_cost > 0:
+            cost_info.append(f"Мана: {mana_cost}")
         if skill.stamina_cost > 0:
             cost_info.append(f"Выносливость: {skill.stamina_cost}")
         if skill.cooldown > 0:

@@ -470,8 +470,11 @@ class TacticalCombatSystem:
             targets.append(caster_unit)
         else:
             # Боевые умения - применяются на врагов
-            # Получаем радиус действия умения
-            skill_range = getattr(skill, 'tactical_range', 1)
+            # Получаем радиус действия умения (используем метод get_tactical_range если доступен)
+            if hasattr(skill, 'get_tactical_range'):
+                skill_range = skill.get_tactical_range()
+            else:
+                skill_range = getattr(skill, 'tactical_range', 1)
 
             if caster_unit == self.player_unit:
                 # Игрок может атаковать любого врага в радиусе действия

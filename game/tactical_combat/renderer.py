@@ -67,8 +67,11 @@ class TacticalCombatRenderer:
         if not can_use or skill.category not in combat_categories:
             return None, 0, False
 
-        # Получаем радиус действия умения
-        tactical_range = getattr(skill, 'tactical_range', 1)
+        # Получаем радиус действия умения (используем метод get_tactical_range если доступен)
+        if hasattr(skill, 'get_tactical_range'):
+            tactical_range = skill.get_tactical_range()
+        else:
+            tactical_range = getattr(skill, 'tactical_range', 1)
 
         # Определяем, является ли умение поддерживающим (применяется на себя)
         skill_id = self.combat.player.skill_manager.get_skill_id(skill)
