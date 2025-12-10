@@ -37,10 +37,256 @@ class TacticalCombatRenderer:
         self.skill_buttons = []  # Список прямоугольников кнопок умений
         self.hovered_skill_slot = None  # Слот умения под курсором
 
+        # Цвета для контуров области действия
+        self.skill_area_color = tuple(ui_config.get('cell_attack_range_color', [200, 100, 100, 128]))
+        self.support_skill_area_color = (100, 200, 100, 128)  # Зеленый для поддерживающих умений
+
+    def _get_hovered_skill_info(self):
+        """
+        Получить информацию об умении под курсором мыши
+
+        Returns:
+            tuple: (skill, tactical_range, is_support) или (None, 0, False) если нет умения
+        """
+        if self.hovered_skill_slot is None:
+            return None, 0, False
+
+        skill = self.combat.player.skill_manager.get_slot_skill(self.hovered_skill_slot)
+        if not skill:
+            return None, 0, False
+
+        # Проверяем, можно ли использовать умение
+        from game.skills import SkillCategory
+        can_use, _ = skill.can_use(self.combat.player)
+        combat_categories = [
+            SkillCategory.COMBAT, SkillCategory.MAGIC,
+            SkillCategory.SHADOW, SkillCategory.WARRIOR,
+            SkillCategory.HUNTER, SkillCategory.MAGE, SkillCategory.GENERAL
+        ]
+
+        if not can_use or skill.category not in combat_categories:
+            return None, 0, False
+
+        # Получаем радиус действия умения
+        tactical_range = getattr(skill, 'tactical_range', 1)
+
+        # Определяем, является ли умение поддерживающим (применяется на себя)
+        skill_id = self.combat.player.skill_manager.get_skill_id(skill)
+        support_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield']
+        is_support = skill_id in support_skills
+
+        return skill, tactical_range, is_support
+
+    def _render_skill_area_outline(self, field_x, field_y):
+        """
+        Отрисовка контура области действия умения при наведении на пиктограмму
+
+        Args:
+            field_x, field_y: Координаты поля боя на экране
+        """
+        skill, tactical_range, is_support = self._get_hovered_skill_info()
+
+        if not skill or tactical_range <= 0:
+            return
+
+        # Позиция игрока как центр области действия
+        center_x = self.combat.player_unit.x
+        center_y = self.combat.player_unit.y
+
+        # Выбираем цвет в зависимости от типа умения
+        if is_support:
+            outline_color = self.support_skill_area_color
+        else:
+            outline_color = self.skill_area_color
+
+        # Создаем полупрозрачную поверхность для заливки
+        cell_size = self.combat.cell_size
+        cell_surface = pygame.Surface((cell_size, cell_size), pygame.SRCALPHA)
+        cell_surface.fill(outline_color)
+
+        # Отрисовываем все клетки в радиусе действия
+        for dx in range(-tactical_range, tactical_range + 1):
+            for dy in range(-tactical_range, tactical_range + 1):
+                cell_x = center_x + dx
+                cell_y = center_y + dy
+
+                # Проверяем границы поля
+                if cell_x < 0 or cell_x >= self.combat.battlefield_width:
+                    continue
+                if cell_y < 0 or cell_y >= self.combat.battlefield_height:
+                    continue
+
+                # Вычисляем расстояние (чебышевское - как в логике боя)
+                distance = max(abs(dx), abs(dy))
+                if distance > tactical_range:
+                    continue
+
+                # Пропускаем клетку игрока для атакующих умений
+                if not is_support and dx == 0 and dy == 0:
+                    continue
+
+                # Позиция клетки на экране
+                screen_x = field_x + cell_x * cell_size
+                screen_y = field_y + cell_y * cell_size
+
+                # Отрисовываем полупрозрачную заливку
+                self.screen.blit(cell_surface, (screen_x, screen_y))
+
+        # Отрисовываем контур границы области действия
+        self._render_area_border(field_x, field_y, center_x, center_y, tactical_range, outline_color, is_support)
+
+    def _render_area_border(self, field_x, field_y, center_x, center_y, radius, color, is_support):
+        """
+        Отрисовка границы области действия (контур вокруг области)
+
+        Args:
+            field_x, field_y: Координаты поля боя
+            center_x, center_y: Центр области (позиция игрока)
+            radius: Радиус области
+            color: Цвет контура
+            is_support: Является ли умение поддерживающим
+        """
+        cell_size = self.combat.cell_size
+        border_color = (color[0], color[1], color[2])  # RGB без альфа
+
+        # Для каждой клетки в области проверяем, является ли её грань границей
+        for dx in range(-radius, radius + 1):
+            for dy in range(-radius, radius + 1):
+                cell_x = center_x + dx
+                cell_y = center_y + dy
+
+                # Проверяем границы поля
+                if cell_x < 0 or cell_x >= self.combat.battlefield_width:
+                    continue
+                if cell_y < 0 or cell_y >= self.combat.battlefield_height:
+                    continue
+
+                # Вычисляем расстояние
+                distance = max(abs(dx), abs(dy))
+                if distance > radius:
+                    continue
+
+                # Пропускаем клетку игрока для атакующих умений
+                if not is_support and dx == 0 and dy == 0:
+                    continue
+
+                screen_x = field_x + cell_x * cell_size
+                screen_y = field_y + cell_y * cell_size
+
+                # Проверяем каждую грань клетки
+                # Верхняя грань
+                if self._is_area_border(center_x, center_y, cell_x, cell_y - 1, radius, is_support):
+                    pygame.draw.line(self.screen, border_color,
+                                   (screen_x, screen_y),
+                                   (screen_x + cell_size, screen_y), 3)
+
+                # Нижняя грань
+                if self._is_area_border(center_x, center_y, cell_x, cell_y + 1, radius, is_support):
+                    pygame.draw.line(self.screen, border_color,
+                                   (screen_x, screen_y + cell_size),
+                                   (screen_x + cell_size, screen_y + cell_size), 3)
+
+                # Левая грань
+                if self._is_area_border(center_x, center_y, cell_x - 1, cell_y, radius, is_support):
+                    pygame.draw.line(self.screen, border_color,
+                                   (screen_x, screen_y),
+                                   (screen_x, screen_y + cell_size), 3)
+
+                # Правая грань
+                if self._is_area_border(center_x, center_y, cell_x + 1, cell_y, radius, is_support):
+                    pygame.draw.line(self.screen, border_color,
+                                   (screen_x + cell_size, screen_y),
+                                   (screen_x + cell_size, screen_y + cell_size), 3)
+
+    def _is_area_border(self, center_x, center_y, check_x, check_y, radius, is_support):
+        """
+        Проверить, является ли соседняя клетка границей области (вне области)
+
+        Args:
+            center_x, center_y: Центр области
+            check_x, check_y: Проверяемая соседняя клетка
+            radius: Радиус области
+            is_support: Является ли умение поддерживающим
+
+        Returns:
+            bool: True если соседняя клетка вне области
+        """
+        # За пределами поля - это граница
+        if check_x < 0 or check_x >= self.combat.battlefield_width:
+            return True
+        if check_y < 0 or check_y >= self.combat.battlefield_height:
+            return True
+
+        # Вычисляем расстояние от центра
+        dx = check_x - center_x
+        dy = check_y - center_y
+        distance = max(abs(dx), abs(dy))
+
+        # Вне радиуса - это граница
+        if distance > radius:
+            return True
+
+        # Для атакующих умений клетка игрока тоже считается границей
+        if not is_support and dx == 0 and dy == 0:
+            return True
+
+        return False
+
+    def _update_skill_hover(self):
+        """
+        Обновить состояние наведения на слот умения.
+        Вызывается в начале render() для определения hovered_skill_slot до отрисовки поля боя.
+        """
+        mouse_pos = pygame.mouse.get_pos()
+        self.hovered_skill_slot = None
+
+        # Пропускаем, если не ход игрока
+        if self.combat.current_turn != "player":
+            return
+
+        # Вычисляем позицию панели умений (те же вычисления, что в render())
+        field_width = self.combat.battlefield_width * self.combat.cell_size
+        field_height = self.combat.battlefield_height * self.combat.cell_size
+        field_x = 20
+        field_y = 100
+        ui_y = field_y + field_height + 20
+
+        # Позиция панели умений
+        skill_panel_x = field_x + 10
+        skill_panel_y = ui_y + 35
+
+        slot_size = 48
+        slot_spacing = 8
+
+        # Проверяем каждый слот
+        for i in range(8):
+            slot_x = skill_panel_x + i * (slot_size + slot_spacing)
+            slot_y = skill_panel_y
+
+            slot_rect = pygame.Rect(slot_x, slot_y, slot_size, slot_size)
+
+            if slot_rect.collidepoint(mouse_pos):
+                # Проверяем, есть ли в слоте используемое умение
+                skill = self.combat.player.skill_manager.get_slot_skill(i)
+                if skill:
+                    from game.skills import SkillCategory
+                    can_use, _ = skill.can_use(self.combat.player)
+                    combat_categories = [
+                        SkillCategory.COMBAT, SkillCategory.MAGIC,
+                        SkillCategory.SHADOW, SkillCategory.WARRIOR,
+                        SkillCategory.HUNTER, SkillCategory.MAGE, SkillCategory.GENERAL
+                    ]
+                    if can_use and skill.category in combat_categories:
+                        self.hovered_skill_slot = i
+                break
+
     def render(self):
         """Основной метод отрисовки"""
         screen_width = self.screen.get_width()
         screen_height = self.screen.get_height()
+
+        # Обновляем состояние наведения на слот умения (до отрисовки поля боя)
+        self._update_skill_hover()
 
         # Затемняем фон
         overlay = pygame.Surface((screen_width, screen_height))
@@ -64,6 +310,9 @@ class TacticalCombatRenderer:
 
         # Отрисовываем поле боя
         self._render_battlefield(field_x, field_y)
+
+        # Отрисовываем контур области действия умения (если наведено на пиктограмму)
+        self._render_skill_area_outline(field_x, field_y)
 
         # Отрисовываем юнитов
         self._render_units(field_x, field_y)
