@@ -124,6 +124,11 @@ class TacticalCombatSystem:
         self.max_log_entries = 10
         self.current_enemy_index = 0  # Индекс текущего врага для хода
 
+        # === СИСТЕМА УПРАВЛЕНИЯ ЮНИТАМИ ИГРОКА ===
+        # Активный юнит (текущий управляемый юнит - игрок или спутник)
+        self.active_unit = self.player_unit  # По умолчанию - игрок
+        self.active_unit_index = 0  # Индекс активного юнита в списке всех юнитов игрока
+
         # Добавляем начальное сообщение
         self.add_to_log(f"=== ТАКТИЧЕСКИЙ БОЙ НАЧАЛСЯ ===")
         self.add_to_log(f"Противник: {enemy.name} (Уровень {enemy.level})")
@@ -280,6 +285,180 @@ class TacticalCombatSystem:
         self.combat_log.append(message)
         if len(self.combat_log) > self.max_log_entries:
             self.combat_log.pop(0)
+
+    # === МЕТОДЫ УПРАВЛЕНИЯ ЮНИТАМИ ИГРОКА ===
+
+    def get_all_player_units(self):
+        """
+        Получить список всех живых юнитов под контролем игрока (игрок + спутники)
+
+        Returns:
+            list: Список юнитов [player_unit, companion_unit1, companion_unit2, ...]
+        """
+        units = []
+        # Игрок всегда первый
+        if self.player.is_alive:
+            units.append(self.player_unit)
+        # Добавляем живых спутников
+        for companion_unit in self.companion_units:
+            if companion_unit.character.is_alive:
+                units.append(companion_unit)
+        return units
+
+    def get_player_units_that_can_act(self):
+        """
+        Получить список юнитов игрока, которые еще не походили
+
+        Returns:
+            list: Список юнитов, которые могут сделать действие
+        """
+        return [unit for unit in self.get_all_player_units() if not unit.has_acted]
+
+    def all_player_units_acted(self):
+        """
+        Проверить, все ли юниты игрока выполнили действие
+
+        Returns:
+            bool: True если все юниты сделали ход
+        """
+        return len(self.get_player_units_that_can_act()) == 0
+
+    def switch_to_next_unit(self):
+        """
+        Переключиться на следующего живого юнита, который еще не походил
+
+        Returns:
+            BattlefieldUnit или None: Новый активный юнит
+        """
+        available_units = self.get_player_units_that_can_act()
+
+        if not available_units:
+            return None
+
+        # Если текущий юнит еще может ходить и жив - остаемся на нем
+        if self.active_unit in available_units and not self.active_unit.has_acted:
+            return self.active_unit
+
+        # Ищем следующий юнит
+        all_units = self.get_all_player_units()
+        current_idx = all_units.index(self.active_unit) if self.active_unit in all_units else -1
+
+        # Перебираем юниты начиная с текущего
+        for i in range(len(all_units)):
+            next_idx = (current_idx + 1 + i) % len(all_units)
+            next_unit = all_units[next_idx]
+            if next_unit in available_units:
+                self.active_unit = next_unit
+                self.active_unit_index = next_idx
+                return next_unit
+
+        return None
+
+    def switch_to_unit(self, unit):
+        """
+        Переключиться на конкретного юнита
+
+        Args:
+            unit: Юнит для переключения
+
+        Returns:
+            bool: True если переключение успешно
+        """
+        # Проверяем, что юнит принадлежит игроку и жив
+        all_units = self.get_all_player_units()
+        if unit not in all_units:
+            return False
+
+        # Проверяем, что юнит еще не походил (если хотим только на активных)
+        if unit.has_acted:
+            self.add_to_log(f"{unit.character.name} уже сделал ход")
+            return False
+
+        self.active_unit = unit
+        self.active_unit_index = all_units.index(unit)
+
+        unit_name = unit.character.name if unit != self.player_unit else "Игрок"
+        self.add_to_log(f"Управление: {unit_name}")
+        return True
+
+    def switch_to_unit_by_index(self, index):
+        """
+        Переключиться на юнита по индексу
+
+        Args:
+            index: Индекс юнита (0 = игрок, 1+ = спутники)
+
+        Returns:
+            bool: True если переключение успешно
+        """
+        all_units = self.get_all_player_units()
+        if 0 <= index < len(all_units):
+            return self.switch_to_unit(all_units[index])
+        return False
+
+    def cycle_active_unit(self, direction=1):
+        """
+        Циклически переключить активного юнита (Tab)
+
+        Args:
+            direction: 1 для следующего, -1 для предыдущего
+
+        Returns:
+            BattlefieldUnit: Новый активный юнит
+        """
+        all_units = self.get_all_player_units()
+        if len(all_units) <= 1:
+            return self.active_unit
+
+        current_idx = all_units.index(self.active_unit) if self.active_unit in all_units else 0
+        new_idx = (current_idx + direction) % len(all_units)
+
+        self.active_unit = all_units[new_idx]
+        self.active_unit_index = new_idx
+
+        unit_name = self.active_unit.character.name if self.active_unit != self.player_unit else "Игрок"
+        self.add_to_log(f"Управление: {unit_name}")
+
+        return self.active_unit
+
+    def is_player_unit(self, unit):
+        """
+        Проверить, является ли юнит юнитом игрока (не спутником)
+
+        Args:
+            unit: Юнит для проверки
+
+        Returns:
+            bool: True если это юнит игрока
+        """
+        return unit == self.player_unit
+
+    def is_companion_unit(self, unit):
+        """
+        Проверить, является ли юнит спутником
+
+        Args:
+            unit: Юнит для проверки
+
+        Returns:
+            bool: True если это юнит спутника
+        """
+        return unit in self.companion_units
+
+    def get_active_unit_skills(self):
+        """
+        Получить список умений активного юнита
+
+        Returns:
+            list: Список умений или пустой список
+        """
+        if not self.active_unit:
+            return []
+
+        character = self.active_unit.character
+        if hasattr(character, 'skill_manager') and character.skill_manager:
+            return list(character.skill_manager.learned_skills.values())
+        return []
 
     def get_distance(self, x1, y1, x2, y2):
         """
@@ -732,9 +911,6 @@ class TacticalCombatSystem:
             if result == "defeat":
                 return "defeat"
 
-        # Сбрасываем cooldown умений игрока после хода всех врагов
-        self.player.skill_manager.tick_cooldowns()
-
         return "continue"
 
     def _execute_single_enemy_turn(self, enemy_unit):
@@ -1148,52 +1324,68 @@ class TacticalCombatSystem:
             dexterity_effect.apply(character)
 
     def end_turn(self):
-        """Завершить текущий ход"""
+        """
+        Завершить ход текущего активного юнита.
+        Если все юниты игрока сделали ход - переходим к ходу врагов.
+        """
         if self.current_turn == "player":
-            # Сбрасываем состояние игрока
-            self.player_unit.reset_turn()
+            # Текущий активный юнит завершил ход
+            self.active_unit.has_acted = True
 
-            # === ХОД СПУТНИКОВ (AI) ===
-            companion_result = self.execute_companion_turns()
+            # Проверяем, все ли юниты игрока сделали ход
+            if self.all_player_units_acted():
+                # === ХОД ВРАГОВ ===
+                self.current_turn = "enemy"
+                result = self.execute_enemy_turn()
 
-            if companion_result == "victory":
-                return "victory"
+                if result == "defeat":
+                    return "defeat"
 
-            # Переход к ходу врагов
-            self.current_turn = "enemy"
-            result = self.execute_enemy_turn()
+                # После хода врагов - снова ход игрока
+                self.current_turn = "player"
 
-            if result == "defeat":
-                return "defeat"
+                # Сбрасываем состояние всех юнитов игрока (игрок + спутники)
+                self.player_unit.reset_turn()
+                for companion_unit in self.companion_units:
+                    companion_unit.reset_turn()
 
-            # После хода врагов - снова ход игрока
-            self.current_turn = "player"
+                # Сбрасываем состояние всех вражеских юнитов
+                for enemy_unit in self.enemy_units:
+                    enemy_unit.reset_turn()
 
-            # Сбрасываем состояние всех вражеских юнитов
-            for enemy_unit in self.enemy_units:
-                enemy_unit.reset_turn()
+                # Устанавливаем активным первого живого юнита
+                all_units = self.get_all_player_units()
+                if all_units:
+                    self.active_unit = all_units[0]
+                    self.active_unit_index = 0
 
-            # Сбрасываем состояние всех спутников
-            for companion_unit in self.companion_units:
-                companion_unit.reset_turn()
+                # === ОБРАБОТКА СТАТУС-ЭФФЕКТОВ (DoT) ДЛЯ ВСЕХ ЮНИТОВ ===
+                self._process_all_status_effects()
 
-            # === ОБРАБОТКА СТАТУС-ЭФФЕКТОВ (DoT) ДЛЯ ВСЕХ ЮНИТОВ ===
-            self._process_all_status_effects()
+                # Сбрасываем cooldown умений всех юнитов игрока
+                self.player.skill_manager.tick_cooldowns()
+                for companion_unit in self.companion_units:
+                    if companion_unit.character.is_alive and hasattr(companion_unit.character, 'skill_manager'):
+                        companion_unit.character.skill_manager.tick_cooldowns()
 
-            # Проверяем победу после DoT урона
-            if self._all_enemies_dead():
-                return "victory"
+                # Проверяем победу после DoT урона
+                if self._all_enemies_dead():
+                    return "victory"
 
-            # Проверяем поражение после DoT урона
-            if not self.player.is_alive:
-                return "defeat"
+                # Проверяем поражение после DoT урона
+                if not self.player.is_alive:
+                    return "defeat"
 
-            # Проверяем, все ли спутники погибли (не влияет на исход боя, но нужно знать)
-            # Спутники могут умереть, но бой продолжается пока жив игрок
+                # Проверяем, жива ли последняя выбранная цель
+                if self.last_selected_target and not self.last_selected_target.character.is_alive:
+                    self.last_selected_target = None
 
-            # Проверяем, жива ли последняя выбранная цель
-            if self.last_selected_target and not self.last_selected_target.character.is_alive:
-                self.last_selected_target = None
+            else:
+                # Еще есть юниты, которые не сделали ход - переключаемся на следующего
+                next_unit = self.switch_to_next_unit()
+                if next_unit:
+                    unit_name = next_unit.character.name if next_unit != self.player_unit else "Игрок"
+                    self.add_to_log(f"Ход: {unit_name}")
 
         return "continue"
 

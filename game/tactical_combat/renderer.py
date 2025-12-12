@@ -37,9 +37,15 @@ class TacticalCombatRenderer:
         self.skill_buttons = []  # Список прямоугольников кнопок умений
         self.hovered_skill_slot = None  # Слот умения под курсором
 
+        # Для кнопок переключения юнитов
+        self.unit_switch_buttons = []  # Список (rect, unit) для переключения между юнитами
+
         # Цвета для контуров области действия
         self.skill_area_color = tuple(ui_config.get('cell_attack_range_color', [200, 100, 100, 128]))
         self.support_skill_area_color = (100, 200, 100, 128)  # Зеленый для поддерживающих умений
+
+        # Цвет подсветки активного юнита
+        self.active_unit_color = (0, 200, 255)  # Голубой цвет
 
     def _get_hovered_skill_info(self):
         """
@@ -51,13 +57,21 @@ class TacticalCombatRenderer:
         if self.hovered_skill_slot is None:
             return None, 0, False
 
-        skill = self.combat.player.skill_manager.get_slot_skill(self.hovered_skill_slot)
+        # Получаем активного юнита и его персонажа
+        active_unit = self.combat.active_unit
+        active_char = active_unit.character
+
+        # Проверяем, есть ли у персонажа skill_manager
+        if not hasattr(active_char, 'skill_manager') or not active_char.skill_manager:
+            return None, 0, False
+
+        skill = active_char.skill_manager.get_slot_skill(self.hovered_skill_slot)
         if not skill:
             return None, 0, False
 
         # Проверяем, можно ли использовать умение
         from game.skills import SkillCategory
-        can_use, _ = skill.can_use(self.combat.player)
+        can_use, _ = skill.can_use(active_char)
         combat_categories = [
             SkillCategory.COMBAT, SkillCategory.MAGIC,
             SkillCategory.SHADOW, SkillCategory.WARRIOR,
@@ -74,8 +88,8 @@ class TacticalCombatRenderer:
             tactical_range = getattr(skill, 'tactical_range', 1)
 
         # Определяем, является ли умение поддерживающим (применяется на себя)
-        skill_id = self.combat.player.skill_manager.get_skill_id(skill)
-        support_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield']
+        skill_id = active_char.skill_manager.get_skill_id(skill)
+        support_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield', 'wolf_howl']
         is_support = skill_id in support_skills
 
         return skill, tactical_range, is_support
@@ -92,9 +106,10 @@ class TacticalCombatRenderer:
         if not skill or tactical_range <= 0:
             return
 
-        # Позиция игрока как центр области действия
-        center_x = self.combat.player_unit.x
-        center_y = self.combat.player_unit.y
+        # Позиция активного юнита как центр области действия
+        active_unit = self.combat.active_unit
+        center_x = active_unit.x
+        center_y = active_unit.y
 
         # Выбираем цвет в зависимости от типа умения
         if is_support:
@@ -247,6 +262,14 @@ class TacticalCombatRenderer:
         if self.combat.current_turn != "player":
             return
 
+        # Получаем активного юнита и его персонажа
+        active_unit = self.combat.active_unit
+        active_char = active_unit.character
+
+        # Проверяем, есть ли у персонажа skill_manager
+        if not hasattr(active_char, 'skill_manager') or not active_char.skill_manager:
+            return
+
         # Вычисляем позицию панели умений (те же вычисления, что в render())
         field_width = self.combat.battlefield_width * self.combat.cell_size
         field_height = self.combat.battlefield_height * self.combat.cell_size
@@ -254,9 +277,13 @@ class TacticalCombatRenderer:
         field_y = 100
         ui_y = field_y + field_height + 20
 
+        # Учитываем высоту панели переключения юнитов
+        all_units = self.combat.get_all_player_units()
+        unit_panel_height = 29 if len(all_units) > 1 else 0
+
         # Позиция панели умений
         skill_panel_x = field_x + 10
-        skill_panel_y = ui_y + 35
+        skill_panel_y = ui_y + unit_panel_height + 30
 
         slot_size = 48
         slot_spacing = 8
@@ -270,10 +297,10 @@ class TacticalCombatRenderer:
 
             if slot_rect.collidepoint(mouse_pos):
                 # Проверяем, есть ли в слоте используемое умение
-                skill = self.combat.player.skill_manager.get_slot_skill(i)
+                skill = active_char.skill_manager.get_slot_skill(i)
                 if skill:
                     from game.skills import SkillCategory
-                    can_use, _ = skill.can_use(self.combat.player)
+                    can_use, _ = skill.can_use(active_char)
                     combat_categories = [
                         SkillCategory.COMBAT, SkillCategory.MAGIC,
                         SkillCategory.SHADOW, SkillCategory.WARRIOR,
@@ -379,8 +406,14 @@ class TacticalCombatRenderer:
 
     def _render_units(self, field_x, field_y):
         """Отрисовка юнитов на поле"""
+        # Определяем активного юнита
+        active_unit = self.combat.active_unit
+
         # Отрисовка игрока
-        self._render_unit(self.combat.player_unit, field_x, field_y, self.player_color, "P", is_target=False)
+        is_active = (self.combat.player_unit == active_unit)
+        has_acted = self.combat.player_unit.has_acted
+        self._render_unit(self.combat.player_unit, field_x, field_y, self.player_color, "P",
+                         is_target=False, is_active=is_active, has_acted=has_acted)
 
         # Отрисовка спутников (зеленый цвет, как у игрока)
         companion_color = (100, 200, 150)  # Чуть другой оттенок зеленого
@@ -392,7 +425,10 @@ class TacticalCombatRenderer:
             # Метка спутника: C для первого, C1, C2... для остальных
             label = "C" if i == 0 else f"C{i}"
 
-            self._render_unit(companion_unit, field_x, field_y, companion_color, label, is_target=False, is_companion=True)
+            is_active = (companion_unit == active_unit)
+            has_acted = companion_unit.has_acted
+            self._render_unit(companion_unit, field_x, field_y, companion_color, label,
+                            is_target=False, is_companion=True, is_active=is_active, has_acted=has_acted)
 
         # Отрисовка всех врагов (с подсветкой если выбран как цель)
         from game.tactical_combat.ui_handler import TacticalCombatUIHandler
@@ -410,7 +446,8 @@ class TacticalCombatRenderer:
 
             self._render_unit(enemy_unit, field_x, field_y, self.enemy_color, label, is_target=is_target)
 
-    def _render_unit(self, unit, field_x, field_y, color, label, is_target=False, is_companion=False):
+    def _render_unit(self, unit, field_x, field_y, color, label, is_target=False, is_companion=False,
+                     is_active=False, has_acted=False):
         """
         Отрисовка юнита
 
@@ -421,6 +458,8 @@ class TacticalCombatRenderer:
             label: Метка (P для игрока, E для врага, C для спутника)
             is_target: True если юнит выбран как цель
             is_companion: True если юнит является спутником
+            is_active: True если юнит активен (управляется игроком)
+            has_acted: True если юнит уже сделал ход
         """
         cell_x = field_x + unit.x * self.combat.cell_size
         cell_y = field_y + unit.y * self.combat.cell_size
@@ -430,14 +469,30 @@ class TacticalCombatRenderer:
         if is_target:
             # Яркая подсветка для выбранной цели
             bg_color = (255, 215, 0)  # Золотой цвет
+        elif has_acted:
+            # Затемнение для юнитов, которые уже сделали ход
+            bg_color = tuple(max(0, c - 60) for c in color)
 
         pygame.draw.rect(self.screen, bg_color,
                         (cell_x + 2, cell_y + 2,
                          self.combat.cell_size - 4, self.combat.cell_size - 4))
 
-        # Рамка (более толстая для выбранной цели)
-        border_width = 4 if is_target else 2
-        border_color = (255, 215, 0) if is_target else (255, 255, 255)
+        # Рамка (более толстая для активного юнита или выбранной цели)
+        if is_active and not has_acted:
+            # Голубая яркая рамка для активного юнита
+            border_width = 4
+            border_color = self.active_unit_color
+        elif is_target:
+            border_width = 4
+            border_color = (255, 215, 0)
+        elif has_acted:
+            # Серая рамка для юнитов, которые уже сделали ход
+            border_width = 2
+            border_color = (128, 128, 128)
+        else:
+            border_width = 2
+            border_color = (255, 255, 255)
+
         pygame.draw.rect(self.screen, border_color,
                         (cell_x + 2, cell_y + 2,
                          self.combat.cell_size - 4, self.combat.cell_size - 4), border_width)
@@ -950,19 +1005,27 @@ class TacticalCombatRenderer:
         pygame.draw.rect(self.screen, (100, 100, 150), (x, y, width, panel_height), 2)
 
         if self.combat.current_turn == "player":
-            # Заголовок умений
-            title = self.info_font.render("Умения:", True, (200, 200, 220))
-            self.screen.blit(title, (x + 10, y + 10))
+            # Отрисовка панели переключения юнитов (в верхней части)
+            unit_panel_height = self._render_unit_switch_panel(x + 10, y + 5, width - 20)
 
-            # Отрисовка панели умений (слева)
+            # Заголовок умений активного юнита
+            active_unit = self.combat.active_unit
+            active_char = active_unit.character
+            unit_name = "Игрок" if active_unit == self.combat.player_unit else active_char.name
+            title = self.info_font.render(f"Умения ({unit_name}):", True, (200, 200, 220))
+            self.screen.blit(title, (x + 10, y + unit_panel_height + 10))
+
+            # Отрисовка панели умений активного юнита (слева)
             skill_panel_width = 480  # 8 слотов * (48 + 8)
-            self._render_skill_panel(x + 10, y + 35, skill_panel_width)
+            self._render_skill_panel(x + 10, y + unit_panel_height + 30, skill_panel_width)
 
-            # Отрисовка панели зелий (под умениями)
-            self._render_potion_panel(x + 10, y + 90, skill_panel_width)
+            # Отрисовка панели зелий (под умениями) - только для игрока
+            if active_unit == self.combat.player_unit:
+                self._render_potion_panel(x + 10, y + unit_panel_height + 80, skill_panel_width)
 
-            # Параметры игрока (справа от панели умений)
-            self._render_player_stats(x + skill_panel_width + 30, y + 10, width - skill_panel_width - 40)
+            # Параметры активного юнита (справа от панели умений)
+            self._render_active_unit_stats(x + skill_panel_width + 30, y + unit_panel_height + 10,
+                                          width - skill_panel_width - 40)
 
         else:
             # Ход противника
@@ -970,6 +1033,137 @@ class TacticalCombatRenderer:
             self.screen.blit(title, (x + 10, y + 10))
             wait_text = self.info_font.render("Ход противника...", True, (255, 150, 150))
             self.screen.blit(wait_text, (x + 20, y + 50))
+
+    def _render_unit_switch_panel(self, x, y, width):
+        """
+        Отрисовка панели переключения между юнитами игрока
+
+        Args:
+            x, y: Позиция панели
+            width: Ширина панели
+
+        Returns:
+            int: Высота отрисованной панели
+        """
+        # Очищаем список кнопок
+        self.unit_switch_buttons = []
+
+        # Получаем все юниты игрока
+        all_units = self.combat.get_all_player_units()
+
+        if len(all_units) <= 1:
+            # Если только один юнит - не показываем панель
+            return 0
+
+        # Параметры кнопок
+        btn_height = 24
+        btn_spacing = 5
+        mouse_pos = pygame.mouse.get_pos()
+
+        # Заголовок
+        header = self.small_font.render("Управление (Tab):", True, (180, 180, 200))
+        self.screen.blit(header, (x, y))
+
+        btn_y = y
+        current_x = x + header.get_width() + 10
+
+        for i, unit in enumerate(all_units):
+            character = unit.character
+            is_active = (unit == self.combat.active_unit)
+            has_acted = unit.has_acted
+
+            # Имя юнита
+            if unit == self.combat.player_unit:
+                name = "Игрок"
+            else:
+                name = character.name[:10] + ".." if len(character.name) > 12 else character.name
+
+            # Определяем цвет кнопки
+            if is_active and not has_acted:
+                bg_color = (60, 100, 150)  # Синий для активного
+                text_color = (255, 255, 255)
+                border_color = self.active_unit_color
+            elif has_acted:
+                bg_color = (40, 40, 50)  # Серый для тех, кто сделал ход
+                text_color = (128, 128, 128)
+                border_color = (80, 80, 80)
+            else:
+                bg_color = (50, 60, 50)  # Зеленый для доступных
+                text_color = (200, 200, 200)
+                border_color = (100, 150, 100)
+
+            # Рендерим текст чтобы узнать ширину
+            name_surface = self.small_font.render(name, True, text_color)
+            btn_width = name_surface.get_width() + 16
+
+            # Проверяем границы - если не влезает, ничего не делаем (не переносим на новую строку)
+            if current_x + btn_width > x + width:
+                break
+
+            # Создаем кнопку
+            btn_rect = pygame.Rect(current_x, btn_y, btn_width, btn_height)
+
+            # Подсветка при наведении
+            if btn_rect.collidepoint(mouse_pos) and not has_acted:
+                bg_color = tuple(min(255, c + 30) for c in bg_color)
+
+            # Рисуем кнопку
+            pygame.draw.rect(self.screen, bg_color, btn_rect)
+            pygame.draw.rect(self.screen, border_color, btn_rect, 2)
+
+            # Текст
+            text_x = current_x + (btn_width - name_surface.get_width()) // 2
+            text_y = btn_y + (btn_height - name_surface.get_height()) // 2
+            self.screen.blit(name_surface, (text_x, text_y))
+
+            # Индикатор действия (галочка для сделавших ход)
+            if has_acted:
+                check_text = self.small_font.render("✓", True, (100, 255, 100))
+                self.screen.blit(check_text, (current_x + btn_width - 14, btn_y + 2))
+
+            # Сохраняем кнопку для обработки кликов
+            if not has_acted:
+                self.unit_switch_buttons.append((btn_rect, unit))
+
+            current_x += btn_width + btn_spacing
+
+        return btn_height + 5
+
+    def _render_active_unit_stats(self, x, y, width):
+        """
+        Отрисовка параметров активного юнита
+
+        Args:
+            x, y: Позиция блока
+            width: Ширина блока
+        """
+        active_unit = self.combat.active_unit
+        character = active_unit.character
+
+        # Заголовок
+        unit_name = "Игрок" if active_unit == self.combat.player_unit else character.name
+        title = self.info_font.render(f"Параметры ({unit_name}):", True, (255, 215, 0))
+        self.screen.blit(title, (x, y))
+
+        # Получаем характеристики
+        damage = character.get_total_damage() if hasattr(character, 'get_total_damage') else 0
+        defense = character.get_total_defense() if hasattr(character, 'get_total_defense') else 0
+        crit_chance = character.calculate_crit_chance() if hasattr(character, 'calculate_crit_chance') else 0
+        dodge_chance = character.calculate_dodge_chance() if hasattr(character, 'calculate_dodge_chance') else 0
+
+        stats_y = y + 25
+
+        # Левая колонка
+        left_stats = [
+            f"Урон: {damage}",
+            f"Защита: {defense}",
+            f"Крит: {crit_chance:.1f}%",
+            f"Уворот: {dodge_chance:.1f}%"
+        ]
+
+        for i, stat in enumerate(left_stats):
+            stat_text = self.small_font.render(stat, True, (200, 200, 220))
+            self.screen.blit(stat_text, (x, stats_y + i * 18))
 
     def _render_player_stats(self, x, y, width):
         """
@@ -1037,13 +1231,20 @@ class TacticalCombatRenderer:
                 self.screen.blit(stat_text, (x, stats_y + (i + 4) * 18))
 
     def _render_skill_panel(self, x, y, width):
-        """Отрисовка панели умений"""
+        """Отрисовка панели умений активного юнита"""
         # Очищаем список кнопок перед отрисовкой
         self.skill_buttons = []
 
         slot_size = 48
         slot_spacing = 8
         slots_per_row = 8
+
+        # Получаем активного юнита и его персонажа
+        active_unit = self.combat.active_unit
+        active_char = active_unit.character
+
+        # Проверяем, есть ли у персонажа skill_manager
+        has_skill_manager = hasattr(active_char, 'skill_manager') and active_char.skill_manager
 
         # Получаем позицию мыши для подсветки
         mouse_pos = pygame.mouse.get_pos()
@@ -1053,13 +1254,15 @@ class TacticalCombatRenderer:
             slot_x = x + i * (slot_size + slot_spacing)
             slot_y = y
 
-            skill = self.combat.player.skill_manager.get_slot_skill(i)
+            skill = None
+            if has_skill_manager:
+                skill = active_char.skill_manager.get_slot_skill(i)
 
             # Проверяем, доступно ли умение для использования в бою
             is_usable = False
             if skill:
                 from game.skills import SkillCategory
-                can_use, reason = skill.can_use(self.combat.player)
+                can_use, reason = skill.can_use(active_char)
                 combat_categories = [
                     SkillCategory.COMBAT, SkillCategory.MAGIC,
                     SkillCategory.SHADOW, SkillCategory.WARRIOR,
@@ -1112,7 +1315,7 @@ class TacticalCombatRenderer:
             # Если есть умение, показываем его
             if skill:
                 # Иконка умения (спрайт или первая буква названия как fallback)
-                skill_id = self.combat.player.skill_manager.get_slot_skill_id(i)
+                skill_id = active_char.skill_manager.get_slot_skill_id(i) if has_skill_manager else None
                 icon_size = slot_size - 8
                 icon_x = slot_x + 4
                 icon_y = slot_y + 4
