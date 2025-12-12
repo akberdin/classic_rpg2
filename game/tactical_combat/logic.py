@@ -1016,7 +1016,7 @@ class TacticalCombatSystem:
             else:
                 # В дистанции атаки - атакуем базовой атакой
                 target_char = target_unit.character
-                attack_result = enemy_unit.character.attack(target_char)
+                attack_result = enemy_unit.character.attack(target_char, skip_range_check=True)
 
                 is_player = target_unit == self.player_unit
                 target_name = "вас" if is_player else target_char.name
@@ -1232,7 +1232,7 @@ class TacticalCombatSystem:
                             self.move_unit(companion_unit, companion_unit.x, companion_unit.y + move_y)
             else:
                 # В дистанции атаки - атакуем
-                attack_result = companion_unit.character.attack(closest_enemy.character)
+                attack_result = companion_unit.character.attack(closest_enemy.character, skip_range_check=True)
 
                 if attack_result['hit']:
                     damage = attack_result['damage']
