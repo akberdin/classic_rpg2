@@ -38,7 +38,7 @@ class BasicAttack(Skill):
         """Использовать базовую атаку"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Проверка критического удара
             crit_chance = user.calculate_crit_chance()
             crit_roll = random.uniform(0, 100)
@@ -100,7 +100,7 @@ class PowerStrike(Skill):
         """Использовать мощный удар"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Проверка критического удара
             crit_chance = user.calculate_crit_chance()
             crit_roll = random.uniform(0, 100)
@@ -168,7 +168,7 @@ class PoisonStrike(Skill):
         """Использовать отравленный удар"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Проверка критического удара
             crit_chance = user.calculate_crit_chance()
             crit_roll = random.uniform(0, 100)
@@ -251,7 +251,7 @@ class StunStrike(Skill):
         """Использовать оглушающий удар"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Проверка критического удара
             crit_chance = user.calculate_crit_chance()
             crit_roll = random.uniform(0, 100)
