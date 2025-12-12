@@ -98,6 +98,10 @@ class TacticalCombatSystem:
         enemy_x = self.config['battlefield']['enemy_spawn_x']
         spawn_y = self.battlefield_height // 2
 
+        # Инициализируем лог боя ДО создания юнитов (т.к. spawn методы могут писать в лог)
+        self.combat_log = []
+        self.max_log_entries = 10
+
         self.player_unit = BattlefieldUnit(player, player_x, spawn_y)
 
         # Создаем юнитов спутников (размещаем рядом с игроком)
@@ -120,8 +124,6 @@ class TacticalCombatSystem:
         self.selected_target = None  # Выбранная цель (для умений)
         self.last_selected_target = None  # Последняя выбранная цель (запоминается между ходами)
         self.hovered_cell = None
-        self.combat_log = []
-        self.max_log_entries = 10
         self.current_enemy_index = 0  # Индекс текущего врага для хода
 
         # === СИСТЕМА УПРАВЛЕНИЯ ЮНИТАМИ ИГРОКА ===
