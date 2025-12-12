@@ -82,7 +82,7 @@ class BasicShot(WeaponSkill):
         """Использовать базовый выстрел"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Получаем урон от оружия (без бонуса силы)
             weapon_damage = 0
             if hasattr(user, 'inventory') and user.inventory:
@@ -141,7 +141,7 @@ class PreciseShot(WeaponSkill):
         """Использовать точный выстрел"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Получаем урон от оружия (без бонуса силы)
             weapon_damage = 0
             if hasattr(user, 'inventory') and user.inventory:
@@ -203,7 +203,7 @@ class RapidFire(WeaponSkill):
         """Использовать быструю стрельбу"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Количество выстрелов = 2 + (ранг - 1)
             num_shots = 2 + (self.rank - 1)  # 2 -> 6 выстрелов
 
@@ -273,7 +273,7 @@ class PiercingArrow(WeaponSkill):
         """Использовать пронзающую стрелу"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Получаем урон от оружия (без бонуса силы)
             weapon_damage = 0
             if hasattr(user, 'inventory') and user.inventory:
@@ -362,7 +362,7 @@ class LongRangeShot(WeaponSkill):
 
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Получаем урон от оружия (без бонуса силы)
             weapon_damage = 0
             if hasattr(user, 'inventory') and user.inventory:
@@ -423,7 +423,7 @@ class Backstab(WeaponSkill):
         """Использовать удар в спину"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             base_damage = user.get_total_damage()
             dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
             dex_bonus = dexterity * 0.5
@@ -465,7 +465,7 @@ class BleedingCut(WeaponSkill):
         """Использовать кровоточащий порез"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             base_damage = user.get_total_damage()
             damage_multiplier = 1.2 + (self.rank - 1) * 0.15
 
@@ -525,7 +525,7 @@ class ShadowStep(WeaponSkill):
         """Использовать шаг тени"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             base_damage = user.get_total_damage()
             dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
             dex_bonus = dexterity * 0.4
@@ -595,7 +595,7 @@ class WhirlwindStrike(WeaponSkill):
         """Использовать вихревой удар"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             base_damage = user.get_total_damage()
             strength = user.get_effective_strength() if hasattr(user, 'get_effective_strength') else getattr(user, 'strength', 10)
             str_bonus = strength * 0.4
@@ -637,7 +637,7 @@ class ShieldBreaker(WeaponSkill):
         """Использовать разрушитель щита"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             base_damage = user.get_total_damage()
             damage_multiplier = 1.6 + (self.rank - 1) * 0.2  # 1.6x -> 2.4x
 
@@ -697,7 +697,7 @@ class BladeDance(WeaponSkill):
         """Использовать танец клинка"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Количество ударов зависит от ранга
             num_hits = 3 + (self.rank - 1)  # 3-7 ударов
 
@@ -757,7 +757,7 @@ class LungeStrike(WeaponSkill):
         """Использовать пронзающий выпад"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Получаем урон от оружия
             weapon_damage = 0
             if hasattr(user, 'inventory') and user.inventory:
@@ -823,7 +823,7 @@ class SpearSweep(WeaponSkill):
         """Использовать вихревое вращение"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Получаем урон от оружия
             weapon_damage = 0
             if hasattr(user, 'inventory') and user.inventory:
@@ -893,7 +893,7 @@ class ArmorBreach(WeaponSkill):
         """Использовать разрыв брони"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Получаем урон от оружия
             weapon_damage = 0
             if hasattr(user, 'inventory') and user.inventory:
@@ -976,7 +976,7 @@ class DeadlyPoison(WeaponSkill):
         """Использовать смертельный яд"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             base_damage = user.get_total_damage()
             damage_multiplier = 1.0 + (self.rank - 1) * 0.1
 
@@ -1110,7 +1110,7 @@ class CriticalStrike(WeaponSkill):
         """Использовать критический удар"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             base_damage = user.get_total_damage()
             dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
             dex_bonus = dexterity * 0.6
@@ -1284,7 +1284,7 @@ class Intimidate(WeaponSkill):
         """Использовать устрашение"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Снижение атаки растет с рангом
             attack_reduction = 10 + (self.rank - 1) * 8  # 10%-42%
             duration = 3 + (self.rank - 1)  # 3-7 ходов
@@ -1512,7 +1512,7 @@ class HuntersMark(WeaponSkill):
         """Использовать метку охотника"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Бонус к урону растет с рангом
             damage_boost = 25 + (self.rank - 1) * 10  # 25%-65%
             duration = 4 + (self.rank - 1)  # 4-8 ходов
@@ -1685,7 +1685,7 @@ class ExplosiveArrow(WeaponSkill):
         """Использовать взрывную стрелу"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Получаем урон от оружия
             weapon_damage = 0
             if hasattr(user, 'inventory') and user.inventory:

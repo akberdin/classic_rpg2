@@ -47,7 +47,7 @@ class WolfBite(Skill):
         """Использовать укус"""
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Проверка критического удара
             crit_chance = user.calculate_crit_chance()
             crit_roll = random.uniform(0, 100)

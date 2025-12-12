@@ -523,17 +523,18 @@ class Character:
 
         return min(75.0, crit_chance)  # Максимум 75% (с учетом бонусов от эффектов)
 
-    def attack(self, target):
+    def attack(self, target, skip_range_check=False):
         """
         Атаковать цель с учетом механики уворота и крита
 
         Args:
             target: Целевой персонаж
+            skip_range_check: Пропустить проверку дистанции (для тактического боя)
 
         Returns:
             dict: Результат атаки с информацией об уроне, увороте и крите
         """
-        if not self.can_attack(target):
+        if not skip_range_check and not self.can_attack(target):
             return {
                 'damage': 0,
                 'dodged': False,

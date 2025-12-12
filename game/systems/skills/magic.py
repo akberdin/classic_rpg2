@@ -202,7 +202,7 @@ class Fireball(Skill):
         import random
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Проверка критического удара
             crit_chance = user.calculate_crit_chance()
             crit_roll = random.uniform(0, 100)
@@ -312,7 +312,7 @@ class IceBolt(Skill):
         import random
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Проверка критического удара
             crit_chance = user.calculate_crit_chance()
             crit_roll = random.uniform(0, 100)
@@ -397,7 +397,7 @@ class Lightning(Skill):
         import random
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Проверка критического удара
             crit_chance = user.calculate_crit_chance()
             crit_roll = random.uniform(0, 100)
@@ -460,7 +460,7 @@ class MagicMissile(Skill):
         import random
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Проверка критического удара
             crit_chance = user.calculate_crit_chance()
             crit_roll = random.uniform(0, 100)
@@ -588,7 +588,7 @@ class FireArrow(Skill):
         import random
         result = super().use(user, target)
 
-        if target and user.can_attack(target):
+        if target:
             # Проверка критического удара
             crit_chance = user.calculate_crit_chance()
             crit_roll = random.uniform(0, 100)
