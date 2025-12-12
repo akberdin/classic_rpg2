@@ -190,6 +190,9 @@ class CompanionWindow(BaseWindow):
             width: Ширина области
             scale_w, scale_h: Масштабы
         """
+        # Сохраняем начальную позицию для правой колонки
+        start_y = y
+
         # Имя и ранг (слева)
         name_text = self.font.render(companion.name, True, (220, 220, 220))
         self.screen.blit(name_text, (x, y))
@@ -239,6 +242,15 @@ class CompanionWindow(BaseWindow):
 
         y += int(15 * scale_h)
 
+        # Определяем ширину колонок
+        # Если волк - используем две колонки, иначе одну
+        if companion.companion_type == 'wolf':
+            left_column_width = int(width * 0.55)  # 55% для левой колонки
+            right_column_x = x + left_column_width + int(20 * scale_w)  # Правая колонка с отступом
+            right_column_width = width - left_column_width - int(40 * scale_w)
+        else:
+            left_column_width = width
+
         # Уровень и опыт
         level_text = self.info_font.render(
             f"Уровень: {companion.level}/{companion.max_level}",
@@ -260,7 +272,7 @@ class CompanionWindow(BaseWindow):
         # Прогресс-бар опыта
         if companion.level < companion.max_level:
             y += int(25 * scale_h)
-            progress_width = int(300 * scale_w)
+            progress_width = min(int(300 * scale_w), left_column_width - int(20 * scale_w))
             progress_height = int(15 * scale_h)
 
             pygame.draw.rect(
@@ -306,12 +318,12 @@ class CompanionWindow(BaseWindow):
 
         y += int(35 * scale_h)
 
-        # Разделитель
+        # Разделитель (только для левой колонки)
         pygame.draw.line(
             self.screen,
             (100, 100, 120),
             (x, y),
-            (x + width - int(20 * scale_w), y),
+            (x + left_column_width - int(20 * scale_w), y),
             1
         )
 
@@ -343,12 +355,12 @@ class CompanionWindow(BaseWindow):
 
         y += int(20 * scale_h)
 
-        # Разделитель
+        # Разделитель (только для левой колонки)
         pygame.draw.line(
             self.screen,
             (100, 100, 120),
             (x, y),
-            (x + width - int(20 * scale_w), y),
+            (x + left_column_width - int(20 * scale_w), y),
             1
         )
 
@@ -398,31 +410,42 @@ class CompanionWindow(BaseWindow):
         text_rect.center = button_rect.center
         self.screen.blit(toggle_text, text_rect)
 
-        # Блок взаимодействия (для волка)
+        # Блок взаимодействия (для волка) - теперь в правой колонке
         if companion.companion_type == 'wolf':
-            y += int(45 * scale_h)
-
-            # Разделитель
+            # Вертикальный разделитель между колонками
+            separator_x = x + left_column_width + int(10 * scale_w)
             pygame.draw.line(
                 self.screen,
                 (100, 100, 120),
-                (x, y),
-                (x + width - int(20 * scale_w), y),
-                1
+                (separator_x, start_y),
+                (separator_x, start_y + int(500 * scale_h)),
+                2
             )
 
-            y += int(15 * scale_h)
+            # Начинаем отрисовку в правой колонке
+            right_y = start_y + int(15 * scale_h)
 
             # Заголовок секции
             interaction_title = self.info_font.render("Взаимодействие:", True, (200, 200, 200))
-            self.screen.blit(interaction_title, (x, y))
+            self.screen.blit(interaction_title, (right_column_x, right_y))
 
-            y += int(30 * scale_h)
+            right_y += int(35 * scale_h)
+
+            # Разделитель под заголовком
+            pygame.draw.line(
+                self.screen,
+                (100, 100, 120),
+                (right_column_x, right_y),
+                (right_column_x + right_column_width - int(20 * scale_w), right_y),
+                1
+            )
+
+            right_y += int(20 * scale_h)
 
             # Кнопка "Накормить"
-            feed_button_width = int(200 * scale_w)
-            feed_button_height = int(25 * scale_h)
-            feed_button_rect = pygame.Rect(x, y, feed_button_width, feed_button_height)
+            feed_button_width = int(180 * scale_w)
+            feed_button_height = int(30 * scale_h)
+            feed_button_rect = pygame.Rect(right_column_x, right_y, feed_button_width, feed_button_height)
 
             # Сохраняем rect кнопки для обработки кликов
             if not hasattr(self, 'feed_button'):
@@ -436,10 +459,10 @@ class CompanionWindow(BaseWindow):
                 player = self._player_ref
                 if player and hasattr(player, 'inventory'):
                     # Проверяем оленину
-                    deer_meat = player.inventory.get_item('venison')
+                    deer_meat = player.inventory.get_item('deer_meat')
                     if deer_meat and deer_meat[1] > 0:
                         has_meat = True
-                        meat_name = 'venison'
+                        meat_name = 'deer_meat'
                     else:
                         # Проверяем медвежатину
                         bear_meat = player.inventory.get_item('bear_meat')
@@ -469,15 +492,23 @@ class CompanionWindow(BaseWindow):
             feed_text_rect.center = feed_button_rect.center
             self.screen.blit(feed_text, feed_text_rect)
 
+            right_y += int(35 * scale_h)
+
             # Подсказка о доступности
             if not has_meat:
-                y += int(30 * scale_h)
                 hint_text = self.info_font.render(
-                    "Требуется мясо (оленина или медвежатина)",
+                    "Требуется мясо",
                     True,
                     (120, 120, 120)
                 )
-                self.screen.blit(hint_text, (x, y))
+                self.screen.blit(hint_text, (right_column_x, right_y))
+                right_y += int(20 * scale_h)
+                hint_text2 = self.info_font.render(
+                    "(оленина или медвежатина)",
+                    True,
+                    (120, 120, 120)
+                )
+                self.screen.blit(hint_text2, (right_column_x, right_y))
 
     def _render_dismiss_confirmation(self, center_x, center_y, scale_w, scale_h):
         """
@@ -594,9 +625,9 @@ class CompanionWindow(BaseWindow):
         meat_name_display = None
 
         # Сначала пробуем оленину
-        venison = player.inventory.get_item('venison')
-        if venison and venison[1] > 0:
-            meat_item = venison[0]
+        deer_meat = player.inventory.get_item('deer_meat')
+        if deer_meat and deer_meat[1] > 0:
+            meat_item = deer_meat[0]
             meat_name_display = "оленину"
         else:
             # Затем медвежатину
