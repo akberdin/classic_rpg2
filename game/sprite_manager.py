@@ -91,6 +91,16 @@ class SpriteManager:
         for effect_id, sprite_path in self.config.get('status_effects', {}).items():
             self.load_effect_icon(effect_id, sprite_path)
 
+        # Загружаем спрайты спутников (companions)
+        for companion_type, companion_data in self.config.get('companions', {}).items():
+            if isinstance(companion_data, dict):
+                # Структура: {"0": "path/rank0.png", "1": "path/rank1.png", ...}
+                for rank, sprite_path in companion_data.items():
+                    self.load_sprite(f"{companion_type}_rank{rank}", sprite_path, 'companion')
+            else:
+                # Простая структура: строка с путем
+                self.load_sprite(companion_type, companion_data, 'companion')
+
         print(f"Загружено спрайтов: {len(self.sprites)}")
 
     def load_sprite(self, sprite_type, sprite_path, category):
@@ -174,6 +184,60 @@ class SpriteManager:
         # Если не найден, используем базовый спрайт
         base_key = f"npc_{npc_type}"
         return self.sprites.get(base_key)
+
+    def get_companion_sprite(self, companion_type, rank, target_size=None):
+        """
+        Получить спрайт спутника по типу и рангу
+
+        Args:
+            companion_type: Тип спутника (wolf, bear, etc.)
+            rank: Ранг спутника (0-3)
+            target_size: Целевой размер (если нужно масштабирование)
+
+        Returns:
+            pygame.Surface или None если спрайт не найден
+        """
+        # Пробуем получить спрайт для конкретного ранга
+        key = f"companion_{companion_type}_rank{rank}"
+        sprite = self.sprites.get(key)
+
+        # Если не найден, пробуем базовый спрайт типа спутника
+        if not sprite:
+            key = f"companion_{companion_type}"
+            sprite = self.sprites.get(key)
+
+        # Если все еще не найден, пробуем спрайт wolf как fallback
+        if not sprite and companion_type != 'wolf':
+            key = f"companion_wolf_rank{rank}"
+            sprite = self.sprites.get(key)
+            if not sprite:
+                key = "companion_wolf"
+                sprite = self.sprites.get(key)
+
+        # Масштабируем если нужно
+        if sprite and target_size:
+            return pygame.transform.scale(sprite, (target_size, target_size))
+
+        return sprite
+
+    def has_companion_sprite(self, companion_type, rank=None):
+        """
+        Проверить, есть ли спрайт для спутника
+
+        Args:
+            companion_type: Тип спутника
+            rank: Ранг спутника (опционально)
+
+        Returns:
+            bool: True если спрайт загружен
+        """
+        if rank is not None:
+            key = f"companion_{companion_type}_rank{rank}"
+            if key in self.sprites:
+                return True
+
+        key = f"companion_{companion_type}"
+        return key in self.sprites
 
     def has_sprite(self, sprite_type, category):
         """
