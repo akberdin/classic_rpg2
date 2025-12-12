@@ -231,17 +231,6 @@ class CompanionWindow(BaseWindow):
 
         y += int(35 * scale_h)
 
-        # Разделитель
-        pygame.draw.line(
-            self.screen,
-            (100, 100, 120),
-            (x, y),
-            (x + width - int(20 * scale_w), y),
-            1
-        )
-
-        y += int(15 * scale_h)
-
         # Определяем ширину колонок
         # Если волк - используем две колонки, иначе одну
         if companion.companion_type == 'wolf':
@@ -250,6 +239,17 @@ class CompanionWindow(BaseWindow):
             right_column_width = width - left_column_width - int(40 * scale_w)
         else:
             left_column_width = width
+
+        # Разделитель (только для левой колонки)
+        pygame.draw.line(
+            self.screen,
+            (100, 100, 120),
+            (x, y),
+            (x + left_column_width - int(20 * scale_w), y),
+            1
+        )
+
+        y += int(15 * scale_h)
 
         # Уровень и опыт
         level_text = self.info_font.render(
@@ -385,7 +385,7 @@ class CompanionWindow(BaseWindow):
         y += int(25 * scale_h)
 
         # Кнопка переключения статуса
-        button_width = int(200 * scale_w)
+        button_width = int(80 * scale_w)
         button_height = int(25 * scale_h)
         button_rect = pygame.Rect(x, y, button_width, button_height)
 
@@ -394,15 +394,23 @@ class CompanionWindow(BaseWindow):
             self.combat_toggle_button = None
         self.combat_toggle_button = button_rect
 
-        # Цвет кнопки
-        button_color = (60, 80, 100)
-        button_border = (150, 200, 255)
+        # Проверяем, находится ли мышь над кнопкой
+        mouse_pos = pygame.mouse.get_pos()
+        is_hovered = button_rect.collidepoint(mouse_pos)
+
+        # Цвет кнопки (с hover-эффектом)
+        if is_hovered:
+            button_color = (80, 100, 120)
+            button_border = (180, 220, 255)
+        else:
+            button_color = (60, 80, 100)
+            button_border = (150, 200, 255)
 
         pygame.draw.rect(self.screen, button_color, button_rect)
         pygame.draw.rect(self.screen, button_border, button_rect, 2)
 
         toggle_text = self.info_font.render(
-            "Переключить участие в боях",
+            "Бой",
             True,
             (200, 200, 200)
         )
@@ -470,11 +478,20 @@ class CompanionWindow(BaseWindow):
                             has_meat = True
                             meat_name = 'Медвежатина'
 
-            # Цвет кнопки (серая если нет мяса)
+            # Проверяем, находится ли мышь над кнопкой
+            mouse_pos = pygame.mouse.get_pos()
+            is_hovered = feed_button_rect.collidepoint(mouse_pos)
+
+            # Цвет кнопки (серая если нет мяса, с hover-эффектом)
             if has_meat:
-                button_color = (60, 100, 60)
-                button_border = (100, 200, 100)
-                text_color = (200, 255, 200)
+                if is_hovered:
+                    button_color = (80, 120, 80)
+                    button_border = (130, 230, 130)
+                    text_color = (220, 255, 220)
+                else:
+                    button_color = (60, 100, 60)
+                    button_border = (100, 200, 100)
+                    text_color = (200, 255, 200)
             else:
                 button_color = (60, 60, 60)
                 button_border = (100, 100, 100)
