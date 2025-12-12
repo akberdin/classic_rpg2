@@ -646,10 +646,19 @@ class Game:
             if entourage:
                 print(f"  Противник привел свиту: {len(entourage)} союзников!")
 
+            # Получаем спутников игрока, участвующих в боях
+            companions = []
+            if hasattr(self.player, 'companion_manager') and self.player.companion_manager:
+                companions = self.player.companion_manager.get_all_companions()
+                if companions:
+                    companion_names = ", ".join([c.name for c in companions if c.participate_in_combat])
+                    if companion_names:
+                        print(f"  Ваши спутники: {companion_names}")
+
             self.tactical_combat_system = TacticalCombatSystem(
                 self.player, enemy, self.screen, self.font, self.ui_scaler,
                 self.game_map, self.respawn_manager, self.sprite_manager, self,
-                entourage=entourage
+                entourage=entourage, companions=companions
             )
             self.tactical_combat_renderer = TacticalCombatRenderer(
                 self.tactical_combat_system, self.screen, self.font, self.ui_scaler
