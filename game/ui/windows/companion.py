@@ -184,21 +184,20 @@ class CompanionWindow(BaseWindow):
             width: Ширина области
             scale_w, scale_h: Масштабы
         """
-        # Загружаем и отображаем спрайт спутника
+        # Имя и ранг (слева)
+        name_text = self.font.render(companion.name, True, (220, 220, 220))
+        self.screen.blit(name_text, (x, y))
+
+        # Загружаем и отображаем спрайт спутника (справа)
         sprite_path = companion.get_sprite_path()
         sprite = self._load_companion_sprite(sprite_path)
 
         if sprite:
             sprite_size = int(64 * min(scale_w, scale_h))
             scaled_sprite = pygame.transform.scale(sprite, (sprite_size, sprite_size))
-            self.screen.blit(scaled_sprite, (x, y))
-            sprite_x_offset = sprite_size + int(20 * scale_w)
-        else:
-            sprite_x_offset = 0
-
-        # Имя и ранг
-        name_text = self.font.render(companion.name, True, (220, 220, 220))
-        self.screen.blit(name_text, (x + sprite_x_offset, y))
+            # Размещаем спрайт в правой части блока
+            sprite_x = x + width - sprite_size - int(10 * scale_w)
+            self.screen.blit(scaled_sprite, (sprite_x, y))
 
         y += int(35 * scale_h)
 
@@ -367,12 +366,31 @@ class CompanionWindow(BaseWindow):
 
         y += int(25 * scale_h)
 
+        # Кнопка переключения статуса
+        button_width = int(200 * scale_w)
+        button_height = int(25 * scale_h)
+        button_rect = pygame.Rect(x, y, button_width, button_height)
+
+        # Сохраняем rect кнопки для обработки кликов
+        if not hasattr(self, 'combat_toggle_button'):
+            self.combat_toggle_button = None
+        self.combat_toggle_button = button_rect
+
+        # Цвет кнопки
+        button_color = (60, 80, 100)
+        button_border = (150, 200, 255)
+
+        pygame.draw.rect(self.screen, button_color, button_rect)
+        pygame.draw.rect(self.screen, button_border, button_rect, 2)
+
         toggle_text = self.info_font.render(
-            "[T] Переключить участие в боях",
+            "Переключить участие в боях",
             True,
-            (150, 200, 255)
+            (200, 200, 200)
         )
-        self.screen.blit(toggle_text, (x, y))
+        text_rect = toggle_text.get_rect()
+        text_rect.center = button_rect.center
+        self.screen.blit(toggle_text, text_rect)
 
     def _render_dismiss_confirmation(self, center_x, center_y, scale_w, scale_h):
         """

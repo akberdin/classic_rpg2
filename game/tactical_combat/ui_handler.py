@@ -123,9 +123,8 @@ class TacticalCombatUIHandler:
                     if self.combat.switch_to_unit(clicked_own_unit):
                         return "continue"
 
-                # Если цель не выбрана - перемещение
-                if not self.selected_target_unit:
-                    return self._handle_movement_click(mouse_x, mouse_y)
+                # Перемещение доступно всегда (даже если цель выбрана)
+                return self._handle_movement_click(mouse_x, mouse_y)
 
             # ПКМ - использование зелья или выбор/снятие цели
             elif event.button == 3:

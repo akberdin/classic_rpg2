@@ -1017,15 +1017,19 @@ class TacticalCombatRenderer:
 
             # Отрисовка панели умений активного юнита (слева)
             skill_panel_width = 480  # 8 слотов * (48 + 8)
-            self._render_skill_panel(x + 10, y + unit_panel_height + 30, skill_panel_width)
+            skill_panel_x = x + 10
+            self._render_skill_panel(skill_panel_x, y + unit_panel_height + 30, skill_panel_width)
 
-            # Отрисовка панели зелий (под умениями) - только для игрока
+            # Отрисовка панели зелий (справа от умений) - только для игрока
+            potion_panel_width = 240  # 4 слота * (48 + 8)
+            potion_panel_x = skill_panel_x + skill_panel_width + 10
             if active_unit == self.combat.player_unit:
-                self._render_potion_panel(x + 10, y + unit_panel_height + 80, skill_panel_width)
+                self._render_potion_panel(potion_panel_x, y + unit_panel_height + 30, potion_panel_width)
 
-            # Параметры активного юнита (справа от панели умений)
-            self._render_active_unit_stats(x + skill_panel_width + 30, y + unit_panel_height + 10,
-                                          width - skill_panel_width - 40)
+            # Параметры активного юнита (справа от панели зелий)
+            stats_panel_x = potion_panel_x + potion_panel_width + 20
+            self._render_active_unit_stats(stats_panel_x, y + unit_panel_height + 10,
+                                          width - (stats_panel_x - x) - 10)
 
         else:
             # Ход противника
@@ -1116,11 +1120,6 @@ class TacticalCombatRenderer:
             text_y = btn_y + (btn_height - name_surface.get_height()) // 2
             self.screen.blit(name_surface, (text_x, text_y))
 
-            # Индикатор действия (галочка для сделавших ход)
-            if has_acted:
-                check_text = self.small_font.render("✓", True, (100, 255, 100))
-                self.screen.blit(check_text, (current_x + btn_width - 14, btn_y + 2))
-
             # Сохраняем кнопку для обработки кликов
             if not has_acted:
                 self.unit_switch_buttons.append((btn_rect, unit))
@@ -1142,12 +1141,16 @@ class TacticalCombatRenderer:
 
         # Заголовок
         unit_name = "Игрок" if active_unit == self.combat.player_unit else character.name
+        # Укорачиваем имя, если оно слишком длинное
+        if len(unit_name) > 12:
+            unit_name = unit_name[:12] + ".."
         title = self.info_font.render(f"Параметры ({unit_name}):", True, (255, 215, 0))
         self.screen.blit(title, (x, y))
 
         # Получаем характеристики
         damage = character.get_total_damage() if hasattr(character, 'get_total_damage') else 0
         defense = character.get_total_defense() if hasattr(character, 'get_total_defense') else 0
+        magic_defense = character.get_magic_defense() if hasattr(character, 'get_magic_defense') else 0
         crit_chance = character.calculate_crit_chance() if hasattr(character, 'calculate_crit_chance') else 0
         dodge_chance = character.calculate_dodge_chance() if hasattr(character, 'calculate_dodge_chance') else 0
 
@@ -1157,13 +1160,25 @@ class TacticalCombatRenderer:
         left_stats = [
             f"Урон: {damage}",
             f"Защита: {defense}",
+            f"М.защ: {magic_defense}"
+        ]
+
+        # Правая колонка
+        right_stats = [
             f"Крит: {crit_chance:.1f}%",
             f"Уворот: {dodge_chance:.1f}%"
         ]
 
+        # Отрисовываем левую колонку
         for i, stat in enumerate(left_stats):
             stat_text = self.small_font.render(stat, True, (200, 200, 220))
             self.screen.blit(stat_text, (x, stats_y + i * 18))
+
+        # Отрисовываем правую колонку
+        right_col_x = x + 120
+        for i, stat in enumerate(right_stats):
+            stat_text = self.small_font.render(stat, True, (200, 200, 220))
+            self.screen.blit(stat_text, (right_col_x, stats_y + i * 18))
 
     def _render_player_stats(self, x, y, width):
         """
