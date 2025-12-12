@@ -103,6 +103,8 @@ class Companion(Character):
             # Добавляем Укус (доступен на всех рангах)
             if 'wolf_bite' not in self.skill_manager.learned_skills:
                 self.skill_manager.learned_skills['wolf_bite'] = bite
+                # Назначаем в первый свободный слот
+                self._assign_skill_to_free_slot('wolf_bite')
             else:
                 # Обновляем ранг существующего умения
                 self.skill_manager.learned_skills['wolf_bite'].set_companion_rank(self.rank)
@@ -114,9 +116,23 @@ class Companion(Character):
 
                 if 'wolf_howl' not in self.skill_manager.learned_skills:
                     self.skill_manager.learned_skills['wolf_howl'] = howl
+                    # Назначаем в первый свободный слот
+                    self._assign_skill_to_free_slot('wolf_howl')
                 else:
                     # Обновляем ранг существующего умения
                     self.skill_manager.learned_skills['wolf_howl'].set_companion_rank(self.rank)
+
+    def _assign_skill_to_free_slot(self, skill_id):
+        """Назначить умение в первый свободный слот быстрого доступа"""
+        # Проверяем, не назначено ли уже это умение в какой-либо слот
+        if skill_id in self.skill_manager.skill_slots:
+            return  # Уже назначено
+
+        # Ищем первый свободный слот
+        for i in range(8):
+            if self.skill_manager.skill_slots[i] is None:
+                self.skill_manager.skill_slots[i] = skill_id
+                return
 
     def _calculate_stats(self):
         """Вычислить характеристики спутника на основе уровня и ранга"""
