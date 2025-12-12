@@ -97,6 +97,49 @@ class CompanionManager:
             companion.health = companion.max_health
             companion.stamina = companion.max_stamina
 
+    def rest_all_companions(self):
+        """
+        Восстановить здоровье и выносливость всех спутников при отдыхе
+
+        Returns:
+            List[Dict]: Список восстановленных значений для каждого спутника
+        """
+        recovery_info = []
+        for companion in self.companions.values():
+            old_health = companion.health
+            old_stamina = companion.stamina
+
+            # Восстанавливаем здоровье используя метод recover_health
+            if hasattr(companion, 'recover_health'):
+                companion.recover_health(is_active_rest=True)
+            else:
+                # Фоллбэк: восстанавливаем 10% от максимума
+                health_restore = int(companion.max_health * 0.1)
+                companion.health = min(companion.max_health, companion.health + health_restore)
+
+            # Восстанавливаем выносливость используя метод recover_stamina
+            if hasattr(companion, 'recover_stamina'):
+                companion.recover_stamina(is_active_rest=True)
+            else:
+                # Фоллбэк: восстанавливаем 20% от максимума
+                stamina_restore = int(companion.max_stamina * 0.2)
+                companion.stamina = min(companion.max_stamina, companion.stamina + stamina_restore)
+
+            health_restored = companion.health - old_health
+            stamina_restored = companion.stamina - old_stamina
+
+            recovery_info.append({
+                'name': companion.name,
+                'health_restored': health_restored,
+                'stamina_restored': stamina_restored,
+                'current_health': companion.health,
+                'max_health': companion.max_health,
+                'current_stamina': companion.stamina,
+                'max_stamina': companion.max_stamina
+            })
+
+        return recovery_info
+
     def get_total_companion_count(self) -> int:
         """
         Получить общее количество спутников

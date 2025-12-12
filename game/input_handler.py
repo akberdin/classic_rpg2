@@ -811,6 +811,14 @@ class InputHandler:
             elif key == pygame.K_n:
                 self.ctx.companion_window.cancel_dismiss()
 
+            # Накормить волка (F)
+            elif key == pygame.K_f:
+                success, message = self.ctx.companion_window.feed_companion(
+                    self.ctx.player.companion_manager,
+                    self.ctx.player
+                )
+                print(message)
+
         # Обработка клика мыши
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # ЛКМ

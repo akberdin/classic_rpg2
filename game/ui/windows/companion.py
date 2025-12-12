@@ -9,8 +9,8 @@ from game.ui.windows.base import BaseWindow
 class CompanionWindow(BaseWindow):
     """Окно управления спутниками"""
 
-    BASE_WIDTH = 800
-    BASE_HEIGHT = 700
+    BASE_WIDTH = 850
+    BASE_HEIGHT = 800
 
     def __init__(self, screen, font, info_font, scaler=None):
         super().__init__(screen, font, info_font, scaler)
@@ -18,14 +18,20 @@ class CompanionWindow(BaseWindow):
         self.show_dismiss_confirmation = False
         self.companion_to_dismiss = None
         self.sprite_cache = {}  # Кэш загруженных спрайтов
+        self._player_ref = None  # Ссылка на игрока для проверки инвентаря
 
-    def render(self, companion_manager):
+    def render(self, companion_manager, player=None):
         """
         Отрисовка окна спутников
 
         Args:
             companion_manager: Менеджер спутников
+            player: Игрок (для проверки инвентаря)
         """
+        # Сохраняем ссылку на игрока
+        if player:
+            self._player_ref = player
+
         companions = companion_manager.get_all_companions()
 
         # Используем базовый класс для отрисовки окна
@@ -392,6 +398,87 @@ class CompanionWindow(BaseWindow):
         text_rect.center = button_rect.center
         self.screen.blit(toggle_text, text_rect)
 
+        # Блок взаимодействия (для волка)
+        if companion.companion_type == 'wolf':
+            y += int(45 * scale_h)
+
+            # Разделитель
+            pygame.draw.line(
+                self.screen,
+                (100, 100, 120),
+                (x, y),
+                (x + width - int(20 * scale_w), y),
+                1
+            )
+
+            y += int(15 * scale_h)
+
+            # Заголовок секции
+            interaction_title = self.info_font.render("Взаимодействие:", True, (200, 200, 200))
+            self.screen.blit(interaction_title, (x, y))
+
+            y += int(30 * scale_h)
+
+            # Кнопка "Накормить"
+            feed_button_width = int(200 * scale_w)
+            feed_button_height = int(25 * scale_h)
+            feed_button_rect = pygame.Rect(x, y, feed_button_width, feed_button_height)
+
+            # Сохраняем rect кнопки для обработки кликов
+            if not hasattr(self, 'feed_button'):
+                self.feed_button = None
+            self.feed_button = feed_button_rect
+
+            # Проверяем наличие мяса (оленина или медвежатина)
+            has_meat = False
+            meat_name = None
+            if hasattr(self, '_player_ref'):
+                player = self._player_ref
+                if player and hasattr(player, 'inventory'):
+                    # Проверяем оленину
+                    deer_meat = player.inventory.get_item('venison')
+                    if deer_meat and deer_meat[1] > 0:
+                        has_meat = True
+                        meat_name = 'venison'
+                    else:
+                        # Проверяем медвежатину
+                        bear_meat = player.inventory.get_item('bear_meat')
+                        if bear_meat and bear_meat[1] > 0:
+                            has_meat = True
+                            meat_name = 'bear_meat'
+
+            # Цвет кнопки (серая если нет мяса)
+            if has_meat:
+                button_color = (60, 100, 60)
+                button_border = (100, 200, 100)
+                text_color = (200, 255, 200)
+            else:
+                button_color = (60, 60, 60)
+                button_border = (100, 100, 100)
+                text_color = (150, 150, 150)
+
+            pygame.draw.rect(self.screen, button_color, feed_button_rect)
+            pygame.draw.rect(self.screen, button_border, feed_button_rect, 2)
+
+            feed_text = self.info_font.render(
+                "[F] Накормить (мясо)",
+                True,
+                text_color
+            )
+            feed_text_rect = feed_text.get_rect()
+            feed_text_rect.center = feed_button_rect.center
+            self.screen.blit(feed_text, feed_text_rect)
+
+            # Подсказка о доступности
+            if not has_meat:
+                y += int(30 * scale_h)
+                hint_text = self.info_font.render(
+                    "Требуется мясо (оленина или медвежатина)",
+                    True,
+                    (120, 120, 120)
+                )
+                self.screen.blit(hint_text, (x, y))
+
     def _render_dismiss_confirmation(self, center_x, center_y, scale_w, scale_h):
         """
         Отрисовка подтверждения прогнания спутника
@@ -476,3 +563,66 @@ class CompanionWindow(BaseWindow):
             companion.participate_in_combat = not companion.participate_in_combat
             return True
         return False
+
+    def set_player_reference(self, player):
+        """Установить ссылку на игрока для проверки инвентаря"""
+        self._player_ref = player
+
+    def feed_companion(self, companion_manager, player):
+        """
+        Накормить выбранного спутника (волка)
+
+        Args:
+            companion_manager: Менеджер спутников
+            player: Игрок
+
+        Returns:
+            tuple: (success: bool, message: str)
+        """
+        companions = companion_manager.get_all_companions()
+        if not companions or self.selected_companion_index >= len(companions):
+            return False, "Спутник не выбран"
+
+        companion = companions[self.selected_companion_index]
+
+        # Проверяем, что это волк
+        if companion.companion_type != 'wolf':
+            return False, "Этот спутник не ест мясо"
+
+        # Проверяем наличие мяса
+        meat_item = None
+        meat_name_display = None
+
+        # Сначала пробуем оленину
+        venison = player.inventory.get_item('venison')
+        if venison and venison[1] > 0:
+            meat_item = venison[0]
+            meat_name_display = "оленину"
+        else:
+            # Затем медвежатину
+            bear_meat = player.inventory.get_item('bear_meat')
+            if bear_meat and bear_meat[1] > 0:
+                meat_item = bear_meat[0]
+                meat_name_display = "медвежатину"
+
+        if not meat_item:
+            return False, "У вас нет мяса (оленина или медвежатина)"
+
+        # Убираем 1 единицу мяса из инвентаря
+        if not player.inventory.remove_item(meat_item, 1):
+            return False, "Не удалось использовать мясо"
+
+        # Восстанавливаем 30% здоровья и выносливости
+        old_health = companion.health
+        old_stamina = companion.stamina
+
+        health_restore = int(companion.max_health * 0.3)
+        stamina_restore = int(companion.max_stamina * 0.3)
+
+        companion.health = min(companion.max_health, companion.health + health_restore)
+        companion.stamina = min(companion.max_stamina, companion.stamina + stamina_restore)
+
+        actual_health = companion.health - old_health
+        actual_stamina = companion.stamina - old_stamina
+
+        return True, f"Вы накормили {companion.name} ({meat_name_display}). Восстановлено: {actual_health} здоровья, {actual_stamina} выносливости."

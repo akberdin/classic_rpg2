@@ -333,6 +333,16 @@ class Player(Character):
         print(f"Мана восстановлена: +{mana_restored} ({self.mana}/{effective_max_mana})")
         print(f"Выносливость восстановлена: +{stamina_restored} ({self.stamina}/{effective_max_stamina})")
 
+        # Восстанавливаем здоровье и выносливость спутников
+        if hasattr(self, 'companion_manager') and self.companion_manager:
+            companion_recovery = self.companion_manager.rest_all_companions()
+            if companion_recovery:
+                print("\nСпутники также отдохнули:")
+                for info in companion_recovery:
+                    if info['health_restored'] > 0 or info['stamina_restored'] > 0:
+                        print(f"  {info['name']}: здоровье +{info['health_restored']} ({info['current_health']}/{info['max_health']}), "
+                              f"выносливость +{info['stamina_restored']} ({info['current_stamina']}/{info['max_stamina']})")
+
     def work(self, game_map=None):
         """
         Работа - сбор ресурсов с использованием профессий или получение золота
