@@ -9,7 +9,7 @@ from game.ui.windows.base import BaseWindow
 class CompanionWindow(BaseWindow):
     """Окно управления спутниками"""
 
-    BASE_WIDTH = 850
+    BASE_WIDTH = 950
     BASE_HEIGHT = 800
 
     def __init__(self, screen, font, info_font, scaler=None):
@@ -621,26 +621,26 @@ class CompanionWindow(BaseWindow):
             return False, "Этот спутник не ест мясо"
 
         # Проверяем наличие мяса
-        meat_item = None
+        meat_key = None
         meat_name_display = None
 
         # Сначала пробуем оленину
         deer_meat = player.inventory.get_item('deer_meat')
         if deer_meat and deer_meat[1] > 0:
-            meat_item = deer_meat[0]
+            meat_key = 'deer_meat'
             meat_name_display = "оленину"
         else:
             # Затем медвежатину
             bear_meat = player.inventory.get_item('bear_meat')
             if bear_meat and bear_meat[1] > 0:
-                meat_item = bear_meat[0]
+                meat_key = 'bear_meat'
                 meat_name_display = "медвежатину"
 
-        if not meat_item:
+        if not meat_key:
             return False, "У вас нет мяса (оленина или медвежатина)"
 
         # Убираем 1 единицу мяса из инвентаря
-        if not player.inventory.remove_item(meat_item, 1):
+        if not player.inventory.remove_item(meat_key, 1):
             return False, "Не удалось использовать мясо"
 
         # Восстанавливаем 30% здоровья и выносливости
