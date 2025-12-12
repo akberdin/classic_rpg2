@@ -496,7 +496,7 @@ class TacticalCombatSystem:
     def is_in_range(self, unit, target_x, target_y, range_distance):
         """
         Проверить, находится ли цель в радиусе действия умения
-        Использует евклидово расстояние для радиальной области
+        Использует чебышевское расстояние для поддержки 8 направлений (включая диагонали)
 
         Args:
             unit: Юнит
@@ -506,7 +506,7 @@ class TacticalCombatSystem:
         Returns:
             bool: True если в радиусе
         """
-        distance = self.get_euclidean_distance(unit.x, unit.y, target_x, target_y)
+        distance = self.get_distance(unit.x, unit.y, target_x, target_y)
         return distance <= range_distance
 
     def can_move_to(self, unit, target_x, target_y):

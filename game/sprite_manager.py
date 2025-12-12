@@ -83,6 +83,11 @@ class SpriteManager:
         for skill_id, sprite_path in self.config.get('skills', {}).items():
             self.load_skill_sprite(skill_id, sprite_path)
 
+        # Загружаем спрайты умений спутников
+        for skill_id, sprite_path in self.config.get('companion_skills', {}).items():
+            if skill_id != '_description':  # Пропускаем описание
+                self.load_skill_sprite(skill_id, sprite_path)
+
         # Загружаем спрайты зелий
         for potion_id, sprite_path in self.config.get('potions', {}).items():
             self.load_sprite(potion_id, sprite_path, 'potion')
