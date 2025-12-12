@@ -9,7 +9,7 @@ from game.ui.windows.base import BaseWindow
 class CompanionWindow(BaseWindow):
     """Окно управления спутниками"""
 
-    BASE_WIDTH = 950
+    BASE_WIDTH = 1100
     BASE_HEIGHT = 800
 
     def __init__(self, screen, font, info_font, scaler=None):
@@ -103,9 +103,20 @@ class CompanionWindow(BaseWindow):
                     2
                 )
 
+            # Загружаем и отображаем спрайт спутника
+            sprite_path = companion.get_sprite_path()
+            sprite = self._load_companion_sprite(sprite_path)
+
+            text_offset_x = 0
+            if sprite:
+                sprite_size = int(48 * min(scale_w, scale_h))
+                scaled_sprite = pygame.transform.scale(sprite, (sprite_size, sprite_size))
+                self.screen.blit(scaled_sprite, (list_x, item_y - int(2 * scale_h)))
+                text_offset_x = sprite_size + int(10 * scale_w)
+
             # Имя и ранг
             name_text = self.info_font.render(companion.name, True, (220, 220, 220))
-            self.screen.blit(name_text, (list_x, item_y))
+            self.screen.blit(name_text, (list_x + text_offset_x, item_y))
 
             # Уровень
             level_text = self.info_font.render(
@@ -113,7 +124,7 @@ class CompanionWindow(BaseWindow):
                 True,
                 (180, 180, 180)
             )
-            self.screen.blit(level_text, (list_x, item_y + int(20 * scale_h)))
+            self.screen.blit(level_text, (list_x + text_offset_x, item_y + int(20 * scale_h)))
 
         # Разделитель
         separator_x = window_x + int(340 * scale_w)
@@ -193,20 +204,9 @@ class CompanionWindow(BaseWindow):
         # Сохраняем начальную позицию для правой колонки
         start_y = y
 
-        # Имя и ранг (слева)
+        # Имя и ранг
         name_text = self.font.render(companion.name, True, (220, 220, 220))
         self.screen.blit(name_text, (x, y))
-
-        # Загружаем и отображаем спрайт спутника (справа)
-        sprite_path = companion.get_sprite_path()
-        sprite = self._load_companion_sprite(sprite_path)
-
-        if sprite:
-            sprite_size = int(64 * min(scale_w, scale_h))
-            scaled_sprite = pygame.transform.scale(sprite, (sprite_size, sprite_size))
-            # Размещаем спрайт в правой части блока
-            sprite_x = x + width - sprite_size - int(10 * scale_w)
-            self.screen.blit(scaled_sprite, (sprite_x, y))
 
         y += int(35 * scale_h)
 
@@ -458,17 +458,17 @@ class CompanionWindow(BaseWindow):
             if hasattr(self, '_player_ref'):
                 player = self._player_ref
                 if player and hasattr(player, 'inventory'):
-                    # Проверяем оленину
-                    deer_meat = player.inventory.get_item('deer_meat')
+                    # Проверяем оленину (по русскому названию)
+                    deer_meat = player.inventory.get_item('Оленина')
                     if deer_meat and deer_meat[1] > 0:
                         has_meat = True
-                        meat_name = 'deer_meat'
+                        meat_name = 'Оленина'
                     else:
-                        # Проверяем медвежатину
-                        bear_meat = player.inventory.get_item('bear_meat')
+                        # Проверяем медвежатину (по русскому названию)
+                        bear_meat = player.inventory.get_item('Медвежатина')
                         if bear_meat and bear_meat[1] > 0:
                             has_meat = True
-                            meat_name = 'bear_meat'
+                            meat_name = 'Медвежатина'
 
             # Цвет кнопки (серая если нет мяса)
             if has_meat:
@@ -624,16 +624,16 @@ class CompanionWindow(BaseWindow):
         meat_key = None
         meat_name_display = None
 
-        # Сначала пробуем оленину
-        deer_meat = player.inventory.get_item('deer_meat')
+        # Сначала пробуем оленину (по русскому названию)
+        deer_meat = player.inventory.get_item('Оленина')
         if deer_meat and deer_meat[1] > 0:
-            meat_key = 'deer_meat'
+            meat_key = 'Оленина'
             meat_name_display = "оленину"
         else:
-            # Затем медвежатину
-            bear_meat = player.inventory.get_item('bear_meat')
+            # Затем медвежатину (по русскому названию)
+            bear_meat = player.inventory.get_item('Медвежатина')
             if bear_meat and bear_meat[1] > 0:
-                meat_key = 'bear_meat'
+                meat_key = 'Медвежатина'
                 meat_name_display = "медвежатину"
 
         if not meat_key:
