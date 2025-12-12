@@ -11,6 +11,7 @@
 import random
 from game.systems.skills.base import Skill, SkillCategory
 from game.systems.skills.effects import PoisonEffect, StunEffect, StrengthBoostEffect
+from game.config.config_loader import get_skills_config
 
 
 class BasicAttack(Skill):
@@ -44,9 +45,13 @@ class BasicAttack(Skill):
             crit_roll = random.uniform(0, 100)
             is_critical = crit_roll < crit_chance
 
-            # Вычисляем урон с учетом ранга (20% за ранг - улучшено)
+            # Вычисляем урон с учетом ранга - параметры из конфига
+            config = get_skills_config()
+            base_multiplier = config.get_combat_skill('basic_attack', 'base_multiplier', default=1.0)
+            rank_multiplier_per_rank = config.get_combat_skill('basic_attack', 'rank_multiplier_per_rank', default=0.2)
+
             base_damage = user.get_total_damage()
-            rank_multiplier = 1.0 + (self.rank - 1) * 0.2  # 1.0x -> 1.8x на 5 ранге
+            rank_multiplier = base_multiplier + (self.rank - 1) * rank_multiplier_per_rank
             total_damage = int(base_damage * rank_multiplier)
 
             # Удваиваем урон при крите
@@ -106,8 +111,14 @@ class PowerStrike(Skill):
             crit_roll = random.uniform(0, 100)
             is_critical = crit_roll < crit_chance
 
-            # Коэффициент урона растет с рангом (1.8x + 0.35x за ранг - улучшено)
-            damage_multiplier = 1.8 + (self.rank - 1) * 0.35  # 1.8x -> 3.2x на 5 ранге
+            # Параметры из конфига
+            config = get_skills_config()
+            base_damage_multiplier = config.get_combat_skill('power_strike', 'base_damage_multiplier', default=1.8)
+            damage_multiplier_per_rank = config.get_combat_skill('power_strike', 'damage_multiplier_per_rank', default=0.35)
+            armor_penetration_per_rank = config.get_combat_skill('power_strike', 'armor_penetration_per_rank', default=0.1)
+
+            # Коэффициент урона растет с рангом
+            damage_multiplier = base_damage_multiplier + (self.rank - 1) * damage_multiplier_per_rank
 
             base_damage = user.get_total_damage()
             total_damage = int(base_damage * damage_multiplier)
@@ -117,7 +128,7 @@ class PowerStrike(Skill):
                 total_damage *= 2
 
             # Бонус пробития брони на высоких рангах (игнорируем часть защиты)
-            armor_penetration = (self.rank - 1) * 0.1  # 0% -> 40% на 5 ранге
+            armor_penetration = (self.rank - 1) * armor_penetration_per_rank
 
             # Учитываем защиту цели с пробитием
             target_defense = target.get_total_defense()
@@ -174,9 +185,19 @@ class PoisonStrike(Skill):
             crit_roll = random.uniform(0, 100)
             is_critical = crit_roll < crit_chance
 
-            # Наносим урон с множителем от ранга (улучшено)
+            # Параметры из конфига
+            config = get_skills_config()
+            base_damage_multiplier = config.get_combat_skill('poison_strike', 'base_damage_multiplier', default=1.0)
+            damage_multiplier_per_rank = config.get_combat_skill('poison_strike', 'damage_multiplier_per_rank', default=0.15)
+            poison_base_damage = config.get_combat_skill('poison_strike', 'poison_base_damage', default=5)
+            poison_damage_per_rank = config.get_combat_skill('poison_strike', 'poison_damage_per_rank', default=4)
+            poison_base_duration = config.get_combat_skill('poison_strike', 'poison_base_duration', default=3)
+            poison_duration_per_rank = config.get_combat_skill('poison_strike', 'poison_duration_per_rank', default=1)
+            defense_reduction_per_rank = config.get_combat_skill('poison_strike', 'defense_reduction_per_rank', default=2)
+
+            # Наносим урон с множителем от ранга
             base_damage = user.get_total_damage()
-            damage_multiplier = 1.0 + (self.rank - 1) * 0.15  # 1.0x -> 1.6x на 5 ранге
+            damage_multiplier = base_damage_multiplier + (self.rank - 1) * damage_multiplier_per_rank
             total_damage = int(base_damage * damage_multiplier)
 
             # Удваиваем урон при крите
@@ -188,12 +209,12 @@ class PoisonStrike(Skill):
 
             target.take_damage(actual_damage)
 
-            # Значительно улучшенный яд с рангом
-            poison_duration = 3 + (self.rank - 1)  # 3-7 ходов
-            poison_damage = 5 + (self.rank - 1) * 4  # 5-21 урона/ход
+            # Параметры яда с рангом
+            poison_duration = poison_base_duration + (self.rank - 1) * poison_duration_per_rank
+            poison_damage = poison_base_damage + (self.rank - 1) * poison_damage_per_rank
 
             # На высоких рангах яд также снижает защиту цели
-            defense_reduction = (self.rank - 1) * 2  # 0-8 снижения защиты
+            defense_reduction = (self.rank - 1) * defense_reduction_per_rank
 
             # Накладываем отравление
             poison = PoisonEffect(duration=poison_duration, damage_per_turn=poison_damage)
@@ -257,8 +278,18 @@ class StunStrike(Skill):
             crit_roll = random.uniform(0, 100)
             is_critical = crit_roll < crit_chance
 
-            # Наносим урон с множителем (1.5x + 0.2x за ранг - улучшено)
-            damage_multiplier = 1.5 + (self.rank - 1) * 0.2  # 1.5x -> 2.3x на 5 ранге
+            # Параметры из конфига
+            config = get_skills_config()
+            base_damage_multiplier = config.get_combat_skill('stun_strike', 'base_damage_multiplier', default=1.5)
+            damage_multiplier_per_rank = config.get_combat_skill('stun_strike', 'damage_multiplier_per_rank', default=0.2)
+            base_stun_chance = config.get_combat_skill('stun_strike', 'base_stun_chance', default=0.5)
+            stun_chance_per_rank = config.get_combat_skill('stun_strike', 'stun_chance_per_rank', default=0.1)
+            max_stun_chance = config.get_combat_skill('stun_strike', 'max_stun_chance', default=0.9)
+            base_stun_duration = config.get_combat_skill('stun_strike', 'base_stun_duration', default=1)
+            stun_duration_rank_divisor = config.get_combat_skill('stun_strike', 'stun_duration_rank_divisor', default=2)
+
+            # Наносим урон с множителем
+            damage_multiplier = base_damage_multiplier + (self.rank - 1) * damage_multiplier_per_rank
             base_damage = user.get_total_damage()
             total_damage = int(base_damage * damage_multiplier)
 
@@ -271,10 +302,10 @@ class StunStrike(Skill):
 
             target.take_damage(actual_damage)
 
-            # Шанс оглушения растет с рангом (50% + 10% за ранг, max 90%)
-            stun_chance = min(0.90, 0.5 + (self.rank - 1) * 0.1)
+            # Шанс оглушения растет с рангом (с учетом максимума)
+            stun_chance = min(max_stun_chance, base_stun_chance + (self.rank - 1) * stun_chance_per_rank)
             # Длительность оглушения также растет с рангом
-            stun_duration = 1 + (self.rank - 1) // 2  # 1-3 хода
+            stun_duration = base_stun_duration + (self.rank - 1) // stun_duration_rank_divisor
 
             stunned = False
             if random.random() < stun_chance:
@@ -338,12 +369,20 @@ class BattleCry(Skill):
         """Использовать боевой клич"""
         result = super().use(user, target)
 
-        # Значительно улучшенный бонус силы от ранга
-        boost_amount = 5 + self.rank * 4  # 9 -> 25 на 5 ранге (было 5-13)
-        boost_duration = 3 + self.rank  # 4-8 ходов (было 3-7)
+        # Параметры из конфига
+        config = get_skills_config()
+        base_strength_boost = config.get_combat_skill('battle_cry', 'base_strength_boost', default=5)
+        strength_boost_per_rank = config.get_combat_skill('battle_cry', 'strength_boost_per_rank', default=4)
+        base_duration = config.get_combat_skill('battle_cry', 'base_duration', default=3)
+        duration_per_rank = config.get_combat_skill('battle_cry', 'duration_per_rank', default=1)
+        crit_bonus_per_rank = config.get_combat_skill('battle_cry', 'crit_bonus_per_rank', default=3)
+
+        # Бонус силы от ранга
+        boost_amount = base_strength_boost + self.rank * strength_boost_per_rank
+        boost_duration = base_duration + self.rank * duration_per_rank
 
         # На высоких рангах также даёт бонус к шансу крита
-        crit_bonus = (self.rank - 1) * 3  # 0-12% к криту
+        crit_bonus = (self.rank - 1) * crit_bonus_per_rank
 
         # Накладываем усиление на себя
         boost = StrengthBoostEffect(duration=boost_duration, boost_amount=boost_amount)

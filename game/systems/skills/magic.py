@@ -14,6 +14,7 @@
 import random
 from game.systems.skills.base import Skill, SkillCategory
 from game.systems.skills.effects import RegenerationEffect, StaminaRecoveryEffect, ShieldEffect, StunEffect, BurnEffect
+from game.config.config_loader import get_skills_config
 
 
 class Heal(Skill):
@@ -208,14 +209,28 @@ class Fireball(Skill):
             crit_roll = random.uniform(0, 100)
             is_critical = crit_roll < crit_chance
 
+            # Параметры из конфига
+            config = get_skills_config()
+            base_damage_value = config.get_magic_skill('fireball', 'base_damage', default=20)
+            intelligence_multiplier = config.get_magic_skill('fireball', 'intelligence_multiplier', default=4.0)
+            spirit_multiplier = config.get_magic_skill('fireball', 'spirit_multiplier', default=0.3)
+            base_rank_multiplier = config.get_magic_skill('fireball', 'base_rank_multiplier', default=1.0)
+            rank_multiplier_per_rank = config.get_magic_skill('fireball', 'rank_multiplier_per_rank', default=0.35)
+            burn_damage_percent_base = config.get_magic_skill('fireball', 'burn_damage_percent_base', default=0.10)
+            burn_damage_percent_per_rank = config.get_magic_skill('fireball', 'burn_damage_percent_per_rank', default=0.05)
+            burn_duration_min = config.get_magic_skill('fireball', 'burn_duration_min', default=1)
+            burn_duration_max = config.get_magic_skill('fireball', 'burn_duration_max', default=3)
+            burn_spread_chance_base = config.get_magic_skill('fireball', 'burn_spread_chance_base', default=0.20)
+            burn_spread_chance_per_rank = config.get_magic_skill('fireball', 'burn_spread_chance_per_rank', default=0.05)
+
             # Базовый урон зависит от интеллекта (с учетом экипировки)
             intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
             spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
 
-            # Урон: 20 + интеллект*4 + дух*0.3 (интеллект значительно важнее)
-            base_damage = 20 + intelligence * 4 + spirit * 0.3
-            # Улучшенный множитель от ранга (+35% за ранг)
-            damage_multiplier = 1.0 + (self.rank - 1) * 0.35  # 1.0x -> 2.4x на 5 ранге
+            # Урон: base + интеллект*multiplier + дух*multiplier
+            base_damage = base_damage_value + intelligence * intelligence_multiplier + spirit * spirit_multiplier
+            # Множитель от ранга
+            damage_multiplier = base_rank_multiplier + (self.rank - 1) * rank_multiplier_per_rank
             total_damage = int(base_damage * damage_multiplier)
 
             # Удваиваем урон при крите
@@ -235,12 +250,12 @@ class Fireball(Skill):
             result['magic_blocked'] = max(0, total_damage - actual_damage)
 
             # === МЕХАНИКА ПОДЖОГА ЦЕЛИ ===
-            # Урон от горения: 10% + 5% за каждый ранг сверх первого
-            burn_damage_percent = 0.10 + (self.rank - 1) * 0.05  # 10% -> 30% на 5 ранге
+            # Урон от горения
+            burn_damage_percent = burn_damage_percent_base + (self.rank - 1) * burn_damage_percent_per_rank
             burn_damage_per_turn = max(1, int(actual_damage * burn_damage_percent))
 
-            # Длительность горения: 1-3 хода (случайно)
-            burn_duration = random.randint(1, 3)
+            # Длительность горения (случайно)
+            burn_duration = random.randint(burn_duration_min, burn_duration_max)
 
             # Применяем эффект горения на цель
             burn_effect = BurnEffect(duration=burn_duration, damage_per_turn=burn_damage_per_turn)
@@ -258,8 +273,8 @@ class Fireball(Skill):
             result['burn_duration'] = burn_duration
 
             # === МЕХАНИКА РАСПРОСТРАНЕНИЯ ОГНЯ НА СОСЕДЕЙ ===
-            # Шанс поджога соседей: 20% + 5% за каждый ранг сверх первого
-            spread_chance = 0.20 + (self.rank - 1) * 0.05  # 20% -> 40% на 5 ранге
+            # Шанс поджога соседей
+            spread_chance = burn_spread_chance_base + (self.rank - 1) * burn_spread_chance_per_rank
 
             # Передаем информацию для обработки в тактическом бою
             result['burn_spread'] = {
@@ -318,13 +333,25 @@ class IceBolt(Skill):
             crit_roll = random.uniform(0, 100)
             is_critical = crit_roll < crit_chance
 
+            # Параметры из конфига
+            config = get_skills_config()
+            base_damage_value = config.get_magic_skill('ice_bolt', 'base_damage', default=15)
+            intelligence_multiplier = config.get_magic_skill('ice_bolt', 'intelligence_multiplier', default=3.0)
+            spirit_multiplier = config.get_magic_skill('ice_bolt', 'spirit_multiplier', default=0.3)
+            base_rank_multiplier = config.get_magic_skill('ice_bolt', 'base_rank_multiplier', default=1.0)
+            rank_multiplier_per_rank = config.get_magic_skill('ice_bolt', 'rank_multiplier_per_rank', default=0.3)
+            base_slow_chance = config.get_magic_skill('ice_bolt', 'base_slow_chance', default=0.4)
+            slow_chance_per_rank = config.get_magic_skill('ice_bolt', 'slow_chance_per_rank', default=0.1)
+            base_slow_duration = config.get_magic_skill('ice_bolt', 'base_slow_duration', default=1)
+            slow_duration_rank_divisor = config.get_magic_skill('ice_bolt', 'slow_duration_rank_divisor', default=2)
+
             # Урон немного меньше чем у огненного шара, но меньше кулдаун и есть замедление (с учетом экипировки)
             intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
             spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
 
-            # Урон: 15 + интеллект*3 + дух*0.3 (увеличено)
-            base_damage = 15 + intelligence * 3 + spirit * 0.3
-            damage_multiplier = 1.0 + (self.rank - 1) * 0.3  # +30% за ранг
+            # Урон: base + интеллект*multiplier + дух*multiplier
+            base_damage = base_damage_value + intelligence * intelligence_multiplier + spirit * spirit_multiplier
+            damage_multiplier = base_rank_multiplier + (self.rank - 1) * rank_multiplier_per_rank
             total_damage = int(base_damage * damage_multiplier)
 
             # Удваиваем урон при крите
@@ -338,9 +365,9 @@ class IceBolt(Skill):
             # Применяем урон
             target.take_damage(actual_damage)
 
-            # Улучшенный шанс и длительность замедления
-            slow_chance = 0.4 + (self.rank - 1) * 0.1  # 40% -> 80% на 5 ранге
-            slow_duration = 1 + (self.rank - 1) // 2  # 1-3 хода
+            # Шанс и длительность замедления
+            slow_chance = base_slow_chance + (self.rank - 1) * slow_chance_per_rank
+            slow_duration = base_slow_duration + (self.rank - 1) // slow_duration_rank_divisor
             slowed = False
             if random.random() < slow_chance:
                 slow = StunEffect(duration=slow_duration)
@@ -403,13 +430,21 @@ class Lightning(Skill):
             crit_roll = random.uniform(0, 100)
             is_critical = crit_roll < crit_chance
 
+            # Параметры из конфига
+            config = get_skills_config()
+            base_damage_value = config.get_magic_skill('lightning', 'base_damage', default=30)
+            intelligence_multiplier = config.get_magic_skill('lightning', 'intelligence_multiplier', default=5.0)
+            spirit_multiplier = config.get_magic_skill('lightning', 'spirit_multiplier', default=0.3)
+            base_rank_multiplier = config.get_magic_skill('lightning', 'base_rank_multiplier', default=1.0)
+            rank_multiplier_per_rank = config.get_magic_skill('lightning', 'rank_multiplier_per_rank', default=0.4)
+
             # Самый высокий урон среди магических атак (с учетом экипировки)
             intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
             spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
 
-            # Урон: 30 + интеллект*5 + дух*0.3 (максимальный урон, интеллект критичен)
-            base_damage = 30 + intelligence * 5 + spirit * 0.3
-            damage_multiplier = 1.0 + (self.rank - 1) * 0.4  # +40% за ранг
+            # Урон: base + интеллект*multiplier + дух*multiplier
+            base_damage = base_damage_value + intelligence * intelligence_multiplier + spirit * spirit_multiplier
+            damage_multiplier = base_rank_multiplier + (self.rank - 1) * rank_multiplier_per_rank
             total_damage = int(base_damage * damage_multiplier)
 
             # Удваиваем урон при крите
@@ -466,13 +501,21 @@ class MagicMissile(Skill):
             crit_roll = random.uniform(0, 100)
             is_critical = crit_roll < crit_chance
 
+            # Параметры из конфига
+            config = get_skills_config()
+            base_damage_value = config.get_magic_skill('magic_missile', 'base_damage', default=12)
+            intelligence_multiplier = config.get_magic_skill('magic_missile', 'intelligence_multiplier', default=2.5)
+            spirit_multiplier = config.get_magic_skill('magic_missile', 'spirit_multiplier', default=0.2)
+            base_rank_multiplier = config.get_magic_skill('magic_missile', 'base_rank_multiplier', default=1.0)
+            rank_multiplier_per_rank = config.get_magic_skill('magic_missile', 'rank_multiplier_per_rank', default=0.25)
+
             # Базовая магическая атака с низкой стоимостью (с учетом экипировки)
             intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
             spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
 
-            # Урон: 12 + интеллект*2.5 + дух*0.2 (увеличено)
-            base_damage = 12 + intelligence * 2.5 + spirit * 0.2
-            damage_multiplier = 1.0 + (self.rank - 1) * 0.25  # +25% за ранг
+            # Урон: base + интеллект*multiplier + дух*multiplier
+            base_damage = base_damage_value + intelligence * intelligence_multiplier + spirit * spirit_multiplier
+            damage_multiplier = base_rank_multiplier + (self.rank - 1) * rank_multiplier_per_rank
             total_damage = int(base_damage * damage_multiplier)
 
             # Удваиваем урон при крите

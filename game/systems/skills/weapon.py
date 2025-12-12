@@ -16,6 +16,7 @@
 import random
 from game.systems.skills.base import Skill, SkillCategory
 from game.systems.skills.effects import PoisonEffect, StatusEffect
+from game.config.config_loader import get_skills_config
 
 
 class WeaponSkill(Skill):
@@ -154,14 +155,22 @@ class PreciseShot(WeaponSkill):
             dexterity = user.get_effective_dexterity() if hasattr(user, 'get_effective_dexterity') else getattr(user, 'dexterity', 10)
             base_damage = weapon_damage + dexterity
 
+            # Параметры из конфига
+            config = get_skills_config()
+            base_damage_multiplier = config.get_weapon_skill('bow_skills', 'precise_shot', 'base_damage_multiplier', default=1.2)
+            damage_multiplier_per_rank = config.get_weapon_skill('bow_skills', 'precise_shot', 'damage_multiplier_per_rank', default=0.2)
+            base_crit_bonus = config.get_weapon_skill('bow_skills', 'precise_shot', 'base_crit_bonus', default=30)
+            crit_bonus_per_rank = config.get_weapon_skill('bow_skills', 'precise_shot', 'crit_bonus_per_rank', default=15)
+            max_crit_chance = config.get_weapon_skill('bow_skills', 'precise_shot', 'max_crit_chance', default=95.0)
+
             # Применяем множитель от ранга
-            damage_multiplier = 1.2 + (self.rank - 1) * 0.2  # 1.2x -> 2.0x
+            damage_multiplier = base_damage_multiplier + (self.rank - 1) * damage_multiplier_per_rank
             total_damage = int(base_damage * damage_multiplier)
 
             # Высокий шанс крита, растущий от ранга
             base_crit_chance = user.calculate_crit_chance() if hasattr(user, 'calculate_crit_chance') else 0
-            skill_crit_bonus = 30 + (self.rank - 1) * 15  # +30% -> +90%
-            crit_chance = min(95.0, base_crit_chance + skill_crit_bonus)  # Максимум 95%
+            skill_crit_bonus = base_crit_bonus + (self.rank - 1) * crit_bonus_per_rank
+            crit_chance = min(max_crit_chance, base_crit_chance + skill_crit_bonus)
             is_crit = random.random() < (crit_chance / 100)
 
             if is_crit:
