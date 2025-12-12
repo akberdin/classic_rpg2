@@ -64,12 +64,37 @@
    - ✅ `base_damage_multiplier`, `damage_multiplier_per_rank`
    - ✅ `base_crit_bonus`, `crit_bonus_per_rank`, `max_crit_chance`
 
+### Ремесленные умения (game/systems/skills/crafting.py) - ПОЛНОСТЬЮ ИСПРАВЛЕНО
+
+Все 6 ремесленных умений теперь корректно загружают параметры из `crafting_skills` в конфиге:
+
+1. **Mining** (`game/systems/skills/crafting.py:12-28`)
+   - ✅ `name`, `description`, `stamina_cost` → из crafting_skills.mining
+
+2. **Lumberjacking** (`game/systems/skills/crafting.py:89-105`)
+   - ✅ `name`, `description`, `stamina_cost` → из crafting_skills.lumberjacking
+
+3. **Craftsmanship** (`game/systems/skills/crafting.py:148-178`)
+   - ✅ `name`, `description`, `stamina_cost`, `mana_cost` → из crafting_skills.craftsmanship
+   - ✅ `quality_bonus_per_rank`, `craft_speed_bonus_per_rank` → из crafting_skills.craftsmanship
+
+4. **Alchemy** (`game/systems/skills/crafting.py:202-232`)
+   - ✅ `name`, `description`, `stamina_cost`, `mana_cost` → из crafting_skills.alchemy
+   - ✅ `quality_bonus_per_rank`, `quantity_bonus_per_rank` → из crafting_skills.alchemy
+
+5. **Enchanting** (`game/systems/skills/crafting.py:256-286`)
+   - ✅ `name`, `description`, `stamina_cost`, `mana_cost` → из crafting_skills.enchanting
+   - ✅ `power_bonus_per_rank`, `success_chance_bonus_per_rank` → из crafting_skills.enchanting
+
+6. **Herbalism** (`game/systems/skills/crafting.py:310-326`)
+   - ✅ `name`, `description`, `stamina_cost` → из crafting_skills.herbalism
+
 ## 📊 Статистика
 
-- **Всего исправлено умений**: 10
-- **Файлов изменено**: 3
-- **Строк кода изменено**: ~181
-- **Параметров переведено на конфиг**: ~45
+- **Всего исправлено умений**: 16
+- **Файлов изменено**: 4
+- **Строк кода изменено**: ~260
+- **Параметров переведено на конфиг**: ~63
 
 ## 🔄 Что осталось сделать
 
@@ -158,7 +183,10 @@ damage_multiplier = base_damage_multiplier + (self.rank - 1) * damage_multiplier
 ## ✅ Git статус
 
 - **Ветка**: `claude/fix-skills-config-loading-01Eu4Njf63j5jWohbPmPL35Z`
-- **Коммит**: `66f41fa` - "Исправление загрузки параметров умений из конфига"
+- **Последние коммиты**:
+  - `49151f1` - "Исправление загрузки параметров ремесленных умений из конфига"
+  - `a9b2b0c` - "Добавление документации по исправлению умений"
+  - `66f41fa` - "Исправление загрузки параметров умений из конфига"
 - **Статус**: Изменения запушены в удалённый репозиторий ✅
 
 ## 🔗 Полезные файлы
