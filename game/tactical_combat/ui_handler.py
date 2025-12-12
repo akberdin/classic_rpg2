@@ -22,6 +22,9 @@ class TacticalCombatUIHandler:
         # Новая система управления
         self.selected_target_unit = None  # Выбранная цель (юнит)
 
+        # Связываем UI handler с системой боя для доступа из renderer
+        self.combat._ui_handler = self
+
     def handle_input(self, event):
         """
         Обработка события ввода
@@ -29,6 +32,8 @@ class TacticalCombatUIHandler:
         - ЛКМ на поле: перемещение (если цель не выбрана) или применение умения (если цель выбрана)
         - ПКМ на юните: выбор/снятие цели
         - ЛКМ на панели умений: применение умения к выбранной цели
+        - Tab: переключение между юнитами игрока (игрок и спутники)
+        - ЛКМ на своем юните: выбрать этого юнита для управления
 
         Args:
             event: Pygame событие
@@ -39,12 +44,27 @@ class TacticalCombatUIHandler:
         if self.combat.current_turn != "player":
             return "continue"
 
+        # Проверяем, что активный юнит еще не сделал ход
+        if self.combat.active_unit and self.combat.active_unit.has_acted:
+            # Автоматически переключаемся на следующего юнита, который может ходить
+            next_unit = self.combat.switch_to_next_unit()
+            if not next_unit:
+                # Все юниты сделали ход - это не должно произойти, но на всякий случай
+                return self.combat.end_turn()
+
         # Восстанавливаем последнюю цель в начале хода, если она жива
         if not self.selected_target_unit and self.combat.last_selected_target:
             if self.combat.last_selected_target.character.is_alive:
                 self.selected_target_unit = self.combat.last_selected_target
 
         if event.type == pygame.KEYDOWN:
+            # Tab - переключение между юнитами игрока
+            if event.key == pygame.K_TAB:
+                # Shift+Tab - переключение в обратном направлении
+                direction = -1 if pygame.key.get_mods() & pygame.KMOD_SHIFT else 1
+                self.combat.cycle_active_unit(direction)
+                return "continue"
+
             # ESC - попытка сбежать или снять выбор цели
             if event.key == pygame.K_ESCAPE:
                 if self.selected_target_unit:
@@ -54,36 +74,54 @@ class TacticalCombatUIHandler:
                 else:
                     return self._attempt_flee()
 
-            # Клавиши 1-8 для быстрого использования умений
+            # Клавиши 1-8 для быстрого использования умений активного юнита
             elif event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4,
                               pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8]:
                 # Определяем индекс слота (0-7)
                 slot_index = event.key - pygame.K_1
 
-                # Получаем умение из слота
-                skill = self.combat.player.skill_manager.get_slot_skill(slot_index)
-                if skill:
-                    # Проверяем, можно ли использовать умение
-                    can_use, reason = skill.can_use(self.combat.player)
-                    if can_use:
-                        return self._handle_skill_use(skill, slot_index)
+                # Получаем активного персонажа и его умения
+                active_char = self.combat.active_unit.character
+
+                if hasattr(active_char, 'skill_manager') and active_char.skill_manager:
+                    skill = active_char.skill_manager.get_slot_skill(slot_index)
+                    if skill:
+                        # Проверяем, можно ли использовать умение
+                        can_use, reason = skill.can_use(active_char)
+                        if can_use:
+                            return self._handle_skill_use(skill, slot_index)
+                        else:
+                            self.combat.add_to_log(reason)
                     else:
-                        self.combat.add_to_log(reason)
+                        self.combat.add_to_log(f"Слот {slot_index + 1} пуст")
                 else:
-                    self.combat.add_to_log(f"Слот {slot_index + 1} пуст")
+                    self.combat.add_to_log(f"{active_char.name} не может использовать умения")
                 return "continue"
 
         # Обработка мыши
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = event.pos
 
-            # ЛКМ - перемещение или клик по умению
+            # ЛКМ - перемещение, выбор юнита, или клик по умению
             if event.button == 1:
                 # Проверяем клик по панели умений
                 if hasattr(self.renderer, 'skill_buttons'):
                     for slot_rect, slot_index, skill, is_usable in self.renderer.skill_buttons:
                         if slot_rect.collidepoint(mouse_x, mouse_y) and skill and is_usable:
                             return self._handle_skill_use(skill, slot_index)
+
+                # Проверяем клик по панели переключения юнитов
+                if hasattr(self.renderer, 'unit_switch_buttons'):
+                    for btn_rect, unit in self.renderer.unit_switch_buttons:
+                        if btn_rect.collidepoint(mouse_x, mouse_y):
+                            if self.combat.switch_to_unit(unit):
+                                return "continue"
+
+                # Проверяем клик по своим юнитам на карте
+                clicked_own_unit = self._get_clicked_player_unit(mouse_x, mouse_y)
+                if clicked_own_unit:
+                    if self.combat.switch_to_unit(clicked_own_unit):
+                        return "continue"
 
                 # Если цель не выбрана - перемещение
                 if not self.selected_target_unit:
@@ -115,9 +153,41 @@ class TacticalCombatUIHandler:
 
         return "continue"
 
+    def _get_clicked_player_unit(self, mouse_x, mouse_y):
+        """
+        Проверить, кликнули ли на юнита игрока (игрок или спутник)
+
+        Args:
+            mouse_x, mouse_y: Координаты клика
+
+        Returns:
+            BattlefieldUnit или None: Юнит под курсором
+        """
+        # Вычисляем клетку по координатам мыши
+        field_x = 20
+        field_y = 100
+
+        cell_x = (mouse_x - field_x) // self.combat.cell_size
+        cell_y = (mouse_y - field_y) // self.combat.cell_size
+
+        # Проверяем клик по игроку
+        if (self.combat.player.is_alive and
+            cell_x == self.combat.player_unit.x and
+            cell_y == self.combat.player_unit.y):
+            return self.combat.player_unit
+
+        # Проверяем клик по спутникам
+        for companion_unit in self.combat.companion_units:
+            if (companion_unit.character.is_alive and
+                cell_x == companion_unit.x and
+                cell_y == companion_unit.y):
+                return companion_unit
+
+        return None
+
     def _handle_movement_click(self, mouse_x, mouse_y):
         """
-        Обработка клика для перемещения
+        Обработка клика для перемещения активного юнита
 
         Args:
             mouse_x, mouse_y: Координаты клика
@@ -133,12 +203,16 @@ class TacticalCombatUIHandler:
         cell_x = (mouse_x - field_x) // self.combat.cell_size
         cell_y = (mouse_y - field_y) // self.combat.cell_size
 
-        # Пытаемся переместить юнита
-        if self.combat.move_unit(self.combat.player_unit, cell_x, cell_y):
-            # Заканчиваем ход после перемещения
+        # Получаем активного юнита
+        active_unit = self.combat.active_unit
+
+        # Пытаемся переместить активного юнита
+        if self.combat.move_unit(active_unit, cell_x, cell_y):
+            # Заканчиваем ход юнита после перемещения
             return self.combat.end_turn()
         else:
-            self.combat.add_to_log("Невозможно переместиться (только в соседние 8 клеток)")
+            unit_name = active_unit.character.name if active_unit != self.combat.player_unit else "Игрок"
+            self.combat.add_to_log(f"Невозможно переместиться (только в соседние 8 клеток)")
 
         return "continue"
 
@@ -183,7 +257,7 @@ class TacticalCombatUIHandler:
 
     def _handle_skill_use(self, skill, slot_index):
         """
-        Обработка использования умения
+        Обработка использования умения активным юнитом
 
         Args:
             skill: Объект умения
@@ -193,6 +267,10 @@ class TacticalCombatUIHandler:
             str: Результат боя
         """
         from game.skills import SkillCategory
+
+        # Получаем активного юнита и персонажа
+        active_unit = self.combat.active_unit
+        active_char = active_unit.character
 
         # Проверяем, является ли умение боевым (все кроме ремесленных)
         combat_categories = [
@@ -207,14 +285,17 @@ class TacticalCombatUIHandler:
         # Определяем цель умения
         target_unit = None
 
-        # Получаем ID умения через SkillManager
-        skill_id = self.combat.player.skill_manager.get_skill_id(skill)
+        # Получаем ID умения через SkillManager персонажа
+        skill_id = None
+        if hasattr(active_char, 'skill_manager') and active_char.skill_manager:
+            skill_id = active_char.skill_manager.get_skill_id(skill)
 
         # Лечебные/поддерживающие умения применяются на себя
-        support_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield']
+        support_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield', 'wolf_howl']
         if skill_id in support_skills:
-            target_unit = self.combat.player_unit
-            self.combat.add_to_log(f"Применяете {skill.name} на себя")
+            target_unit = active_unit
+            unit_name = active_char.name if active_unit != self.combat.player_unit else "Вы"
+            self.combat.add_to_log(f"{unit_name} применяет {skill.name}")
         else:
             # Боевые умения требуют выбранной цели
             if not self.selected_target_unit:
@@ -224,13 +305,13 @@ class TacticalCombatUIHandler:
             target_unit = self.selected_target_unit
 
             # Проверяем дистанцию до цели
-            targets = self.combat.get_skill_targets(skill, self.combat.player_unit)
+            targets = self.combat.get_skill_targets(skill, active_unit)
             if target_unit not in targets:
                 self.combat.add_to_log(f"Цель вне радиуса действия {skill.name}")
                 return "continue"
 
         # Используем умение
-        result = self.combat.use_skill(skill, self.combat.player_unit, target_unit)
+        result = self.combat.use_skill(skill, active_unit, target_unit)
 
         # Снимаем выбор цели после использования умения
         self.selected_target_unit = None
@@ -307,5 +388,13 @@ class TacticalCombatUIHandler:
         if total_exp > 0:
             self.combat.player.add_experience(total_exp)
             self.combat.add_to_log(f"Всего получено: {total_exp} опыта!")
+
+            # Даем опыт спутникам (30% от общего)
+            companion_exp = int(total_exp * 0.3)
+            if companion_exp > 0:
+                for companion_unit in self.combat.companion_units:
+                    if companion_unit.character.is_alive and hasattr(companion_unit.character, 'add_experience'):
+                        companion_unit.character.add_experience(companion_exp)
+                        self.combat.add_to_log(f"{companion_unit.character.name}: +{companion_exp} опыта")
 
         return "victory"
