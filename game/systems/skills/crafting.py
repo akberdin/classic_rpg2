@@ -6,17 +6,24 @@
 - Lumberjacking - рубка леса
 """
 from game.systems.skills.base import Skill, SkillCategory
+from game.config.config_loader import get_skills_config
 
 
 class Mining(Skill):
     """Рудокоп - добыча руды"""
 
     def __init__(self):
+        # Загружаем параметры из конфига
+        config = get_skills_config()
+        name = config.get_crafting_skill('mining', 'name', default='Рудокоп')
+        description = config.get_crafting_skill('mining', 'description', default='Позволяет добывать руду в шахтах. Доступные руды зависят от ранга')
+        stamina_cost = config.get_crafting_skill('mining', 'stamina_cost', default=10)
+
         super().__init__(
-            name="Рудокоп",
-            description="Позволяет добывать руду в шахтах. Доступные руды зависят от ранга",
+            name=name,
+            description=description,
             category=SkillCategory.CRAFTING,
-            stamina_cost=10,
+            stamina_cost=stamina_cost,
             cooldown=0
         )
 
@@ -83,11 +90,17 @@ class Lumberjacking(Skill):
     """Лесоруб - рубка деревьев"""
 
     def __init__(self):
+        # Загружаем параметры из конфига
+        config = get_skills_config()
+        name = config.get_crafting_skill('lumberjacking', 'name', default='Лесоруб')
+        description = config.get_crafting_skill('lumberjacking', 'description', default='Позволяет рубить деревья. Эффективность растет с рангом')
+        stamina_cost = config.get_crafting_skill('lumberjacking', 'stamina_cost', default=10)
+
         super().__init__(
-            name="Лесоруб",
-            description="Позволяет рубить деревья. Эффективность растет с рангом",
+            name=name,
+            description=description,
             category=SkillCategory.CRAFTING,
-            stamina_cost=10,
+            stamina_cost=stamina_cost,
             cooldown=0
         )
 
@@ -136,22 +149,33 @@ class Craftsmanship(Skill):
     """Изготовление - открывает доступ к более сложным рецептам"""
 
     def __init__(self):
+        # Загружаем параметры из конфига
+        config = get_skills_config()
+        name = config.get_crafting_skill('craftsmanship', 'name', default='Изготовление')
+        description = config.get_crafting_skill('craftsmanship', 'description', default='Умение создавать предметы из материалов. Ранг определяет сложность доступных рецептов')
+        stamina_cost = config.get_crafting_skill('craftsmanship', 'stamina_cost', default=0)
+        mana_cost = config.get_crafting_skill('craftsmanship', 'mana_cost', default=0)
+
         super().__init__(
-            name="Изготовление",
-            description="Умение создавать предметы из материалов. Ранг определяет сложность доступных рецептов",
+            name=name,
+            description=description,
             category=SkillCategory.CRAFTING,
-            stamina_cost=0,
-            mana_cost=0,
+            stamina_cost=stamina_cost,
+            mana_cost=mana_cost,
             cooldown=0
         )
 
     def get_quality_bonus(self):
         """Получить бонус к качеству изделий"""
-        return 0.05 * (self.rank - 1)  # 0%, 5%, 10%, 15%, 20% для рангов 1-5
+        config = get_skills_config()
+        quality_bonus_per_rank = config.get_crafting_skill('craftsmanship', 'quality_bonus_per_rank', default=0.05)
+        return quality_bonus_per_rank * (self.rank - 1)
 
     def get_craft_speed_bonus(self):
         """Получить бонус к скорости крафта"""
-        return 0.1 * (self.rank - 1)  # 0%, 10%, 20%, 30%, 40% для рангов 1-5
+        config = get_skills_config()
+        craft_speed_bonus_per_rank = config.get_crafting_skill('craftsmanship', 'craft_speed_bonus_per_rank', default=0.1)
+        return craft_speed_bonus_per_rank * (self.rank - 1)
 
     def get_rank_progression_info(self):
         """Информация о прогрессии по рангам"""
@@ -179,22 +203,33 @@ class Alchemy(Skill):
     """Алхимия - открывает доступ к более сложным зельям"""
 
     def __init__(self):
+        # Загружаем параметры из конфига
+        config = get_skills_config()
+        name = config.get_crafting_skill('alchemy', 'name', default='Алхимия')
+        description = config.get_crafting_skill('alchemy', 'description', default='Умение создавать зелья и эликсиры. Ранг определяет сложность доступных рецептов зелий')
+        stamina_cost = config.get_crafting_skill('alchemy', 'stamina_cost', default=0)
+        mana_cost = config.get_crafting_skill('alchemy', 'mana_cost', default=0)
+
         super().__init__(
-            name="Алхимия",
-            description="Умение создавать зелья и эликсиры. Ранг определяет сложность доступных рецептов зелий",
+            name=name,
+            description=description,
             category=SkillCategory.CRAFTING,
-            stamina_cost=0,
-            mana_cost=0,
+            stamina_cost=stamina_cost,
+            mana_cost=mana_cost,
             cooldown=0
         )
 
     def get_quality_bonus(self):
         """Получить бонус к качеству зелий"""
-        return 0.05 * (self.rank - 1)  # 0%, 5%, 10%, 15%, 20% для рангов 1-5
+        config = get_skills_config()
+        quality_bonus_per_rank = config.get_crafting_skill('alchemy', 'quality_bonus_per_rank', default=0.05)
+        return quality_bonus_per_rank * (self.rank - 1)
 
     def get_quantity_bonus(self):
         """Получить бонус к количеству зелий"""
-        return 0.1 * (self.rank - 1)  # 0%, 10%, 20%, 30%, 40% для рангов 1-5
+        config = get_skills_config()
+        quantity_bonus_per_rank = config.get_crafting_skill('alchemy', 'quantity_bonus_per_rank', default=0.1)
+        return quantity_bonus_per_rank * (self.rank - 1)
 
     def get_rank_progression_info(self):
         """Информация о прогрессии по рангам"""
@@ -222,22 +257,33 @@ class Enchanting(Skill):
     """Зачарование - открывает доступ к более сложным зачарованиям"""
 
     def __init__(self):
+        # Загружаем параметры из конфига
+        config = get_skills_config()
+        name = config.get_crafting_skill('enchanting', 'name', default='Зачарование')
+        description = config.get_crafting_skill('enchanting', 'description', default='Умение накладывать магические эффекты на предметы. Ранг определяет сложность доступных зачарований')
+        stamina_cost = config.get_crafting_skill('enchanting', 'stamina_cost', default=0)
+        mana_cost = config.get_crafting_skill('enchanting', 'mana_cost', default=0)
+
         super().__init__(
-            name="Зачарование",
-            description="Умение накладывать магические эффекты на предметы. Ранг определяет сложность доступных зачарований",
+            name=name,
+            description=description,
             category=SkillCategory.CRAFTING,
-            stamina_cost=0,
-            mana_cost=0,
+            stamina_cost=stamina_cost,
+            mana_cost=mana_cost,
             cooldown=0
         )
 
     def get_power_bonus(self):
         """Получить бонус к силе зачарований"""
-        return 0.08 * (self.rank - 1)  # 0%, 8%, 16%, 24%, 32% для рангов 1-5
+        config = get_skills_config()
+        power_bonus_per_rank = config.get_crafting_skill('enchanting', 'power_bonus_per_rank', default=0.08)
+        return power_bonus_per_rank * (self.rank - 1)
 
     def get_success_chance_bonus(self):
         """Получить бонус к шансу успеха зачарования"""
-        return 0.05 * (self.rank - 1)  # 0%, 5%, 10%, 15%, 20% для рангов 1-5
+        config = get_skills_config()
+        success_chance_bonus_per_rank = config.get_crafting_skill('enchanting', 'success_chance_bonus_per_rank', default=0.05)
+        return success_chance_bonus_per_rank * (self.rank - 1)
 
     def get_rank_progression_info(self):
         """Информация о прогрессии по рангам"""
@@ -265,11 +311,17 @@ class Herbalism(Skill):
     """Травник - сбор трав"""
 
     def __init__(self):
+        # Загружаем параметры из конфига
+        config = get_skills_config()
+        name = config.get_crafting_skill('herbalism', 'name', default='Травник')
+        description = config.get_crafting_skill('herbalism', 'description', default='Позволяет собирать травы на равнинах и в лесах. Эффективность растет с рангом')
+        stamina_cost = config.get_crafting_skill('herbalism', 'stamina_cost', default=10)
+
         super().__init__(
-            name="Травник",
-            description="Позволяет собирать травы на равнинах и в лесах. Эффективность растет с рангом",
+            name=name,
+            description=description,
             category=SkillCategory.CRAFTING,
-            stamina_cost=10,
+            stamina_cost=stamina_cost,
             cooldown=0
         )
 
