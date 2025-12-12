@@ -811,14 +811,6 @@ class InputHandler:
             elif key == pygame.K_n:
                 self.ctx.companion_window.cancel_dismiss()
 
-            # Накормить волка (F)
-            elif key == pygame.K_f:
-                success, message = self.ctx.companion_window.feed_companion(
-                    self.ctx.player.companion_manager,
-                    self.ctx.player
-                )
-                print(message)
-
         # Обработка клика мыши
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # ЛКМ
@@ -833,6 +825,18 @@ class InputHandler:
                                 companion = companions[self.ctx.companion_window.selected_companion_index]
                                 status = "будет участвовать" if companion.participate_in_combat else "не будет участвовать"
                                 print(f"{companion.name} теперь {status} в боях")
+
+            elif event.button == 3:  # ПКМ
+                mouse_x, mouse_y = event.pos
+
+                # Проверяем клик по кнопке "Накормить"
+                if hasattr(self.ctx.companion_window, 'feed_button') and self.ctx.companion_window.feed_button:
+                    if self.ctx.companion_window.feed_button.collidepoint(mouse_x, mouse_y):
+                        success, message = self.ctx.companion_window.feed_companion(
+                            self.ctx.player.companion_manager,
+                            self.ctx.player
+                        )
+                        print(message)
 
     def handle_crafting_input(self, event):
         """
