@@ -771,52 +771,60 @@ class InputHandler:
             self.ctx.player.skill_manager.unassign_from_slot(self.ctx.skill_book_window.selected_slot_index)
             print(f"Слот {self.ctx.skill_book_window.selected_slot_index + 1} очищен")
 
-    def handle_companion_input(self, key):
+    def handle_companion_input(self, event):
         """
         Обработка ввода в окне спутников
 
         Args:
-            key: Нажатая клавиша
+            event: Pygame событие
         """
-        if key == pygame.K_ESCAPE or key == pygame.K_p:
-            self.ctx.companion_window_open = False
-            return
+        if event.type == pygame.KEYDOWN:
+            key = event.key
+            if key == pygame.K_ESCAPE or key == pygame.K_p:
+                self.ctx.companion_window_open = False
+                return
 
-        # Навигация по списку спутников (W/S или UP/DOWN)
-        if key == pygame.K_UP or key == pygame.K_w:
-            self.ctx.companion_window.move_selection_up(self.ctx.player.companion_manager)
-        elif key == pygame.K_DOWN or key == pygame.K_s:
-            self.ctx.companion_window.move_selection_down(self.ctx.player.companion_manager)
+            # Навигация по списку спутников (W/S или UP/DOWN)
+            if key == pygame.K_UP or key == pygame.K_w:
+                self.ctx.companion_window.move_selection_up(self.ctx.player.companion_manager)
+            elif key == pygame.K_DOWN or key == pygame.K_s:
+                self.ctx.companion_window.move_selection_down(self.ctx.player.companion_manager)
 
-        # Прогнать спутника (D)
-        elif key == pygame.K_d:
-            if not self.ctx.companion_window.show_dismiss_confirmation:
-                self.ctx.companion_window.request_dismiss(self.ctx.player.companion_manager)
-            else:
-                # Отмена подтверждения
+            # Прогнать спутника (D)
+            elif key == pygame.K_d:
+                if not self.ctx.companion_window.show_dismiss_confirmation:
+                    self.ctx.companion_window.request_dismiss(self.ctx.player.companion_manager)
+                else:
+                    # Отмена подтверждения
+                    self.ctx.companion_window.cancel_dismiss()
+
+            # Подтверждение прогнания (Y)
+            elif key == pygame.K_y:
+                if self.ctx.companion_window.show_dismiss_confirmation:
+                    companions = self.ctx.player.companion_manager.get_all_companions()
+                    if companions:
+                        dismissed_companion = companions[self.ctx.companion_window.selected_companion_index]
+                        self.ctx.companion_window.confirm_dismiss(self.ctx.player.companion_manager)
+                        print(f"{dismissed_companion.name} покинул вас!")
+
+            # Отмена прогнания (N)
+            elif key == pygame.K_n:
                 self.ctx.companion_window.cancel_dismiss()
 
-        # Подтверждение прогнания (Y)
-        elif key == pygame.K_y:
-            if self.ctx.companion_window.show_dismiss_confirmation:
-                companions = self.ctx.player.companion_manager.get_all_companions()
-                if companions:
-                    dismissed_companion = companions[self.ctx.companion_window.selected_companion_index]
-                    self.ctx.companion_window.confirm_dismiss(self.ctx.player.companion_manager)
-                    print(f"{dismissed_companion.name} покинул вас!")
+        # Обработка клика мыши
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # ЛКМ
+                mouse_x, mouse_y = event.pos
 
-        # Отмена прогнания (N)
-        elif key == pygame.K_n:
-            self.ctx.companion_window.cancel_dismiss()
-
-        # Переключить участие в боях (T)
-        elif key == pygame.K_t:
-            if self.ctx.companion_window.toggle_combat_participation(self.ctx.player.companion_manager):
-                companions = self.ctx.player.companion_manager.get_all_companions()
-                if companions:
-                    companion = companions[self.ctx.companion_window.selected_companion_index]
-                    status = "будет участвовать" if companion.participate_in_combat else "не будет участвовать"
-                    print(f"{companion.name} теперь {status} в боях")
+                # Проверяем клик по кнопке переключения участия в боях
+                if hasattr(self.ctx.companion_window, 'combat_toggle_button') and self.ctx.companion_window.combat_toggle_button:
+                    if self.ctx.companion_window.combat_toggle_button.collidepoint(mouse_x, mouse_y):
+                        if self.ctx.companion_window.toggle_combat_participation(self.ctx.player.companion_manager):
+                            companions = self.ctx.player.companion_manager.get_all_companions()
+                            if companions:
+                                companion = companions[self.ctx.companion_window.selected_companion_index]
+                                status = "будет участвовать" if companion.participate_in_combat else "не будет участвовать"
+                                print(f"{companion.name} теперь {status} в боях")
 
     def handle_crafting_input(self, event):
         """
@@ -1209,8 +1217,7 @@ class InputHandler:
 
         # Окно спутников
         if self.ctx.companion_window_open:
-            if event.type == pygame.KEYDOWN:
-                self.handle_companion_input(event.key)
+            self.handle_companion_input(event)
             return True
 
         # Книга умений
