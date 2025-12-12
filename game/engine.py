@@ -764,7 +764,7 @@ class Game:
 
         # Если открыто окно спутников, отрисовываем его
         if self.companion_window_open:
-            self.companion_window.render(self.player.companion_manager)
+            self.companion_window.render(self.player.companion_manager, self.player)
 
         # Если открыто окно крафта, отрисовываем его
         if self.crafting_window_open:
