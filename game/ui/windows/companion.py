@@ -461,7 +461,7 @@ class CompanionWindow(BaseWindow):
             pygame.draw.rect(self.screen, button_border, feed_button_rect, 2)
 
             feed_text = self.info_font.render(
-                "[F] Накормить (мясо)",
+                "Накормить (мясо)",
                 True,
                 text_color
             )
