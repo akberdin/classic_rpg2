@@ -186,7 +186,8 @@
   "companion_skills": {
     "_description": "Спрайты умений спутников",
     "wolf_bite": "assets/skills/companion/wolf_bite.png",
-    "wolf_howl": "assets/skills/companion/wolf_howl.png"
+    "wolf_howl": "assets/skills/companion/wolf_howl.png",
+    "wolf_devour": "assets/skills/companion/wolf_devour.png"
   },
 
   "fallback": {
