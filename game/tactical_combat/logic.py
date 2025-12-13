@@ -723,18 +723,34 @@ class TacticalCombatSystem:
         # Получаем ID умения для определения типа
         skill_id = caster_unit.character.skill_manager.get_skill_id(skill)
 
-        # Лечебные/поддерживающие умения - применяются на себя
+        # Получаем радиус действия умения (используем метод get_tactical_range если доступен)
+        if hasattr(skill, 'get_tactical_range'):
+            skill_range = skill.get_tactical_range()
+        else:
+            skill_range = getattr(skill, 'tactical_range', 1)
+
+        # Лечебные/поддерживающие умения - применяются на союзников (включая себя)
         support_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield']
         if skill_id in support_skills:
-            targets.append(caster_unit)
+            # Определяем, кто является заклинателем - игрок/спутник или враг
+            is_player_side = (caster_unit == self.player_unit or
+                             caster_unit in self.companion_units)
+
+            if is_player_side:
+                # Игрок и спутники могут лечить себя и союзников в радиусе действия
+                # Добавляем игрока
+                if self.player.is_alive and self.is_in_range(caster_unit, self.player_unit.x, self.player_unit.y, skill_range):
+                    targets.append(self.player_unit)
+                # Добавляем спутников
+                for companion_unit in self.companion_units:
+                    if companion_unit.character.is_alive:
+                        if self.is_in_range(caster_unit, companion_unit.x, companion_unit.y, skill_range):
+                            targets.append(companion_unit)
+            else:
+                # Враги лечат только себя (для простоты)
+                targets.append(caster_unit)
         else:
             # Боевые умения - применяются на врагов
-            # Получаем радиус действия умения (используем метод get_tactical_range если доступен)
-            if hasattr(skill, 'get_tactical_range'):
-                skill_range = skill.get_tactical_range()
-            else:
-                skill_range = getattr(skill, 'tactical_range', 1)
-
             # Определяем, кто является заклинателем - игрок/спутник или враг
             is_player_side = (caster_unit == self.player_unit or
                              caster_unit in self.companion_units)
@@ -1176,6 +1192,17 @@ class TacticalCombatSystem:
                 # Проверяем, является ли умение поддерживающим (например Вой)
                 if skill_id == 'wolf_howl':
                     support_skills.append(skill)
+                # Проверяем, является ли умение лечащим (Пожирание используем приоритетно при низком здоровье)
+                elif skill_id == 'wolf_devour':
+                    # Используем Пожирание, если здоровье меньше 60%
+                    if companion_unit.character.health < companion_unit.character.max_health * 0.6:
+                        if self.is_in_range(companion_unit, closest_enemy.x, closest_enemy.y, skill_range):
+                            # Добавляем в начало списка для приоритета
+                            usable_skills.insert(0, (skill, closest_enemy))
+                    else:
+                        # Если здоровье нормальное, добавляем как обычное атакующее умение
+                        if self.is_in_range(companion_unit, closest_enemy.x, closest_enemy.y, skill_range):
+                            usable_skills.append((skill, closest_enemy))
                 elif self.is_in_range(companion_unit, closest_enemy.x, closest_enemy.y, skill_range):
                     usable_skills.append((skill, closest_enemy))
 

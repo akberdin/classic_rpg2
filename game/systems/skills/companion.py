@@ -193,3 +193,116 @@ class WolfHowlDexterityEffect(DexterityBoostEffect):
         """Применить эффект усиления ловкости"""
         self.boost_amount = int(character.dexterity * (self.boost_percentage / 100))
         super().apply(character)
+
+
+class WolfDevour(Skill):
+    """Пожирание - волк наносит мощный укус и восстанавливает здоровье"""
+
+    def __init__(self, companion_rank=0):
+        """
+        Инициализация умения Пожирание
+
+        Args:
+            companion_rank: Ранг спутника (0-3)
+        """
+        super().__init__(
+            name="Пожирание",
+            description="Волк яростно вгрызается во врага, нанося огромный урон и восстанавливая здоровье. Доступно с 3 ранга",
+            category=SkillCategory.COMBAT,
+            stamina_cost=15,
+            cooldown=3,
+            tactical_range=1  # Радиус 1 клетка (ближний бой)
+        )
+        self.companion_rank = companion_rank
+
+    def get_tactical_range(self):
+        """Получить радиус действия для тактического боя"""
+        return 1  # Пожирание работает на расстоянии 1 клетки (ближний бой)
+
+    def set_companion_rank(self, rank):
+        """Обновить ранг спутника"""
+        self.companion_rank = rank
+
+    def get_damage_multiplier(self):
+        """
+        Получить множитель урона в зависимости от ранга спутника
+        Доступно с 3 ранга (companion_rank >= 2):
+        - Ранг 2 (3-й ранг): x1.8
+        - Ранг 3 (4-й ранг): x2.2
+        """
+        if self.companion_rank < 2:
+            return 0  # Недоступно до 3 ранга
+
+        # Базовый множитель 1.8 для ранга 2, +0.4 за каждый следующий ранг
+        return 1.8 + (self.companion_rank - 2) * 0.4
+
+    def get_heal_percentage(self):
+        """
+        Получить процент восстановления здоровья от нанесенного урона
+        - Ранг 2: 30%
+        - Ранг 3: 40%
+        """
+        if self.companion_rank < 2:
+            return 0
+
+        # 30% для ранга 2, +10% за каждый следующий ранг
+        return 30 + (self.companion_rank - 2) * 10
+
+    def can_use(self, user, target=None):
+        """Проверить, можно ли использовать умение"""
+        # Умение доступно только с 3 ранга спутника (companion_rank >= 2)
+        if self.companion_rank < 2:
+            return False, "Пожирание доступно с 3 ранга спутника (Волк)"
+
+        return super().can_use(user)
+
+    def use(self, user, target=None):
+        """Использовать пожирание"""
+        result = super().use(user, target)
+
+        if target:
+            # Проверка критического удара
+            crit_chance = user.calculate_crit_chance()
+            crit_roll = random.uniform(0, 100)
+            is_critical = crit_roll < crit_chance
+
+            # Вычисляем урон с учетом ранга спутника (весомый урон)
+            base_damage = user.get_total_damage()
+            rank_multiplier = self.get_damage_multiplier()
+            total_damage = int(base_damage * rank_multiplier)
+
+            # Удваиваем урон при крите
+            if is_critical:
+                total_damage *= 2
+
+            # Учитываем защиту цели (броню)
+            target_defense = target.get_total_defense()
+            actual_damage = max(1, total_damage - target_defense)
+
+            # Применяем урон
+            target.take_damage(actual_damage)
+
+            # === ВОССТАНОВЛЕНИЕ ЗДОРОВЬЯ ===
+            heal_percentage = self.get_heal_percentage()
+            heal_amount = int(actual_damage * (heal_percentage / 100))
+
+            # Восстанавливаем здоровье волку
+            user_max_health = user.get_effective_max_health() if hasattr(user, 'get_effective_max_health') else user.max_health
+            old_health = user.health
+            user.health = min(user_max_health, user.health + heal_amount)
+            actual_heal = user.health - old_health
+
+            result['damage'] = actual_damage
+            result['critical'] = is_critical
+            result['heal'] = actual_heal
+
+            if is_critical:
+                result['message'] = f"КРИТИЧЕСКИЙ УДАР! {user.name} яростно пожирает {target.name}! Урон: {actual_damage}, восстановлено {actual_heal} HP"
+            else:
+                result['message'] = f"{user.name} пожирает {target.name}! Урон: {actual_damage}, восстановлено {actual_heal} HP"
+
+            if not target.is_alive:
+                result['killed'] = True
+                result['message'] += f" {target.name} повержен!"
+
+        return result

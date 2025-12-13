@@ -9,7 +9,7 @@ import os
 import uuid
 from game.character import Character
 from game.systems.skills.base import SkillManager
-from game.systems.skills.companion import WolfBite, WolfHowl
+from game.systems.skills.companion import WolfBite, WolfHowl, WolfDevour
 
 
 class Companion(Character):
@@ -121,6 +121,19 @@ class Companion(Character):
                 else:
                     # Обновляем ранг существующего умения
                     self.skill_manager.learned_skills['wolf_howl'].set_companion_rank(self.rank)
+
+            # Добавляем Пожирание (доступно с 3 ранга, т.е. rank >= 2)
+            if self.rank >= 2:
+                devour = WolfDevour(self.rank)
+                devour.set_companion_rank(self.rank)
+
+                if 'wolf_devour' not in self.skill_manager.learned_skills:
+                    self.skill_manager.learned_skills['wolf_devour'] = devour
+                    # Назначаем в первый свободный слот
+                    self._assign_skill_to_free_slot('wolf_devour')
+                else:
+                    # Обновляем ранг существующего умения
+                    self.skill_manager.learned_skills['wolf_devour'].set_companion_rank(self.rank)
 
     def _assign_skill_to_free_slot(self, skill_id):
         """Назначить умение в первый свободный слот быстрого доступа"""
