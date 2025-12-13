@@ -289,12 +289,46 @@ class TacticalCombatUIHandler:
         if hasattr(active_char, 'skill_manager') and active_char.skill_manager:
             skill_id = active_char.skill_manager.get_skill_id(skill)
 
-        # Лечебные/поддерживающие умения применяются на себя
-        support_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield', 'wolf_howl']
-        if skill_id in support_skills:
+        # Поддерживающие умения (баффы) применяются на себя
+        self_buff_skills = ['wolf_howl']
+
+        # Лечебные умения могут применяться на союзников или на себя (если цель не выбрана)
+        healing_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield']
+
+        if skill_id in self_buff_skills:
+            # Баффы всегда применяются на себя
             target_unit = active_unit
             unit_name = active_char.name if active_unit != self.combat.player_unit else "Вы"
             self.combat.add_to_log(f"{unit_name} применяет {skill.name}")
+        elif skill_id in healing_skills:
+            # Лечебные умения - если цель выбрана и это союзник, лечим его, иначе себя
+            if self.selected_target_unit:
+                # Проверяем, что цель - союзник
+                is_ally = (self.selected_target_unit == self.combat.player_unit or
+                          self.selected_target_unit in self.combat.companion_units)
+
+                if is_ally:
+                    # Проверяем дистанцию до цели
+                    targets = self.combat.get_skill_targets(skill, active_unit)
+                    if self.selected_target_unit in targets:
+                        target_unit = self.selected_target_unit
+                    else:
+                        self.combat.add_to_log(f"Цель вне радиуса действия {skill.name}")
+                        return "continue"
+                else:
+                    # Выбрана не та цель (враг)
+                    self.combat.add_to_log(f"{skill.name} можно применить только на союзников!")
+                    return "continue"
+            else:
+                # Цель не выбрана - лечим себя
+                target_unit = active_unit
+
+            unit_name = active_char.name if active_unit != self.combat.player_unit else "Вы"
+            if target_unit == active_unit:
+                self.combat.add_to_log(f"{unit_name} применяет {skill.name} на себя")
+            else:
+                target_name = target_unit.character.name if target_unit != self.combat.player_unit else "вас"
+                self.combat.add_to_log(f"{unit_name} применяет {skill.name} на {target_name}")
         else:
             # Боевые умения требуют выбранной цели
             if not self.selected_target_unit:
