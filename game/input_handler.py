@@ -563,7 +563,7 @@ class InputHandler:
             elif key == pygame.K_DOWN or key == pygame.K_s:
                 self.ctx.trade_window.selected_player_index = min(len(player_items) - 1, self.ctx.trade_window.selected_player_index + 1)
             elif key == pygame.K_RETURN:
-                # Продать выбранный предмет
+                # Продать выбранный предмет (или весь стэк при зажатом Alt)
                 if 0 <= self.ctx.trade_window.selected_player_index < len(player_items):
                     item, quantity = player_items[self.ctx.trade_window.selected_player_index]
 
@@ -576,24 +576,47 @@ class InputHandler:
                         print(f"Травы можно продавать только алхимикам!")
                         return
 
-                    sell_price = int(item.value * 0.7)  # Торговец покупает за 70% от стоимости
+                    # Проверяем, зажата ли клавиша Alt для продажи всего стэка
+                    mods = pygame.key.get_mods()
+                    sell_all = (mods & pygame.KMOD_ALT) != 0
 
-                    if self.ctx.nearby_npc.inventory.gold >= sell_price:
-                        if self.ctx.player.inventory.remove_item(item, 1):
-                            if self.ctx.nearby_npc.inventory.add_item(item, 1):
-                                self.ctx.player.inventory.add_gold(sell_price)
-                                self.ctx.nearby_npc.inventory.remove_gold(sell_price)
-                                print(f"Вы продали {item.name} за {sell_price} золота")
+                    # Определяем количество для продажи
+                    sell_quantity = quantity if sell_all else 1
 
-                                # Обновляем прогресс квеста "Начинающий торговец"
-                                self.ctx.player.items_sold += 1
-                                self.ctx.quest_manager.update_quest_progress("merchant", 0, 1)
+                    sell_price_per_item = int(item.value * 0.7)  # Торговец покупает за 70% от стоимости
+
+                    # Определяем максимальное количество, которое можно продать
+                    max_affordable = self.ctx.nearby_npc.inventory.gold // sell_price_per_item
+                    actual_sell_quantity = min(sell_quantity, max_affordable)
+
+                    if actual_sell_quantity == 0:
+                        print(f"У торговца недостаточно золота! Нужно {sell_price_per_item}, у него {self.ctx.nearby_npc.inventory.gold}")
+                        return
+
+                    total_price = sell_price_per_item * actual_sell_quantity
+
+                    # Продаем предметы
+                    if self.ctx.player.inventory.remove_item(item, actual_sell_quantity):
+                        if self.ctx.nearby_npc.inventory.add_item(item, actual_sell_quantity):
+                            self.ctx.player.inventory.add_gold(total_price)
+                            self.ctx.nearby_npc.inventory.remove_gold(total_price)
+
+                            if actual_sell_quantity == 1:
+                                print(f"Вы продали {item.name} за {total_price} золота")
                             else:
-                                # Возвращаем предмет игроку если не поместился в инвентарь торговца
-                                self.ctx.player.inventory.add_item(item, 1)
-                                print("У торговца нет места для этого предмета!")
-                    else:
-                        print(f"У торговца недостаточно золота! Нужно {sell_price}, у него {self.ctx.nearby_npc.inventory.gold}")
+                                print(f"Вы продали {item.name} x{actual_sell_quantity} за {total_price} золота")
+
+                            # Обновляем прогресс квеста "Начинающий торговец"
+                            self.ctx.player.items_sold += actual_sell_quantity
+                            self.ctx.quest_manager.update_quest_progress("merchant", 0, actual_sell_quantity)
+
+                            # Предупреждаем, если не удалось продать весь стэк
+                            if sell_all and actual_sell_quantity < sell_quantity:
+                                print(f"У торговца хватило золота только на {actual_sell_quantity} из {sell_quantity} предметов")
+                        else:
+                            # Возвращаем предметы игроку если не поместились в инвентарь торговца
+                            self.ctx.player.inventory.add_item(item, actual_sell_quantity)
+                            print("У торговца нет места для этих предметов!")
 
     def handle_trade_left_click(self, pos):
         """
@@ -658,23 +681,50 @@ class InputHandler:
                 print(f"Травы можно продавать только алхимикам!")
                 return
 
-            sell_price = int(item.value * 0.7)
+            # Проверяем, зажата ли клавиша Alt для продажи всего стэка
+            mods = pygame.key.get_mods()
+            sell_all = (mods & pygame.KMOD_ALT) != 0
 
-            if self.ctx.nearby_npc.inventory.gold >= sell_price:
-                if self.ctx.player.inventory.remove_item(item, 1):
-                    if self.ctx.nearby_npc.inventory.add_item(item, 1):
-                        self.ctx.player.inventory.add_gold(sell_price)
-                        self.ctx.nearby_npc.inventory.remove_gold(sell_price)
-                        print(f"Вы продали {item.name} за {sell_price} золота")
+            # Получаем количество предмета в инвентаре
+            quantity = self.ctx.player.inventory.get_item_count(item.name)
 
-                        # Обновляем прогресс квеста "Начинающий торговец"
-                        self.ctx.player.items_sold += 1
-                        self.ctx.quest_manager.update_quest_progress("merchant", 0, 1)
+            # Определяем количество для продажи
+            sell_quantity = quantity if sell_all else 1
+
+            sell_price_per_item = int(item.value * 0.7)
+
+            # Определяем максимальное количество, которое можно продать
+            max_affordable = self.ctx.nearby_npc.inventory.gold // sell_price_per_item
+            actual_sell_quantity = min(sell_quantity, max_affordable)
+
+            if actual_sell_quantity == 0:
+                print(f"У торговца недостаточно золота! Нужно {sell_price_per_item}, у него {self.ctx.nearby_npc.inventory.gold}")
+                return
+
+            total_price = sell_price_per_item * actual_sell_quantity
+
+            # Продаем предметы
+            if self.ctx.player.inventory.remove_item(item, actual_sell_quantity):
+                if self.ctx.nearby_npc.inventory.add_item(item, actual_sell_quantity):
+                    self.ctx.player.inventory.add_gold(total_price)
+                    self.ctx.nearby_npc.inventory.remove_gold(total_price)
+
+                    if actual_sell_quantity == 1:
+                        print(f"Вы продали {item.name} за {total_price} золота")
                     else:
-                        self.ctx.player.inventory.add_item(item, 1)
-                        print("У торговца нет места для этого предмета!")
-            else:
-                print(f"У торговца недостаточно золота! Нужно {sell_price}, у него {self.ctx.nearby_npc.inventory.gold}")
+                        print(f"Вы продали {item.name} x{actual_sell_quantity} за {total_price} золота")
+
+                    # Обновляем прогресс квеста "Начинающий торговец"
+                    self.ctx.player.items_sold += actual_sell_quantity
+                    self.ctx.quest_manager.update_quest_progress("merchant", 0, actual_sell_quantity)
+
+                    # Предупреждаем, если не удалось продать весь стэк
+                    if sell_all and actual_sell_quantity < sell_quantity:
+                        print(f"У торговца хватило золота только на {actual_sell_quantity} из {sell_quantity} предметов")
+                else:
+                    # Возвращаем предметы игроку если не поместились в инвентарь торговца
+                    self.ctx.player.inventory.add_item(item, actual_sell_quantity)
+                    print("У торговца нет места для этих предметов!")
 
     def handle_character_input(self, key):
         """
