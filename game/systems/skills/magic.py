@@ -611,11 +611,11 @@ class FireArrow(Skill):
 
     def get_rank_progression_info(self):
         return [
-            "Ранг 1: Урон 5 + Интеллект*2%, дальность 4, мана 5, шанс поджога 20%",
-            "Ранг 2: Урон 10 + Интеллект*2%, дальность 5, мана 10, шанс поджога 30%",
-            "Ранг 3: Урон 15 + Интеллект*2%, дальность 6, мана 15, шанс поджога 40%",
-            "Ранг 4: Урон 20 + Интеллект*2%, дальность 7, мана 20, шанс поджога 50%",
-            "Ранг 5: Урон 25 + Интеллект*2%, дальность 8, мана 25, шанс поджога 60%"
+            "Ранг 1: Урон x1.0 (10 + Интеллект*2.0), дальность 5, мана 5, шанс поджога 20%",
+            "Ранг 2: Урон x1.2 (10 + Интеллект*2.0), дальность 6, мана 10, шанс поджога 30%",
+            "Ранг 3: Урон x1.4 (10 + Интеллект*2.0), дальность 7, мана 15, шанс поджога 40%",
+            "Ранг 4: Урон x1.6 (10 + Интеллект*2.0), дальность 8, мана 20, шанс поджога 50%",
+            "Ранг 5: Урон x1.8 (10 + Интеллект*2.0), дальность 9, мана 25, шанс поджога 60%"
         ]
 
     def get_tactical_range(self):
@@ -637,15 +637,23 @@ class FireArrow(Skill):
             crit_roll = random.uniform(0, 100)
             is_critical = crit_roll < crit_chance
 
-            # Урон: базовый урон зависит от ранга (5 за каждый ранг)
+            # Параметры из конфига
+            config = get_skills_config()
+            base_damage_value = config.get_magic_skill('fire_arrow', 'base_damage', default=10)
+            intelligence_multiplier = config.get_magic_skill('fire_arrow', 'intelligence_multiplier', default=2.0)
+            spirit_multiplier = config.get_magic_skill('fire_arrow', 'spirit_multiplier', default=0.2)
+            base_rank_multiplier = config.get_magic_skill('fire_arrow', 'base_rank_multiplier', default=1.0)
+            rank_multiplier_per_rank = config.get_magic_skill('fire_arrow', 'rank_multiplier_per_rank', default=0.2)
+
+            # Базовый урон зависит от интеллекта и духа (с учетом экипировки)
             intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
+            spirit = user.get_effective_spirit() if hasattr(user, 'get_effective_spirit') else getattr(user, 'spirit', 1)
 
-            # Базовый урон: 5 * ранг
-            base_damage = 5 * self.rank
-
-            # Бонус от интеллекта: +2% за каждое очко интеллекта
-            intelligence_multiplier = 1.0 + (intelligence * 0.02)
-            total_damage = int(base_damage * intelligence_multiplier)
+            # Урон: base + интеллект*multiplier + дух*multiplier
+            base_damage = base_damage_value + intelligence * intelligence_multiplier + spirit * spirit_multiplier
+            # Множитель от ранга
+            damage_multiplier = base_rank_multiplier + (self.rank - 1) * rank_multiplier_per_rank
+            total_damage = int(base_damage * damage_multiplier)
 
             # Удваиваем урон при крите
             if is_critical:
@@ -664,14 +672,19 @@ class FireArrow(Skill):
             result['magic_blocked'] = max(0, total_damage - actual_damage)
 
             # === МЕХАНИКА ПОДЖОГА ===
-            # Шанс поджога: 20% + 10% за каждый ранг сверх первого
-            burn_chance = 0.20 + (self.rank - 1) * 0.10  # 20% -> 60% на 5 ранге
+            # Параметры поджога из конфига
+            burn_base_chance = config.get_magic_skill('fire_arrow', 'burn_base_chance', default=0.20)
+            burn_chance_per_rank = config.get_magic_skill('fire_arrow', 'burn_chance_per_rank', default=0.10)
+            burn_duration = config.get_magic_skill('fire_arrow', 'burn_duration', default=3)
+            burn_damage_percent = config.get_magic_skill('fire_arrow', 'burn_damage_percent', default=0.50)
+
+            # Шанс поджога: базовый + бонус за ранг
+            burn_chance = burn_base_chance + (self.rank - 1) * burn_chance_per_rank
 
             burn_applied = False
             if random.random() < burn_chance:
-                # Урон от горения: 50% от нанесенного урона
-                burn_damage_per_turn = max(1, int(actual_damage * 0.50))
-                burn_duration = 3  # Фиксированная длительность 3 хода
+                # Урон от горения: процент от нанесенного урона
+                burn_damage_per_turn = max(1, int(actual_damage * burn_damage_percent))
 
                 # Применяем эффект горения на цель
                 burn_effect = BurnEffect(duration=burn_duration, damage_per_turn=burn_damage_per_turn)
