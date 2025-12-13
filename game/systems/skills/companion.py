@@ -137,7 +137,7 @@ class WolfHowl(Skill):
         if self.companion_rank < 1:
             return False, "Вой доступен со 2 ранга спутника"
 
-        return super().can_use(user, target)
+        return super().can_use(user)
 
     def use(self, user, target=None):
         """
