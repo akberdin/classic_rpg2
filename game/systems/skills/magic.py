@@ -39,11 +39,11 @@ class Heal(Skill):
         ]
 
     def use(self, user, target=None):
-        """Использовать лечение - ВСЕГДА лечит себя (user)"""
+        """Использовать лечение - может лечить себя или союзника (target)"""
         result = super().use(user, target)
 
-        # Лечение ВСЕГДА применяется к себе (user), не к target
-        heal_target = user
+        # Если указана цель - лечим её, иначе лечим себя
+        heal_target = target if target else user
 
         # Базовое лечение зависит от интеллекта и духа (с учетом экипировки)
         intelligence = user.get_effective_intelligence() if hasattr(user, 'get_effective_intelligence') else getattr(user, 'intelligence', 1)
@@ -62,7 +62,12 @@ class Heal(Skill):
         actual_heal = heal_target.health - old_health
 
         result['heal'] = actual_heal
-        result['message'] = f"{user.name} восстанавливает {actual_heal} HP!"
+
+        # Формируем сообщение в зависимости от цели
+        if heal_target == user:
+            result['message'] = f"{user.name} восстанавливает {actual_heal} HP!"
+        else:
+            result['message'] = f"{user.name} восстанавливает {heal_target.name} на {actual_heal} HP!"
 
         return result
 

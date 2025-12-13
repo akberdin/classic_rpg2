@@ -191,6 +191,74 @@ class RandomEventSystem:
 
     def _setup_events(self):
         """Настроить события"""
+        # ======== СОБЫТИЯ ДЛЯ СПУТНИКА "ВОЛК" ========
+
+        # Положительные события при наличии спутника волка
+        self.events.append(RandomEvent(
+            "wolf_hunt", "Удачная охота волка",
+            "Ваш волк охотится и приносит вам добычу!",
+            lambda p, g: self._wolf_hunt(p, g),
+            chance=0.02, min_rank="Новичок",
+            event_type=EventType.POSITIVE, icon="🐺"
+        ))
+
+        self.events.append(RandomEvent(
+            "wolf_guard", "Волк на страже",
+            "Ваш волк предупредил вас об опасности и помог избежать засады.",
+            lambda p, g: self._wolf_guard(p, g),
+            chance=0.015, min_rank="Новичок",
+            event_type=EventType.POSITIVE, icon="🛡"
+        ))
+
+        self.events.append(RandomEvent(
+            "wolf_treasure", "Волк нашел клад",
+            "Ваш волк раскопал что-то интересное!",
+            lambda p, g: self._wolf_treasure(p, g),
+            chance=0.012, min_rank="Новичок",
+            event_type=EventType.POSITIVE, icon="💎"
+        ))
+
+        self.events.append(RandomEvent(
+            "wolf_howl_morale", "Вдохновляющий вой",
+            "Вой вашего волка поднял вам настроение и придал сил.",
+            lambda p, g: self._wolf_howl_morale(p, g),
+            chance=0.018, min_rank="Новичок",
+            event_type=EventType.POSITIVE, icon="🌙"
+        ))
+
+        # Негативные события при наличии спутника волка
+        self.events.append(RandomEvent(
+            "wolf_chase", "Волк погнался за добычей",
+            "Ваш волк погнался за добычей и увлекся. Пришлось его искать.",
+            lambda p, g: self._wolf_chase(p, g),
+            chance=0.015, min_rank="Новичок",
+            event_type=EventType.NEGATIVE, icon="🏃"
+        ))
+
+        self.events.append(RandomEvent(
+            "wolf_attract_predators", "Волк привлек хищников",
+            "Вой вашего волка привлек внимание опасных хищников поблизости.",
+            lambda p, g: self._wolf_attract_predators(p, g),
+            chance=0.01, min_rank="Новичок",
+            event_type=EventType.NEGATIVE, icon="⚠"
+        ))
+
+        self.events.append(RandomEvent(
+            "wolf_injured", "Волк ранен",
+            "Ваш волк подрался с диким зверем и получил ранения.",
+            lambda p, g: self._wolf_injured(p, g),
+            chance=0.012, min_rank="Новичок",
+            event_type=EventType.NEGATIVE, icon="🩹"
+        ))
+
+        self.events.append(RandomEvent(
+            "wolf_scared_villagers", "Волк напугал жителей",
+            "Ваш волк напугал местных жителей. Вам пришлось заплатить штраф.",
+            lambda p, g: self._wolf_scared_villagers(p, g),
+            chance=0.008, min_rank="Новичок",
+            event_type=EventType.NEGATIVE, icon="😱"
+        ))
+
         # ======== СОБЫТИЯ ДЛЯ НОВИЧКОВ (1-10 уровень) ========
 
         # Положительные события для новичков
@@ -491,6 +559,22 @@ class RandomEventSystem:
             event_type=EventType.NEGATIVE, icon="Z"
         ))
 
+    def _has_wolf_companion(self, player):
+        """
+        Проверить, есть ли у игрока спутник волк
+
+        Args:
+            player: Игрок
+
+        Returns:
+            tuple: (bool - есть ли волк, Companion - первый найденный волк или None)
+        """
+        if hasattr(player, 'companion_manager') and player.companion_manager:
+            wolves = player.companion_manager.get_companions_by_type('wolf')
+            if wolves:
+                return True, wolves[0]
+        return False, None
+
     def check_for_event(self, player, game):
         """
         Проверить, произошло ли событие
@@ -517,6 +601,16 @@ class RandomEventSystem:
             e for e in self.events
             if self._player_rank_sufficient(player, e.min_rank)
         ]
+
+        # Фильтруем события волка - они доступны только при наличии спутника волка
+        has_wolf, wolf_companion = self._has_wolf_companion(player)
+        wolf_event_ids = [
+            'wolf_hunt', 'wolf_guard', 'wolf_treasure', 'wolf_howl_morale',
+            'wolf_chase', 'wolf_attract_predators', 'wolf_injured', 'wolf_scared_villagers'
+        ]
+        if not has_wolf:
+            # Если нет волка, убираем события волка из доступных
+            available_events = [e for e in available_events if e.event_id not in wolf_event_ids]
 
         # Перемешиваем для разнообразия
         random.shuffle(available_events)
@@ -938,6 +1032,190 @@ class RandomEventSystem:
             if gold_lost > 0:
                 player.inventory.remove_gold(gold_lost)
             return [f"  Потеряно {gold_lost} золота из-за парадокса"]
+
+    # === События для спутника "Волк" ===
+
+    def _wolf_hunt(self, player, game):
+        """Волк охотится и приносит добычу"""
+        has_wolf, wolf = self._has_wolf_companion(player)
+        if not has_wolf:
+            return []
+
+        # Награда зависит от ранга волка
+        wolf_rank = wolf.rank if hasattr(wolf, 'rank') else 0
+        gold = random.randint(10, 25) * (player.level + wolf_rank * 5)
+        exp = random.randint(5, 15) * player.level
+
+        player.inventory.add_gold(gold)
+        player.add_experience(exp)
+
+        # Волк также получает опыт
+        wolf.add_experience(exp // 2)
+
+        return [f"  Получено {gold} золота и {exp} опыта", f"  {wolf.name} получил {exp // 2} опыта"]
+
+    def _wolf_guard(self, player, game):
+        """Волк предупреждает об опасности"""
+        has_wolf, wolf = self._has_wolf_companion(player)
+        if not has_wolf:
+            return []
+
+        # Восстанавливаем немного здоровья и даем опыт
+        effective_max_health = player.get_effective_max_health()
+        heal = int(effective_max_health * 0.15)
+        player.health = min(effective_max_health, player.health + heal)
+
+        exp = random.randint(10, 20) * player.level
+        player.add_experience(exp)
+
+        # Волк получает опыт за бдительность
+        wolf.add_experience(exp // 3)
+
+        return [f"  Восстановлено {heal} здоровья", f"  Получено {exp} опыта", f"  {wolf.name} получил {exp // 3} опыта"]
+
+    def _wolf_treasure(self, player, game):
+        """Волк находит клад"""
+        has_wolf, wolf = self._has_wolf_companion(player)
+        if not has_wolf:
+            return []
+
+        from game.item_registry import get_item
+
+        # Награда зависит от ранга волка
+        wolf_rank = wolf.rank if hasattr(wolf, 'rank') else 0
+        gold = random.randint(20, 40) * (player.level + wolf_rank * 3)
+        player.inventory.add_gold(gold)
+
+        results = [f"  Получено {gold} золота"]
+
+        # Шанс найти предмет (зависит от ранга волка)
+        item_chance = 0.4 + wolf_rank * 0.15
+        if random.random() < item_chance:
+            possible_items = ["health_potion", "mana_potion", "iron_ore", "artifact_fragment"]
+            item_id = random.choice(possible_items)
+            item = get_item(item_id)
+            if item:
+                player.inventory.add_item(item, 1)
+                results.append(f"  Найдено: {item.name}")
+
+        # Волк получает опыт
+        wolf_exp = random.randint(8, 18) * player.level
+        wolf.add_experience(wolf_exp)
+        results.append(f"  {wolf.name} получил {wolf_exp} опыта")
+
+        return results
+
+    def _wolf_howl_morale(self, player, game):
+        """Вой волка вдохновляет"""
+        has_wolf, wolf = self._has_wolf_companion(player)
+        if not has_wolf:
+            return []
+
+        # Восстанавливаем выносливость и ману
+        effective_max_stamina = player.get_effective_max_stamina()
+        effective_max_mana = player.get_effective_max_mana()
+
+        stamina = int(effective_max_stamina * 0.3)
+        mana = int(effective_max_mana * 0.2)
+
+        player.stamina = min(effective_max_stamina, player.stamina + stamina)
+        player.mana = min(effective_max_mana, player.mana + mana)
+
+        # Волк также восстанавливает выносливость
+        wolf_max_stamina = wolf.get_effective_max_stamina() if hasattr(wolf, 'get_effective_max_stamina') else wolf.max_stamina
+        wolf_stamina = int(wolf_max_stamina * 0.4)
+        wolf.stamina = min(wolf_max_stamina, wolf.stamina + wolf_stamina)
+
+        return [f"  Восстановлено {stamina} выносливости и {mana} маны",
+                f"  {wolf.name} восстановил {wolf_stamina} выносливости"]
+
+    def _wolf_chase(self, player, game):
+        """Волк погнался за добычей"""
+        has_wolf, wolf = self._has_wolf_companion(player)
+        if not has_wolf:
+            return []
+
+        # Теряем время (выносливость)
+        effective_max_stamina = player.get_effective_max_stamina()
+        stamina_loss = int(effective_max_stamina * 0.2)
+        player.stamina = max(0, player.stamina - stamina_loss)
+
+        # Волк также теряет выносливость
+        wolf_max_stamina = wolf.get_effective_max_stamina() if hasattr(wolf, 'get_effective_max_stamina') else wolf.max_stamina
+        wolf_stamina_loss = int(wolf_max_stamina * 0.3)
+        wolf.stamina = max(0, wolf.stamina - wolf_stamina_loss)
+
+        return [f"  Потеряно {stamina_loss} выносливости",
+                f"  {wolf.name} потерял {wolf_stamina_loss} выносливости"]
+
+    def _wolf_attract_predators(self, player, game):
+        """Волк привлек хищников"""
+        has_wolf, wolf = self._has_wolf_companion(player)
+        if not has_wolf:
+            return []
+
+        if player.godmode:
+            return ["  Хищники не осмелились напасть (режим бессмертия)"]
+
+        # Получаем урон
+        effective_max_health = player.get_effective_max_health()
+        damage = int(effective_max_health * 0.12)
+        player.health = max(1, player.health - damage)
+
+        results = [f"  Получено {damage} урона от хищников"]
+
+        # Волк также может получить урон (меньше, т.к. он умеет обороняться)
+        if random.random() < 0.5:
+            wolf_max_health = wolf.get_effective_max_health() if hasattr(wolf, 'get_effective_max_health') else wolf.max_health
+            wolf_damage = int(wolf_max_health * 0.08)
+            wolf.health = max(1, wolf.health - wolf_damage)
+            results.append(f"  {wolf.name} получил {wolf_damage} урона")
+
+        return results
+
+    def _wolf_injured(self, player, game):
+        """Волк ранен в драке"""
+        has_wolf, wolf = self._has_wolf_companion(player)
+        if not has_wolf:
+            return []
+
+        # Волк получает урон
+        wolf_max_health = wolf.get_effective_max_health() if hasattr(wolf, 'get_effective_max_health') else wolf.max_health
+        wolf_damage = int(wolf_max_health * 0.25)
+        wolf.health = max(1, wolf.health - wolf_damage)
+
+        # Игрок тратит ресурсы на лечение волка (золото или зелье)
+        treatment_cost = random.randint(15, 30) * player.level
+        results = [f"  {wolf.name} получил {wolf_damage} урона"]
+
+        if player.inventory.gold >= treatment_cost:
+            player.inventory.remove_gold(treatment_cost)
+            # Частично лечим волка
+            heal = int(wolf_damage * 0.4)
+            wolf.health = min(wolf_max_health, wolf.health + heal)
+            results.append(f"  Заплачено {treatment_cost} золота за лечение")
+            results.append(f"  {wolf.name} восстановил {heal} здоровья")
+        else:
+            results.append(f"  Не хватило золота на лечение (нужно {treatment_cost})")
+
+        return results
+
+    def _wolf_scared_villagers(self, player, game):
+        """Волк напугал жителей"""
+        has_wolf, wolf = self._has_wolf_companion(player)
+        if not has_wolf:
+            return []
+
+        # Платим штраф
+        fine = random.randint(20, 50) * player.level
+        if player.inventory.gold >= fine:
+            player.inventory.remove_gold(fine)
+            return [f"  Заплачен штраф {fine} золота"]
+        else:
+            # Не хватает золота - теряем репутацию (через опыт)
+            exp_loss = random.randint(10, 25) * player.level
+            player.experience = max(0, player.experience - exp_loss)
+            return [f"  Не хватило золота на штраф", f"  Потеряно {exp_loss} опыта из-за плохой репутации"]
 
 
 class KillstreakSystem:
