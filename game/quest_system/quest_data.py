@@ -584,3 +584,799 @@ NECROMANCER_KILL_QUESTS = {
         'min_rank': 2
     }
 }
+
+# ===== ШАБЛОНЫ КРАФТОВЫХ КВЕСТОВ =====
+
+# Крафтовые квесты кузнеца (деревня/город)
+BLACKSMITH_CRAFT_QUESTS = {
+    # Цепочка 1: Начинающий кузнец (уровни 1-5)
+    'craft_copper_ingots': {
+        'display_name': 'Медные слитки',
+        'quest_names': ['Проба пера', 'Первая плавка', 'Ученик кузнеца'],
+        'descriptions': [
+            'Кузнец хочет проверить твои навыки. Выплави медные слитки.',
+            'Для начала научись переплавлять медную руду в слитки.',
+            'Докажи, что умеешь работать с металлом.'
+        ],
+        'craft_item': 'copper_ingot',
+        'quantity': 3,
+        'min_rank': 1,
+        'chain_id': 'blacksmith_beginner',
+        'chain_step': 1
+    },
+    'craft_poor_knife': {
+        'display_name': 'Простой нож',
+        'quest_names': ['Первое оружие', 'Кузнечное дело', 'Клинок новичка'],
+        'descriptions': [
+            'Пора создать настоящее оружие. Выкуй простой нож.',
+            'Кузнец просит изготовить простой нож для торговца.',
+            'Первый нож - важный этап в обучении кузнеца.'
+        ],
+        'craft_item': 'poor_knife',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'blacksmith_beginner',
+        'chain_step': 2,
+        'requires_quest': 'craft_copper_ingots'
+    },
+    'craft_poor_sword': {
+        'display_name': 'Простой меч',
+        'quest_names': ['Первый меч', 'Оружие стражника', 'Клинок защитника'],
+        'descriptions': [
+            'Стража заказала простой меч. Выкуй его!',
+            'Создай меч для местного ополченца.',
+            'Деревенский воин нуждается в оружии.'
+        ],
+        'craft_item': 'poor_sword',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'blacksmith_beginner',
+        'chain_step': 3,
+        'requires_quest': 'craft_poor_knife'
+    },
+
+    # Цепочка 2: Подмастерье кузнеца (уровни 5-10)
+    'craft_iron_ingots': {
+        'display_name': 'Железные слитки',
+        'quest_names': ['Работа с железом', 'Крепкий металл', 'Заказ кузнеца'],
+        'descriptions': [
+            'Кузнец доверяет тебе работу с железом. Выплави слитки.',
+            'Железо - основа настоящего оружия. Покажи мастерство.',
+            'Для нового заказа нужны железные слитки.'
+        ],
+        'craft_item': 'iron_ingot',
+        'quantity': 5,
+        'min_rank': 1,
+        'chain_id': 'blacksmith_apprentice',
+        'chain_step': 1
+    },
+    'craft_knife': {
+        'display_name': 'Обычный нож',
+        'quest_names': ['Надежный клинок', 'Нож охотника', 'Заказ мясника'],
+        'descriptions': [
+            'Мяснику нужен хороший нож. Создай обычный нож.',
+            'Охотник заказал надежный нож для работы.',
+            'Выкуй качественный нож из железа.'
+        ],
+        'craft_item': 'knife',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'blacksmith_apprentice',
+        'chain_step': 2,
+        'requires_quest': 'craft_iron_ingots'
+    },
+    'craft_sword': {
+        'display_name': 'Обычный меч',
+        'quest_names': ['Меч стражника', 'Оружие воина', 'Стальной клинок'],
+        'descriptions': [
+            'Капитан стражи заказал меч. Создай обычный меч.',
+            'Воин-наемник ищет надежное оружие.',
+            'Выкуй меч из железа для защитника деревни.'
+        ],
+        'craft_item': 'sword',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'blacksmith_apprentice',
+        'chain_step': 3,
+        'requires_quest': 'craft_knife'
+    },
+    'craft_axe': {
+        'display_name': 'Обычный топор',
+        'quest_names': ['Топор дровосека', 'Надежный топор', 'Инструмент силы'],
+        'descriptions': [
+            'Дровосек заказал надежный топор.',
+            'Лесоруб нуждается в хорошем инструменте.',
+            'Создай топор для работы в лесу.'
+        ],
+        'craft_item': 'axe',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'blacksmith_apprentice',
+        'chain_step': 4,
+        'requires_quest': 'craft_sword'
+    },
+
+    # Цепочка 3: Мастер кузнец (уровни 10-15)
+    'craft_steel_ingots': {
+        'display_name': 'Стальные слитки',
+        'quest_names': ['Работа со сталью', 'Благородный металл', 'Секрет стали'],
+        'descriptions': [
+            'Пора освоить работу со сталью. Создай стальные слитки.',
+            'Сталь - признак мастерства кузнеца.',
+            'Кузнец передает секрет создания стали.'
+        ],
+        'craft_item': 'steel_ingot',
+        'quantity': 3,
+        'min_rank': 2,
+        'chain_id': 'blacksmith_master',
+        'chain_step': 1
+    },
+    'craft_fine_knife': {
+        'display_name': 'Качественный нож',
+        'quest_names': ['Клинок мастера', 'Искусный нож', 'Заказ дворянина'],
+        'descriptions': [
+            'Дворянин заказал качественный нож. Покажи мастерство.',
+            'Создай нож, достойный благородного человека.',
+            'Выкуй клинок необычного качества.'
+        ],
+        'craft_item': 'fine_knife',
+        'quantity': 1,
+        'min_rank': 2,
+        'chain_id': 'blacksmith_master',
+        'chain_step': 2,
+        'requires_quest': 'craft_steel_ingots'
+    },
+    'craft_fine_sword': {
+        'display_name': 'Качественный меч',
+        'quest_names': ['Меч рыцаря', 'Клинок чести', 'Оружие героя'],
+        'descriptions': [
+            'Рыцарь заказал достойный меч. Создай качественный клинок.',
+            'Благородный воин ищет надежное оружие.',
+            'Выкуй меч, достойный настоящего героя.'
+        ],
+        'craft_item': 'fine_sword',
+        'quantity': 1,
+        'min_rank': 2,
+        'chain_id': 'blacksmith_master',
+        'chain_step': 3,
+        'requires_quest': 'craft_fine_knife'
+    },
+    'craft_fine_axe': {
+        'display_name': 'Качественный топор',
+        'quest_names': ['Боевой топор', 'Топор воина', 'Секира чемпиона'],
+        'descriptions': [
+            'Воин-варвар заказал мощный боевой топор.',
+            'Создай топор для настоящего бойца.',
+            'Выкуй топор необычного качества.'
+        ],
+        'craft_item': 'fine_axe',
+        'quantity': 1,
+        'min_rank': 2,
+        'chain_id': 'blacksmith_master',
+        'chain_step': 4,
+        'requires_quest': 'craft_fine_sword'
+    }
+}
+
+# Крафтовые квесты алхимика
+ALCHEMIST_CRAFT_QUESTS = {
+    # Цепочка 1: Начинающий алхимик (уровни 1-5)
+    'craft_minor_health_potion': {
+        'display_name': 'Малое зелье здоровья',
+        'quest_names': ['Первое зелье', 'Азы алхимии', 'Целительная наука'],
+        'descriptions': [
+            'Алхимик обучает тебя основам. Создай малое зелье здоровья.',
+            'Научись варить простейшие целебные зелья.',
+            'Лазарет нуждается в запасе целебных зелий.'
+        ],
+        'craft_item': 'minor_health_potion',
+        'quantity': 3,
+        'min_rank': 1,
+        'chain_id': 'alchemist_beginner',
+        'chain_step': 1
+    },
+    'craft_minor_stamina_potion': {
+        'display_name': 'Малое зелье выносливости',
+        'quest_names': ['Зелье бодрости', 'Эликсир силы', 'Напиток воина'],
+        'descriptions': [
+            'Стража заказала зелья выносливости для патрулей.',
+            'Создай зелья, восстанавливающие силы.',
+            'Охотники нуждаются в подкреплении.'
+        ],
+        'craft_item': 'minor_stamina_potion',
+        'quantity': 3,
+        'min_rank': 1,
+        'chain_id': 'alchemist_beginner',
+        'chain_step': 2,
+        'requires_quest': 'craft_minor_health_potion'
+    },
+    'craft_minor_mana_potion': {
+        'display_name': 'Малое зелье маны',
+        'quest_names': ['Магическая эссенция', 'Зелье волшебника', 'Источник силы'],
+        'descriptions': [
+            'Маги академии заказали зелья маны.',
+            'Создай зелья для восстановления магической энергии.',
+            'Чародей просит помочь с запасами зелий.'
+        ],
+        'craft_item': 'minor_mana_potion',
+        'quantity': 3,
+        'min_rank': 1,
+        'chain_id': 'alchemist_beginner',
+        'chain_step': 3,
+        'requires_quest': 'craft_minor_stamina_potion'
+    },
+
+    # Цепочка 2: Подмастерье алхимика (уровни 5-10)
+    'craft_health_potion': {
+        'display_name': 'Зелье здоровья',
+        'quest_names': ['Улучшенное целебное', 'Зелье воина', 'Эликсир жизни'],
+        'descriptions': [
+            'Пора научиться делать более сильные зелья здоровья.',
+            'Гильдия авантюристов заказала партию зелий.',
+            'Создай улучшенное целебное зелье.'
+        ],
+        'craft_item': 'health_potion',
+        'quantity': 2,
+        'min_rank': 1,
+        'chain_id': 'alchemist_apprentice',
+        'chain_step': 1
+    },
+    'craft_stamina_potion': {
+        'display_name': 'Зелье выносливости',
+        'quest_names': ['Напиток выносливости', 'Эликсир силы', 'Зелье героя'],
+        'descriptions': [
+            'Караван просит зелья для долгого пути.',
+            'Создай мощное зелье выносливости.',
+            'Отряд наемников заказал зелья для похода.'
+        ],
+        'craft_item': 'stamina_potion',
+        'quantity': 2,
+        'min_rank': 1,
+        'chain_id': 'alchemist_apprentice',
+        'chain_step': 2,
+        'requires_quest': 'craft_health_potion'
+    },
+    'craft_mana_potion': {
+        'display_name': 'Зелье маны',
+        'quest_names': ['Эликсир магии', 'Источник силы', 'Зелье чародея'],
+        'descriptions': [
+            'Магическая академия увеличивает запасы зелий.',
+            'Создай мощное зелье для восстановления маны.',
+            'Маг-исследователь нуждается в зельях.'
+        ],
+        'craft_item': 'mana_potion',
+        'quantity': 2,
+        'min_rank': 2,
+        'chain_id': 'alchemist_apprentice',
+        'chain_step': 3,
+        'requires_quest': 'craft_stamina_potion'
+    },
+
+    # Цепочка 3: Мастер алхимик (уровни 10-15)
+    'craft_greater_health_potion': {
+        'display_name': 'Большое зелье здоровья',
+        'quest_names': ['Мощное целебное', 'Эликсир регенерации', 'Зелье мастера'],
+        'descriptions': [
+            'Создай мощное зелье для героев гильдии.',
+            'Рыцарский орден заказал запас целебных зелий.',
+            'Докажи мастерство, создав большое зелье здоровья.'
+        ],
+        'craft_item': 'greater_health_potion',
+        'quantity': 2,
+        'min_rank': 2,
+        'chain_id': 'alchemist_master',
+        'chain_step': 1
+    },
+    'craft_greater_stamina_potion': {
+        'display_name': 'Большое зелье выносливости',
+        'quest_names': ['Эликсир неутомимости', 'Зелье титана', 'Напиток силы'],
+        'descriptions': [
+            'Армия готовится к походу и нуждается в зельях.',
+            'Создай мощное зелье для воинов.',
+            'Гладиаторы арены заказали зелья.'
+        ],
+        'craft_item': 'greater_stamina_potion',
+        'quantity': 2,
+        'min_rank': 2,
+        'chain_id': 'alchemist_master',
+        'chain_step': 2,
+        'requires_quest': 'craft_greater_health_potion'
+    },
+    'craft_greater_mana_potion': {
+        'display_name': 'Большое зелье маны',
+        'quest_names': ['Эликсир архимага', 'Источник магии', 'Зелье мудреца'],
+        'descriptions': [
+            'Архимаг академии заказал редкие зелья маны.',
+            'Создай мощнейшее зелье для магов.',
+            'Верховный маг нуждается в особых зельях.'
+        ],
+        'craft_item': 'greater_mana_potion',
+        'quantity': 2,
+        'min_rank': 3,
+        'chain_id': 'alchemist_master',
+        'chain_step': 3,
+        'requires_quest': 'craft_greater_stamina_potion'
+    }
+}
+
+# Крафтовые квесты кожевника/портного
+LEATHERWORKER_CRAFT_QUESTS = {
+    # Цепочка 1: Начинающий кожевник (уровни 1-5)
+    'craft_leather': {
+        'display_name': 'Кожа',
+        'quest_names': ['Выделка кожи', 'Ремесло кожевника', 'Первая обработка'],
+        'descriptions': [
+            'Кожевник обучает основам ремесла. Обработай шкуры.',
+            'Научись превращать шкуры в качественную кожу.',
+            'Мастерская нуждается в выделанной коже.'
+        ],
+        'craft_item': 'leather',
+        'quantity': 3,
+        'min_rank': 1,
+        'chain_id': 'leatherworker_beginner',
+        'chain_step': 1
+    },
+    'craft_leather_strips': {
+        'display_name': 'Полоски кожи',
+        'quest_names': ['Нарезка кожи', 'Материал для работы', 'Кожаные ремни'],
+        'descriptions': [
+            'Нарежь кожу на полоски для дальнейшей работы.',
+            'Полоски кожи нужны для многих изделий.',
+            'Мастер просит подготовить материал.'
+        ],
+        'craft_item': 'leather_strips',
+        'quantity': 10,
+        'min_rank': 1,
+        'chain_id': 'leatherworker_beginner',
+        'chain_step': 2,
+        'requires_quest': 'craft_leather'
+    },
+    'craft_poor_belt': {
+        'display_name': 'Простой ремень',
+        'quest_names': ['Первый ремень', 'Простая работа', 'Пояс новичка'],
+        'descriptions': [
+            'Создай простой ремень для путника.',
+            'Торговец заказал простые ремни.',
+            'Докажи умение делать простые вещи.'
+        ],
+        'craft_item': 'poor_belt',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'leatherworker_beginner',
+        'chain_step': 3,
+        'requires_quest': 'craft_leather_strips'
+    },
+    'craft_poor_light_gloves': {
+        'display_name': 'Простые перчатки',
+        'quest_names': ['Первые перчатки', 'Работа руками', 'Защита рук'],
+        'descriptions': [
+            'Рабочим нужны простые перчатки.',
+            'Создай перчатки для защиты рук.',
+            'Мастерская заказала партию перчаток.'
+        ],
+        'craft_item': 'poor_light_gloves',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'leatherworker_beginner',
+        'chain_step': 4,
+        'requires_quest': 'craft_poor_belt'
+    },
+
+    # Цепочка 2: Подмастерье кожевника (уровни 5-10)
+    'craft_belt': {
+        'display_name': 'Обычный ремень',
+        'quest_names': ['Надежный пояс', 'Ремень стражника', 'Кожаный пояс'],
+        'descriptions': [
+            'Стража заказала качественные ремни.',
+            'Создай надежный ремень для воина.',
+            'Торговец ищет качественные пояса.'
+        ],
+        'craft_item': 'belt',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'leatherworker_apprentice',
+        'chain_step': 1
+    },
+    'craft_light_gloves': {
+        'display_name': 'Обычные перчатки',
+        'quest_names': ['Перчатки охотника', 'Ловкие руки', 'Защита стрелка'],
+        'descriptions': [
+            'Охотники заказали качественные перчатки.',
+            'Создай перчатки для лучника.',
+            'Гильдия воров ищет подходящие перчатки.'
+        ],
+        'craft_item': 'light_gloves',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'leatherworker_apprentice',
+        'chain_step': 2,
+        'requires_quest': 'craft_belt'
+    },
+    'craft_light_boots': {
+        'display_name': 'Обычная обувь',
+        'quest_names': ['Сапоги путника', 'Обувь странника', 'Легкие сапоги'],
+        'descriptions': [
+            'Путешественник заказал удобную обувь.',
+            'Создай легкие сапоги для долгих походов.',
+            'Торговец караванов ищет обувь.'
+        ],
+        'craft_item': 'light_boots',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'leatherworker_apprentice',
+        'chain_step': 3,
+        'requires_quest': 'craft_light_gloves'
+    },
+    'craft_backpack': {
+        'display_name': 'Обычный рюкзак',
+        'quest_names': ['Рюкзак путника', 'Походная сумка', 'Вместительный мешок'],
+        'descriptions': [
+            'Авантюристу нужен надежный рюкзак.',
+            'Создай вместительный рюкзак для похода.',
+            'Торговец заказал партию рюкзаков.'
+        ],
+        'craft_item': 'backpack',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'leatherworker_apprentice',
+        'chain_step': 4,
+        'requires_quest': 'craft_light_boots'
+    },
+
+    # Цепочка 3: Мастер кожевник (уровни 10-15)
+    'craft_fine_belt': {
+        'display_name': 'Качественный ремень',
+        'quest_names': ['Пояс воина', 'Ремень чемпиона', 'Благородный пояс'],
+        'descriptions': [
+            'Рыцарь заказал качественный пояс.',
+            'Создай ремень для благородного воина.',
+            'Гильдия воинов ищет лучшие ремни.'
+        ],
+        'craft_item': 'fine_belt',
+        'quantity': 1,
+        'min_rank': 2,
+        'chain_id': 'leatherworker_master',
+        'chain_step': 1
+    },
+    'craft_fine_light_gloves': {
+        'display_name': 'Качественные перчатки',
+        'quest_names': ['Перчатки мастера', 'Ловкость убийцы', 'Руки вора'],
+        'descriptions': [
+            'Мастер-вор заказал особые перчатки.',
+            'Создай перчатки для опытного лучника.',
+            'Ассасин ищет подходящие перчатки.'
+        ],
+        'craft_item': 'fine_light_gloves',
+        'quantity': 1,
+        'min_rank': 2,
+        'chain_id': 'leatherworker_master',
+        'chain_step': 2,
+        'requires_quest': 'craft_fine_belt'
+    },
+    'craft_fine_light_boots': {
+        'display_name': 'Качественная обувь',
+        'quest_names': ['Сапоги скорости', 'Обувь следопыта', 'Бесшумные сапоги'],
+        'descriptions': [
+            'Следопыт заказал особую обувь.',
+            'Создай легкую обувь для разведчика.',
+            'Шпион нуждается в бесшумных сапогах.'
+        ],
+        'craft_item': 'fine_light_boots',
+        'quantity': 1,
+        'min_rank': 2,
+        'chain_id': 'leatherworker_master',
+        'chain_step': 3,
+        'requires_quest': 'craft_fine_light_gloves'
+    },
+    'craft_fine_backpack': {
+        'display_name': 'Качественный рюкзак',
+        'quest_names': ['Рюкзак героя', 'Сумка авантюриста', 'Вместилище сокровищ'],
+        'descriptions': [
+            'Опытный авантюрист заказал лучший рюкзак.',
+            'Создай рюкзак для настоящего героя.',
+            'Искатель сокровищ нуждается в большом рюкзаке.'
+        ],
+        'craft_item': 'fine_backpack',
+        'quantity': 1,
+        'min_rank': 2,
+        'chain_id': 'leatherworker_master',
+        'chain_step': 4,
+        'requires_quest': 'craft_fine_light_boots'
+    }
+}
+
+# Крафтовые квесты охотника (луки и метательное оружие)
+HUNTER_CRAFT_QUESTS = {
+    # Цепочка 1: Начинающий лучник (уровни 1-5)
+    'craft_bowstring': {
+        'display_name': 'Тетива',
+        'quest_names': ['Основа лука', 'Тетива охотника', 'Первый шаг'],
+        'descriptions': [
+            'Охотник обучает тебя делать тетиву из жил.',
+            'Для хорошего лука нужна крепкая тетива.',
+            'Научись делать тетиву из звериных жил.'
+        ],
+        'craft_item': 'bowstring',
+        'quantity': 2,
+        'min_rank': 1,
+        'chain_id': 'hunter_beginner',
+        'chain_step': 1
+    },
+    'craft_wooden_bow_limb': {
+        'display_name': 'Деревянные плечи лука',
+        'quest_names': ['Основа лука', 'Плечи охотника', 'Деревянная дуга'],
+        'descriptions': [
+            'Вырежи деревянные плечи для простого лука.',
+            'Охотник показывает как выбрать древесину.',
+            'Сделай основу для своего первого лука.'
+        ],
+        'craft_item': 'wooden_bow_limb',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'hunter_beginner',
+        'chain_step': 2,
+        'requires_quest': 'craft_bowstring'
+    },
+    'craft_poor_bow': {
+        'display_name': 'Простой лук',
+        'quest_names': ['Первый лук', 'Оружие охотника', 'Лук новичка'],
+        'descriptions': [
+            'Пора собрать свой первый лук!',
+            'Создай простой лук для охоты.',
+            'Молодому охотнику нужен лук.'
+        ],
+        'craft_item': 'poor_bow',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'hunter_beginner',
+        'chain_step': 3,
+        'requires_quest': 'craft_wooden_bow_limb'
+    },
+
+    # Цепочка 2: Опытный охотник (уровни 5-10)
+    'craft_reinforced_bow_limb': {
+        'display_name': 'Укрепленные плечи лука',
+        'quest_names': ['Усиленная дуга', 'Секрет силы', 'Укрепление лука'],
+        'descriptions': [
+            'Научись укреплять плечи лука жилами.',
+            'Опытный охотник делится секретом.',
+            'Создай более мощную основу для лука.'
+        ],
+        'craft_item': 'reinforced_bow_limb',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'hunter_advanced',
+        'chain_step': 1
+    },
+    'craft_bow': {
+        'display_name': 'Обычный лук',
+        'quest_names': ['Лук охотника', 'Надежное оружие', 'Стрела смерти'],
+        'descriptions': [
+            'Создай надежный лук для серьезной охоты.',
+            'Гильдия охотников заказала лук.',
+            'Стрелок ищет хорошее оружие.'
+        ],
+        'craft_item': 'bow',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'hunter_advanced',
+        'chain_step': 2,
+        'requires_quest': 'craft_reinforced_bow_limb'
+    },
+
+    # Цепочка 3: Мастер лучник (уровни 10-15)
+    'craft_composite_bow_limb': {
+        'display_name': 'Композитные плечи лука',
+        'quest_names': ['Секрет мастеров', 'Композитная дуга', 'Древнее искусство'],
+        'descriptions': [
+            'Освой древнее искусство создания композитного лука.',
+            'Мастер раскрывает секрет композитных луков.',
+            'Создай плечи из дерева, рога и жил.'
+        ],
+        'craft_item': 'composite_bow_limb',
+        'quantity': 1,
+        'min_rank': 2,
+        'chain_id': 'hunter_master',
+        'chain_step': 1
+    },
+    'craft_fine_bow': {
+        'display_name': 'Качественный лук',
+        'quest_names': ['Лук мастера', 'Дальнобойное оружие', 'Лук чемпиона'],
+        'descriptions': [
+            'Создай лук для настоящего мастера стрельбы.',
+            'Чемпион лучников заказал особый лук.',
+            'Собери композитный лук высшего качества.'
+        ],
+        'craft_item': 'fine_bow',
+        'quantity': 1,
+        'min_rank': 2,
+        'chain_id': 'hunter_master',
+        'chain_step': 2,
+        'requires_quest': 'craft_composite_bow_limb'
+    }
+}
+
+# Крафтовые квесты мага (посохи)
+MAGE_CRAFT_QUESTS = {
+    # Цепочка 1: Начинающий маг (уровни 1-5)
+    'craft_wooden_staff_core': {
+        'display_name': 'Деревянный стержень',
+        'quest_names': ['Основа посоха', 'Древо силы', 'Первый шаг мага'],
+        'descriptions': [
+            'Маг обучает тебя основам создания посоха.',
+            'Выбери правильную древесину для стержня.',
+            'Создай деревянный стержень для посоха.'
+        ],
+        'craft_item': 'wooden_staff_core',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'mage_beginner',
+        'chain_step': 1
+    },
+    'craft_poor_staff': {
+        'display_name': 'Простой посох',
+        'quest_names': ['Первый посох', 'Опора мага', 'Посох ученика'],
+        'descriptions': [
+            'Создай простой посох для начинающего мага.',
+            'Ученик академии нуждается в посохе.',
+            'Собери свой первый магический посох.'
+        ],
+        'craft_item': 'poor_staff',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'mage_beginner',
+        'chain_step': 2,
+        'requires_quest': 'craft_wooden_staff_core'
+    },
+
+    # Цепочка 2: Подмастерье мага (уровни 5-10)
+    'craft_staff_focus': {
+        'display_name': 'Навершие посоха',
+        'quest_names': ['Фокус силы', 'Навершие мага', 'Концентратор'],
+        'descriptions': [
+            'Создай навершие для концентрации магической силы.',
+            'Маг показывает как делать навершия.',
+            'Навершие усиливает магию посоха.'
+        ],
+        'craft_item': 'staff_focus',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'mage_apprentice',
+        'chain_step': 1
+    },
+    'craft_iron_staff_core': {
+        'display_name': 'Железный стержень',
+        'quest_names': ['Стержень силы', 'Железная основа', 'Укрепление посоха'],
+        'descriptions': [
+            'Укрепи посох железным стержнем.',
+            'Кузнец помогает создать железный стержень.',
+            'Железо делает посох прочнее.'
+        ],
+        'craft_item': 'iron_staff_core',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'mage_apprentice',
+        'chain_step': 2,
+        'requires_quest': 'craft_staff_focus'
+    },
+    'craft_staff': {
+        'display_name': 'Обычный посох',
+        'quest_names': ['Посох мага', 'Надежная опора', 'Посох адепта'],
+        'descriptions': [
+            'Создай полноценный посох для мага.',
+            'Адепт магии заказал посох.',
+            'Собери надежный посох с навершием.'
+        ],
+        'craft_item': 'staff',
+        'quantity': 1,
+        'min_rank': 1,
+        'chain_id': 'mage_apprentice',
+        'chain_step': 3,
+        'requires_quest': 'craft_iron_staff_core'
+    },
+
+    # Цепочка 3: Мастер маг (уровни 10-15)
+    'craft_magic_staff_focus': {
+        'display_name': 'Магическое навершие',
+        'quest_names': ['Кристалл силы', 'Магический фокус', 'Навершие мастера'],
+        'descriptions': [
+            'Создай магическое навершие с кристаллом.',
+            'Архимаг раскрывает секрет магических навершей.',
+            'Вложи магический кристалл в навершие.'
+        ],
+        'craft_item': 'magic_staff_focus',
+        'quantity': 1,
+        'min_rank': 2,
+        'chain_id': 'mage_master',
+        'chain_step': 1
+    },
+    'craft_steel_staff_core': {
+        'display_name': 'Стальной стержень',
+        'quest_names': ['Стержень мастера', 'Стальная основа', 'Несокрушимый посох'],
+        'descriptions': [
+            'Создай стальной стержень для мощного посоха.',
+            'Сталь лучше проводит магическую энергию.',
+            'Мастер-кузнец помогает с созданием.'
+        ],
+        'craft_item': 'steel_staff_core',
+        'quantity': 1,
+        'min_rank': 2,
+        'chain_id': 'mage_master',
+        'chain_step': 2,
+        'requires_quest': 'craft_magic_staff_focus'
+    },
+    'craft_fine_staff': {
+        'display_name': 'Качественный посох',
+        'quest_names': ['Посох архимага', 'Древо мудрости', 'Посох мастера'],
+        'descriptions': [
+            'Создай посох для настоящего мастера магии.',
+            'Архимаг заказал особый посох.',
+            'Собери посох высшего качества.'
+        ],
+        'craft_item': 'fine_staff',
+        'quantity': 1,
+        'min_rank': 2,
+        'chain_id': 'mage_master',
+        'chain_step': 3,
+        'requires_quest': 'craft_steel_staff_core'
+    }
+}
+
+# Словарь ключевых слов для крафтовых предметов
+CRAFT_ITEM_KEY_TO_NAME = {
+    # Слитки
+    'copper_ingot': 'Медный слиток',
+    'iron_ingot': 'Железный слиток',
+    'steel_ingot': 'Стальной слиток',
+    # Ножи
+    'poor_knife': 'Нож (плохое)',
+    'knife': 'Нож (обычное)',
+    'fine_knife': 'Нож (необычное)',
+    # Мечи
+    'poor_sword': 'Меч (плохое)',
+    'sword': 'Меч (обычное)',
+    'fine_sword': 'Меч (необычное)',
+    # Топоры
+    'axe': 'Топор (обычное)',
+    'fine_axe': 'Топор (необычное)',
+    # Зелья
+    'minor_health_potion': 'Малое зелье здоровья',
+    'minor_stamina_potion': 'Малое зелье выносливости',
+    'minor_mana_potion': 'Малое зелье маны',
+    'health_potion': 'Зелье здоровья',
+    'stamina_potion': 'Зелье выносливости',
+    'mana_potion': 'Зелье маны',
+    'greater_health_potion': 'Большое зелье здоровья',
+    'greater_stamina_potion': 'Большое зелье выносливости',
+    'greater_mana_potion': 'Большое зелье маны',
+    # Кожа и броня
+    'leather': 'Кожа',
+    'leather_strips': 'Полоски кожи',
+    'poor_belt': 'Ремень (плохое)',
+    'belt': 'Ремень (обычное)',
+    'fine_belt': 'Ремень (необычное)',
+    'poor_light_gloves': 'Перчатки (плохое)',
+    'light_gloves': 'Перчатки (обычное)',
+    'fine_light_gloves': 'Перчатки (необычное)',
+    'light_boots': 'Обувь (обычное)',
+    'fine_light_boots': 'Обувь (необычное)',
+    'backpack': 'Рюкзак (обычное)',
+    'fine_backpack': 'Рюкзак (необычное)',
+    # Луки
+    'bowstring': 'Тетива',
+    'wooden_bow_limb': 'Деревянные плечи лука',
+    'reinforced_bow_limb': 'Укрепленные плечи лука',
+    'composite_bow_limb': 'Композитные плечи лука',
+    'poor_bow': 'Лук (плохое)',
+    'bow': 'Лук (обычное)',
+    'fine_bow': 'Лук (необычное)',
+    # Посохи
+    'wooden_staff_core': 'Деревянный стержень',
+    'iron_staff_core': 'Железный стержень',
+    'steel_staff_core': 'Стальной стержень',
+    'staff_focus': 'Навершие посоха',
+    'magic_staff_focus': 'Магическое навершие',
+    'poor_staff': 'Посох (плохое)',
+    'staff': 'Посох (обычное)',
+    'fine_staff': 'Посох (необычное)'
+}
