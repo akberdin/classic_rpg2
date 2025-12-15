@@ -75,6 +75,13 @@
       "veteran": "assets/actors/necro/necro3.png",
       "expert": "assets/actors/necro/necro4.png"
     },
+    "shadow_adept": {
+      "default": "assets/actors/shadow_adept/shadow_adept1.png",
+      "novice": "assets/actors/shadow_adept/shadow_adept1.png",
+      "regular": "assets/actors/shadow_adept/shadow_adept2.png",
+      "veteran": "assets/actors/shadow_adept/shadow_adept3.png",
+      "expert": "assets/actors/shadow_adept/shadow_adept4.png"
+    },
     "wolf": {
       "default": "assets/actors/wolf/wolf1.png",
       "novice": "assets/actors/wolf/wolf1.png",
@@ -105,7 +112,8 @@
     "bandit_camp": "assets/objects/camps/bandit.png",
     "ruins": "assets/objects/ruins/ruins.png",
     "magic_school": "assets/objects/magic_school/magic_school.png",
-    "warrior_academy": "assets/objects/warrior_academy/warrior_academy.png"
+    "warrior_academy": "assets/objects/warrior_academy/warrior_academy.png",
+    "secret_camp": "assets/objects/secret_camp/secret_camp.png"
   },
 
   "biomes": {
