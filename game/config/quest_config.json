@@ -3,18 +3,22 @@
     "max_active_quests": 10,
     "quest_rotation_turns": 120,
     "min_quests_per_location": 2,
-    "max_quests_per_location": 3
+    "max_quests_per_location": 4
   },
+
   "rank_thresholds": {
     "rank_1_max_level": 10,
     "rank_2_max_level": 20,
     "rank_3_max_level": 30
   },
-  "unique_quest_probabilities": {
-    "city": 0.30,
-    "village": 0.15,
-    "magic_school": 0.40
+
+  "difficulty_by_rank": {
+    "1": ["easy", "medium"],
+    "2": ["easy", "medium", "hard"],
+    "3": ["medium", "hard", "very_hard"],
+    "4": ["hard", "very_hard"]
   },
+
   "quest_amounts": {
     "gather": {
       "easy": [3, 5],
@@ -29,6 +33,7 @@
       "very_hard": [6, 10]
     }
   },
+
   "rewards": {
     "gather_quests": {
       "base_exp": 50,
@@ -45,9 +50,161 @@
       "amount_divisor": 4
     }
   },
+
+  "npc_quest_givers": {
+    "merchant": {
+      "quest_types": ["gather"],
+      "resources": ["copper_ore", "iron_ore", "silver_ore", "gold_ore", "wolf_hide", "bear_hide", "deer_hide"],
+      "locations": ["city", "village"],
+      "max_quests": 2,
+      "quest_theme": "trade"
+    },
+    "guard": {
+      "quest_types": ["kill"],
+      "enemies": ["bandit", "undead"],
+      "locations": ["city", "village"],
+      "max_quests": 2,
+      "quest_theme": "protection"
+    },
+    "miner": {
+      "quest_types": ["gather"],
+      "resources": ["copper_ore", "iron_ore", "silver_ore", "gold_ore", "mithril_ore"],
+      "locations": ["mine"],
+      "max_quests": 2,
+      "quest_theme": "mining"
+    },
+    "hunter": {
+      "quest_types": ["kill", "gather"],
+      "enemies": ["wolf", "bear", "deer"],
+      "resources": ["wolf_hide", "bear_hide", "deer_hide", "wolf_fang", "bear_fang", "bear_meat", "deer_meat"],
+      "locations": ["village", "city"],
+      "max_quests": 3,
+      "quest_theme": "hunting"
+    },
+    "alchemist": {
+      "quest_types": ["gather"],
+      "resources": ["magic_crystal", "wolf_fang", "bear_fang", "chamomile", "mint", "sage", "ginseng", "mandrake"],
+      "locations": ["city", "village", "magic_school"],
+      "max_quests": 2,
+      "quest_theme": "alchemy"
+    },
+    "mage": {
+      "quest_types": ["kill", "gather"],
+      "enemies": ["undead", "necromancer"],
+      "resources": ["magic_crystal", "artifact_fragment", "old_scroll", "ancient_coin"],
+      "locations": ["magic_school", "city"],
+      "max_quests": 2,
+      "quest_theme": "arcane"
+    },
+    "necromancer": {
+      "quest_types": ["gather"],
+      "resources": ["artifact_fragment", "ancient_coin", "magic_crystal"],
+      "locations": ["ruins"],
+      "max_quests": 1,
+      "quest_theme": "dark_magic"
+    }
+  },
+
+  "location_quest_rules": {
+    "city": {
+      "primary_givers": ["merchant", "guard"],
+      "secondary_givers": ["hunter", "alchemist", "mage"],
+      "resource_focus": ["silver_ore", "gold_ore", "mithril_ore", "bear_hide", "deer_hide"],
+      "enemy_focus": ["bandit", "undead"],
+      "min_rank_for_hard": 2,
+      "quest_distribution": {
+        "gather": 0.5,
+        "kill": 0.3,
+        "chain": 0.2
+      }
+    },
+    "village": {
+      "primary_givers": ["merchant", "guard", "hunter"],
+      "secondary_givers": ["alchemist"],
+      "resource_focus": ["copper_ore", "iron_ore", "wolf_hide", "deer_meat", "bear_meat"],
+      "enemy_focus": ["wolf", "bear", "bandit"],
+      "min_rank_for_hard": 1,
+      "quest_distribution": {
+        "gather": 0.6,
+        "kill": 0.3,
+        "chain": 0.1
+      }
+    },
+    "mine": {
+      "primary_givers": ["miner"],
+      "secondary_givers": ["merchant"],
+      "resource_focus": ["copper_ore", "iron_ore", "silver_ore", "gold_ore", "mithril_ore"],
+      "enemy_focus": [],
+      "min_rank_for_hard": 2,
+      "quest_distribution": {
+        "gather": 0.9,
+        "kill": 0.0,
+        "chain": 0.1
+      }
+    },
+    "ruins": {
+      "primary_givers": ["mage"],
+      "secondary_givers": ["alchemist", "necromancer"],
+      "resource_focus": ["artifact_fragment", "ancient_coin", "magic_crystal"],
+      "enemy_focus": ["undead", "necromancer"],
+      "min_rank_for_hard": 2,
+      "quest_distribution": {
+        "gather": 0.4,
+        "kill": 0.4,
+        "chain": 0.2
+      }
+    },
+    "magic_school": {
+      "primary_givers": ["mage", "alchemist"],
+      "secondary_givers": [],
+      "resource_focus": ["magic_crystal", "old_scroll", "artifact_fragment"],
+      "enemy_focus": ["undead", "necromancer"],
+      "min_rank_for_hard": 2,
+      "quest_distribution": {
+        "gather": 0.5,
+        "kill": 0.3,
+        "chain": 0.2
+      }
+    },
+    "bandit_camp": {
+      "primary_givers": [],
+      "secondary_givers": [],
+      "resource_focus": [],
+      "enemy_focus": ["bandit"],
+      "min_rank_for_hard": 1,
+      "quest_distribution": {
+        "gather": 0.0,
+        "kill": 1.0,
+        "chain": 0.0
+      }
+    }
+  },
+
   "difficulty_ranges": {
-    "easy_resources": ["copper_ore", "wood"],
-    "medium_resources": ["iron_ore", "ancient_coin", "silver_ore", "artifact_fragment"],
-    "hard_resources": ["gold_ore", "magic_crystal", "mithril_ore"]
+    "easy_resources": ["copper_ore", "wood", "wolf_fang", "chamomile", "mint"],
+    "medium_resources": ["iron_ore", "ancient_coin", "silver_ore", "artifact_fragment", "wolf_hide", "deer_hide", "sage", "ginseng"],
+    "hard_resources": ["gold_ore", "magic_crystal", "mithril_ore", "bear_hide", "bear_fang", "mandrake"]
+  },
+
+  "resource_by_difficulty": {
+    "easy": ["copper_ore", "wood", "wolf_fang", "chamomile", "mint", "deer_meat"],
+    "medium": ["iron_ore", "silver_ore", "wolf_hide", "deer_hide", "ancient_coin", "sage", "ginseng", "bear_meat"],
+    "hard": ["gold_ore", "bear_hide", "bear_fang", "artifact_fragment", "mandrake"],
+    "very_hard": ["mithril_ore", "magic_crystal"]
+  },
+
+  "enemy_by_difficulty": {
+    "easy": ["wolf", "deer"],
+    "medium": ["bear", "bandit"],
+    "hard": ["undead"],
+    "very_hard": ["necromancer"]
+  },
+
+  "unique_quest_probabilities": {
+    "city": 0.30,
+    "village": 0.15,
+    "magic_school": 0.40,
+    "ruins": 0.25,
+    "mine": 0.10
   }
 }
