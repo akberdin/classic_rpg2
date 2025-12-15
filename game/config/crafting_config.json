@@ -1552,6 +1552,437 @@
       "category": "alchemy",
       "base_price": 85,
       "sprite": null
+    },
+
+    {
+      "id": "axe",
+      "name": "Топор (обычное качество)",
+      "display_name": "Рецепт: Топор (обычное качество)",
+      "quality": "common",
+      "description": "Изготовление топора обычного качества. Требуется 1 железное лезвие топора, 1 длинная рукоять и 2 кожаных полоски",
+      "station": "workbench",
+      "result_item": "axe",
+      "result_quantity": 1,
+      "required_level": 7,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "iron_axe_blade", "quantity": 1},
+        {"item": "long_wooden_handle", "quantity": 1},
+        {"item": "leather_strips", "quantity": 2}
+      ],
+      "category": "weapon",
+      "base_price": 100,
+      "sprite": null
+    },
+    {
+      "id": "fine_axe",
+      "name": "Топор (необычное качество)",
+      "display_name": "Рецепт: Топор (необычное качество)",
+      "quality": "uncommon",
+      "description": "Изготовление качественного топора. Требуется 1 стальное лезвие топора, 1 длинная рукоять и 3 железных полоски",
+      "station": "workbench",
+      "result_item": "fine_axe",
+      "result_quantity": 1,
+      "required_level": 12,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "steel_axe_blade", "quantity": 1},
+        {"item": "long_wooden_handle", "quantity": 1},
+        {"item": "iron_strips", "quantity": 3}
+      ],
+      "category": "weapon",
+      "base_price": 180,
+      "sprite": null
+    },
+
+    {
+      "id": "spear",
+      "name": "Копье (обычное качество)",
+      "display_name": "Рецепт: Копье (обычное качество)",
+      "quality": "common",
+      "description": "Изготовление копья обычного качества. Требуется 1 железный наконечник, 1 древко и 4 кожаных полоски",
+      "station": "workbench",
+      "result_item": "spear",
+      "result_quantity": 1,
+      "required_level": 7,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "iron_spearhead", "quantity": 1},
+        {"item": "wooden_shaft", "quantity": 1},
+        {"item": "leather_strips", "quantity": 4}
+      ],
+      "category": "weapon",
+      "base_price": 115,
+      "sprite": null
+    },
+    {
+      "id": "fine_spear",
+      "name": "Копье (необычное качество)",
+      "display_name": "Рецепт: Копье (необычное качество)",
+      "quality": "uncommon",
+      "description": "Изготовление качественного копья. Требуется 1 стальной наконечник, 1 древко и 3 железных полоски",
+      "station": "workbench",
+      "result_item": "fine_spear",
+      "result_quantity": 1,
+      "required_level": 11,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "steel_spearhead", "quantity": 1},
+        {"item": "wooden_shaft", "quantity": 1},
+        {"item": "iron_strips", "quantity": 3}
+      ],
+      "category": "weapon",
+      "base_price": 200,
+      "sprite": null
+    },
+
+    {
+      "id": "wooden_bow_limb",
+      "name": "Деревянные плечи лука",
+      "display_name": "Рецепт: Деревянные плечи лука",
+      "quality": "common",
+      "description": "Изготовление деревянных плеч для лука. Требуется 3 древесины",
+      "station": "workbench",
+      "result_item": "wooden_bow_limb",
+      "result_quantity": 1,
+      "required_level": 2,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "wood", "quantity": 3}
+      ],
+      "category": "tool",
+      "base_price": 40,
+      "sprite": null
+    },
+    {
+      "id": "reinforced_bow_limb",
+      "name": "Укрепленные плечи лука",
+      "display_name": "Рецепт: Укрепленные плечи лука",
+      "quality": "common",
+      "description": "Изготовление укрепленных плеч для лука. Требуется 1 деревянные плечи лука, 2 звериных жилы и 2 кожаных полоски",
+      "station": "workbench",
+      "result_item": "reinforced_bow_limb",
+      "result_quantity": 1,
+      "required_level": 5,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "wooden_bow_limb", "quantity": 1},
+        {"item": "animal_sinew", "quantity": 2},
+        {"item": "leather_strips", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 80,
+      "sprite": null
+    },
+    {
+      "id": "composite_bow_limb",
+      "name": "Композитные плечи лука",
+      "display_name": "Рецепт: Композитные плечи лука",
+      "quality": "uncommon",
+      "description": "Изготовление композитных плеч для лука. Требуется 1 укрепленные плечи, 1 рога оленя и 3 звериных жилы",
+      "station": "workbench",
+      "result_item": "composite_bow_limb",
+      "result_quantity": 1,
+      "required_level": 9,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "reinforced_bow_limb", "quantity": 1},
+        {"item": "deer_antlers", "quantity": 1},
+        {"item": "animal_sinew", "quantity": 3}
+      ],
+      "category": "tool",
+      "base_price": 140,
+      "sprite": null
+    },
+    {
+      "id": "poor_bow",
+      "name": "Лук (плохое качество)",
+      "display_name": "Рецепт: Лук (плохое качество)",
+      "quality": "poor",
+      "description": "Изготовление простого лука. Требуется 1 деревянные плечи лука и 1 тетива",
+      "station": "workbench",
+      "result_item": "poor_bow",
+      "result_quantity": 1,
+      "required_level": 3,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "wooden_bow_limb", "quantity": 1},
+        {"item": "bowstring", "quantity": 1}
+      ],
+      "category": "weapon",
+      "base_price": 50,
+      "sprite": null
+    },
+    {
+      "id": "bow",
+      "name": "Лук (обычное качество)",
+      "display_name": "Рецепт: Лук (обычное качество)",
+      "quality": "common",
+      "description": "Изготовление лука обычного качества. Требуется 1 укрепленные плечи лука, 1 тетива и 2 кожаных полоски",
+      "station": "workbench",
+      "result_item": "bow",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "reinforced_bow_limb", "quantity": 1},
+        {"item": "bowstring", "quantity": 1},
+        {"item": "leather_strips", "quantity": 2}
+      ],
+      "category": "weapon",
+      "base_price": 95,
+      "sprite": null
+    },
+    {
+      "id": "fine_bow",
+      "name": "Лук (необычное качество)",
+      "display_name": "Рецепт: Лук (необычное качество)",
+      "quality": "uncommon",
+      "description": "Изготовление качественного лука. Требуется 1 композитные плечи лука, 1 тетива и 3 кожаных полоски",
+      "station": "workbench",
+      "result_item": "fine_bow",
+      "result_quantity": 1,
+      "required_level": 10,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "composite_bow_limb", "quantity": 1},
+        {"item": "bowstring", "quantity": 1},
+        {"item": "leather_strips", "quantity": 3}
+      ],
+      "category": "weapon",
+      "base_price": 170,
+      "sprite": null
+    },
+
+    {
+      "id": "wooden_staff_core",
+      "name": "Деревянный стержень посоха",
+      "display_name": "Рецепт: Деревянный стержень посоха",
+      "quality": "common",
+      "description": "Изготовление деревянного стержня для посоха. Требуется 4 древесины",
+      "station": "workbench",
+      "result_item": "wooden_staff_core",
+      "result_quantity": 1,
+      "required_level": 1,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "wood", "quantity": 4}
+      ],
+      "category": "tool",
+      "base_price": 30,
+      "sprite": null
+    },
+    {
+      "id": "iron_staff_core",
+      "name": "Железный стержень посоха",
+      "display_name": "Рецепт: Железный стержень посоха",
+      "quality": "common",
+      "description": "Изготовление железного стержня для посоха. Требуется 1 деревянный стержень и 2 железных слитка",
+      "station": "forge",
+      "result_item": "iron_staff_core",
+      "result_quantity": 1,
+      "required_level": 5,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "wooden_staff_core", "quantity": 1},
+        {"item": "iron_ingot", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 60,
+      "sprite": null
+    },
+    {
+      "id": "steel_staff_core",
+      "name": "Стальной стержень посоха",
+      "display_name": "Рецепт: Стальной стержень посоха",
+      "quality": "uncommon",
+      "description": "Изготовление стального стержня для посоха. Требуется 1 железный стержень и 2 стальных слитка",
+      "station": "forge",
+      "result_item": "steel_staff_core",
+      "result_quantity": 1,
+      "required_level": 9,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "iron_staff_core", "quantity": 1},
+        {"item": "steel_ingot", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 110,
+      "sprite": null
+    },
+    {
+      "id": "staff_focus",
+      "name": "Навершие посоха",
+      "display_name": "Рецепт: Навершие посоха",
+      "quality": "common",
+      "description": "Изготовление простого навершия для посоха. Требуется 1 медный слиток и 2 древесины",
+      "station": "workbench",
+      "result_item": "staff_focus",
+      "result_quantity": 1,
+      "required_level": 2,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 1},
+        {"item": "wood", "quantity": 2}
+      ],
+      "category": "tool",
+      "base_price": 45,
+      "sprite": null
+    },
+    {
+      "id": "magic_staff_focus",
+      "name": "Магическое навершие",
+      "display_name": "Рецепт: Магическое навершие",
+      "quality": "uncommon",
+      "description": "Изготовление магического навершия для посоха. Требуется 1 навершие и 1 магический кристалл",
+      "station": "enchanting_table",
+      "result_item": "magic_staff_focus",
+      "result_quantity": 1,
+      "required_level": 8,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "staff_focus", "quantity": 1},
+        {"item": "magic_crystal", "quantity": 1}
+      ],
+      "category": "tool",
+      "base_price": 120,
+      "sprite": null
+    },
+    {
+      "id": "poor_staff",
+      "name": "Посох (плохое качество)",
+      "display_name": "Рецепт: Посох (плохое качество)",
+      "quality": "poor",
+      "description": "Изготовление простого посоха. Требуется 1 деревянный стержень посоха",
+      "station": "workbench",
+      "result_item": "poor_staff",
+      "result_quantity": 1,
+      "required_level": 2,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "wooden_staff_core", "quantity": 1}
+      ],
+      "category": "weapon",
+      "base_price": 45,
+      "sprite": null
+    },
+    {
+      "id": "staff",
+      "name": "Посох (обычное качество)",
+      "display_name": "Рецепт: Посох (обычное качество)",
+      "quality": "common",
+      "description": "Изготовление посоха обычного качества. Требуется 1 железный стержень и 1 навершие",
+      "station": "workbench",
+      "result_item": "staff",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "iron_staff_core", "quantity": 1},
+        {"item": "staff_focus", "quantity": 1}
+      ],
+      "category": "weapon",
+      "base_price": 85,
+      "sprite": null
+    },
+    {
+      "id": "fine_staff",
+      "name": "Посох (необычное качество)",
+      "display_name": "Рецепт: Посох (необычное качество)",
+      "quality": "uncommon",
+      "description": "Изготовление качественного посоха. Требуется 1 стальной стержень и 1 магическое навершие",
+      "station": "workbench",
+      "result_item": "fine_staff",
+      "result_quantity": 1,
+      "required_level": 10,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "steel_staff_core", "quantity": 1},
+        {"item": "magic_staff_focus", "quantity": 1}
+      ],
+      "category": "weapon",
+      "base_price": 160,
+      "sprite": null
+    },
+
+    {
+      "id": "greater_health_potion_recipe",
+      "name": "Большое зелье здоровья",
+      "display_name": "Рецепт: Большое зелье здоровья",
+      "quality": "uncommon",
+      "description": "Изготовление большого зелья здоровья. Восстанавливает 200 здоровья. Требуется 4 ромашки, 2 мяты и 1 женьшень",
+      "station": "alchemy_table",
+      "result_item": "greater_health_potion",
+      "result_quantity": 1,
+      "required_level": 10,
+      "required_skill": "alchemy",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "chamomile", "quantity": 4},
+        {"item": "mint", "quantity": 2},
+        {"item": "ginseng", "quantity": 1}
+      ],
+      "category": "alchemy",
+      "base_price": 140,
+      "sprite": null
+    },
+    {
+      "id": "greater_mana_potion_recipe",
+      "name": "Большое зелье маны",
+      "display_name": "Рецепт: Большое зелье маны",
+      "quality": "uncommon",
+      "description": "Изготовление большого зелья маны. Восстанавливает 120 маны. Требуется 4 шалфея, 2 женьшеня",
+      "station": "alchemy_table",
+      "result_item": "greater_mana_potion",
+      "result_quantity": 1,
+      "required_level": 12,
+      "required_skill": "alchemy",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "sage", "quantity": 4},
+        {"item": "ginseng", "quantity": 2}
+      ],
+      "category": "alchemy",
+      "base_price": 120,
+      "sprite": null
+    },
+    {
+      "id": "greater_stamina_potion_recipe",
+      "name": "Большое зелье выносливости",
+      "display_name": "Рецепт: Большое зелье выносливости",
+      "quality": "uncommon",
+      "description": "Изготовление большого зелья выносливости. Восстанавливает 200 выносливости. Требуется 4 мяты, 2 женьшеня",
+      "station": "alchemy_table",
+      "result_item": "greater_stamina_potion",
+      "result_quantity": 1,
+      "required_level": 9,
+      "required_skill": "alchemy",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "mint", "quantity": 4},
+        {"item": "ginseng", "quantity": 2}
+      ],
+      "category": "alchemy",
+      "base_price": 100,
+      "sprite": null
     }
   ],
 

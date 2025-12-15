@@ -83,6 +83,17 @@
     "bowstring": {"name": "Тетива", "value": 25, "weight": 0.2},
     "short_horn_handle": {"name": "Короткая роговая рукоять", "value": 70, "weight": 0.6},
 
+    "wooden_bow_limb": {"name": "Деревянные плечи лука", "value": 35, "weight": 0.8},
+    "reinforced_bow_limb": {"name": "Укрепленные плечи лука", "value": 70, "weight": 0.9},
+    "composite_bow_limb": {"name": "Композитные плечи лука", "value": 120, "weight": 0.7},
+
+    "wooden_staff_core": {"name": "Деревянный стержень посоха", "value": 25, "weight": 1.2},
+    "iron_staff_core": {"name": "Железный стержень посоха", "value": 50, "weight": 1.5},
+    "steel_staff_core": {"name": "Стальной стержень посоха", "value": 90, "weight": 1.4},
+
+    "staff_focus": {"name": "Навершие посоха", "value": 40, "weight": 0.3},
+    "magic_staff_focus": {"name": "Магическое навершие", "value": 100, "weight": 0.4},
+
     "ancient_coin": {"name": "Древняя монета", "value": 30, "weight": 0.5},
     "artifact_fragment": {"name": "Фрагмент артефакта", "value": 80, "weight": 0.5},
     "magic_crystal": {"name": "Магический кристалл", "value": 150, "weight": 0.5},
@@ -148,6 +159,20 @@
       "effect_type": "stamina",
       "effect_value": 100,
       "value": 40,
+      "weight": 0.2
+    },
+    "greater_mana_potion": {
+      "name": "Большое зелье маны",
+      "effect_type": "mana",
+      "effect_value": 120,
+      "value": 100,
+      "weight": 0.2
+    },
+    "greater_stamina_potion": {
+      "name": "Большое зелье выносливости",
+      "effect_type": "stamina",
+      "effect_value": 200,
+      "value": 80,
       "weight": 0.2
     },
     "elixir_of_life": {
@@ -319,6 +344,116 @@
       "stats_bonus": {"dexterity": 7, "luck": 5},
       "param_bonus": {"stamina": 8},
       "skill_bonus": {"rapid_fire": 2, "piercing_arrow": 2}
+    },
+
+    "axe": {
+      "name": "Топор",
+      "weapon_type": "AXE",
+      "damage": 14,
+      "value": 90,
+      "quality": "COMMON"
+    },
+    "fine_axe": {
+      "name": "Топор",
+      "weapon_type": "AXE",
+      "damage": 20,
+      "value": 160,
+      "quality": "UNCOMMON",
+      "stats_bonus": {"strength": 1}
+    },
+    "rare_axe": {
+      "name": "Топор",
+      "weapon_type": "AXE",
+      "damage": 27,
+      "value": 280,
+      "quality": "RARE",
+      "stats_bonus": {"strength": 3, "constitution": 1}
+    },
+
+    "spear": {
+      "name": "Копье",
+      "weapon_type": "SPEAR",
+      "damage": 14,
+      "value": 100,
+      "quality": "COMMON"
+    },
+    "fine_spear": {
+      "name": "Копье",
+      "weapon_type": "SPEAR",
+      "damage": 20,
+      "value": 180,
+      "quality": "UNCOMMON",
+      "stats_bonus": {"dexterity": 1}
+    },
+    "rare_spear": {
+      "name": "Копье",
+      "weapon_type": "SPEAR",
+      "damage": 27,
+      "value": 310,
+      "quality": "RARE",
+      "stats_bonus": {"dexterity": 2, "strength": 2}
+    },
+
+    "poor_bow": {
+      "name": "Лук",
+      "weapon_type": "BOW",
+      "damage": 6,
+      "value": 45,
+      "quality": "POOR"
+    },
+    "bow": {
+      "name": "Лук",
+      "weapon_type": "BOW",
+      "damage": 10,
+      "value": 85,
+      "quality": "COMMON"
+    },
+    "fine_bow": {
+      "name": "Лук",
+      "weapon_type": "BOW",
+      "damage": 16,
+      "value": 150,
+      "quality": "UNCOMMON",
+      "stats_bonus": {"dexterity": 1}
+    },
+    "rare_bow": {
+      "name": "Лук",
+      "weapon_type": "BOW",
+      "damage": 23,
+      "value": 260,
+      "quality": "RARE",
+      "stats_bonus": {"dexterity": 3, "luck": 1}
+    },
+
+    "poor_staff": {
+      "name": "Посох",
+      "weapon_type": "STAFF",
+      "damage": 5,
+      "value": 40,
+      "quality": "POOR"
+    },
+    "staff": {
+      "name": "Посох",
+      "weapon_type": "STAFF",
+      "damage": 9,
+      "value": 75,
+      "quality": "COMMON"
+    },
+    "fine_staff": {
+      "name": "Посох",
+      "weapon_type": "STAFF",
+      "damage": 14,
+      "value": 140,
+      "quality": "UNCOMMON",
+      "stats_bonus": {"intelligence": 1}
+    },
+    "rare_staff": {
+      "name": "Посох",
+      "weapon_type": "STAFF",
+      "damage": 20,
+      "value": 250,
+      "quality": "RARE",
+      "stats_bonus": {"intelligence": 2, "spirit": 2}
     }
   },
 
