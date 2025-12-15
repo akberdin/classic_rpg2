@@ -1983,6 +1983,877 @@
       "category": "alchemy",
       "base_price": 100,
       "sprite": null
+    },
+
+    {"_comment": "=== КОЛЬЦА - базовые ==="},
+    {
+      "id": "copper_ring",
+      "name": "Медное кольцо",
+      "display_name": "Рецепт: Медное кольцо",
+      "quality": "common",
+      "description": "Простое медное кольцо. Требуется 2 медных слитка",
+      "station": "forge",
+      "result_item": "copper_ring",
+      "result_quantity": 1,
+      "required_level": 3,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 2}
+      ],
+      "category": "jewelry",
+      "base_price": 30,
+      "sprite": null
+    },
+    {
+      "id": "silver_ring",
+      "name": "Серебряное кольцо",
+      "display_name": "Рецепт: Серебряное кольцо",
+      "quality": "uncommon",
+      "description": "Изящное серебряное кольцо. Требуется 2 серебряных слитка",
+      "station": "forge",
+      "result_item": "silver_ring",
+      "result_quantity": 1,
+      "required_level": 12,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 2}
+      ],
+      "category": "jewelry",
+      "base_price": 120,
+      "sprite": null
+    },
+    {
+      "id": "gold_ring",
+      "name": "Золотое кольцо",
+      "display_name": "Рецепт: Золотое кольцо",
+      "quality": "rare",
+      "description": "Роскошное золотое кольцо. Требуется 2 золотых слитка",
+      "station": "forge",
+      "result_item": "gold_ring",
+      "result_quantity": 1,
+      "required_level": 18,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 2}
+      ],
+      "category": "jewelry",
+      "base_price": 300,
+      "sprite": null
+    },
+
+    {"_comment": "=== КОЛЬЦА - с камнями (медные) ==="},
+    {
+      "id": "copper_ring_amethyst",
+      "name": "Медное кольцо с аметистом",
+      "display_name": "Рецепт: Медное кольцо с аметистом",
+      "quality": "common",
+      "description": "Медное кольцо с огранённым аметистом. Требуется 2 медных слитка и 1 огранённый аметист",
+      "station": "forge",
+      "result_item": "copper_ring_amethyst",
+      "result_quantity": 1,
+      "required_level": 5,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 2},
+        {"item": "cut_amethyst", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 70,
+      "sprite": null
+    },
+    {
+      "id": "copper_ring_ruby",
+      "name": "Медное кольцо с рубином",
+      "display_name": "Рецепт: Медное кольцо с рубином",
+      "quality": "common",
+      "description": "Медное кольцо с огранённым рубином. Требуется 2 медных слитка и 1 огранённый рубин",
+      "station": "forge",
+      "result_item": "copper_ring_ruby",
+      "result_quantity": 1,
+      "required_level": 5,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 2},
+        {"item": "cut_ruby", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 80,
+      "sprite": null
+    },
+    {
+      "id": "copper_ring_sapphire",
+      "name": "Медное кольцо с сапфиром",
+      "display_name": "Рецепт: Медное кольцо с сапфиром",
+      "quality": "common",
+      "description": "Медное кольцо с огранённым сапфиром. Требуется 2 медных слитка и 1 огранённый сапфир",
+      "station": "forge",
+      "result_item": "copper_ring_sapphire",
+      "result_quantity": 1,
+      "required_level": 5,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 2},
+        {"item": "cut_sapphire", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 80,
+      "sprite": null
+    },
+    {
+      "id": "copper_ring_emerald",
+      "name": "Медное кольцо с изумрудом",
+      "display_name": "Рецепт: Медное кольцо с изумрудом",
+      "quality": "common",
+      "description": "Медное кольцо с огранённым изумрудом. Требуется 2 медных слитка и 1 огранённый изумруд",
+      "station": "forge",
+      "result_item": "copper_ring_emerald",
+      "result_quantity": 1,
+      "required_level": 5,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 2},
+        {"item": "cut_emerald", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 100,
+      "sprite": null
+    },
+    {
+      "id": "copper_ring_topaz",
+      "name": "Медное кольцо с топазом",
+      "display_name": "Рецепт: Медное кольцо с топазом",
+      "quality": "common",
+      "description": "Медное кольцо с огранённым топазом. Требуется 2 медных слитка и 1 огранённый топаз",
+      "station": "forge",
+      "result_item": "copper_ring_topaz",
+      "result_quantity": 1,
+      "required_level": 5,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 2},
+        {"item": "cut_topaz", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 75,
+      "sprite": null
+    },
+    {
+      "id": "copper_ring_diamond",
+      "name": "Медное кольцо с алмазом",
+      "display_name": "Рецепт: Медное кольцо с алмазом",
+      "quality": "uncommon",
+      "description": "Медное кольцо с огранённым алмазом. Требуется 2 медных слитка и 1 огранённый алмаз",
+      "station": "forge",
+      "result_item": "copper_ring_diamond",
+      "result_quantity": 1,
+      "required_level": 8,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 2},
+        {"item": "cut_diamond", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 200,
+      "sprite": null
+    },
+
+    {"_comment": "=== КОЛЬЦА - с камнями (серебряные) ==="},
+    {
+      "id": "silver_ring_amethyst",
+      "name": "Серебряное кольцо с аметистом",
+      "display_name": "Рецепт: Серебряное кольцо с аметистом",
+      "quality": "uncommon",
+      "description": "Серебряное кольцо с совершенным аметистом. Требуется 2 серебряных слитка и 1 совершенный аметист",
+      "station": "forge",
+      "result_item": "silver_ring_amethyst",
+      "result_quantity": 1,
+      "required_level": 14,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 2},
+        {"item": "perfect_amethyst", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 200,
+      "sprite": null
+    },
+    {
+      "id": "silver_ring_ruby",
+      "name": "Серебряное кольцо с рубином",
+      "display_name": "Рецепт: Серебряное кольцо с рубином",
+      "quality": "uncommon",
+      "description": "Серебряное кольцо с совершенным рубином. Требуется 2 серебряных слитка и 1 совершенный рубин",
+      "station": "forge",
+      "result_item": "silver_ring_ruby",
+      "result_quantity": 1,
+      "required_level": 14,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 2},
+        {"item": "perfect_ruby", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 220,
+      "sprite": null
+    },
+    {
+      "id": "silver_ring_sapphire",
+      "name": "Серебряное кольцо с сапфиром",
+      "display_name": "Рецепт: Серебряное кольцо с сапфиром",
+      "quality": "uncommon",
+      "description": "Серебряное кольцо с совершенным сапфиром. Требуется 2 серебряных слитка и 1 совершенный сапфир",
+      "station": "forge",
+      "result_item": "silver_ring_sapphire",
+      "result_quantity": 1,
+      "required_level": 14,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 2},
+        {"item": "perfect_sapphire", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 220,
+      "sprite": null
+    },
+    {
+      "id": "silver_ring_emerald",
+      "name": "Серебряное кольцо с изумрудом",
+      "display_name": "Рецепт: Серебряное кольцо с изумрудом",
+      "quality": "uncommon",
+      "description": "Серебряное кольцо с совершенным изумрудом. Требуется 2 серебряных слитка и 1 совершенный изумруд",
+      "station": "forge",
+      "result_item": "silver_ring_emerald",
+      "result_quantity": 1,
+      "required_level": 14,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 2},
+        {"item": "perfect_emerald", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 250,
+      "sprite": null
+    },
+    {
+      "id": "silver_ring_topaz",
+      "name": "Серебряное кольцо с топазом",
+      "display_name": "Рецепт: Серебряное кольцо с топазом",
+      "quality": "uncommon",
+      "description": "Серебряное кольцо с совершенным топазом. Требуется 2 серебряных слитка и 1 совершенный топаз",
+      "station": "forge",
+      "result_item": "silver_ring_topaz",
+      "result_quantity": 1,
+      "required_level": 14,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 2},
+        {"item": "perfect_topaz", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 210,
+      "sprite": null
+    },
+    {
+      "id": "silver_ring_diamond",
+      "name": "Серебряное кольцо с алмазом",
+      "display_name": "Рецепт: Серебряное кольцо с алмазом",
+      "quality": "rare",
+      "description": "Серебряное кольцо с совершенным алмазом. Требуется 2 серебряных слитка и 1 совершенный алмаз",
+      "station": "forge",
+      "result_item": "silver_ring_diamond",
+      "result_quantity": 1,
+      "required_level": 16,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 2},
+        {"item": "perfect_diamond", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 450,
+      "sprite": null
+    },
+
+    {"_comment": "=== КОЛЬЦА - с камнями (золотые) ==="},
+    {
+      "id": "gold_ring_amethyst",
+      "name": "Золотое кольцо с аметистом",
+      "display_name": "Рецепт: Золотое кольцо с аметистом",
+      "quality": "rare",
+      "description": "Золотое кольцо с совершенным аметистом. Требуется 2 золотых слитка и 1 совершенный аметист",
+      "station": "forge",
+      "result_item": "gold_ring_amethyst",
+      "result_quantity": 1,
+      "required_level": 20,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 2},
+        {"item": "perfect_amethyst", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 400,
+      "sprite": null
+    },
+    {
+      "id": "gold_ring_ruby",
+      "name": "Золотое кольцо с рубином",
+      "display_name": "Рецепт: Золотое кольцо с рубином",
+      "quality": "rare",
+      "description": "Золотое кольцо с совершенным рубином. Требуется 2 золотых слитка и 1 совершенный рубин",
+      "station": "forge",
+      "result_item": "gold_ring_ruby",
+      "result_quantity": 1,
+      "required_level": 20,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 2},
+        {"item": "perfect_ruby", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 420,
+      "sprite": null
+    },
+    {
+      "id": "gold_ring_sapphire",
+      "name": "Золотое кольцо с сапфиром",
+      "display_name": "Рецепт: Золотое кольцо с сапфиром",
+      "quality": "rare",
+      "description": "Золотое кольцо с совершенным сапфиром. Требуется 2 золотых слитка и 1 совершенный сапфир",
+      "station": "forge",
+      "result_item": "gold_ring_sapphire",
+      "result_quantity": 1,
+      "required_level": 20,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 2},
+        {"item": "perfect_sapphire", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 420,
+      "sprite": null
+    },
+    {
+      "id": "gold_ring_emerald",
+      "name": "Золотое кольцо с изумрудом",
+      "display_name": "Рецепт: Золотое кольцо с изумрудом",
+      "quality": "rare",
+      "description": "Золотое кольцо с совершенным изумрудом. Требуется 2 золотых слитка и 1 совершенный изумруд",
+      "station": "forge",
+      "result_item": "gold_ring_emerald",
+      "result_quantity": 1,
+      "required_level": 20,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 2},
+        {"item": "perfect_emerald", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 450,
+      "sprite": null
+    },
+    {
+      "id": "gold_ring_topaz",
+      "name": "Золотое кольцо с топазом",
+      "display_name": "Рецепт: Золотое кольцо с топазом",
+      "quality": "rare",
+      "description": "Золотое кольцо с совершенным топазом. Требуется 2 золотых слитка и 1 совершенный топаз",
+      "station": "forge",
+      "result_item": "gold_ring_topaz",
+      "result_quantity": 1,
+      "required_level": 20,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 2},
+        {"item": "perfect_topaz", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 410,
+      "sprite": null
+    },
+    {
+      "id": "gold_ring_diamond",
+      "name": "Золотое кольцо с алмазом",
+      "display_name": "Рецепт: Золотое кольцо с алмазом",
+      "quality": "epic",
+      "description": "Золотое кольцо с совершенным алмазом. Требуется 2 золотых слитка и 1 совершенный алмаз",
+      "station": "forge",
+      "result_item": "gold_ring_diamond",
+      "result_quantity": 1,
+      "required_level": 22,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 4,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 2},
+        {"item": "perfect_diamond", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 800,
+      "sprite": null
+    },
+
+    {"_comment": "=== АМУЛЕТЫ - базовые ==="},
+    {
+      "id": "copper_amulet",
+      "name": "Медный амулет",
+      "display_name": "Рецепт: Медный амулет",
+      "quality": "common",
+      "description": "Простой медный амулет. Требуется 3 медных слитка и 1 полоска кожи",
+      "station": "forge",
+      "result_item": "copper_amulet",
+      "result_quantity": 1,
+      "required_level": 4,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 50,
+      "sprite": null
+    },
+    {
+      "id": "silver_amulet",
+      "name": "Серебряный амулет",
+      "display_name": "Рецепт: Серебряный амулет",
+      "quality": "uncommon",
+      "description": "Изящный серебряный амулет. Требуется 3 серебряных слитка и 1 полоска кожи",
+      "station": "forge",
+      "result_item": "silver_amulet",
+      "result_quantity": 1,
+      "required_level": 13,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 180,
+      "sprite": null
+    },
+    {
+      "id": "gold_amulet",
+      "name": "Золотой амулет",
+      "display_name": "Рецепт: Золотой амулет",
+      "quality": "rare",
+      "description": "Роскошный золотой амулет. Требуется 3 золотых слитка и 1 полоска кожи",
+      "station": "forge",
+      "result_item": "gold_amulet",
+      "result_quantity": 1,
+      "required_level": 19,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 400,
+      "sprite": null
+    },
+
+    {"_comment": "=== АМУЛЕТЫ - с камнями (медные) ==="},
+    {
+      "id": "copper_amulet_amethyst",
+      "name": "Медный амулет с аметистом",
+      "display_name": "Рецепт: Медный амулет с аметистом",
+      "quality": "common",
+      "description": "Медный амулет с огранённым аметистом. Требуется 3 медных слитка, 1 полоска кожи и 1 огранённый аметист",
+      "station": "forge",
+      "result_item": "copper_amulet_amethyst",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "cut_amethyst", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 100,
+      "sprite": null
+    },
+    {
+      "id": "copper_amulet_ruby",
+      "name": "Медный амулет с рубином",
+      "display_name": "Рецепт: Медный амулет с рубином",
+      "quality": "common",
+      "description": "Медный амулет с огранённым рубином. Требуется 3 медных слитка, 1 полоска кожи и 1 огранённый рубин",
+      "station": "forge",
+      "result_item": "copper_amulet_ruby",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "cut_ruby", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 110,
+      "sprite": null
+    },
+    {
+      "id": "copper_amulet_sapphire",
+      "name": "Медный амулет с сапфиром",
+      "display_name": "Рецепт: Медный амулет с сапфиром",
+      "quality": "common",
+      "description": "Медный амулет с огранённым сапфиром. Требуется 3 медных слитка, 1 полоска кожи и 1 огранённый сапфир",
+      "station": "forge",
+      "result_item": "copper_amulet_sapphire",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "cut_sapphire", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 110,
+      "sprite": null
+    },
+    {
+      "id": "copper_amulet_emerald",
+      "name": "Медный амулет с изумрудом",
+      "display_name": "Рецепт: Медный амулет с изумрудом",
+      "quality": "common",
+      "description": "Медный амулет с огранённым изумрудом. Требуется 3 медных слитка, 1 полоска кожи и 1 огранённый изумруд",
+      "station": "forge",
+      "result_item": "copper_amulet_emerald",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "cut_emerald", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 130,
+      "sprite": null
+    },
+    {
+      "id": "copper_amulet_topaz",
+      "name": "Медный амулет с топазом",
+      "display_name": "Рецепт: Медный амулет с топазом",
+      "quality": "common",
+      "description": "Медный амулет с огранённым топазом. Требуется 3 медных слитка, 1 полоска кожи и 1 огранённый топаз",
+      "station": "forge",
+      "result_item": "copper_amulet_topaz",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "cut_topaz", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 105,
+      "sprite": null
+    },
+    {
+      "id": "copper_amulet_diamond",
+      "name": "Медный амулет с алмазом",
+      "display_name": "Рецепт: Медный амулет с алмазом",
+      "quality": "uncommon",
+      "description": "Медный амулет с огранённым алмазом. Требуется 3 медных слитка, 1 полоска кожи и 1 огранённый алмаз",
+      "station": "forge",
+      "result_item": "copper_amulet_diamond",
+      "result_quantity": 1,
+      "required_level": 9,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "copper_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "cut_diamond", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 250,
+      "sprite": null
+    },
+
+    {"_comment": "=== АМУЛЕТЫ - с камнями (серебряные) ==="},
+    {
+      "id": "silver_amulet_amethyst",
+      "name": "Серебряный амулет с аметистом",
+      "display_name": "Рецепт: Серебряный амулет с аметистом",
+      "quality": "uncommon",
+      "description": "Серебряный амулет с совершенным аметистом. Требуется 3 серебряных слитка, 1 полоска кожи и 1 совершенный аметист",
+      "station": "forge",
+      "result_item": "silver_amulet_amethyst",
+      "result_quantity": 1,
+      "required_level": 15,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "perfect_amethyst", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 280,
+      "sprite": null
+    },
+    {
+      "id": "silver_amulet_ruby",
+      "name": "Серебряный амулет с рубином",
+      "display_name": "Рецепт: Серебряный амулет с рубином",
+      "quality": "uncommon",
+      "description": "Серебряный амулет с совершенным рубином. Требуется 3 серебряных слитка, 1 полоска кожи и 1 совершенный рубин",
+      "station": "forge",
+      "result_item": "silver_amulet_ruby",
+      "result_quantity": 1,
+      "required_level": 15,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "perfect_ruby", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 300,
+      "sprite": null
+    },
+    {
+      "id": "silver_amulet_sapphire",
+      "name": "Серебряный амулет с сапфиром",
+      "display_name": "Рецепт: Серебряный амулет с сапфиром",
+      "quality": "uncommon",
+      "description": "Серебряный амулет с совершенным сапфиром. Требуется 3 серебряных слитка, 1 полоска кожи и 1 совершенный сапфир",
+      "station": "forge",
+      "result_item": "silver_amulet_sapphire",
+      "result_quantity": 1,
+      "required_level": 15,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "perfect_sapphire", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 300,
+      "sprite": null
+    },
+    {
+      "id": "silver_amulet_emerald",
+      "name": "Серебряный амулет с изумрудом",
+      "display_name": "Рецепт: Серебряный амулет с изумрудом",
+      "quality": "uncommon",
+      "description": "Серебряный амулет с совершенным изумрудом. Требуется 3 серебряных слитка, 1 полоска кожи и 1 совершенный изумруд",
+      "station": "forge",
+      "result_item": "silver_amulet_emerald",
+      "result_quantity": 1,
+      "required_level": 15,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "perfect_emerald", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 330,
+      "sprite": null
+    },
+    {
+      "id": "silver_amulet_topaz",
+      "name": "Серебряный амулет с топазом",
+      "display_name": "Рецепт: Серебряный амулет с топазом",
+      "quality": "uncommon",
+      "description": "Серебряный амулет с совершенным топазом. Требуется 3 серебряных слитка, 1 полоска кожи и 1 совершенный топаз",
+      "station": "forge",
+      "result_item": "silver_amulet_topaz",
+      "result_quantity": 1,
+      "required_level": 15,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "perfect_topaz", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 290,
+      "sprite": null
+    },
+    {
+      "id": "silver_amulet_diamond",
+      "name": "Серебряный амулет с алмазом",
+      "display_name": "Рецепт: Серебряный амулет с алмазом",
+      "quality": "rare",
+      "description": "Серебряный амулет с совершенным алмазом. Требуется 3 серебряных слитка, 1 полоска кожи и 1 совершенный алмаз",
+      "station": "forge",
+      "result_item": "silver_amulet_diamond",
+      "result_quantity": 1,
+      "required_level": 17,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "silver_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "perfect_diamond", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 550,
+      "sprite": null
+    },
+
+    {"_comment": "=== АМУЛЕТЫ - с камнями (золотые) ==="},
+    {
+      "id": "gold_amulet_amethyst",
+      "name": "Золотой амулет с аметистом",
+      "display_name": "Рецепт: Золотой амулет с аметистом",
+      "quality": "rare",
+      "description": "Золотой амулет с совершенным аметистом. Требуется 3 золотых слитка, 1 полоска кожи и 1 совершенный аметист",
+      "station": "forge",
+      "result_item": "gold_amulet_amethyst",
+      "result_quantity": 1,
+      "required_level": 21,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "perfect_amethyst", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 530,
+      "sprite": null
+    },
+    {
+      "id": "gold_amulet_ruby",
+      "name": "Золотой амулет с рубином",
+      "display_name": "Рецепт: Золотой амулет с рубином",
+      "quality": "rare",
+      "description": "Золотой амулет с совершенным рубином. Требуется 3 золотых слитка, 1 полоска кожи и 1 совершенный рубин",
+      "station": "forge",
+      "result_item": "gold_amulet_ruby",
+      "result_quantity": 1,
+      "required_level": 21,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "perfect_ruby", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 550,
+      "sprite": null
+    },
+    {
+      "id": "gold_amulet_sapphire",
+      "name": "Золотой амулет с сапфиром",
+      "display_name": "Рецепт: Золотой амулет с сапфиром",
+      "quality": "rare",
+      "description": "Золотой амулет с совершенным сапфиром. Требуется 3 золотых слитка, 1 полоска кожи и 1 совершенный сапфир",
+      "station": "forge",
+      "result_item": "gold_amulet_sapphire",
+      "result_quantity": 1,
+      "required_level": 21,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "perfect_sapphire", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 550,
+      "sprite": null
+    },
+    {
+      "id": "gold_amulet_emerald",
+      "name": "Золотой амулет с изумрудом",
+      "display_name": "Рецепт: Золотой амулет с изумрудом",
+      "quality": "rare",
+      "description": "Золотой амулет с совершенным изумрудом. Требуется 3 золотых слитка, 1 полоска кожи и 1 совершенный изумруд",
+      "station": "forge",
+      "result_item": "gold_amulet_emerald",
+      "result_quantity": 1,
+      "required_level": 21,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "perfect_emerald", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 580,
+      "sprite": null
+    },
+    {
+      "id": "gold_amulet_topaz",
+      "name": "Золотой амулет с топазом",
+      "display_name": "Рецепт: Золотой амулет с топазом",
+      "quality": "rare",
+      "description": "Золотой амулет с совершенным топазом. Требуется 3 золотых слитка, 1 полоска кожи и 1 совершенный топаз",
+      "station": "forge",
+      "result_item": "gold_amulet_topaz",
+      "result_quantity": 1,
+      "required_level": 21,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "perfect_topaz", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 540,
+      "sprite": null
+    },
+    {
+      "id": "gold_amulet_diamond",
+      "name": "Золотой амулет с алмазом",
+      "display_name": "Рецепт: Золотой амулет с алмазом",
+      "quality": "epic",
+      "description": "Золотой амулет с совершенным алмазом. Требуется 3 золотых слитка, 1 полоска кожи и 1 совершенный алмаз",
+      "station": "forge",
+      "result_item": "gold_amulet_diamond",
+      "result_quantity": 1,
+      "required_level": 23,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 4,
+      "ingredients": [
+        {"item": "gold_ingot", "quantity": 3},
+        {"item": "leather_strips", "quantity": 1},
+        {"item": "perfect_diamond", "quantity": 1}
+      ],
+      "category": "jewelry",
+      "base_price": 950,
+      "sprite": null
     }
   ],
 

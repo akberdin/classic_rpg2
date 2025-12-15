@@ -70,6 +70,16 @@ class Mining(Profession):
             "gold_ore": 20,
             "mithril_ore": 10
         }
+        # Драгоценные камни: base_chance, quality_weights (shard, raw, cut, perfect)
+        self.gem_types = {
+            "amethyst": {"base_chance": 5, "weights": [50, 35, 12, 3]},
+            "ruby": {"base_chance": 4, "weights": [50, 35, 12, 3]},
+            "sapphire": {"base_chance": 4, "weights": [50, 35, 12, 3]},
+            "emerald": {"base_chance": 3, "weights": [45, 35, 15, 5]},
+            "topaz": {"base_chance": 4.5, "weights": [50, 35, 12, 3]},
+            "diamond": {"base_chance": 1, "weights": [60, 30, 8, 2]}
+        }
+        self.gem_qualities = ["shard", "raw", "cut", "perfect"]
 
     def can_use(self, player, location):
         """
@@ -136,6 +146,42 @@ class Mining(Profession):
                 # Количество зависит от ранга умения (1-3 на низких рангах, до 5 на высоких)
                 quantity = random.randint(1, min(5, 1 + effective_rank // 2))
                 resources.append((get_item(ore_type), quantity))
+
+        # Шанс найти драгоценный камень (зависит от удачи)
+        player_luck = getattr(player, 'luck', 1)
+        # Получаем удачу с учётом экипировки
+        if hasattr(player, 'get_effective_stat'):
+            player_luck = player.get_effective_stat('luck')
+        elif hasattr(player, 'inventory'):
+            player_luck = player.inventory.get_total_stat_bonus('luck') + getattr(player, 'luck', 1)
+
+        # Пробуем найти камни каждого типа
+        for gem_name, gem_data in self.gem_types.items():
+            # Шанс с учётом удачи: базовый + (удача * 0.5)
+            gem_chance = gem_data["base_chance"] + (player_luck * 0.5)
+            gem_chance = min(gem_chance, 25)  # Максимум 25% шанс на каждый тип камня
+
+            if random.random() * 100 < gem_chance:
+                # Определяем качество камня с учётом удачи
+                weights = gem_data["weights"].copy()
+                # Удача улучшает шанс лучшего качества
+                luck_bonus = min(player_luck * 0.5, 15)  # До 15% перераспределения
+                if luck_bonus > 0:
+                    # Уменьшаем веса низкого качества
+                    weights[0] = max(20, weights[0] - luck_bonus * 0.5)
+                    weights[1] = max(15, weights[1] - luck_bonus * 0.3)
+                    # Увеличиваем веса высокого качества
+                    weights[2] += luck_bonus * 0.5
+                    weights[3] += luck_bonus * 0.3
+
+                quality_idx = random.choices(range(4), weights=weights)[0]
+                quality = self.gem_qualities[quality_idx]
+                gem_id = f"{quality}_{gem_name}"
+
+                gem_item = get_item(gem_id)
+                if gem_item:
+                    resources.append((gem_item, 1))
+                    print(f"Вы нашли {gem_item.name}!")
 
         # Случайные события при добыче (10% шанс)
         event_roll = random.randint(1, 100)

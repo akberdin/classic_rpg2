@@ -106,7 +106,39 @@
     "dark_crystal": {"name": "Темный Кристалл", "value": 400, "weight": 0.3},
     "soul_gem": {"name": "Камень Душ", "value": 800, "weight": 0.2},
     "necronomicon_page": {"name": "Страница Некрономикона", "value": 1500, "weight": 0.1},
-    "philosophers_stone_fragment": {"name": "Осколок Философского Камня", "value": 1000, "weight": 0.1}
+    "philosophers_stone_fragment": {"name": "Осколок Философского Камня", "value": 1000, "weight": 0.1},
+
+    "_comment_gems": "Драгоценные камни различного качества для крафта украшений",
+
+    "amethyst_shard": {"name": "Осколок аметиста", "value": 15, "weight": 0.05, "quality": "POOR"},
+    "raw_amethyst": {"name": "Необработанный аметист", "value": 40, "weight": 0.1, "quality": "COMMON"},
+    "cut_amethyst": {"name": "Огранённый аметист", "value": 100, "weight": 0.1, "quality": "UNCOMMON"},
+    "perfect_amethyst": {"name": "Совершенный аметист", "value": 250, "weight": 0.1, "quality": "RARE"},
+
+    "ruby_shard": {"name": "Осколок рубина", "value": 20, "weight": 0.05, "quality": "POOR"},
+    "raw_ruby": {"name": "Необработанный рубин", "value": 50, "weight": 0.1, "quality": "COMMON"},
+    "cut_ruby": {"name": "Огранённый рубин", "value": 120, "weight": 0.1, "quality": "UNCOMMON"},
+    "perfect_ruby": {"name": "Совершенный рубин", "value": 300, "weight": 0.1, "quality": "RARE"},
+
+    "sapphire_shard": {"name": "Осколок сапфира", "value": 20, "weight": 0.05, "quality": "POOR"},
+    "raw_sapphire": {"name": "Необработанный сапфир", "value": 50, "weight": 0.1, "quality": "COMMON"},
+    "cut_sapphire": {"name": "Огранённый сапфир", "value": 120, "weight": 0.1, "quality": "UNCOMMON"},
+    "perfect_sapphire": {"name": "Совершенный сапфир", "value": 300, "weight": 0.1, "quality": "RARE"},
+
+    "emerald_shard": {"name": "Осколок изумруда", "value": 25, "weight": 0.05, "quality": "POOR"},
+    "raw_emerald": {"name": "Необработанный изумруд", "value": 60, "weight": 0.1, "quality": "COMMON"},
+    "cut_emerald": {"name": "Огранённый изумруд", "value": 150, "weight": 0.1, "quality": "UNCOMMON"},
+    "perfect_emerald": {"name": "Совершенный изумруд", "value": 350, "weight": 0.1, "quality": "RARE"},
+
+    "topaz_shard": {"name": "Осколок топаза", "value": 18, "weight": 0.05, "quality": "POOR"},
+    "raw_topaz": {"name": "Необработанный топаз", "value": 45, "weight": 0.1, "quality": "COMMON"},
+    "cut_topaz": {"name": "Огранённый топаз", "value": 110, "weight": 0.1, "quality": "UNCOMMON"},
+    "perfect_topaz": {"name": "Совершенный топаз", "value": 280, "weight": 0.1, "quality": "RARE"},
+
+    "diamond_shard": {"name": "Осколок алмаза", "value": 50, "weight": 0.05, "quality": "UNCOMMON"},
+    "raw_diamond": {"name": "Необработанный алмаз", "value": 150, "weight": 0.1, "quality": "RARE"},
+    "cut_diamond": {"name": "Огранённый алмаз", "value": 400, "weight": 0.1, "quality": "EPIC"},
+    "perfect_diamond": {"name": "Совершенный алмаз", "value": 1000, "weight": 0.1, "quality": "LEGENDARY"}
   },
 
   "potions": {
@@ -609,6 +641,270 @@
     }
   },
 
+  "jewelry": {
+    "_comment": "Украшения: кольца и амулеты. Базовые версии без бонусов, бонусы добавляются зачарованием",
+
+    "copper_ring": {
+      "name": "Медное кольцо",
+      "slot": "RING_1",
+      "value": 50,
+      "quality": "POOR"
+    },
+    "silver_ring": {
+      "name": "Серебряное кольцо",
+      "slot": "RING_1",
+      "value": 180,
+      "quality": "COMMON"
+    },
+    "gold_ring": {
+      "name": "Золотое кольцо",
+      "slot": "RING_1",
+      "value": 400,
+      "quality": "UNCOMMON"
+    },
+
+    "copper_ring_amethyst": {
+      "name": "Медное кольцо с аметистом",
+      "slot": "RING_1",
+      "value": 100,
+      "quality": "COMMON"
+    },
+    "copper_ring_ruby": {
+      "name": "Медное кольцо с рубином",
+      "slot": "RING_1",
+      "value": 120,
+      "quality": "COMMON"
+    },
+    "copper_ring_sapphire": {
+      "name": "Медное кольцо с сапфиром",
+      "slot": "RING_1",
+      "value": 120,
+      "quality": "COMMON"
+    },
+    "copper_ring_emerald": {
+      "name": "Медное кольцо с изумрудом",
+      "slot": "RING_1",
+      "value": 130,
+      "quality": "COMMON"
+    },
+    "copper_ring_topaz": {
+      "name": "Медное кольцо с топазом",
+      "slot": "RING_1",
+      "value": 115,
+      "quality": "COMMON"
+    },
+    "copper_ring_diamond": {
+      "name": "Медное кольцо с алмазом",
+      "slot": "RING_1",
+      "value": 250,
+      "quality": "UNCOMMON"
+    },
+
+    "silver_ring_amethyst": {
+      "name": "Серебряное кольцо с аметистом",
+      "slot": "RING_1",
+      "value": 280,
+      "quality": "UNCOMMON"
+    },
+    "silver_ring_ruby": {
+      "name": "Серебряное кольцо с рубином",
+      "slot": "RING_1",
+      "value": 300,
+      "quality": "UNCOMMON"
+    },
+    "silver_ring_sapphire": {
+      "name": "Серебряное кольцо с сапфиром",
+      "slot": "RING_1",
+      "value": 300,
+      "quality": "UNCOMMON"
+    },
+    "silver_ring_emerald": {
+      "name": "Серебряное кольцо с изумрудом",
+      "slot": "RING_1",
+      "value": 330,
+      "quality": "UNCOMMON"
+    },
+    "silver_ring_topaz": {
+      "name": "Серебряное кольцо с топазом",
+      "slot": "RING_1",
+      "value": 290,
+      "quality": "UNCOMMON"
+    },
+    "silver_ring_diamond": {
+      "name": "Серебряное кольцо с алмазом",
+      "slot": "RING_1",
+      "value": 580,
+      "quality": "RARE"
+    },
+
+    "gold_ring_amethyst": {
+      "name": "Золотое кольцо с аметистом",
+      "slot": "RING_1",
+      "value": 500,
+      "quality": "RARE"
+    },
+    "gold_ring_ruby": {
+      "name": "Золотое кольцо с рубином",
+      "slot": "RING_1",
+      "value": 520,
+      "quality": "RARE"
+    },
+    "gold_ring_sapphire": {
+      "name": "Золотое кольцо с сапфиром",
+      "slot": "RING_1",
+      "value": 520,
+      "quality": "RARE"
+    },
+    "gold_ring_emerald": {
+      "name": "Золотое кольцо с изумрудом",
+      "slot": "RING_1",
+      "value": 550,
+      "quality": "RARE"
+    },
+    "gold_ring_topaz": {
+      "name": "Золотое кольцо с топазом",
+      "slot": "RING_1",
+      "value": 510,
+      "quality": "RARE"
+    },
+    "gold_ring_diamond": {
+      "name": "Золотое кольцо с алмазом",
+      "slot": "RING_1",
+      "value": 1000,
+      "quality": "EPIC"
+    },
+
+    "copper_amulet": {
+      "name": "Медный амулет",
+      "slot": "AMULET",
+      "value": 70,
+      "quality": "POOR"
+    },
+    "silver_amulet": {
+      "name": "Серебряный амулет",
+      "slot": "AMULET",
+      "value": 250,
+      "quality": "COMMON"
+    },
+    "gold_amulet": {
+      "name": "Золотой амулет",
+      "slot": "AMULET",
+      "value": 550,
+      "quality": "UNCOMMON"
+    },
+
+    "copper_amulet_amethyst": {
+      "name": "Медный амулет с аметистом",
+      "slot": "AMULET",
+      "value": 140,
+      "quality": "COMMON"
+    },
+    "copper_amulet_ruby": {
+      "name": "Медный амулет с рубином",
+      "slot": "AMULET",
+      "value": 160,
+      "quality": "COMMON"
+    },
+    "copper_amulet_sapphire": {
+      "name": "Медный амулет с сапфиром",
+      "slot": "AMULET",
+      "value": 160,
+      "quality": "COMMON"
+    },
+    "copper_amulet_emerald": {
+      "name": "Медный амулет с изумрудом",
+      "slot": "AMULET",
+      "value": 180,
+      "quality": "COMMON"
+    },
+    "copper_amulet_topaz": {
+      "name": "Медный амулет с топазом",
+      "slot": "AMULET",
+      "value": 155,
+      "quality": "COMMON"
+    },
+    "copper_amulet_diamond": {
+      "name": "Медный амулет с алмазом",
+      "slot": "AMULET",
+      "value": 320,
+      "quality": "UNCOMMON"
+    },
+
+    "silver_amulet_amethyst": {
+      "name": "Серебряный амулет с аметистом",
+      "slot": "AMULET",
+      "value": 350,
+      "quality": "UNCOMMON"
+    },
+    "silver_amulet_ruby": {
+      "name": "Серебряный амулет с рубином",
+      "slot": "AMULET",
+      "value": 370,
+      "quality": "UNCOMMON"
+    },
+    "silver_amulet_sapphire": {
+      "name": "Серебряный амулет с сапфиром",
+      "slot": "AMULET",
+      "value": 370,
+      "quality": "UNCOMMON"
+    },
+    "silver_amulet_emerald": {
+      "name": "Серебряный амулет с изумрудом",
+      "slot": "AMULET",
+      "value": 400,
+      "quality": "UNCOMMON"
+    },
+    "silver_amulet_topaz": {
+      "name": "Серебряный амулет с топазом",
+      "slot": "AMULET",
+      "value": 360,
+      "quality": "UNCOMMON"
+    },
+    "silver_amulet_diamond": {
+      "name": "Серебряный амулет с алмазом",
+      "slot": "AMULET",
+      "value": 700,
+      "quality": "RARE"
+    },
+
+    "gold_amulet_amethyst": {
+      "name": "Золотой амулет с аметистом",
+      "slot": "AMULET",
+      "value": 650,
+      "quality": "RARE"
+    },
+    "gold_amulet_ruby": {
+      "name": "Золотой амулет с рубином",
+      "slot": "AMULET",
+      "value": 670,
+      "quality": "RARE"
+    },
+    "gold_amulet_sapphire": {
+      "name": "Золотой амулет с сапфиром",
+      "slot": "AMULET",
+      "value": 670,
+      "quality": "RARE"
+    },
+    "gold_amulet_emerald": {
+      "name": "Золотой амулет с изумрудом",
+      "slot": "AMULET",
+      "value": 700,
+      "quality": "RARE"
+    },
+    "gold_amulet_topaz": {
+      "name": "Золотой амулет с топазом",
+      "slot": "AMULET",
+      "value": 660,
+      "quality": "RARE"
+    },
+    "gold_amulet_diamond": {
+      "name": "Золотой амулет с алмазом",
+      "slot": "AMULET",
+      "value": 1200,
+      "quality": "EPIC"
+    }
+  },
+
   "skill_books": {
     "_comment": "Книги умений: боевые, магические, ремесленные",
 
@@ -762,6 +1058,310 @@
       "recipe_id": "poor_axe",
       "value": 60,
       "description": "Изготовление простого топора. Требуется 1 длинная деревянная рукоять и 1 медное лезвие топора."
+    },
+
+    "_comment_jewelry_recipes": "Рецепты украшений: кольца и амулеты",
+
+    "recipe_copper_ring": {
+      "name": "Рецепт: Медное кольцо",
+      "recipe_id": "copper_ring",
+      "value": 40,
+      "quality": "COMMON",
+      "description": "Простое медное кольцо. Требуется 2 медных слитка."
+    },
+    "recipe_silver_ring": {
+      "name": "Рецепт: Серебряное кольцо",
+      "recipe_id": "silver_ring",
+      "value": 150,
+      "quality": "UNCOMMON",
+      "description": "Изящное серебряное кольцо. Требуется 2 серебряных слитка."
+    },
+    "recipe_gold_ring": {
+      "name": "Рецепт: Золотое кольцо",
+      "recipe_id": "gold_ring",
+      "value": 350,
+      "quality": "RARE",
+      "description": "Роскошное золотое кольцо. Требуется 2 золотых слитка."
+    },
+
+    "recipe_copper_ring_amethyst": {
+      "name": "Рецепт: Медное кольцо с аметистом",
+      "recipe_id": "copper_ring_amethyst",
+      "value": 80,
+      "quality": "COMMON",
+      "description": "Медное кольцо с аметистом. Требуется 2 медных слитка и 1 огранённый аметист."
+    },
+    "recipe_copper_ring_ruby": {
+      "name": "Рецепт: Медное кольцо с рубином",
+      "recipe_id": "copper_ring_ruby",
+      "value": 90,
+      "quality": "COMMON",
+      "description": "Медное кольцо с рубином. Требуется 2 медных слитка и 1 огранённый рубин."
+    },
+    "recipe_copper_ring_sapphire": {
+      "name": "Рецепт: Медное кольцо с сапфиром",
+      "recipe_id": "copper_ring_sapphire",
+      "value": 90,
+      "quality": "COMMON",
+      "description": "Медное кольцо с сапфиром. Требуется 2 медных слитка и 1 огранённый сапфир."
+    },
+    "recipe_copper_ring_emerald": {
+      "name": "Рецепт: Медное кольцо с изумрудом",
+      "recipe_id": "copper_ring_emerald",
+      "value": 100,
+      "quality": "COMMON",
+      "description": "Медное кольцо с изумрудом. Требуется 2 медных слитка и 1 огранённый изумруд."
+    },
+    "recipe_copper_ring_topaz": {
+      "name": "Рецепт: Медное кольцо с топазом",
+      "recipe_id": "copper_ring_topaz",
+      "value": 85,
+      "quality": "COMMON",
+      "description": "Медное кольцо с топазом. Требуется 2 медных слитка и 1 огранённый топаз."
+    },
+    "recipe_copper_ring_diamond": {
+      "name": "Рецепт: Медное кольцо с алмазом",
+      "recipe_id": "copper_ring_diamond",
+      "value": 220,
+      "quality": "UNCOMMON",
+      "description": "Медное кольцо с алмазом. Требуется 2 медных слитка и 1 огранённый алмаз."
+    },
+
+    "recipe_silver_ring_amethyst": {
+      "name": "Рецепт: Серебряное кольцо с аметистом",
+      "recipe_id": "silver_ring_amethyst",
+      "value": 230,
+      "quality": "UNCOMMON",
+      "description": "Серебряное кольцо с аметистом. Требуется 2 серебряных слитка и 1 совершенный аметист."
+    },
+    "recipe_silver_ring_ruby": {
+      "name": "Рецепт: Серебряное кольцо с рубином",
+      "recipe_id": "silver_ring_ruby",
+      "value": 250,
+      "quality": "UNCOMMON",
+      "description": "Серебряное кольцо с рубином. Требуется 2 серебряных слитка и 1 совершенный рубин."
+    },
+    "recipe_silver_ring_sapphire": {
+      "name": "Рецепт: Серебряное кольцо с сапфиром",
+      "recipe_id": "silver_ring_sapphire",
+      "value": 250,
+      "quality": "UNCOMMON",
+      "description": "Серебряное кольцо с сапфиром. Требуется 2 серебряных слитка и 1 совершенный сапфир."
+    },
+    "recipe_silver_ring_emerald": {
+      "name": "Рецепт: Серебряное кольцо с изумрудом",
+      "recipe_id": "silver_ring_emerald",
+      "value": 280,
+      "quality": "UNCOMMON",
+      "description": "Серебряное кольцо с изумрудом. Требуется 2 серебряных слитка и 1 совершенный изумруд."
+    },
+    "recipe_silver_ring_topaz": {
+      "name": "Рецепт: Серебряное кольцо с топазом",
+      "recipe_id": "silver_ring_topaz",
+      "value": 240,
+      "quality": "UNCOMMON",
+      "description": "Серебряное кольцо с топазом. Требуется 2 серебряных слитка и 1 совершенный топаз."
+    },
+    "recipe_silver_ring_diamond": {
+      "name": "Рецепт: Серебряное кольцо с алмазом",
+      "recipe_id": "silver_ring_diamond",
+      "value": 500,
+      "quality": "RARE",
+      "description": "Серебряное кольцо с алмазом. Требуется 2 серебряных слитка и 1 совершенный алмаз."
+    },
+
+    "recipe_gold_ring_amethyst": {
+      "name": "Рецепт: Золотое кольцо с аметистом",
+      "recipe_id": "gold_ring_amethyst",
+      "value": 450,
+      "quality": "RARE",
+      "description": "Золотое кольцо с аметистом. Требуется 2 золотых слитка и 1 совершенный аметист."
+    },
+    "recipe_gold_ring_ruby": {
+      "name": "Рецепт: Золотое кольцо с рубином",
+      "recipe_id": "gold_ring_ruby",
+      "value": 470,
+      "quality": "RARE",
+      "description": "Золотое кольцо с рубином. Требуется 2 золотых слитка и 1 совершенный рубин."
+    },
+    "recipe_gold_ring_sapphire": {
+      "name": "Рецепт: Золотое кольцо с сапфиром",
+      "recipe_id": "gold_ring_sapphire",
+      "value": 470,
+      "quality": "RARE",
+      "description": "Золотое кольцо с сапфиром. Требуется 2 золотых слитка и 1 совершенный сапфир."
+    },
+    "recipe_gold_ring_emerald": {
+      "name": "Рецепт: Золотое кольцо с изумрудом",
+      "recipe_id": "gold_ring_emerald",
+      "value": 500,
+      "quality": "RARE",
+      "description": "Золотое кольцо с изумрудом. Требуется 2 золотых слитка и 1 совершенный изумруд."
+    },
+    "recipe_gold_ring_topaz": {
+      "name": "Рецепт: Золотое кольцо с топазом",
+      "recipe_id": "gold_ring_topaz",
+      "value": 460,
+      "quality": "RARE",
+      "description": "Золотое кольцо с топазом. Требуется 2 золотых слитка и 1 совершенный топаз."
+    },
+    "recipe_gold_ring_diamond": {
+      "name": "Рецепт: Золотое кольцо с алмазом",
+      "recipe_id": "gold_ring_diamond",
+      "value": 900,
+      "quality": "EPIC",
+      "description": "Золотое кольцо с алмазом. Требуется 2 золотых слитка и 1 совершенный алмаз."
+    },
+
+    "recipe_copper_amulet": {
+      "name": "Рецепт: Медный амулет",
+      "recipe_id": "copper_amulet",
+      "value": 60,
+      "quality": "COMMON",
+      "description": "Простой медный амулет. Требуется 3 медных слитка и 1 полоска кожи."
+    },
+    "recipe_silver_amulet": {
+      "name": "Рецепт: Серебряный амулет",
+      "recipe_id": "silver_amulet",
+      "value": 200,
+      "quality": "UNCOMMON",
+      "description": "Изящный серебряный амулет. Требуется 3 серебряных слитка и 1 полоска кожи."
+    },
+    "recipe_gold_amulet": {
+      "name": "Рецепт: Золотой амулет",
+      "recipe_id": "gold_amulet",
+      "value": 450,
+      "quality": "RARE",
+      "description": "Роскошный золотой амулет. Требуется 3 золотых слитка и 1 полоска кожи."
+    },
+
+    "recipe_copper_amulet_amethyst": {
+      "name": "Рецепт: Медный амулет с аметистом",
+      "recipe_id": "copper_amulet_amethyst",
+      "value": 110,
+      "quality": "COMMON",
+      "description": "Медный амулет с аметистом. Требуется 3 медных слитка, 1 полоска кожи и 1 огранённый аметист."
+    },
+    "recipe_copper_amulet_ruby": {
+      "name": "Рецепт: Медный амулет с рубином",
+      "recipe_id": "copper_amulet_ruby",
+      "value": 120,
+      "quality": "COMMON",
+      "description": "Медный амулет с рубином. Требуется 3 медных слитка, 1 полоска кожи и 1 огранённый рубин."
+    },
+    "recipe_copper_amulet_sapphire": {
+      "name": "Рецепт: Медный амулет с сапфиром",
+      "recipe_id": "copper_amulet_sapphire",
+      "value": 120,
+      "quality": "COMMON",
+      "description": "Медный амулет с сапфиром. Требуется 3 медных слитка, 1 полоска кожи и 1 огранённый сапфир."
+    },
+    "recipe_copper_amulet_emerald": {
+      "name": "Рецепт: Медный амулет с изумрудом",
+      "recipe_id": "copper_amulet_emerald",
+      "value": 140,
+      "quality": "COMMON",
+      "description": "Медный амулет с изумрудом. Требуется 3 медных слитка, 1 полоска кожи и 1 огранённый изумруд."
+    },
+    "recipe_copper_amulet_topaz": {
+      "name": "Рецепт: Медный амулет с топазом",
+      "recipe_id": "copper_amulet_topaz",
+      "value": 115,
+      "quality": "COMMON",
+      "description": "Медный амулет с топазом. Требуется 3 медных слитка, 1 полоска кожи и 1 огранённый топаз."
+    },
+    "recipe_copper_amulet_diamond": {
+      "name": "Рецепт: Медный амулет с алмазом",
+      "recipe_id": "copper_amulet_diamond",
+      "value": 280,
+      "quality": "UNCOMMON",
+      "description": "Медный амулет с алмазом. Требуется 3 медных слитка, 1 полоска кожи и 1 огранённый алмаз."
+    },
+
+    "recipe_silver_amulet_amethyst": {
+      "name": "Рецепт: Серебряный амулет с аметистом",
+      "recipe_id": "silver_amulet_amethyst",
+      "value": 300,
+      "quality": "UNCOMMON",
+      "description": "Серебряный амулет с аметистом. Требуется 3 серебряных слитка, 1 полоска кожи и 1 совершенный аметист."
+    },
+    "recipe_silver_amulet_ruby": {
+      "name": "Рецепт: Серебряный амулет с рубином",
+      "recipe_id": "silver_amulet_ruby",
+      "value": 320,
+      "quality": "UNCOMMON",
+      "description": "Серебряный амулет с рубином. Требуется 3 серебряных слитка, 1 полоска кожи и 1 совершенный рубин."
+    },
+    "recipe_silver_amulet_sapphire": {
+      "name": "Рецепт: Серебряный амулет с сапфиром",
+      "recipe_id": "silver_amulet_sapphire",
+      "value": 320,
+      "quality": "UNCOMMON",
+      "description": "Серебряный амулет с сапфиром. Требуется 3 серебряных слитка, 1 полоска кожи и 1 совершенный сапфир."
+    },
+    "recipe_silver_amulet_emerald": {
+      "name": "Рецепт: Серебряный амулет с изумрудом",
+      "recipe_id": "silver_amulet_emerald",
+      "value": 360,
+      "quality": "UNCOMMON",
+      "description": "Серебряный амулет с изумрудом. Требуется 3 серебряных слитка, 1 полоска кожи и 1 совершенный изумруд."
+    },
+    "recipe_silver_amulet_topaz": {
+      "name": "Рецепт: Серебряный амулет с топазом",
+      "recipe_id": "silver_amulet_topaz",
+      "value": 310,
+      "quality": "UNCOMMON",
+      "description": "Серебряный амулет с топазом. Требуется 3 серебряных слитка, 1 полоска кожи и 1 совершенный топаз."
+    },
+    "recipe_silver_amulet_diamond": {
+      "name": "Рецепт: Серебряный амулет с алмазом",
+      "recipe_id": "silver_amulet_diamond",
+      "value": 600,
+      "quality": "RARE",
+      "description": "Серебряный амулет с алмазом. Требуется 3 серебряных слитка, 1 полоска кожи и 1 совершенный алмаз."
+    },
+
+    "recipe_gold_amulet_amethyst": {
+      "name": "Рецепт: Золотой амулет с аметистом",
+      "recipe_id": "gold_amulet_amethyst",
+      "value": 580,
+      "quality": "RARE",
+      "description": "Золотой амулет с аметистом. Требуется 3 золотых слитка, 1 полоска кожи и 1 совершенный аметист."
+    },
+    "recipe_gold_amulet_ruby": {
+      "name": "Рецепт: Золотой амулет с рубином",
+      "recipe_id": "gold_amulet_ruby",
+      "value": 600,
+      "quality": "RARE",
+      "description": "Золотой амулет с рубином. Требуется 3 золотых слитка, 1 полоска кожи и 1 совершенный рубин."
+    },
+    "recipe_gold_amulet_sapphire": {
+      "name": "Рецепт: Золотой амулет с сапфиром",
+      "recipe_id": "gold_amulet_sapphire",
+      "value": 600,
+      "quality": "RARE",
+      "description": "Золотой амулет с сапфиром. Требуется 3 золотых слитка, 1 полоска кожи и 1 совершенный сапфир."
+    },
+    "recipe_gold_amulet_emerald": {
+      "name": "Рецепт: Золотой амулет с изумрудом",
+      "recipe_id": "gold_amulet_emerald",
+      "value": 640,
+      "quality": "RARE",
+      "description": "Золотой амулет с изумрудом. Требуется 3 золотых слитка, 1 полоска кожи и 1 совершенный изумруд."
+    },
+    "recipe_gold_amulet_topaz": {
+      "name": "Рецепт: Золотой амулет с топазом",
+      "recipe_id": "gold_amulet_topaz",
+      "value": 590,
+      "quality": "RARE",
+      "description": "Золотой амулет с топазом. Требуется 3 золотых слитка, 1 полоска кожи и 1 совершенный топаз."
+    },
+    "recipe_gold_amulet_diamond": {
+      "name": "Рецепт: Золотой амулет с алмазом",
+      "recipe_id": "gold_amulet_diamond",
+      "value": 1100,
+      "quality": "EPIC",
+      "description": "Золотой амулет с алмазом. Требуется 3 золотых слитка, 1 полоска кожи и 1 совершенный алмаз."
     }
   }
 }
