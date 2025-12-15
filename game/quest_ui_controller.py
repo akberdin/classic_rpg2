@@ -5,6 +5,7 @@
 """
 from game.quest_system import get_unique_quest_for_location
 from game.quest_system.generators.location import generate_quests_for_location
+from game.quest_system.generators.chains import get_available_chain_quests
 
 
 class QuestUIController:
@@ -67,6 +68,14 @@ class QuestUIController:
                 unique_quest.location_id = location_id
                 self.quest_manager.add_location_quest(location_id, unique_quest)
 
+            # Добавляем доступные квесты из цепочек
+            chain_quests = get_available_chain_quests(
+                self.quest_manager, self.player.level, location.location_type, count=1
+            )
+            for quest in chain_quests:
+                quest.location_id = location_id
+                self.quest_manager.add_location_quest(location_id, quest)
+
         # Проверяем прогресс всех квестов на сбор ресурсов
         self.quest_manager.check_all_quest_progress(self.player)
 
@@ -76,6 +85,12 @@ class QuestUIController:
         # Фильтруем квесты по рангу игрока
         player_rank = self.player.get_rank_number()
         available_quests = [q for q in available_quests if getattr(q, 'min_rank', 1) <= player_rank]
+
+        # Фильтруем квесты из цепочек (не показываем, если предыдущий квест не завершен)
+        available_quests = [
+            q for q in available_quests
+            if self.quest_manager.can_accept_chain_quest(q)
+        ]
 
         active_quests = self.quest_manager.get_active_quests()
         turn_in_quests = self.quest_manager.get_quests_ready_to_turn_in(location_id)

@@ -69,31 +69,58 @@ def generate_city_quests(location_name, location_id, player_level=1, count=3):
     quest_types = ['gather', 'gather', 'kill']  # Больше квестов на сбор
     random.shuffle(quest_types)
 
+    # Отслеживаем уже использованные ресурсы и врагов для избежания дублирования
+    used_resources = set()
+    used_enemies = set()
+
     # Гарантируем хотя бы один квест на части животных
     animal_parts = ['bear_hide', 'deer_hide', 'bear_meat', 'deer_meat', 'wolf_hide', 'bear_fang', 'wolf_fang']
     available_animal_parts = [k for k in animal_parts if k in available_resources]
     animal_quest_added = False
 
+    # Определяем диапазон сложности в зависимости от ранга игрока
+    if player_rank >= 3:
+        difficulty_range = [QuestDifficulty.MEDIUM, QuestDifficulty.HARD, QuestDifficulty.VERY_HARD]
+    elif player_rank == 2:
+        difficulty_range = [QuestDifficulty.EASY, QuestDifficulty.MEDIUM, QuestDifficulty.HARD]
+    else:
+        difficulty_range = [QuestDifficulty.EASY, QuestDifficulty.MEDIUM]
+
     for i in range(min(count, len(quest_types))):
         if quest_types[i] == 'gather' and available_resources:
+            # Получаем список доступных ресурсов (исключая уже использованные)
+            remaining_resources = [k for k in available_resources.keys() if k not in used_resources]
+            if not remaining_resources:
+                continue
+
             # Если это первый квест на сбор и мы еще не добавили квест на части животных
-            if not animal_quest_added and available_animal_parts and random.random() < 0.7:  # 70% шанс на части животных
-                resource_key = random.choice(available_animal_parts)
+            remaining_animal_parts = [k for k in available_animal_parts if k not in used_resources]
+            if not animal_quest_added and remaining_animal_parts and random.random() < 0.7:
+                resource_key = random.choice(remaining_animal_parts)
                 animal_quest_added = True
             else:
-                # Выбираем из доступных ресурсов
-                resource_key = random.choice(list(available_resources.keys()))
+                # Выбираем из оставшихся ресурсов
+                resource_key = random.choice(remaining_resources)
                 if resource_key in animal_parts:
                     animal_quest_added = True
+
+            used_resources.add(resource_key)
 
             quest = _generate_gather_quest_from_template(
                 resource_key, available_resources[resource_key],
                 location_name, location_id, player_level,
-                difficulty_range=[QuestDifficulty.MEDIUM, QuestDifficulty.HARD, QuestDifficulty.VERY_HARD]
+                difficulty_range=difficulty_range
             )
             quests.append(quest)
         elif available_enemies:
-            enemy_key = random.choice(list(available_enemies.keys()))
+            # Получаем список доступных врагов (исключая уже использованных)
+            remaining_enemies = [k for k in available_enemies.keys() if k not in used_enemies]
+            if not remaining_enemies:
+                continue
+
+            enemy_key = random.choice(remaining_enemies)
+            used_enemies.add(enemy_key)
+
             quest = _generate_kill_quest_from_template(
                 enemy_key, available_enemies[enemy_key],
                 location_name, location_id, player_level
@@ -121,31 +148,56 @@ def generate_village_quests(location_name, location_id, player_level=1, count=3)
     quest_types = ['gather', 'kill', 'gather']  # Смешанные квесты
     random.shuffle(quest_types)
 
+    # Отслеживаем уже использованные ресурсы и врагов для избежания дублирования
+    used_resources = set()
+    used_enemies = set()
+
     # Гарантируем хотя бы один квест на части животных
     animal_parts = ['wolf_hide', 'wolf_fang', 'bear_meat', 'deer_meat', 'deer_hide', 'bear_hide', 'bear_fang']
     available_animal_parts = [k for k in animal_parts if k in available_resources]
     animal_quest_added = False
 
+    # Определяем диапазон сложности в зависимости от ранга игрока
+    if player_rank >= 2:
+        difficulty_range = [QuestDifficulty.EASY, QuestDifficulty.MEDIUM, QuestDifficulty.HARD]
+    else:
+        difficulty_range = [QuestDifficulty.EASY, QuestDifficulty.MEDIUM]
+
     for i in range(min(count, len(quest_types))):
         if quest_types[i] == 'gather' and available_resources:
+            # Получаем список доступных ресурсов (исключая уже использованные)
+            remaining_resources = [k for k in available_resources.keys() if k not in used_resources]
+            if not remaining_resources:
+                continue
+
             # Если это первый квест на сбор и мы еще не добавили квест на части животных
-            if not animal_quest_added and available_animal_parts and random.random() < 0.7:  # 70% шанс на части животных
-                resource_key = random.choice(available_animal_parts)
+            remaining_animal_parts = [k for k in available_animal_parts if k not in used_resources]
+            if not animal_quest_added and remaining_animal_parts and random.random() < 0.7:
+                resource_key = random.choice(remaining_animal_parts)
                 animal_quest_added = True
             else:
-                # Выбираем из доступных ресурсов
-                resource_key = random.choice(list(available_resources.keys()))
+                # Выбираем из оставшихся ресурсов
+                resource_key = random.choice(remaining_resources)
                 if resource_key in animal_parts:
                     animal_quest_added = True
+
+            used_resources.add(resource_key)
 
             quest = _generate_gather_quest_from_template(
                 resource_key, available_resources[resource_key],
                 location_name, location_id, player_level,
-                difficulty_range=[QuestDifficulty.EASY, QuestDifficulty.MEDIUM]
+                difficulty_range=difficulty_range
             )
             quests.append(quest)
         elif available_enemies:
-            enemy_key = random.choice(list(available_enemies.keys()))
+            # Получаем список доступных врагов (исключая уже использованных)
+            remaining_enemies = [k for k in available_enemies.keys() if k not in used_enemies]
+            if not remaining_enemies:
+                continue
+
+            enemy_key = random.choice(remaining_enemies)
+            used_enemies.add(enemy_key)
+
             quest = _generate_kill_quest_from_template(
                 enemy_key, available_enemies[enemy_key],
                 location_name, location_id, player_level
@@ -173,17 +225,43 @@ def generate_hunter_quests(location_name, location_id, player_level=1, count=3):
     quest_types = ['gather', 'kill', 'gather']
     random.shuffle(quest_types)
 
+    # Отслеживаем уже использованные ресурсы и врагов для избежания дублирования
+    used_resources = set()
+    used_enemies = set()
+
+    # Определяем диапазон сложности в зависимости от ранга игрока
+    if player_rank >= 3:
+        difficulty_range = [QuestDifficulty.MEDIUM, QuestDifficulty.HARD, QuestDifficulty.VERY_HARD]
+    elif player_rank >= 2:
+        difficulty_range = [QuestDifficulty.EASY, QuestDifficulty.MEDIUM, QuestDifficulty.HARD]
+    else:
+        difficulty_range = [QuestDifficulty.EASY, QuestDifficulty.MEDIUM]
+
     for i in range(min(count, len(quest_types))):
         if quest_types[i] == 'gather' and available_resources:
-            resource_key = random.choice(list(available_resources.keys()))
+            # Получаем список доступных ресурсов (исключая уже использованные)
+            remaining_resources = [k for k in available_resources.keys() if k not in used_resources]
+            if not remaining_resources:
+                continue
+
+            resource_key = random.choice(remaining_resources)
+            used_resources.add(resource_key)
+
             quest = _generate_gather_quest_from_template(
                 resource_key, available_resources[resource_key],
                 location_name, location_id, player_level,
-                difficulty_range=[QuestDifficulty.EASY, QuestDifficulty.MEDIUM, QuestDifficulty.HARD]
+                difficulty_range=difficulty_range
             )
             quests.append(quest)
         elif available_enemies:
-            enemy_key = random.choice(list(available_enemies.keys()))
+            # Получаем список доступных врагов (исключая уже использованных)
+            remaining_enemies = [k for k in available_enemies.keys() if k not in used_enemies]
+            if not remaining_enemies:
+                continue
+
+            enemy_key = random.choice(remaining_enemies)
+            used_enemies.add(enemy_key)
+
             quest = _generate_kill_quest_from_template(
                 enemy_key, available_enemies[enemy_key],
                 location_name, location_id, player_level,
@@ -212,17 +290,44 @@ def generate_necromancer_quests(location_name, location_id, player_level=1, coun
     quest_types = ['gather', 'kill']
     random.shuffle(quest_types)
 
+    # Отслеживаем уже использованные ресурсы и врагов для избежания дублирования
+    used_resources = set()
+    used_enemies = set()
+
+    # Определяем диапазон сложности в зависимости от ранга игрока
+    # Некромант - высокоуровневый контент, но адаптируем под ранг
+    if player_rank >= 4:
+        difficulty_range = [QuestDifficulty.HARD, QuestDifficulty.VERY_HARD]
+    elif player_rank >= 3:
+        difficulty_range = [QuestDifficulty.MEDIUM, QuestDifficulty.HARD, QuestDifficulty.VERY_HARD]
+    else:
+        difficulty_range = [QuestDifficulty.MEDIUM, QuestDifficulty.HARD]
+
     for i in range(min(count, len(quest_types))):
         if quest_types[i] == 'gather' and available_resources:
-            resource_key = random.choice(list(available_resources.keys()))
+            # Получаем список доступных ресурсов (исключая уже использованные)
+            remaining_resources = [k for k in available_resources.keys() if k not in used_resources]
+            if not remaining_resources:
+                continue
+
+            resource_key = random.choice(remaining_resources)
+            used_resources.add(resource_key)
+
             quest = _generate_gather_quest_from_template(
                 resource_key, available_resources[resource_key],
                 location_name, location_id, player_level,
-                difficulty_range=[QuestDifficulty.HARD, QuestDifficulty.VERY_HARD]
+                difficulty_range=difficulty_range
             )
             quests.append(quest)
         elif available_enemies:
-            enemy_key = random.choice(list(available_enemies.keys()))
+            # Получаем список доступных врагов (исключая уже использованных)
+            remaining_enemies = [k for k in available_enemies.keys() if k not in used_enemies]
+            if not remaining_enemies:
+                continue
+
+            enemy_key = random.choice(remaining_enemies)
+            used_enemies.add(enemy_key)
+
             quest = _generate_kill_quest_from_template(
                 enemy_key, available_enemies[enemy_key],
                 location_name, location_id, player_level
@@ -247,12 +352,30 @@ def generate_alchemist_quests(location_name, location_id, player_level=1, count=
 
     quests = []
 
+    # Отслеживаем уже использованные ресурсы для избежания дублирования
+    used_resources = set()
+
+    # Определяем диапазон сложности в зависимости от ранга игрока
+    if player_rank >= 3:
+        difficulty_range = [QuestDifficulty.MEDIUM, QuestDifficulty.HARD, QuestDifficulty.VERY_HARD]
+    elif player_rank >= 2:
+        difficulty_range = [QuestDifficulty.EASY, QuestDifficulty.MEDIUM, QuestDifficulty.HARD]
+    else:
+        difficulty_range = [QuestDifficulty.EASY, QuestDifficulty.MEDIUM]
+
     for _ in range(count):
-        resource_key = random.choice(list(available_resources.keys()))
+        # Получаем список доступных ресурсов (исключая уже использованные)
+        remaining_resources = [k for k in available_resources.keys() if k not in used_resources]
+        if not remaining_resources:
+            break
+
+        resource_key = random.choice(remaining_resources)
+        used_resources.add(resource_key)
+
         quest = _generate_gather_quest_from_template(
             resource_key, available_resources[resource_key],
             location_name, location_id, player_level,
-            difficulty_range=[QuestDifficulty.MEDIUM, QuestDifficulty.HARD]
+            difficulty_range=difficulty_range
         )
         quests.append(quest)
     return quests
