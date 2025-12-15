@@ -284,6 +284,24 @@ class Quest:
                     companion = player.companion_manager.add_companion(companion_type, companion_level)
                     messages.append(f"К вам присоединился: {companion.name}!")
 
+        # Базовые рецепты крафта
+        if 'basic_recipes' in self.rewards and self.rewards['basic_recipes']:
+            from game.crafting_system import CraftingSystem
+            crafting_system = CraftingSystem()
+            basic_recipes = crafting_system.get_basic_recipes()
+
+            if not hasattr(player, 'known_recipes'):
+                player.known_recipes = set()
+
+            recipes_added = 0
+            for recipe_id in basic_recipes:
+                if recipe_id not in player.known_recipes:
+                    player.known_recipes.add(recipe_id)
+                    recipes_added += 1
+
+            if recipes_added > 0:
+                messages.append(f"Разблокировано базовых рецептов: {recipes_added}")
+
         # Устанавливаем статус завершённого квеста
         self.status = QuestStatus.COMPLETED
 

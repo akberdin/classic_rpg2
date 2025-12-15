@@ -59,14 +59,15 @@ def create_starter_quests():
     quests.append(quest2)
 
     # Квест 3: Сборщик ресурсов - автоматически назначается
+    # При завершении разблокирует базовые рецепты крафта (плохого качества, бесплатные, простые)
     objectives = [
         QuestObjective("Добыть Медная руда x5", required_count=5),
     ]
-    rewards = {'exp': 100, 'skills': ['craftsmanship']}
+    rewards = {'exp': 100, 'skills': ['craftsmanship'], 'basic_recipes': True}
     quest3 = Quest(
         quest_id="resource_gatherer",
         name="Сборщик ресурсов",
-        description="Соберите медную руду в шахтах.",
+        description="Соберите медную руду в шахтах. Это откроет вам базовые рецепты крафта.",
         objectives=objectives,
         rewards=rewards,
         quest_type=QuestType.GATHER_RESOURCE,

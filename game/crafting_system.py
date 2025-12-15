@@ -30,6 +30,8 @@ class CraftingRecipe:
         self.category = recipe_data['category']
         self.required_skill = recipe_data.get('required_skill', None)
         self.required_skill_rank = recipe_data.get('required_skill_rank', 1)
+        self.quality = recipe_data.get('quality', 'common')
+        self.base_price = recipe_data.get('base_price', 0)
 
     def can_craft(self, player, inventory) -> Tuple[bool, Optional[str]]:
         """
@@ -94,6 +96,32 @@ class CraftingRecipe:
             quantity = ingredient['quantity']
             result.append(f"{item_name} x{quantity}")
         return result
+
+    def is_basic(self) -> bool:
+        """
+        Проверить, является ли рецепт базовым (разблокируется при выполнении квеста "Сборщик ресурсов").
+
+        Базовые рецепты:
+        - Рецепты с качеством "poor" (плохое)
+        - Рецепты с базовой ценой 0
+        - Простые рецепты первого ранга с низкой ценой (base_price <= 5)
+
+        Returns:
+            bool: True если рецепт базовый
+        """
+        # Рецепты плохого качества
+        if self.quality == 'poor':
+            return True
+
+        # Бесплатные рецепты
+        if self.base_price == 0:
+            return True
+
+        # Простые рецепты первого ранга с низкой ценой
+        if self.required_skill_rank == 1 and self.base_price <= 5:
+            return True
+
+        return False
 
 
 class CraftingStation:
@@ -338,3 +366,15 @@ class CraftingSystem:
             str: Название категории
         """
         return self.categories.get(category_id, category_id)
+
+    def get_basic_recipes(self) -> List[str]:
+        """
+        Получить список ID базовых рецептов.
+
+        Базовые рецепты разблокируются при выполнении квеста "Сборщик ресурсов".
+        Включает рецепты плохого качества, бесплатные рецепты и простые рецепты.
+
+        Returns:
+            List[str]: Список ID базовых рецептов
+        """
+        return [recipe.id for recipe in self.recipes.values() if recipe.is_basic()]
