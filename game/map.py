@@ -28,9 +28,64 @@ class GameMap:
         self.height = height
         self.tiles = []
         self.locations = []
+        self.starting_village = None  # Стартовая деревня "Тихая"
 
-        # Генерация карты
-        self._generate_map()
+        # Генерация карты с проверкой на успешность размещения стартовой деревни
+        self._generate_map_with_starting_village()
+
+    def _generate_map_with_starting_village(self, max_attempts=10):
+        """
+        Генерация карты с гарантированным размещением стартовой деревни "Тихая"
+
+        При невозможности найти подходящее место для деревни - перегенерирует карту
+
+        Args:
+            max_attempts: Максимальное количество попыток перегенерации карты
+        """
+        for attempt in range(max_attempts):
+            # Сбрасываем данные для новой генерации
+            self.tiles = []
+            self.locations = []
+            self.starting_village = None
+
+            # Генерируем карту
+            self._generate_map()
+
+            # Проверяем, создана ли стартовая деревня
+            if self.starting_village is not None:
+                return  # Успешная генерация
+
+            # Если не создана, пробуем снова
+            if attempt < max_attempts - 1:
+                print(f"Попытка {attempt + 1}: не удалось найти место для деревни 'Тихая', перегенерация карты...")
+
+        # Если после всех попыток не удалось - создаём деревню в случайном безопасном месте
+        print("Предупреждение: не удалось найти идеальное место для деревни 'Тихая', создаём в ближайшем подходящем месте")
+        self._create_fallback_starting_village()
+
+    def _create_fallback_starting_village(self):
+        """Создание стартовой деревни в запасном месте (если не удалось найти идеальное)"""
+        # Ищем любое место подальше от опасных локаций
+        for _ in range(1000):
+            x, y = self._find_random_passable_position()
+            if x is None:
+                continue
+
+            # Проверяем расстояние до опасных локаций (хотя бы 15 клеток)
+            safe = True
+            for loc in self.locations:
+                if loc.location_type in [LOCATION_BANDIT_CAMP, LOCATION_RUINS]:
+                    distance = abs(x - loc.x) + abs(y - loc.y)
+                    if distance < 15:
+                        safe = False
+                        break
+
+            if safe and self._check_min_distance_to_all_locations(x, y, 3):
+                village = Location(x, y, LOCATION_VILLAGE, "Тихая")
+                self.tiles[y][x].set_location(village)
+                self.locations.append(village)
+                self.starting_village = village
+                return
 
     def _generate_map(self):
         """Генерация карты с биомами"""
@@ -104,6 +159,9 @@ class GameMap:
 
         # Генерация руин (увеличено до 40, на расстоянии >= 15 от городов и деревень)
         self._generate_ruins()
+
+        # Поиск и создание стартовой деревни "Тихая" (после генерации всех локаций)
+        self._setup_starting_village()
 
     def _generate_magic_school_cluster(self):
         """Генерация школы магов с двумя деревнями рядом"""
@@ -350,6 +408,134 @@ class GameMap:
             self.locations.append(location)
             created += 1
 
+    def _setup_starting_village(self):
+        """
+        Поиск и создание стартовой деревни "Тихая" после генерации всех локаций
+
+        Условия размещения:
+        - Рядом (3-5 клеток) должен быть лес (биом)
+        - Рядом (3-5 клеток) должна быть шахта (локация)
+        - В радиусе 20 клеток не должно быть лагерей бандитов и руин
+        """
+        position = self._find_tikhaya_village_position()
+        if position:
+            x, y = position
+            village = Location(x, y, LOCATION_VILLAGE, "Тихая")
+            self.tiles[y][x].set_location(village)
+            self.locations.append(village)
+            self.starting_village = village
+
+    def _find_tikhaya_village_position(self):
+        """
+        Найти подходящее место для деревни "Тихая"
+
+        Условия:
+        - Рядом (3-5 клеток) есть лес (биом BIOME_FOREST)
+        - Рядом (3-5 клеток) есть шахта (LOCATION_MINE)
+        - В радиусе 20 клеток нет лагерей бандитов и руин
+        - Минимальное расстояние до других локаций (3 клетки)
+
+        Returns:
+            tuple: (x, y) или None если не найдено
+        """
+        # Получаем все шахты для проверки близости
+        mines = [loc for loc in self.locations if loc.location_type == LOCATION_MINE]
+        if not mines:
+            return None
+
+        # Получаем опасные локации для проверки расстояния
+        dangerous_locations = [loc for loc in self.locations
+                               if loc.location_type in [LOCATION_BANDIT_CAMP, LOCATION_RUINS]]
+
+        max_attempts = 2000
+        for _ in range(max_attempts):
+            # Находим случайную проходимую позицию
+            x = random.randint(0, self.width - 1)
+            y = random.randint(0, self.height - 1)
+            tile = self.tiles[y][x]
+
+            # Проверяем, что тайл проходим и свободен
+            if not tile.is_passable() or tile.has_location():
+                continue
+
+            # Проверяем минимальное расстояние до других локаций
+            if not self._check_min_distance_to_all_locations(x, y, 3):
+                continue
+
+            # Проверяем наличие леса рядом (3-5 клеток)
+            has_forest_nearby = self._check_biome_nearby(x, y, BIOME_FOREST, min_dist=3, max_dist=5)
+            if not has_forest_nearby:
+                continue
+
+            # Проверяем наличие шахты рядом (3-5 клеток)
+            has_mine_nearby = self._check_location_nearby(x, y, mines, min_dist=3, max_dist=5)
+            if not has_mine_nearby:
+                continue
+
+            # Проверяем расстояние до опасных локаций (>= 20 клеток)
+            safe_from_danger = True
+            for loc in dangerous_locations:
+                distance = abs(x - loc.x) + abs(y - loc.y)
+                if distance < 20:
+                    safe_from_danger = False
+                    break
+
+            if not safe_from_danger:
+                continue
+
+            # Все условия выполнены - возвращаем позицию
+            return (x, y)
+
+        return None
+
+    def _check_biome_nearby(self, x, y, biome_type, min_dist, max_dist):
+        """
+        Проверить наличие указанного биома в заданном радиусе
+
+        Args:
+            x, y: Центральные координаты
+            biome_type: Тип биома для поиска
+            min_dist: Минимальное расстояние
+            max_dist: Максимальное расстояние
+
+        Returns:
+            bool: True если биом найден в заданном радиусе
+        """
+        for dx in range(-max_dist, max_dist + 1):
+            for dy in range(-max_dist, max_dist + 1):
+                check_x = x + dx
+                check_y = y + dy
+
+                if not self.is_valid_position(check_x, check_y):
+                    continue
+
+                # Вычисляем евклидово расстояние
+                distance = (dx ** 2 + dy ** 2) ** 0.5
+                if min_dist <= distance <= max_dist:
+                    if self.tiles[check_y][check_x].biome == biome_type:
+                        return True
+        return False
+
+    def _check_location_nearby(self, x, y, locations, min_dist, max_dist):
+        """
+        Проверить наличие локации из списка в заданном радиусе
+
+        Args:
+            x, y: Центральные координаты
+            locations: Список локаций для проверки
+            min_dist: Минимальное расстояние
+            max_dist: Максимальное расстояние
+
+        Returns:
+            bool: True если локация найдена в заданном радиусе
+        """
+        for loc in locations:
+            # Используем евклидово расстояние
+            distance = ((x - loc.x) ** 2 + (y - loc.y) ** 2) ** 0.5
+            if min_dist <= distance <= max_dist:
+                return True
+        return False
+
     def _find_random_passable_position(self):
         """Найти случайную проходимую позицию на карте"""
         max_attempts = 1000
@@ -432,23 +618,27 @@ class GameMap:
 
     def find_spawn_point(self):
         """
-        Найти подходящую точку спавна игрока возле случайного города или деревни
+        Найти подходящую точку спавна игрока в стартовой деревне "Тихая"
 
         Returns:
             tuple: (x, y) координаты точки спавна
         """
-        # Ищем все города и деревни
-        settlements = [loc for loc in self.locations
-                      if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]]
+        # Приоритет - стартовая деревня "Тихая"
+        if self.starting_village is not None:
+            settlement = self.starting_village
+        else:
+            # Запасной вариант - ищем все города и деревни
+            settlements = [loc for loc in self.locations
+                          if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]]
 
-        if not settlements:
-            # Если нет поселений, спавним в центре карты
-            center_x = self.width // 2
-            center_y = self.height // 2
-            return (center_x, center_y)
+            if not settlements:
+                # Если нет поселений, спавним в центре карты
+                center_x = self.width // 2
+                center_y = self.height // 2
+                return (center_x, center_y)
 
-        # Выбираем случайное поселение
-        settlement = random.choice(settlements)
+            # Выбираем случайное поселение
+            settlement = random.choice(settlements)
 
         # Ищем проходимое место рядом с поселением (в радиусе 3-7 клеток)
         search_radius = 7
