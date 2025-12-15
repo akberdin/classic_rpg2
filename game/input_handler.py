@@ -1245,6 +1245,18 @@ class InputHandler:
                     filter_type = self.ctx.inventory_window.get_filter_at_mouse(*event.pos)
                     if filter_type:
                         self.ctx.inventory_window.set_filter(filter_type)
+                    else:
+                        # Проверяем клик по предмету в инвентаре для выделения
+                        item_index = self.ctx.inventory_window.get_item_index_at_mouse(
+                            self.ctx.player, *event.pos
+                        )
+                        if item_index is not None:
+                            self.ctx.inventory_window.selected_inventory_index = item_index
+                        else:
+                            # Проверяем клик по слоту экипировки для выделения
+                            slot, _ = self.ctx.inventory_window.get_equipment_slot_at_mouse(*event.pos)
+                            if slot is not None:
+                                self.ctx.inventory_window.selected_equipment_slot = slot
                 elif event.button == 3:  # ПКМ
                     mods = pygame.key.get_mods()
                     if mods & pygame.KMOD_ALT:
