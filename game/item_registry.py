@@ -341,7 +341,7 @@ class ItemRegistry:
         """
         from game.inventory import (
             Item, ResourceItem, PotionItem, SkillBookItem, RecipeItem,
-            WeaponItem, ArmorItem, JewelryItem
+            WeaponItem, ArmorItem, JewelryItem, BeltItem, BackpackItem
         )
         category = data.get('_category', '')
         name = data.get('name', item_id)
@@ -384,14 +384,39 @@ class ItemRegistry:
                 param_bonus = data.get('param_bonus', {})
                 skill_bonus = data.get('skill_bonus', {})
 
-                item = ArmorItem(
-                    name, slot, armor_type, defense,
-                    value=value,
-                    quality=quality,
-                    stats_bonus=stats_bonus,
-                    param_bonus=param_bonus,
-                    skill_bonus=skill_bonus
-                )
+                # Специальные классы для пояса и рюкзака
+                from game.inventory import EquipmentSlot
+                if slot == EquipmentSlot.BELT:
+                    # Создаём BeltItem - слоты определяются автоматически по качеству
+                    item = BeltItem(
+                        name,
+                        value=value,
+                        quality=quality,
+                        param_bonus=param_bonus if param_bonus else None
+                    )
+                    # Устанавливаем stats_bonus если есть
+                    if stats_bonus:
+                        item.stats_bonus = stats_bonus
+                elif slot == EquipmentSlot.BACKPACK:
+                    # Создаём BackpackItem - слоты определяются автоматически по качеству
+                    item = BackpackItem(
+                        name,
+                        value=value,
+                        quality=quality
+                    )
+                    # Устанавливаем stats_bonus если есть
+                    if stats_bonus:
+                        item.stats_bonus = stats_bonus
+                else:
+                    # Обычная броня
+                    item = ArmorItem(
+                        name, slot, armor_type, defense,
+                        value=value,
+                        quality=quality,
+                        stats_bonus=stats_bonus,
+                        param_bonus=param_bonus,
+                        skill_bonus=skill_bonus
+                    )
 
             elif category == 'jewelry':
                 slot = self._get_equipment_slot(data.get('slot', 'RING_1'))

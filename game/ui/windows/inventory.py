@@ -880,6 +880,28 @@ class InventoryWindow:
                 if rect.collidepoint(mouse_x, mouse_y) and item:
                     return item
 
+        # Получаем индекс предмета
+        item_index = self.get_item_index_at_mouse(player, mouse_x, mouse_y)
+        if item_index is not None:
+            all_items = self.get_filtered_items(player)
+            if 0 <= item_index < len(all_items):
+                item, quantity = all_items[item_index]
+                return item
+
+        return None
+
+    def get_item_index_at_mouse(self, player, mouse_x, mouse_y):
+        """
+        Получить индекс предмета под курсором мыши в списке инвентаря
+
+        Args:
+            player: Объект игрока
+            mouse_x: X координата мыши
+            mouse_y: Y координата мыши
+
+        Returns:
+            int или None: Индекс предмета или None
+        """
         # Получаем размеры экрана
         screen_width = self.screen.get_width()
         screen_height = self.screen.get_height()
@@ -909,15 +931,7 @@ class InventoryWindow:
             return None
 
         # Вычисляем индекс предмета
-        all_items = player.inventory.get_all_items()
-
-        # Применяем фильтр
-        if self.item_type_filter != "all":
-            filtered_items = []
-            for item, quantity in all_items:
-                if self._match_filter(item):
-                    filtered_items.append((item, quantity))
-            all_items = filtered_items
+        all_items = self.get_filtered_items(player)
 
         if not all_items:
             return None
@@ -935,8 +949,7 @@ class InventoryWindow:
         actual_index = start_index + item_index
 
         if 0 <= actual_index < len(all_items):
-            item, quantity = all_items[actual_index]
-            return item
+            return actual_index
 
         return None
 
