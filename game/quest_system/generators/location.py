@@ -21,30 +21,57 @@ from .rewards import calculate_gather_quest_rewards, calculate_kill_quest_reward
 
 def generate_quests_for_location(location_name, location_id, player_level=1, count=3, location_type=None):
     """
-    Сгенерировать несколько квестов для локации
+    Сгенерировать несколько квестов для локации.
+
+    Использует шаблонный генератор для логичной генерации квестов
+    на основе типа локации, NPC и ранга игрока.
 
     Args:
         location_name: Название локации
         location_id: ID локации
         player_level: Уровень игрока
         count: Количество квестов
-        location_type: Тип локации (для специализированных генераторов)
+        location_type: Тип локации (city, village, mine, ruins, magic_school, bandit_camp)
 
     Returns:
         list: Список квестов
     """
-    from game.constants import LOCATION_CITY, LOCATION_VILLAGE
+    from game.constants import (
+        LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MINE,
+        LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, LOCATION_BANDIT_CAMP
+    )
+    from .template_generator import generate_quests_from_template
 
-    # Используем специализированные генераторы если известен тип локации
+    # Карта типов локаций
+    location_type_map = {
+        LOCATION_CITY: 'city',
+        LOCATION_VILLAGE: 'village',
+        LOCATION_MINE: 'mine',
+        LOCATION_RUINS: 'ruins',
+        LOCATION_MAGIC_SCHOOL: 'magic_school',
+        LOCATION_BANDIT_CAMP: 'bandit_camp'
+    }
+
+    # Получаем строковый тип локации для конфигурации
+    config_location_type = location_type_map.get(location_type, location_type)
+
+    # Пробуем использовать шаблонный генератор
+    if config_location_type:
+        quests = generate_quests_from_template(
+            location_name, location_id, player_level, config_location_type, count
+        )
+        if quests:
+            return quests
+
+    # Fallback на специализированные генераторы для обратной совместимости
     if location_type == LOCATION_CITY:
         return generate_city_quests(location_name, location_id, player_level, count)
     elif location_type == LOCATION_VILLAGE:
         return generate_village_quests(location_name, location_id, player_level, count)
 
-    # Fallback на старый метод для других типов локаций
+    # Fallback на простой генератор
     quests = []
     for _ in range(count):
-        # Простой генератор (можно расширить если нужно)
         quest = _generate_simple_quest(location_name, location_id, player_level)
         quests.append(quest)
     return quests
