@@ -2,12 +2,12 @@
 Модуль для создания и размещения NPC на карте
 """
 import random
-from game.npc import Guard, Merchant, MagicMerchant, WarriorMerchant, MagePatrol, Bandit, Miner, Undead, Alchemist, Hunter, Necromancer, Wolf, Bear, Deer
+from game.npc import Guard, Merchant, MagicMerchant, WarriorMerchant, ShadowMerchant, MagePatrol, Bandit, Miner, Undead, ShadowAdept, Alchemist, Hunter, Necromancer, Wolf, Bear, Deer
 from game.inventory import ItemGenerator, ItemQuality
 from game.item_registry import get_item
 from game.constants import (
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
-    LOCATION_MINE, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, BIOME_FOREST
+    LOCATION_MINE, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, LOCATION_SECRET_CAMP, BIOME_FOREST
 )
 
 
@@ -37,6 +37,7 @@ class NPCSpawner:
             'bandits': self.spawn_bandits(),
             'miners': self.spawn_miners(),
             'undead': self.spawn_undead(),
+            'shadow_adepts': self.spawn_shadow_adepts(),
             'alchemists': self.spawn_alchemists(),
             'hunters': self.spawn_hunters(),
             'necromancers': self.spawn_necromancers(),
@@ -52,6 +53,11 @@ class NPCSpawner:
         warrior_merchant = self.spawn_warrior_merchant()
         if warrior_merchant:
             npcs['merchants'].append(warrior_merchant)
+
+        # Добавляем теневого торговца к торговцам (Тайный лагерь)
+        shadow_merchant = self.spawn_shadow_merchant()
+        if shadow_merchant:
+            npcs['merchants'].append(shadow_merchant)
 
         # Добавляем воинов возле Военной академии к стражникам
         warriors = self.spawn_warriors()
@@ -271,6 +277,180 @@ class NPCSpawner:
             return warrior_merchant
 
         return None
+
+    def spawn_shadow_merchant(self):
+        """
+        Создание теневого торговца в Тайном лагере
+
+        Returns:
+            ShadowMerchant or None: Теневой торговец или None
+        """
+        # Находим Тайный лагерь
+        secret_camp = None
+        for loc in self.game_map.locations:
+            if loc.location_type == LOCATION_SECRET_CAMP:
+                secret_camp = loc
+                break
+
+        if not secret_camp:
+            return None
+
+        # Находим позицию рядом с Тайным лагерем
+        merchant_pos = self._find_npc_position(secret_camp.x, secret_camp.y)
+
+        if merchant_pos:
+            mx, my = merchant_pos
+            merchant_names = [
+                "Теневой Торговец", "Мастер Клинков", "Торговец Ядами",
+                "Посредник Теней", "Темный Коммерсант", "Скрытый Купец"
+            ]
+            merchant_name = random.choice(merchant_names)
+
+            shadow_merchant = ShadowMerchant(merchant_name, mx, my, level=10)
+            print(f"Создан теневой торговец '{merchant_name}' в Тайном лагере")
+            return shadow_merchant
+
+        return None
+
+    def spawn_shadow_adepts(self):
+        """
+        Создание Адептов тени в Тайном лагере
+        4 ранга: новичок (1-10), обычный (11-20), ветеран (21-30), эксперт (31-40)
+
+        Returns:
+            list: Список адептов тени
+        """
+        shadow_adepts = []
+
+        # Находим Тайный лагерь
+        secret_camp = None
+        for loc in self.game_map.locations:
+            if loc.location_type == LOCATION_SECRET_CAMP:
+                secret_camp = loc
+                break
+
+        if not secret_camp:
+            return shadow_adepts
+
+        # Имена адептов тени по рангам
+        adept_names_rank1 = ["Ученик Тени", "Послушник", "Начинающий Убийца"]
+        adept_names_rank2 = ["Адепт Тени", "Теневой Агент", "Шпион"]
+        adept_names_rank3 = ["Мастер Теней", "Убийца", "Теневой Охотник"]
+        adept_names_rank4 = ["Теневой Лорд", "Верховный Убийца", "Владыка Теней"]
+
+        # Ранг 1: 3 адепта (уровень 1-10)
+        for i in range(3):
+            adept_pos = None
+            for attempt in range(30):
+                offset_x = random.randint(-15, 15)
+                offset_y = random.randint(-15, 15)
+                ax = secret_camp.x + offset_x
+                ay = secret_camp.y + offset_y
+
+                if self.game_map.is_valid_position(ax, ay):
+                    tile = self.game_map.get_tile(ax, ay)
+                    if tile.is_passable():
+                        occupied = False
+                        for existing in shadow_adepts:
+                            if existing.x == ax and existing.y == ay:
+                                occupied = True
+                                break
+                        if not occupied:
+                            adept_pos = (ax, ay)
+                            break
+
+            if adept_pos:
+                ax, ay = adept_pos
+                adept_level = random.randint(1, 10)
+                adept_name = f"{random.choice(adept_names_rank1)} {secret_camp.name}"
+                adept = ShadowAdept(adept_name, ax, ay, adept_level, secret_camp.x, secret_camp.y)
+                shadow_adepts.append(adept)
+
+        # Ранг 2: 2 адепта (уровень 11-20)
+        for i in range(2):
+            adept_pos = None
+            for attempt in range(30):
+                offset_x = random.randint(-15, 15)
+                offset_y = random.randint(-15, 15)
+                ax = secret_camp.x + offset_x
+                ay = secret_camp.y + offset_y
+
+                if self.game_map.is_valid_position(ax, ay):
+                    tile = self.game_map.get_tile(ax, ay)
+                    if tile.is_passable():
+                        occupied = False
+                        for existing in shadow_adepts:
+                            if existing.x == ax and existing.y == ay:
+                                occupied = True
+                                break
+                        if not occupied:
+                            adept_pos = (ax, ay)
+                            break
+
+            if adept_pos:
+                ax, ay = adept_pos
+                adept_level = random.randint(11, 20)
+                adept_name = f"{random.choice(adept_names_rank2)} {secret_camp.name}"
+                adept = ShadowAdept(adept_name, ax, ay, adept_level, secret_camp.x, secret_camp.y)
+                shadow_adepts.append(adept)
+
+        # Ранг 3: 2 адепта (уровень 21-30)
+        for i in range(2):
+            adept_pos = None
+            for attempt in range(30):
+                offset_x = random.randint(-15, 15)
+                offset_y = random.randint(-15, 15)
+                ax = secret_camp.x + offset_x
+                ay = secret_camp.y + offset_y
+
+                if self.game_map.is_valid_position(ax, ay):
+                    tile = self.game_map.get_tile(ax, ay)
+                    if tile.is_passable():
+                        occupied = False
+                        for existing in shadow_adepts:
+                            if existing.x == ax and existing.y == ay:
+                                occupied = True
+                                break
+                        if not occupied:
+                            adept_pos = (ax, ay)
+                            break
+
+            if adept_pos:
+                ax, ay = adept_pos
+                adept_level = random.randint(21, 30)
+                adept_name = f"{random.choice(adept_names_rank3)} {secret_camp.name}"
+                adept = ShadowAdept(adept_name, ax, ay, adept_level, secret_camp.x, secret_camp.y)
+                shadow_adepts.append(adept)
+
+        # Ранг 4: 1 адепт (уровень 31-40)
+        adept_pos = None
+        for attempt in range(30):
+            offset_x = random.randint(-15, 15)
+            offset_y = random.randint(-15, 15)
+            ax = secret_camp.x + offset_x
+            ay = secret_camp.y + offset_y
+
+            if self.game_map.is_valid_position(ax, ay):
+                tile = self.game_map.get_tile(ax, ay)
+                if tile.is_passable():
+                    occupied = False
+                    for existing in shadow_adepts:
+                        if existing.x == ax and existing.y == ay:
+                            occupied = True
+                            break
+                    if not occupied:
+                        adept_pos = (ax, ay)
+                        break
+
+        if adept_pos:
+            ax, ay = adept_pos
+            adept_level = random.randint(31, 40)
+            adept_name = f"{random.choice(adept_names_rank4)} {secret_camp.name}"
+            adept = ShadowAdept(adept_name, ax, ay, adept_level, secret_camp.x, secret_camp.y)
+            shadow_adepts.append(adept)
+
+        print(f"Создано Адептов тени: {len(shadow_adepts)} (3 ранга 1, 2 ранга 2, 2 ранга 3, 1 ранга 4)")
+        return shadow_adepts
 
     def spawn_warriors(self):
         """

@@ -1,10 +1,10 @@
 """
-Враждебные NPC: Bandit и Undead
+Враждебные NPC: Bandit, Undead и ShadowAdept
 """
 import random
 from game.npc.base import NPC
 from game.constants import (
-    NPC_TYPE_BANDIT, NPC_TYPE_UNDEAD, NPC_RELATIONSHIPS,
+    NPC_TYPE_BANDIT, NPC_TYPE_UNDEAD, NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_MAGE, NPC_TYPE_NECROMANCER, NPC_RELATIONSHIPS,
     RELATIONSHIP_NEUTRAL, RELATIONSHIP_HOSTILE, BANDIT_CAMP_RADIUS
 )
 
@@ -693,6 +693,283 @@ class Undead(NPC):
 
     def _rest(self):
         """Отдых - обновляется каждый игровой час"""
+        self.rest_counter += 1
+        if self.rest_counter >= self.rest_duration:
+            self.state = "patrol"
+            self.rest_counter = 0
+
+
+class ShadowAdept(NPC):
+    """
+    Класс Адепта Тени - наемные убийцы и шпионы
+
+    Характеристики:
+    - Приоритет экипировки: средняя броня
+    - Основные характеристики: ловкость и удача
+    - Агрессивны к: магам, нежити, бандитам и некромантам
+    """
+
+    def __init__(self, name, x=0, y=0, level=5, camp_x=None, camp_y=None):
+        """
+        Инициализация Адепта Тени
+
+        Args:
+            name: Имя адепта
+            x: Позиция X
+            y: Позиция Y
+            level: Уровень адепта
+            camp_x: Координата X Тайного лагеря
+            camp_y: Координата Y Тайного лагеря
+        """
+        super().__init__(name, x, y, npc_type=NPC_TYPE_SHADOW_ADEPT, level=level)
+
+        # Модификация статов для адепта тени: ловкость и удача
+        self._adjust_shadow_adept_stats()
+
+        # AI параметры
+        self.state = "patrol"  # patrol, rest, combat
+        self.camp_x = camp_x if camp_x is not None else x
+        self.camp_y = camp_y if camp_y is not None else y
+
+        # Радиусы зоны контроля
+        self.spawn_radius = 10
+        self.patrol_radius = 25  # Широкий радиус патрулирования
+        self.max_distance_from_camp = self.patrol_radius
+
+        self.rest_counter = 0
+        self.rest_duration = random.randint(2, 4)
+        self.steps_per_hour = 1
+        self.target_enemy = None
+        self.detection_range_player = 16  # Высокая дальность обнаружения
+        self.detection_range_npc = 12
+        self.wander_target = None
+        self.pursuit_counter = 0
+        self.max_pursuit_steps = 22
+        self.idle_timer = random.randint(0, 5)
+
+        # Враждебные типы NPC
+        self.hostile_types = [NPC_TYPE_MAGE, NPC_TYPE_UNDEAD, NPC_TYPE_BANDIT, NPC_TYPE_NECROMANCER]
+
+        # Состояние по умолчанию для расписания
+        self.default_state = "patrol"
+
+    def _adjust_shadow_adept_stats(self):
+        """Модификация статов для адепта тени - высокая ловкость и удача"""
+        # Повышаем ловкость и удачу (приоритетные характеристики)
+        self.dexterity = int(self.dexterity * 1.25)  # +25% ловкости
+        self.luck = int(self.luck * 1.20)  # +20% удачи
+
+        # Средняя сила
+        self.strength = int(self.strength * 1.0)
+
+        # Снижаем магические характеристики
+        self.spirit = max(1, int(self.spirit * 0.5))
+        self.intelligence = max(1, int(self.intelligence * 0.6))
+
+        # Обновляем производные статы
+        self.update_derived_stats()
+
+    def _is_near_settlement(self, game_map, x, y, safe_distance=2):
+        """Проверить, находится ли позиция рядом с городом или деревней"""
+        from game.constants import LOCATION_CITY, LOCATION_VILLAGE
+        if not hasattr(game_map, 'locations'):
+            return False
+
+        for location in game_map.locations:
+            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
+                distance = abs(x - location.x) + abs(y - location.y)
+                if distance <= safe_distance:
+                    return True
+        return False
+
+    def update_ai(self, context_or_map, all_npcs=None, player=None, current_hour=12):
+        """Обновление AI адепта тени за 1 час игрового времени"""
+        from game.core.ai_context import AIContext
+        if isinstance(context_or_map, AIContext):
+            context = context_or_map
+            game_map = context.game_map
+            all_npcs = context.all_npcs
+            player = context.player
+            current_hour = context.current_hour
+        else:
+            game_map = context_or_map
+
+        if not self.is_alive:
+            return
+
+        self.update_schedule(current_hour, game_map)
+
+        if self.is_hidden():
+            return
+
+        self.recover_stamina()
+
+        if self.is_resting:
+            return
+
+        if self.idle_timer > 0:
+            self.idle_timer -= 1
+            return
+
+        if self._check_and_handle_npc_collision(all_npcs):
+            if self._try_move_away_from_collision(game_map, all_npcs):
+                return
+
+        # Проверяем врагов (адепты тени НЕ агрессивны к игроку!)
+        self._check_for_enemies(all_npcs, player=None)
+
+        if self.state == "combat":
+            if self.consume_stamina():
+                self._combat_step(game_map, context)
+                self._check_for_enemies(all_npcs, player=None)
+        elif self.state == "patrol":
+            if self.consume_stamina():
+                self._patrol_step(game_map)
+        elif self.state == "rest":
+            self._rest_shadow()
+
+    def _check_for_enemies(self, all_npcs, player=None):
+        """
+        Проверить наличие врагов поблизости
+        Адепты тени агрессивны к магам, нежити, бандитам и некромантам, но НЕ к игроку
+        """
+        closest_enemy = None
+        closest_distance = float('inf')
+
+        if all_npcs:
+            for npc in all_npcs:
+                if not npc.is_alive:
+                    continue
+
+                if npc is self:
+                    continue
+
+                if npc.npc_type == NPC_TYPE_SHADOW_ADEPT:
+                    continue
+
+                if npc.npc_type in self.hostile_types:
+                    distance = abs(self.x - npc.x) + abs(self.y - npc.y)
+
+                    if distance <= self.detection_range_npc and distance < closest_distance:
+                        closest_enemy = npc
+                        closest_distance = distance
+
+        if closest_enemy:
+            pursuers_count = 0
+            if all_npcs:
+                for npc in all_npcs:
+                    if (npc.is_alive and npc is not self and
+                        hasattr(npc, 'target_enemy') and npc.target_enemy is closest_enemy and
+                        hasattr(npc, 'state') and npc.state == "combat"):
+                        pursuers_count += 1
+
+            if pursuers_count < 2:
+                self.target_enemy = closest_enemy
+                self.state = "combat"
+                self.pursuit_counter = 0
+        elif self.state == "combat":
+            self.target_enemy = None
+            self.state = "patrol"
+            self.pursuit_counter = 0
+
+    def _combat_step(self, game_map, context=None):
+        """Один шаг боевого поведения"""
+        if not self.target_enemy or not self.target_enemy.is_alive:
+            self.target_enemy = None
+            self.state = "patrol"
+            self.pursuit_counter = 0
+            return
+
+        if hasattr(self.target_enemy, 'x') and hasattr(self.target_enemy, 'y'):
+            if self._is_near_settlement(game_map, self.target_enemy.x, self.target_enemy.y, safe_distance=2):
+                self.target_enemy = None
+                self.state = "patrol"
+                self.pursuit_counter = 0
+                return
+
+        if self.pursuit_counter >= self.max_pursuit_steps:
+            self.pursuit_counter = 0
+            return
+
+        distance_to_camp = abs(self.x - self.camp_x) + abs(self.y - self.camp_y)
+        if distance_to_camp > self.max_distance_from_camp + 5:
+            self.target_enemy = None
+            self.state = "patrol"
+            self.pursuit_counter = 0
+            return
+
+        if self.can_attack(self.target_enemy):
+            enemy_killed = self._simplified_npc_combat(self.target_enemy, context)
+
+            if enemy_killed:
+                print(f"{self.name} победил {self.target_enemy.name} в быстром бою!")
+                self.target_enemy = None
+                self.state = "patrol"
+                self.pursuit_counter = 0
+            else:
+                self.pursuit_counter = 0
+        else:
+            dx, dy = self._find_next_step(self.target_enemy.x, self.target_enemy.y, game_map, max_search_distance=50)
+            if (dx != 0 or dy != 0):
+                new_x = self.x + dx
+                new_y = self.y + dy
+
+                if self._is_near_settlement(game_map, new_x, new_y, safe_distance=2):
+                    self.target_enemy = None
+                    self.state = "patrol"
+                    self.pursuit_counter = 0
+                    return
+
+                distance_to_camp_new = abs(new_x - self.camp_x) + abs(new_y - self.camp_y)
+                if distance_to_camp_new <= self.max_distance_from_camp + 5:
+                    if self._can_move(new_x, new_y, game_map):
+                        self.x = new_x
+                        self.y = new_y
+                        self.pursuit_counter += 1
+                    else:
+                        self.pursuit_counter += 1
+                else:
+                    self.target_enemy = None
+                    self.state = "patrol"
+                    self.pursuit_counter = 0
+
+    def _patrol_step(self, game_map):
+        """Один шаг патрулирования территории"""
+        distance_to_camp = abs(self.x - self.camp_x) + abs(self.y - self.camp_y)
+
+        if distance_to_camp > self.max_distance_from_camp:
+            dx, dy = self._find_next_step(self.camp_x, self.camp_y, game_map, max_search_distance=50)
+            if dx != 0 or dy != 0:
+                if self._can_move(self.x + dx, self.y + dy, game_map):
+                    self.x += dx
+                    self.y += dy
+            return
+
+        if not self.wander_target or (self.x == self.wander_target[0] and self.y == self.wander_target[1]):
+            self._choose_wander_target()
+
+        if self.wander_target:
+            dx, dy = self._find_next_step(self.wander_target[0], self.wander_target[1], game_map, max_search_distance=30)
+            if dx != 0 or dy != 0:
+                if self._can_move(self.x + dx, self.y + dy, game_map):
+                    self.x += dx
+                    self.y += dy
+
+        if random.random() < 0.05:
+            self.state = "rest"
+            self.rest_counter = 0
+
+    def _choose_wander_target(self):
+        """Выбрать случайную точку для патруля"""
+        max_offset = self.patrol_radius
+
+        target_x = self.camp_x + random.randint(-max_offset, max_offset)
+        target_y = self.camp_y + random.randint(-max_offset, max_offset)
+
+        self.wander_target = (target_x, target_y)
+
+    def _rest_shadow(self):
+        """Отдых адепта тени"""
         self.rest_counter += 1
         if self.rest_counter >= self.rest_duration:
             self.state = "patrol"

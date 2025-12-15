@@ -141,6 +141,11 @@ class Merchant(NPC):
         """Получить рецепты для данного ранга с механизмом автоматического определения ранга"""
         from game.inventory import ItemQuality
         from game.item_registry import ItemRegistry
+        from game.crafting_system import CraftingSystem
+
+        # Получаем список базовых рецептов (которые даются при открытии крафта)
+        crafting_system = CraftingSystem()
+        basic_recipe_ids = set(crafting_system.get_basic_recipes())
 
         # Группируем все рецепты по качеству предмета, который они создают
         all_recipe_ids = ItemRegistry.get_instance().get_items_by_type('recipes')
@@ -149,6 +154,11 @@ class Merchant(NPC):
         for recipe_id in all_recipe_ids:
             recipe_item = get_item(recipe_id)
             recipe_quality = recipe_item.quality
+
+            # Пропускаем базовые рецепты - они не продаются
+            # Получаем ID рецепта из предмета рецепта
+            if hasattr(recipe_item, 'recipe_id') and recipe_item.recipe_id in basic_recipe_ids:
+                continue
 
             # Определяем ранг рецепта по качеству
             if rank == 1:
@@ -856,6 +866,117 @@ class WarriorMerchant(Merchant):
         else:
             game_map = context_or_map
         """Военный торговец не перемещается"""
+        # Обновляем расписание
+        self.update_schedule(current_hour, game_map)
+
+        # Если NPC скрыт (в локации), не обновляем AI
+        if self.is_hidden():
+            return
+
+        # Восстанавливаем энергию стоя на месте
+        if self.stamina < self.max_stamina:
+            self.stamina = min(self.max_stamina, self.stamina + 2)
+
+
+class ShadowMerchant(Merchant):
+    """Класс Торговца книгами Тени для Тайного лагеря"""
+
+    def __init__(self, name, x=0, y=0, level=5):
+        """
+        Инициализация Торговца книгами Тени
+
+        Args:
+            name: Имя торговца
+            x: Позиция X
+            y: Позиция Y
+            level: Уровень торговца
+        """
+        super().__init__(name, x, y, level)
+        # Торговец тени не путешествует
+        self.state = "rest"
+        self.settlements = []
+        # Перегенерируем товары для теневого торговца
+        self._generate_shadow_goods()
+
+    def _generate_shadow_goods(self):
+        """Генерация товаров теневого торговца Тайного лагеря"""
+        from game.inventory import ItemGenerator, WeaponType, ArmorType, EquipmentSlot, ItemQuality
+
+        # Очищаем стандартные товары
+        self.inventory.items.clear()
+
+        # Увеличенное золото для скупки
+        self.inventory.gold = (random.randint(1500, 4000) + self.level * 150) * 3
+
+        # Оружие: ножи, кинжалы (средняя и легкая броня подходит для убийц)
+        shadow_weapon_types = [WeaponType.KNIFE, WeaponType.SWORD, WeaponType.BOW]
+        num_weapons = random.randint(5, 10)
+        for _ in range(num_weapons):
+            # Генерируем качество только UNCOMMON и RARE
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
+            weapon_type = random.choice(shadow_weapon_types)
+            weapon = ItemGenerator.generate_weapon_by_type(weapon_type, quality=quality)
+            self.inventory.add_item(weapon, 1)
+
+        # Броня: легкая и средняя броня (необычного и редкого качества)
+        shadow_armor_types = [ArmorType.LIGHT, ArmorType.MEDIUM]
+        num_armors = random.randint(4, 8)
+        for _ in range(num_armors):
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
+            armor_type = random.choice(shadow_armor_types)
+            slot = random.choice([EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET])
+            armor = ItemGenerator.generate_armor(self.level, slot=slot, armor_type=armor_type, quality=quality)
+            self.inventory.add_item(armor, 1)
+
+        # Пояса и рюкзаки (1-2 штуки каждого, качество UNCOMMON и RARE)
+        for _ in range(random.randint(1, 2)):
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
+            belt = ItemGenerator.generate_belt(self.level, quality=quality)
+            self.inventory.add_item(belt, 1)
+
+        for _ in range(random.randint(1, 2)):
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
+            backpack = ItemGenerator.generate_backpack(self.level, quality=quality)
+            self.inventory.add_item(backpack, 1)
+
+        # Украшения: не более 5 позиций (необычного и редкого качества)
+        num_jewelry = random.randint(2, 5)
+        for _ in range(num_jewelry):
+            quality = random.choice([ItemQuality.UNCOMMON, ItemQuality.RARE])
+            jewelry = ItemGenerator.generate_jewelry(self.level + 2, quality=quality)
+            self.inventory.add_item(jewelry, 1)
+
+        # Зелья: Зелья здоровья и выносливости
+        self.inventory.add_item(get_item("health_potion"), random.randint(3, 6))
+        self.inventory.add_item(get_item("greater_health_potion"), random.randint(2, 4))
+        self.inventory.add_item(get_item("stamina_potion"), random.randint(3, 6))
+
+        # Книги: ВСЕ книги вкладки "Тень" (backstab, bleeding_cut, shadow_step)
+        shadow_books = [
+            "book_backstab",      # Удар в спину
+            "book_bleeding_cut",  # Кровоточащий порез
+            "book_shadow_step"    # Шаг тени
+        ]
+
+        # Добавляем все теневые книги
+        for book_id in shadow_books:
+            book = get_item(book_id)
+            if book:
+                self.inventory.add_item(book, 1)
+
+        # Рецепты: не продаёт рецепты (Тайный лагерь специализируется на книгах)
+
+    def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
+        # Поддержка AIContext и старого способа вызова
+        from game.core.ai_context import AIContext
+        if isinstance(context_or_map, AIContext):
+            context = context_or_map
+            game_map = context.game_map
+            all_npcs = context.all_npcs
+            current_hour = context.current_hour
+        else:
+            game_map = context_or_map
+        """Теневой торговец не перемещается"""
         # Обновляем расписание
         self.update_schedule(current_hour, game_map)
 

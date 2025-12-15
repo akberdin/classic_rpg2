@@ -7,9 +7,9 @@ from game.tile import Tile, Location
 from game.constants import (
     MAP_WIDTH, MAP_HEIGHT,
     BIOME_WATER, BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST,
-    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MINE, LOCATION_BANDIT_CAMP, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY,
+    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MINE, LOCATION_BANDIT_CAMP, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, LOCATION_SECRET_CAMP,
     PASSABLE_BIOMES,
-    CITY_NAMES, VILLAGE_NAMES, MAGIC_SCHOOL_NAMES, WARRIOR_ACADEMY_NAMES, MINE_NAMES, BANDIT_CAMP_NAMES, RUIN_NAMES
+    CITY_NAMES, VILLAGE_NAMES, MAGIC_SCHOOL_NAMES, WARRIOR_ACADEMY_NAMES, MINE_NAMES, BANDIT_CAMP_NAMES, RUIN_NAMES, SECRET_CAMP_NAMES
 )
 
 
@@ -159,6 +159,9 @@ class GameMap:
 
         # Генерация руин (увеличено до 40, на расстоянии >= 15 от городов и деревень)
         self._generate_ruins()
+
+        # Генерация Тайного лагеря
+        self._generate_secret_camp()
 
         # Поиск и создание стартовой деревни "Тихая" (после генерации всех локаций)
         self._setup_starting_village()
@@ -407,6 +410,76 @@ class GameMap:
             self.tiles[y][x].set_location(location)
             self.locations.append(location)
             created += 1
+
+    def _generate_secret_camp(self):
+        """
+        Генерация Тайного лагеря с требованиями по расстоянию:
+        - >= 20 клеток от городов, академии магов и военной академии
+        - >= 15 клеток от деревень, лагерей бандитов и руин
+        """
+        # Получаем локации для проверки расстояний
+        major_locations = [loc for loc in self.locations
+                          if loc.location_type in [LOCATION_CITY, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY]]
+        minor_locations = [loc for loc in self.locations
+                          if loc.location_type in [LOCATION_VILLAGE, LOCATION_BANDIT_CAMP, LOCATION_RUINS]]
+
+        names_copy = SECRET_CAMP_NAMES.copy()
+        random.shuffle(names_copy)
+
+        max_attempts = 2000
+
+        for attempt in range(max_attempts):
+            # Находим случайную позицию в лесу (Тайный лагерь скрыт в лесах)
+            x = random.randint(0, self.width - 1)
+            y = random.randint(0, self.height - 1)
+            tile = self.tiles[y][x]
+
+            # Проверяем, что это лес и там нет локации
+            if tile.biome != BIOME_FOREST or tile.has_location() or not tile.is_passable():
+                continue
+
+            # Проверяем расстояние до крупных локаций (>= 20 клеток)
+            too_close_to_major = False
+            for loc in major_locations:
+                distance = abs(x - loc.x) + abs(y - loc.y)
+                if distance < 20:
+                    too_close_to_major = True
+                    break
+
+            if too_close_to_major:
+                continue
+
+            # Проверяем расстояние до малых локаций (>= 15 клеток)
+            too_close_to_minor = False
+            for loc in minor_locations:
+                distance = abs(x - loc.x) + abs(y - loc.y)
+                if distance < 15:
+                    too_close_to_minor = True
+                    break
+
+            if too_close_to_minor:
+                continue
+
+            # Создаем Тайный лагерь
+            name = names_copy[0] if names_copy else "Тайный Лагерь"
+            location = Location(x, y, LOCATION_SECRET_CAMP, name)
+            self.tiles[y][x].set_location(location)
+            self.locations.append(location)
+            return
+
+        # Если не удалось найти подходящее место, создаем в любом лесу с минимальными требованиями
+        for attempt in range(max_attempts):
+            x = random.randint(0, self.width - 1)
+            y = random.randint(0, self.height - 1)
+            tile = self.tiles[y][x]
+
+            if tile.biome == BIOME_FOREST and not tile.has_location() and tile.is_passable():
+                if self._check_min_distance_to_all_locations(x, y, 10):
+                    name = names_copy[0] if names_copy else "Тайный Лагерь"
+                    location = Location(x, y, LOCATION_SECRET_CAMP, name)
+                    self.tiles[y][x].set_location(location)
+                    self.locations.append(location)
+                    return
 
     def _setup_starting_village(self):
         """

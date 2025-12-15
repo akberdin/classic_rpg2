@@ -63,7 +63,7 @@ def create_starter_quests():
     objectives = [
         QuestObjective("Добыть Медная руда x5", required_count=5),
     ]
-    rewards = {'exp': 100, 'skills': ['craftsmanship'], 'basic_recipes': True}
+    rewards = {'exp': 100, 'gold': 50, 'skills': ['craftsmanship'], 'basic_recipes': True}
     quest3 = Quest(
         quest_id="resource_gatherer",
         name="Сборщик ресурсов",

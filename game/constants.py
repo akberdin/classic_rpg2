@@ -26,6 +26,7 @@ LOCATION_BANDIT_CAMP = 'bandit_camp'
 LOCATION_RUINS = 'ruins'
 LOCATION_MAGIC_SCHOOL = 'magic_school'
 LOCATION_WARRIOR_ACADEMY = 'warrior_academy'
+LOCATION_SECRET_CAMP = 'secret_camp'
 
 # Проходимые биомы
 PASSABLE_BIOMES = [BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST]
@@ -41,6 +42,7 @@ NPC_TYPE_MAGE = "mage"
 NPC_TYPE_ALCHEMIST = "alchemist"
 NPC_TYPE_HUNTER = "hunter"
 NPC_TYPE_NECROMANCER = "necromancer"
+NPC_TYPE_SHADOW_ADEPT = "shadow_adept"
 
 # Типы животных NPC
 NPC_TYPE_WOLF = "wolf"
@@ -277,6 +279,37 @@ NPC_RELATIONSHIPS = {
     (NPC_TYPE_HUNTER, NPC_TYPE_WOLF): RELATIONSHIP_HOSTILE,
     (NPC_TYPE_HUNTER, NPC_TYPE_BEAR): RELATIONSHIP_HOSTILE,
     (NPC_TYPE_HUNTER, NPC_TYPE_DEER): RELATIONSHIP_HOSTILE,
+
+    # Адепты тени (агрессивны к магам, нежити, бандитам, некромантам)
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_GUARD): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_MERCHANT): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_MINER): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_NEUTRAL): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_ALCHEMIST): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_HUNTER): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_MAGE): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_BANDIT): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_UNDEAD): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_NECROMANCER): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_FRIENDLY,
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_WOLF): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_BEAR): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_SHADOW_ADEPT, NPC_TYPE_DEER): RELATIONSHIP_NEUTRAL,
+
+    # Отношения других NPC к Адептам тени
+    (NPC_TYPE_GUARD, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_UNFRIENDLY,
+    (NPC_TYPE_MERCHANT, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_UNFRIENDLY,
+    (NPC_TYPE_MINER, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_UNFRIENDLY,
+    (NPC_TYPE_NEUTRAL, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_UNFRIENDLY,
+    (NPC_TYPE_ALCHEMIST, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_UNFRIENDLY,
+    (NPC_TYPE_HUNTER, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_UNFRIENDLY,
+    (NPC_TYPE_MAGE, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_BANDIT, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_UNDEAD, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_NECROMANCER, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_HOSTILE,
+    (NPC_TYPE_WOLF, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_BEAR, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_NEUTRAL,
+    (NPC_TYPE_DEER, NPC_TYPE_SHADOW_ADEPT): RELATIONSHIP_NEUTRAL,
 }
 
 # =============================================================================
@@ -305,6 +338,11 @@ MAGIC_SCHOOL_NAMES = [
 
 WARRIOR_ACADEMY_NAMES = [
     "Военная Академия", "Школа Воинского Искусства", "Цитадель Воинов"
+]
+
+SECRET_CAMP_NAMES = [
+    "Тайный Лагерь", "Убежище Теней", "Логово Убийц",
+    "Скрытый Приют", "Гнездо Шпионов", "Темный Притон"
 ]
 
 MINE_NAMES = [
@@ -410,6 +448,7 @@ def _init_dynamic_constants():
         'ruins': tuple(ui_config.get_color('locations', 'ruins', [128, 128, 128])),
         'magic_school': tuple(ui_config.get_color('locations', 'magic_school', [138, 43, 226])),
         'warrior_academy': tuple(ui_config.get_color('locations', 'warrior_academy', [178, 34, 34])),
+        'secret_camp': tuple(ui_config.get_color('locations', 'secret_camp', [64, 64, 64])),
 
         # Общие
         'player': tuple(ui_config.get_color('general', 'player', [255, 215, 0])),
@@ -600,6 +639,7 @@ COLORS = {
     'ruins': (128, 128, 128),
     'magic_school': (138, 43, 226),
     'warrior_academy': (178, 34, 34),
+    'secret_camp': (64, 64, 64),
     'player': (255, 215, 0),
     'fog': (40, 40, 45),
     'background': (20, 20, 25),
