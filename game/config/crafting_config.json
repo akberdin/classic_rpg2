@@ -39,7 +39,7 @@
         {"item": "charcoal", "quantity": 2}
       ],
       "category": "smelting",
-      "base_price": 50,
+      "base_price": 5,
       "sprite": null
     },
     {
@@ -59,7 +59,7 @@
         {"item": "charcoal", "quantity": 2}
       ],
       "category": "smelting",
-      "base_price": 100,
+      "base_price": 15,
       "sprite": null
     },
     {
@@ -138,7 +138,7 @@
         {"item": "wood", "quantity": 2}
       ],
       "category": "tool",
-      "base_price": 20,
+      "base_price": 3,
       "sprite": null
     },
     {
@@ -157,7 +157,7 @@
         {"item": "wood", "quantity": 1}
       ],
       "category": "tool",
-      "base_price": 15,
+      "base_price": 2,
       "sprite": null
     },
     {
@@ -176,7 +176,7 @@
         {"item": "wood", "quantity": 3}
       ],
       "category": "tool",
-      "base_price": 25,
+      "base_price": 3,
       "sprite": null
     },
     {
@@ -195,7 +195,7 @@
         {"item": "wood", "quantity": 5}
       ],
       "category": "smelting",
-      "base_price": 10,
+      "base_price": 0,
       "sprite": null
     },
     {
@@ -355,7 +355,7 @@
         {"item": "charcoal", "quantity": 3}
       ],
       "category": "tool",
-      "base_price": 40,
+      "base_price": 5,
       "sprite": null
     },
     {
@@ -375,7 +375,7 @@
         {"item": "copper_axe_blade", "quantity": 1}
       ],
       "category": "weapon",
-      "base_price": 60,
+      "base_price": 10,
       "sprite": null
     },
     {
@@ -394,7 +394,7 @@
         {"item": "wolf_hide", "quantity": 1}
       ],
       "category": "tool",
-      "base_price": 40,
+      "base_price": 0,
       "sprite": null
     },
     {
@@ -413,7 +413,7 @@
         {"item": "bear_hide", "quantity": 1}
       ],
       "category": "tool",
-      "base_price": 60,
+      "base_price": 0,
       "sprite": null
     },
     {
@@ -432,7 +432,7 @@
         {"item": "deer_hide", "quantity": 1}
       ],
       "category": "tool",
-      "base_price": 50,
+      "base_price": 0,
       "sprite": null
     },
     {
@@ -471,7 +471,7 @@
         {"item": "charcoal", "quantity": 2}
       ],
       "category": "tool",
-      "base_price": 35,
+      "base_price": 5,
       "sprite": null
     },
     {
@@ -492,7 +492,7 @@
         {"item": "wooden_shaft", "quantity": 1}
       ],
       "category": "weapon",
-      "base_price": 70,
+      "base_price": 10,
       "sprite": null
     },
     {
@@ -512,7 +512,7 @@
         {"item": "charcoal", "quantity": 2}
       ],
       "category": "tool",
-      "base_price": 35,
+      "base_price": 5,
       "sprite": null
     },
     {
@@ -852,7 +852,7 @@
         {"item": "long_wooden_handle", "quantity": 1}
       ],
       "category": "weapon",
-      "base_price": 55,
+      "base_price": 10,
       "sprite": null
     },
     {
@@ -911,7 +911,7 @@
         {"item": "poor_fabric", "quantity": 2}
       ],
       "category": "armor",
-      "base_price": 35,
+      "base_price": 8,
       "sprite": null
     },
     {
@@ -969,7 +969,7 @@
         {"item": "deer_hide", "quantity": 1}
       ],
       "category": "armor",
-      "base_price": 45,
+      "base_price": 8,
       "sprite": null
     },
     {
@@ -1027,7 +1027,7 @@
         {"item": "poor_fabric", "quantity": 3}
       ],
       "category": "armor",
-      "base_price": 35,
+      "base_price": 5,
       "sprite": null
     },
     {
@@ -1166,7 +1166,7 @@
         {"item": "poor_fabric", "quantity": 1}
       ],
       "category": "armor",
-      "base_price": 28,
+      "base_price": 5,
       "sprite": null
     },
     {
@@ -1248,7 +1248,7 @@
         {"item": "animal_sinew", "quantity": 3}
       ],
       "category": "tool",
-      "base_price": 30,
+      "base_price": 5,
       "sprite": null
     },
     {
@@ -1287,7 +1287,7 @@
         {"item": "short_wooden_handle", "quantity": 1}
       ],
       "category": "weapon",
-      "base_price": 40,
+      "base_price": 8,
       "sprite": null
     },
     {
@@ -1370,7 +1370,7 @@
         {"item": "short_wooden_handle", "quantity": 1}
       ],
       "category": "weapon",
-      "base_price": 58,
+      "base_price": 10,
       "sprite": null
     },
     {
@@ -1452,7 +1452,7 @@
         {"item": "chamomile", "quantity": 2}
       ],
       "category": "alchemy",
-      "base_price": 25,
+      "base_price": 5,
       "sprite": null
     },
     {
@@ -1491,7 +1491,7 @@
         {"item": "sage", "quantity": 2}
       ],
       "category": "alchemy",
-      "base_price": 35,
+      "base_price": 8,
       "sprite": null
     },
     {
@@ -1530,7 +1530,7 @@
         {"item": "mint", "quantity": 2}
       ],
       "category": "alchemy",
-      "base_price": 30,
+      "base_price": 5,
       "sprite": null
     },
     {
@@ -1656,7 +1656,7 @@
         {"item": "wood", "quantity": 3}
       ],
       "category": "tool",
-      "base_price": 40,
+      "base_price": 5,
       "sprite": null
     },
     {
@@ -1718,7 +1718,7 @@
         {"item": "bowstring", "quantity": 1}
       ],
       "category": "weapon",
-      "base_price": 50,
+      "base_price": 10,
       "sprite": null
     },
     {
@@ -1780,7 +1780,7 @@
         {"item": "wood", "quantity": 4}
       ],
       "category": "tool",
-      "base_price": 30,
+      "base_price": 5,
       "sprite": null
     },
     {
@@ -1879,7 +1879,7 @@
         {"item": "wooden_staff_core", "quantity": 1}
       ],
       "category": "weapon",
-      "base_price": 45,
+      "base_price": 10,
       "sprite": null
     },
     {

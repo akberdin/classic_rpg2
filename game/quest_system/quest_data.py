@@ -1380,3 +1380,151 @@ CRAFT_ITEM_KEY_TO_NAME = {
     'staff': 'Посох (обычное)',
     'fine_staff': 'Посох (необычное)'
 }
+
+# ===== КВЕСТЫ-ОБУЧЕНИЯ ДЛЯ ПОЛУЧЕНИЯ БАЗОВЫХ РЕЦЕПТОВ =====
+# Эти квесты дают игрокам базовые рецепты крафта бесплатно
+
+CRAFTING_TUTORIAL_QUESTS = {
+    'learn_basic_smelting': {
+        'display_name': 'Первые шаги кузнеца',
+        'quest_names': ['Основы плавки', 'Кузнечное дело', 'Работа с металлом'],
+        'descriptions': [
+            'Кузнец деревни готов научить тебя основам плавки металла. Собери медную руду и древесину, чтобы начать обучение.',
+            'Деревенский кузнец предлагает обучить тебя переплавке руды. Принеси медную руду и древесину для первого урока.',
+            'Мастер-кузнец ждет учеников. Собери медную руду и древесину, и он научит тебя работе с металлом.'
+        ],
+        'gather_items': {
+            'copper_ore': 3,
+            'wood': 5
+        },
+        'reward_exp': 100,
+        'reward_gold': 20,
+        'reward_recipes': ['copper_ingot', 'charcoal'],
+        'min_rank': 1,
+        'location_type': 'village',
+        'is_tutorial': True,
+        'tutorial_category': 'smelting'
+    },
+    'learn_basic_woodwork': {
+        'display_name': 'Азы плотничества',
+        'quest_names': ['Основы деревообработки', 'Плотницкое дело', 'Работа с деревом'],
+        'descriptions': [
+            'Деревенский плотник готов научить тебя основам работы с деревом. Собери древесину для обучения.',
+            'Мастер по дереву предлагает научить тебя создавать рукояти и древки. Принеси древесину.',
+            'Плотник деревни ждет учеников. Собери древесину, и он покажет тебе основы ремесла.'
+        ],
+        'gather_items': {
+            'wood': 8
+        },
+        'reward_exp': 80,
+        'reward_gold': 15,
+        'reward_recipes': ['long_wooden_handle', 'short_wooden_handle', 'wooden_shaft'],
+        'min_rank': 1,
+        'location_type': 'village',
+        'is_tutorial': True,
+        'tutorial_category': 'woodwork'
+    },
+    'learn_basic_leatherwork': {
+        'display_name': 'Основы кожевенного дела',
+        'quest_names': ['Обработка кожи', 'Кожевенное ремесло', 'Работа с кожей'],
+        'descriptions': [
+            'Кожевник деревни готов научить тебя обработке шкур. Охотись на волков и принеси их шкуры.',
+            'Мастер по коже предлагает научить тебя обработке шкур. Добудь волчьи шкуры для обучения.',
+            'Деревенский кожевник ждет учеников. Принеси волчьи шкуры, и он научит тебя ремеслу.'
+        ],
+        'gather_items': {
+            'wolf_hide': 5
+        },
+        'reward_exp': 100,
+        'reward_gold': 20,
+        'reward_recipes': ['leather_from_wolf_hide', 'leather_from_bear_hide', 'leather_from_deer_hide', 'leather_strips'],
+        'min_rank': 1,
+        'location_type': 'village',
+        'is_tutorial': True,
+        'tutorial_category': 'leatherwork'
+    },
+    'learn_basic_weaponcraft': {
+        'display_name': 'Простое оружие',
+        'quest_names': ['Создание оружия', 'Оружейное дело', 'Первое оружие'],
+        'descriptions': [
+            'Оружейник деревни готов научить тебя создавать простое оружие. Собери медную руду и древесину.',
+            'Мастер оружейник предлагает научить тебя ковать лезвия. Принеси медную руду для обучения.',
+            'Деревенский кузнец научит тебя создавать оружие. Собери медную руду и древесину.'
+        ],
+        'gather_items': {
+            'copper_ore': 8,
+            'wood': 5,
+            'leather_strips': 5
+        },
+        'reward_exp': 150,
+        'reward_gold': 30,
+        'reward_recipes': ['copper_axe_blade', 'copper_spearhead', 'poor_axe', 'poor_spear'],
+        'min_rank': 1,
+        'location_type': 'village',
+        'is_tutorial': True,
+        'tutorial_category': 'weaponcraft',
+        'requires_recipe': 'copper_ingot'
+    },
+    'learn_basic_alchemy': {
+        'display_name': 'Основы алхимии',
+        'quest_names': ['Травничество', 'Алхимия для новичков', 'Первые зелья'],
+        'descriptions': [
+            'Деревенский знахарь готов научить тебя основам алхимии. Собери травы в окрестностях.',
+            'Алхимик предлагает научить тебя варить простые зелья. Принеси ромашку и мяту.',
+            'Знахарь деревни ждет учеников. Собери травы, и он научит тебя алхимии.'
+        ],
+        'gather_items': {
+            'chamomile': 10,
+            'mint': 8
+        },
+        'reward_exp': 120,
+        'reward_gold': 25,
+        'reward_recipes': ['minor_health_potion_recipe', 'minor_stamina_potion_recipe'],
+        'min_rank': 1,
+        'location_type': 'village',
+        'is_tutorial': True,
+        'tutorial_category': 'alchemy'
+    },
+    'learn_advanced_smelting': {
+        'display_name': 'Продвинутая плавка',
+        'quest_names': ['Железная руда', 'Сталь и железо', 'Продвинутая металлургия'],
+        'descriptions': [
+            'Городской кузнец готов научить тебя работе с железом. Собери железную руду.',
+            'Мастер-металлург предлагает научить тебя плавке железа и стали. Принеси железную руду.',
+            'Кузнец города ждет учеников для обучения продвинутой плавке. Собери железную руду.'
+        ],
+        'gather_items': {
+            'iron_ore': 10,
+            'copper_ingot': 5
+        },
+        'reward_exp': 200,
+        'reward_gold': 40,
+        'reward_recipes': ['iron_ingot', 'steel_ingot'],
+        'min_rank': 2,
+        'location_type': 'city',
+        'is_tutorial': True,
+        'tutorial_category': 'smelting',
+        'requires_recipe': 'copper_ingot'
+    }
+}
+
+# Словарь для отслеживания прогресса квестов-обучений
+TUTORIAL_RECIPE_REWARDS = {
+    'copper_ingot': 'learn_basic_smelting',
+    'charcoal': 'learn_basic_smelting',
+    'long_wooden_handle': 'learn_basic_woodwork',
+    'short_wooden_handle': 'learn_basic_woodwork',
+    'wooden_shaft': 'learn_basic_woodwork',
+    'leather_from_wolf_hide': 'learn_basic_leatherwork',
+    'leather_from_bear_hide': 'learn_basic_leatherwork',
+    'leather_from_deer_hide': 'learn_basic_leatherwork',
+    'leather_strips': 'learn_basic_leatherwork',
+    'copper_axe_blade': 'learn_basic_weaponcraft',
+    'copper_spearhead': 'learn_basic_weaponcraft',
+    'poor_axe': 'learn_basic_weaponcraft',
+    'poor_spear': 'learn_basic_weaponcraft',
+    'minor_health_potion_recipe': 'learn_basic_alchemy',
+    'minor_stamina_potion_recipe': 'learn_basic_alchemy',
+    'iron_ingot': 'learn_advanced_smelting',
+    'steel_ingot': 'learn_advanced_smelting'
+}

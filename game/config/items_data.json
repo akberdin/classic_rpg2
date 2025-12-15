@@ -5,11 +5,11 @@
   "resources": {
     "_comment": "Ресурсы: руды, слитки, древесина, травы, материалы",
 
-    "copper_ore": {"name": "Медная руда", "value": 10, "weight": 0.5},
-    "iron_ore": {"name": "Железная руда", "value": 20, "weight": 0.5},
-    "silver_ore": {"name": "Серебряная руда", "value": 50, "weight": 0.5},
-    "gold_ore": {"name": "Золотая руда", "value": 100, "weight": 0.5},
-    "mithril_ore": {"name": "Мифриловая руда", "value": 200, "weight": 0.5},
+    "copper_ore": {"name": "Медная руда", "value": 4, "weight": 0.5},
+    "iron_ore": {"name": "Железная руда", "value": 8, "weight": 0.5},
+    "silver_ore": {"name": "Серебряная руда", "value": 20, "weight": 0.5},
+    "gold_ore": {"name": "Золотая руда", "value": 40, "weight": 0.5},
+    "mithril_ore": {"name": "Мифриловая руда", "value": 80, "weight": 0.5},
 
     "copper_ingot": {"name": "Медный слиток", "value": 30, "weight": 0.5},
     "iron_ingot": {"name": "Железный слиток", "value": 60, "weight": 0.5},
@@ -18,8 +18,8 @@
     "mithril_ingot": {"name": "Мифриловый слиток", "value": 600, "weight": 0.5},
     "steel_ingot": {"name": "Стальной слиток", "value": 120, "weight": 0.5},
 
-    "wood": {"name": "Древесина", "value": 5, "weight": 1.0},
-    "charcoal": {"name": "Древесный уголь", "value": 8, "weight": 0.3},
+    "wood": {"name": "Древесина", "value": 3, "weight": 1.0},
+    "charcoal": {"name": "Древесный уголь", "value": 10, "weight": 0.3},
 
     "long_wooden_handle": {"name": "Длинная деревянная рукоять", "value": 15, "weight": 0.8},
     "short_wooden_handle": {"name": "Короткая деревянная рукоять", "value": 10, "weight": 0.5},
