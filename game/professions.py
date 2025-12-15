@@ -153,7 +153,7 @@ class Mining(Profession):
         if hasattr(player, 'get_effective_stat'):
             player_luck = player.get_effective_stat('luck')
         elif hasattr(player, 'inventory'):
-            player_luck = player.inventory.get_total_stat_bonus('luck') + getattr(player, 'luck', 1)
+            player_luck = player.inventory.get_total_stats_bonus('luck') + getattr(player, 'luck', 1)
 
         # Пробуем найти камни каждого типа
         for gem_name, gem_data in self.gem_types.items():
