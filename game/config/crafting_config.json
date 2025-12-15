@@ -1,7 +1,6 @@
 {
   "_description": "Конфигурация системы крафта - рецепты и станции",
   "_version": "2.0.0",
-
   "crafting_stations": {
     "workbench": {
       "name": "Мастерская",
@@ -20,7 +19,6 @@
       "description": "Для улучшения и зачарования предметов"
     }
   },
-
   "recipes": [
     {
       "id": "copper_ingot",
@@ -35,8 +33,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ore", "quantity": 5},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "copper_ore",
+          "quantity": 5
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "smelting",
       "base_price": 5,
@@ -55,8 +59,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_ore", "quantity": 5},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "iron_ore",
+          "quantity": 5
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "smelting",
       "base_price": 15,
@@ -75,8 +85,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ore", "quantity": 5},
-        {"item": "charcoal", "quantity": 3}
+        {
+          "item": "silver_ore",
+          "quantity": 5
+        },
+        {
+          "item": "charcoal",
+          "quantity": 3
+        }
       ],
       "category": "smelting",
       "base_price": 250,
@@ -95,8 +111,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ore", "quantity": 5},
-        {"item": "charcoal", "quantity": 3}
+        {
+          "item": "gold_ore",
+          "quantity": 5
+        },
+        {
+          "item": "charcoal",
+          "quantity": 3
+        }
       ],
       "category": "smelting",
       "base_price": 500,
@@ -115,8 +137,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 4,
       "ingredients": [
-        {"item": "mithril_ore", "quantity": 5},
-        {"item": "charcoal", "quantity": 4}
+        {
+          "item": "mithril_ore",
+          "quantity": 5
+        },
+        {
+          "item": "charcoal",
+          "quantity": 4
+        }
       ],
       "category": "smelting",
       "base_price": 1000,
@@ -135,7 +163,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "wood", "quantity": 2}
+        {
+          "item": "wood",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 3,
@@ -154,7 +185,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "wood", "quantity": 1}
+        {
+          "item": "wood",
+          "quantity": 1
+        }
       ],
       "category": "tool",
       "base_price": 2,
@@ -173,7 +207,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "wood", "quantity": 3}
+        {
+          "item": "wood",
+          "quantity": 3
+        }
       ],
       "category": "tool",
       "base_price": 3,
@@ -192,7 +229,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "wood", "quantity": 5}
+        {
+          "item": "wood",
+          "quantity": 5
+        }
       ],
       "category": "smelting",
       "base_price": 0,
@@ -211,8 +251,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "iron_ingot", "quantity": 4},
-        {"item": "charcoal", "quantity": 5}
+        {
+          "item": "iron_ingot",
+          "quantity": 4
+        },
+        {
+          "item": "charcoal",
+          "quantity": 5
+        }
       ],
       "category": "smelting",
       "base_price": 150,
@@ -231,8 +277,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "copper_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 50,
@@ -251,8 +303,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "iron_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 80,
@@ -271,8 +329,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "steel_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "steel_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 150,
@@ -291,8 +355,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "silver_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 200,
@@ -311,8 +381,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "gold_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 400,
@@ -331,8 +407,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 4,
       "ingredients": [
-        {"item": "mithril_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "mithril_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 800,
@@ -351,8 +433,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 2},
-        {"item": "charcoal", "quantity": 3}
+        {
+          "item": "copper_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "charcoal",
+          "quantity": 3
+        }
       ],
       "category": "tool",
       "base_price": 5,
@@ -371,8 +459,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "long_wooden_handle", "quantity": 1},
-        {"item": "copper_axe_blade", "quantity": 1}
+        {
+          "item": "long_wooden_handle",
+          "quantity": 1
+        },
+        {
+          "item": "copper_axe_blade",
+          "quantity": 1
+        }
       ],
       "category": "weapon",
       "base_price": 10,
@@ -391,7 +485,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "wolf_hide", "quantity": 1}
+        {
+          "item": "wolf_hide",
+          "quantity": 1
+        }
       ],
       "category": "tool",
       "base_price": 0,
@@ -410,7 +507,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "bear_hide", "quantity": 1}
+        {
+          "item": "bear_hide",
+          "quantity": 1
+        }
       ],
       "category": "tool",
       "base_price": 0,
@@ -429,7 +529,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "deer_hide", "quantity": 1}
+        {
+          "item": "deer_hide",
+          "quantity": 1
+        }
       ],
       "category": "tool",
       "base_price": 0,
@@ -448,7 +551,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "leather", "quantity": 1}
+        {
+          "item": "leather",
+          "quantity": 1
+        }
       ],
       "category": "tool",
       "base_price": 50,
@@ -467,8 +573,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "copper_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 5,
@@ -487,9 +599,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_spearhead", "quantity": 1},
-        {"item": "leather_strips", "quantity": 3},
-        {"item": "wooden_shaft", "quantity": 1}
+        {
+          "item": "copper_spearhead",
+          "quantity": 1
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 3
+        },
+        {
+          "item": "wooden_shaft",
+          "quantity": 1
+        }
       ],
       "category": "weapon",
       "base_price": 10,
@@ -508,8 +629,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 2},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "copper_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 5,
@@ -528,8 +655,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_ingot", "quantity": 2},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "iron_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 60,
@@ -548,8 +681,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "steel_ingot", "quantity": 2},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "steel_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 105,
@@ -568,8 +707,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 1
+        }
       ],
       "category": "tool",
       "base_price": 25,
@@ -588,8 +733,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 1}
+        {
+          "item": "iron_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 1
+        }
       ],
       "category": "tool",
       "base_price": 45,
@@ -608,8 +759,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "steel_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 1}
+        {
+          "item": "steel_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 1
+        }
       ],
       "category": "tool",
       "base_price": 80,
@@ -628,8 +785,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 1
+        }
       ],
       "category": "tool",
       "base_price": 120,
@@ -648,8 +811,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "copper_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 32,
@@ -668,8 +837,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "iron_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 58,
@@ -688,8 +863,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "steel_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "steel_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 100,
@@ -708,8 +889,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 2},
-        {"item": "charcoal", "quantity": 3}
+        {
+          "item": "copper_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "charcoal",
+          "quantity": 3
+        }
       ],
       "category": "tool",
       "base_price": 48,
@@ -728,8 +915,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_ingot", "quantity": 2},
-        {"item": "charcoal", "quantity": 3}
+        {
+          "item": "iron_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "charcoal",
+          "quantity": 3
+        }
       ],
       "category": "tool",
       "base_price": 85,
@@ -748,8 +941,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "steel_ingot", "quantity": 2},
-        {"item": "charcoal", "quantity": 3}
+        {
+          "item": "steel_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "charcoal",
+          "quantity": 3
+        }
       ],
       "category": "tool",
       "base_price": 150,
@@ -768,8 +967,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "iron_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 70,
@@ -788,8 +993,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "steel_ingot", "quantity": 1},
-        {"item": "charcoal", "quantity": 2}
+        {
+          "item": "steel_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "charcoal",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 120,
@@ -808,8 +1019,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_ingot", "quantity": 2},
-        {"item": "charcoal", "quantity": 3}
+        {
+          "item": "iron_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "charcoal",
+          "quantity": 3
+        }
       ],
       "category": "tool",
       "base_price": 72,
@@ -828,8 +1045,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "steel_ingot", "quantity": 2},
-        {"item": "charcoal", "quantity": 3}
+        {
+          "item": "steel_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "charcoal",
+          "quantity": 3
+        }
       ],
       "category": "tool",
       "base_price": 125,
@@ -848,8 +1071,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_hammer_head", "quantity": 1},
-        {"item": "long_wooden_handle", "quantity": 1}
+        {
+          "item": "copper_hammer_head",
+          "quantity": 1
+        },
+        {
+          "item": "long_wooden_handle",
+          "quantity": 1
+        }
       ],
       "category": "weapon",
       "base_price": 10,
@@ -868,8 +1097,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_hammer_head", "quantity": 1},
-        {"item": "long_wooden_handle", "quantity": 1}
+        {
+          "item": "iron_hammer_head",
+          "quantity": 1
+        },
+        {
+          "item": "long_wooden_handle",
+          "quantity": 1
+        }
       ],
       "category": "weapon",
       "base_price": 95,
@@ -888,8 +1123,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "steel_hammer_head", "quantity": 1},
-        {"item": "long_wooden_handle", "quantity": 1}
+        {
+          "item": "steel_hammer_head",
+          "quantity": 1
+        },
+        {
+          "item": "long_wooden_handle",
+          "quantity": 1
+        }
       ],
       "category": "weapon",
       "base_price": 160,
@@ -908,7 +1149,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "poor_fabric", "quantity": 2}
+        {
+          "item": "poor_fabric",
+          "quantity": 2
+        }
       ],
       "category": "armor",
       "base_price": 8,
@@ -927,7 +1171,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "fabric", "quantity": 2}
+        {
+          "item": "fabric",
+          "quantity": 2
+        }
       ],
       "category": "armor",
       "base_price": 60,
@@ -946,8 +1193,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "fabric", "quantity": 2},
-        {"item": "leather_strips", "quantity": 3}
+        {
+          "item": "fabric",
+          "quantity": 2
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 3
+        }
       ],
       "category": "armor",
       "base_price": 105,
@@ -966,7 +1219,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "deer_hide", "quantity": 1}
+        {
+          "item": "deer_hide",
+          "quantity": 1
+        }
       ],
       "category": "armor",
       "base_price": 8,
@@ -985,7 +1241,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "leather", "quantity": 1}
+        {
+          "item": "leather",
+          "quantity": 1
+        }
       ],
       "category": "armor",
       "base_price": 75,
@@ -1004,8 +1263,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "leather", "quantity": 1},
-        {"item": "leather_strips", "quantity": 4}
+        {
+          "item": "leather",
+          "quantity": 1
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 4
+        }
       ],
       "category": "armor",
       "base_price": 130,
@@ -1024,7 +1289,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "poor_fabric", "quantity": 3}
+        {
+          "item": "poor_fabric",
+          "quantity": 3
+        }
       ],
       "category": "armor",
       "base_price": 5,
@@ -1043,8 +1311,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "poor_fabric", "quantity": 3},
-        {"item": "leather_strips", "quantity": 4}
+        {
+          "item": "poor_fabric",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 4
+        }
       ],
       "category": "armor",
       "base_price": 70,
@@ -1063,9 +1337,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "fabric", "quantity": 3},
-        {"item": "leather_strips", "quantity": 5},
-        {"item": "copper_strips", "quantity": 3}
+        {
+          "item": "fabric",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 5
+        },
+        {
+          "item": "copper_strips",
+          "quantity": 3
+        }
       ],
       "category": "armor",
       "base_price": 125,
@@ -1084,9 +1367,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "leather", "quantity": 2},
-        {"item": "leather_strips", "quantity": 6},
-        {"item": "copper_strips", "quantity": 3}
+        {
+          "item": "leather",
+          "quantity": 2
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 6
+        },
+        {
+          "item": "copper_strips",
+          "quantity": 3
+        }
       ],
       "category": "armor",
       "base_price": 210,
@@ -1105,7 +1397,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "poor_fabric", "quantity": 2}
+        {
+          "item": "poor_fabric",
+          "quantity": 2
+        }
       ],
       "category": "armor",
       "base_price": 40,
@@ -1124,7 +1419,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "fabric", "quantity": 2}
+        {
+          "item": "fabric",
+          "quantity": 2
+        }
       ],
       "category": "armor",
       "base_price": 70,
@@ -1143,8 +1441,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "fabric", "quantity": 2},
-        {"item": "leather_strips", "quantity": 4}
+        {
+          "item": "fabric",
+          "quantity": 2
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 4
+        }
       ],
       "category": "armor",
       "base_price": 120,
@@ -1163,7 +1467,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "poor_fabric", "quantity": 1}
+        {
+          "item": "poor_fabric",
+          "quantity": 1
+        }
       ],
       "category": "armor",
       "base_price": 5,
@@ -1182,8 +1489,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "poor_fabric", "quantity": 1},
-        {"item": "leather_strips", "quantity": 3}
+        {
+          "item": "poor_fabric",
+          "quantity": 1
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 3
+        }
       ],
       "category": "armor",
       "base_price": 55,
@@ -1202,9 +1515,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "fabric", "quantity": 1},
-        {"item": "leather_strips", "quantity": 4},
-        {"item": "copper_strips", "quantity": 2}
+        {
+          "item": "fabric",
+          "quantity": 1
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 4
+        },
+        {
+          "item": "copper_strips",
+          "quantity": 2
+        }
       ],
       "category": "armor",
       "base_price": 100,
@@ -1223,10 +1545,22 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "leather", "quantity": 1},
-        {"item": "leather_strips", "quantity": 5},
-        {"item": "copper_strips", "quantity": 3},
-        {"item": "silver_strips", "quantity": 2}
+        {
+          "item": "leather",
+          "quantity": 1
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 5
+        },
+        {
+          "item": "copper_strips",
+          "quantity": 3
+        },
+        {
+          "item": "silver_strips",
+          "quantity": 2
+        }
       ],
       "category": "armor",
       "base_price": 180,
@@ -1245,7 +1579,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "animal_sinew", "quantity": 3}
+        {
+          "item": "animal_sinew",
+          "quantity": 3
+        }
       ],
       "category": "tool",
       "base_price": 5,
@@ -1264,7 +1601,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "deer_antlers", "quantity": 1}
+        {
+          "item": "deer_antlers",
+          "quantity": 1
+        }
       ],
       "category": "tool",
       "base_price": 75,
@@ -1283,8 +1623,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_short_blade", "quantity": 1},
-        {"item": "short_wooden_handle", "quantity": 1}
+        {
+          "item": "copper_short_blade",
+          "quantity": 1
+        },
+        {
+          "item": "short_wooden_handle",
+          "quantity": 1
+        }
       ],
       "category": "weapon",
       "base_price": 8,
@@ -1303,9 +1649,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_short_blade", "quantity": 1},
-        {"item": "short_wooden_handle", "quantity": 1},
-        {"item": "copper_strips", "quantity": 2}
+        {
+          "item": "iron_short_blade",
+          "quantity": 1
+        },
+        {
+          "item": "short_wooden_handle",
+          "quantity": 1
+        },
+        {
+          "item": "copper_strips",
+          "quantity": 2
+        }
       ],
       "category": "weapon",
       "base_price": 75,
@@ -1324,9 +1679,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "steel_short_blade", "quantity": 1},
-        {"item": "short_wooden_handle", "quantity": 1},
-        {"item": "iron_strips", "quantity": 2}
+        {
+          "item": "steel_short_blade",
+          "quantity": 1
+        },
+        {
+          "item": "short_wooden_handle",
+          "quantity": 1
+        },
+        {
+          "item": "iron_strips",
+          "quantity": 2
+        }
       ],
       "category": "weapon",
       "base_price": 130,
@@ -1345,9 +1709,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "steel_short_blade", "quantity": 1},
-        {"item": "short_horn_handle", "quantity": 1},
-        {"item": "silver_strips", "quantity": 2}
+        {
+          "item": "steel_short_blade",
+          "quantity": 1
+        },
+        {
+          "item": "short_horn_handle",
+          "quantity": 1
+        },
+        {
+          "item": "silver_strips",
+          "quantity": 2
+        }
       ],
       "category": "weapon",
       "base_price": 220,
@@ -1366,8 +1739,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_long_blade", "quantity": 1},
-        {"item": "short_wooden_handle", "quantity": 1}
+        {
+          "item": "copper_long_blade",
+          "quantity": 1
+        },
+        {
+          "item": "short_wooden_handle",
+          "quantity": 1
+        }
       ],
       "category": "weapon",
       "base_price": 10,
@@ -1386,9 +1765,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "iron_long_blade", "quantity": 1},
-        {"item": "short_wooden_handle", "quantity": 1},
-        {"item": "copper_strips", "quantity": 3}
+        {
+          "item": "iron_long_blade",
+          "quantity": 1
+        },
+        {
+          "item": "short_wooden_handle",
+          "quantity": 1
+        },
+        {
+          "item": "copper_strips",
+          "quantity": 3
+        }
       ],
       "category": "weapon",
       "base_price": 110,
@@ -1407,9 +1795,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "steel_long_blade", "quantity": 1},
-        {"item": "short_wooden_handle", "quantity": 1},
-        {"item": "iron_strips", "quantity": 3}
+        {
+          "item": "steel_long_blade",
+          "quantity": 1
+        },
+        {
+          "item": "short_wooden_handle",
+          "quantity": 1
+        },
+        {
+          "item": "iron_strips",
+          "quantity": 3
+        }
       ],
       "category": "weapon",
       "base_price": 185,
@@ -1428,9 +1825,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "steel_long_blade", "quantity": 1},
-        {"item": "short_horn_handle", "quantity": 1},
-        {"item": "silver_strips", "quantity": 3}
+        {
+          "item": "steel_long_blade",
+          "quantity": 1
+        },
+        {
+          "item": "short_horn_handle",
+          "quantity": 1
+        },
+        {
+          "item": "silver_strips",
+          "quantity": 3
+        }
       ],
       "category": "weapon",
       "base_price": 320,
@@ -1449,7 +1855,10 @@
       "required_skill": "alchemy",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "chamomile", "quantity": 2}
+        {
+          "item": "chamomile",
+          "quantity": 2
+        }
       ],
       "category": "alchemy",
       "base_price": 5,
@@ -1468,8 +1877,14 @@
       "required_skill": "alchemy",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "chamomile", "quantity": 3},
-        {"item": "mint", "quantity": 1}
+        {
+          "item": "chamomile",
+          "quantity": 3
+        },
+        {
+          "item": "mint",
+          "quantity": 1
+        }
       ],
       "category": "alchemy",
       "base_price": 60,
@@ -1488,7 +1903,10 @@
       "required_skill": "alchemy",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "sage", "quantity": 2}
+        {
+          "item": "sage",
+          "quantity": 2
+        }
       ],
       "category": "alchemy",
       "base_price": 8,
@@ -1507,8 +1925,14 @@
       "required_skill": "alchemy",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "sage", "quantity": 3},
-        {"item": "ginseng", "quantity": 1}
+        {
+          "item": "sage",
+          "quantity": 3
+        },
+        {
+          "item": "ginseng",
+          "quantity": 1
+        }
       ],
       "category": "alchemy",
       "base_price": 90,
@@ -1527,7 +1951,10 @@
       "required_skill": "alchemy",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "mint", "quantity": 2}
+        {
+          "item": "mint",
+          "quantity": 2
+        }
       ],
       "category": "alchemy",
       "base_price": 5,
@@ -1546,14 +1973,19 @@
       "required_skill": "alchemy",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "mint", "quantity": 3},
-        {"item": "ginseng", "quantity": 1}
+        {
+          "item": "mint",
+          "quantity": 3
+        },
+        {
+          "item": "ginseng",
+          "quantity": 1
+        }
       ],
       "category": "alchemy",
       "base_price": 85,
       "sprite": null
     },
-
     {
       "id": "axe",
       "name": "Топор (обычное качество)",
@@ -1567,9 +1999,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_axe_blade", "quantity": 1},
-        {"item": "long_wooden_handle", "quantity": 1},
-        {"item": "leather_strips", "quantity": 2}
+        {
+          "item": "iron_axe_blade",
+          "quantity": 1
+        },
+        {
+          "item": "long_wooden_handle",
+          "quantity": 1
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 2
+        }
       ],
       "category": "weapon",
       "base_price": 100,
@@ -1588,15 +2029,23 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "steel_axe_blade", "quantity": 1},
-        {"item": "long_wooden_handle", "quantity": 1},
-        {"item": "iron_strips", "quantity": 3}
+        {
+          "item": "steel_axe_blade",
+          "quantity": 1
+        },
+        {
+          "item": "long_wooden_handle",
+          "quantity": 1
+        },
+        {
+          "item": "iron_strips",
+          "quantity": 3
+        }
       ],
       "category": "weapon",
       "base_price": 180,
       "sprite": null
     },
-
     {
       "id": "spear",
       "name": "Копье (обычное качество)",
@@ -1610,9 +2059,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_spearhead", "quantity": 1},
-        {"item": "wooden_shaft", "quantity": 1},
-        {"item": "leather_strips", "quantity": 4}
+        {
+          "item": "iron_spearhead",
+          "quantity": 1
+        },
+        {
+          "item": "wooden_shaft",
+          "quantity": 1
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 4
+        }
       ],
       "category": "weapon",
       "base_price": 115,
@@ -1631,15 +2089,23 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "steel_spearhead", "quantity": 1},
-        {"item": "wooden_shaft", "quantity": 1},
-        {"item": "iron_strips", "quantity": 3}
+        {
+          "item": "steel_spearhead",
+          "quantity": 1
+        },
+        {
+          "item": "wooden_shaft",
+          "quantity": 1
+        },
+        {
+          "item": "iron_strips",
+          "quantity": 3
+        }
       ],
       "category": "weapon",
       "base_price": 200,
       "sprite": null
     },
-
     {
       "id": "wooden_bow_limb",
       "name": "Деревянные плечи лука",
@@ -1653,7 +2119,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "wood", "quantity": 3}
+        {
+          "item": "wood",
+          "quantity": 3
+        }
       ],
       "category": "tool",
       "base_price": 5,
@@ -1672,9 +2141,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "wooden_bow_limb", "quantity": 1},
-        {"item": "animal_sinew", "quantity": 2},
-        {"item": "leather_strips", "quantity": 2}
+        {
+          "item": "wooden_bow_limb",
+          "quantity": 1
+        },
+        {
+          "item": "animal_sinew",
+          "quantity": 2
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 80,
@@ -1693,9 +2171,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "reinforced_bow_limb", "quantity": 1},
-        {"item": "deer_antlers", "quantity": 1},
-        {"item": "animal_sinew", "quantity": 3}
+        {
+          "item": "reinforced_bow_limb",
+          "quantity": 1
+        },
+        {
+          "item": "deer_antlers",
+          "quantity": 1
+        },
+        {
+          "item": "animal_sinew",
+          "quantity": 3
+        }
       ],
       "category": "tool",
       "base_price": 140,
@@ -1714,8 +2201,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "wooden_bow_limb", "quantity": 1},
-        {"item": "bowstring", "quantity": 1}
+        {
+          "item": "wooden_bow_limb",
+          "quantity": 1
+        },
+        {
+          "item": "bowstring",
+          "quantity": 1
+        }
       ],
       "category": "weapon",
       "base_price": 10,
@@ -1734,9 +2227,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "reinforced_bow_limb", "quantity": 1},
-        {"item": "bowstring", "quantity": 1},
-        {"item": "leather_strips", "quantity": 2}
+        {
+          "item": "reinforced_bow_limb",
+          "quantity": 1
+        },
+        {
+          "item": "bowstring",
+          "quantity": 1
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 2
+        }
       ],
       "category": "weapon",
       "base_price": 95,
@@ -1755,15 +2257,23 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "composite_bow_limb", "quantity": 1},
-        {"item": "bowstring", "quantity": 1},
-        {"item": "leather_strips", "quantity": 3}
+        {
+          "item": "composite_bow_limb",
+          "quantity": 1
+        },
+        {
+          "item": "bowstring",
+          "quantity": 1
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 3
+        }
       ],
       "category": "weapon",
       "base_price": 170,
       "sprite": null
     },
-
     {
       "id": "wooden_staff_core",
       "name": "Деревянный стержень посоха",
@@ -1777,7 +2287,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "wood", "quantity": 4}
+        {
+          "item": "wood",
+          "quantity": 4
+        }
       ],
       "category": "tool",
       "base_price": 5,
@@ -1796,8 +2309,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "wooden_staff_core", "quantity": 1},
-        {"item": "iron_ingot", "quantity": 2}
+        {
+          "item": "wooden_staff_core",
+          "quantity": 1
+        },
+        {
+          "item": "iron_ingot",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 60,
@@ -1816,8 +2335,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "iron_staff_core", "quantity": 1},
-        {"item": "steel_ingot", "quantity": 2}
+        {
+          "item": "iron_staff_core",
+          "quantity": 1
+        },
+        {
+          "item": "steel_ingot",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 110,
@@ -1836,8 +2361,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 1},
-        {"item": "wood", "quantity": 2}
+        {
+          "item": "copper_ingot",
+          "quantity": 1
+        },
+        {
+          "item": "wood",
+          "quantity": 2
+        }
       ],
       "category": "tool",
       "base_price": 45,
@@ -1856,8 +2387,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "staff_focus", "quantity": 1},
-        {"item": "magic_crystal", "quantity": 1}
+        {
+          "item": "staff_focus",
+          "quantity": 1
+        },
+        {
+          "item": "magic_crystal",
+          "quantity": 1
+        }
       ],
       "category": "tool",
       "base_price": 120,
@@ -1876,7 +2413,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "wooden_staff_core", "quantity": 1}
+        {
+          "item": "wooden_staff_core",
+          "quantity": 1
+        }
       ],
       "category": "weapon",
       "base_price": 10,
@@ -1895,8 +2435,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "iron_staff_core", "quantity": 1},
-        {"item": "staff_focus", "quantity": 1}
+        {
+          "item": "iron_staff_core",
+          "quantity": 1
+        },
+        {
+          "item": "staff_focus",
+          "quantity": 1
+        }
       ],
       "category": "weapon",
       "base_price": 85,
@@ -1915,14 +2461,19 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "steel_staff_core", "quantity": 1},
-        {"item": "magic_staff_focus", "quantity": 1}
+        {
+          "item": "steel_staff_core",
+          "quantity": 1
+        },
+        {
+          "item": "magic_staff_focus",
+          "quantity": 1
+        }
       ],
       "category": "weapon",
       "base_price": 160,
       "sprite": null
     },
-
     {
       "id": "greater_health_potion_recipe",
       "name": "Большое зелье здоровья",
@@ -1936,9 +2487,18 @@
       "required_skill": "alchemy",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "chamomile", "quantity": 4},
-        {"item": "mint", "quantity": 2},
-        {"item": "ginseng", "quantity": 1}
+        {
+          "item": "chamomile",
+          "quantity": 4
+        },
+        {
+          "item": "mint",
+          "quantity": 2
+        },
+        {
+          "item": "ginseng",
+          "quantity": 1
+        }
       ],
       "category": "alchemy",
       "base_price": 140,
@@ -1957,8 +2517,14 @@
       "required_skill": "alchemy",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "sage", "quantity": 4},
-        {"item": "ginseng", "quantity": 2}
+        {
+          "item": "sage",
+          "quantity": 4
+        },
+        {
+          "item": "ginseng",
+          "quantity": 2
+        }
       ],
       "category": "alchemy",
       "base_price": 120,
@@ -1977,15 +2543,19 @@
       "required_skill": "alchemy",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "mint", "quantity": 4},
-        {"item": "ginseng", "quantity": 2}
+        {
+          "item": "mint",
+          "quantity": 4
+        },
+        {
+          "item": "ginseng",
+          "quantity": 2
+        }
       ],
       "category": "alchemy",
       "base_price": 100,
       "sprite": null
     },
-
-    {"_comment": "=== КОЛЬЦА - базовые ==="},
     {
       "id": "copper_ring",
       "name": "Медное кольцо",
@@ -1999,7 +2569,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 2}
+        {
+          "item": "copper_ingot",
+          "quantity": 2
+        }
       ],
       "category": "jewelry",
       "base_price": 30,
@@ -2018,7 +2591,10 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 2}
+        {
+          "item": "silver_ingot",
+          "quantity": 2
+        }
       ],
       "category": "jewelry",
       "base_price": 120,
@@ -2037,14 +2613,15 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 2}
+        {
+          "item": "gold_ingot",
+          "quantity": 2
+        }
       ],
       "category": "jewelry",
       "base_price": 300,
       "sprite": null
     },
-
-    {"_comment": "=== КОЛЬЦА - с камнями (медные) ==="},
     {
       "id": "copper_ring_amethyst",
       "name": "Медное кольцо с аметистом",
@@ -2058,8 +2635,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 2},
-        {"item": "cut_amethyst", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "cut_amethyst",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 70,
@@ -2078,8 +2661,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 2},
-        {"item": "cut_ruby", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "cut_ruby",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 80,
@@ -2098,8 +2687,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 2},
-        {"item": "cut_sapphire", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "cut_sapphire",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 80,
@@ -2118,8 +2713,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 2},
-        {"item": "cut_emerald", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "cut_emerald",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 100,
@@ -2138,8 +2739,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 2},
-        {"item": "cut_topaz", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "cut_topaz",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 75,
@@ -2158,15 +2765,19 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 2},
-        {"item": "cut_diamond", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "cut_diamond",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 200,
       "sprite": null
     },
-
-    {"_comment": "=== КОЛЬЦА - с камнями (серебряные) ==="},
     {
       "id": "silver_ring_amethyst",
       "name": "Серебряное кольцо с аметистом",
@@ -2180,8 +2791,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 2},
-        {"item": "perfect_amethyst", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "perfect_amethyst",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 200,
@@ -2200,8 +2817,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 2},
-        {"item": "perfect_ruby", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "perfect_ruby",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 220,
@@ -2220,8 +2843,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 2},
-        {"item": "perfect_sapphire", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "perfect_sapphire",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 220,
@@ -2240,8 +2869,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 2},
-        {"item": "perfect_emerald", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "perfect_emerald",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 250,
@@ -2260,8 +2895,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 2},
-        {"item": "perfect_topaz", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "perfect_topaz",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 210,
@@ -2280,15 +2921,19 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 2},
-        {"item": "perfect_diamond", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "perfect_diamond",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 450,
       "sprite": null
     },
-
-    {"_comment": "=== КОЛЬЦА - с камнями (золотые) ==="},
     {
       "id": "gold_ring_amethyst",
       "name": "Золотое кольцо с аметистом",
@@ -2302,8 +2947,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 2},
-        {"item": "perfect_amethyst", "quantity": 1}
+        {
+          "item": "gold_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "perfect_amethyst",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 400,
@@ -2322,8 +2973,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 2},
-        {"item": "perfect_ruby", "quantity": 1}
+        {
+          "item": "gold_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "perfect_ruby",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 420,
@@ -2342,8 +2999,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 2},
-        {"item": "perfect_sapphire", "quantity": 1}
+        {
+          "item": "gold_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "perfect_sapphire",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 420,
@@ -2362,8 +3025,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 2},
-        {"item": "perfect_emerald", "quantity": 1}
+        {
+          "item": "gold_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "perfect_emerald",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 450,
@@ -2382,8 +3051,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 2},
-        {"item": "perfect_topaz", "quantity": 1}
+        {
+          "item": "gold_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "perfect_topaz",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 410,
@@ -2402,15 +3077,19 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 4,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 2},
-        {"item": "perfect_diamond", "quantity": 1}
+        {
+          "item": "gold_ingot",
+          "quantity": 2
+        },
+        {
+          "item": "perfect_diamond",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 800,
       "sprite": null
     },
-
-    {"_comment": "=== АМУЛЕТЫ - базовые ==="},
     {
       "id": "copper_amulet",
       "name": "Медный амулет",
@@ -2424,8 +3103,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 50,
@@ -2444,8 +3129,14 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 180,
@@ -2464,15 +3155,19 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1}
+        {
+          "item": "gold_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 400,
       "sprite": null
     },
-
-    {"_comment": "=== АМУЛЕТЫ - с камнями (медные) ==="},
     {
       "id": "copper_amulet_amethyst",
       "name": "Медный амулет с аметистом",
@@ -2486,9 +3181,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "cut_amethyst", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "cut_amethyst",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 100,
@@ -2507,9 +3211,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "cut_ruby", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "cut_ruby",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 110,
@@ -2528,9 +3241,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "cut_sapphire", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "cut_sapphire",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 110,
@@ -2549,9 +3271,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "cut_emerald", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "cut_emerald",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 130,
@@ -2570,9 +3301,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "cut_topaz", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "cut_topaz",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 105,
@@ -2591,16 +3331,23 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "copper_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "cut_diamond", "quantity": 1}
+        {
+          "item": "copper_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "cut_diamond",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 250,
       "sprite": null
     },
-
-    {"_comment": "=== АМУЛЕТЫ - с камнями (серебряные) ==="},
     {
       "id": "silver_amulet_amethyst",
       "name": "Серебряный амулет с аметистом",
@@ -2614,9 +3361,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "perfect_amethyst", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "perfect_amethyst",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 280,
@@ -2635,9 +3391,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "perfect_ruby", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "perfect_ruby",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 300,
@@ -2656,9 +3421,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "perfect_sapphire", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "perfect_sapphire",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 300,
@@ -2677,9 +3451,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "perfect_emerald", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "perfect_emerald",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 330,
@@ -2698,9 +3481,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 2,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "perfect_topaz", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "perfect_topaz",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 290,
@@ -2719,16 +3511,23 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "silver_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "perfect_diamond", "quantity": 1}
+        {
+          "item": "silver_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "perfect_diamond",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 550,
       "sprite": null
     },
-
-    {"_comment": "=== АМУЛЕТЫ - с камнями (золотые) ==="},
     {
       "id": "gold_amulet_amethyst",
       "name": "Золотой амулет с аметистом",
@@ -2742,9 +3541,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "perfect_amethyst", "quantity": 1}
+        {
+          "item": "gold_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "perfect_amethyst",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 530,
@@ -2763,9 +3571,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "perfect_ruby", "quantity": 1}
+        {
+          "item": "gold_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "perfect_ruby",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 550,
@@ -2784,9 +3601,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "perfect_sapphire", "quantity": 1}
+        {
+          "item": "gold_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "perfect_sapphire",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 550,
@@ -2805,9 +3631,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "perfect_emerald", "quantity": 1}
+        {
+          "item": "gold_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "perfect_emerald",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 580,
@@ -2826,9 +3661,18 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 3,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "perfect_topaz", "quantity": 1}
+        {
+          "item": "gold_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "perfect_topaz",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 540,
@@ -2847,16 +3691,24 @@
       "required_skill": "craftsmanship",
       "required_skill_rank": 4,
       "ingredients": [
-        {"item": "gold_ingot", "quantity": 3},
-        {"item": "leather_strips", "quantity": 1},
-        {"item": "perfect_diamond", "quantity": 1}
+        {
+          "item": "gold_ingot",
+          "quantity": 3
+        },
+        {
+          "item": "leather_strips",
+          "quantity": 1
+        },
+        {
+          "item": "perfect_diamond",
+          "quantity": 1
+        }
       ],
       "category": "jewelry",
       "base_price": 950,
       "sprite": null
     }
   ],
-
   "categories": {
     "materials": "Материалы",
     "armor": "Броня",
