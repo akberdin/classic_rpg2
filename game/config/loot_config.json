@@ -155,19 +155,43 @@
     "tiers": [
       {
         "min_level": 1,
-        "recipes": ["recipe_copper_ingot", "recipe_iron_ingot"]
+        "recipes": ["recipe_copper_ingot", "recipe_iron_ingot", "recipe_copper_ring", "recipe_copper_amulet"]
+      },
+      {
+        "min_level": 5,
+        "recipes": ["recipe_copper_ring_amethyst", "recipe_copper_ring_ruby", "recipe_copper_ring_sapphire", "recipe_copper_ring_emerald", "recipe_copper_ring_topaz", "recipe_copper_amulet_amethyst", "recipe_copper_amulet_ruby", "recipe_copper_amulet_sapphire", "recipe_copper_amulet_emerald", "recipe_copper_amulet_topaz"]
+      },
+      {
+        "min_level": 8,
+        "recipes": ["recipe_copper_ring_diamond", "recipe_copper_amulet_diamond"]
       },
       {
         "min_level": 10,
-        "recipes": ["recipe_silver_ingot"]
+        "recipes": ["recipe_silver_ingot", "recipe_silver_ring", "recipe_silver_amulet"]
+      },
+      {
+        "min_level": 14,
+        "recipes": ["recipe_silver_ring_amethyst", "recipe_silver_ring_ruby", "recipe_silver_ring_sapphire", "recipe_silver_ring_emerald", "recipe_silver_ring_topaz", "recipe_silver_amulet_amethyst", "recipe_silver_amulet_ruby", "recipe_silver_amulet_sapphire", "recipe_silver_amulet_emerald", "recipe_silver_amulet_topaz"]
       },
       {
         "min_level": 15,
         "recipes": ["recipe_gold_ingot"]
       },
       {
+        "min_level": 16,
+        "recipes": ["recipe_silver_ring_diamond", "recipe_silver_amulet_diamond"]
+      },
+      {
+        "min_level": 18,
+        "recipes": ["recipe_gold_ring", "recipe_gold_amulet"]
+      },
+      {
         "min_level": 20,
-        "recipes": ["recipe_mithril_ingot"]
+        "recipes": ["recipe_mithril_ingot", "recipe_gold_ring_amethyst", "recipe_gold_ring_ruby", "recipe_gold_ring_sapphire", "recipe_gold_ring_emerald", "recipe_gold_ring_topaz", "recipe_gold_amulet_amethyst", "recipe_gold_amulet_ruby", "recipe_gold_amulet_sapphire", "recipe_gold_amulet_emerald", "recipe_gold_amulet_topaz"]
+      },
+      {
+        "min_level": 22,
+        "recipes": ["recipe_gold_ring_diamond", "recipe_gold_amulet_diamond"]
       }
     ]
   },
@@ -182,6 +206,20 @@
         "max_chance": 0.60,
         "quantity_min": 1,
         "quantity_max": 3
+      },
+      "raw_amethyst": {
+        "base_chance": 0.08,
+        "per_level": 0.005,
+        "max_chance": 0.20,
+        "quantity_min": 1,
+        "quantity_max": 1
+      },
+      "raw_ruby": {
+        "base_chance": 0.06,
+        "per_level": 0.005,
+        "max_chance": 0.18,
+        "quantity_min": 1,
+        "quantity_max": 1
       }
     },
 
@@ -199,6 +237,30 @@
         "max_chance": 0.65,
         "quantity_min": 1,
         "quantity_max": 3
+      },
+      "raw_sapphire": {
+        "base_chance": 0.10,
+        "per_level": 0.005,
+        "max_chance": 0.25,
+        "quantity_min": 1,
+        "quantity_max": 1
+      }
+    },
+
+    "necromancer": {
+      "raw_emerald": {
+        "base_chance": 0.15,
+        "per_level": 0.01,
+        "max_chance": 0.35,
+        "quantity_min": 1,
+        "quantity_max": 1
+      },
+      "cut_diamond": {
+        "base_chance": 0.05,
+        "per_level": 0.005,
+        "max_chance": 0.15,
+        "quantity_min": 1,
+        "quantity_max": 1
       }
     }
   },

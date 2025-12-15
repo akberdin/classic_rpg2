@@ -80,7 +80,7 @@ class ItemRegistry:
             return
 
         # Обработка каждой категории
-        categories = ['resources', 'potions', 'weapons', 'armor', 'skill_books', 'recipes']
+        categories = ['resources', 'potions', 'weapons', 'armor', 'jewelry', 'skill_books', 'recipes']
 
         for category in categories:
             if category not in raw_data:
@@ -341,7 +341,7 @@ class ItemRegistry:
         """
         from game.inventory import (
             Item, ResourceItem, PotionItem, SkillBookItem, RecipeItem,
-            WeaponItem, ArmorItem
+            WeaponItem, ArmorItem, JewelryItem
         )
         category = data.get('_category', '')
         name = data.get('name', item_id)
@@ -386,6 +386,21 @@ class ItemRegistry:
 
                 item = ArmorItem(
                     name, slot, armor_type, defense,
+                    value=value,
+                    quality=quality,
+                    stats_bonus=stats_bonus,
+                    param_bonus=param_bonus,
+                    skill_bonus=skill_bonus
+                )
+
+            elif category == 'jewelry':
+                slot = self._get_equipment_slot(data.get('slot', 'RING_1'))
+                stats_bonus = data.get('stats_bonus', {})
+                param_bonus = data.get('param_bonus', {})
+                skill_bonus = data.get('skill_bonus', {})
+
+                item = JewelryItem(
+                    name, slot,
                     value=value,
                     quality=quality,
                     stats_bonus=stats_bonus,
