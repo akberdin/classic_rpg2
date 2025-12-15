@@ -20,7 +20,10 @@ from .utils import (
 
 from .chains import (
     get_available_chain_quests,
-    get_next_chain_quest
+    get_next_chain_quest,
+    get_chain_masters_for_location,
+    get_chain_quests_for_master,
+    get_chain_progress
 )
 
 from .template_generator import (
@@ -37,6 +40,9 @@ __all__ = [
     'filter_by_rank',
     'get_available_chain_quests',
     'get_next_chain_quest',
+    'get_chain_masters_for_location',
+    'get_chain_quests_for_master',
+    'get_chain_progress',
     'TemplateQuestGenerator',
     'generate_quests_from_template',
     'get_template_generator',
