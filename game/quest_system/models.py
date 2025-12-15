@@ -97,7 +97,7 @@ class Quest:
     def __init__(self, quest_id, name, description, objectives, rewards,
                  quest_type=QuestType.STORY, difficulty=QuestDifficulty.EASY,
                  location_id=None, giver_location=None, is_unique=False, is_starter=False,
-                 min_rank=1):
+                 min_rank=1, chain_id=None, chain_step=0, requires_quest=None):
         """
         Инициализация квеста
 
@@ -114,6 +114,9 @@ class Quest:
             is_unique: Уникальный квест с особыми наградами (красная рамка в UI)
             is_starter: Стартовый квест (автоматически назначается)
             min_rank: Минимальный ранг игрока для доступа к квесту (1-4)
+            chain_id: ID цепочки квестов (для связанных квестов)
+            chain_step: Номер шага в цепочке (1, 2, 3...)
+            requires_quest: ID квеста, который нужно завершить перед этим
         """
         self.quest_id = quest_id
         self.name = name
@@ -128,6 +131,11 @@ class Quest:
         self.is_unique = is_unique  # Уникальный квест (красная рамка)
         self.is_starter = is_starter  # Стартовый квест
         self.min_rank = min_rank  # Минимальный ранг для квеста
+
+        # Данные для цепочек квестов
+        self.chain_id = chain_id  # ID цепочки квестов
+        self.chain_step = chain_step  # Шаг в цепочке (1, 2, 3...)
+        self.requires_quest = requires_quest  # ID предыдущего квеста в цепочке
 
         # Данные для отслеживания прогресса
         self.target_item = None  # Для квестов на сбор ресурсов

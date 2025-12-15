@@ -17,6 +17,7 @@ class QuestManager:
         self.available_quests = []  # Доступные квесты
         self.active_quests = []     # Активные квесты
         self.completed_quests = []  # Завершенные квесты
+        self.completed_quest_ids = set()  # Множество ID завершенных квестов (для быстрой проверки)
         self.location_quests = {}   # Квесты по локациям: {location_id: [quests]}
         self.location_quest_turn = {}  # Ход последнего обновления квестов: {location_id: turn}
 
@@ -62,6 +63,45 @@ class QuestManager:
         """
         return len(self.active_quests) < self.MAX_ACTIVE_QUESTS
 
+    def is_quest_completed(self, quest_id):
+        """
+        Проверить, завершен ли квест с указанным ID
+
+        Args:
+            quest_id: ID квеста для проверки
+
+        Returns:
+            bool: True если квест завершен
+        """
+        return quest_id in self.completed_quest_ids
+
+    def can_accept_chain_quest(self, quest):
+        """
+        Проверить, можно ли принять квест из цепочки
+        (предыдущий квест в цепочке должен быть завершен)
+
+        Args:
+            quest: Квест для проверки
+
+        Returns:
+            bool: True если можно принять квест
+        """
+        # Если квест не является частью цепочки, можно принять
+        if not quest.requires_quest:
+            return True
+
+        # Проверяем, завершен ли предыдущий квест в цепочке
+        return self.is_quest_completed(quest.requires_quest)
+
+    def get_completed_quest_ids(self):
+        """
+        Получить множество ID завершенных квестов
+
+        Returns:
+            set: Множество ID завершенных квестов
+        """
+        return self.completed_quest_ids.copy()
+
     def accept_quest(self, quest_id, location_id=None, player=None):
         """
         Принять квест
@@ -97,6 +137,10 @@ class QuestManager:
 
         if not quest:
             return False, "Квест не найден"
+
+        # Проверяем цепочку квестов
+        if not self.can_accept_chain_quest(quest):
+            return False, f"Сначала завершите предыдущий квест в цепочке"
 
         # Принимаем квест
         if quest.start():
@@ -245,6 +289,9 @@ class QuestManager:
         # Перемещаем квест в завершенные
         self.active_quests.remove(quest)
         self.completed_quests.append(quest)
+
+        # Добавляем ID квеста в множество завершенных (для цепочек)
+        self.completed_quest_ids.add(quest_id)
 
         return True, messages
 
