@@ -431,6 +431,19 @@ class GameContext:
         """Получить систему крафта."""
         return getattr(self._game, 'crafting_system', None)
 
+    @property
+    def dungeon_manager(self):
+        """Получить менеджер подземелий."""
+        return getattr(self._game, 'dungeon_manager', None)
+
+    @property
+    def exit_confirmation_open(self) -> bool:
+        return getattr(self._game, 'exit_confirmation_open', False)
+
+    @exit_confirmation_open.setter
+    def exit_confirmation_open(self, value: bool):
+        self._game.exit_confirmation_open = value
+
     # === Списки NPC (через NPCManager) ===
 
     @property

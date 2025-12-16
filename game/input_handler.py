@@ -4,7 +4,7 @@
 import pygame
 from game.inventory import EquipmentItem, EquipmentSlot, SkillBookItem, PotionItem, RecipeItem
 from game.save_system import SaveSystem
-from game.constants import LOCATION_CITY, LOCATION_VILLAGE
+from game.constants import LOCATION_CITY, LOCATION_VILLAGE, LOCATION_RUINS, LOCATION_MINE
 from game.core.game_context import GameContext
 
 
@@ -932,7 +932,33 @@ class InputHandler:
             # Открываем окно подтверждения выхода
             self.ctx.exit_confirmation_open = True
         elif key == pygame.K_e:
-            # Взаимодействие с NPC
+            # Проверяем, находимся ли в подземелье
+            if self.ctx.dungeon_manager.is_in_dungeon:
+                dungeon = self.ctx.dungeon_manager.current_dungeon
+                # Проверяем, на выходе ли игрок
+                if dungeon.is_exit_tile(self.ctx.player.x, self.ctx.player.y):
+                    self.game.dungeon_exit_window.set_dungeon_name(dungeon.name)
+                    self.game.dungeon_exit_open = True
+                else:
+                    # Взаимодействие с объектами в подземелье
+                    result = self.ctx.dungeon_manager.interact_with_tile(self.ctx.player)
+                    if result:
+                        print(result.get("message", ""))
+                return
+
+            # Проверяем возможность входа в подземелье/шахту
+            can_enter, dtype, loc_name = self.ctx.dungeon_manager.can_enter_dungeon(self.ctx.player)
+            if can_enter:
+                # Открываем окно входа в подземелье
+                tile = self.ctx.game_map.get_tile(self.ctx.player.x, self.ctx.player.y)
+                # Вычисляем уровень подземелья
+                distance = abs(self.ctx.player.x - 100) + abs(self.ctx.player.y - 100)
+                level = max(1, min(10, 1 + distance // 25))
+                self.game.dungeon_entry_window.set_location(loc_name, dtype, level)
+                self.game.dungeon_entry_open = True
+                return
+
+            # Взаимодействие с NPC (на основной карте)
             self.ctx.check_npc_nearby()
             return
         elif key == pygame.K_f:
@@ -1091,7 +1117,33 @@ class InputHandler:
                 print("У вас недостаточно выносливости! Нажмите R для отдыха.")
                 return
 
-            # Игрок может проходить сквозь NPC (коллизии убраны)
+            # Проверяем, находимся ли в подземелье
+            if self.ctx.dungeon_manager.is_in_dungeon:
+                # Движение в подземелье
+                if self.ctx.dungeon_manager.can_move_in_dungeon(self.ctx.player, new_x, new_y):
+                    self.ctx.player.x = new_x
+                    self.ctx.player.y = new_y
+
+                    # Обновляем состояние подземелья
+                    self.ctx.dungeon_manager.update_dungeon(self.ctx.player)
+
+                    # Продвигаем время
+                    self.ctx.game_time.advance_time(1/3)
+
+                    # Проверяем NPC рядом для боя
+                    dungeon = self.ctx.dungeon_manager.current_dungeon
+                    nearby_npc = dungeon.get_npc_at(new_x, new_y)
+                    if nearby_npc and nearby_npc.is_alive:
+                        # Начинаем бой
+                        print(f"Вы столкнулись с {nearby_npc.name}!")
+                        self.game.nearby_npc = nearby_npc
+                        self.game.is_npc_aggression = True
+                        self.game.combat_mode_menu_open = True
+                else:
+                    print("Туда нельзя пройти!")
+                return
+
+            # Игрок может проходить сквозь NPC (коллизии убраны) - основная карта
             if self.ctx.player.move_to(new_x, new_y, self.ctx.game_map):
                 # Продвигаем время на 20 минут (1/3 часа) за перемещение
                 self.ctx.game_time.advance_time(1/3)
