@@ -92,8 +92,8 @@ class DungeonEntryWindow(BaseWindow):
         self.draw_overlay()
 
         # Размеры окна с масштабированием
-        win_w = self.ui_scaler.scale_x(self.window_width)
-        win_h = self.ui_scaler.scale_y(self.window_height)
+        win_w = self.scaler.scale_x(self.window_width)
+        win_h = self.scaler.scale_y(self.window_height)
 
         # Центрируем окно
         win_x = (self.screen.get_width() - win_w) // 2
@@ -104,7 +104,7 @@ class DungeonEntryWindow(BaseWindow):
         pygame.draw.rect(self.screen, (100, 100, 120), (win_x, win_y, win_w, win_h), 2)
 
         # Заголовок
-        title_height = self.ui_scaler.scale_y(40)
+        title_height = self.scaler.scale_y(40)
         title_rect = pygame.Rect(win_x, win_y, win_w, title_height)
         pygame.draw.rect(self.screen, (60, 60, 80), title_rect)
         pygame.draw.line(self.screen, (100, 100, 120),
@@ -125,9 +125,9 @@ class DungeonEntryWindow(BaseWindow):
         self.screen.blit(title_surface, (title_x, title_y))
 
         # Контент
-        content_y = win_y + title_height + self.ui_scaler.scale_y(15)
-        line_height = self.ui_scaler.scale_y(25)
-        padding_x = self.ui_scaler.scale_x(20)
+        content_y = win_y + title_height + self.scaler.scale_y(15)
+        line_height = self.scaler.scale_y(25)
+        padding_x = self.scaler.scale_x(20)
 
         # Название локации
         loc_text = f"Локация: {self.location_name}"
@@ -156,18 +156,18 @@ class DungeonEntryWindow(BaseWindow):
                 "Выход возможен только через специальные точки.",
             ]
 
-        content_y += self.ui_scaler.scale_y(10)
+        content_y += self.scaler.scale_y(10)
         for desc in desc_lines:
             desc_surface = self.info_font.render(desc, True, (180, 180, 180))
             self.screen.blit(desc_surface, (win_x + padding_x, content_y))
             content_y += line_height
 
         # Опции меню
-        content_y += self.ui_scaler.scale_y(15)
+        content_y += self.scaler.scale_y(15)
         pygame.draw.line(self.screen, (80, 80, 100),
                         (win_x + padding_x, content_y),
                         (win_x + win_w - padding_x, content_y), 1)
-        content_y += self.ui_scaler.scale_y(10)
+        content_y += self.scaler.scale_y(10)
 
         for i, (option_text, _) in enumerate(self.options):
             if i == self.selected_option:
@@ -236,8 +236,8 @@ class DungeonExitWindow(BaseWindow):
         """Отрисовка окна"""
         self.draw_overlay()
 
-        win_w = self.ui_scaler.scale_x(self.window_width)
-        win_h = self.ui_scaler.scale_y(self.window_height)
+        win_w = self.scaler.scale_x(self.window_width)
+        win_h = self.scaler.scale_y(self.window_height)
         win_x = (self.screen.get_width() - win_w) // 2
         win_y = (self.screen.get_height() - win_h) // 2
 
@@ -246,7 +246,7 @@ class DungeonExitWindow(BaseWindow):
         pygame.draw.rect(self.screen, (100, 100, 120), (win_x, win_y, win_w, win_h), 2)
 
         # Заголовок
-        title_height = self.ui_scaler.scale_y(35)
+        title_height = self.scaler.scale_y(35)
         pygame.draw.rect(self.screen, (60, 60, 80), (win_x, win_y, win_w, title_height))
 
         title_surface = self.font.render("Выход из подземелья", True, (150, 200, 150))
@@ -255,15 +255,15 @@ class DungeonExitWindow(BaseWindow):
         self.screen.blit(title_surface, (title_x, title_y))
 
         # Вопрос
-        content_y = win_y + title_height + self.ui_scaler.scale_y(20)
-        line_height = self.ui_scaler.scale_y(25)
-        padding_x = self.ui_scaler.scale_x(20)
+        content_y = win_y + title_height + self.scaler.scale_y(20)
+        line_height = self.scaler.scale_y(25)
+        padding_x = self.scaler.scale_x(20)
 
         question = f"Покинуть {self.dungeon_name}?"
         q_surface = self.info_font.render(question, True, (220, 220, 220))
         q_x = win_x + (win_w - q_surface.get_width()) // 2
         self.screen.blit(q_surface, (q_x, content_y))
-        content_y += line_height + self.ui_scaler.scale_y(15)
+        content_y += line_height + self.scaler.scale_y(15)
 
         # Опции
         options = [
