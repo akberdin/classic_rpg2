@@ -951,7 +951,7 @@ class InputHandler:
                 self.ctx.dungeon_manager.cycle_target(self.ctx.player)
                 target = self.ctx.dungeon_manager.selected_target
                 if target:
-                    print(f"Цель: {target.name} (HP: {target.hp}/{target.max_hp})")
+                    print(f"Цель: {target.name} (HP: {target.health}/{target.max_health})")
                 else:
                     print("Нет видимых целей")
                 return

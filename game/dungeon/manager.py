@@ -684,14 +684,14 @@ class DungeonManager:
                 defense = player.get_total_defense()
                 final_damage = max(1, attack_damage - defense // 2)
 
-                player.hp -= final_damage
-                if player.hp < 0:
-                    player.hp = 0
+                player.health -= final_damage
+                if player.health < 0:
+                    player.health = 0
 
                 results.append({
                     "attacker": npc.name,
                     "damage": final_damage,
-                    "player_hp": player.hp
+                    "player_hp": player.health
                 })
             elif dist <= 5:
                 # Движемся к игроку
