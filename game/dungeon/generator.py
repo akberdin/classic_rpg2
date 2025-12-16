@@ -361,15 +361,21 @@ class DungeonGenerator:
             # Уровень шахты зависит от расстояния от центра карты
             distance = abs(location_x - 100) + abs(location_y - 100)
             dungeon_level = max(1, min(10, 1 + distance // 30))
-            width = random.randint(70, 100)
-            height = random.randint(60, 80)
+            # Размер зависит от уровня: базовый размер + бонус за уровень
+            base_width, base_height = 50, 40
+            level_bonus = dungeon_level * 5
+            width = base_width + level_bonus + random.randint(0, 20)
+            height = base_height + level_bonus + random.randint(0, 15)
         else:  # ruins / dungeon
             dungeon_type = "dungeon"
             # Уровень подземелья зависит от расстояния от центра
             distance = abs(location_x - 100) + abs(location_y - 100)
             dungeon_level = max(1, min(10, 1 + distance // 25))
-            width = random.randint(80, 110)
-            height = random.randint(65, 90)
+            # Размер зависит от уровня: базовый размер + бонус за уровень
+            base_width, base_height = 55, 45
+            level_bonus = dungeon_level * 6
+            width = base_width + level_bonus + random.randint(0, 25)
+            height = base_height + level_bonus + random.randint(0, 20)
 
         # Генерируем название
         name = f"Подземелье под {location_name}" if dungeon_type == "dungeon" else f"Шахта {location_name}"

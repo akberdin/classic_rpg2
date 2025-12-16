@@ -243,6 +243,9 @@ class DungeonManager:
             # Обновляем тип клетки
             dungeon.set_tile_type(player.x, player.y, DungeonTileType.TRAP_TRIGGERED)
             print(trap_result["message"])
+            # Проверяем смерть от ловушки
+            if trap_result.get("player_dead"):
+                return {"player_dead": True}
 
         # Пытаемся обнаружить ловушки и тайники поблизости
         detected_traps = dungeon.trap_manager.try_detect_nearby(player, radius=2)
@@ -519,8 +522,8 @@ class DungeonManager:
         distance = abs(player.x - target.x) + abs(player.y - target.y)
 
         if skill:
-            # Получаем радиус умения
-            skill_range = getattr(skill, 'range', 1)
+            # Получаем радиус умения (tactical_range - основной атрибут дальности умения)
+            skill_range = getattr(skill, 'tactical_range', getattr(skill, 'range', 1))
             if distance > skill_range:
                 return False, f"Слишком далеко (нужно {skill_range})"
         else:
@@ -647,11 +650,12 @@ class DungeonManager:
         # Опыт
         exp_reward = getattr(enemy, 'exp_reward', 10) * self.current_dungeon.dungeon_level
         player.add_experience(exp_reward)
+        print(f"Получено {exp_reward} опыта!")
 
-        # Шанс дропа
-        if hasattr(enemy, 'loot_table') and random.random() < 0.3:
-            # Можно добавить дроп предметов
-            pass
+        # Золото
+        gold_reward = random.randint(5, 15) * self.current_dungeon.dungeon_level
+        player.gold += gold_reward
+        print(f"Найдено {gold_reward} золота!")
 
     def enemy_turn(self, player) -> List[dict]:
         """
