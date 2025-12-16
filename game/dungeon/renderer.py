@@ -232,8 +232,8 @@ class DungeonRenderer:
 
     def _render_npc_health_bar(self, npc, pixel_x: int, pixel_y: int):
         """Рисуем шкалу здоровья над NPC"""
-        hp = getattr(npc, 'hp', 0)
-        max_hp = getattr(npc, 'max_hp', 1)
+        hp = getattr(npc, 'health', 0)  # Используем health вместо hp
+        max_hp = getattr(npc, 'max_health', 1)  # Используем max_health вместо max_hp
         if max_hp <= 0:
             max_hp = 1
 
@@ -509,8 +509,8 @@ class DungeonRenderer:
         """Отрисовка подсказок управления боем"""
         hints = [
             "[ЛКМ] / [Tab] - Выбор цели",
-            "[Space] - Атака",
-            "[1-8] - Умения",
+            "[Space] - Атака (авто-выбор)",
+            "[1-8] - Умения (авто-выбор)",
             "[Esc] - Снять выделение"
         ]
 
