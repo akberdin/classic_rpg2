@@ -380,7 +380,7 @@ RUIN_NAMES = [
 def _init_dynamic_constants():
     """Инициализация динамических констант из конфигов"""
     global BASE_WIDTH, BASE_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, FPS
-    global TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, VISION_RADIUS
+    global TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, VISION_RADIUS, DUNGEON_VISION_RADIUS
     global COLORS, ITEM_QUALITY_COLORS
     global STAMINA_PER_STAT_POINT, STAMINA_COST_PER_MOVE
     global STAMINA_REST_MIN, STAMINA_REST_MAX
@@ -429,6 +429,7 @@ def _init_dynamic_constants():
     MAP_WIDTH = world_config.get_map_param('width', 200)
     MAP_HEIGHT = world_config.get_map_param('height', 200)
     VISION_RADIUS = world_config.get_map_param('vision_radius', 5)
+    DUNGEON_VISION_RADIUS = world_config.get_map_param('dungeon_vision_radius', 10)  # В 2 раза больше
     LOCATION_MIN_DISTANCE = world_config.get_map_param('location_min_distance', 8)
 
     # Цвета из конфига
@@ -624,6 +625,7 @@ TILE_SIZE = 64
 MAP_WIDTH = 200
 MAP_HEIGHT = 200
 VISION_RADIUS = 5
+DUNGEON_VISION_RADIUS = 10  # Радиус обзора в подземельях (в 2 раза больше)
 
 # Цвета по умолчанию (должны совпадать с ui_config.json)
 COLORS = {

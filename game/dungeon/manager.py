@@ -7,6 +7,7 @@ from typing import Optional, List, Tuple
 from game.dungeon.dungeon_map import DungeonMap
 from game.dungeon.generator import DungeonGenerator
 from game.dungeon.tiles import DungeonTileType
+from game.constants import DUNGEON_VISION_RADIUS
 
 
 class DungeonManager:
@@ -128,8 +129,8 @@ class DungeonManager:
 
         self.is_in_dungeon = True
 
-        # Обновляем видимость
-        self.current_dungeon.update_visibility(player.x, player.y, 5)
+        # Обновляем видимость (используем увеличенный радиус для подземелий)
+        self.current_dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
 
         return {
             "success": True,
@@ -233,8 +234,8 @@ class DungeonManager:
 
         dungeon = self.current_dungeon
 
-        # Обновляем видимость
-        dungeon.update_visibility(player.x, player.y, 5)
+        # Обновляем видимость (используем увеличенный радиус для подземелий)
+        dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
 
         # Проверяем ловушки
         trap_result = dungeon.trap_manager.check_player_position(player)

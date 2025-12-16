@@ -508,7 +508,7 @@ class DungeonRenderer:
     def render_combat_hints(self, font):
         """Отрисовка подсказок управления боем"""
         hints = [
-            "[Tab] - Выбор цели",
+            "[ЛКМ] / [Tab] - Выбор цели",
             "[Space] - Атака",
             "[1-8] - Умения",
             "[Esc] - Снять выделение"

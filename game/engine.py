@@ -529,7 +529,12 @@ class Game:
 
             # Обработка кликов мыши на основном экране (если ни одно меню не открыто)
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 3:  # ПКМ
+                if event.button == 1:  # ЛКМ
+                    # В подземелье - клик по NPC для выделения цели
+                    if self.dungeon_manager.is_in_dungeon:
+                        if self._handle_dungeon_target_click(event.pos):
+                            continue
+                elif event.button == 3:  # ПКМ
                     # Проверяем клик по слотам зелий на HUD
                     if self._handle_potion_slot_click(event.pos):
                         continue
@@ -638,6 +643,36 @@ class Game:
                 else:
                     print("Слот зелья пуст")
                     return True
+
+        return False
+
+    def _handle_dungeon_target_click(self, mouse_pos):
+        """
+        Обработка клика ЛКМ по NPC в подземелье для выделения цели.
+
+        Args:
+            mouse_pos: Позиция мыши (x, y)
+
+        Returns:
+            bool: True если клик был обработан (по NPC)
+        """
+        if not self.dungeon_manager.is_in_dungeon or not self.dungeon_manager.current_dungeon:
+            return False
+
+        # Получаем NPC по позиции на экране
+        npc = self.dungeon_manager.get_npc_at_screen_pos(
+            self.player, mouse_pos[0], mouse_pos[1], TILE_SIZE
+        )
+
+        if npc and npc.is_alive:
+            # Проверяем видимость NPC
+            dungeon = self.dungeon_manager.current_dungeon
+            tile = dungeon.get_tile(npc.x, npc.y)
+            if tile and tile.visible:
+                # Выбираем цель
+                self.dungeon_manager.select_target(npc)
+                print(f"Цель выбрана: {npc.name} (HP: {npc.health}/{npc.max_health})")
+                return True
 
         return False
 
