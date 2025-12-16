@@ -1189,7 +1189,13 @@ class InputHandler:
                     self.ctx.player.y = new_y
 
                     # Обновляем состояние подземелья
-                    self.ctx.dungeon_manager.update_dungeon(self.ctx.player)
+                    dungeon_result = self.ctx.dungeon_manager.update_dungeon(self.ctx.player)
+
+                    # Проверяем смерть от ловушки
+                    if dungeon_result and dungeon_result.get("player_dead"):
+                        print("Вы погибли в подземелье!")
+                        self.game.running = False
+                        return
 
                     # Продвигаем время
                     self.ctx.game_time.advance_time(1/3)
@@ -1198,6 +1204,11 @@ class InputHandler:
                     enemy_results = self.ctx.dungeon_manager.enemy_turn(self.ctx.player)
                     for result in enemy_results:
                         print(f"{result['attacker']} атакует вас на {result['damage']} урона!")
+                        # Проверяем смерть от атаки врага
+                        if self.ctx.player.health <= 0:
+                            print("Вы погибли в подземелье!")
+                            self.game.running = False
+                            return
                 else:
                     print("Туда нельзя пройти!")
                 return

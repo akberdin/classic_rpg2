@@ -154,8 +154,15 @@ class Trap:
         # Наносим урон
         actual_damage = self.damage
         player.health -= actual_damage
+        if player.health < 0:
+            player.health = 0
         result["damage"] = actual_damage
         result["message"] = f"Ловушка '{self.name}' нанесла вам {actual_damage} урона!"
+
+        # Проверяем смерть игрока
+        if player.health <= 0:
+            result["player_dead"] = True
+            result["message"] += " Вы погибли!"
 
         # Дополнительные эффекты
         if self.poison_duration > 0:
