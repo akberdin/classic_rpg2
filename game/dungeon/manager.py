@@ -572,7 +572,7 @@ class DungeonManager:
         base_damage = getattr(skill, 'damage', 0)
         if base_damage == 0:
             # Базовая атака
-            base_damage = player.get_attack()
+            base_damage = player.get_total_damage()
 
         # Модификаторы урона
         damage_multiplier = getattr(skill, 'damage_multiplier', 1.0)
@@ -615,7 +615,7 @@ class DungeonManager:
             return {"success": False, "message": reason}
 
         target = self.selected_target
-        damage = player.get_attack()
+        damage = player.get_total_damage()
 
         # Учитываем защиту врага
         defense = getattr(target, 'defense', 0)
@@ -681,7 +681,7 @@ class DungeonManager:
             if dist <= 1:
                 # Атакуем игрока
                 attack_damage = getattr(npc, 'attack', 5)
-                defense = player.get_defense()
+                defense = player.get_total_defense()
                 final_damage = max(1, attack_damage - defense // 2)
 
                 player.hp -= final_damage
