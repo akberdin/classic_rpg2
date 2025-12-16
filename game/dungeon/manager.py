@@ -255,8 +255,8 @@ class DungeonManager:
             print(f"Вы заметили {stash.name}!")
             dungeon.set_tile_type(stash.x, stash.y, DungeonTileType.STASH)
 
-        # Обновляем AI NPC
-        self._update_dungeon_npcs(player)
+        # Примечание: НЕ обновляем AI NPC здесь, так как enemy_turn() вызывается
+        # отдельно после каждого действия игрока (одно действие за ход)
 
     def _update_dungeon_npcs(self, player):
         """Обновление AI NPC в подземелье"""
@@ -532,7 +532,7 @@ class DungeonManager:
 
     def use_skill_on_target(self, player, skill, target=None) -> Optional[dict]:
         """
-        Использовать умение на цели
+        Использовать умение на цели (аналогично тактическому бою)
 
         Args:
             player: Игрок
@@ -557,46 +557,27 @@ class DungeonManager:
         if target is None:
             return {"success": False, "message": "Нет видимых врагов"}
 
-        # Проверяем возможность атаки
+        # Проверяем возможность атаки (дистанция и линия видимости)
         can_attack, reason = self.can_attack_target(player, target, skill)
         if not can_attack:
             return {"success": False, "message": reason}
 
-        # Проверяем ману/выносливость
-        mana_cost = getattr(skill, 'mana_cost', 0)
-        stamina_cost = getattr(skill, 'stamina_cost', 0)
+        # Используем умение через skill_manager (как в тактическом бою)
+        # Это обеспечивает правильный расчет урона, эффектов и прогресса умения
+        skill_result = player.skill_manager.use_skill(skill, target)
 
-        if mana_cost > 0 and player.mana < mana_cost:
-            return {"success": False, "message": "Недостаточно маны"}
+        if not skill_result.get('success', False):
+            return {"success": False, "message": skill_result.get('message', 'Не удалось использовать умение')}
 
-        if stamina_cost > 0 and player.stamina < stamina_cost:
-            return {"success": False, "message": "Недостаточно выносливости"}
-
-        # Расходуем ресурсы
-        if mana_cost > 0:
-            player.mana -= mana_cost
-        if stamina_cost > 0:
-            player.stamina -= stamina_cost
-
-        # Рассчитываем урон
-        base_damage = getattr(skill, 'damage', 0)
-        if base_damage == 0:
-            # Базовая атака
-            base_damage = player.get_total_damage()
-
-        # Модификаторы урона
-        damage_multiplier = getattr(skill, 'damage_multiplier', 1.0)
-        final_damage = int(base_damage * damage_multiplier)
-
-        # Наносим урон
-        actual_damage = target.take_damage(final_damage)
-
+        # Формируем результат для системы подземелий
         result = {
             "success": True,
-            "damage": actual_damage,
+            "damage": skill_result.get('damage', 0),
             "target": target.name,
             "skill": getattr(skill, 'name', 'Атака'),
-            "killed": not target.is_alive
+            "killed": skill_result.get('killed', False) or not target.is_alive,
+            "critical": skill_result.get('critical', False),
+            "message": skill_result.get('message', '')
         }
 
         # Если враг убит
