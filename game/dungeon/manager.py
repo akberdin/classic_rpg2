@@ -479,9 +479,9 @@ class DungeonManager:
         screen_width = self.game.window_width
         screen_height = self.game.window_height
 
-        # Вычисляем центр экрана в тайлах
-        tiles_x = screen_width // tile_size
-        tiles_y = screen_height // tile_size
+        # Вычисляем центр экрана в тайлах (аналогично renderer.py с +2)
+        tiles_x = screen_width // tile_size + 2
+        tiles_y = screen_height // tile_size + 2
         start_x = player.x - tiles_x // 2
         start_y = player.y - tiles_y // 2
 

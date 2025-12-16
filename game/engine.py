@@ -647,7 +647,7 @@ class Game:
 
     def _handle_dungeon_target_click(self, mouse_pos):
         """
-        Обработка клика ЛКМ по NPC в подземелье для выделения цели.
+        Обработка клика ПКМ по NPC в подземелье для выделения цели.
 
         Args:
             mouse_pos: Позиция мыши (x, y)
