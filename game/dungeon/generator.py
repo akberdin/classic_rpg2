@@ -17,11 +17,11 @@ class DungeonGenerator:
         """Инициализация генератора"""
         # Параметры генерации подземелий
         self.dungeon_params = {
-            "min_rooms": 5,
-            "max_rooms": 12,
-            "min_room_size": 4,
-            "max_room_size": 10,
-            "corridor_width": 1,
+            "min_rooms": 8,
+            "max_rooms": 18,
+            "min_room_size": 5,
+            "max_room_size": 14,
+            "corridor_width": 2,
             "trap_chance": 0.08,     # 8% шанс ловушки на проходимой клетке
             "stash_chance": 0.05,    # 5% шанс тайника
             "decorations": True,
@@ -29,11 +29,11 @@ class DungeonGenerator:
 
         # Параметры генерации шахт
         self.mine_params = {
-            "min_rooms": 3,
-            "max_rooms": 8,
-            "min_room_size": 3,
-            "max_room_size": 8,
-            "corridor_width": 2,     # Шахты шире
+            "min_rooms": 6,
+            "max_rooms": 14,
+            "min_room_size": 4,
+            "max_room_size": 12,
+            "corridor_width": 3,     # Шахты шире
             "trap_chance": 0.05,     # Меньше ловушек
             "stash_chance": 0.10,    # Больше руды
             "decorations": True,
@@ -361,15 +361,15 @@ class DungeonGenerator:
             # Уровень шахты зависит от расстояния от центра карты
             distance = abs(location_x - 100) + abs(location_y - 100)
             dungeon_level = max(1, min(10, 1 + distance // 30))
-            width = random.randint(40, 60)
-            height = random.randint(30, 50)
+            width = random.randint(70, 100)
+            height = random.randint(60, 80)
         else:  # ruins / dungeon
             dungeon_type = "dungeon"
             # Уровень подземелья зависит от расстояния от центра
             distance = abs(location_x - 100) + abs(location_y - 100)
             dungeon_level = max(1, min(10, 1 + distance // 25))
-            width = random.randint(45, 65)
-            height = random.randint(35, 55)
+            width = random.randint(80, 110)
+            height = random.randint(65, 90)
 
         # Генерируем название
         name = f"Подземелье под {location_name}" if dungeon_type == "dungeon" else f"Шахта {location_name}"

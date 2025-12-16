@@ -929,8 +929,39 @@ class InputHandler:
             print(f"Вы отдохнули. {self.ctx.game_time.get_time_string()}")
             return
         elif key == pygame.K_ESCAPE:
+            # В подземелье - снимаем выделение цели
+            if self.ctx.dungeon_manager.is_in_dungeon and self.ctx.dungeon_manager.selected_target:
+                self.ctx.dungeon_manager.deselect_target()
+                return
             # Открываем окно подтверждения выхода
             self.ctx.exit_confirmation_open = True
+        elif key == pygame.K_TAB:
+            # Переключение цели в подземелье
+            if self.ctx.dungeon_manager.is_in_dungeon:
+                self.ctx.dungeon_manager.cycle_target(self.ctx.player)
+                target = self.ctx.dungeon_manager.selected_target
+                if target:
+                    print(f"Цель: {target.name} (HP: {target.hp}/{target.max_hp})")
+                else:
+                    print("Нет видимых целей")
+                return
+        elif key == pygame.K_SPACE:
+            # Базовая атака в подземелье
+            if self.ctx.dungeon_manager.is_in_dungeon:
+                result = self.ctx.dungeon_manager.basic_attack(self.ctx.player)
+                if result:
+                    if result.get('success'):
+                        msg = f"Вы атакуете {result['target']} на {result['damage']} урона!"
+                        if result.get('killed'):
+                            msg += f" {result['target']} повержен!"
+                        print(msg)
+                        # Ход врагов после атаки
+                        enemy_results = self.ctx.dungeon_manager.enemy_turn(self.ctx.player)
+                        for er in enemy_results:
+                            print(f"{er['attacker']} атакует вас на {er['damage']} урона!")
+                    else:
+                        print(result.get('message', 'Не удалось атаковать'))
+                return
         elif key == pygame.K_e:
             # Проверяем, находимся ли в подземелье
             if self.ctx.dungeon_manager.is_in_dungeon:
@@ -985,6 +1016,31 @@ class InputHandler:
             skill = self.ctx.player.skill_manager.get_slot_skill(slot_index)
             if skill:
                 skill_id = self.ctx.player.skill_manager.skill_slots[slot_index]
+
+                # Если в подземелье - используем умение на цели
+                if self.ctx.dungeon_manager.is_in_dungeon:
+                    # Боевые умения
+                    if skill.category.value in ['melee', 'ranged', 'magic']:
+                        result = self.ctx.dungeon_manager.use_skill_on_target(self.ctx.player, skill)
+                        if result:
+                            if result.get('success'):
+                                msg = f"{result['skill']}: {result['damage']} урона по {result['target']}!"
+                                if result.get('killed'):
+                                    msg += f" {result['target']} повержен!"
+                                print(msg)
+                                # Ход врагов после атаки
+                                enemy_results = self.ctx.dungeon_manager.enemy_turn(self.ctx.player)
+                                for er in enemy_results:
+                                    print(f"{er['attacker']} атакует вас на {er['damage']} урона!")
+                            else:
+                                print(result.get('message', 'Не удалось использовать умение'))
+                    # Умения восстановления на себя
+                    elif skill_id in ['heal', 'regeneration', 'stamina_recovery']:
+                        result = self.ctx.player.skill_manager.use_skill_from_slot(slot_index)
+                        print(result.get('message', ''))
+                    else:
+                        print(f"{skill.name} нельзя использовать здесь!")
+                    return
 
                 # Список магических умений, которые можно использовать вне боя
                 out_of_combat_magic_skills = ['heal', 'regeneration', 'stamina_recovery']
@@ -1119,6 +1175,16 @@ class InputHandler:
 
             # Проверяем, находимся ли в подземелье
             if self.ctx.dungeon_manager.is_in_dungeon:
+                # Проверяем, есть ли NPC на целевой клетке
+                dungeon = self.ctx.dungeon_manager.current_dungeon
+                npc_on_tile = dungeon.get_npc_at(new_x, new_y)
+
+                if npc_on_tile and npc_on_tile.is_alive:
+                    # Автоматически выбираем цель вместо открытия меню боя
+                    self.ctx.dungeon_manager.select_target(npc_on_tile)
+                    print(f"Цель выбрана: {npc_on_tile.name}")
+                    return
+
                 # Движение в подземелье
                 if self.ctx.dungeon_manager.can_move_in_dungeon(self.ctx.player, new_x, new_y):
                     self.ctx.player.x = new_x
@@ -1130,15 +1196,10 @@ class InputHandler:
                     # Продвигаем время
                     self.ctx.game_time.advance_time(1/3)
 
-                    # Проверяем NPC рядом для боя
-                    dungeon = self.ctx.dungeon_manager.current_dungeon
-                    nearby_npc = dungeon.get_npc_at(new_x, new_y)
-                    if nearby_npc and nearby_npc.is_alive:
-                        # Начинаем бой
-                        print(f"Вы столкнулись с {nearby_npc.name}!")
-                        self.game.nearby_npc = nearby_npc
-                        self.game.is_npc_aggression = True
-                        self.game.combat_mode_menu_open = True
+                    # Ход врагов после хода игрока
+                    enemy_results = self.ctx.dungeon_manager.enemy_turn(self.ctx.player)
+                    for result in enemy_results:
+                        print(f"{result['attacker']} атакует вас на {result['damage']} урона!")
                 else:
                     print("Туда нельзя пройти!")
                 return

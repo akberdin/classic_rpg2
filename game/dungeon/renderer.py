@@ -49,7 +49,7 @@ class DungeonRenderer:
         }
 
     def render_dungeon(self, dungeon: DungeonMap, player, camera_x: int, camera_y: int,
-                       viewport_width: int, viewport_height: int):
+                       viewport_width: int, viewport_height: int, selected_target=None):
         """
         Отрисовка подземелья
 
@@ -60,6 +60,7 @@ class DungeonRenderer:
             camera_y: Смещение камеры по Y (в тайлах)
             viewport_width: Ширина области отрисовки (в пикселях)
             viewport_height: Высота области отрисовки (в пикселях)
+            selected_target: Выбранная цель (NPC) для отображения выделения
         """
         # Вычисляем количество видимых тайлов
         tiles_x = viewport_width // self.tile_size + 2
@@ -120,7 +121,7 @@ class DungeonRenderer:
                     self.screen.blit(symbol_surface, (sym_x, sym_y))
 
         # Отрисовываем NPC
-        self._render_npcs(dungeon, player, start_x, start_y, tiles_x, tiles_y)
+        self._render_npcs(dungeon, player, start_x, start_y, tiles_x, tiles_y, selected_target)
 
         # Отрисовываем игрока
         self._render_player(player, start_x, start_y)
@@ -141,7 +142,7 @@ class DungeonRenderer:
         return colors.get(tile_type, (255, 255, 255))
 
     def _render_npcs(self, dungeon: DungeonMap, player, start_x: int, start_y: int,
-                     tiles_x: int, tiles_y: int):
+                     tiles_x: int, tiles_y: int, selected_target=None):
         """Отрисовка NPC в подземелье"""
         for npc in dungeon.npcs:
             if not npc.is_alive:
@@ -163,6 +164,13 @@ class DungeonRenderer:
             pixel_x = screen_x * self.tile_size
             pixel_y = screen_y * self.tile_size
 
+            # Проверяем, выделен ли NPC
+            is_selected = (selected_target is not None and selected_target == npc)
+
+            # Рисуем индикатор выделения (перед спрайтом)
+            if is_selected:
+                self._render_selection_indicator(pixel_x, pixel_y)
+
             # Функция отрисовки по умолчанию
             def draw_npc_default():
                 center_x = pixel_x + self.tile_size // 2
@@ -178,14 +186,6 @@ class DungeonRenderer:
                 pygame.draw.circle(self.screen, npc_color, (center_x, center_y), radius)
                 pygame.draw.circle(self.screen, (200, 200, 220), (center_x, center_y), radius, 2)
 
-                # Рисуем индикатор уровня
-                if hasattr(npc, 'level'):
-                    level_text = str(npc.level)
-                    level_surface = self.small_font.render(level_text, True, (255, 255, 255))
-                    level_x = center_x - level_surface.get_width() // 2
-                    level_y = center_y - level_surface.get_height() // 2
-                    self.screen.blit(level_surface, (level_x, level_y))
-
             # Используем спрайт если доступен
             npc_type = getattr(npc, 'npc_type', 'undead')
             npc_level = getattr(npc, 'level', 1)
@@ -197,6 +197,83 @@ class DungeonRenderer:
                 )
             else:
                 draw_npc_default()
+
+            # Рисуем шкалу здоровья над NPC
+            self._render_npc_health_bar(npc, pixel_x, pixel_y)
+
+    def _render_selection_indicator(self, pixel_x: int, pixel_y: int):
+        """Рисуем индикатор выделения вокруг клетки"""
+        # Красная рамка вокруг выделенного врага
+        pygame.draw.rect(self.screen, (255, 80, 80),
+                        (pixel_x - 2, pixel_y - 2,
+                         self.tile_size + 4, self.tile_size + 4), 3)
+
+        # Уголки для красоты
+        corner_len = 8
+        corner_color = (255, 200, 100)
+        # Верхний левый
+        pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y), (pixel_x + corner_len, pixel_y), 2)
+        pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y), (pixel_x, pixel_y + corner_len), 2)
+        # Верхний правый
+        pygame.draw.line(self.screen, corner_color, (pixel_x + self.tile_size, pixel_y),
+                        (pixel_x + self.tile_size - corner_len, pixel_y), 2)
+        pygame.draw.line(self.screen, corner_color, (pixel_x + self.tile_size, pixel_y),
+                        (pixel_x + self.tile_size, pixel_y + corner_len), 2)
+        # Нижний левый
+        pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y + self.tile_size),
+                        (pixel_x + corner_len, pixel_y + self.tile_size), 2)
+        pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y + self.tile_size),
+                        (pixel_x, pixel_y + self.tile_size - corner_len), 2)
+        # Нижний правый
+        pygame.draw.line(self.screen, corner_color, (pixel_x + self.tile_size, pixel_y + self.tile_size),
+                        (pixel_x + self.tile_size - corner_len, pixel_y + self.tile_size), 2)
+        pygame.draw.line(self.screen, corner_color, (pixel_x + self.tile_size, pixel_y + self.tile_size),
+                        (pixel_x + self.tile_size, pixel_y + self.tile_size - corner_len), 2)
+
+    def _render_npc_health_bar(self, npc, pixel_x: int, pixel_y: int):
+        """Рисуем шкалу здоровья над NPC"""
+        hp = getattr(npc, 'hp', 0)
+        max_hp = getattr(npc, 'max_hp', 1)
+        if max_hp <= 0:
+            max_hp = 1
+
+        # Размеры шкалы
+        bar_width = self.tile_size - 4
+        bar_height = 5
+        bar_x = pixel_x + 2
+        bar_y = pixel_y - bar_height - 3
+
+        # Фон шкалы
+        pygame.draw.rect(self.screen, (40, 40, 40),
+                        (bar_x - 1, bar_y - 1, bar_width + 2, bar_height + 2))
+
+        # Заполнение шкалы
+        fill_width = int(bar_width * (hp / max_hp))
+
+        # Цвет зависит от процента HP
+        hp_percent = hp / max_hp
+        if hp_percent > 0.6:
+            bar_color = (80, 200, 80)  # Зеленый
+        elif hp_percent > 0.3:
+            bar_color = (220, 180, 50)  # Желтый
+        else:
+            bar_color = (200, 60, 60)  # Красный
+
+        if fill_width > 0:
+            pygame.draw.rect(self.screen, bar_color,
+                            (bar_x, bar_y, fill_width, bar_height))
+
+        # Рамка
+        pygame.draw.rect(self.screen, (100, 100, 100),
+                        (bar_x - 1, bar_y - 1, bar_width + 2, bar_height + 2), 1)
+
+        # Уровень под шкалой HP
+        level = getattr(npc, 'level', 1)
+        level_text = f"Lv{level}"
+        level_surface = self.small_font.render(level_text, True, (200, 200, 200))
+        level_x = pixel_x + (self.tile_size - level_surface.get_width()) // 2
+        level_y = pixel_y + self.tile_size + 1
+        self.screen.blit(level_surface, (level_x, level_y))
 
     def _render_player(self, player, start_x: int, start_y: int):
         """Отрисовка игрока"""
@@ -319,3 +396,128 @@ class DungeonRenderer:
             hint_x = (self.screen.get_width() - hint_surface.get_width()) // 2
             hint_y = self.screen.get_height() - 50
             self.screen.blit(hint_surface, (hint_x, hint_y))
+
+    def render_target_info_panel(self, target_info: dict, font):
+        """
+        Отрисовка панели информации о выбранном враге
+
+        Args:
+            target_info: Словарь с информацией о цели
+            font: Шрифт для текста
+        """
+        if target_info is None:
+            return
+
+        # Размеры и позиция панели (справа)
+        panel_width = 200
+        panel_height = 180
+        panel_x = self.screen.get_width() - panel_width - 10
+        panel_y = 130  # Под мини-картой
+
+        # Фон панели
+        panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
+        panel_surface.fill((30, 30, 50, 230))
+        self.screen.blit(panel_surface, (panel_x, panel_y))
+
+        # Рамка
+        pygame.draw.rect(self.screen, (100, 80, 80),
+                        (panel_x, panel_y, panel_width, panel_height), 2)
+
+        # Заголовок - красная полоса
+        pygame.draw.rect(self.screen, (120, 50, 50),
+                        (panel_x, panel_y, panel_width, 30))
+
+        current_y = panel_y + 5
+        padding_x = panel_x + 10
+
+        # Имя врага
+        name = target_info.get('name', 'Враг')
+        name_surface = font.render(name, True, (255, 200, 200))
+        self.screen.blit(name_surface, (padding_x, current_y))
+        current_y += 30
+
+        # Уровень
+        level = target_info.get('level', 1)
+        level_text = f"Уровень: {level}"
+        level_surface = font.render(level_text, True, (200, 200, 200))
+        self.screen.blit(level_surface, (padding_x, current_y))
+        current_y += 25
+
+        # Шкала HP
+        hp = target_info.get('hp', 0)
+        max_hp = target_info.get('max_hp', 1)
+        if max_hp <= 0:
+            max_hp = 1
+
+        hp_text = f"HP: {hp}/{max_hp}"
+        hp_text_surface = font.render(hp_text, True, (200, 200, 200))
+        self.screen.blit(hp_text_surface, (padding_x, current_y))
+        current_y += 22
+
+        # Шкала HP графическая
+        bar_width = panel_width - 20
+        bar_height = 12
+        bar_x = padding_x
+        bar_y = current_y
+
+        # Фон шкалы
+        pygame.draw.rect(self.screen, (40, 40, 40),
+                        (bar_x, bar_y, bar_width, bar_height))
+
+        # Заполнение
+        fill_width = int(bar_width * (hp / max_hp))
+        hp_percent = hp / max_hp
+        if hp_percent > 0.6:
+            bar_color = (80, 200, 80)
+        elif hp_percent > 0.3:
+            bar_color = (220, 180, 50)
+        else:
+            bar_color = (200, 60, 60)
+
+        if fill_width > 0:
+            pygame.draw.rect(self.screen, bar_color,
+                            (bar_x, bar_y, fill_width, bar_height))
+
+        pygame.draw.rect(self.screen, (100, 100, 100),
+                        (bar_x, bar_y, bar_width, bar_height), 1)
+        current_y += 20
+
+        # Атака и защита
+        attack = target_info.get('attack', 5)
+        defense = target_info.get('defense', 0)
+
+        stats_text = f"Атака: {attack}  Защита: {defense}"
+        stats_surface = font.render(stats_text, True, (180, 180, 180))
+        self.screen.blit(stats_surface, (padding_x, current_y))
+        current_y += 25
+
+        # Тип NPC
+        npc_type = target_info.get('npc_type', 'unknown')
+        type_names = {
+            'undead': 'Нежить',
+            'skeleton': 'Скелет',
+            'zombie': 'Зомби',
+            'ghost': 'Призрак',
+            'golem': 'Голем',
+        }
+        type_display = type_names.get(npc_type, npc_type.capitalize())
+        type_text = f"Тип: {type_display}"
+        type_surface = font.render(type_text, True, (150, 150, 180))
+        self.screen.blit(type_surface, (padding_x, current_y))
+
+    def render_combat_hints(self, font):
+        """Отрисовка подсказок управления боем"""
+        hints = [
+            "[Tab] - Выбор цели",
+            "[Space] - Атака",
+            "[1-8] - Умения",
+            "[Esc] - Снять выделение"
+        ]
+
+        hint_y = self.screen.get_height() - 30 - len(hints) * 20
+        hint_x = 10
+
+        for hint in hints:
+            hint_surface = font.render(hint, True, (180, 180, 150))
+            self.screen.blit(hint_surface, (hint_x, hint_y))
+            hint_y += 20
