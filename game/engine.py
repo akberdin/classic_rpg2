@@ -529,12 +529,11 @@ class Game:
 
             # Обработка кликов мыши на основном экране (если ни одно меню не открыто)
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:  # ЛКМ
+                if event.button == 3:  # ПКМ
                     # В подземелье - клик по NPC для выделения цели
                     if self.dungeon_manager.is_in_dungeon:
                         if self._handle_dungeon_target_click(event.pos):
                             continue
-                elif event.button == 3:  # ПКМ
                     # Проверяем клик по слотам зелий на HUD
                     if self._handle_potion_slot_click(event.pos):
                         continue
