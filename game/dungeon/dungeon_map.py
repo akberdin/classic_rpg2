@@ -242,6 +242,37 @@ class DungeonMap:
 
         return True
 
+    def has_line_of_sight(self, x1: int, y1: int, x2: int, y2: int) -> bool:
+        """
+        Публичный метод для проверки линии видимости (для боя и умений)
+
+        Args:
+            x1, y1: Начальная точка
+            x2, y2: Конечная точка
+
+        Returns:
+            bool: True если есть прямая видимость (нет стен на пути)
+        """
+        return self._has_line_of_sight(x1, y1, x2, y2)
+
+    def get_adjacent_positions(self, x: int, y: int) -> List[Tuple[int, int]]:
+        """
+        Получить соседние проходимые позиции
+
+        Args:
+            x: Координата X
+            y: Координата Y
+
+        Returns:
+            List[Tuple[int, int]]: Список соседних позиций
+        """
+        positions = []
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nx, ny = x + dx, y + dy
+            if self.is_passable(nx, ny):
+                positions.append((nx, ny))
+        return positions
+
     def add_npc(self, npc):
         """
         Добавить NPC в подземелье
