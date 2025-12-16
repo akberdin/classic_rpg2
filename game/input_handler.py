@@ -233,6 +233,11 @@ class InputHandler:
         Args:
             key: Нажатая клавиша
         """
+        # В подземелье не используем меню взаимодействия
+        if self.ctx.dungeon_manager.is_in_dungeon:
+            self.ctx.interaction_menu_open = False
+            return
+
         npc_type = self.ctx.nearby_npc.npc_type if self.ctx.nearby_npc else None
 
         if key == pygame.K_1:
@@ -333,6 +338,11 @@ class InputHandler:
     def handle_combat_mode_choice(self, event):
         """Обработка выбора режима боя"""
         if event.type != pygame.KEYDOWN:
+            return
+
+        # В подземелье не используем меню выбора режима боя
+        if self.ctx.dungeon_manager.is_in_dungeon:
+            self.ctx.combat_mode_menu_open = False
             return
 
         if event.key == pygame.K_1:

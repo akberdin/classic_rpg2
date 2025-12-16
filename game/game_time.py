@@ -114,11 +114,17 @@ class GameTime:
             attacker = self.ctx.player.attacked_by_npc
             self.ctx.player.attacked_by_npc = None  # Сбрасываем флаг
             if attacker.is_alive:  # Проверяем что атакующий еще жив
-                # Открываем меню выбора режима боя с флагом агрессии
-                self.game.nearby_npc = attacker
-                self.game.is_npc_aggression = True
-                self.game.combat_mode_menu_open = True
-                print(f"{attacker.name} напал на вас! Выберите режим боя!")
+                # В подземелье не открываем меню - там прямой бой
+                if self.ctx.dungeon_manager and self.ctx.dungeon_manager.is_in_dungeon:
+                    # В подземелье автоматически выбираем атакующего как цель
+                    self.ctx.dungeon_manager.select_target(attacker)
+                    print(f"{attacker.name} напал на вас!")
+                else:
+                    # Открываем меню выбора режима боя с флагом агрессии
+                    self.game.nearby_npc = attacker
+                    self.game.is_npc_aggression = True
+                    self.game.combat_mode_menu_open = True
+                    print(f"{attacker.name} напал на вас! Выберите режим боя!")
 
         # Проверяем достижения
         if self.ctx.achievement_manager:
