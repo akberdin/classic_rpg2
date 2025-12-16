@@ -281,7 +281,7 @@ class Game:
         from game.dungeon.manager import DungeonManager
         from game.dungeon.renderer import DungeonRenderer
         self.dungeon_manager = DungeonManager(self)
-        self.dungeon_renderer = DungeonRenderer(self.screen, TILE_SIZE, self.ui_scaler)
+        self.dungeon_renderer = DungeonRenderer(self.screen, TILE_SIZE, self.ui_scaler, self.sprite_manager)
 
         # Инициализация системы ресурсов
         self.resource_system = ResourceSystem(
@@ -777,13 +777,13 @@ class Game:
             # HUD подземелья
             self.dungeon_renderer.render_hud(dungeon, self.player, self.info_font)
 
-            # Отрисовка окон
+            # Отрисовка стандартного HUD (здоровье, мана, выносливость)
+            self.hud_renderer.render()
+
+            # Отрисовка окна выхода из подземелья
             if self.dungeon_exit_open:
                 self.dungeon_exit_window.render()
-
-            # Обновление дисплея и выход
-            pygame.display.flip()
-            return
+            # Не выходим рано - позволяем отрисовать остальные UI окна ниже
         else:
             # Отрисовка основной карты
             self.world_renderer.render_map()
