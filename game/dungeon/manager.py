@@ -38,6 +38,14 @@ class DungeonManager:
         # NPC для подземелий
         self.dungeon_npcs: List = []
 
+        # Система боя в подземелье
+        self.selected_target = None  # Выбранный враг
+        self.target_index = 0  # Индекс для циклического выбора
+
+        # Режим выбора цели для умения
+        self.skill_targeting_mode = False
+        self.pending_skill = None  # Умение, ожидающее выбора цели
+
     def can_enter_dungeon(self, player) -> Tuple[bool, str, str]:
         """
         Проверить, может ли игрок войти в подземелье
@@ -387,3 +395,356 @@ class DungeonManager:
     def clear_cache(self):
         """Очистить кэш подземелий"""
         self._dungeon_cache.clear()
+
+    # ===== Система боя в подземелье =====
+
+    def get_visible_enemies(self, player) -> List:
+        """
+        Получить список видимых врагов
+
+        Args:
+            player: Объект игрока
+
+        Returns:
+            List: Список видимых живых NPC
+        """
+        if not self.is_in_dungeon or not self.current_dungeon:
+            return []
+
+        visible = []
+        dungeon = self.current_dungeon
+
+        for npc in dungeon.npcs:
+            if not npc.is_alive:
+                continue
+
+            # Проверяем видимость клетки
+            tile = dungeon.get_tile(npc.x, npc.y)
+            if tile and tile.visible:
+                visible.append(npc)
+
+        return visible
+
+    def cycle_target(self, player, direction: int = 1):
+        """
+        Переключить выбранную цель
+
+        Args:
+            player: Объект игрока
+            direction: 1 для следующего, -1 для предыдущего
+        """
+        enemies = self.get_visible_enemies(player)
+
+        if not enemies:
+            self.selected_target = None
+            self.target_index = 0
+            return
+
+        self.target_index = (self.target_index + direction) % len(enemies)
+        self.selected_target = enemies[self.target_index]
+
+    def select_target(self, npc):
+        """
+        Выбрать конкретную цель
+
+        Args:
+            npc: NPC для выбора
+        """
+        self.selected_target = npc
+
+    def deselect_target(self):
+        """Снять выделение с цели"""
+        self.selected_target = None
+        self.target_index = 0
+        self.skill_targeting_mode = False
+        self.pending_skill = None
+
+    def get_npc_at_screen_pos(self, player, screen_x: int, screen_y: int, tile_size: int):
+        """
+        Получить NPC по позиции на экране
+
+        Args:
+            player: Игрок
+            screen_x, screen_y: Позиция на экране
+            tile_size: Размер тайла
+
+        Returns:
+            NPC или None
+        """
+        if not self.is_in_dungeon or not self.current_dungeon:
+            return None
+
+        dungeon = self.current_dungeon
+        screen_width = self.game.window_width
+        screen_height = self.game.window_height
+
+        # Вычисляем центр экрана в тайлах
+        tiles_x = screen_width // tile_size
+        tiles_y = screen_height // tile_size
+        start_x = player.x - tiles_x // 2
+        start_y = player.y - tiles_y // 2
+
+        # Переводим экранные координаты в координаты карты
+        tile_x = start_x + screen_x // tile_size
+        tile_y = start_y + screen_y // tile_size
+
+        return dungeon.get_npc_at(tile_x, tile_y)
+
+    def can_attack_target(self, player, target, skill=None) -> Tuple[bool, str]:
+        """
+        Проверить можно ли атаковать цель
+
+        Args:
+            player: Игрок
+            target: Цель (NPC)
+            skill: Умение (опционально)
+
+        Returns:
+            Tuple[bool, str]: (можно ли атаковать, причина)
+        """
+        if not self.is_in_dungeon or not self.current_dungeon:
+            return False, "Не в подземелье"
+
+        if not target or not target.is_alive:
+            return False, "Цель недоступна"
+
+        dungeon = self.current_dungeon
+
+        # Проверяем линию видимости
+        if not dungeon.has_line_of_sight(player.x, player.y, target.x, target.y):
+            return False, "Нет линии видимости"
+
+        # Проверяем расстояние
+        distance = abs(player.x - target.x) + abs(player.y - target.y)
+
+        if skill:
+            # Получаем радиус умения
+            skill_range = getattr(skill, 'range', 1)
+            if distance > skill_range:
+                return False, f"Слишком далеко (нужно {skill_range})"
+        else:
+            # Базовая атака - только рядом
+            if distance > 1:
+                return False, "Слишком далеко"
+
+        return True, ""
+
+    def use_skill_on_target(self, player, skill, target=None) -> Optional[dict]:
+        """
+        Использовать умение на цели
+
+        Args:
+            player: Игрок
+            skill: Умение
+            target: Цель (если None - используется selected_target)
+
+        Returns:
+            dict или None: Результат использования
+        """
+        if target is None:
+            target = self.selected_target
+
+        if target is None:
+            return {"success": False, "message": "Выберите цель (Tab)"}
+
+        # Проверяем возможность атаки
+        can_attack, reason = self.can_attack_target(player, target, skill)
+        if not can_attack:
+            return {"success": False, "message": reason}
+
+        # Проверяем ману/выносливость
+        mana_cost = getattr(skill, 'mana_cost', 0)
+        stamina_cost = getattr(skill, 'stamina_cost', 0)
+
+        if mana_cost > 0 and player.mana < mana_cost:
+            return {"success": False, "message": "Недостаточно маны"}
+
+        if stamina_cost > 0 and player.stamina < stamina_cost:
+            return {"success": False, "message": "Недостаточно выносливости"}
+
+        # Расходуем ресурсы
+        if mana_cost > 0:
+            player.mana -= mana_cost
+        if stamina_cost > 0:
+            player.stamina -= stamina_cost
+
+        # Рассчитываем урон
+        base_damage = getattr(skill, 'damage', 0)
+        if base_damage == 0:
+            # Базовая атака
+            base_damage = player.get_attack()
+
+        # Модификаторы урона
+        damage_multiplier = getattr(skill, 'damage_multiplier', 1.0)
+        final_damage = int(base_damage * damage_multiplier)
+
+        # Наносим урон
+        actual_damage = target.take_damage(final_damage)
+
+        result = {
+            "success": True,
+            "damage": actual_damage,
+            "target": target.name,
+            "skill": getattr(skill, 'name', 'Атака'),
+            "killed": not target.is_alive
+        }
+
+        # Если враг убит
+        if not target.is_alive:
+            self._on_enemy_killed(player, target)
+            if self.selected_target == target:
+                self.deselect_target()
+
+        return result
+
+    def basic_attack(self, player) -> Optional[dict]:
+        """
+        Базовая атака по выбранной цели
+
+        Args:
+            player: Игрок
+
+        Returns:
+            dict или None: Результат атаки
+        """
+        if self.selected_target is None:
+            return {"success": False, "message": "Выберите цель (Tab)"}
+
+        can_attack, reason = self.can_attack_target(player, self.selected_target)
+        if not can_attack:
+            return {"success": False, "message": reason}
+
+        target = self.selected_target
+        damage = player.get_attack()
+
+        # Учитываем защиту врага
+        defense = getattr(target, 'defense', 0)
+        final_damage = max(1, damage - defense // 2)
+
+        actual_damage = target.take_damage(final_damage)
+
+        result = {
+            "success": True,
+            "damage": actual_damage,
+            "target": target.name,
+            "skill": "Атака",
+            "killed": not target.is_alive
+        }
+
+        if not target.is_alive:
+            self._on_enemy_killed(player, target)
+            self.deselect_target()
+
+        return result
+
+    def _on_enemy_killed(self, player, enemy):
+        """
+        Обработка убийства врага
+
+        Args:
+            player: Игрок
+            enemy: Убитый враг
+        """
+        # Опыт
+        exp_reward = getattr(enemy, 'exp_reward', 10) * self.current_dungeon.dungeon_level
+        player.gain_experience(exp_reward)
+
+        # Шанс дропа
+        if hasattr(enemy, 'loot_table') and random.random() < 0.3:
+            # Можно добавить дроп предметов
+            pass
+
+    def enemy_turn(self, player) -> List[dict]:
+        """
+        Ход врагов - они атакуют игрока если рядом
+
+        Args:
+            player: Игрок
+
+        Returns:
+            List[dict]: Список результатов атак врагов
+        """
+        results = []
+
+        if not self.is_in_dungeon or not self.current_dungeon:
+            return results
+
+        dungeon = self.current_dungeon
+
+        for npc in dungeon.npcs:
+            if not npc.is_alive:
+                continue
+
+            # Расстояние до игрока
+            dist = abs(npc.x - player.x) + abs(npc.y - player.y)
+
+            if dist <= 1:
+                # Атакуем игрока
+                attack_damage = getattr(npc, 'attack', 5)
+                defense = player.get_defense()
+                final_damage = max(1, attack_damage - defense // 2)
+
+                player.hp -= final_damage
+                if player.hp < 0:
+                    player.hp = 0
+
+                results.append({
+                    "attacker": npc.name,
+                    "damage": final_damage,
+                    "player_hp": player.hp
+                })
+            elif dist <= 5:
+                # Движемся к игроку
+                self._move_enemy_towards_player(npc, player)
+
+        return results
+
+    def _move_enemy_towards_player(self, npc, player):
+        """Двигаем врага к игроку"""
+        if not self.current_dungeon:
+            return
+
+        dungeon = self.current_dungeon
+
+        # Простой алгоритм - двигаемся по оси с большей разницей
+        dx = 0
+        dy = 0
+
+        if abs(player.x - npc.x) > abs(player.y - npc.y):
+            dx = 1 if player.x > npc.x else -1
+        else:
+            dy = 1 if player.y > npc.y else -1
+
+        new_x = npc.x + dx
+        new_y = npc.y + dy
+
+        # Проверяем можно ли туда пойти
+        if dungeon.is_passable(new_x, new_y):
+            # Проверяем нет ли там другого NPC
+            other_npc = dungeon.get_npc_at(new_x, new_y)
+            if other_npc is None or not other_npc.is_alive:
+                npc.x = new_x
+                npc.y = new_y
+
+    def get_target_info(self) -> Optional[dict]:
+        """
+        Получить информацию о выбранной цели
+
+        Returns:
+            dict или None: Информация о цели
+        """
+        if self.selected_target is None:
+            return None
+
+        target = self.selected_target
+        return {
+            "name": getattr(target, 'name', 'Враг'),
+            "level": getattr(target, 'level', 1),
+            "hp": getattr(target, 'hp', 0),
+            "max_hp": getattr(target, 'max_hp', 1),
+            "attack": getattr(target, 'attack', 5),
+            "defense": getattr(target, 'defense', 0),
+            "npc_type": getattr(target, 'npc_type', 'undead'),
+            "x": target.x,
+            "y": target.y
+        }

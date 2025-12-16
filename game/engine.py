@@ -759,9 +759,11 @@ class Game:
         if self.dungeon_manager.is_in_dungeon and self.dungeon_manager.current_dungeon:
             # Отрисовка подземелья
             dungeon = self.dungeon_manager.current_dungeon
+            selected_target = self.dungeon_manager.selected_target
             self.dungeon_renderer.render_dungeon(
                 dungeon, self.player, 0, 0,
-                self.window_width, self.window_height
+                self.window_width, self.window_height,
+                selected_target
             )
 
             # Мини-карта подземелья
@@ -779,6 +781,14 @@ class Game:
 
             # Отрисовка стандартного HUD (здоровье, мана, выносливость)
             self.hud_renderer.render()
+
+            # Панель информации о выбранном враге
+            target_info = self.dungeon_manager.get_target_info()
+            if target_info:
+                self.dungeon_renderer.render_target_info_panel(target_info, self.info_font)
+
+            # Подсказки управления боем
+            self.dungeon_renderer.render_combat_hints(self.info_font)
 
             # Отрисовка окна выхода из подземелья
             if self.dungeon_exit_open:
