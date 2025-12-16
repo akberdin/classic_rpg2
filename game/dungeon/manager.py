@@ -405,6 +405,73 @@ class DungeonManager:
 
         return True
 
+    def move_player(self, player, dx: int, dy: int) -> Optional[dict]:
+        """
+        Переместить игрока в подземелье
+
+        Args:
+            player: Объект игрока
+            dx: Смещение по X (-1, 0, 1)
+            dy: Смещение по Y (-1, 0, 1)
+
+        Returns:
+            dict или None: Результат перемещения
+        """
+        if not self.is_in_dungeon or not self.current_dungeon:
+            return None
+
+        new_x = player.x + dx
+        new_y = player.y + dy
+
+        # Проверяем возможность перемещения
+        if not self.can_move_in_dungeon(player, new_x, new_y):
+            return {"success": False, "message": "Нельзя пройти туда"}
+
+        dungeon = self.current_dungeon
+
+        # Проверяем NPC на клетке
+        npc = dungeon.get_npc_at(new_x, new_y)
+        if npc and npc.is_alive:
+            return {"success": False, "message": f"Клетка занята: {npc.name}"}
+
+        # Перемещаем игрока
+        player.x = new_x
+        player.y = new_y
+
+        # Обновляем видимость
+        dungeon.update_visibility(player.x, player.y)
+
+        result = {"success": True, "message": ""}
+
+        # Проверяем ловушки
+        trap = dungeon.trap_manager.get_trap_at(new_x, new_y)
+        if trap and not trap.is_triggered and not trap.is_disarmed:
+            # Если ловушка не обнаружена - срабатывает
+            if not trap.is_detected:
+                trap_result = trap.trigger(player)
+                dungeon.set_tile_type(new_x, new_y, DungeonTileType.TRAP_TRIGGERED)
+                result["trap"] = trap_result
+                result["message"] = trap_result.get("message", "Ловушка!")
+            else:
+                # Обнаруженная ловушка - можно попытаться обезвредить
+                result["message"] = "Вы видите ловушку. Нажмите R чтобы обезвредить."
+
+        # Проверяем тайники (автообнаружение)
+        stash = dungeon.stash_manager.get_stash_at(new_x, new_y)
+        if stash and not stash.is_detected:
+            stash.detect()
+            result["stash_found"] = True
+            result["message"] = "Вы обнаружили тайник! Нажмите E чтобы обыскать."
+
+        # Проверяем останки
+        remains = dungeon.get_remains_at(new_x, new_y)
+        if remains and not remains.get('looted', False):
+            result["remains_found"] = True
+            if not result["message"]:
+                result["message"] = f"Останки {remains['enemy_name']}. Нажмите E чтобы обыскать."
+
+        return result
+
     def get_current_dungeon_info(self) -> Optional[dict]:
         """Получить информацию о текущем подземелье"""
         if not self.is_in_dungeon or not self.current_dungeon:
