@@ -265,10 +265,8 @@ class Quest:
         # Предметы
         if 'items' in self.rewards:
             for item, quantity in self.rewards['items']:
-                if player.inventory.add_item(item, quantity):
-                    messages.append(f"Получено: {item.name} x{quantity}")
-                else:
-                    messages.append(f"Инвентарь полон! Не удалось получить {item.name}")
+                player.inventory.add_item(item, quantity)
+                messages.append(f"Получено: {item.name} x{quantity}")
 
         # Умения
         if 'skills' in self.rewards:
@@ -409,8 +407,8 @@ class Achievement:
 
         if 'items' in self.rewards:
             for item, count in self.rewards['items']:
-                if player.inventory.add_item(item, count):
-                    messages.append(f"+{item.name} x{count}")
+                player.inventory.add_item(item, count)
+                messages.append(f"+{item.name} x{count}")
 
         return messages
 
