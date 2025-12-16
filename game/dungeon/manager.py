@@ -537,7 +537,7 @@ class DungeonManager:
         Args:
             player: Игрок
             skill: Умение
-            target: Цель (если None - используется selected_target)
+            target: Цель (если None - используется selected_target или ближайший враг)
 
         Returns:
             dict или None: Результат использования
@@ -545,8 +545,17 @@ class DungeonManager:
         if target is None:
             target = self.selected_target
 
+        # Если цель не выбрана, автоматически выбираем ближайшего видимого врага
         if target is None:
-            return {"success": False, "message": "Выберите цель (Tab)"}
+            visible_enemies = self.get_visible_enemies(player)
+            if visible_enemies:
+                # Сортируем по расстоянию и выбираем ближайшего
+                visible_enemies.sort(key=lambda e: abs(e.x - player.x) + abs(e.y - player.y))
+                target = visible_enemies[0]
+                self.selected_target = target  # Выделяем выбранного врага
+
+        if target is None:
+            return {"success": False, "message": "Нет видимых врагов"}
 
         # Проверяем возможность атаки
         can_attack, reason = self.can_attack_target(player, target, skill)
@@ -608,8 +617,16 @@ class DungeonManager:
         Returns:
             dict или None: Результат атаки
         """
+        # Если цель не выбрана, автоматически выбираем ближайшего видимого врага
         if self.selected_target is None:
-            return {"success": False, "message": "Выберите цель (Tab)"}
+            visible_enemies = self.get_visible_enemies(player)
+            if visible_enemies:
+                # Сортируем по расстоянию и выбираем ближайшего
+                visible_enemies.sort(key=lambda e: abs(e.x - player.x) + abs(e.y - player.y))
+                self.selected_target = visible_enemies[0]
+
+        if self.selected_target is None:
+            return {"success": False, "message": "Нет видимых врагов"}
 
         can_attack, reason = self.can_attack_target(player, self.selected_target)
         if not can_attack:
@@ -741,10 +758,10 @@ class DungeonManager:
         return {
             "name": getattr(target, 'name', 'Враг'),
             "level": getattr(target, 'level', 1),
-            "hp": getattr(target, 'hp', 0),
-            "max_hp": getattr(target, 'max_hp', 1),
-            "attack": getattr(target, 'attack', 5),
-            "defense": getattr(target, 'defense', 0),
+            "hp": getattr(target, 'health', 0),  # Используем health, а не hp
+            "max_hp": getattr(target, 'max_health', 1),  # Используем max_health, а не max_hp
+            "attack": getattr(target, 'strength', 5),  # Используем strength как атаку
+            "defense": getattr(target, 'constitution', 0),  # Используем constitution как защиту
             "npc_type": getattr(target, 'npc_type', 'undead'),
             "x": target.x,
             "y": target.y
