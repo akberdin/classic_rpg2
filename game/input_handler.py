@@ -956,22 +956,9 @@ class InputHandler:
                     print("Нет видимых целей")
                 return
         elif key == pygame.K_SPACE:
-            # Базовая атака в подземелье
-            if self.ctx.dungeon_manager.is_in_dungeon:
-                result = self.ctx.dungeon_manager.basic_attack(self.ctx.player)
-                if result:
-                    if result.get('success'):
-                        msg = f"Вы атакуете {result['target']} на {result['damage']} урона!"
-                        if result.get('killed'):
-                            msg += f" {result['target']} повержен!"
-                        print(msg)
-                        # Ход врагов после атаки
-                        enemy_results = self.ctx.dungeon_manager.enemy_turn(self.ctx.player)
-                        for er in enemy_results:
-                            print(f"{er['attacker']} атакует вас на {er['damage']} урона!")
-                    else:
-                        print(result.get('message', 'Не удалось атаковать'))
-                return
+            # Пробел не используется для атаки в подземелье
+            # (атака только через умения 1-8)
+            return
         elif key == pygame.K_e:
             # Проверяем, находимся ли в подземелье
             if self.ctx.dungeon_manager.is_in_dungeon:
@@ -1029,8 +1016,15 @@ class InputHandler:
 
                 # Если в подземелье - используем умение на цели
                 if self.ctx.dungeon_manager.is_in_dungeon:
-                    # Боевые умения
-                    if skill.category.value in ['melee', 'ranged', 'magic']:
+                    # Умения восстановления на себя
+                    if skill_id in ['heal', 'regeneration', 'stamina_recovery']:
+                        result = self.ctx.player.skill_manager.use_skill_from_slot(slot_index)
+                        print(result.get('message', ''))
+                    # Ремесленные умения нельзя использовать в подземелье
+                    elif skill.category.value == 'crafting':
+                        print(f"{skill.name} нельзя использовать в подземелье!")
+                    # Все остальные боевые умения (warrior, hunter, mage, shadow, combat, general)
+                    else:
                         result = self.ctx.dungeon_manager.use_skill_on_target(self.ctx.player, skill)
                         if result:
                             if result.get('success'):
@@ -1044,12 +1038,6 @@ class InputHandler:
                                     print(f"{er['attacker']} атакует вас на {er['damage']} урона!")
                             else:
                                 print(result.get('message', 'Не удалось использовать умение'))
-                    # Умения восстановления на себя
-                    elif skill_id in ['heal', 'regeneration', 'stamina_recovery']:
-                        result = self.ctx.player.skill_manager.use_skill_from_slot(slot_index)
-                        print(result.get('message', ''))
-                    else:
-                        print(f"{skill.name} нельзя использовать здесь!")
                     return
 
                 # Список магических умений, которые можно использовать вне боя
