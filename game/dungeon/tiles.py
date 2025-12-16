@@ -32,6 +32,10 @@ class DungeonTileType(Enum):
     MINECART = "minecart"      # Вагонетка (непроходима)
     SUPPORT = "support"        # Опора (непроходима)
 
+    # Останки врагов
+    REMAINS = "remains"        # Останки врага (проходимы, можно обыскать)
+    REMAINS_LOOTED = "remains_looted"  # Обысканные останки
+
 
 # Цвета для временного отображения (градиент серого)
 DUNGEON_TILE_COLORS = {
@@ -60,6 +64,10 @@ DUNGEON_TILE_COLORS = {
     DungeonTileType.ORE_VEIN: (100, 80, 60),       # Коричневатый
     DungeonTileType.MINECART: (50, 50, 50),        # Темный
     DungeonTileType.SUPPORT: (60, 45, 30),         # Деревянный
+
+    # Останки врагов
+    DungeonTileType.REMAINS: (120, 80, 80),        # Красноватый (кровь)
+    DungeonTileType.REMAINS_LOOTED: (80, 60, 60),  # Темнее (обысканы)
 }
 
 # Проходимость клеток
@@ -75,6 +83,8 @@ PASSABLE_DUNGEON_TILES = [
     DungeonTileType.BONES,
     DungeonTileType.ALTAR,
     DungeonTileType.ORE_VEIN,
+    DungeonTileType.REMAINS,
+    DungeonTileType.REMAINS_LOOTED,
 ]
 
 
@@ -100,6 +110,7 @@ class DungeonTile:
         self.trap_data = None   # Данные ловушки (если это ловушка)
         self.stash_data = None  # Данные тайника (если это тайник)
         self.ore_data = None    # Данные руды (если это рудная жила)
+        self.remains_data = None  # Данные останков (если это останки врага)
 
         # NPC на клетке
         self.npc = None

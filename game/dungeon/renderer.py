@@ -34,6 +34,7 @@ class DungeonRenderer:
         # Цвета
         self.fog_color = (10, 10, 15)  # Неисследованные клетки
         self.dim_factor = 0.5  # Затемнение исследованных, но невидимых клеток
+        self.light_radius = 5  # Радиус освещения от игрока
 
         # Спецсимволы для отображения
         self.tile_symbols = {
@@ -46,6 +47,8 @@ class DungeonRenderer:
             DungeonTileType.ALTAR: "A",
             DungeonTileType.BONES: "b",
             DungeonTileType.ORE_VEIN: "o",
+            DungeonTileType.REMAINS: "R",
+            DungeonTileType.REMAINS_LOOTED: "r",
         }
 
     def render_dungeon(self, dungeon: DungeonMap, player, camera_x: int, camera_y: int,
@@ -100,6 +103,13 @@ class DungeonRenderer:
                 # Если клетка не видна сейчас, затемняем
                 if not tile.visible:
                     color = tuple(int(c * self.dim_factor) for c in color)
+                else:
+                    # Эффект затухания света от игрока
+                    dist = ((map_x - player.x) ** 2 + (map_y - player.y) ** 2) ** 0.5
+                    if dist > 0:
+                        # Коэффициент освещения: 1.0 в центре, уменьшается к краям
+                        light_factor = max(0.3, 1.0 - (dist / (self.light_radius + 1)) * 0.7)
+                        color = tuple(int(c * light_factor) for c in color)
 
                 # Рисуем клетку
                 pygame.draw.rect(self.screen, color,
@@ -138,6 +148,8 @@ class DungeonRenderer:
             DungeonTileType.ALTAR: (200, 100, 255),       # Фиолетовый
             DungeonTileType.BONES: (220, 220, 200),
             DungeonTileType.ORE_VEIN: (200, 150, 100),
+            DungeonTileType.REMAINS: (255, 150, 150),     # Красноватый
+            DungeonTileType.REMAINS_LOOTED: (150, 100, 100),  # Тёмно-красный
         }
         return colors.get(tile_type, (255, 255, 255))
 
