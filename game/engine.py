@@ -529,6 +529,11 @@ class Game:
 
             # Обработка кликов мыши на основном экране (если ни одно меню не открыто)
             if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # ЛКМ
+                    # В подземелье - клик для перемещения
+                    if self.dungeon_manager.is_in_dungeon:
+                        if self._handle_dungeon_move_click(event.pos):
+                            continue
                 if event.button == 3:  # ПКМ
                     # В подземелье - клик по NPC для выделения цели
                     if self.dungeon_manager.is_in_dungeon:
@@ -642,6 +647,64 @@ class Game:
                 else:
                     print("Слот зелья пуст")
                     return True
+
+        return False
+
+    def _handle_dungeon_move_click(self, mouse_pos):
+        """
+        Обработка клика ЛКМ для перемещения в подземелье.
+
+        Args:
+            mouse_pos: Позиция мыши (x, y)
+
+        Returns:
+            bool: True если клик был обработан (перемещение выполнено)
+        """
+        if not self.dungeon_manager.is_in_dungeon or not self.dungeon_manager.current_dungeon:
+            return False
+
+        dungeon = self.dungeon_manager.current_dungeon
+
+        # Вычисляем количество видимых тайлов
+        tiles_x = self.window_width // TILE_SIZE + 2
+        tiles_y = self.window_height // TILE_SIZE + 2
+
+        # Начальная позиция отрисовки (центрируем на игроке)
+        start_x = self.player.x - tiles_x // 2
+        start_y = self.player.y - tiles_y // 2
+
+        # Вычисляем координаты клетки по позиции мыши
+        tile_screen_x = mouse_pos[0] // TILE_SIZE
+        tile_screen_y = mouse_pos[1] // TILE_SIZE
+
+        target_x = start_x + tile_screen_x
+        target_y = start_y + tile_screen_y
+
+        # Вычисляем смещение от игрока
+        dx = target_x - self.player.x
+        dy = target_y - self.player.y
+
+        # Проверяем, что это соседняя клетка (одна из 8)
+        if abs(dx) > 1 or abs(dy) > 1:
+            return False  # Слишком далеко
+
+        if dx == 0 and dy == 0:
+            return False  # Клик на самого себя
+
+        # Пытаемся переместиться
+        result = self.dungeon_manager.move_player(self.player, dx, dy)
+        if result and result.get('success'):
+            # Ход врагов после движения
+            enemy_results = self.dungeon_manager.enemy_turn(self.player)
+            for enemy_result in enemy_results:
+                print(f"{enemy_result['attacker']} наносит {enemy_result['damage']} урона!")
+
+            # Проверяем здоровье игрока
+            if self.player.health <= 0:
+                print("Вы погибли в подземелье!")
+                self.running = False
+
+            return True
 
         return False
 

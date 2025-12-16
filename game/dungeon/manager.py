@@ -300,6 +300,22 @@ class DungeonManager:
         if not tile:
             return None
 
+        # Проверяем останки
+        remains = dungeon.get_remains_at(player.x, player.y)
+        if remains and not remains.get('looted', False):
+            loot_result = dungeon.loot_remains(player.x, player.y, player)
+            if loot_result:
+                messages = [f"Вы обыскали останки {loot_result['enemy_name']}:"]
+                if loot_result['gold'] > 0:
+                    messages.append(f"  Золото: {loot_result['gold']}")
+                for item_name, quantity in loot_result['items']:
+                    messages.append(f"  {item_name} x{quantity}")
+                return {
+                    "type": "remains",
+                    "success": True,
+                    "message": "\n".join(messages)
+                }
+
         # Проверяем тайник
         stash = dungeon.stash_manager.get_stash_at(player.x, player.y)
         if stash and stash.is_detected and not stash.is_looted:
@@ -583,6 +599,9 @@ class DungeonManager:
             "message": skill_result.get('message', '')
         }
 
+        # Помечаем атакованного NPC как агрессивного (теперь он будет преследовать игрока)
+        target._aggro_target = player
+
         # Если враг убит
         if not target.is_alive:
             self._on_enemy_killed(player, target)
@@ -625,6 +644,9 @@ class DungeonManager:
 
         actual_damage = target.take_damage(final_damage)
 
+        # Помечаем атакованного NPC как агрессивного
+        target._aggro_target = player
+
         result = {
             "success": True,
             "damage": actual_damage,
@@ -647,15 +669,29 @@ class DungeonManager:
             player: Игрок
             enemy: Убитый враг
         """
-        # Опыт
+        # Опыт даётся сразу при убийстве
         exp_reward = getattr(enemy, 'exp_reward', 10) * self.current_dungeon.dungeon_level
         player.add_experience(exp_reward)
         print(f"Получено {exp_reward} опыта!")
 
-        # Золото
+        # Создаём останки на месте врага (золото и лут можно получить при обыске)
         gold_reward = random.randint(5, 15) * self.current_dungeon.dungeon_level
-        player.gold += gold_reward
-        print(f"Найдено {gold_reward} золота!")
+
+        # Генерируем возможный лут
+        loot_items = []
+        if random.random() < 0.3:  # 30% шанс на лут
+            from game.item_registry import get_item
+            possible_loot = ['minor_health_potion', 'minor_mana_potion', 'minor_stamina_potion']
+            item = get_item(random.choice(possible_loot))
+            if item:
+                loot_items.append((item, 1))
+
+        # Добавляем останки
+        self.current_dungeon.add_remains(enemy.x, enemy.y, enemy.name, gold_reward, loot_items)
+        print(f"Останки {enemy.name} можно обыскать [E]")
+
+        # Помечаем NPC как агрессивного к игроку (для других NPC)
+        enemy._aggro_target = player
 
     def enemy_turn(self, player) -> List[dict]:
         """
@@ -674,14 +710,19 @@ class DungeonManager:
 
         dungeon = self.current_dungeon
 
+        # Уменьшаем cooldown умений игрока после каждого хода
+        if hasattr(player, 'skill_manager'):
+            player.skill_manager.tick_cooldowns()
+
         for npc in dungeon.npcs:
             if not npc.is_alive:
                 continue
 
-            # Расстояние до игрока
-            dist = abs(npc.x - player.x) + abs(npc.y - player.y)
+            # Расстояние до игрока (чебышевская метрика для 8 направлений)
+            dist = max(abs(npc.x - player.x), abs(npc.y - player.y))
 
-            if dist <= 1:
+            # NPC атакует если рядом (дистанция 1)
+            if dist == 1:
                 # Атакуем игрока
                 attack_damage = npc.get_total_damage()
                 defense = player.get_total_defense()
@@ -696,30 +737,46 @@ class DungeonManager:
                     "damage": final_damage,
                     "player_hp": player.health
                 })
-            elif dist <= 5:
-                # Движемся к игроку
-                self._move_enemy_towards_player(npc, player)
+
+                # Помечаем NPC как агрессивного
+                npc._aggro_target = player
+            elif dist > 1:
+                # Если NPC агрессивен (был атакован или атаковал), преследует игрока
+                if hasattr(npc, '_aggro_target') and npc._aggro_target == player:
+                    self._move_enemy_towards_player(npc, player)
+                elif dist <= 5:
+                    # Обычное поведение - движение к игроку если в радиусе обнаружения
+                    self._move_enemy_towards_player(npc, player)
 
         return results
 
     def _move_enemy_towards_player(self, npc, player):
-        """Двигаем врага к игроку"""
+        """Двигаем врага к игроку (по 8 направлениям)"""
         if not self.current_dungeon:
             return
 
         dungeon = self.current_dungeon
 
-        # Простой алгоритм - двигаемся по оси с большей разницей
+        # Вычисляем направление к игроку
         dx = 0
         dy = 0
 
-        if abs(player.x - npc.x) > abs(player.y - npc.y):
-            dx = 1 if player.x > npc.x else -1
-        else:
-            dy = 1 if player.y > npc.y else -1
+        if player.x > npc.x:
+            dx = 1
+        elif player.x < npc.x:
+            dx = -1
+
+        if player.y > npc.y:
+            dy = 1
+        elif player.y < npc.y:
+            dy = -1
 
         new_x = npc.x + dx
         new_y = npc.y + dy
+
+        # Не двигаемся на клетку игрока (предотвращение слипания)
+        if new_x == player.x and new_y == player.y:
+            return
 
         # Проверяем можно ли туда пойти
         if dungeon.is_passable(new_x, new_y):
@@ -728,6 +785,23 @@ class DungeonManager:
             if other_npc is None or not other_npc.is_alive:
                 npc.x = new_x
                 npc.y = new_y
+                return
+
+        # Если диагональный путь заблокирован, пробуем по одной оси
+        if dx != 0 and dy != 0:
+            # Пробуем только по X
+            if player.x != npc.x + dx:  # Не на клетку игрока
+                if dungeon.is_passable(npc.x + dx, npc.y):
+                    other = dungeon.get_npc_at(npc.x + dx, npc.y)
+                    if other is None or not other.is_alive:
+                        npc.x += dx
+                        return
+            # Пробуем только по Y
+            if player.y != npc.y + dy:  # Не на клетку игрока
+                if dungeon.is_passable(npc.x, npc.y + dy):
+                    other = dungeon.get_npc_at(npc.x, npc.y + dy)
+                    if other is None or not other.is_alive:
+                        npc.y += dy
 
     def get_target_info(self) -> Optional[dict]:
         """

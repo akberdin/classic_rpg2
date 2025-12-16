@@ -390,6 +390,86 @@ class DungeonMap:
             "exits": len(self.exits),
         }
 
+    def add_remains(self, x: int, y: int, enemy_name: str, gold: int, loot_items: List):
+        """
+        Добавить останки врага на клетку
+
+        Args:
+            x: Координата X
+            y: Координата Y
+            enemy_name: Имя убитого врага
+            gold: Количество золота
+            loot_items: Список предметов [(item, quantity), ...]
+        """
+        tile = self.get_tile(x, y)
+        if tile:
+            tile.tile_type = DungeonTileType.REMAINS
+            tile.remains_data = {
+                'enemy_name': enemy_name,
+                'gold': gold,
+                'loot_items': loot_items,
+                'looted': False
+            }
+
+    def get_remains_at(self, x: int, y: int) -> Optional[dict]:
+        """
+        Получить данные останков по координатам
+
+        Args:
+            x: Координата X
+            y: Координата Y
+
+        Returns:
+            dict с данными останков или None
+        """
+        tile = self.get_tile(x, y)
+        if tile and tile.tile_type == DungeonTileType.REMAINS and tile.remains_data:
+            return tile.remains_data
+        return None
+
+    def loot_remains(self, x: int, y: int, player) -> Optional[dict]:
+        """
+        Обыскать останки
+
+        Args:
+            x: Координата X
+            y: Координата Y
+            player: Игрок
+
+        Returns:
+            dict с результатом обыска или None
+        """
+        tile = self.get_tile(x, y)
+        if not tile or tile.tile_type != DungeonTileType.REMAINS or not tile.remains_data:
+            return None
+
+        if tile.remains_data.get('looted', False):
+            return None
+
+        remains = tile.remains_data
+        result = {
+            'success': True,
+            'enemy_name': remains['enemy_name'],
+            'gold': remains['gold'],
+            'items': []
+        }
+
+        # Добавляем золото
+        if remains['gold'] > 0:
+            player.inventory.add_gold(remains['gold'])
+
+        # Добавляем предметы
+        for item, quantity in remains.get('loot_items', []):
+            player.inventory.add_item(item, quantity)
+            item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
+            result['items'].append((item_name, quantity))
+
+        # Помечаем как обысканные
+        tile.remains_data['looted'] = True
+        tile.tile_type = DungeonTileType.REMAINS_LOOTED
+
+        return result
+
     def debug_print(self):
         """Вывести карту в консоль (для отладки)"""
         symbols = {
@@ -409,6 +489,8 @@ class DungeonMap:
             DungeonTileType.ORE_VEIN: 'o',
             DungeonTileType.MINECART: 'M',
             DungeonTileType.SUPPORT: '|',
+            DungeonTileType.REMAINS: 'R',
+            DungeonTileType.REMAINS_LOOTED: 'r',
         }
 
         print(f"\n=== {self.name} ({self.dungeon_type}, уровень {self.dungeon_level}) ===")

@@ -198,6 +198,39 @@
     "wolf_devour": "assets/skills/companion/wolf_devour.png"
   },
 
+  "dungeon_tiles": {
+    "_description": "Спрайты объектов подземелья",
+    "floor": "assets/dungeon/floor.png",
+    "wall": "assets/dungeon/wall.png",
+    "corridor": "assets/dungeon/corridor.png",
+    "entrance": "assets/dungeon/entrance.png",
+    "exit": "assets/dungeon/exit.png",
+    "trap": "assets/dungeon/trap.png",
+    "trap_triggered": "assets/dungeon/trap_triggered.png",
+    "stash": "assets/dungeon/stash.png",
+    "stash_looted": "assets/dungeon/stash_looted.png",
+    "altar": "assets/dungeon/altar.png",
+    "bones": "assets/dungeon/bones.png",
+    "ore_vein": "assets/dungeon/ore_vein.png",
+    "remains": "assets/dungeon/remains.png",
+    "remains_looted": "assets/dungeon/remains_looted.png",
+    "rubble": "assets/dungeon/rubble.png",
+    "water": "assets/dungeon/water.png",
+    "minecart": "assets/dungeon/minecart.png",
+    "support": "assets/dungeon/support.png"
+  },
+
+  "dungeon_objects": {
+    "_description": "Спрайты интерактивных объектов подземелья",
+    "chest": "assets/dungeon/objects/chest.png",
+    "chest_open": "assets/dungeon/objects/chest_open.png",
+    "lever": "assets/dungeon/objects/lever.png",
+    "lever_active": "assets/dungeon/objects/lever_active.png",
+    "torch": "assets/dungeon/objects/torch.png",
+    "door": "assets/dungeon/objects/door.png",
+    "door_open": "assets/dungeon/objects/door_open.png"
+  },
+
   "fallback": {
     "_comment": "Если спрайт не найден, используется геометрическая фигура или текст",
     "use_placeholder": true,
