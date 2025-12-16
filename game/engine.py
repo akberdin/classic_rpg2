@@ -23,6 +23,8 @@ from game.ui.windows import (
     CombatModeSelectionWindow,
     CraftingWindow,
     NPCSelectionWindow,
+    DungeonEntryWindow,
+    DungeonExitWindow,
 )
 from game.ui.windows.companion import CompanionWindow
 from game.optimization import PerformanceOptimizer, RenderCache
@@ -173,6 +175,12 @@ class Game:
         # Окно выбора режима боя
         self.combat_mode_window = CombatModeSelectionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
 
+        # Окна подземелий
+        self.dungeon_entry_window = DungeonEntryWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.dungeon_exit_window = DungeonExitWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.dungeon_entry_open = False
+        self.dungeon_exit_open = False
+
         # Окна города/деревни
         self.settlement_menu_window = SettlementMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler, self.game_map)
         self.inquiry_menu_window = InquiryMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler, self.game_map)
@@ -268,6 +276,12 @@ class Game:
 
         # Инициализация рендерера HUD
         self.hud_renderer = HUDRenderer(self)
+
+        # Инициализация системы подземелий
+        from game.dungeon.manager import DungeonManager
+        from game.dungeon.renderer import DungeonRenderer
+        self.dungeon_manager = DungeonManager(self)
+        self.dungeon_renderer = DungeonRenderer(self.screen, TILE_SIZE, self.ui_scaler)
 
         # Инициализация системы ресурсов
         self.resource_system = ResourceSystem(
@@ -367,6 +381,35 @@ class Game:
                     self.running = False
                 elif result == 'no':
                     self.exit_confirmation_open = False
+                continue
+
+            # Если открыто окно входа в подземелье, обрабатываем его
+            if self.dungeon_entry_open:
+                result = self.dungeon_entry_window.handle_input(event)
+                if result == "enter":
+                    # Входим в подземелье
+                    can_enter, dtype, loc_name = self.dungeon_manager.can_enter_dungeon(self.player)
+                    if can_enter:
+                        enter_result = self.dungeon_manager.enter_dungeon(self.player, dtype, loc_name)
+                        if enter_result["success"]:
+                            print(enter_result["message"])
+                    self.dungeon_entry_open = False
+                elif result == "leave":
+                    self.dungeon_entry_open = False
+                continue
+
+            # Если открыто окно выхода из подземелья, обрабатываем его
+            if self.dungeon_exit_open:
+                result = self.dungeon_exit_window.handle_input(event)
+                if result == "exit":
+                    exit_result = self.dungeon_manager.exit_dungeon(self.player)
+                    if exit_result["success"]:
+                        print(exit_result["message"])
+                        # Обновляем туман войны на основной карте
+                        self.fog_of_war.update_vision(self.player.x, self.player.y)
+                    self.dungeon_exit_open = False
+                elif result == "stay":
+                    self.dungeon_exit_open = False
                 continue
 
             # Если идет тактический бой, передаем управление системе тактического боя
@@ -712,14 +755,44 @@ class Game:
         # Очистка экрана
         self.screen.fill(COLORS['background'])
 
-        # Отрисовка карты
-        self.world_renderer.render_map()
+        # Проверяем, находимся ли в подземелье
+        if self.dungeon_manager.is_in_dungeon and self.dungeon_manager.current_dungeon:
+            # Отрисовка подземелья
+            dungeon = self.dungeon_manager.current_dungeon
+            self.dungeon_renderer.render_dungeon(
+                dungeon, self.player, 0, 0,
+                self.window_width, self.window_height
+            )
 
-        # Отрисовка UI
-        self.hud_renderer.render()
+            # Мини-карта подземелья
+            minimap_w = 150
+            minimap_h = 120
+            minimap_x = self.window_width - minimap_w - 10
+            minimap_y = 10
+            self.dungeon_renderer.render_minimap(
+                dungeon, self.player,
+                minimap_x, minimap_y, minimap_w, minimap_h
+            )
 
-        # Отрисовка мини-карты
-        self.world_renderer.render_minimap()
+            # HUD подземелья
+            self.dungeon_renderer.render_hud(dungeon, self.player, self.info_font)
+
+            # Отрисовка окон
+            if self.dungeon_exit_open:
+                self.dungeon_exit_window.render()
+
+            # Обновление дисплея и выход
+            pygame.display.flip()
+            return
+        else:
+            # Отрисовка основной карты
+            self.world_renderer.render_map()
+
+            # Отрисовка UI
+            self.hud_renderer.render()
+
+            # Отрисовка мини-карты
+            self.world_renderer.render_minimap()
 
         # Если идет бой, отрисовываем окно боя
         if self.in_combat and self.combat_system:
@@ -808,6 +881,10 @@ class Game:
         # Если открыто окно ответа на вопрос, отрисовываем его
         if self.inquiry_response_open:
             self.inquiry_response_window.render()
+
+        # Если открыто окно входа в подземелье, отрисовываем его
+        if self.dungeon_entry_open:
+            self.dungeon_entry_window.render()
 
         # Отрисовка окна помощи (поверх всего)
         self.help_window.render()
