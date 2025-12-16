@@ -11,7 +11,7 @@ from game.dungeon.tiles import DungeonTileType, DUNGEON_TILE_COLORS
 class DungeonRenderer:
     """Рендерер для отображения подземелий"""
 
-    def __init__(self, screen, tile_size: int, ui_scaler):
+    def __init__(self, screen, tile_size: int, ui_scaler, sprite_manager=None):
         """
         Инициализация рендерера
 
@@ -19,10 +19,12 @@ class DungeonRenderer:
             screen: Экран pygame
             tile_size: Размер тайла в пикселях
             ui_scaler: Масштабировщик UI
+            sprite_manager: Менеджер спрайтов (опционально)
         """
         self.screen = screen
         self.tile_size = tile_size
         self.ui_scaler = ui_scaler
+        self.sprite_manager = sprite_manager
 
         # Шрифты
         font_size = max(12, tile_size // 3)
@@ -161,27 +163,40 @@ class DungeonRenderer:
             pixel_x = screen_x * self.tile_size
             pixel_y = screen_y * self.tile_size
 
-            # Рисуем NPC (серый круг для нежити)
-            center_x = pixel_x + self.tile_size // 2
-            center_y = pixel_y + self.tile_size // 2
-            radius = self.tile_size // 3
+            # Функция отрисовки по умолчанию
+            def draw_npc_default():
+                center_x = pixel_x + self.tile_size // 2
+                center_y = pixel_y + self.tile_size // 2
+                radius = self.tile_size // 3
 
-            # Цвет зависит от типа NPC
-            npc_color = (128, 128, 160)  # Серо-синий для нежити
-            if hasattr(npc, 'npc_type'):
-                if npc.npc_type == "undead":
-                    npc_color = (100, 100, 130)
+                # Цвет зависит от типа NPC
+                npc_color = (128, 128, 160)  # Серо-синий для нежити
+                if hasattr(npc, 'npc_type'):
+                    if npc.npc_type == "undead":
+                        npc_color = (100, 100, 130)
 
-            pygame.draw.circle(self.screen, npc_color, (center_x, center_y), radius)
-            pygame.draw.circle(self.screen, (200, 200, 220), (center_x, center_y), radius, 2)
+                pygame.draw.circle(self.screen, npc_color, (center_x, center_y), radius)
+                pygame.draw.circle(self.screen, (200, 200, 220), (center_x, center_y), radius, 2)
 
-            # Рисуем индикатор уровня
-            if hasattr(npc, 'level'):
-                level_text = str(npc.level)
-                level_surface = self.small_font.render(level_text, True, (255, 255, 255))
-                level_x = center_x - level_surface.get_width() // 2
-                level_y = center_y - level_surface.get_height() // 2
-                self.screen.blit(level_surface, (level_x, level_y))
+                # Рисуем индикатор уровня
+                if hasattr(npc, 'level'):
+                    level_text = str(npc.level)
+                    level_surface = self.small_font.render(level_text, True, (255, 255, 255))
+                    level_x = center_x - level_surface.get_width() // 2
+                    level_y = center_y - level_surface.get_height() // 2
+                    self.screen.blit(level_surface, (level_x, level_y))
+
+            # Используем спрайт если доступен
+            npc_type = getattr(npc, 'npc_type', 'undead')
+            npc_level = getattr(npc, 'level', 1)
+
+            if self.sprite_manager:
+                self.sprite_manager.render_npc(
+                    self.screen, npc_type, pixel_x, pixel_y,
+                    draw_npc_default, npc_level
+                )
+            else:
+                draw_npc_default()
 
     def _render_player(self, player, start_x: int, start_y: int):
         """Отрисовка игрока"""
@@ -191,20 +206,22 @@ class DungeonRenderer:
         pixel_x = screen_x * self.tile_size
         pixel_y = screen_y * self.tile_size
 
-        # Игрок - золотой круг
-        center_x = pixel_x + self.tile_size // 2
-        center_y = pixel_y + self.tile_size // 2
-        radius = self.tile_size // 3
+        # Функция отрисовки по умолчанию (геометрическая фигура)
+        def draw_player_default():
+            center_x = pixel_x + self.tile_size // 2
+            center_y = pixel_y + self.tile_size // 2
+            radius = self.tile_size // 3
+            pygame.draw.circle(self.screen, (255, 215, 0), (center_x, center_y), radius)
+            pygame.draw.circle(self.screen, (255, 255, 200), (center_x, center_y), radius, 2)
 
-        pygame.draw.circle(self.screen, (255, 215, 0), (center_x, center_y), radius)
-        pygame.draw.circle(self.screen, (255, 255, 200), (center_x, center_y), radius, 2)
-
-        # Символ игрока
-        player_symbol = "@"
-        symbol_surface = self.font.render(player_symbol, True, (50, 50, 50))
-        sym_x = center_x - symbol_surface.get_width() // 2
-        sym_y = center_y - symbol_surface.get_height() // 2
-        self.screen.blit(symbol_surface, (sym_x, sym_y))
+        # Используем спрайт если доступен
+        if self.sprite_manager:
+            self.sprite_manager.render_npc(
+                self.screen, 'player', pixel_x, pixel_y,
+                draw_player_default, player.level
+            )
+        else:
+            draw_player_default()
 
     def render_minimap(self, dungeon: DungeonMap, player, x: int, y: int,
                        width: int, height: int):
