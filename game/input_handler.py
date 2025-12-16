@@ -542,14 +542,10 @@ class InputHandler:
 
                     if self.ctx.player.inventory.gold >= buy_price:
                         if self.ctx.nearby_npc.inventory.remove_item(item, 1):
-                            if self.ctx.player.inventory.add_item(item, 1):
-                                self.ctx.player.inventory.remove_gold(buy_price)
-                                self.ctx.nearby_npc.inventory.add_gold(buy_price)
-                                print(f"Вы купили {item.name} за {buy_price} золота")
-                            else:
-                                # Возвращаем предмет торговцу если не поместился в инвентарь
-                                self.ctx.nearby_npc.inventory.add_item(item, 1)
-                                print("Ваш инвентарь переполнен!")
+                            self.ctx.player.inventory.add_item(item, 1)
+                            self.ctx.player.inventory.remove_gold(buy_price)
+                            self.ctx.nearby_npc.inventory.add_gold(buy_price)
+                            print(f"Вы купили {item.name} за {buy_price} золота")
                     else:
                         print(f"Недостаточно золота! Нужно {buy_price}, у вас {self.ctx.player.inventory.gold}")
         else:
@@ -661,13 +657,10 @@ class InputHandler:
 
             if self.ctx.player.inventory.gold >= buy_price:
                 if self.ctx.nearby_npc.inventory.remove_item(item, 1):
-                    if self.ctx.player.inventory.add_item(item, 1):
-                        self.ctx.player.inventory.remove_gold(buy_price)
-                        self.ctx.nearby_npc.inventory.add_gold(buy_price)
-                        print(f"Вы купили {item.name} за {buy_price} золота")
-                    else:
-                        self.ctx.nearby_npc.inventory.add_item(item, 1)
-                        print("Ваш инвентарь переполнен!")
+                    self.ctx.player.inventory.add_item(item, 1)
+                    self.ctx.player.inventory.remove_gold(buy_price)
+                    self.ctx.nearby_npc.inventory.add_gold(buy_price)
+                    print(f"Вы купили {item.name} за {buy_price} золота")
             else:
                 print(f"Недостаточно золота! Нужно {buy_price}, у вас {self.ctx.player.inventory.gold}")
         else:
@@ -1084,6 +1077,11 @@ class InputHandler:
 
         # Попытка переместить игрока
         if moved:
+            # Проверяем перегрузку инвентаря перед движением
+            if self.ctx.player.inventory.is_overloaded():
+                print("Вы перегружены!")
+                return
+
             # Проверяем выносливость перед движением
             if self.ctx.player.is_resting:
                 print("Вы слишком устали и должны отдохнуть!")

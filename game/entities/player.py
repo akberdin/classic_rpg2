@@ -373,11 +373,9 @@ class Player(Character):
             resources = mining.gather(self)
             if resources:
                 for item, quantity in resources:
-                    if self.inventory.add_item(item, quantity):
-                        print(f"Добыто: {item.name} x{quantity}")
-                        self.resources_collected += 1
-                    else:
-                        print(f"Инвентарь полон! Не удалось добавить {item.name}")
+                    self.inventory.add_item(item, quantity)
+                    print(f"Добыто: {item.name} x{quantity}")
+                    self.resources_collected += 1
                 resources_gathered = True
             else:
                 print("Вам не удалось ничего добыть в этот раз.")
@@ -390,11 +388,9 @@ class Player(Character):
             resources = lumberjacking.gather(self)
             if resources:
                 for item, quantity in resources:
-                    if self.inventory.add_item(item, quantity):
-                        print(f"Срублено: {item.name} x{quantity}")
-                        self.resources_collected += 1
-                    else:
-                        print(f"Инвентарь полон! Не удалось добавить {item.name}")
+                    self.inventory.add_item(item, quantity)
+                    print(f"Срублено: {item.name} x{quantity}")
+                    self.resources_collected += 1
                 resources_gathered = True
             else:
                 print("Вам не удалось ничего добыть в этот раз.")

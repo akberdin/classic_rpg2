@@ -163,7 +163,8 @@ class ResourceSystem:
             if item == 'gold':
                 self.player.inventory.add_gold(quantity)
                 collected_gold += quantity
-            elif self.player.inventory.add_item(item, quantity):
+            else:
+                self.player.inventory.add_item(item, quantity)
                 collected_items.append((item, quantity))
 
                 # Обновляем прогресс квестов на сбор ресурсов

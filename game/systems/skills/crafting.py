@@ -72,12 +72,10 @@ class Mining(Skill):
             result['resources'] = resources
             messages = []
             for item, quantity in resources:
-                if user.inventory.add_item(item, quantity):
-                    messages.append(f"Добыто: {item.name} x{quantity}")
-                    if hasattr(user, 'resources_collected'):
-                        user.resources_collected += 1
-                else:
-                    messages.append(f"Инвентарь полон! Не удалось добавить {item.name}")
+                user.inventory.add_item(item, quantity)
+                messages.append(f"Добыто: {item.name} x{quantity}")
+                if hasattr(user, 'resources_collected'):
+                    user.resources_collected += 1
             result['message'] = "\n".join(messages) if messages else f"{user.name} добыл ресурсы!"
         else:
             result['success'] = False
@@ -131,12 +129,10 @@ class Lumberjacking(Skill):
             result['resources'] = resources
             messages = []
             for item, quantity in resources:
-                if user.inventory.add_item(item, quantity):
-                    messages.append(f"Срублено: {item.name} x{quantity}")
-                    if hasattr(user, 'resources_collected'):
-                        user.resources_collected += 1
-                else:
-                    messages.append(f"Инвентарь полон! Не удалось добавить {item.name}")
+                user.inventory.add_item(item, quantity)
+                messages.append(f"Срублено: {item.name} x{quantity}")
+                if hasattr(user, 'resources_collected'):
+                    user.resources_collected += 1
             result['message'] = "\n".join(messages) if messages else f"{user.name} срубил деревья!"
         else:
             result['success'] = False
@@ -352,12 +348,10 @@ class Herbalism(Skill):
             result['resources'] = resources
             messages = []
             for item, quantity in resources:
-                if user.inventory.add_item(item, quantity):
-                    messages.append(f"Собрано: {item.name} x{quantity}")
-                    if hasattr(user, 'resources_collected'):
-                        user.resources_collected += 1
-                else:
-                    messages.append(f"Инвентарь полон! Не удалось добавить {item.name}")
+                user.inventory.add_item(item, quantity)
+                messages.append(f"Собрано: {item.name} x{quantity}")
+                if hasattr(user, 'resources_collected'):
+                    user.resources_collected += 1
             result['message'] = "\n".join(messages) if messages else f"{user.name} собрал травы!"
         else:
             result['success'] = False

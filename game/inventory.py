@@ -749,22 +749,32 @@ class Inventory:
         # Экипированные предметы НЕ учитываются в весе инвентаря
         return round(total, 2)
 
+    def is_overweight(self):
+        """Проверить, превышен ли максимальный вес"""
+        return self.current_weight > self.max_weight
+
+    def is_over_slots(self):
+        """Проверить, превышено ли количество слотов"""
+        return len(self.items) > self.max_slots
+
+    def is_overloaded(self):
+        """Проверить, перегружен ли инвентарь (по весу или слотам)"""
+        return self.is_overweight() or self.is_over_slots()
+
     def add_item(self, item, quantity=1):
         """
         Добавить предмет в инвентарь
+
+        Ограничения на вес и количество слотов убраны - вместо этого
+        при перегрузе игрок не может двигаться.
 
         Args:
             item: Объект предмета
             quantity: Количество
 
         Returns:
-            bool: True если успешно добавлен
+            bool: True если успешно добавлен (всегда True)
         """
-        # Проверка на вес
-        new_weight = self.current_weight + (item.weight * quantity)
-        if new_weight > self.max_weight:
-            return False  # Превышен максимальный вес
-
         # Определяем, можно ли стекировать предмет
         can_stack = getattr(item, 'is_stackable', True)
 
@@ -787,15 +797,9 @@ class Inventory:
                 # Сохраняем оригинальное имя для отображения
                 item._inventory_key = item_key
 
-            # Проверка на количество слотов
-            if len(self.items) >= self.max_slots:
-                return False  # Инвентарь полон
-
             # Добавляем новый предмет (для не-стекируемых quantity всегда 1)
             if not can_stack:
                 for _ in range(quantity):
-                    if len(self.items) >= self.max_slots:
-                        return False
                     # Каждый предмет в отдельный слот
                     counter = 1
                     item_key = base_key
@@ -1008,19 +1012,6 @@ class Inventory:
         if not isinstance(item, EquipmentItem):
             return (False, "Этот предмет нельзя экипировать")
 
-        # СПЕЦИАЛЬНАЯ ПРОВЕРКА ДЛЯ РЮКЗАКА
-        if isinstance(item, BackpackItem):
-            # Проверяем, есть ли уже экипированный рюкзак
-            old_backpack = self.equipment.get(EquipmentSlot.BACKPACK)
-            if old_backpack and isinstance(old_backpack, BackpackItem):
-                # Новый размер = базовый + бонус от нового рюкзака
-                new_max_slots = self.base_max_slots + item.get_bonus_slots()
-                current_items_count = len(self.items)
-
-                # Проверяем, поместятся ли все текущие предметы в новый рюкзак
-                if current_items_count > new_max_slots:
-                    return (False, f"Не могу сменить рюкзак: занято {current_items_count} слотов, а в новом рюкзаке будет доступно только {new_max_slots} слотов. Освободите {current_items_count - new_max_slots} слотов.")
-
         # Определяем слот
         slot = item.slot
 
@@ -1092,8 +1083,7 @@ class Inventory:
         old_item = self.equipment[slot]
         if old_item:
             # Возвращаем старый предмет в инвентарь
-            if not self.add_item(old_item, 1):
-                return (False, "Не удалось снять экипированный предмет - инвентарь переполнен")
+            self.add_item(old_item, 1)
 
         # Снимаем бонусы умений от старого предмета
         if old_item and hasattr(old_item, 'skill_bonus') and old_item.skill_bonus:
@@ -1209,16 +1199,6 @@ class Inventory:
         if not item:
             return (False, "Слот пуст")
 
-        # СПЕЦИАЛЬНАЯ ПРОВЕРКА ДЛЯ РЮКЗАКА
-        if isinstance(item, BackpackItem):
-            # Проверяем, поместятся ли предметы в базовый размер инвентаря
-            new_max_slots = self.base_max_slots
-            current_items_count = len(self.items)
-
-            # +1 слот нужен будет для самого рюкзака
-            if current_items_count + 1 > new_max_slots:
-                return (False, f"Не могу снять рюкзак: занято {current_items_count} слотов, а без рюкзака будет доступно только {new_max_slots} слотов. Освободите {current_items_count + 1 - new_max_slots} слотов.")
-
         # СПЕЦИАЛЬНАЯ ПРОВЕРКА ДЛЯ ПОЯСА
         if isinstance(item, BeltItem):
             # Проверяем, есть ли предметы в слотах талисманов или зелий
@@ -1238,9 +1218,8 @@ class Inventory:
             if occupied_slots:
                 return (False, "Сначала освободите все слоты пояса (талисманы и зелья)")
 
-        # Пытаемся добавить в инвентарь
-        if not self.add_item(item, 1):
-            return (False, "Инвентарь переполнен")
+        # Добавляем в инвентарь
+        self.add_item(item, 1)
 
         # Снимаем бонусы умений от предмета
         if hasattr(item, 'skill_bonus') and item.skill_bonus:

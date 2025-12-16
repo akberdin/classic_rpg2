@@ -267,10 +267,8 @@ class CheatMenuWindow:
                             quality=ItemQuality.ARTIFACT
                         )
 
-                    if game.player.inventory.add_item(artifact, 1):
-                        print(f"Получен артефакт: {artifact.name}!")
-                    else:
-                        print("Не удалось добавить артефакт - инвентарь переполнен!")
+                    game.player.inventory.add_item(artifact, 1)
+                    print(f"Получен артефакт: {artifact.name}!")
                 except Exception as e:
                     print(f"Ошибка при создании артефакта: {e}")
                     import traceback
