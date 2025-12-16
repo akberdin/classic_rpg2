@@ -646,7 +646,7 @@ class DungeonManager:
         """
         # Опыт
         exp_reward = getattr(enemy, 'exp_reward', 10) * self.current_dungeon.dungeon_level
-        player.gain_experience(exp_reward)
+        player.add_experience(exp_reward)
 
         # Шанс дропа
         if hasattr(enemy, 'loot_table') and random.random() < 0.3:
