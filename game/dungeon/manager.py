@@ -680,7 +680,7 @@ class DungeonManager:
 
             if dist <= 1:
                 # Атакуем игрока
-                attack_damage = getattr(npc, 'attack', 5)
+                attack_damage = npc.get_total_damage()
                 defense = player.get_total_defense()
                 final_damage = max(1, attack_damage - defense // 2)
 
