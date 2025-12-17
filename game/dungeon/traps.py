@@ -120,12 +120,12 @@ class Trap:
         self.is_detected = False
         self.is_disarmed = False
 
-    def trigger(self, player) -> dict:
+    def trigger(self, target) -> dict:
         """
         Активировать ловушку
 
         Args:
-            player: Объект игрока
+            target: Объект игрока или NPC
 
         Returns:
             dict: Результат срабатывания ловушки
@@ -135,49 +135,87 @@ class Trap:
 
         self.is_triggered = True
 
+        # Определяем, игрок это или NPC
+        is_player = hasattr(target, 'inventory')  # У игрока есть инвентарь
+
         result = {
             "success": True,
             "trap_name": self.name,
             "damage": 0,
             "damage_type": self.damage_type,
             "effects": [],
-            "message": ""
+            "message": "",
+            "target_name": getattr(target, 'name', 'Цель')
         }
 
         # Шанс уклонения от ловушки (зависит от ловкости)
-        dodge_chance = min(50, player.dexterity * 2)
+        dodge_chance = min(50, target.dexterity * 2)
         if random.randint(1, 100) <= dodge_chance:
-            result["message"] = f"Вы успели увернуться от ловушки '{self.name}'!"
+            if is_player:
+                result["message"] = f"Вы успели увернуться от ловушки '{self.name}'!"
+            else:
+                result["message"] = f"{target.name} увернулся от ловушки '{self.name}'!"
             result["damage"] = 0
             return result
 
-        # Наносим урон
-        actual_damage = self.damage
-        player.health -= actual_damage
-        if player.health < 0:
-            player.health = 0
+        # Наносим урон с учетом защиты
+        base_damage = self.damage
+
+        # Получаем защиту цели (если есть метод get_total_defense)
+        defense = 0
+        if hasattr(target, 'get_total_defense'):
+            defense = target.get_total_defense()
+
+        # Применяем формулу урона (аналогично бою с врагами)
+        # Защита снижает урон вдвое
+        actual_damage = max(1, base_damage - defense // 2)
+
+        target.health -= actual_damage
+        if target.health < 0:
+            target.health = 0
         result["damage"] = actual_damage
-        result["message"] = f"Ловушка '{self.name}' нанесла вам {actual_damage} урона!"
 
-        # Проверяем смерть игрока
-        if player.health <= 0:
-            result["player_dead"] = True
-            result["message"] += " Вы погибли!"
+        # Формируем сообщение с информацией о защите
+        if is_player:
+            if defense > 0:
+                blocked = base_damage - actual_damage
+                result["message"] = f"Ловушка '{self.name}' нанесла вам {actual_damage} урона (заблокировано: {blocked})!"
+            else:
+                result["message"] = f"Ловушка '{self.name}' нанесла вам {actual_damage} урона!"
+        else:
+            if defense > 0:
+                blocked = base_damage - actual_damage
+                result["message"] = f"Ловушка '{self.name}' нанесла {target.name} {actual_damage} урона (заблокировано: {blocked})!"
+            else:
+                result["message"] = f"Ловушка '{self.name}' нанесла {target.name} {actual_damage} урона!"
 
-        # Дополнительные эффекты
-        if self.poison_duration > 0:
-            # Применяем отравление
-            if hasattr(player, 'apply_poison'):
-                player.apply_poison(self.poison_damage, self.poison_duration)
-            result["effects"].append(f"Отравление на {self.poison_duration} ходов")
-            result["message"] += f" Вы отравлены на {self.poison_duration} ходов!"
+        # Проверяем смерть
+        if target.health <= 0:
+            if is_player:
+                result["player_dead"] = True
+                result["message"] += " Вы погибли!"
+            else:
+                result["target_dead"] = True
+                result["message"] += f" {target.name} погиб!"
+                # Помечаем NPC как мертвого
+                if hasattr(target, 'is_alive'):
+                    target.is_alive = False
 
-        if self.curse_effect:
-            # Применяем проклятие
-            if hasattr(player, 'apply_curse'):
-                player.apply_curse(self.curse_effect, self.curse_duration)
-            result["effects"].append(f"Проклятие '{self.curse_effect}' на {self.curse_duration} ходов")
-            result["message"] += f" На вас наложено проклятие!"
+        # Дополнительные эффекты (только для игрока, у NPC могут не быть этих методов)
+        if is_player:
+            if self.poison_duration > 0:
+                # Применяем отравление
+                if hasattr(target, 'apply_poison'):
+                    target.apply_poison(self.poison_damage, self.poison_duration)
+                result["effects"].append(f"Отравление на {self.poison_duration} ходов")
+                result["message"] += f" Вы отравлены на {self.poison_duration} ходов!"
+
+            if self.curse_effect:
+                # Применяем проклятие
+                if hasattr(target, 'apply_curse'):
+                    target.apply_curse(self.curse_effect, self.curse_duration)
+                result["effects"].append(f"Проклятие '{self.curse_effect}' на {self.curse_duration} ходов")
+                result["message"] += f" На вас наложено проклятие!"
 
         return result
 
