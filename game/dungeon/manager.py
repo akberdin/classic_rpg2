@@ -102,8 +102,11 @@ class DungeonManager:
         cache_key = (self.saved_world_x, self.saved_world_y)
 
         if cache_key in self._dungeon_cache:
-            # Используем сохраненное подземелье
+            # Используем сохраненное подземелье (уже посещенное)
             self.current_dungeon = self._dungeon_cache[cache_key]
+
+            # Восстанавливаем список NPC из сохраненного подземелья
+            self.dungeon_npcs = self.current_dungeon.npcs.copy()
         else:
             # Генерируем новое подземелье
             tile = self.game.game_map.get_tile(player.x, player.y)
@@ -858,6 +861,10 @@ class DungeonManager:
         if new_x == player.x and new_y == player.y:
             return
 
+        # Сохраняем старые координаты для проверки движения
+        old_x = npc.x
+        old_y = npc.y
+
         # Проверяем можно ли туда пойти
         if dungeon.is_passable(new_x, new_y):
             # Проверяем нет ли там другого NPC
@@ -865,6 +872,8 @@ class DungeonManager:
             if other_npc is None or not other_npc.is_alive:
                 npc.x = new_x
                 npc.y = new_y
+                # Проверяем ловушки после движения
+                self._check_npc_trap(npc, dungeon)
                 return
 
         # Если диагональный путь заблокирован, пробуем по одной оси
@@ -875,6 +884,8 @@ class DungeonManager:
                     other = dungeon.get_npc_at(npc.x + dx, npc.y)
                     if other is None or not other.is_alive:
                         npc.x += dx
+                        # Проверяем ловушки после движения
+                        self._check_npc_trap(npc, dungeon)
                         return
             # Пробуем только по Y
             if player.y != npc.y + dy:  # Не на клетку игрока
@@ -882,6 +893,44 @@ class DungeonManager:
                     other = dungeon.get_npc_at(npc.x, npc.y + dy)
                     if other is None or not other.is_alive:
                         npc.y += dy
+                        # Проверяем ловушки после движения
+                        self._check_npc_trap(npc, dungeon)
+
+    def _check_npc_trap(self, npc, dungeon):
+        """
+        Проверить, наступил ли NPC на ловушку
+
+        Args:
+            npc: NPC
+            dungeon: Подземелье
+        """
+        trap = dungeon.trap_manager.get_trap_at(npc.x, npc.y)
+        if trap and not trap.is_triggered and not trap.is_disarmed:
+            # NPC наступает на ловушку
+            trap_result = trap.trigger(npc)
+            if trap_result.get("success"):
+                # Обновляем тип клетки
+                dungeon.set_tile_type(npc.x, npc.y, DungeonTileType.TRAP_TRIGGERED)
+                # Выводим сообщение о срабатывании ловушки
+                print(trap_result.get("message", ""))
+
+                # Если NPC убит ловушкой, создаем останки
+                if trap_result.get("target_dead") and not npc.is_alive:
+                    import random
+                    from game.item_registry import get_item
+
+                    gold_reward = random.randint(5, 15) * dungeon.dungeon_level
+
+                    # Генерируем возможный лут
+                    loot_items = []
+                    if random.random() < 0.2:  # 20% шанс на лут
+                        possible_loot = ['minor_health_potion', 'minor_mana_potion', 'minor_stamina_potion']
+                        item = get_item(random.choice(possible_loot))
+                        if item:
+                            loot_items.append((item, 1))
+
+                    # Добавляем останки
+                    dungeon.add_remains(npc.x, npc.y, npc.name, gold_reward, loot_items)
 
     def get_target_info(self) -> Optional[dict]:
         """

@@ -34,7 +34,7 @@ class DungeonGenerator:
             "min_room_size": 4,
             "max_room_size": 12,
             "corridor_width": 3,     # Шахты шире
-            "trap_chance": 0.05,     # Меньше ловушек
+            "trap_chance": 0.025,    # Меньше ловушек (2.5% вместо 5%)
             "stash_chance": 0.10,    # Больше руды
             "decorations": True,
         }
