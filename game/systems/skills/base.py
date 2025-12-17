@@ -34,6 +34,7 @@ class SkillCategory(Enum):
     HUNTER = "hunter"  # Умения охотника (луки, копья)
     MAGE = "mage"  # Умения мага (магия)
     GENERAL = "general"  # Общие умения (базовые, не магические, не ремесленные)
+    EXPLORATION = "exploration"  # Умения исследования (обнаружение, обезвреживание, взлом)
 
 
 class Skill:

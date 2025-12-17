@@ -16,6 +16,87 @@ class StashType(Enum):
     ANCIENT_TOMB = "tomb"        # Древняя гробница - редкий лут
 
 
+class StashLevel(Enum):
+    """Уровни тайников"""
+    SIMPLE = 1             # Простой (виден сразу)
+    HIDDEN = 2             # Скрытый
+    WELL_HIDDEN = 3        # Хорошо спрятанный
+    MASTERFULLY_HIDDEN = 4 # Мастерски скрытый
+    LEGENDARY_TREASURE = 5 # Легендарное сокровище
+
+
+# Параметры уровней тайников
+STASH_LEVEL_DATA = {
+    StashLevel.SIMPLE: {
+        "name": "Простой",
+        "dc_modifier": 0,              # Виден сразу (DC = 0)
+        "gold_multiplier": 1.0,        # 100% золота
+        "quality_weights": {           # Веса качества предметов
+            "poor": 50,
+            "common": 40,
+            "uncommon": 10,
+        },
+        "trap_chance": 0.0,            # Нет ловушек
+        "extra_items": 0,              # Доп. предметов
+    },
+    StashLevel.HIDDEN: {
+        "name": "Скрытый",
+        "dc_modifier": 10,             # DC обнаружения +10
+        "gold_multiplier": 1.5,        # 150% золота
+        "quality_weights": {
+            "common": 60,
+            "uncommon": 30,
+            "rare": 10,
+        },
+        "trap_chance": 0.10,           # 10% шанс ловушки (уровень 1)
+        "extra_items": 0,
+    },
+    StashLevel.WELL_HIDDEN: {
+        "name": "Хорошо Спрятанный",
+        "dc_modifier": 15,             # DC обнаружения +15
+        "gold_multiplier": 2.0,        # 200% золота
+        "quality_weights": {
+            "common": 40,
+            "uncommon": 40,
+            "rare": 15,
+            "epic": 5,
+        },
+        "trap_chance": 0.30,           # 30% шанс ловушки (уровень 2)
+        "extra_items": 1,              # +1 предмет
+    },
+    StashLevel.MASTERFULLY_HIDDEN: {
+        "name": "Мастерски Скрытый",
+        "dc_modifier": 20,             # DC обнаружения +20
+        "gold_multiplier": 3.0,        # 300% золота
+        "quality_weights": {
+            "common": 20,
+            "uncommon": 35,
+            "rare": 30,
+            "epic": 12,
+            "legendary": 3,
+        },
+        "trap_chance": 0.60,           # 60% шанс ловушки (уровень 3)
+        "extra_items": 2,              # +2 предмета
+        "skill_book_chance": 0.05,    # 5% шанс книги умений
+    },
+    StashLevel.LEGENDARY_TREASURE: {
+        "name": "Легендарное Сокровище",
+        "dc_modifier": 25,             # DC обнаружения +25
+        "gold_multiplier": 5.0,        # 500% золота
+        "quality_weights": {
+            "uncommon": 25,
+            "rare": 30,
+            "epic": 25,
+            "legendary": 15,
+            "artifact": 5,
+        },
+        "trap_chance": 0.90,           # 90% шанс ловушки (уровень 4-5)
+        "extra_items": 3,              # +3 предмета
+        "skill_book_chance": 1.0,     # Гарантированная книга умений
+        "recipe_chance": 0.15,        # 15% шанс рецепта
+    },
+}
+
 # Параметры тайников
 STASH_DATA = {
     StashType.CHEST: {
@@ -155,7 +236,8 @@ DUNGEON_LOOT_TABLES = {
 class Stash:
     """Класс тайника"""
 
-    def __init__(self, x: int, y: int, stash_type: StashType, dungeon_level: int = 1):
+    def __init__(self, x: int, y: int, stash_type: StashType, dungeon_level: int = 1,
+                 stash_level: StashLevel = StashLevel.SIMPLE):
         """
         Создать тайник
 
@@ -164,29 +246,71 @@ class Stash:
             y: Координата Y
             stash_type: Тип тайника
             dungeon_level: Уровень подземелья
+            stash_level: Уровень тайника (1-5)
         """
         self.x = x
         self.y = y
         self.stash_type = stash_type
         self.dungeon_level = dungeon_level
+        self.stash_level = stash_level
 
-        # Данные тайника
-        data = STASH_DATA.get(stash_type, STASH_DATA[StashType.CHEST])
-        self.name = data["name"]
-        self.description = data["description"]
-        self.detection_dc = data["detection_dc"]
-        self.gold_min = data["gold_min"]
-        self.gold_max = data["gold_max"]
-        self.item_chance = data["item_chance"]
-        self.item_quality_bonus = data["item_quality_bonus"]
-        self.resource_type = data.get("resource_type", None)
+        # Данные типа тайника
+        stash_data = STASH_DATA.get(stash_type, STASH_DATA[StashType.CHEST])
+        self.name = stash_data["name"]
+        self.description = stash_data["description"]
+        self.resource_type = stash_data.get("resource_type", None)
+
+        # Данные уровня тайника
+        level_data = STASH_LEVEL_DATA[stash_level]
+        self.level_name = level_data["name"]
+        self.gold_multiplier = level_data["gold_multiplier"]
+        self.quality_weights = level_data["quality_weights"]
+        self.trap_chance = level_data["trap_chance"]
+        self.extra_items = level_data["extra_items"]
+
+        # Расчет DC с учетом уровня тайника
+        base_detection_dc = stash_data["detection_dc"]
+        dc_modifier = level_data["dc_modifier"]
+        self.detection_dc = max(0, base_detection_dc + dc_modifier)
+
+        # Базовые параметры лута
+        self.gold_min = stash_data["gold_min"]
+        self.gold_max = stash_data["gold_max"]
+        self.item_chance = stash_data["item_chance"]
+        self.item_quality_bonus = stash_data["item_quality_bonus"]
 
         # Состояние
         self.is_detected = (self.detection_dc == 0)  # Виден ли тайник
         self.is_looted = False
 
+        # Ловушка в тайнике (генерируется при создании)
+        self.has_trap = False
+        self.trap = None
+        self._generate_trap()
+
         # Сгенерированный лут (кэшируется при первом открытии)
         self._cached_loot = None
+
+    def _generate_trap(self):
+        """Генерация ловушки в тайнике (если есть шанс)"""
+        if self.trap_chance > 0 and random.random() < self.trap_chance:
+            # Импортируем здесь, чтобы избежать циклической зависимости
+            from game.dungeon.traps import Trap, TrapType, TrapLevel, TRAP_DATA
+
+            self.has_trap = True
+
+            # Выбираем случайный тип ловушки
+            trap_types = list(TrapType)
+            trap_type = random.choice(trap_types)
+
+            # Определяем уровень ловушки на основе уровня тайника
+            trap_level_value = max(1, self.stash_level.value - 1)
+            trap_level = TrapLevel(trap_level_value)
+
+            # Создаем ловушку (не отображается на карте)
+            self.trap = Trap(self.x, self.y, trap_type, self.dungeon_level, trap_level)
+            # Ловушка автоматически не обнаружена
+            self.trap.is_detected = False
 
     def try_detect(self, player) -> bool:
         """
@@ -274,14 +398,15 @@ class Stash:
             player: Объект игрока
 
         Returns:
-            dict: {"success": bool, "gold": int, "items": list, "message": str}
+            dict: {"success": bool, "gold": int, "items": list, "message": str, "trap_triggered": bool}
         """
         if not self.is_detected:
             return {
                 "success": False,
                 "gold": 0,
                 "items": [],
-                "message": "Вы не видите здесь ничего интересного"
+                "message": "Вы не видите здесь ничего интересного",
+                "trap_triggered": False
             }
 
         if self.is_looted:
@@ -289,8 +414,28 @@ class Stash:
                 "success": False,
                 "gold": 0,
                 "items": [],
-                "message": f"{self.name} уже обыскан"
+                "message": f"{self.name} уже обыскан",
+                "trap_triggered": False
             }
+
+        # Проверяем ловушку ПЕРЕД обыском
+        if self.has_trap and self.trap and not self.trap.is_disarmed:
+            # Ловушка срабатывает при попытке обыска
+            trap_result = self.trap.trigger(player)
+
+            # Если игрок мертв, не даем обыскать тайник
+            if player.health <= 0:
+                return {
+                    "success": False,
+                    "gold": 0,
+                    "items": [],
+                    "message": f"Попытка обыскать {self.name} ({self.level_name}) активировала ловушку!\n{trap_result['message']}",
+                    "trap_triggered": True,
+                    "trap_result": trap_result
+                }
+            else:
+                # Игрок выжил, можно продолжить обыск (но после урона)
+                pass
 
         self.is_looted = True
 
@@ -305,7 +450,18 @@ class Stash:
             player.inventory.add_gold(loot["gold"])
 
         # Формируем сообщение
-        messages = [f"Вы обыскали {self.name}:"]
+        messages = []
+
+        # Если была ловушка
+        if self.has_trap and self.trap and not self.trap.is_disarmed:
+            messages.append(f"⚠️ ЛОВУШКА! При обыске {self.name} ({self.level_name}) сработала ловушка!")
+            trap_result = self.trap.trigger(player)
+            if trap_result.get("success"):
+                messages.append(trap_result["message"])
+            messages.append("")
+
+        messages.append(f"Вы обыскали {self.name} ({self.level_name}):")
+
         if loot["gold"] > 0:
             messages.append(f"  +{loot['gold']} золота")
 
@@ -319,7 +475,8 @@ class Stash:
             "success": True,
             "gold": loot["gold"],
             "items": loot["items"],
-            "message": "\n".join(messages)
+            "message": "\n".join(messages),
+            "trap_triggered": self.has_trap and self.trap and not self.trap.is_disarmed
         }
 
 
@@ -393,7 +550,45 @@ class StashManager:
 
             stash_type = random.choices(stash_types, weights=stash_weights, k=1)[0]
 
-        return Stash(x, y, stash_type, dungeon_level)
+        # Определяем уровень тайника на основе уровня подземелья
+        stash_level = self._determine_stash_level(dungeon_level)
+
+        return Stash(x, y, stash_type, dungeon_level, stash_level)
+
+    def _determine_stash_level(self, dungeon_level: int) -> StashLevel:
+        """
+        Определить уровень тайника на основе уровня подземелья
+
+        Args:
+            dungeon_level: Уровень подземелья
+
+        Returns:
+            StashLevel: Уровень тайника
+        """
+        # Распределение уровней тайников по уровню подземелья
+        if dungeon_level <= 3:
+            # Уровень 1-3: в основном простые и скрытые
+            weights = [70, 25, 5, 0, 0]
+        elif dungeon_level <= 6:
+            # Уровень 4-6: скрытые и хорошо спрятанные
+            weights = [40, 35, 20, 5, 0]
+        elif dungeon_level <= 10:
+            # Уровень 7-10: хорошо спрятанные и мастерские
+            weights = [20, 30, 30, 15, 5]
+        elif dungeon_level <= 15:
+            # Уровень 11-15: мастерские с редкими легендарными
+            weights = [10, 20, 35, 25, 10]
+        elif dungeon_level <= 20:
+            # Уровень 16-20: мастерские и легендарные
+            weights = [5, 15, 30, 35, 15]
+        else:
+            # Уровень 21+: в основном мастерские и легендарные
+            weights = [0, 10, 25, 40, 25]
+
+        levels = [StashLevel.SIMPLE, StashLevel.HIDDEN, StashLevel.WELL_HIDDEN,
+                  StashLevel.MASTERFULLY_HIDDEN, StashLevel.LEGENDARY_TREASURE]
+
+        return random.choices(levels, weights=weights, k=1)[0]
 
     def clear(self):
         """Очистить все тайники"""

@@ -16,6 +16,60 @@ class TrapType(Enum):
     CURSE = "curse"            # Проклятие - дебафф
 
 
+class TrapLevel(Enum):
+    """Уровни ловушек"""
+    PRIMITIVE = 1      # Примитивная
+    COMMON = 2         # Обычная
+    SKILLED = 3        # Искусная
+    MASTERWORK = 4     # Мастерская
+    LEGENDARY = 5      # Легендарная
+
+
+# Параметры уровней ловушек
+TRAP_LEVEL_DATA = {
+    TrapLevel.PRIMITIVE: {
+        "name": "Примитивная",
+        "damage_multiplier": 0.7,    # 70% базового урона
+        "dc_modifier": -2,            # -2 к DC обнаружения и обезвреживания
+        "trigger_chance": 0.80,       # 80% шанс сработать
+        "anti_disarm_damage": 0.0,    # Нет анти-обезвреживания
+    },
+    TrapLevel.COMMON: {
+        "name": "Обычная",
+        "damage_multiplier": 1.0,     # 100% базового урона
+        "dc_modifier": 0,             # Базовый DC
+        "trigger_chance": 0.85,
+        "anti_disarm_damage": 0.0,
+    },
+    TrapLevel.SKILLED: {
+        "name": "Искусная",
+        "damage_multiplier": 1.4,     # 140% базового урона
+        "dc_modifier": 4,             # +4 к DC
+        "trigger_chance": 0.90,
+        "anti_disarm_damage": 0.3,    # 30% урона при провале обезвреживания
+        "secondary_effect": True,      # Дополнительный эффект
+    },
+    TrapLevel.MASTERWORK: {
+        "name": "Мастерская",
+        "damage_multiplier": 1.8,     # 180% базового урона
+        "dc_modifier": 8,             # +8 к DC
+        "trigger_chance": 0.95,
+        "anti_disarm_damage": 0.5,    # 50% урона при провале
+        "secondary_effect": True,
+        "aoe_effect": True,           # Эффект на область
+    },
+    TrapLevel.LEGENDARY: {
+        "name": "Легендарная",
+        "damage_multiplier": 2.5,     # 250% базового урона
+        "dc_modifier": 13,            # +13 к DC
+        "trigger_chance": 1.0,        # Всегда срабатывает
+        "anti_disarm_damage": 0.8,    # 80% урона при провале
+        "secondary_effect": True,
+        "aoe_effect": True,
+        "triple_effect": True,        # Тройной эффект
+    },
+}
+
 # Параметры ловушек
 TRAP_DATA = {
     TrapType.SPIKE: {
@@ -82,7 +136,8 @@ TRAP_DATA = {
 class Trap:
     """Класс ловушки"""
 
-    def __init__(self, x: int, y: int, trap_type: TrapType, dungeon_level: int = 1):
+    def __init__(self, x: int, y: int, trap_type: TrapType, dungeon_level: int = 1,
+                 trap_level: TrapLevel = TrapLevel.COMMON):
         """
         Создать ловушку
 
@@ -91,29 +146,52 @@ class Trap:
             y: Координата Y
             trap_type: Тип ловушки
             dungeon_level: Уровень подземелья (влияет на урон)
+            trap_level: Уровень ловушки (1-5)
         """
         self.x = x
         self.y = y
         self.trap_type = trap_type
         self.dungeon_level = dungeon_level
+        self.trap_level = trap_level
 
-        # Данные ловушки
-        data = TRAP_DATA.get(trap_type, TRAP_DATA[TrapType.SPIKE])
-        self.name = data["name"]
-        self.description = data["description"]
-        self.damage_type = data["damage_type"]
-        self.detection_dc = data["detection_dc"]
-        self.disarm_dc = data["disarm_dc"]
+        # Данные типа ловушки
+        trap_data = TRAP_DATA.get(trap_type, TRAP_DATA[TrapType.SPIKE])
+        self.name = trap_data["name"]
+        self.description = trap_data["description"]
+        self.damage_type = trap_data["damage_type"]
 
-        # Расчет урона с учетом уровня подземелья
-        base_damage = data["base_damage"]
-        self.damage = int(base_damage * (1 + 0.15 * (dungeon_level - 1)))
+        # Данные уровня ловушки
+        level_data = TRAP_LEVEL_DATA[trap_level]
+        self.level_name = level_data["name"]
+        self.trigger_chance = level_data["trigger_chance"]
+        self.anti_disarm_damage = level_data["anti_disarm_damage"]
+
+        # Расчет DC с учетом уровня ловушки
+        base_detection_dc = trap_data["detection_dc"]
+        base_disarm_dc = trap_data["disarm_dc"]
+        dc_modifier = level_data["dc_modifier"]
+
+        self.detection_dc = max(1, base_detection_dc + dc_modifier)
+        self.disarm_dc = max(1, base_disarm_dc + dc_modifier)
+
+        # Расчет урона с учетом уровня ловушки и подземелья
+        base_damage = trap_data["base_damage"]
+        damage_multiplier = level_data["damage_multiplier"]
+        dungeon_scaling = 1 + 0.1 * (dungeon_level - 1)  # +10% за уровень подземелья
+
+        self.damage = int(base_damage * damage_multiplier * dungeon_scaling)
 
         # Дополнительные эффекты
-        self.poison_duration = data.get("poison_duration", 0)
-        self.poison_damage = data.get("poison_damage", 0)
-        self.curse_effect = data.get("curse_effect", None)
-        self.curse_duration = data.get("curse_duration", 0)
+        self.poison_duration = trap_data.get("poison_duration", 0)
+        self.poison_damage = trap_data.get("poison_damage", 0)
+        self.curse_effect = trap_data.get("curse_effect", None)
+        self.curse_duration = trap_data.get("curse_duration", 0)
+
+        # Усиление эффектов для высокоуровневых ловушек
+        if level_data.get("secondary_effect", False):
+            self.poison_duration = int(self.poison_duration * 1.5)
+            self.poison_damage = int(self.poison_damage * 1.5)
+            self.curse_duration = int(self.curse_duration * 1.5)
 
         # Состояние
         self.is_triggered = False
@@ -133,6 +211,14 @@ class Trap:
         if self.is_triggered or self.is_disarmed:
             return {"success": False, "message": "Ловушка уже сработала или обезврежена"}
 
+        # Проверка шанса срабатывания (для высокоуровневых ловушек)
+        if random.random() > self.trigger_chance:
+            # Ловушка не сработала (чудом)
+            return {
+                "success": False,
+                "message": f"Ловушка '{self.name}' не сработала!"
+            }
+
         self.is_triggered = True
 
         # Определяем, игрок это или NPC
@@ -141,6 +227,7 @@ class Trap:
         result = {
             "success": True,
             "trap_name": self.name,
+            "trap_level": self.level_name,
             "damage": 0,
             "damage_type": self.damage_type,
             "effects": [],
@@ -153,9 +240,9 @@ class Trap:
         dodge_chance = min(50, target_dexterity * 2)
         if random.randint(1, 100) <= dodge_chance:
             if is_player:
-                result["message"] = f"Вы успели увернуться от ловушки '{self.name}'!"
+                result["message"] = f"Вы успели увернуться от ловушки '{self.name}' ({self.level_name})!"
             else:
-                result["message"] = f"{target.name} увернулся от ловушки '{self.name}'!"
+                result["message"] = f"{target.name} увернулся от ловушки '{self.name}' ({self.level_name})!"
             result["damage"] = 0
             return result
 
@@ -265,11 +352,35 @@ class Trap:
 
         if disarm_roll >= self.disarm_dc:
             self.is_disarmed = True
-            return True, f"Вы успешно обезвредили ловушку '{self.name}'!"
+            return True, f"Вы успешно обезвредили ловушку '{self.name}' ({self.level_name})!"
         else:
-            # Провал - ловушка срабатывает
-            result = self.trigger(player)
-            return False, f"Неудача! {result['message']}"
+            # Провал - анти-обезвреживание или полное срабатывание
+            if self.anti_disarm_damage > 0:
+                # Частичное срабатывание (анти-обезвреживание)
+                damage = int(self.damage * self.anti_disarm_damage)
+
+                # Применяем защиту
+                defense = 0
+                if hasattr(player, 'get_total_defense'):
+                    defense = player.get_total_defense()
+
+                actual_damage = max(1, damage - defense // 2)
+                player.health -= actual_damage
+                if player.health < 0:
+                    player.health = 0
+
+                message = f"Неудача! Ловушка '{self.name}' частично сработала, нанеся {actual_damage} урона!"
+
+                # Проверка смерти
+                if player.health <= 0:
+                    message += " Вы погибли!"
+                    return False, message
+
+                return False, message
+            else:
+                # Полное срабатывание ловушки (для низкоуровневых)
+                result = self.trigger(player)
+                return False, f"Неудача! {result['message']}"
 
 
 class TrapManager:
@@ -349,7 +460,46 @@ class TrapManager:
             trap_weights.append(data["weight"])
 
         chosen_type = random.choices(trap_types, weights=trap_weights, k=1)[0]
-        return Trap(x, y, chosen_type, dungeon_level)
+
+        # Определяем уровень ловушки на основе уровня подземелья
+        trap_level = self._determine_trap_level(dungeon_level)
+
+        return Trap(x, y, chosen_type, dungeon_level, trap_level)
+
+    def _determine_trap_level(self, dungeon_level: int) -> TrapLevel:
+        """
+        Определить уровень ловушки на основе уровня подземелья
+
+        Args:
+            dungeon_level: Уровень подземелья
+
+        Returns:
+            TrapLevel: Уровень ловушки
+        """
+        # Распределение уровней ловушек по уровню подземелья
+        if dungeon_level <= 3:
+            # Уровень 1-3: в основном примитивные и обычные
+            weights = [70, 25, 5, 0, 0]
+        elif dungeon_level <= 6:
+            # Уровень 4-6: обычные и искусные
+            weights = [40, 35, 20, 5, 0]
+        elif dungeon_level <= 10:
+            # Уровень 7-10: искусные и мастерские
+            weights = [20, 30, 30, 15, 5]
+        elif dungeon_level <= 15:
+            # Уровень 11-15: мастерские с редкими легендарными
+            weights = [10, 20, 35, 25, 10]
+        elif dungeon_level <= 20:
+            # Уровень 16-20: мастерские и легендарные
+            weights = [5, 15, 30, 35, 15]
+        else:
+            # Уровень 21+: в основном мастерские и легендарные
+            weights = [0, 10, 25, 40, 25]
+
+        levels = [TrapLevel.PRIMITIVE, TrapLevel.COMMON, TrapLevel.SKILLED,
+                  TrapLevel.MASTERWORK, TrapLevel.LEGENDARY]
+
+        return random.choices(levels, weights=weights, k=1)[0]
 
     def clear(self):
         """Очистить все ловушки"""

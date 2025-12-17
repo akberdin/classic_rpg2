@@ -98,6 +98,14 @@ from game.systems.skills.weapon import (
     Trap,
 )
 
+# Навыки исследования
+from game.systems.skills.exploration import (
+    KeenEyeSkill,
+    DisarmTrapSkill,
+    LockpickingSkill,
+    TreasureHunterSkill,
+)
+
 __all__ = [
     # Эффекты
     'StatusEffect', 'PoisonEffect', 'StunEffect', 'RegenerationEffect',
@@ -121,6 +129,8 @@ __all__ = [
     'IronStance', 'Intimidate', 'SteelSkin', 'Counterattack', 'Berserker',
     # Новые умения HUNTER
     'HuntersMark', 'StaminaBoost', 'EagleEye', 'ExplosiveArrow', 'Trap',
+    # Навыки исследования (EXPLORATION)
+    'KeenEyeSkill', 'DisarmTrapSkill', 'LockpickingSkill', 'TreasureHunterSkill',
     # Словарь умений
     'AVAILABLE_SKILLS',
 ]
@@ -185,4 +195,9 @@ AVAILABLE_SKILLS = {
     'alchemy': Alchemy,
     'enchanting': Enchanting,
     'herbalism': Herbalism,
+    # Навыки исследования (EXPLORATION)
+    'keen_eye': KeenEyeSkill,
+    'disarm_trap': DisarmTrapSkill,
+    'lockpicking': LockpickingSkill,
+    'treasure_hunter': TreasureHunterSkill,
 }
