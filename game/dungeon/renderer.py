@@ -525,13 +525,13 @@ class DungeonRenderer:
             "[Esc] - Снять выделение"
         ]
 
-        # Размещаем подсказки выше центральных элементов интерфейса
-        hint_y = self.screen.get_height() - 120
-        hint_x = 10
-
-        # Фон для лучшей читаемости
+        # Размещаем подсказки в правом нижнем углу
         hint_bg_width = 220
         hint_bg_height = len(hints) * 22 + 10
+        hint_x = self.screen.get_width() - hint_bg_width - 10
+        hint_y = self.screen.get_height() - hint_bg_height - 10
+
+        # Фон для лучшей читаемости
         hint_bg = pygame.Surface((hint_bg_width, hint_bg_height), pygame.SRCALPHA)
         hint_bg.fill((20, 20, 30, 180))
         self.screen.blit(hint_bg, (hint_x - 5, hint_y - 5))

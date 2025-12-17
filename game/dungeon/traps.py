@@ -149,7 +149,8 @@ class Trap:
         }
 
         # Шанс уклонения от ловушки (зависит от ловкости)
-        dodge_chance = min(50, target.dexterity * 2)
+        target_dexterity = getattr(target, 'dexterity', 5)  # Защита от отсутствия атрибута
+        dodge_chance = min(50, target_dexterity * 2)
         if random.randint(1, 100) <= dodge_chance:
             if is_player:
                 result["message"] = f"Вы успели увернуться от ловушки '{self.name}'!"
