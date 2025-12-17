@@ -5,9 +5,13 @@
 - Слой высоты (elevation) - определяет рельеф
 - Слой влажности (moisture) - определяет тип растительности
 - Градиент температуры - север холоднее, юг теплее
+
+Карта может быть сохранена в JSON и загружена из него для фиксированного мира.
 """
 import random
 import math
+import json
+import os
 from perlin_noise import PerlinNoise
 from game.tile import Tile, Location
 from game.constants import (
@@ -23,14 +27,27 @@ from game.constants import (
 class GameMap:
     """Класс игровой карты"""
 
-    def __init__(self, width=MAP_WIDTH, height=MAP_HEIGHT):
+    # Путь к файлу карты по умолчанию
+    DEFAULT_MAP_FILE = os.path.join(os.path.dirname(__file__), 'config', 'map1.json')
+
+    def __init__(self, width=MAP_WIDTH, height=MAP_HEIGHT, load_from_file=True):
         """
         Инициализация карты
 
+        Если load_from_file=True и файл map1.json существует, карта загружается из него.
+        Иначе генерируется новая карта процедурно.
+
         Args:
-            width: Ширина карты в тайлах
-            height: Высота карты в тайлах
+            width: Ширина карты в тайлах (игнорируется при загрузке из файла)
+            height: Высота карты в тайлах (игнорируется при загрузке из файла)
+            load_from_file: Загружать ли карту из файла (по умолчанию True)
         """
+        # Пытаемся загрузить карту из файла
+        if load_from_file and os.path.exists(self.DEFAULT_MAP_FILE):
+            self._load_from_file(self.DEFAULT_MAP_FILE)
+            return
+
+        # Если файла нет или загрузка отключена - генерируем новую карту
         self.width = width
         self.height = height
         self.tiles = []
@@ -39,6 +56,53 @@ class GameMap:
 
         # Генерация карты с проверкой на успешность размещения стартовой деревни
         self._generate_map_with_starting_village()
+
+    def _load_from_file(self, filepath: str):
+        """
+        Загрузить карту из JSON файла (внутренний метод)
+
+        Args:
+            filepath: Путь к файлу
+        """
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        self.width = data["width"]
+        self.height = data["height"]
+        self.seed = data.get("seed", 0)
+        self.tiles = []
+        self.locations = []
+        self.starting_village = None
+
+        # Восстанавливаем биомы
+        for y in range(self.height):
+            row = []
+            for x in range(self.width):
+                tile = Tile(x, y)
+                tile.biome = data["biomes"][y][x]
+                row.append(tile)
+            self.tiles.append(row)
+
+        # Восстанавливаем локации
+        for loc_data in data["locations"]:
+            location = Location(
+                loc_data["x"],
+                loc_data["y"],
+                loc_data["type"],
+                loc_data["name"]
+            )
+            self.locations.append(location)
+            self.tiles[loc_data["y"]][loc_data["x"]].set_location(location)
+
+        # Восстанавливаем стартовую деревню
+        if data.get("starting_village"):
+            sv = data["starting_village"]
+            for loc in self.locations:
+                if loc.x == sv["x"] and loc.y == sv["y"]:
+                    self.starting_village = loc
+                    break
+
+        print(f"Карта загружена из {filepath}")
 
     def _generate_map_with_starting_village(self, max_attempts=10):
         """
@@ -172,26 +236,15 @@ class GameMap:
     def _get_edge_distance(self, x, y):
         """
         Получить коэффициент расстояния от края карты
-        Используется для создания острова/континента (края ниже)
+
+        ОТКЛЮЧЕНО: Карта не должна быть островом.
+        Всегда возвращает 1.0 для равномерного распределения биомов.
 
         Returns:
-            float: Коэффициент от 0 (край) до 1 (центр)
+            float: Всегда 1.0 (без эффекта острова)
         """
-        # Нормализованные координаты от центра
-        nx = 2.0 * x / self.width - 1.0
-        ny = 2.0 * y / self.height - 1.0
-
-        # Расстояние от центра (квадратная метрика для более квадратного континента)
-        d = max(abs(nx), abs(ny))
-
-        # Плавный переход от центра к краям
-        # Край начинается на расстоянии 0.7 от центра
-        if d < 0.6:
-            return 1.0
-        elif d < 0.9:
-            return 1.0 - (d - 0.6) * 2.0  # Плавное уменьшение
-        else:
-            return 0.1  # Минимальная высота у краев
+        # Эффект острова отключен - возвращаем 1.0
+        return 1.0
 
     def _determine_biome_advanced(self, elevation, moisture, temperature):
         """
@@ -1095,3 +1148,110 @@ class GameMap:
 
         # Если не нашли рядом с поселением, возвращаем координаты поселения
         return (settlement.x, settlement.y)
+
+    # =========================================================================
+    # СОХРАНЕНИЕ И ЗАГРУЗКА КАРТЫ
+    # =========================================================================
+
+    def save_to_json(self, filepath: str):
+        """
+        Сохранить карту в JSON файл
+
+        Args:
+            filepath: Путь к файлу для сохранения
+        """
+        data = {
+            "version": "1.0",
+            "width": self.width,
+            "height": self.height,
+            "seed": getattr(self, 'seed', 0),
+            "biomes": [],
+            "locations": [],
+            "starting_village": None
+        }
+
+        # Сохраняем биомы (компактно - как 2D массив строк)
+        for y in range(self.height):
+            row = []
+            for x in range(self.width):
+                row.append(self.tiles[y][x].biome)
+            data["biomes"].append(row)
+
+        # Сохраняем локации
+        for loc in self.locations:
+            loc_data = {
+                "x": loc.x,
+                "y": loc.y,
+                "type": loc.location_type,
+                "name": loc.name
+            }
+            data["locations"].append(loc_data)
+
+            # Отмечаем стартовую деревню
+            if self.starting_village and loc.x == self.starting_village.x and loc.y == self.starting_village.y:
+                data["starting_village"] = {"x": loc.x, "y": loc.y, "name": loc.name}
+
+        # Записываем в файл
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+        print(f"Карта сохранена в {filepath}")
+
+    @classmethod
+    def load_from_json(cls, filepath: str) -> 'GameMap':
+        """
+        Загрузить карту из JSON файла
+
+        Args:
+            filepath: Путь к файлу карты
+
+        Returns:
+            GameMap: Загруженная карта
+        """
+        with open(filepath, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        # Создаем пустую карту без генерации
+        game_map = cls.__new__(cls)
+        game_map.width = data["width"]
+        game_map.height = data["height"]
+        game_map.seed = data.get("seed", 0)
+        game_map.tiles = []
+        game_map.locations = []
+        game_map.starting_village = None
+
+        # Восстанавливаем биомы
+        for y in range(game_map.height):
+            row = []
+            for x in range(game_map.width):
+                tile = Tile(x, y)
+                tile.biome = data["biomes"][y][x]
+                row.append(tile)
+            game_map.tiles.append(row)
+
+        # Восстанавливаем локации
+        for loc_data in data["locations"]:
+            location = Location(
+                loc_data["x"],
+                loc_data["y"],
+                loc_data["type"],
+                loc_data["name"]
+            )
+            game_map.locations.append(location)
+            game_map.tiles[loc_data["y"]][loc_data["x"]].set_location(location)
+
+        # Восстанавливаем стартовую деревню
+        if data.get("starting_village"):
+            sv = data["starting_village"]
+            for loc in game_map.locations:
+                if loc.x == sv["x"] and loc.y == sv["y"]:
+                    game_map.starting_village = loc
+                    break
+
+        print(f"Карта загружена из {filepath}")
+        return game_map
+
+    @staticmethod
+    def get_default_map_path() -> str:
+        """Получить путь к файлу карты по умолчанию"""
+        return os.path.join(os.path.dirname(__file__), 'config', 'map1.json')
