@@ -106,7 +106,14 @@ class DungeonGenerator:
 
     def _generate_rooms(self, dungeon: DungeonMap, num_rooms: int, params: dict):
         """
-        Генерация комнат методом BSP (Binary Space Partitioning)
+        Улучшенная генерация комнат с различными формами
+
+        Типы комнат:
+        - Прямоугольные (стандартные)
+        - L-образные (угловые)
+        - Крестообразные
+        - Круглые (приблизительно)
+        - Специальные комнаты (сокровищница, комната босса)
 
         Args:
             dungeon: Карта подземелья
@@ -118,7 +125,11 @@ class DungeonGenerator:
 
         rooms_created = 0
         attempts = 0
-        max_attempts = num_rooms * 10
+        max_attempts = num_rooms * 15  # Увеличено для большего разнообразия
+
+        # Отмечаем, созданы ли специальные комнаты
+        treasure_room_created = False
+        boss_room_created = False
 
         while rooms_created < num_rooms and attempts < max_attempts:
             attempts += 1
@@ -133,10 +144,122 @@ class DungeonGenerator:
 
             # Проверяем, не пересекается ли с другими комнатами
             if not self._room_overlaps(dungeon, room_x, room_y, room_w, room_h):
-                # Создаем комнату
-                self._carve_room(dungeon, room_x, room_y, room_w, room_h)
+                # Выбираем тип комнаты
+                room_type = self._choose_room_type(
+                    rooms_created, num_rooms,
+                    treasure_room_created, boss_room_created
+                )
+
+                # Создаем комнату выбранного типа
+                if room_type == "rectangular":
+                    self._carve_room(dungeon, room_x, room_y, room_w, room_h)
+                elif room_type == "l_shaped":
+                    self._carve_l_shaped_room(dungeon, room_x, room_y, room_w, room_h)
+                elif room_type == "cross":
+                    self._carve_cross_room(dungeon, room_x, room_y, room_w, room_h)
+                elif room_type == "circular":
+                    self._carve_circular_room(dungeon, room_x, room_y, min(room_w, room_h) // 2)
+                elif room_type == "treasure":
+                    self._carve_room(dungeon, room_x, room_y, room_w, room_h)
+                    treasure_room_created = True
+                elif room_type == "boss":
+                    # Комната босса больше обычной
+                    boss_w = min(room_w + 4, max_size + 4)
+                    boss_h = min(room_h + 4, max_size + 4)
+                    self._carve_room(dungeon, room_x, room_y, boss_w, boss_h)
+                    boss_room_created = True
+                else:
+                    self._carve_room(dungeon, room_x, room_y, room_w, room_h)
+
                 dungeon.rooms.append((room_x, room_y, room_w, room_h))
                 rooms_created += 1
+
+    def _choose_room_type(self, current_room: int, total_rooms: int,
+                          treasure_created: bool, boss_created: bool) -> str:
+        """
+        Выбрать тип комнаты на основе текущего прогресса генерации
+
+        Returns:
+            str: Тип комнаты
+        """
+        # Последняя комната - комната босса (если еще не создана)
+        if current_room == total_rooms - 1 and not boss_created:
+            return "boss"
+
+        # Предпоследняя комната - сокровищница (если еще не создана)
+        if current_room == total_rooms - 2 and not treasure_created:
+            return "treasure"
+
+        # Для остальных комнат - случайный выбор формы
+        roll = random.random()
+        if roll < 0.55:
+            return "rectangular"  # 55% - обычные прямоугольные
+        elif roll < 0.70:
+            return "l_shaped"     # 15% - L-образные
+        elif roll < 0.85:
+            return "cross"        # 15% - крестообразные
+        else:
+            return "circular"     # 15% - круглые
+
+    def _carve_l_shaped_room(self, dungeon: DungeonMap, x: int, y: int, w: int, h: int):
+        """
+        Вырезать L-образную комнату
+
+        Args:
+            dungeon: Карта подземелья
+            x, y, w, h: Параметры ограничивающего прямоугольника
+        """
+        # L-образная комната состоит из двух прямоугольников
+        # Вертикальная часть
+        vert_w = w // 2
+        for dy in range(h):
+            for dx in range(vert_w):
+                dungeon.set_tile_type(x + dx, y + dy, DungeonTileType.FLOOR)
+
+        # Горизонтальная часть (нижняя)
+        horiz_h = h // 2
+        for dy in range(horiz_h):
+            for dx in range(w):
+                dungeon.set_tile_type(x + dx, y + h - horiz_h + dy, DungeonTileType.FLOOR)
+
+    def _carve_cross_room(self, dungeon: DungeonMap, x: int, y: int, w: int, h: int):
+        """
+        Вырезать крестообразную комнату
+
+        Args:
+            dungeon: Карта подземелья
+            x, y, w, h: Параметры ограничивающего прямоугольника
+        """
+        # Центральная вертикальная часть
+        vert_w = max(3, w // 3)
+        vert_start = (w - vert_w) // 2
+        for dy in range(h):
+            for dx in range(vert_w):
+                dungeon.set_tile_type(x + vert_start + dx, y + dy, DungeonTileType.FLOOR)
+
+        # Центральная горизонтальная часть
+        horiz_h = max(3, h // 3)
+        horiz_start = (h - horiz_h) // 2
+        for dy in range(horiz_h):
+            for dx in range(w):
+                dungeon.set_tile_type(x + dx, y + horiz_start + dy, DungeonTileType.FLOOR)
+
+    def _carve_circular_room(self, dungeon: DungeonMap, cx: int, cy: int, radius: int):
+        """
+        Вырезать круглую комнату
+
+        Args:
+            dungeon: Карта подземелья
+            cx, cy: Координаты центра
+            radius: Радиус комнаты
+        """
+        for dy in range(-radius, radius + 1):
+            for dx in range(-radius, radius + 1):
+                # Проверяем, находится ли точка внутри круга
+                if dx * dx + dy * dy <= radius * radius:
+                    px, py = cx + dx, cy + dy
+                    if dungeon.is_valid_position(px, py):
+                        dungeon.set_tile_type(px, py, DungeonTileType.FLOOR)
 
     def _room_overlaps(self, dungeon: DungeonMap, x: int, y: int, w: int, h: int,
                        padding: int = 2) -> bool:
@@ -310,7 +433,13 @@ class DungeonGenerator:
                     dungeon.set_tile_type(x, y, DungeonTileType.STASH)
 
     def _place_decorations(self, dungeon: DungeonMap, dungeon_type: str):
-        """Добавить декоративные элементы"""
+        """
+        Добавить декоративные элементы в подземелье
+
+        ИСПРАВЛЕНА ОШИБКА: ранее условия проверялись в неправильном порядке,
+        из-за чего алтари и лужи воды никогда не генерировались.
+        Теперь используются правильные диапазоны.
+        """
         floor_tiles = dungeon.get_all_floor_tiles()
 
         for x, y in floor_tiles:
@@ -319,27 +448,34 @@ class DungeonGenerator:
             if tile.tile_type not in [DungeonTileType.FLOOR, DungeonTileType.CORRIDOR]:
                 continue
 
-            # Случайные декорации
+            # Случайные декорации с ПРАВИЛЬНЫМИ диапазонами
             roll = random.random()
 
             if dungeon_type == "mine":
-                # Для шахт
+                # Для шахт:
+                # 0-1%: вагонетки
+                # 1-3%: опоры
+                # 3-6%: обломки
                 if roll < 0.01:
                     dungeon.set_tile_type(x, y, DungeonTileType.MINECART)
                 elif roll < 0.03:
                     dungeon.set_tile_type(x, y, DungeonTileType.SUPPORT)
-                elif roll < 0.05:
+                elif roll < 0.06:
                     dungeon.set_tile_type(x, y, DungeonTileType.RUBBLE)
             else:
-                # Для подземелий
-                if roll < 0.02:
-                    dungeon.set_tile_type(x, y, DungeonTileType.BONES)
-                elif roll < 0.03:
-                    dungeon.set_tile_type(x, y, DungeonTileType.RUBBLE)
-                elif roll < 0.005:
+                # Для подземелий (ИСПРАВЛЕННЫЙ порядок):
+                # 0-0.3%: алтари (редкие!)
+                # 0.3-1%: лужи воды
+                # 1-3%: кости
+                # 3-5%: обломки
+                if roll < 0.003:
                     dungeon.set_tile_type(x, y, DungeonTileType.ALTAR)
                 elif roll < 0.01:
                     dungeon.set_tile_type(x, y, DungeonTileType.WATER)
+                elif roll < 0.03:
+                    dungeon.set_tile_type(x, y, DungeonTileType.BONES)
+                elif roll < 0.05:
+                    dungeon.set_tile_type(x, y, DungeonTileType.RUBBLE)
 
     def generate_dungeon_for_location(self, location_type: str, location_name: str,
                                        location_x: int, location_y: int) -> DungeonMap:

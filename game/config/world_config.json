@@ -28,6 +28,16 @@
     "forest": {
       "passable": true,
       "movement_cost": 1.3
+    },
+    "mountain": {
+      "passable": true,
+      "movement_cost": 2.5,
+      "_comment": "Горы - высокая стоимость движения, шахты размещаются здесь"
+    },
+    "swamp": {
+      "passable": true,
+      "movement_cost": 1.8,
+      "_comment": "Болота - замедляют движение, могут содержать руины"
     }
   },
   "location_types": {
