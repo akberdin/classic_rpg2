@@ -1075,6 +1075,9 @@ class Game:
             # Подсказки управления боем
             self.dungeon_renderer.render_combat_hints(self.info_font)
 
+            # Панель статистики исследования
+            self.dungeon_renderer.render_exploration_stats_panel(self.player, self.dungeon_manager, self.info_font)
+
             # Отрисовка окна выхода из подземелья
             if self.dungeon_exit_open:
                 self.dungeon_exit_window.render()
