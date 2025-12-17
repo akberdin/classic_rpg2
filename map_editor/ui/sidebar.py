@@ -103,9 +103,13 @@ class Sidebar:
         self.on_location_select: Optional[Callable[[str], None]] = None
         self.on_brush_change: Optional[Callable[[BrushSettings], None]] = None
         self.on_slider_change: Optional[Callable[[str, float], None]] = None
+        self.on_edit_location: Optional[Callable[[Dict[str, Any]], None]] = None
 
         # Location info display
         self.location_info: Optional[Dict[str, Any]] = None
+
+        # Edit button rect (stored for click detection)
+        self._edit_button_rect: Optional[pygame.Rect] = None
 
     def set_tool(self, tool: ToolType) -> None:
         """Set the current tool to display appropriate options."""
@@ -165,12 +169,25 @@ class Sidebar:
 
     def _handle_click(self, local_x: int, local_y: int) -> bool:
         """Handle click within sidebar."""
+        # Check edit button click first (available in multiple modes)
+        if self._edit_button_rect and self._edit_button_rect.collidepoint(local_x, local_y):
+            if self.on_edit_location and self.location_info:
+                self.on_edit_location(self.location_info)
+            return True
+
         if self.current_tool == ToolType.BRUSH:
             return self._handle_brush_click(local_x, local_y)
         elif self.current_tool == ToolType.OBJECT:
             return self._handle_object_click(local_x, local_y)
         elif self.current_tool == ToolType.FILL:
             return self._handle_brush_click(local_x, local_y)
+        elif self.current_tool == ToolType.SELECT:
+            return self._handle_select_click(local_x, local_y)
+        return True
+
+    def _handle_select_click(self, local_x: int, local_y: int) -> bool:
+        """Handle click in select mode."""
+        # Edit button is handled above
         return True
 
     def _handle_brush_click(self, local_x: int, local_y: int) -> bool:
@@ -463,12 +480,16 @@ class Sidebar:
     def _draw_select_panel(self, surface: pygame.Surface) -> None:
         """Draw selection tool info."""
         y_offset = 10
+        self._edit_button_rect = None  # Reset edit button rect
+
         y_offset = self._draw_section_header(surface, "Информация", y_offset)
 
         lines = [
             "Инструмент выбора",
             "",
             "ЛКМ - выбрать локацию",
+            "ПКМ - информация",
+            "Двойной клик - редактировать",
             "Колесо - масштаб",
             "СКМ - перемещение"
         ]
@@ -490,12 +511,23 @@ class Sidebar:
             ]
 
             if self.location_info.get('is_starting'):
-                info_lines.append("Стартовая деревня")
+                info_lines.append("(Стартовая деревня)")
 
             for line in info_lines:
                 text_surface = self.font.render(line, True, self.text_color)
                 surface.blit(text_surface, (8, y_offset))
                 y_offset += 18
+
+            # Edit button
+            y_offset += 10
+            btn_rect = pygame.Rect(8, y_offset, self.width - 16, 30)
+            self._edit_button_rect = btn_rect
+
+            pygame.draw.rect(surface, self.button_active, btn_rect, border_radius=4)
+            edit_text = self.font_bold.render("Редактировать", True, self.text_color)
+            text_rect = edit_text.get_rect(center=btn_rect.center)
+            surface.blit(edit_text, text_rect)
+            y_offset += 40
 
     def _draw_default_panel(self, surface: pygame.Surface) -> None:
         """Draw default panel when no specific tool is selected."""

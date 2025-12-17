@@ -17,19 +17,19 @@ class ToolType(Enum):
 
 
 @dataclass
-class Button:
+class ToolbarButton:
     """Toolbar button definition."""
     rect: pygame.Rect
-    icon: str
+    text: str
     tooltip: str
     action: str
     active: bool = False
     enabled: bool = True
-    hotkey: Optional[str] = None
+    is_separator: bool = False
 
 
 class Toolbar:
-    """Top toolbar for the map editor."""
+    """Top toolbar for the map editor with Russian labels."""
 
     def __init__(self, width: int, height: int, config: Dict[str, Any]):
         self.width = width
@@ -44,11 +44,12 @@ class Toolbar:
         self.button_active = tuple(ui_config.get('button_active_color', [0, 122, 204]))
         self.text_color = tuple(ui_config.get('text_color', [255, 255, 255]))
         self.border_color = tuple(ui_config.get('border_color', [70, 70, 75]))
+        self.separator_color = (80, 80, 85)
 
         # Font
         pygame.font.init()
-        self.font = pygame.font.SysFont('Arial', 12)
-        self.icon_font = pygame.font.SysFont('Segoe UI Symbol', 16)
+        self.font = pygame.font.SysFont('Arial', 11)
+        self.font_small = pygame.font.SysFont('Arial', 10)
 
         # Current state
         self.current_tool = ToolType.SELECT
@@ -59,113 +60,92 @@ class Toolbar:
         self.on_action: Optional[Callable[[str], None]] = None
 
         # Create buttons
-        self.buttons: Dict[str, Button] = {}
+        self.buttons: Dict[str, ToolbarButton] = {}
         self._create_buttons()
 
     def _create_buttons(self) -> None:
-        """Create toolbar buttons."""
-        button_size = 36
+        """Create toolbar buttons with Russian text."""
+        button_height = 32
         padding = 4
         x = padding
+        y = (self.height - button_height) // 2
 
-        # File operations
+        # File operations group
         file_buttons = [
-            ("new", "Новая карта (Ctrl+N)", "new"),
-            ("open", "Открыть (Ctrl+O)", "open"),
-            ("save", "Сохранить (Ctrl+S)", "save"),
-            ("save_as", "Сохранить как...", "save_as"),
+            ("Новая", "Новая карта (Ctrl+N)", "new", 55),
+            ("Открыть", "Открыть файл (Ctrl+O)", "open", 60),
+            ("Сохранить", "Сохранить (Ctrl+S)", "save", 70),
         ]
 
-        for icon, tooltip, action in file_buttons:
-            self.buttons[action] = Button(
-                rect=pygame.Rect(x, padding, button_size, button_size),
-                icon=self._get_icon(action),
+        for text, tooltip, action, btn_width in file_buttons:
+            self.buttons[action] = ToolbarButton(
+                rect=pygame.Rect(x, y, btn_width, button_height),
+                text=text,
                 tooltip=tooltip,
                 action=action
             )
-            x += button_size + padding
+            x += btn_width + padding
 
-        x += padding * 2  # Separator
+        # Separator
+        x += 8
 
-        # Tool buttons
+        # Tool buttons group
         tool_buttons = [
-            ("select", "Выбор (V)", "tool_select", ToolType.SELECT),
-            ("brush", "Кисть (B)", "tool_brush", ToolType.BRUSH),
-            ("fill", "Заливка (G)", "tool_fill", ToolType.FILL),
-            ("object", "Объекты (O)", "tool_object", ToolType.OBJECT),
-            ("eraser", "Ластик (E)", "tool_eraser", ToolType.ERASER),
-            ("move", "Перемещение (M)", "tool_move", ToolType.MOVE),
+            ("Выбор", "Инструмент выбора (V)", "tool_select", ToolType.SELECT, 50),
+            ("Кисть", "Рисование биомов (B)", "tool_brush", ToolType.BRUSH, 50),
+            ("Заливка", "Заливка области (G)", "tool_fill", ToolType.FILL, 55),
+            ("Объекты", "Размещение объектов (O)", "tool_object", ToolType.OBJECT, 60),
+            ("Удалить", "Удаление объектов (E)", "tool_eraser", ToolType.ERASER, 58),
+            ("Двигать", "Перемещение объектов (M)", "tool_move", ToolType.MOVE, 55),
         ]
 
-        for icon, tooltip, action, tool_type in tool_buttons:
-            self.buttons[action] = Button(
-                rect=pygame.Rect(x, padding, button_size, button_size),
-                icon=self._get_icon(icon),
+        for text, tooltip, action, tool_type, btn_width in tool_buttons:
+            self.buttons[action] = ToolbarButton(
+                rect=pygame.Rect(x, y, btn_width, button_height),
+                text=text,
                 tooltip=tooltip,
                 action=action,
                 active=(tool_type == self.current_tool)
             )
-            x += button_size + padding
+            x += btn_width + padding
 
-        x += padding * 2  # Separator
+        # Separator
+        x += 8
 
-        # Generation buttons
+        # Generation buttons group
         gen_buttons = [
-            ("generate", "Генерировать (F5)", "generate"),
-            ("regenerate", "Перегенерировать (F6)", "regenerate"),
-            ("settings", "Настройки генератора", "gen_settings"),
+            ("Генерация", "Настройки и генерация карты (F5)", "generate", 70),
+            ("Новый seed", "Перегенерировать с новым seed (F6)", "regenerate", 75),
         ]
 
-        for icon, tooltip, action in gen_buttons:
-            self.buttons[action] = Button(
-                rect=pygame.Rect(x, padding, button_size, button_size),
-                icon=self._get_icon(icon),
+        for text, tooltip, action, btn_width in gen_buttons:
+            self.buttons[action] = ToolbarButton(
+                rect=pygame.Rect(x, y, btn_width, button_height),
+                text=text,
                 tooltip=tooltip,
                 action=action
             )
-            x += button_size + padding
+            x += btn_width + padding
 
-        x += padding * 2  # Separator
+        # Separator
+        x += 8
 
-        # View buttons
+        # View buttons group
         view_buttons = [
-            ("zoom_in", "Приблизить (+)", "zoom_in"),
-            ("zoom_out", "Отдалить (-)", "zoom_out"),
-            ("fit", "Вписать (Home)", "fit_view"),
-            ("grid", "Сетка (Ctrl+G)", "toggle_grid"),
+            ("+", "Приблизить (+)", "zoom_in", 28),
+            ("-", "Отдалить (-)", "zoom_out", 28),
+            ("Вписать", "Вписать карту в экран (Home)", "fit_view", 55),
+            ("Сетка", "Показать/скрыть сетку (Ctrl+G)", "toggle_grid", 50),
         ]
 
-        for icon, tooltip, action in view_buttons:
-            self.buttons[action] = Button(
-                rect=pygame.Rect(x, padding, button_size, button_size),
-                icon=self._get_icon(icon),
+        for text, tooltip, action, btn_width in view_buttons:
+            self.buttons[action] = ToolbarButton(
+                rect=pygame.Rect(x, y, btn_width, button_height),
+                text=text,
                 tooltip=tooltip,
                 action=action
             )
-            x += button_size + padding
-
-    def _get_icon(self, icon_type: str) -> str:
-        """Get icon character for button type."""
-        icons = {
-            "new": "+",
-            "open": "O",
-            "save": "S",
-            "save_as": "SA",
-            "select": "V",
-            "brush": "B",
-            "fill": "G",
-            "object": "OB",
-            "eraser": "E",
-            "move": "M",
-            "generate": "GN",
-            "regenerate": "RG",
-            "settings": "ST",
-            "zoom_in": "+",
-            "zoom_out": "-",
-            "fit": "F",
-            "grid": "#"
-        }
-        return icons.get(icon_type, "?")
+            x += btn_width + padding
 
     def handle_event(self, event: pygame.event.Event) -> bool:
         """Handle pygame event. Returns True if event was consumed."""
@@ -191,7 +171,7 @@ class Toolbar:
 
         return False
 
-    def _handle_button_click(self, name: str, button: Button) -> None:
+    def _handle_button_click(self, name: str, button: ToolbarButton) -> None:
         """Handle button click."""
         action = button.action
 
@@ -217,7 +197,7 @@ class Toolbar:
         mods = pygame.key.get_mods()
         ctrl = mods & pygame.KMOD_CTRL
 
-        # Tool hotkeys
+        # Tool hotkeys (without Ctrl)
         if not ctrl:
             tool_keys = {
                 pygame.K_v: ToolType.SELECT,
@@ -231,7 +211,7 @@ class Toolbar:
                 self.set_tool(tool_keys[event.key])
                 return True
 
-        # File hotkeys
+        # File hotkeys (with Ctrl)
         if ctrl:
             if event.key == pygame.K_n:
                 if self.on_action:
@@ -261,7 +241,7 @@ class Toolbar:
             return True
 
         # View hotkeys
-        if event.key == pygame.K_PLUS or event.key == pygame.K_KP_PLUS:
+        if event.key == pygame.K_PLUS or event.key == pygame.K_KP_PLUS or event.key == pygame.K_EQUALS:
             if self.on_action:
                 self.on_action("zoom_in")
             return True
@@ -303,6 +283,9 @@ class Toolbar:
         pygame.draw.line(surface, self.border_color, (0, self.height - 1),
                         (self.width, self.height - 1))
 
+        # Draw separators between button groups
+        self._draw_separators(surface)
+
         # Buttons
         for name, button in self.buttons.items():
             self._draw_button(surface, name, button)
@@ -311,7 +294,29 @@ class Toolbar:
         if self.hovered_button:
             self._draw_tooltip(surface)
 
-    def _draw_button(self, surface: pygame.Surface, name: str, button: Button) -> None:
+    def _draw_separators(self, surface: pygame.Surface) -> None:
+        """Draw vertical separators between button groups."""
+        # Find separator positions (after file, tools, generation groups)
+        sep_positions = []
+
+        # After file buttons (after "save")
+        if "save" in self.buttons:
+            sep_positions.append(self.buttons["save"].rect.right + 6)
+
+        # After tool buttons (after "tool_move")
+        if "tool_move" in self.buttons:
+            sep_positions.append(self.buttons["tool_move"].rect.right + 6)
+
+        # After generation buttons (after "regenerate")
+        if "regenerate" in self.buttons:
+            sep_positions.append(self.buttons["regenerate"].rect.right + 6)
+
+        # Draw separators
+        for x in sep_positions:
+            pygame.draw.line(surface, self.separator_color,
+                           (x, 8), (x, self.height - 8))
+
+    def _draw_button(self, surface: pygame.Surface, name: str, button: ToolbarButton) -> None:
         """Draw a single button."""
         # Determine color
         if not button.enabled:
@@ -326,11 +331,11 @@ class Toolbar:
         # Draw button background
         pygame.draw.rect(surface, color, button.rect, border_radius=4)
 
-        # Draw icon
+        # Draw text
         text_color = self.text_color if button.enabled else tuple(c // 2 for c in self.text_color)
-        icon_surface = self.font.render(button.icon, True, text_color)
-        icon_rect = icon_surface.get_rect(center=button.rect.center)
-        surface.blit(icon_surface, icon_rect)
+        text_surface = self.font.render(button.text, True, text_color)
+        text_rect = text_surface.get_rect(center=button.rect.center)
+        surface.blit(text_surface, text_rect)
 
     def _draw_tooltip(self, surface: pygame.Surface) -> None:
         """Draw tooltip for hovered button."""
@@ -342,8 +347,8 @@ class Toolbar:
             return
 
         # Render tooltip text
-        tooltip_surface = self.font.render(button.tooltip, True, self.text_color)
-        padding = 4
+        tooltip_surface = self.font_small.render(button.tooltip, True, self.text_color)
+        padding = 6
 
         # Position below button
         x = button.rect.x
@@ -352,7 +357,7 @@ class Toolbar:
         # Background
         bg_rect = pygame.Rect(
             x - padding,
-            y - padding,
+            y,
             tooltip_surface.get_width() + padding * 2,
             tooltip_surface.get_height() + padding * 2
         )
@@ -360,9 +365,11 @@ class Toolbar:
         # Keep on screen
         if bg_rect.right > self.width:
             bg_rect.right = self.width - 4
+        if bg_rect.left < 4:
+            bg_rect.left = 4
 
-        pygame.draw.rect(surface, self.bg_color, bg_rect, border_radius=2)
-        pygame.draw.rect(surface, self.border_color, bg_rect, width=1, border_radius=2)
+        pygame.draw.rect(surface, (30, 30, 32), bg_rect, border_radius=4)
+        pygame.draw.rect(surface, self.border_color, bg_rect, width=1, border_radius=4)
 
         surface.blit(tooltip_surface, (bg_rect.x + padding, bg_rect.y + padding))
 

@@ -39,6 +39,17 @@ class DialogCheckbox:
     checked: bool = False
 
 
+@dataclass
+class DialogTextInput:
+    """Text input control in a dialog."""
+    rect: pygame.Rect
+    label: str
+    key: str
+    value: str = ""
+    max_length: int = 50
+    active: bool = False
+
+
 class Dialog:
     """Base dialog class."""
 
@@ -69,8 +80,10 @@ class Dialog:
         self.buttons: List[DialogButton] = []
         self.sliders: List[DialogSlider] = []
         self.checkboxes: List[DialogCheckbox] = []
+        self.text_inputs: List[DialogTextInput] = []
         self.hovered_button: Optional[int] = None
         self.active_slider: Optional[DialogSlider] = None
+        self.active_text_input: Optional[DialogTextInput] = None
 
         # Position (will be set when showing)
         self.x = 0
@@ -144,6 +157,19 @@ class Dialog:
                     self.data[checkbox.key] = checkbox.checked
                     return True
 
+            # Check text inputs
+            for text_input in self.text_inputs:
+                if text_input.rect.collidepoint(local_x, local_y):
+                    # Deactivate all other inputs
+                    for ti in self.text_inputs:
+                        ti.active = False
+                    text_input.active = True
+                    self.active_text_input = text_input
+                    return True
+                else:
+                    text_input.active = False
+
+            self.active_text_input = None
             return True
 
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -151,6 +177,33 @@ class Dialog:
             return self.visible
 
         elif event.type == pygame.KEYDOWN:
+            # Handle text input first
+            if self.active_text_input:
+                if event.key == pygame.K_BACKSPACE:
+                    self.active_text_input.value = self.active_text_input.value[:-1]
+                    self.data[self.active_text_input.key] = self.active_text_input.value
+                    return True
+                elif event.key == pygame.K_RETURN:
+                    # Deactivate text input on Enter
+                    self.active_text_input.active = False
+                    self.active_text_input = None
+                    return True
+                elif event.key == pygame.K_ESCAPE:
+                    # Deactivate text input on Escape
+                    self.active_text_input.active = False
+                    self.active_text_input = None
+                    return True
+                elif event.key == pygame.K_TAB:
+                    # Move to next text input
+                    self._focus_next_text_input()
+                    return True
+                elif event.unicode and len(self.active_text_input.value) < self.active_text_input.max_length:
+                    # Add character (filter control characters)
+                    if event.unicode.isprintable():
+                        self.active_text_input.value += event.unicode
+                        self.data[self.active_text_input.key] = self.active_text_input.value
+                return True
+
             if event.key == pygame.K_ESCAPE:
                 self.result = "cancel"
                 self.hide()
@@ -165,6 +218,22 @@ class Dialog:
                 return True
 
         return self.visible
+
+    def _focus_next_text_input(self) -> None:
+        """Focus the next text input field."""
+        if not self.text_inputs:
+            return
+
+        current_idx = -1
+        for i, ti in enumerate(self.text_inputs):
+            if ti.active:
+                current_idx = i
+                ti.active = False
+                break
+
+        next_idx = (current_idx + 1) % len(self.text_inputs)
+        self.text_inputs[next_idx].active = True
+        self.active_text_input = self.text_inputs[next_idx]
 
     def _handle_button_click(self, button: DialogButton) -> None:
         """Handle button click."""
@@ -218,6 +287,10 @@ class Dialog:
         # Draw checkboxes
         for checkbox in self.checkboxes:
             self._draw_checkbox(surface, checkbox)
+
+        # Draw text inputs
+        for text_input in self.text_inputs:
+            self._draw_text_input(surface, text_input)
 
         # Draw buttons
         for i, button in enumerate(self.buttons):
@@ -274,6 +347,43 @@ class Dialog:
         # Label
         label_surface = self.font.render(checkbox.label, True, self.text_color)
         surface.blit(label_surface, (rect.x + 24, rect.y + 2))
+
+    def _draw_text_input(self, surface: pygame.Surface, text_input: DialogTextInput) -> None:
+        """Draw a text input control."""
+        rect = pygame.Rect(
+            self.x + text_input.rect.x,
+            self.y + text_input.rect.y,
+            text_input.rect.width,
+            text_input.rect.height
+        )
+
+        # Label
+        label_surface = self.font.render(text_input.label, True, self.text_color)
+        surface.blit(label_surface, (rect.x, rect.y - 18))
+
+        # Input background
+        bg_color = (50, 50, 55) if text_input.active else self.slider_bg
+        pygame.draw.rect(surface, bg_color, rect, border_radius=4)
+
+        # Border (highlight when active)
+        border_color = self.slider_fill if text_input.active else self.border_color
+        pygame.draw.rect(surface, border_color, rect, width=2 if text_input.active else 1, border_radius=4)
+
+        # Text
+        display_text = text_input.value
+        if text_input.active:
+            # Add cursor
+            display_text += "|"
+
+        text_surface = self.font.render(display_text, True, self.text_color)
+
+        # Clip text to fit
+        text_rect = text_surface.get_rect(midleft=(rect.x + 8, rect.centery))
+        if text_rect.width > rect.width - 16:
+            # Show end of text when too long
+            text_rect.right = rect.right - 8
+
+        surface.blit(text_surface, text_rect)
 
     def _draw_button(self, surface: pygame.Surface, button: DialogButton,
                      hovered: bool) -> None:
@@ -454,22 +564,50 @@ class GeneratorDialog(Dialog):
         )
 
 
-class ObjectDialog(Dialog):
-    """Dialog for editing object properties."""
+class LocationEditDialog(Dialog):
+    """Dialog for editing location properties with name input."""
 
     def __init__(self, location_info: Dict[str, Any] = None):
-        super().__init__("Свойства локации", 350, 200)
+        super().__init__("Редактирование локации", 400, 280)
         self.location_info = location_info or {}
         self._setup_controls()
 
     def _setup_controls(self) -> None:
-        """Setup dialog controls."""
-        # This is a simplified version - in a full implementation,
-        # you would add text input for name editing
+        """Setup dialog controls with text input for name."""
+        y = 50
 
+        # Name input
+        self.text_inputs.append(DialogTextInput(
+            rect=pygame.Rect(20, y + 20, self.width - 40, 28),
+            label="Название локации:",
+            key="name",
+            value=self.location_info.get('name', ''),
+            max_length=40
+        ))
+        self.data['name'] = self.location_info.get('name', '')
+        y += 70
+
+        # Checkbox for starting village (only for villages)
+        if self.location_info.get('type') == 'village':
+            self.checkboxes.append(DialogCheckbox(
+                rect=pygame.Rect(20, y, self.width - 40, 20),
+                label="Сделать стартовой деревней",
+                key="set_starting",
+                checked=self.location_info.get('is_starting', False)
+            ))
+            self.data['set_starting'] = self.location_info.get('is_starting', False)
+            y += 40
+
+        # Buttons
         btn_width = 100
         btn_height = 30
         btn_y = self.height - btn_height - 15
+
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(20, btn_y, btn_width, btn_height),
+            text="Удалить",
+            action="delete"
+        ))
 
         self.buttons.append(DialogButton(
             rect=pygame.Rect(self.width - btn_width - 120, btn_y, btn_width, btn_height),
@@ -479,7 +617,7 @@ class ObjectDialog(Dialog):
 
         self.buttons.append(DialogButton(
             rect=pygame.Rect(self.width - btn_width - 10, btn_y, btn_width, btn_height),
-            text="OK",
+            text="Сохранить",
             action="ok",
             primary=True
         ))
@@ -491,19 +629,21 @@ class ObjectDialog(Dialog):
         if not self.visible:
             return
 
-        # Draw location info
-        y = self.y + 50
-        lines = [
+        # Draw location type and coordinates info
+        y = self.y + 140
+        info_lines = [
             f"Тип: {self.location_info.get('type_display', '')}",
-            f"Имя: {self.location_info.get('name', '')}",
-            f"X: {self.location_info.get('x', 0)}",
-            f"Y: {self.location_info.get('y', 0)}"
+            f"Координаты: ({self.location_info.get('x', 0)}, {self.location_info.get('y', 0)})"
         ]
 
-        for line in lines:
-            text_surface = self.font.render(line, True, self.text_color)
+        for line in info_lines:
+            text_surface = self.font.render(line, True, (180, 180, 180))
             surface.blit(text_surface, (self.x + 20, y))
-            y += 22
+            y += 20
+
+
+# Keep old name for backwards compatibility
+ObjectDialog = LocationEditDialog
 
 
 class SaveDialog(Dialog):
