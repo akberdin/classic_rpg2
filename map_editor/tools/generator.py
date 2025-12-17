@@ -67,6 +67,9 @@ class GeneratorParams:
     bandit_camp_count: int = 8
     ruins_count: int = 10
 
+    # Placement options
+    ignore_min_distance: bool = False  # Disable minimum distance restriction
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -93,7 +96,8 @@ class GeneratorParams:
             'village_count': self.village_count,
             'mine_count': self.mine_count,
             'bandit_camp_count': self.bandit_camp_count,
-            'ruins_count': self.ruins_count
+            'ruins_count': self.ruins_count,
+            'ignore_min_distance': self.ignore_min_distance
         }
 
     @classmethod
@@ -466,7 +470,7 @@ class MapGenerator:
 
     def _generate_rivers(self, biomes: List[List[str]],
                         elevation: List[List[float]]) -> List[List[str]]:
-        """Generate rivers flowing from high to low elevation."""
+        """Generate natural meandering rivers flowing from high to low elevation."""
         result = [[biomes[y][x] for x in range(self.params.width)]
                  for y in range(self.params.height)]
 
@@ -489,12 +493,14 @@ class MapGenerator:
             if rivers_created >= self.params.river_count:
                 break
 
-            # Trace river path
+            # Trace river path with natural meandering
             x, y = sx, sy
             path = [(x, y)]
             max_steps = self.params.width + self.params.height
+            meander_direction = random.choice([-1, 1])  # Initial meander direction
+            meander_strength = random.uniform(0.3, 0.6)  # How much it meanders
 
-            for _ in range(max_steps):
+            for step in range(max_steps):
                 if biomes[y][x] == BIOME_WATER:
                     break
 
@@ -502,21 +508,75 @@ class MapGenerator:
                 if not neighbors:
                     break
 
-                # Find lowest neighbor
-                lowest = min(neighbors, key=lambda n: elevation[n[1]][n[0]])
-                if elevation[lowest[1]][lowest[0]] >= elevation[y][x]:
+                # Sort neighbors by elevation
+                sorted_neighbors = sorted(neighbors, key=lambda n: elevation[n[1]][n[0]])
+
+                # Find candidates (neighbors lower than current)
+                candidates = [n for n in sorted_neighbors if elevation[n[1]][n[0]] < elevation[y][x]]
+
+                if not candidates:
                     break
 
-                x, y = lowest
+                # Add meandering: occasionally prefer side neighbors over lowest
+                if len(candidates) > 1 and random.random() < meander_strength:
+                    # Prefer candidates that maintain meander direction
+                    dx_preferred = meander_direction
+                    side_candidates = [
+                        n for n in candidates
+                        if (n[0] - x) * dx_preferred > 0  # Moving in meander direction
+                    ]
+                    if side_candidates:
+                        # Choose from side candidates, weighted by elevation
+                        weights = [1.0 / (elevation[n[1]][n[0]] + 0.1) for n in side_candidates]
+                        total = sum(weights)
+                        r = random.random() * total
+                        cumsum = 0
+                        next_pos = side_candidates[0]
+                        for i, w in enumerate(weights):
+                            cumsum += w
+                            if r <= cumsum:
+                                next_pos = side_candidates[i]
+                                break
+                    else:
+                        next_pos = candidates[0]  # Lowest neighbor
+
+                    # Occasionally reverse meander direction
+                    if random.random() < 0.15:
+                        meander_direction *= -1
+                else:
+                    # Follow steepest descent
+                    next_pos = candidates[0]
+
+                x, y = next_pos
+
                 if (x, y) in path:
                     break
                 path.append((x, y))
 
             # Only create river if it reaches water or is long enough
             if len(path) > 10:
-                for rx, ry in path:
+                # Draw river with variable width
+                for i, (rx, ry) in enumerate(path):
+                    # River gets wider as it flows
+                    progress = i / len(path)
+                    width = 1 if progress < 0.5 else (2 if progress < 0.8 else 3)
+
+                    # Draw main river point
                     if result[ry][rx] not in [BIOME_WATER, BIOME_MOUNTAIN]:
                         result[ry][rx] = BIOME_WATER
+
+                    # Widen river in later sections
+                    if width > 1:
+                        for dx in range(-width // 2, width // 2 + 1):
+                            for dy in range(-width // 2, width // 2 + 1):
+                                nx, ny = rx + dx, ry + dy
+                                if (0 <= nx < self.params.width and
+                                        0 <= ny < self.params.height and
+                                        result[ny][nx] not in [BIOME_WATER, BIOME_MOUNTAIN]):
+                                    # Don't widen too much, use probability
+                                    if abs(dx) + abs(dy) <= width // 2 or random.random() < 0.3:
+                                        result[ny][nx] = BIOME_WATER
+
                 rivers_created += 1
 
         return result
@@ -612,21 +672,22 @@ class MapGenerator:
             if game_map.get_location_at(x, y):
                 continue
 
-            # Check distance from other locations
-            too_close = False
-            for loc in game_map.locations:
-                d = distance(x, y, loc.x, loc.y)
-                if d < min_distance:
-                    too_close = True
-                    break
-                if min_distance_from_settlements > 0:
-                    if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
-                        if d < min_distance_from_settlements:
-                            too_close = True
-                            break
+            # Check distance from other locations (unless disabled)
+            if not self.params.ignore_min_distance:
+                too_close = False
+                for loc in game_map.locations:
+                    d = distance(x, y, loc.x, loc.y)
+                    if d < min_distance:
+                        too_close = True
+                        break
+                    if min_distance_from_settlements > 0:
+                        if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
+                            if d < min_distance_from_settlements:
+                                too_close = True
+                                break
 
-            if too_close:
-                continue
+                if too_close:
+                    continue
 
             # Generate name
             name = self._get_location_name(location_type)
