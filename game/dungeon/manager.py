@@ -762,15 +762,7 @@ class DungeonManager:
         from game.loot_system import LootSystem
 
         loot_system = LootSystem(player)
-        loot_result = loot_system.generate_loot(enemy, player)
-
-        # Извлекаем золото и предметы из результата лута
-        gold_reward = loot_result.get('gold', 0)
-        loot_items = []
-
-        # Добавляем все предметы из результата лута
-        for item in loot_result.get('items', []):
-            loot_items.append((item, 1))  # (предмет, количество)
+        loot_items, gold_reward = loot_system.generate_loot(enemy)
 
         # Добавляем останки (если есть что добавить)
         if gold_reward > 0 or len(loot_items) > 0:
@@ -815,6 +807,19 @@ class DungeonManager:
 
             # NPC атакует если рядом (дистанция 1)
             if dist == 1:
+                # Проверяем режим бессмертия игрока
+                if getattr(player, 'godmode', False):
+                    # В режиме бессмертия урон не наносится
+                    results.append({
+                        "attacker": npc.name,
+                        "damage": 0,
+                        "player_hp": player.health,
+                        "blocked_by_godmode": True
+                    })
+                    # Помечаем NPC как агрессивного
+                    npc._aggro_target = player
+                    continue
+
                 # Атакуем игрока
                 attack_damage = npc.get_total_damage()
                 defense = player.get_total_defense()
@@ -935,11 +940,11 @@ class DungeonManager:
                     # Получаем игрока из game для генерации лута
                     player = self.game.player if hasattr(self, 'game') and hasattr(self.game, 'player') else None
 
-                    loot_system = LootSystem()
-                    loot_result = loot_system.generate_loot(npc, player) if player else {'gold': 0, 'items': []}
-
-                    gold_reward = loot_result.get('gold', 0)
-                    loot_items = [(item, 1) for item in loot_result.get('items', [])]
+                    if player:
+                        loot_system = LootSystem(player)
+                        loot_items, gold_reward = loot_system.generate_loot(npc)
+                    else:
+                        loot_items, gold_reward = [], 0
 
                     # Добавляем останки
                     dungeon.add_remains(npc.x, npc.y, npc.name, gold_reward, loot_items)
