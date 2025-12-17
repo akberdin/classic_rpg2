@@ -771,10 +771,10 @@ class DungeonRenderer:
 
         # Отрисовка навыков
         skills_data = [
-            ("Keen Eye", keen_eye),
-            ("Disarm", disarm_trap),
-            ("Lockpick", lockpicking),
-            ("Treasure", treasure_hunter)
+            ("Ост.Глаз", keen_eye),
+            ("Обезвр.", disarm_trap),
+            ("Взлом", lockpicking),
+            ("Охотник", treasure_hunter)
         ]
 
         for skill_name, skill in skills_data:
@@ -782,11 +782,11 @@ class DungeonRenderer:
                 continue
 
             rank = skill.rank
-            # Рисуем звездочки для ранга
-            stars = "★" * rank + "☆" * (5 - rank)
+            # Рисуем ранг числом вместо звёздочек (pygame плохо работает с эмодзи)
+            rank_str = f"[{rank}/5]"
 
             # Имя навыка (сокращенное)
-            skill_text = f"{skill_name}: {stars}"
+            skill_text = f"{skill_name}: {rank_str}"
             skill_surface = font.render(skill_text, True, (220, 220, 200))
             self.screen.blit(skill_surface, (padding_x, current_y))
             current_y += 20

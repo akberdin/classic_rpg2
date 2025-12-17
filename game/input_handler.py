@@ -980,14 +980,33 @@ class InputHandler:
                         self.game.object_interaction_open = True
                     return
 
+                # Проверяем останки под игроком (прямое взаимодействие)
+                remains = dungeon.get_remains_at(self.ctx.player.x, self.ctx.player.y)
+                if remains and not remains.get('looted', False):
+                    result = self.ctx.dungeon_manager.interact_with_tile(self.ctx.player)
+                    if result and result.get('success'):
+                        print(result.get('message', 'Вы обыскали останки'))
+                    return
+
+                # Проверяем тайник под игроком (прямое взаимодействие)
+                stash = dungeon.stash_manager.get_stash_at(self.ctx.player.x, self.ctx.player.y)
+                if stash and stash.is_detected and not stash.is_looted:
+                    result = self.ctx.dungeon_manager.interact_with_tile(self.ctx.player)
+                    if result:
+                        if result.get('success'):
+                            print(f"Тайник обыскан! Получено: {result.get('gold', 0)} золота")
+                        else:
+                            print(result.get('message', 'Не удалось обыскать тайник'))
+                    return
+
                 # Проверяем, на выходе ли игрок
                 if dungeon.is_exit_tile(self.ctx.player.x, self.ctx.player.y):
                     self.game.dungeon_exit_window.set_dungeon_name(dungeon.name)
                     self.game.dungeon_exit_open = True
                     return
 
-                # Старая система взаимодействия отключена - теперь используется новая (ПКМ + E)
-                print("Для взаимодействия с объектами используйте ПКМ (выбор) + E (меню)")
+                # Подсказка для выбора объектов на расстоянии
+                print("Для взаимодействия с объектами на расстоянии используйте ПКМ (выбор) + E (меню)")
                 return
 
             # Проверяем возможность входа в подземелье/шахту
