@@ -1079,8 +1079,15 @@ class NPCSpawner:
 
             # Определяем случайную позицию внутри ячейки (с отступом от краев)
             margin = 2
-            spawn_x = grid_col * cell_width + random.randint(margin, cell_width - margin - 1)
-            spawn_y = grid_row * cell_height + random.randint(margin, cell_height - margin - 1)
+            # Безопасный расчёт позиции для маленьких ячеек
+            if cell_width > margin * 2:
+                spawn_x = grid_col * cell_width + random.randint(margin, cell_width - margin - 1)
+            else:
+                spawn_x = grid_col * cell_width + cell_width // 2
+            if cell_height > margin * 2:
+                spawn_y = grid_row * cell_height + random.randint(margin, cell_height - margin - 1)
+            else:
+                spawn_y = grid_row * cell_height + cell_height // 2
 
             # Проверяем границы карты
             if spawn_x < 5 or spawn_x >= map_width - 5:
