@@ -1133,7 +1133,7 @@ class DungeonManager:
                 "level": obj.trap_level.value,
                 "level_name": obj.trap_level.name,
                 "detected": obj.is_detected,
-                "dc": obj.dc,
+                "dc": obj.disarm_dc,  # DC для обезвреживания
                 "x": obj.x,
                 "y": obj.y
             }
@@ -1149,7 +1149,7 @@ class DungeonManager:
                 "level": obj.stash_level.value,
                 "level_name": obj.stash_level.name,
                 "detected": obj.is_detected,
-                "dc": obj.dc,
+                "dc": obj.detection_dc,  # DC для обнаружения
                 "has_trap": obj.trap is not None,
                 "x": obj.x,
                 "y": obj.y
