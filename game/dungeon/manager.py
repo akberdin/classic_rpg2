@@ -380,8 +380,8 @@ class DungeonManager:
         if trap and trap.is_detected and not trap.is_triggered and not trap.is_disarmed:
             success, message = trap.try_disarm(player)
             if success:
-                # Меняем тип клетки
-                dungeon.set_tile_type(target_x, target_y, DungeonTileType.FLOOR)
+                # Меняем тип клетки на сработавшую (обезвреженная = деактивированная)
+                dungeon.set_tile_type(target_x, target_y, DungeonTileType.TRAP_TRIGGERED)
             return {"success": success, "message": message}
 
         return None
@@ -1095,7 +1095,8 @@ class DungeonManager:
         # Ищем ловушку на этой позиции
         for trap in self.current_dungeon.trap_manager.traps:
             if trap.x == map_x and trap.y == map_y:
-                if trap.is_detected and not trap.is_triggered:
+                # Можно выбрать только обнаруженную, не сработавшую и не обезвреженную ловушку
+                if trap.is_detected and not trap.is_triggered and not trap.is_disarmed:
                     return (trap, 'trap')
 
         # Ищем тайник на этой позиции
