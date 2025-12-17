@@ -17,6 +17,8 @@ BIOME_SAND = 'sand'
 BIOME_PLAINS = 'plains'
 BIOME_HILLS = 'hills'
 BIOME_FOREST = 'forest'
+BIOME_MOUNTAIN = 'mountain'  # Горы (высокие, труднопроходимые)
+BIOME_SWAMP = 'swamp'        # Болото (влажные низины)
 
 # Типы локаций
 LOCATION_CITY = 'city'
@@ -28,8 +30,8 @@ LOCATION_MAGIC_SCHOOL = 'magic_school'
 LOCATION_WARRIOR_ACADEMY = 'warrior_academy'
 LOCATION_SECRET_CAMP = 'secret_camp'
 
-# Проходимые биомы
-PASSABLE_BIOMES = [BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST]
+# Проходимые биомы (горы и болото проходимы, но с высокой стоимостью)
+PASSABLE_BIOMES = [BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST, BIOME_MOUNTAIN, BIOME_SWAMP]
 
 # Типы NPC
 NPC_TYPE_GUARD = "guard"
@@ -634,6 +636,8 @@ COLORS = {
     'plains': (65, 80, 25),
     'hills': (95, 85, 60),
     'forest': (20, 55, 20),
+    'mountain': (110, 100, 95),   # Горы - серо-коричневый
+    'swamp': (45, 65, 35),        # Болото - темно-зеленый с коричневым
     'city': (169, 169, 169),
     'village': (139, 115, 85),
     'mine': (96, 96, 96),

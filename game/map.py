@@ -1,12 +1,19 @@
 """
-Класс карты игры с генерацией биомов и локаций
+Класс карты игры с улучшенной процедурной генерацией биомов и локаций
+
+Алгоритм генерации использует многослойный шум Перлина:
+- Слой высоты (elevation) - определяет рельеф
+- Слой влажности (moisture) - определяет тип растительности
+- Градиент температуры - север холоднее, юг теплее
 """
 import random
+import math
 from perlin_noise import PerlinNoise
 from game.tile import Tile, Location
 from game.constants import (
     MAP_WIDTH, MAP_HEIGHT,
     BIOME_WATER, BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST,
+    BIOME_MOUNTAIN, BIOME_SWAMP,
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MINE, LOCATION_BANDIT_CAMP, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, LOCATION_SECRET_CAMP,
     PASSABLE_BIOMES,
     CITY_NAMES, VILLAGE_NAMES, MAGIC_SCHOOL_NAMES, WARRIOR_ACADEMY_NAMES, MINE_NAMES, BANDIT_CAMP_NAMES, RUIN_NAMES, SECRET_CAMP_NAMES
@@ -88,37 +95,270 @@ class GameMap:
                 return
 
     def _generate_map(self):
-        """Генерация карты с биомами"""
+        """
+        Улучшенная генерация карты с многослойным шумом Перлина
+
+        Использует:
+        - Шум высоты (elevation) для рельефа
+        - Шум влажности (moisture) для типа растительности
+        - Градиент температуры (север холоднее)
+        - Постобработка для пляжей и рек
+        """
         # Инициализация пустой карты
         self.tiles = [[Tile(x, y) for x in range(self.width)] for y in range(self.height)]
 
-        # Параметры для шума Перлина
-        scale = 100.0
-        octaves = 6
-        self.seed = random.randint(0, 10000)  # Сохраняем seed для воспроизводимости
+        # Сохраняем seed для воспроизводимости
+        self.seed = random.randint(0, 10000)
 
-        # Создаем генератор шума Перлина
-        noise_generator = PerlinNoise(octaves=octaves, seed=self.seed)
+        # Создаем генераторы шума для разных слоев
+        elevation_noise = PerlinNoise(octaves=6, seed=self.seed)
+        moisture_noise = PerlinNoise(octaves=4, seed=self.seed + 1000)
+        detail_noise = PerlinNoise(octaves=8, seed=self.seed + 2000)  # Для мелких деталей
 
-        # Генерация биомов с помощью шума Перлина
+        # Параметры масштаба
+        elevation_scale = 80.0   # Крупные формы рельефа
+        moisture_scale = 60.0    # Зоны влажности
+        detail_scale = 30.0      # Мелкие детали
+
+        # Храним карты высот и влажности для последующей обработки
+        self.elevation_map = [[0.0 for _ in range(self.width)] for _ in range(self.height)]
+        self.moisture_map = [[0.0 for _ in range(self.width)] for _ in range(self.height)]
+
+        # Первый проход: генерация базовых значений
         for y in range(self.height):
             for x in range(self.width):
-                # Получаем значение шума для данной точки
-                noise_val = noise_generator([x / scale, y / scale])
+                # Получаем значения шума
+                elevation = elevation_noise([x / elevation_scale, y / elevation_scale])
+                moisture = moisture_noise([x / moisture_scale, y / moisture_scale])
+                detail = detail_noise([x / detail_scale, y / detail_scale])
 
-                # Нормализуем значение от -0.5..0.5 до 0..1
-                noise_val = noise_val + 0.5
+                # Нормализуем от [-0.5, 0.5] до [0, 1]
+                elevation = elevation + 0.5
+                moisture = moisture + 0.5
+                detail = detail + 0.5
 
-                # Определяем биом на основе значения шума
-                biome = self._determine_biome(noise_val)
+                # Добавляем мелкие детали к высоте (20% влияния)
+                elevation = elevation * 0.8 + detail * 0.2
+
+                # Градиент для создания континента (края карты ниже)
+                edge_distance = self._get_edge_distance(x, y)
+                elevation = elevation * edge_distance
+
+                # Сохраняем значения
+                self.elevation_map[y][x] = elevation
+                self.moisture_map[y][x] = moisture
+
+        # Второй проход: определение биомов
+        for y in range(self.height):
+            for x in range(self.width):
+                elevation = self.elevation_map[y][x]
+                moisture = self.moisture_map[y][x]
+
+                # Градиент температуры (юг теплее)
+                temperature = y / self.height  # 0 на севере, 1 на юге
+
+                biome = self._determine_biome_advanced(elevation, moisture, temperature)
                 self.tiles[y][x].biome = biome
+
+        # Третий проход: постобработка - создание пляжей
+        self._generate_beaches()
+
+        # Четвертый проход: генерация рек
+        self._generate_rivers()
 
         # Генерация локаций
         self._generate_locations()
 
+    def _get_edge_distance(self, x, y):
+        """
+        Получить коэффициент расстояния от края карты
+        Используется для создания острова/континента (края ниже)
+
+        Returns:
+            float: Коэффициент от 0 (край) до 1 (центр)
+        """
+        # Нормализованные координаты от центра
+        nx = 2.0 * x / self.width - 1.0
+        ny = 2.0 * y / self.height - 1.0
+
+        # Расстояние от центра (квадратная метрика для более квадратного континента)
+        d = max(abs(nx), abs(ny))
+
+        # Плавный переход от центра к краям
+        # Край начинается на расстоянии 0.7 от центра
+        if d < 0.6:
+            return 1.0
+        elif d < 0.9:
+            return 1.0 - (d - 0.6) * 2.0  # Плавное уменьшение
+        else:
+            return 0.1  # Минимальная высота у краев
+
+    def _determine_biome_advanced(self, elevation, moisture, temperature):
+        """
+        Определить биом на основе высоты, влажности и температуры
+
+        Логика определения биомов:
+        - Очень низко (< 0.25): Вода
+        - Низко (0.25-0.35) + высокая влажность: Болото
+        - Низко (0.25-0.35) + низкая влажность: Песок/Пляж
+        - Средне-низко (0.35-0.5): Равнины или Лес (зависит от влажности)
+        - Средне (0.5-0.65): Равнины или Холмы
+        - Высоко (0.65-0.8): Холмы или Лес (зависит от влажности)
+        - Очень высоко (> 0.8): Горы
+
+        Args:
+            elevation: Высота (0..1)
+            moisture: Влажность (0..1)
+            temperature: Температура (0..1, где 0 - север/холод, 1 - юг/тепло)
+
+        Returns:
+            str: Тип биома
+        """
+        # Вода - очень низкие области
+        if elevation < 0.25:
+            return BIOME_WATER
+
+        # Горы - очень высокие области
+        if elevation > 0.8:
+            return BIOME_MOUNTAIN
+
+        # Высокие холмы
+        if elevation > 0.65:
+            # Лес на влажных высотах
+            if moisture > 0.5:
+                return BIOME_FOREST
+            return BIOME_HILLS
+
+        # Средняя высота - основная область биомов
+        if elevation > 0.5:
+            if moisture > 0.6:
+                return BIOME_FOREST
+            elif moisture > 0.35:
+                return BIOME_PLAINS
+            else:
+                return BIOME_HILLS  # Сухие холмы
+
+        # Низкие области
+        if elevation > 0.35:
+            if moisture > 0.65:
+                return BIOME_FOREST  # Влажный лес
+            elif moisture > 0.4:
+                return BIOME_PLAINS
+            else:
+                return BIOME_SAND  # Сухие низины
+
+        # Очень низкие области (0.25-0.35) - прибрежная зона
+        if moisture > 0.6:
+            return BIOME_SWAMP  # Болото в низких влажных местах
+        else:
+            return BIOME_SAND  # Песок/пляж
+
+    def _generate_beaches(self):
+        """
+        Постобработка: генерация пляжей вокруг воды
+        Песок должен быть на границе воды и суши
+        """
+        # Находим все клетки воды и создаем песок вокруг них
+        water_tiles = set()
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.tiles[y][x].biome == BIOME_WATER:
+                    water_tiles.add((x, y))
+
+        # Для каждой клетки рядом с водой - возможно сделать песком
+        beach_candidates = set()
+        for wx, wy in water_tiles:
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    nx, ny = wx + dx, wy + dy
+                    if self.is_valid_position(nx, ny):
+                        tile = self.tiles[ny][nx]
+                        if tile.biome not in [BIOME_WATER, BIOME_MOUNTAIN]:
+                            beach_candidates.add((nx, ny))
+
+        # Превращаем часть кандидатов в песок (пляж)
+        for bx, by in beach_candidates:
+            # 70% шанс стать песком у воды
+            if random.random() < 0.7:
+                self.tiles[by][bx].biome = BIOME_SAND
+
+    def _generate_rivers(self):
+        """
+        Генерация рек методом "от истока к устью"
+        Реки текут из высоких точек в низкие (к воде)
+        """
+        num_rivers = random.randint(3, 6)
+
+        for _ in range(num_rivers):
+            # Находим исток - высокую точку (холмы или горы)
+            source = self._find_river_source()
+            if source is None:
+                continue
+
+            # Прокладываем реку к ближайшей воде или краю карты
+            self._carve_river(source[0], source[1])
+
+    def _find_river_source(self):
+        """Найти подходящий исток реки (высокая точка)"""
+        for _ in range(100):
+            x = random.randint(10, self.width - 10)
+            y = random.randint(10, self.height - 10)
+
+            elevation = self.elevation_map[y][x]
+            # Исток должен быть в горах или высоких холмах
+            if elevation > 0.6 and self.tiles[y][x].biome in [BIOME_MOUNTAIN, BIOME_HILLS]:
+                return (x, y)
+        return None
+
+    def _carve_river(self, start_x, start_y):
+        """
+        Прокладывание реки от истока вниз по склону
+        Использует алгоритм градиентного спуска с небольшим рандомом
+        """
+        x, y = start_x, start_y
+        river_length = 0
+        max_length = 150
+
+        while river_length < max_length:
+            # Делаем текущую клетку водой
+            if self.is_valid_position(x, y):
+                # Не перезаписываем существующую воду или слишком ценные биомы рядом с локациями
+                if self.tiles[y][x].biome != BIOME_WATER and not self.tiles[y][x].has_location():
+                    self.tiles[y][x].biome = BIOME_WATER
+
+            # Находим соседа с минимальной высотой
+            best_neighbor = None
+            best_elevation = self.elevation_map[y][x]
+
+            # Проверяем соседей (с небольшим случайным смещением)
+            neighbors = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+            random.shuffle(neighbors)  # Добавляем рандом
+
+            for dx, dy in neighbors:
+                nx, ny = x + dx, y + dy
+                if self.is_valid_position(nx, ny):
+                    neighbor_elevation = self.elevation_map[ny][nx]
+                    # Небольшой шанс выбрать не самого низкого соседа (извилистость)
+                    if neighbor_elevation < best_elevation or (random.random() < 0.15 and neighbor_elevation < best_elevation + 0.1):
+                        best_elevation = neighbor_elevation
+                        best_neighbor = (nx, ny)
+
+            # Если не нашли путь вниз или достигли воды - останавливаемся
+            if best_neighbor is None:
+                break
+
+            nx, ny = best_neighbor
+            if self.tiles[ny][nx].biome == BIOME_WATER:
+                # Достигли существующей воды - река влилась
+                break
+
+            x, y = nx, ny
+            river_length += 1
+
     def _determine_biome(self, noise_val):
         """
-        Определить биом на основе значения шума
+        Устаревший метод определения биома (для обратной совместимости)
+        Используйте _determine_biome_advanced для новой логики
 
         Args:
             noise_val: Значение шума (0..1)
@@ -138,26 +378,35 @@ class GameMap:
             return BIOME_FOREST
 
     def _generate_locations(self):
-        """Генерация локаций на карте с компактным размещением"""
+        """
+        Улучшенная генерация локаций с учетом рельефа и биомов
+
+        Логика размещения:
+        - Города: на равнинах, предпочтительно рядом с водой (реки)
+        - Деревни: на равнинах и в лесах
+        - Шахты: ТОЛЬКО в горах или холмах
+        - Руины: в труднодоступных местах (холмы, болота)
+        - Лагеря бандитов: в лесах
+        """
         # Генерация школы магов и деревень рядом с ней
         self._generate_magic_school_cluster()
 
         # Генерация военной академии
         self._generate_warrior_academy_cluster()
 
-        # Генерация компактных кластеров городов (увеличено с 10 до 15)
-        self._generate_compact_locations(LOCATION_CITY, 15, CITY_NAMES, min_distance=5, max_distance=15)
+        # Генерация городов (на равнинах, рядом с водой)
+        self._generate_cities()
 
-        # Генерация компактных кластеров деревень (увеличено с 25 до 35)
-        self._generate_compact_locations(LOCATION_VILLAGE, 35, VILLAGE_NAMES, min_distance=5, max_distance=15)
+        # Генерация деревень (на равнинах и лесах)
+        self._generate_villages()
 
-        # Генерация компактных кластеров шахт (увеличено с 15 до 20)
-        self._generate_compact_locations(LOCATION_MINE, 20, MINE_NAMES, min_distance=5, max_distance=15)
+        # Генерация шахт (в горах и холмах)
+        self._generate_mines()
 
-        # Генерация лагерей бандитов (только в лесах, на расстоянии >= 50 от городов)
+        # Генерация лагерей бандитов (только в лесах)
         self._generate_bandit_camps()
 
-        # Генерация руин (увеличено до 40, на расстоянии >= 15 от городов и деревень)
+        # Генерация руин (в труднодоступных местах)
         self._generate_ruins()
 
         # Генерация Тайного лагеря
@@ -165,6 +414,124 @@ class GameMap:
 
         # Поиск и создание стартовой деревни "Тихая" (после генерации всех локаций)
         self._setup_starting_village()
+
+    def _generate_cities(self):
+        """
+        Генерация городов на равнинах, предпочтительно рядом с водой
+        """
+        names_copy = CITY_NAMES.copy()
+        random.shuffle(names_copy)
+        count = 15
+        created = 0
+
+        for _ in range(2000):
+            if created >= count:
+                break
+
+            x = random.randint(5, self.width - 5)
+            y = random.randint(5, self.height - 5)
+            tile = self.tiles[y][x]
+
+            # Города должны быть на равнинах
+            if tile.biome != BIOME_PLAINS or tile.has_location():
+                continue
+
+            # Проверяем расстояние до других локаций
+            if not self._check_min_distance_to_all_locations(x, y, 8):
+                continue
+
+            # Бонус за близость к воде (реке)
+            near_water = self._has_water_nearby(x, y, radius=5)
+
+            # 80% шанс если рядом вода, 40% если нет
+            if random.random() < (0.8 if near_water else 0.4):
+                name = names_copy[created] if created < len(names_copy) else f"Город #{created+1}"
+                location = Location(x, y, LOCATION_CITY, name)
+                self.tiles[y][x].set_location(location)
+                self.locations.append(location)
+                created += 1
+
+    def _generate_villages(self):
+        """
+        Генерация деревень на равнинах и в лесах
+        """
+        names_copy = VILLAGE_NAMES.copy()
+        random.shuffle(names_copy)
+        count = 35
+        created = 0
+
+        for _ in range(3000):
+            if created >= count:
+                break
+
+            x = random.randint(3, self.width - 3)
+            y = random.randint(3, self.height - 3)
+            tile = self.tiles[y][x]
+
+            # Деревни на равнинах и в лесах
+            if tile.biome not in [BIOME_PLAINS, BIOME_FOREST] or tile.has_location():
+                continue
+
+            # Проверяем расстояние до других локаций
+            if not self._check_min_distance_to_all_locations(x, y, 5):
+                continue
+
+            name = names_copy[created] if created < len(names_copy) else f"Деревня #{created+1}"
+            location = Location(x, y, LOCATION_VILLAGE, name)
+            self.tiles[y][x].set_location(location)
+            self.locations.append(location)
+            created += 1
+
+    def _generate_mines(self):
+        """
+        Генерация шахт ТОЛЬКО в горах или холмах
+        Это логично - руда добывается в горных районах
+        """
+        names_copy = MINE_NAMES.copy()
+        random.shuffle(names_copy)
+        count = 20
+        created = 0
+
+        for _ in range(3000):
+            if created >= count:
+                break
+
+            x = random.randint(5, self.width - 5)
+            y = random.randint(5, self.height - 5)
+            tile = self.tiles[y][x]
+
+            # Шахты ТОЛЬКО в горах или холмах - это реалистично!
+            if tile.biome not in [BIOME_MOUNTAIN, BIOME_HILLS] or tile.has_location():
+                continue
+
+            # Проверяем расстояние до других локаций
+            if not self._check_min_distance_to_all_locations(x, y, 6):
+                continue
+
+            name = names_copy[created] if created < len(names_copy) else f"Шахта #{created+1}"
+            location = Location(x, y, LOCATION_MINE, name)
+            self.tiles[y][x].set_location(location)
+            self.locations.append(location)
+            created += 1
+
+    def _has_water_nearby(self, x, y, radius=5):
+        """
+        Проверить наличие воды в указанном радиусе
+
+        Args:
+            x, y: Центральные координаты
+            radius: Радиус поиска
+
+        Returns:
+            bool: True если вода найдена
+        """
+        for dx in range(-radius, radius + 1):
+            for dy in range(-radius, radius + 1):
+                nx, ny = x + dx, y + dy
+                if self.is_valid_position(nx, ny):
+                    if self.tiles[ny][nx].biome == BIOME_WATER:
+                        return True
+        return False
 
     def _generate_magic_school_cluster(self):
         """Генерация школы магов с двумя деревнями рядом"""
