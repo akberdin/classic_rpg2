@@ -5,7 +5,11 @@ from typing import Dict, List, Tuple, Callable, Optional, Any
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..tools.generator import GeneratorParams
+from ..tools.generator import (
+    GeneratorParams,
+    LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE,
+    LOCATION_MINE, LOCATION_RUINS
+)
 
 
 @dataclass
@@ -577,13 +581,21 @@ class LocationEditDialog(Dialog):
     """Dialog for editing location properties with name input."""
 
     def __init__(self, location_info: Dict[str, Any] = None):
-        super().__init__("Редактирование локации", 400, 280)
         self.location_info = location_info or {}
+        # Calculate dialog height based on location type
+        loc_type = self.location_info.get('type', '')
+        height = 280
+        if loc_type in [LOCATION_MINE, LOCATION_RUINS]:
+            height += 50  # Space for rank slider
+        if loc_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
+            height += 50  # Space for shop_rank slider
+        super().__init__("Редактирование локации", 400, height)
         self._setup_controls()
 
     def _setup_controls(self) -> None:
         """Setup dialog controls with text input for name."""
         y = 50
+        loc_type = self.location_info.get('type', '')
 
         # Name input
         self.text_inputs.append(DialogTextInput(
@@ -596,8 +608,32 @@ class LocationEditDialog(Dialog):
         self.data['name'] = self.location_info.get('name', '')
         y += 70
 
+        # Rank slider for mines and ruins
+        if loc_type in [LOCATION_MINE, LOCATION_RUINS]:
+            self.sliders.append(DialogSlider(
+                rect=pygame.Rect(20, y + 20, self.width - 40, 16),
+                label="Ранг (сложность)",
+                key="rank",
+                value=self.location_info.get('rank', 1),
+                min_val=1, max_val=5, step=1
+            ))
+            self.data['rank'] = self.location_info.get('rank', 1)
+            y += 50
+
+        # Shop rank slider for settlements
+        if loc_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
+            self.sliders.append(DialogSlider(
+                rect=pygame.Rect(20, y + 20, self.width - 40, 16),
+                label="Ранг магазина",
+                key="shop_rank",
+                value=self.location_info.get('shop_rank', 1),
+                min_val=1, max_val=5, step=1
+            ))
+            self.data['shop_rank'] = self.location_info.get('shop_rank', 1)
+            y += 50
+
         # Checkbox for starting village (only for villages)
-        if self.location_info.get('type') == 'village':
+        if loc_type == LOCATION_VILLAGE:
             self.checkboxes.append(DialogCheckbox(
                 rect=pygame.Rect(20, y, self.width - 40, 20),
                 label="Сделать стартовой деревней",

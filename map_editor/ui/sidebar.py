@@ -8,9 +8,12 @@ from ..tools.brush import BrushSettings, BrushShape, BrushMode
 from ..tools.generator import (
     BIOME_WATER, BIOME_SAND, BIOME_PLAINS, BIOME_FOREST,
     BIOME_HILLS, BIOME_MOUNTAIN, BIOME_SWAMP,
-    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MINE, LOCATION_BANDIT_CAMP,
-    LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY,
-    LOCATION_SECRET_CAMP
+    LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE, LOCATION_MINE,
+    LOCATION_BANDIT_CAMP, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL,
+    LOCATION_WARRIOR_ACADEMY, LOCATION_SECRET_CAMP,
+    LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_BOAR,
+    LOCATION_SPAWN_DEER, LOCATION_SPAWN_GOBLIN, LOCATION_SPAWN_ORC,
+    LOCATION_SPAWN_UNDEAD, LOCATION_SPAWN_DRAGON
 )
 from .toolbar import ToolType
 
@@ -42,6 +45,7 @@ class Sidebar:
     }
 
     LOCATION_NAMES = {
+        LOCATION_CAPITAL: "Столица",
         LOCATION_CITY: "Город",
         LOCATION_VILLAGE: "Деревня",
         LOCATION_MINE: "Шахта",
@@ -50,6 +54,17 @@ class Sidebar:
         LOCATION_MAGIC_SCHOOL: "Школа магии",
         LOCATION_WARRIOR_ACADEMY: "Академия воинов",
         LOCATION_SECRET_CAMP: "Тайный лагерь"
+    }
+
+    SPAWN_NAMES = {
+        LOCATION_SPAWN_WOLF: "Спавн: Волки",
+        LOCATION_SPAWN_BEAR: "Спавн: Медведи",
+        LOCATION_SPAWN_BOAR: "Спавн: Кабаны",
+        LOCATION_SPAWN_DEER: "Спавн: Олени",
+        LOCATION_SPAWN_GOBLIN: "Спавн: Гоблины",
+        LOCATION_SPAWN_ORC: "Спавн: Орки",
+        LOCATION_SPAWN_UNDEAD: "Спавн: Нежить",
+        LOCATION_SPAWN_DRAGON: "Спавн: Дракон"
     }
 
     def __init__(self, x: int, y: int, width: int, height: int, config: Dict[str, Any]):
@@ -267,7 +282,21 @@ class Sidebar:
         button_height = 28
         padding = 4
 
+        # Check location type buttons
         for loc_type in self.LOCATION_NAMES.keys():
+            btn_rect = pygame.Rect(padding, y_offset, self.width - padding * 2, button_height)
+            if btn_rect.collidepoint(local_x, local_y):
+                self.selected_location = loc_type
+                if self.on_location_select:
+                    self.on_location_select(loc_type)
+                return True
+            y_offset += button_height + padding
+
+        # Check spawn point buttons
+        y_offset += 10  # Gap before spawn section
+        y_offset += 30  # Section header
+
+        for loc_type in self.SPAWN_NAMES.keys():
             btn_rect = pygame.Rect(padding, y_offset, self.width - padding * 2, button_height)
             if btn_rect.collidepoint(local_x, local_y):
                 self.selected_location = loc_type
@@ -463,17 +492,48 @@ class Sidebar:
 
             y_offset += button_height + padding
 
+        # Section: Spawn Points
+        y_offset += 10
+        y_offset = self._draw_section_header(surface, "Точки спавна", y_offset)
+
+        for loc_type, name in self.SPAWN_NAMES.items():
+            btn_rect = pygame.Rect(padding, y_offset, self.width - padding * 2, button_height)
+
+            color = self.button_active if loc_type == self.selected_location else self.button_color
+            pygame.draw.rect(surface, color, btn_rect, border_radius=4)
+
+            # Spawn point color indicator (use a distinct color - red tones)
+            spawn_color = self.location_colors.get(loc_type, (200, 50, 50))
+            indicator_rect = pygame.Rect(btn_rect.x + 4, btn_rect.y + 4,
+                                        20, btn_rect.height - 8)
+            pygame.draw.rect(surface, spawn_color, indicator_rect, border_radius=2)
+
+            # Text
+            text_surface = self.font.render(name, True, self.text_color)
+            surface.blit(text_surface, (btn_rect.x + 30, btn_rect.y + 7))
+
+            y_offset += button_height + padding
+
         # Section: Selected Location Info
         if self.location_info:
             y_offset += 10
             y_offset = self._draw_section_header(surface, "Выбранная локация", y_offset)
 
+            loc_type = self.location_info.get('type', '')
             info_lines = [
                 f"Тип: {self.location_info.get('type_display', '')}",
                 f"Имя: {self.location_info.get('name', '')}",
                 f"X: {self.location_info.get('x', 0)}",
                 f"Y: {self.location_info.get('y', 0)}"
             ]
+
+            # Show rank for mines and ruins
+            if loc_type in [LOCATION_MINE, LOCATION_RUINS]:
+                info_lines.append(f"Ранг: {self.location_info.get('rank', 1)}")
+
+            # Show shop_rank for settlements
+            if loc_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
+                info_lines.append(f"Ранг магазина: {self.location_info.get('shop_rank', 1)}")
 
             if self.location_info.get('is_starting'):
                 info_lines.append("(Стартовая деревня)")
