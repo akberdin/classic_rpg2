@@ -10,7 +10,7 @@ from game.character import Player
 from game.npc import Merchant
 from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
-from game.inventory import get_random_loot_from_location
+from game.inventory import get_random_loot_from_location, get_item_by_id
 from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow, CheatMenuWindow
 from game.ui.windows import (
     InteractionWindow,
@@ -872,7 +872,7 @@ class Game:
 
             # Добавляем предметы в инвентарь
             for item_name, item_id, quantity in loot_result.get('items', []):
-                item = self.item_manager.get_item_by_id(item_id)
+                item = get_item_by_id(item_id)
                 if item:
                     self.player.inventory.add_item(item, quantity)
         else:
@@ -900,7 +900,7 @@ class Game:
         if result.get('success'):
             # Добавляем предметы в инвентарь
             for item_name, item_id, quantity in result.get('items', []):
-                item = self.item_manager.get_item_by_id(item_id)
+                item = get_item_by_id(item_id)
                 if item:
                     self.player.inventory.add_item(item, quantity)
 
