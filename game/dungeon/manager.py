@@ -201,6 +201,13 @@ class DungeonManager:
             if dungeon.get_npc_at(x, y) is not None:
                 continue
 
+            # Проверяем безопасную зону вокруг входа (радиус 5 клеток)
+            if dungeon.entrance:
+                entrance_x, entrance_y = dungeon.entrance
+                distance_to_entrance = abs(x - entrance_x) + abs(y - entrance_y)
+                if distance_to_entrance < 5:
+                    continue  # Слишком близко к входу, пропускаем
+
             # Создаем нежить
             level = random.randint(
                 max(1, dungeon.dungeon_level - 1),
@@ -438,23 +445,24 @@ class DungeonManager:
         player.x = new_x
         player.y = new_y
 
-        # Обновляем видимость
-        dungeon.update_visibility(player.x, player.y)
+        # Обновляем видимость (используем увеличенный радиус для подземелий)
+        dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
 
         result = {"success": True, "message": ""}
 
         # Проверяем ловушки
         trap = dungeon.trap_manager.get_trap_at(new_x, new_y)
         if trap and not trap.is_triggered and not trap.is_disarmed:
-            # Если ловушка не обнаружена - срабатывает
+            # Если ловушка не обнаружена - срабатывает автоматически
             if not trap.is_detected:
                 trap_result = trap.trigger(player)
                 dungeon.set_tile_type(new_x, new_y, DungeonTileType.TRAP_TRIGGERED)
                 result["trap"] = trap_result
                 result["message"] = trap_result.get("message", "Ловушка!")
             else:
-                # Обнаруженная ловушка - можно попытаться обезвредить
-                result["message"] = "Вы видите ловушку. Нажмите R чтобы обезвредить."
+                # Обнаруженная ловушка - игрок может пройти мимо, но видит предупреждение
+                # Чтобы обезвредить, нужно стоять рядом и нажать R
+                result["message"] = "Осторожно! Ловушка! Обезвредьте её с соседней клетки (подойдите и нажмите R)."
 
         # Проверяем тайники (автообнаружение)
         stash = dungeon.stash_manager.get_stash_at(new_x, new_y)
@@ -777,10 +785,11 @@ class DungeonManager:
 
         dungeon = self.current_dungeon
 
-        # Уменьшаем cooldown умений игрока после каждого хода
+        # Уменьшаем cooldown умений игрока после каждого хода (один раз за ход, а не за каждого врага)
         if hasattr(player, 'skill_manager'):
             player.skill_manager.tick_cooldowns()
 
+        # Обрабатываем действия всех врагов
         for npc in dungeon.npcs:
             if not npc.is_alive:
                 continue
@@ -808,11 +817,15 @@ class DungeonManager:
                 # Помечаем NPC как агрессивного
                 npc._aggro_target = player
             elif dist > 1:
-                # Если NPC агрессивен (был атакован или атаковал), преследует игрока
+                # Проверяем линию видимости для преследования
+                has_los = dungeon.has_line_of_sight(npc.x, npc.y, player.x, player.y)
+
+                # Если NPC агрессивен (был атакован или атаковал), преследует игрока (но только если видит)
                 if hasattr(npc, '_aggro_target') and npc._aggro_target == player:
-                    self._move_enemy_towards_player(npc, player)
-                elif dist <= 5:
-                    # Обычное поведение - движение к игроку если в радиусе обнаружения
+                    if has_los:
+                        self._move_enemy_towards_player(npc, player)
+                elif dist <= 5 and has_los:
+                    # Обычное поведение - движение к игроку если в радиусе обнаружения И видит игрока
                     self._move_enemy_towards_player(npc, player)
 
         return results
