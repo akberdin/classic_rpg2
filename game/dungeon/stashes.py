@@ -325,11 +325,28 @@ class Stash:
         if self.is_detected:
             return True
 
-        # Проверка на обнаружение
-        detection_roll = random.randint(1, 20) + player.luck // 3 + player.intelligence // 5
+        # Получаем бонус от навыка Keen Eye (если есть)
+        keen_eye_bonus = 0
+        if hasattr(player, 'skill_manager') and player.skill_manager:
+            keen_eye = player.skill_manager.get_skill("Острый Глаз")
+            if keen_eye:
+                keen_eye_bonus = keen_eye.get_detection_bonus()
+
+        # Проверка на обнаружение (удача + интеллект + Keen Eye)
+        detection_roll = (random.randint(1, 20) +
+                         player.luck // 3 +
+                         player.intelligence // 5 +
+                         keen_eye_bonus)
 
         if detection_roll >= self.detection_dc:
             self.is_detected = True
+
+            # Прогресс навыка Keen Eye
+            if hasattr(player, 'skill_manager') and player.skill_manager:
+                keen_eye = player.skill_manager.get_skill("Острый Глаз")
+                if keen_eye:
+                    keen_eye.on_object_detected()
+
             return True
         return False
 
@@ -504,11 +521,19 @@ class StashManager:
 
         Args:
             player: Объект игрока
-            radius: Радиус обнаружения
+            radius: Радиус обнаружения (может быть расширен Keen Eye)
 
         Returns:
             List[Stash]: Список обнаруженных тайников
         """
+        # Получаем Keen Eye для проверки автообнаружения
+        keen_eye = None
+        if hasattr(player, 'skill_manager') and player.skill_manager:
+            keen_eye = player.skill_manager.get_skill("Острый Глаз")
+            if keen_eye:
+                # Расширяем радиус поиска на основе навыка
+                radius = max(radius, keen_eye.get_auto_detect_radius())
+
         detected = []
         for stash in self.stashes:
             if stash.is_detected or stash.is_looted:
@@ -516,7 +541,17 @@ class StashManager:
 
             distance = abs(stash.x - player.x) + abs(stash.y - player.y)
             if distance <= radius:
-                if stash.try_detect(player):
+                # Проверяем автообнаружение для низкоуровневых тайников
+                auto_detected = False
+                if keen_eye and distance <= keen_eye.get_auto_detect_radius():
+                    if keen_eye.can_auto_detect(stash.stash_level.value):
+                        stash.is_detected = True
+                        auto_detected = True
+                        keen_eye.on_object_detected()
+                        detected.append(stash)
+
+                # Обычное обнаружение, если не было автообнаружения
+                if not auto_detected and stash.try_detect(player):
                     detected.append(stash)
 
         return detected
