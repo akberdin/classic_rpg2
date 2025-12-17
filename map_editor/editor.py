@@ -12,7 +12,7 @@ from .tools.objects import ObjectPlacer, PlacementMode
 from .ui.toolbar import Toolbar, ToolType
 from .ui.sidebar import Sidebar
 from .ui.dialogs import (
-    Dialog, GeneratorDialog, ObjectDialog, SaveDialog, LoadDialog
+    Dialog, GeneratorDialog, LocationEditDialog, SaveDialog, LoadDialog
 )
 
 
@@ -122,9 +122,13 @@ class MapEditor:
         self.sidebar.on_biome_select = self._on_biome_select
         self.sidebar.on_location_select = self._on_location_select
         self.sidebar.on_brush_change = self._on_brush_change
+        self.sidebar.on_edit_location = self._on_edit_location
 
         # Dialog callbacks
         self.generator_dialog.on_close = self._on_generator_dialog_close
+
+        # Location editing state
+        self._editing_location = None
 
     def _on_tool_change(self, tool: ToolType) -> None:
         """Handle tool change."""
@@ -177,6 +181,80 @@ class MapEditor:
     def _on_brush_change(self, settings: BrushSettings) -> None:
         """Handle brush settings change."""
         self.brush.settings = settings
+
+    def _on_edit_location(self, location_info: Dict[str, Any]) -> None:
+        """Handle location edit request from sidebar."""
+        if not self.current_map or not location_info:
+            return
+
+        # Find the location in the map by coordinates
+        loc_x = location_info.get('x', -1)
+        loc_y = location_info.get('y', -1)
+
+        for location in self.current_map.locations:
+            if location.x == loc_x and location.y == loc_y:
+                self._editing_location = location
+                break
+        else:
+            self._set_status("Локация не найдена")
+            return
+
+        # Prepare location info for dialog
+        dialog_info = {
+            'name': self._editing_location.name,
+            'type': self._editing_location.location_type,
+            'type_display': location_info.get('type_display', self._editing_location.location_type),
+            'x': self._editing_location.x,
+            'y': self._editing_location.y,
+            'is_starting': (self._editing_location == self.current_map.starting_village)
+        }
+
+        # Create and show the dialog
+        dialog = LocationEditDialog(dialog_info)
+        dialog.on_close = self._on_location_edit_dialog_close
+        self.active_dialog = dialog
+        dialog.show(self.width, self.height)
+
+    def _on_location_edit_dialog_close(self, action: str, data: Dict[str, Any]) -> None:
+        """Handle location edit dialog close."""
+        self.active_dialog = None
+
+        if not self._editing_location:
+            return
+
+        if action == "ok":
+            # Update location name
+            new_name = data.get('name', '').strip()
+            if new_name and new_name != self._editing_location.name:
+                self._editing_location.name = new_name
+                self.has_unsaved_changes = True
+                self._set_status(f"Локация переименована: {new_name}")
+
+            # Update starting village status (only for villages)
+            if self._editing_location.location_type == 'village':
+                set_starting = data.get('set_starting', False)
+                if set_starting and self._editing_location != self.current_map.starting_village:
+                    self.current_map.starting_village = self._editing_location
+                    self.has_unsaved_changes = True
+                    self._set_status(f"Стартовая деревня: {self._editing_location.name}")
+
+            # Update sidebar info
+            info = self.object_placer.get_location_info(self._editing_location)
+            info['is_starting'] = (self._editing_location == self.current_map.starting_village)
+            self.sidebar.set_location_info(info)
+
+        elif action == "delete":
+            # Delete the location
+            loc_name = self._editing_location.name
+            if self._editing_location == self.current_map.starting_village:
+                self.current_map.starting_village = None
+
+            self.current_map.locations.remove(self._editing_location)
+            self.has_unsaved_changes = True
+            self.sidebar.set_location_info(None)
+            self._set_status(f"Локация удалена: {loc_name}")
+
+        self._editing_location = None
 
     def _on_generator_dialog_close(self, action: str, data: Dict[str, Any]) -> None:
         """Handle generator dialog close."""

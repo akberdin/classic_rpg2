@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple, Any, Optional
 from dataclasses import dataclass, field
 
 from ..utils.helpers import (
-    PerlinNoise, normalize_map, get_neighbors, distance, bresenham_circle
+    PerlinNoise, normalize_map, get_neighbors, distance
 )
 
 
@@ -210,15 +210,30 @@ class GeneratedMap:
 
         locations = [MapLocation.from_dict(loc) for loc in data.get('locations', [])]
 
+        # Find starting village in locations list (by coordinates)
         starting_village = None
         if 'starting_village' in data:
             sv_data = data['starting_village']
-            starting_village = MapLocation(
-                x=sv_data['x'],
-                y=sv_data['y'],
-                location_type=LOCATION_VILLAGE,
-                name=sv_data.get('name', 'Тихая')
-            )
+            sv_x, sv_y = sv_data['x'], sv_data['y']
+            sv_name = sv_data.get('name', 'Тихая')
+
+            # Find matching location in list
+            for loc in locations:
+                if loc.x == sv_x and loc.y == sv_y:
+                    starting_village = loc
+                    if not loc.name:
+                        loc.name = sv_name
+                    break
+
+            # If not found in locations, create new and add
+            if starting_village is None:
+                starting_village = MapLocation(
+                    x=sv_x,
+                    y=sv_y,
+                    location_type=LOCATION_VILLAGE,
+                    name=sv_name
+                )
+                locations.append(starting_village)
 
         return cls(
             width=width,
@@ -309,14 +324,16 @@ class MapGenerator:
         for key in self._used_names:
             self._used_names[key].clear()
 
-        # Generate noise maps
+        # Generate noise maps with different seeds for variation
         elevation = self._generate_noise(
             self.params.elevation_scale,
-            self.params.elevation_octaves
+            self.params.elevation_octaves,
+            seed_offset=0
         )
         moisture = self._generate_noise(
             self.params.moisture_scale,
-            self.params.moisture_octaves
+            self.params.moisture_octaves,
+            seed_offset=10000  # Different seed for moisture map
         )
 
         # Normalize maps
@@ -353,9 +370,10 @@ class MapGenerator:
 
         return generated_map
 
-    def _generate_noise(self, scale: float, octaves: int) -> List[List[float]]:
-        """Generate Perlin noise map."""
-        noise_gen = PerlinNoise(self.params.seed)
+    def _generate_noise(self, scale: float, octaves: int, seed_offset: int = 0) -> List[List[float]]:
+        """Generate Perlin noise map with optional seed offset for variation."""
+        noise_seed = self.params.seed + seed_offset if self.params.seed else seed_offset
+        noise_gen = PerlinNoise(noise_seed)
         noise_map = []
 
         for y in range(self.params.height):
@@ -657,14 +675,16 @@ class MapGenerator:
 
         random.seed(self.params.seed)
 
-        # Generate new terrain
+        # Generate new terrain with different seeds for variation
         elevation = self._generate_noise(
             self.params.elevation_scale,
-            self.params.elevation_octaves
+            self.params.elevation_octaves,
+            seed_offset=0
         )
         moisture = self._generate_noise(
             self.params.moisture_scale,
-            self.params.moisture_octaves
+            self.params.moisture_octaves,
+            seed_offset=10000
         )
 
         elevation = normalize_map(elevation)
