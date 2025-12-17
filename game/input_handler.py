@@ -939,10 +939,14 @@ class InputHandler:
             print(f"Вы отдохнули. {self.ctx.game_time.get_time_string()}")
             return
         elif key == pygame.K_ESCAPE:
-            # В подземелье - снимаем выделение цели
-            if self.ctx.dungeon_manager.is_in_dungeon and self.ctx.dungeon_manager.selected_target:
-                self.ctx.dungeon_manager.deselect_target()
-                return
+            # В подземелье - снимаем выделение цели или объекта
+            if self.ctx.dungeon_manager.is_in_dungeon:
+                if self.ctx.dungeon_manager.selected_target:
+                    self.ctx.dungeon_manager.deselect_target()
+                    return
+                elif self.ctx.dungeon_manager.selected_object:
+                    self.ctx.dungeon_manager.deselect_object()
+                    return
             # Открываем окно подтверждения выхода
             self.ctx.exit_confirmation_open = True
         elif key == pygame.K_TAB:

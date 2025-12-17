@@ -52,7 +52,8 @@ class DungeonRenderer:
         }
 
     def render_dungeon(self, dungeon: DungeonMap, player, camera_x: int, camera_y: int,
-                       viewport_width: int, viewport_height: int, selected_target=None):
+                       viewport_width: int, viewport_height: int, selected_target=None,
+                       selected_object=None, selected_object_type=None):
         """
         Отрисовка подземелья
 
@@ -64,6 +65,8 @@ class DungeonRenderer:
             viewport_width: Ширина области отрисовки (в пикселях)
             viewport_height: Высота области отрисовки (в пикселях)
             selected_target: Выбранная цель (NPC) для отображения выделения
+            selected_object: Выбранный объект (ловушка или тайник)
+            selected_object_type: Тип выбранного объекта ('trap' или 'stash')
         """
         # Вычисляем количество видимых тайлов
         tiles_x = viewport_width // self.tile_size + 2
@@ -129,6 +132,10 @@ class DungeonRenderer:
                     sym_x = pixel_x + (self.tile_size - symbol_surface.get_width()) // 2
                     sym_y = pixel_y + (self.tile_size - symbol_surface.get_height()) // 2
                     self.screen.blit(symbol_surface, (sym_x, sym_y))
+
+        # Отрисовываем выделение объектов подземелья (ловушек и тайников)
+        if selected_object and selected_object_type:
+            self._render_object_selection(dungeon, selected_object, start_x, start_y)
 
         # Отрисовываем NPC
         self._render_npcs(dungeon, player, start_x, start_y, tiles_x, tiles_y, selected_target)
@@ -223,6 +230,58 @@ class DungeonRenderer:
         # Уголки для красоты
         corner_len = 8
         corner_color = (255, 200, 100)
+        # Верхний левый
+        pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y), (pixel_x + corner_len, pixel_y), 2)
+        pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y), (pixel_x, pixel_y + corner_len), 2)
+        # Верхний правый
+        pygame.draw.line(self.screen, corner_color, (pixel_x + self.tile_size, pixel_y),
+                        (pixel_x + self.tile_size - corner_len, pixel_y), 2)
+        pygame.draw.line(self.screen, corner_color, (pixel_x + self.tile_size, pixel_y),
+                        (pixel_x + self.tile_size, pixel_y + corner_len), 2)
+        # Нижний левый
+        pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y + self.tile_size),
+                        (pixel_x + corner_len, pixel_y + self.tile_size), 2)
+        pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y + self.tile_size),
+                        (pixel_x, pixel_y + self.tile_size - corner_len), 2)
+        # Нижний правый
+        pygame.draw.line(self.screen, corner_color, (pixel_x + self.tile_size, pixel_y + self.tile_size),
+                        (pixel_x + self.tile_size - corner_len, pixel_y + self.tile_size), 2)
+        pygame.draw.line(self.screen, corner_color, (pixel_x + self.tile_size, pixel_y + self.tile_size),
+                        (pixel_x + self.tile_size, pixel_y + self.tile_size - corner_len), 2)
+
+    def _render_object_selection(self, dungeon: DungeonMap, selected_object, start_x: int, start_y: int):
+        """
+        Отрисовка выделения для выбранного объекта подземелья
+
+        Args:
+            dungeon: Карта подземелья
+            selected_object: Выбранный объект (ловушка или тайник)
+            start_x: Начальная координата X видимой области
+            start_y: Начальная координата Y видимой области
+        """
+        if not selected_object:
+            return
+
+        # Проверяем видимость объекта
+        tile = dungeon.get_tile(selected_object.x, selected_object.y)
+        if not tile or not tile.visible:
+            return
+
+        # Вычисляем позицию на экране
+        screen_x = selected_object.x - start_x
+        screen_y = selected_object.y - start_y
+        pixel_x = screen_x * self.tile_size
+        pixel_y = screen_y * self.tile_size
+
+        # Используем желтую/золотую рамку для объектов (чтобы отличать от врагов)
+        selection_color = (255, 215, 0)  # Золотой
+        pygame.draw.rect(self.screen, selection_color,
+                        (pixel_x - 2, pixel_y - 2,
+                         self.tile_size + 4, self.tile_size + 4), 3)
+
+        # Уголки для красоты (ярко-желтые)
+        corner_len = 8
+        corner_color = (255, 255, 100)
         # Верхний левый
         pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y), (pixel_x + corner_len, pixel_y), 2)
         pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y), (pixel_x, pixel_y + corner_len), 2)

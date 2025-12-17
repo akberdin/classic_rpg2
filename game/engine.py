@@ -710,18 +710,40 @@ class Game:
 
     def _handle_dungeon_target_click(self, mouse_pos):
         """
-        Обработка клика ПКМ по NPC в подземелье для выделения цели.
+        Обработка клика ПКМ в подземелье для выделения цели (NPC или объект).
+        Приоритет: сначала ищем ближайший интерактивный объект, затем NPC на клетке.
 
         Args:
             mouse_pos: Позиция мыши (x, y)
 
         Returns:
-            bool: True если клик был обработан (по NPC)
+            bool: True если клик был обработан
         """
         if not self.dungeon_manager.is_in_dungeon or not self.dungeon_manager.current_dungeon:
             return False
 
-        # Получаем NPC по позиции на экране
+        # Сначала пытаемся найти ближайший интерактивный объект (ловушку или тайник)
+        nearest_result = self.dungeon_manager.get_nearest_interactive_object(
+            self.player.x, self.player.y, max_distance=5
+        )
+
+        if nearest_result:
+            obj, obj_type = nearest_result
+            self.dungeon_manager.select_object(obj, obj_type)
+
+            # Формируем сообщение
+            if obj_type == 'trap':
+                level_name = obj.trap_level.name
+                trap_name = obj.trap_type.value.replace('_', ' ').title()
+                print(f"Объект выбран: {trap_name} (Уровень: {level_name})")
+            elif obj_type == 'stash':
+                level_name = obj.stash_level.name
+                trap_info = " [С ловушкой!]" if obj.trap else ""
+                print(f"Объект выбран: Тайник (Уровень: {level_name}){trap_info}")
+
+            return True
+
+        # Если объектов рядом нет, пробуем выбрать NPC на клетке клика
         npc = self.dungeon_manager.get_npc_at_screen_pos(
             self.player, mouse_pos[0], mouse_pos[1], TILE_SIZE
         )
@@ -731,6 +753,9 @@ class Game:
             dungeon = self.dungeon_manager.current_dungeon
             tile = dungeon.get_tile(npc.x, npc.y)
             if tile and tile.visible:
+                # Снимаем выделение с объекта при выборе NPC
+                if self.dungeon_manager.selected_object:
+                    self.dungeon_manager.deselect_object()
                 # Выбираем цель
                 self.dungeon_manager.select_target(npc)
                 print(f"Цель выбрана: {npc.name} (HP: {npc.health}/{npc.max_health})")
@@ -857,10 +882,12 @@ class Game:
             # Отрисовка подземелья
             dungeon = self.dungeon_manager.current_dungeon
             selected_target = self.dungeon_manager.selected_target
+            selected_object = self.dungeon_manager.selected_object
+            selected_object_type = self.dungeon_manager.selected_object_type
             self.dungeon_renderer.render_dungeon(
                 dungeon, self.player, 0, 0,
                 self.window_width, self.window_height,
-                selected_target
+                selected_target, selected_object, selected_object_type
             )
 
             # Мини-карта подземелья (увеличен размер для лучшей видимости)
