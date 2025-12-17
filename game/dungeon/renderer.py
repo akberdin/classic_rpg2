@@ -731,7 +731,7 @@ class DungeonRenderer:
         # Получаем навыки EXPLORATION
         keen_eye = player.skill_manager.get_skill("Острый Глаз")
         disarm_trap = player.skill_manager.get_skill("Обезвреживание")
-        lockpicking = player.skill_manager.get_skill("Взлом Замков")
+        lockpicking = player.skill_manager.get_skill("Взлом")
         treasure_hunter = player.skill_manager.get_skill("Охотник за Сокровищами")
 
         # Если ни одного навыка нет, не показываем панель

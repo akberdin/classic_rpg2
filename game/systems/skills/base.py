@@ -726,17 +726,27 @@ class SkillManager:
         """
         return self.learned_skills
 
-    def get_skill(self, skill_id):
+    def get_skill(self, skill_id_or_name):
         """
-        Получить умение по его ID
+        Получить умение по его ID или имени
 
         Args:
-            skill_id: ID умения
+            skill_id_or_name: ID умения (например, "keen_eye") или имя (например, "Острый Глаз")
 
         Returns:
             Skill or None: Объект умения или None если не найдено
         """
-        return self.learned_skills.get(skill_id)
+        # Сначала пробуем найти по ID
+        skill = self.learned_skills.get(skill_id_or_name)
+        if skill:
+            return skill
+
+        # Если не найдено по ID, ищем по имени
+        for skill_instance in self.learned_skills.values():
+            if skill_instance.name == skill_id_or_name:
+                return skill_instance
+
+        return None
 
     def try_rank_up_skill(self, skill_id, player):
         """
