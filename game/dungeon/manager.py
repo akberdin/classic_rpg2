@@ -761,7 +761,7 @@ class DungeonManager:
         # Используем полноценную систему лута для генерации
         from game.loot_system import LootSystem
 
-        loot_system = LootSystem()
+        loot_system = LootSystem(player)
         loot_result = loot_system.generate_loot(enemy, player)
 
         # Извлекаем золото и предметы из результата лута
