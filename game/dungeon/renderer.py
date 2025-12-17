@@ -415,13 +415,13 @@ class DungeonRenderer:
                 pygame.draw.rect(self.screen, color, (px, py, pixel_w, pixel_h))
 
         # Рисуем обнаруженные ловушки
-        for trap in dungeon.traps:
-            if trap.detected:
+        for trap in dungeon.trap_manager.traps:
+            if trap.is_detected:
                 trap_px = x + trap.x * pixel_w
                 trap_py = y + trap.y * pixel_h
 
                 # Цвет зависит от состояния ловушки
-                if trap.disarmed:
+                if trap.is_disarmed:
                     trap_color = (100, 100, 100)  # Серый для обезвреженных
                 else:
                     trap_color = (220, 50, 50)  # Красный для активных
@@ -434,14 +434,14 @@ class DungeonRenderer:
                                (marker_x, marker_y, marker_size, marker_size))
 
         # Рисуем обнаруженные тайники
-        for stash in dungeon.stashes:
-            if stash.detected and not stash.is_looted:
+        for stash in dungeon.stash_manager.stashes:
+            if stash.is_detected and not stash.is_looted:
                 stash_px = x + stash.x * pixel_w
                 stash_py = y + stash.y * pixel_h
 
                 # Золотой цвет для тайников
                 stash_color = (255, 215, 0)
-                if stash.has_trap and not stash.trap_disarmed:
+                if stash.has_trap and stash.trap and not stash.trap.is_disarmed:
                     # Оранжевый для тайников с ловушками
                     stash_color = (255, 140, 0)
 
