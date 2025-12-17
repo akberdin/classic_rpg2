@@ -23,7 +23,7 @@ class DungeonGenerator:
             "max_room_size": 14,
             "corridor_width": 2,
             "trap_chance": 0.08,     # 8% шанс ловушки на проходимой клетке
-            "stash_chance": 0.05,    # 5% шанс тайника
+            "stash_chance": 0.015,   # 1.5% шанс тайника (уменьшено для баланса)
             "decorations": True,
         }
 
@@ -35,7 +35,7 @@ class DungeonGenerator:
             "max_room_size": 12,
             "corridor_width": 3,     # Шахты шире
             "trap_chance": 0.025,    # Меньше ловушек (2.5% вместо 5%)
-            "stash_chance": 0.10,    # Больше руды
+            "stash_chance": 0.03,    # 3% руды (уменьшено с 10% для баланса)
             "decorations": True,
         }
 
