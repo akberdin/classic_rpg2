@@ -26,6 +26,7 @@ from game.ui.windows import (
     DungeonEntryWindow,
     DungeonExitWindow,
 )
+from game.ui.windows.object_interaction import ObjectInteractionWindow
 from game.ui.windows.companion import CompanionWindow
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quest_system import (
@@ -178,8 +179,10 @@ class Game:
         # Окна подземелий
         self.dungeon_entry_window = DungeonEntryWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.dungeon_exit_window = DungeonExitWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.object_interaction_window = ObjectInteractionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.dungeon_entry_open = False
         self.dungeon_exit_open = False
+        self.object_interaction_open = False
 
         # Окна города/деревни
         self.settlement_menu_window = SettlementMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler, self.game_map)
@@ -410,6 +413,17 @@ class Game:
                     self.dungeon_exit_open = False
                 elif result == "stay":
                     self.dungeon_exit_open = False
+                continue
+
+            # Если открыто окно взаимодействия с объектом, обрабатываем его
+            if self.object_interaction_open:
+                result = self.object_interaction_window.handle_input(event)
+                if result and result != 'cancel':
+                    # Выполняем действие (будет реализовано позже)
+                    self._handle_object_interaction(result)
+                    self.object_interaction_open = False
+                elif result == 'cancel':
+                    self.object_interaction_open = False
                 continue
 
             # Если идет тактический бой, передаем управление системе тактического боя
@@ -917,6 +931,11 @@ class Game:
             # Отрисовка окна выхода из подземелья
             if self.dungeon_exit_open:
                 self.dungeon_exit_window.render()
+
+            # Отрисовка окна взаимодействия с объектом
+            if self.object_interaction_open:
+                self.object_interaction_window.render()
+
             # Не выходим рано - позволяем отрисовать остальные UI окна ниже
         else:
             # Отрисовка основной карты
