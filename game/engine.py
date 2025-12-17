@@ -725,7 +725,7 @@ class Game:
     def _handle_dungeon_target_click(self, mouse_pos):
         """
         Обработка клика ПКМ в подземелье для выделения цели (NPC или объект).
-        Приоритет: сначала ищем ближайший интерактивный объект, затем NPC на клетке.
+        Приоритет: сначала NPC на кликнутой клетке, затем ближайший объект.
 
         Args:
             mouse_pos: Позиция мыши (x, y)
@@ -736,7 +736,18 @@ class Game:
         if not self.dungeon_manager.is_in_dungeon or not self.dungeon_manager.current_dungeon:
             return False
 
-        # Сначала пытаемся найти ближайший интерактивный объект (ловушку или тайник)
+        # Сначала проверяем, есть ли NPC на кликнутой клетке
+        npc = self.dungeon_manager.get_npc_at_screen_pos(
+            self.player, mouse_pos[0], mouse_pos[1], TILE_SIZE
+        )
+
+        if npc:
+            # Выбираем NPC
+            self.dungeon_manager.select_target(npc)
+            print(f"Враг выбран: {npc.name} ({npc.health}/{npc.max_health} HP)")
+            return True
+
+        # Если NPC нет, пытаемся найти ближайший интерактивный объект
         nearest_result = self.dungeon_manager.get_nearest_interactive_object(
             self.player.x, self.player.y, max_distance=5
         )
@@ -757,24 +768,7 @@ class Game:
 
             return True
 
-        # Если объектов рядом нет, пробуем выбрать NPC на клетке клика
-        npc = self.dungeon_manager.get_npc_at_screen_pos(
-            self.player, mouse_pos[0], mouse_pos[1], TILE_SIZE
-        )
-
-        if npc and npc.is_alive:
-            # Проверяем видимость NPC
-            dungeon = self.dungeon_manager.current_dungeon
-            tile = dungeon.get_tile(npc.x, npc.y)
-            if tile and tile.visible:
-                # Снимаем выделение с объекта при выборе NPC
-                if self.dungeon_manager.selected_object:
-                    self.dungeon_manager.deselect_object()
-                # Выбираем цель
-                self.dungeon_manager.select_target(npc)
-                print(f"Цель выбрана: {npc.name} (HP: {npc.health}/{npc.max_health})")
-                return True
-
+        # Ничего не нашли
         return False
 
     def _collect_resources(self):

@@ -984,11 +984,10 @@ class InputHandler:
                 if dungeon.is_exit_tile(self.ctx.player.x, self.ctx.player.y):
                     self.game.dungeon_exit_window.set_dungeon_name(dungeon.name)
                     self.game.dungeon_exit_open = True
-                else:
-                    # Взаимодействие с объектами в подземелье
-                    result = self.ctx.dungeon_manager.interact_with_tile(self.ctx.player)
-                    if result:
-                        print(result.get("message", ""))
+                    return
+
+                # Старая система взаимодействия отключена - теперь используется новая (ПКМ + E)
+                print("Для взаимодействия с объектами используйте ПКМ (выбор) + E (меню)")
                 return
 
             # Проверяем возможность входа в подземелье/шахту

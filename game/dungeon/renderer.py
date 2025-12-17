@@ -103,6 +103,18 @@ class DungeonRenderer:
                 # Получаем цвет клетки
                 color = tile.get_color()
 
+                # Для необнаруженных объектов показываем как обычный пол
+                if tile.tile_type == DungeonTileType.TRAP:
+                    trap = dungeon.trap_manager.get_trap_at(map_x, map_y)
+                    if trap and not trap.is_detected:
+                        # Показываем как обычный пол
+                        color = DUNGEON_TILE_COLORS.get(DungeonTileType.FLOOR, (80, 80, 80))
+                elif tile.tile_type == DungeonTileType.STASH:
+                    stash = dungeon.stash_manager.get_stash_at(map_x, map_y)
+                    if stash and not stash.is_detected:
+                        # Показываем как обычный пол
+                        color = DUNGEON_TILE_COLORS.get(DungeonTileType.FLOOR, (80, 80, 80))
+
                 # Если клетка не видна сейчас, затемняем
                 if not tile.visible:
                     color = tuple(int(c * self.dim_factor) for c in color)
@@ -126,12 +138,32 @@ class DungeonRenderer:
 
                 # Рисуем специальные символы
                 if tile.visible and tile.tile_type in self.tile_symbols:
-                    symbol = self.tile_symbols[tile.tile_type]
-                    symbol_color = self._get_symbol_color(tile.tile_type)
-                    symbol_surface = self.font.render(symbol, True, symbol_color)
-                    sym_x = pixel_x + (self.tile_size - symbol_surface.get_width()) // 2
-                    sym_y = pixel_y + (self.tile_size - symbol_surface.get_height()) // 2
-                    self.screen.blit(symbol_surface, (sym_x, sym_y))
+                    # Проверяем, нужно ли отрисовывать символ (для скрытых объектов)
+                    should_draw = True
+
+                    # Ловушки видны только если обнаружены
+                    if tile.tile_type == DungeonTileType.TRAP:
+                        trap = dungeon.trap_manager.get_trap_at(map_x, map_y)
+                        if trap and not trap.is_detected:
+                            should_draw = False
+
+                    # Сработавшие ловушки всегда видны
+                    elif tile.tile_type == DungeonTileType.TRAP_TRIGGERED:
+                        should_draw = True
+
+                    # Тайники видны только если обнаружены
+                    elif tile.tile_type == DungeonTileType.STASH:
+                        stash = dungeon.stash_manager.get_stash_at(map_x, map_y)
+                        if stash and not stash.is_detected:
+                            should_draw = False
+
+                    if should_draw:
+                        symbol = self.tile_symbols[tile.tile_type]
+                        symbol_color = self._get_symbol_color(tile.tile_type)
+                        symbol_surface = self.font.render(symbol, True, symbol_color)
+                        sym_x = pixel_x + (self.tile_size - symbol_surface.get_width()) // 2
+                        sym_y = pixel_y + (self.tile_size - symbol_surface.get_height()) // 2
+                        self.screen.blit(symbol_surface, (sym_x, sym_y))
 
         # Отрисовываем выделение объектов подземелья (ловушек и тайников)
         if selected_object and selected_object_type:
