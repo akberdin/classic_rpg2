@@ -781,6 +781,153 @@ class Game:
         """Делегирование к ResourceSystem."""
         self.resource_system.collect_resources()
 
+    def _handle_object_interaction(self, action: str):
+        """
+        Обработка действия с выбранным объектом подземелья
+
+        Args:
+            action: Действие ('disarm', 'lockpick', 'loot', 'disarm_stash_trap', 'bypass')
+        """
+        if not self.dungeon_manager.selected_object or not self.dungeon_manager.selected_object_type:
+            print("Объект не выбран")
+            return
+
+        obj = self.dungeon_manager.selected_object
+        obj_type = self.dungeon_manager.selected_object_type
+
+        # Проверяем расстояние до объекта (должны быть рядом)
+        distance = abs(obj.x - self.player.x) + abs(obj.y - self.player.y)
+        if distance > 1:
+            print("Вы слишком далеко от объекта. Подойдите ближе.")
+            return
+
+        if action == 'disarm' and obj_type == 'trap':
+            self._disarm_trap(obj)
+        elif action == 'disarm_stash_trap' and obj_type == 'stash':
+            self._disarm_stash_trap(obj)
+        elif action == 'lockpick' and obj_type == 'stash':
+            self._lockpick_stash(obj)
+        elif action == 'loot' and obj_type == 'stash':
+            self._loot_stash(obj)
+        elif action == 'bypass' and obj_type == 'trap':
+            print("Вы осторожно обошли ловушку.")
+            self.dungeon_manager.deselect_object()
+        else:
+            print(f"Неизвестное действие: {action}")
+
+    def _disarm_trap(self, trap):
+        """Обезвредить ловушку используя навык Disarm Trap"""
+        if not hasattr(self.player, 'skill_manager') or not self.player.skill_manager:
+            print("У вас нет навыков обезвреживания")
+            return
+
+        disarm_skill = self.player.skill_manager.get_skill("Обезвреживание")
+        if not disarm_skill:
+            print("У вас нет навыка 'Обезвреживание'")
+            return
+
+        # Используем навык
+        result = disarm_skill.use(self.player, trap)
+        print(result.get('message', ''))
+
+        # Снимаем выделение после обезвреживания
+        if result.get('success') or trap.is_disarmed:
+            self.dungeon_manager.deselect_object()
+
+    def _disarm_stash_trap(self, stash):
+        """Обезвредить ловушку в тайнике"""
+        if not stash.trap:
+            print("В тайнике нет ловушки")
+            return
+
+        self._disarm_trap(stash.trap)
+
+        # Если ловушка обезврежена, уведомляем
+        if stash.trap.is_disarmed:
+            print("Ловушка в тайнике обезврежена. Теперь можно безопасно обыскать его.")
+
+    def _lockpick_stash(self, stash):
+        """Взломать тайник используя навык Lockpicking"""
+        if stash.is_looted:
+            print("Тайник уже обыскан")
+            self.dungeon_manager.deselect_object()
+            return
+
+        if not hasattr(self.player, 'skill_manager') or not self.player.skill_manager:
+            print("У вас нет навыков взлома")
+            return
+
+        lockpick_skill = self.player.skill_manager.get_skill("Взлом Замков")
+        if not lockpick_skill:
+            print("У вас нет навыка 'Взлом Замков'")
+            return
+
+        # Используем навык (он вызовет loot с бонусами)
+        result = lockpick_skill.use(self.player, stash)
+
+        # Отображаем результат
+        if result.get('success'):
+            loot_result = result.get('loot_result', {})
+            print(loot_result.get('message', 'Тайник взломан!'))
+
+            # Добавляем предметы в инвентарь
+            for item_name, item_id, quantity in loot_result.get('items', []):
+                item = self.item_manager.get_item_by_id(item_id)
+                if item:
+                    self.player.inventory.add_item(item, quantity)
+        else:
+            print(result.get('message', 'Не удалось взломать тайник'))
+
+        # Снимаем выделение после взлома
+        if stash.is_looted:
+            self.dungeon_manager.deselect_object()
+
+    def _loot_stash(self, stash):
+        """Обыскать тайник без использования навыков"""
+        if stash.is_looted:
+            print("Тайник уже обыскан")
+            self.dungeon_manager.deselect_object()
+            return
+
+        # Предупреждаем о ловушке
+        if stash.trap and not stash.trap.is_disarmed:
+            print("⚠️ ВНИМАНИЕ: В тайнике установлена ловушка!")
+            print("Рекомендуется сначала обезвредить её.")
+
+        # Обыскиваем тайник
+        result = stash.loot(self.player)
+
+        if result.get('success'):
+            # Добавляем предметы в инвентарь
+            for item_name, item_id, quantity in result.get('items', []):
+                item = self.item_manager.get_item_by_id(item_id)
+                if item:
+                    self.player.inventory.add_item(item, quantity)
+
+            print(result.get('message', ''))
+        else:
+            print(result.get('message', 'Не удалось обыскать тайник'))
+
+        # Проверяем, жив ли игрок после ловушки
+        if self.player.health <= 0:
+            print("Вы погибли от ловушки!")
+            self.running = False
+            return
+
+        # Снимаем выделение после обыска
+        if stash.is_looted:
+            self.dungeon_manager.deselect_object()
+
+        # Ход врагов после взаимодействия с тайником
+        if self.dungeon_manager.is_in_dungeon:
+            enemy_results = self.dungeon_manager.enemy_turn(self.player)
+            for enemy_result in enemy_results:
+                print(f"{enemy_result['attacker']} наносит {enemy_result['damage']} урона!")
+
+            if self.player.health <= 0:
+                print("Вы погибли в подземелье!")
+                self.running = False
+
     def _start_combat(self, enemy, tactical=False):
         """
         Начать бой с NPC
