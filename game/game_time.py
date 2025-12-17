@@ -43,6 +43,14 @@ class GameTime:
             hours: Количество часов для продвижения (может быть дробным)
             skip_player_recovery: Не восстанавливать выносливость игрока (используется при отдыхе)
         """
+        # Если игрок в подземелье - время на основной карте не течёт
+        # (NPC не обновляются, день не меняется, квесты не ротируются)
+        if self.ctx.dungeon_manager and self.ctx.dungeon_manager.is_in_dungeon:
+            # В подземелье только обновляем кулдауны навыков
+            if hasattr(self.ctx.player, 'skill_manager') and self.ctx.player.skill_manager:
+                self.ctx.player.skill_manager.tick_cooldowns()
+            return
+
         self.game_hour += hours
         self.game_turn += 1  # Увеличиваем счетчик ходов
 

@@ -224,6 +224,19 @@ class Trap:
         # Определяем, игрок это или NPC
         is_player = hasattr(target, 'inventory')  # У игрока есть инвентарь
 
+        # Проверка режима бессмертия для игрока
+        if is_player and getattr(target, 'godmode', False):
+            return {
+                "success": True,
+                "trap_name": self.name,
+                "trap_level": self.level_name,
+                "damage": 0,
+                "damage_type": self.damage_type,
+                "effects": [],
+                "message": f"Ловушка '{self.name}' сработала, но вы неуязвимы!",
+                "target_name": getattr(target, 'name', 'Цель')
+            }
+
         result = {
             "success": True,
             "trap_name": self.name,

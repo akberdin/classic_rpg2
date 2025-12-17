@@ -595,10 +595,12 @@ class DungeonRenderer:
             return
 
         # Размеры и позиция панели (справа)
+        # Миникарта: y=10, h=180, легенда: y=200, h~100
+        # Панель NPC должна быть ниже легенды
         panel_width = 200
         panel_height = 180
         panel_x = self.screen.get_width() - panel_width - 10
-        panel_y = 130  # Под мини-картой
+        panel_y = 310  # Под мини-картой и легендой (10+180+10+100+10=310)
 
         # Фон панели
         panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
@@ -793,21 +795,21 @@ class DungeonRenderer:
 
         # Статистика (если есть навыки)
         if keen_eye:
-            detected = keen_eye.stats.get('objects_detected', 0)
+            detected = getattr(keen_eye, 'objects_detected', 0)
             stat_text = f"Обнаружено: {detected}"
             stat_surface = font.render(stat_text, True, (180, 200, 180))
             self.screen.blit(stat_surface, (padding_x, current_y))
             current_y += 18
 
         if disarm_trap:
-            disarmed = disarm_trap.stats.get('traps_disarmed', 0)
+            disarmed = getattr(disarm_trap, 'traps_disarmed', 0)
             stat_text = f"Обезврежено: {disarmed}"
             stat_surface = font.render(stat_text, True, (180, 200, 180))
             self.screen.blit(stat_surface, (padding_x, current_y))
             current_y += 18
 
         if lockpicking:
-            lockpicked = lockpicking.stats.get('stashes_lockpicked', 0)
+            lockpicked = getattr(lockpicking, 'stashes_lockpicked', 0)
             stat_text = f"Взломано: {lockpicked}"
             stat_surface = font.render(stat_text, True, (180, 200, 180))
             self.screen.blit(stat_surface, (padding_x, current_y))
