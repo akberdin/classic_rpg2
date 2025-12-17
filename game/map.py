@@ -175,14 +175,13 @@ class GameMap:
         self.seed = random.randint(0, 10000)
 
         # Создаем генераторы шума для разных слоев
-        elevation_noise = PerlinNoise(octaves=6, seed=self.seed)
-        moisture_noise = PerlinNoise(octaves=4, seed=self.seed + 1000)
-        detail_noise = PerlinNoise(octaves=8, seed=self.seed + 2000)  # Для мелких деталей
+        # Меньше октав = более плавные, крупные формы
+        elevation_noise = PerlinNoise(octaves=3, seed=self.seed)
+        moisture_noise = PerlinNoise(octaves=2, seed=self.seed + 1000)
 
-        # Параметры масштаба
-        elevation_scale = 80.0   # Крупные формы рельефа
-        moisture_scale = 60.0    # Зоны влажности
-        detail_scale = 30.0      # Мелкие детали
+        # Параметры масштаба (УВЕЛИЧЕНЫ для более крупных зон)
+        elevation_scale = 150.0   # Крупные формы рельефа (было 80)
+        moisture_scale = 120.0    # Зоны влажности (было 60)
 
         # Храним карты высот и влажности для последующей обработки
         self.elevation_map = [[0.0 for _ in range(self.width)] for _ in range(self.height)]
@@ -194,19 +193,10 @@ class GameMap:
                 # Получаем значения шума
                 elevation = elevation_noise([x / elevation_scale, y / elevation_scale])
                 moisture = moisture_noise([x / moisture_scale, y / moisture_scale])
-                detail = detail_noise([x / detail_scale, y / detail_scale])
 
                 # Нормализуем от [-0.5, 0.5] до [0, 1]
                 elevation = elevation + 0.5
                 moisture = moisture + 0.5
-                detail = detail + 0.5
-
-                # Добавляем мелкие детали к высоте (20% влияния)
-                elevation = elevation * 0.8 + detail * 0.2
-
-                # Градиент для создания континента (края карты ниже)
-                edge_distance = self._get_edge_distance(x, y)
-                elevation = elevation * edge_distance
 
                 # Сохраняем значения
                 self.elevation_map[y][x] = elevation
@@ -224,14 +214,53 @@ class GameMap:
                 biome = self._determine_biome_advanced(elevation, moisture, temperature)
                 self.tiles[y][x].biome = biome
 
-        # Третий проход: постобработка - создание пляжей
+        # Третий проход: сглаживание биомов (удаление одиночных тайлов)
+        self._smooth_biomes()
+
+        # Четвертый проход: постобработка - создание пляжей
         self._generate_beaches()
 
-        # Четвертый проход: генерация рек
+        # Пятый проход: генерация рек
         self._generate_rivers()
 
         # Генерация локаций
         self._generate_locations()
+
+    def _smooth_biomes(self, iterations=2):
+        """
+        Сглаживание биомов - удаление одиночных тайлов и мелких вкраплений
+
+        Использует алгоритм "голосования соседей": если тайл окружен
+        преимущественно другим биомом, он меняется на этот биом.
+        """
+        for _ in range(iterations):
+            changes = []
+
+            for y in range(1, self.height - 1):
+                for x in range(1, self.width - 1):
+                    current_biome = self.tiles[y][x].biome
+
+                    # Считаем соседние биомы (8 соседей)
+                    neighbor_counts = {}
+                    for dy in [-1, 0, 1]:
+                        for dx in [-1, 0, 1]:
+                            if dx == 0 and dy == 0:
+                                continue
+                            neighbor_biome = self.tiles[y + dy][x + dx].biome
+                            neighbor_counts[neighbor_biome] = neighbor_counts.get(neighbor_biome, 0) + 1
+
+                    # Находим самый частый соседний биом
+                    if neighbor_counts:
+                        most_common = max(neighbor_counts, key=neighbor_counts.get)
+                        most_common_count = neighbor_counts[most_common]
+
+                        # Если текущий биом отличается и большинство соседей (>=6 из 8) одинаковы
+                        if current_biome != most_common and most_common_count >= 6:
+                            changes.append((x, y, most_common))
+
+            # Применяем изменения
+            for x, y, new_biome in changes:
+                self.tiles[y][x].biome = new_biome
 
     def _get_edge_distance(self, x, y):
         """
@@ -248,63 +277,50 @@ class GameMap:
 
     def _determine_biome_advanced(self, elevation, moisture, temperature):
         """
-        Определить биом на основе высоты, влажности и температуры
+        Определить биом на основе высоты и влажности
 
-        Логика определения биомов:
-        - Очень низко (< 0.25): Вода
-        - Низко (0.25-0.35) + высокая влажность: Болото
-        - Низко (0.25-0.35) + низкая влажность: Песок/Пляж
-        - Средне-низко (0.35-0.5): Равнины или Лес (зависит от влажности)
-        - Средне (0.5-0.65): Равнины или Холмы
-        - Высоко (0.65-0.8): Холмы или Лес (зависит от влажности)
-        - Очень высоко (> 0.8): Горы
+        Упрощенная логика для более крупных однородных зон:
+        - Очень низко (< 0.3): Вода (озера, реки)
+        - Низко + влажно: Болото
+        - Низко + сухо: Песок
+        - Средне + влажно: Лес
+        - Средне + сухо: Равнины
+        - Высоко: Холмы
+        - Очень высоко: Горы
 
         Args:
             elevation: Высота (0..1)
             moisture: Влажность (0..1)
-            temperature: Температура (0..1, где 0 - север/холод, 1 - юг/тепло)
+            temperature: Температура (не используется для простоты)
 
         Returns:
             str: Тип биома
         """
-        # Вода - очень низкие области
-        if elevation < 0.25:
+        # Вода - низкие области (озера)
+        if elevation < 0.30:
             return BIOME_WATER
 
         # Горы - очень высокие области
-        if elevation > 0.8:
+        if elevation > 0.75:
             return BIOME_MOUNTAIN
 
-        # Высокие холмы
-        if elevation > 0.65:
-            # Лес на влажных высотах
-            if moisture > 0.5:
-                return BIOME_FOREST
+        # Холмы - высокие области
+        if elevation > 0.60:
             return BIOME_HILLS
 
-        # Средняя высота - основная область биомов
-        if elevation > 0.5:
-            if moisture > 0.6:
-                return BIOME_FOREST
-            elif moisture > 0.35:
-                return BIOME_PLAINS
-            else:
-                return BIOME_HILLS  # Сухие холмы
-
-        # Низкие области
+        # Средние и низкие области - зависят от влажности
         if elevation > 0.35:
-            if moisture > 0.65:
-                return BIOME_FOREST  # Влажный лес
-            elif moisture > 0.4:
-                return BIOME_PLAINS
+            # Средняя высота
+            if moisture > 0.55:
+                return BIOME_FOREST
             else:
-                return BIOME_SAND  # Сухие низины
-
-        # Очень низкие области (0.25-0.35) - прибрежная зона
-        if moisture > 0.6:
-            return BIOME_SWAMP  # Болото в низких влажных местах
+                return BIOME_PLAINS
         else:
-            return BIOME_SAND  # Песок/пляж
+            # Низкая высота (0.30-0.35) - прибрежная зона
+            if moisture > 0.55:
+                return BIOME_SWAMP
+            else:
+                return BIOME_SAND
 
     def _generate_beaches(self):
         """
