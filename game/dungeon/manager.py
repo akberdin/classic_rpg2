@@ -747,26 +747,35 @@ class DungeonManager:
             player: Игрок
             enemy: Убитый враг
         """
-        # Опыт даётся сразу при убийстве
-        exp_reward = getattr(enemy, 'exp_reward', 10) * self.current_dungeon.dungeon_level
+        # Используем правильный расчет опыта с учетом разницы уровней
+        from game.combat import calculate_combat_exp
+        exp_reward = calculate_combat_exp(player.level, enemy.level)
         player.add_experience(exp_reward)
         print(f"Получено {exp_reward} опыта!")
 
         # Создаём останки на месте врага (золото и лут можно получить при обыске)
-        gold_reward = random.randint(5, 15) * self.current_dungeon.dungeon_level
+        # Используем полноценную систему лута для генерации
+        from game.loot_system import LootSystem
 
-        # Генерируем возможный лут
+        loot_system = LootSystem()
+        loot_result = loot_system.generate_loot(enemy, player)
+
+        # Извлекаем золото и предметы из результата лута
+        gold_reward = loot_result.get('gold', 0)
         loot_items = []
-        if random.random() < 0.3:  # 30% шанс на лут
-            from game.item_registry import get_item
-            possible_loot = ['minor_health_potion', 'minor_mana_potion', 'minor_stamina_potion']
-            item = get_item(random.choice(possible_loot))
-            if item:
-                loot_items.append((item, 1))
 
-        # Добавляем останки
-        self.current_dungeon.add_remains(enemy.x, enemy.y, enemy.name, gold_reward, loot_items)
-        print(f"Останки {enemy.name} можно обыскать [E]")
+        # Добавляем все предметы из результата лута
+        for item in loot_result.get('items', []):
+            loot_items.append((item, 1))  # (предмет, количество)
+
+        # Добавляем останки (если есть что добавить)
+        if gold_reward > 0 or len(loot_items) > 0:
+            self.current_dungeon.add_remains(enemy.x, enemy.y, enemy.name, gold_reward, loot_items)
+            print(f"Останки {enemy.name} можно обыскать [E]")
+        else:
+            # Даже без лута добавляем останки (но с 0 золота)
+            self.current_dungeon.add_remains(enemy.x, enemy.y, enemy.name, 0, [])
+            print(f"Останки {enemy.name} (без лута)")
 
         # Помечаем NPC как агрессивного к игроку (для других NPC)
         enemy._aggro_target = player
@@ -916,18 +925,17 @@ class DungeonManager:
 
                 # Если NPC убит ловушкой, создаем останки
                 if trap_result.get("target_dead") and not npc.is_alive:
-                    import random
-                    from game.item_registry import get_item
+                    # Используем полноценную систему лута
+                    from game.loot_system import LootSystem
 
-                    gold_reward = random.randint(5, 15) * dungeon.dungeon_level
+                    # Получаем игрока из game для генерации лута
+                    player = self.game.player if hasattr(self, 'game') and hasattr(self.game, 'player') else None
 
-                    # Генерируем возможный лут
-                    loot_items = []
-                    if random.random() < 0.2:  # 20% шанс на лут
-                        possible_loot = ['minor_health_potion', 'minor_mana_potion', 'minor_stamina_potion']
-                        item = get_item(random.choice(possible_loot))
-                        if item:
-                            loot_items.append((item, 1))
+                    loot_system = LootSystem()
+                    loot_result = loot_system.generate_loot(npc, player) if player else {'gold': 0, 'items': []}
+
+                    gold_reward = loot_result.get('gold', 0)
+                    loot_items = [(item, 1) for item in loot_result.get('items', [])]
 
                     # Добавляем останки
                     dungeon.add_remains(npc.x, npc.y, npc.name, gold_reward, loot_items)
@@ -943,6 +951,20 @@ class DungeonManager:
             return None
 
         target = self.selected_target
+
+        # Проверяем, что цель жива
+        if not getattr(target, 'is_alive', False):
+            self.deselect_target()  # Снимаем выделение с мертвого врага
+            return None
+
+        # Проверяем видимость цели
+        if self.current_dungeon:
+            tile = self.current_dungeon.get_tile(target.x, target.y)
+            if not tile or not tile.visible:
+                # Цель не видна - снимаем выделение
+                self.deselect_target()
+                return None
+
         return {
             "name": getattr(target, 'name', 'Враг'),
             "level": getattr(target, 'level', 1),

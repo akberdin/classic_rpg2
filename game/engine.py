@@ -863,9 +863,9 @@ class Game:
                 selected_target
             )
 
-            # Мини-карта подземелья
-            minimap_w = 150
-            minimap_h = 120
+            # Мини-карта подземелья (увеличен размер для лучшей видимости)
+            minimap_w = 220
+            minimap_h = 180
             minimap_x = self.window_width - minimap_w - 10
             minimap_y = 10
             self.dungeon_renderer.render_minimap(
