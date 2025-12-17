@@ -1018,170 +1018,101 @@ class NPCSpawner:
 
     def spawn_animals(self):
         """
-        Создание ровно 400 животных NPC равномерно по всей карте
-        с режимами патрулирования (patrol) или свободного путешествия (wander)
+        Создание животных NPC только в радиусе 10 клеток от точек спавна.
+        Животные спавнятся только около соответствующих точек спавна:
+        - spawn_wolf -> волки
+        - spawn_bear -> медведи
+        - spawn_deer -> олени
 
         Returns:
             list: Список всех животных (волки, медведи, олени)
         """
         animals = []
 
-        # Целевое количество животных
-        TOTAL_ANIMALS = 400
-
-        # Распределение по типам (в процентах)
-        WOLF_PERCENT = 30   # 30% волков = 120
-        BEAR_PERCENT = 20   # 20% медведей = 80
-        DEER_PERCENT = 50   # 50% оленей = 200
+        # Количество животных на одну точку спавна
+        ANIMALS_PER_SPAWN = 10
+        SPAWN_RADIUS = 10
 
         # Распределение по режимам поведения
         PATROL_PERCENT = 60  # 60% патрулируют вокруг точки спавна
-        WANDER_PERCENT = 40  # 40% свободно путешествуют по карте
 
         # Уровни животных
         level_min, level_max = 1, 15
 
-        map_width = self.game_map.width
-        map_height = self.game_map.height
+        # Собираем точки спавна по типам
+        spawn_points = {
+            'wolf': [],
+            'bear': [],
+            'deer': []
+        }
 
-        # Создаем сетку 20x20 = 400 ячеек (одно животное на ячейку)
-        grid_cols = 20
-        grid_rows = 20
-        cell_width = map_width // grid_cols
-        cell_height = map_height // grid_rows
+        for loc in self.game_map.locations:
+            loc_type = getattr(loc, 'location_type', None) or getattr(loc, 'type', None)
+            if loc_type == 'spawn_wolf':
+                spawn_points['wolf'].append((loc.x, loc.y))
+            elif loc_type == 'spawn_bear':
+                spawn_points['bear'].append((loc.x, loc.y))
+            elif loc_type == 'spawn_deer':
+                spawn_points['deer'].append((loc.x, loc.y))
 
-        # Генерируем все позиции ячеек и перемешиваем
-        grid_cells = [(col, row) for col in range(grid_cols) for row in range(grid_rows)]
-        random.shuffle(grid_cells)
+        print(f"Найдено точек спавна: волки={len(spawn_points['wolf'])}, "
+              f"медведи={len(spawn_points['bear'])}, олени={len(spawn_points['deer'])}")
 
-        # Подготавливаем списки типов животных для равномерного распределения
-        wolf_count = int(TOTAL_ANIMALS * WOLF_PERCENT / 100)  # 120
-        bear_count = int(TOTAL_ANIMALS * BEAR_PERCENT / 100)  # 80
-        deer_count = TOTAL_ANIMALS - wolf_count - bear_count  # 200
+        # Если нет точек спавна, выходим
+        total_spawn_points = sum(len(pts) for pts in spawn_points.values())
+        if total_spawn_points == 0:
+            print("Точки спавна животных не найдены на карте!")
+            return animals
 
-        animal_types = ['wolf'] * wolf_count + ['bear'] * bear_count + ['deer'] * deer_count
-        random.shuffle(animal_types)
+        # Спавним животных около каждой точки
+        for animal_type, points in spawn_points.items():
+            for spawn_center_x, spawn_center_y in points:
+                spawned_at_point = 0
+                attempts = 0
+                max_attempts = 100
 
-        # Подготавливаем список режимов поведения
-        patrol_count = int(TOTAL_ANIMALS * PATROL_PERCENT / 100)
-        wander_count = TOTAL_ANIMALS - patrol_count
+                while spawned_at_point < ANIMALS_PER_SPAWN and attempts < max_attempts:
+                    attempts += 1
 
-        behavior_modes = ['patrol'] * patrol_count + ['wander'] * wander_count
-        random.shuffle(behavior_modes)
+                    # Случайная позиция в радиусе от точки спавна
+                    offset_x = random.randint(-SPAWN_RADIUS, SPAWN_RADIUS)
+                    offset_y = random.randint(-SPAWN_RADIUS, SPAWN_RADIUS)
+                    spawn_x = spawn_center_x + offset_x
+                    spawn_y = spawn_center_y + offset_y
 
-        # Спавним животных
-        spawned_count = 0
-        cell_index = 0
+                    # Проверяем границы карты
+                    if spawn_x < 5 or spawn_x >= self.game_map.width - 5:
+                        continue
+                    if spawn_y < 5 or spawn_y >= self.game_map.height - 5:
+                        continue
 
-        while spawned_count < TOTAL_ANIMALS and cell_index < len(grid_cells):
-            grid_col, grid_row = grid_cells[cell_index]
-            cell_index += 1
+                    # Проверяем, что тайл проходим
+                    if not self.game_map.is_valid_position(spawn_x, spawn_y):
+                        continue
 
-            # Определяем случайную позицию внутри ячейки (с отступом от краев)
-            margin = 2
-            # Безопасный расчёт позиции для маленьких ячеек
-            if cell_width > margin * 2:
-                spawn_x = grid_col * cell_width + random.randint(margin, cell_width - margin - 1)
-            else:
-                spawn_x = grid_col * cell_width + cell_width // 2
-            if cell_height > margin * 2:
-                spawn_y = grid_row * cell_height + random.randint(margin, cell_height - margin - 1)
-            else:
-                spawn_y = grid_row * cell_height + cell_height // 2
+                    tile = self.game_map.get_tile(spawn_x, spawn_y)
+                    if not tile or not tile.is_passable():
+                        continue
 
-            # Проверяем границы карты
-            if spawn_x < 5 or spawn_x >= map_width - 5:
-                continue
-            if spawn_y < 5 or spawn_y >= map_height - 5:
-                continue
+                    # Находим свободную позицию рядом
+                    pos = self._find_npc_position(spawn_x, spawn_y, animals)
+                    if not pos:
+                        continue
 
-            # Проверяем, что нет локаций поблизости (минимум 10 клеток)
-            location_nearby = False
-            for loc in self.game_map.locations:
-                dist = abs(loc.x - spawn_x) + abs(loc.y - spawn_y)
-                if dist < 10:
-                    location_nearby = True
-                    break
+                    ax, ay = pos
+                    level = random.randint(level_min, level_max)
+                    behavior_mode = 'patrol' if random.randint(1, 100) <= PATROL_PERCENT else 'wander'
 
-            if location_nearby:
-                continue
+                    # Создаем животное нужного типа
+                    if animal_type == 'wolf':
+                        animal = Wolf("Волк", ax, ay, level, spawn_center_x, spawn_center_y, behavior_mode)
+                    elif animal_type == 'bear':
+                        animal = Bear("Медведь", ax, ay, level, spawn_center_x, spawn_center_y, behavior_mode)
+                    else:  # deer
+                        animal = Deer("Олень", ax, ay, level, spawn_center_x, spawn_center_y, behavior_mode)
 
-            # Проверяем, что тайл проходим
-            if not self.game_map.is_valid_position(spawn_x, spawn_y):
-                continue
-
-            tile = self.game_map.get_tile(spawn_x, spawn_y)
-            if not tile or not tile.is_passable():
-                continue
-
-            # Находим свободную позицию рядом
-            pos = self._find_npc_position(spawn_x, spawn_y, animals)
-            if not pos:
-                continue
-
-            ax, ay = pos
-            animal_type = animal_types[spawned_count]
-            behavior_mode = behavior_modes[spawned_count]
-            level = random.randint(level_min, level_max)
-
-            # Создаем животное нужного типа
-            if animal_type == 'wolf':
-                animal = Wolf(f"Волк", ax, ay, level, spawn_x, spawn_y, behavior_mode)
-            elif animal_type == 'bear':
-                animal = Bear(f"Медведь", ax, ay, level, spawn_x, spawn_y, behavior_mode)
-            else:  # deer
-                animal = Deer(f"Олень", ax, ay, level, spawn_x, spawn_y, behavior_mode)
-
-            animals.append(animal)
-            spawned_count += 1
-
-        # Если не хватило ячеек, добавляем оставшихся в случайные места
-        attempts = 0
-        max_attempts = 1000
-        while spawned_count < TOTAL_ANIMALS and attempts < max_attempts:
-            attempts += 1
-
-            # Случайная позиция на карте
-            spawn_x = random.randint(10, map_width - 10)
-            spawn_y = random.randint(10, map_height - 10)
-
-            # Проверяем, что нет локаций поблизости
-            location_nearby = False
-            for loc in self.game_map.locations:
-                dist = abs(loc.x - spawn_x) + abs(loc.y - spawn_y)
-                if dist < 10:
-                    location_nearby = True
-                    break
-
-            if location_nearby:
-                continue
-
-            # Проверяем проходимость
-            if not self.game_map.is_valid_position(spawn_x, spawn_y):
-                continue
-
-            tile = self.game_map.get_tile(spawn_x, spawn_y)
-            if not tile or not tile.is_passable():
-                continue
-
-            pos = self._find_npc_position(spawn_x, spawn_y, animals)
-            if not pos:
-                continue
-
-            ax, ay = pos
-            animal_type = animal_types[spawned_count]
-            behavior_mode = behavior_modes[spawned_count]
-            level = random.randint(level_min, level_max)
-
-            if animal_type == 'wolf':
-                animal = Wolf(f"Волк", ax, ay, level, spawn_x, spawn_y, behavior_mode)
-            elif animal_type == 'bear':
-                animal = Bear(f"Медведь", ax, ay, level, spawn_x, spawn_y, behavior_mode)
-            else:
-                animal = Deer(f"Олень", ax, ay, level, spawn_x, spawn_y, behavior_mode)
-
-            animals.append(animal)
-            spawned_count += 1
+                    animals.append(animal)
+                    spawned_at_point += 1
 
         # Подсчитываем статистику
         wolves = sum(1 for a in animals if isinstance(a, Wolf))
@@ -1190,7 +1121,7 @@ class NPCSpawner:
         patrol_animals = sum(1 for a in animals if a.behavior_mode == 'patrol')
         wander_animals = sum(1 for a in animals if a.behavior_mode == 'wander')
 
-        print(f"Создано животных: {len(animals)} из {TOTAL_ANIMALS}")
+        print(f"Создано животных: {len(animals)}")
         print(f"  - Волки: {wolves}, Медведи: {bears}, Олени: {deers}")
         print(f"  - Патрулирование: {patrol_animals}, Путешествие: {wander_animals}")
 

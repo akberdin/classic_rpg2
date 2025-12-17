@@ -11,9 +11,7 @@ from ..tools.generator import (
     LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE, LOCATION_MINE,
     LOCATION_BANDIT_CAMP, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL,
     LOCATION_WARRIOR_ACADEMY, LOCATION_SECRET_CAMP,
-    LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_BOAR,
-    LOCATION_SPAWN_DEER, LOCATION_SPAWN_GOBLIN, LOCATION_SPAWN_ORC,
-    LOCATION_SPAWN_UNDEAD, LOCATION_SPAWN_DRAGON
+    LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER
 )
 from .toolbar import ToolType
 
@@ -59,12 +57,7 @@ class Sidebar:
     SPAWN_NAMES = {
         LOCATION_SPAWN_WOLF: "Спавн: Волки",
         LOCATION_SPAWN_BEAR: "Спавн: Медведи",
-        LOCATION_SPAWN_BOAR: "Спавн: Кабаны",
-        LOCATION_SPAWN_DEER: "Спавн: Олени",
-        LOCATION_SPAWN_GOBLIN: "Спавн: Гоблины",
-        LOCATION_SPAWN_ORC: "Спавн: Орки",
-        LOCATION_SPAWN_UNDEAD: "Спавн: Нежить",
-        LOCATION_SPAWN_DRAGON: "Спавн: Дракон"
+        LOCATION_SPAWN_DEER: "Спавн: Олени"
     }
 
     def __init__(self, x: int, y: int, width: int, height: int, config: Dict[str, Any]):
