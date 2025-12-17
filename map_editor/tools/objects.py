@@ -9,9 +9,7 @@ from .generator import (
     LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE, LOCATION_MINE,
     LOCATION_BANDIT_CAMP, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL,
     LOCATION_WARRIOR_ACADEMY, LOCATION_SECRET_CAMP,
-    LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_BOAR,
-    LOCATION_SPAWN_DEER, LOCATION_SPAWN_GOBLIN, LOCATION_SPAWN_ORC,
-    LOCATION_SPAWN_UNDEAD, LOCATION_SPAWN_DRAGON,
+    LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER,
     BIOME_MOUNTAIN, BIOME_HILLS, BIOME_FOREST, BIOME_PLAINS, BIOME_SAND,
     BIOME_SWAMP
 )
@@ -105,39 +103,10 @@ LOCATION_TEMPLATES: Dict[str, LocationTemplate] = {
         valid_biomes=[BIOME_FOREST, BIOME_MOUNTAIN],
         min_distance_from_same=20
     ),
-    LOCATION_SPAWN_BOAR: LocationTemplate(
-        location_type=LOCATION_SPAWN_BOAR,
-        valid_biomes=[BIOME_FOREST, BIOME_PLAINS],
-        min_distance_from_same=15
-    ),
     LOCATION_SPAWN_DEER: LocationTemplate(
         location_type=LOCATION_SPAWN_DEER,
         valid_biomes=[BIOME_FOREST, BIOME_PLAINS],
         min_distance_from_same=12
-    ),
-    LOCATION_SPAWN_GOBLIN: LocationTemplate(
-        location_type=LOCATION_SPAWN_GOBLIN,
-        valid_biomes=[BIOME_FOREST, BIOME_HILLS, BIOME_SWAMP],
-        min_distance_from_same=20,
-        min_distance_from_settlements=10
-    ),
-    LOCATION_SPAWN_ORC: LocationTemplate(
-        location_type=LOCATION_SPAWN_ORC,
-        valid_biomes=[BIOME_HILLS, BIOME_MOUNTAIN],
-        min_distance_from_same=25,
-        min_distance_from_settlements=15
-    ),
-    LOCATION_SPAWN_UNDEAD: LocationTemplate(
-        location_type=LOCATION_SPAWN_UNDEAD,
-        valid_biomes=[BIOME_SWAMP, BIOME_FOREST],
-        min_distance_from_same=25,
-        min_distance_from_settlements=15
-    ),
-    LOCATION_SPAWN_DRAGON: LocationTemplate(
-        location_type=LOCATION_SPAWN_DRAGON,
-        valid_biomes=[BIOME_MOUNTAIN],
-        min_distance_from_same=50,
-        min_distance_from_settlements=25
     )
 }
 
@@ -173,12 +142,7 @@ DEFAULT_NAMES: Dict[str, List[str]] = {
     # Spawn point names
     LOCATION_SPAWN_WOLF: ["Волчье логово"],
     LOCATION_SPAWN_BEAR: ["Медвежья берлога"],
-    LOCATION_SPAWN_BOAR: ["Кабанья тропа"],
-    LOCATION_SPAWN_DEER: ["Оленья поляна"],
-    LOCATION_SPAWN_GOBLIN: ["Гоблинское гнездо"],
-    LOCATION_SPAWN_ORC: ["Орочий лагерь"],
-    LOCATION_SPAWN_UNDEAD: ["Проклятое место"],
-    LOCATION_SPAWN_DRAGON: ["Драконье логово"]
+    LOCATION_SPAWN_DEER: ["Оленья поляна"]
 }
 
 
@@ -419,12 +383,7 @@ class ObjectPlacer:
             LOCATION_SECRET_CAMP: "Тайный лагерь",
             LOCATION_SPAWN_WOLF: "Спавн: Волки",
             LOCATION_SPAWN_BEAR: "Спавн: Медведи",
-            LOCATION_SPAWN_BOAR: "Спавн: Кабаны",
-            LOCATION_SPAWN_DEER: "Спавн: Олени",
-            LOCATION_SPAWN_GOBLIN: "Спавн: Гоблины",
-            LOCATION_SPAWN_ORC: "Спавн: Орки",
-            LOCATION_SPAWN_UNDEAD: "Спавн: Нежить",
-            LOCATION_SPAWN_DRAGON: "Спавн: Дракон"
+            LOCATION_SPAWN_DEER: "Спавн: Олени"
         }
         return names.get(location_type, location_type)
 

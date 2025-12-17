@@ -32,12 +32,7 @@ LOCATION_SECRET_CAMP = "secret_camp"
 # Beast spawn point constants
 LOCATION_SPAWN_WOLF = "spawn_wolf"
 LOCATION_SPAWN_BEAR = "spawn_bear"
-LOCATION_SPAWN_BOAR = "spawn_boar"
 LOCATION_SPAWN_DEER = "spawn_deer"
-LOCATION_SPAWN_GOBLIN = "spawn_goblin"
-LOCATION_SPAWN_ORC = "spawn_orc"
-LOCATION_SPAWN_UNDEAD = "spawn_undead"
-LOCATION_SPAWN_DRAGON = "spawn_dragon"
 
 PASSABLE_BIOMES = [BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST, BIOME_MOUNTAIN, BIOME_SWAMP]
 
