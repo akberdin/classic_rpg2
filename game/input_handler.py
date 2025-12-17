@@ -939,10 +939,14 @@ class InputHandler:
             print(f"Вы отдохнули. {self.ctx.game_time.get_time_string()}")
             return
         elif key == pygame.K_ESCAPE:
-            # В подземелье - снимаем выделение цели
-            if self.ctx.dungeon_manager.is_in_dungeon and self.ctx.dungeon_manager.selected_target:
-                self.ctx.dungeon_manager.deselect_target()
-                return
+            # В подземелье - снимаем выделение цели или объекта
+            if self.ctx.dungeon_manager.is_in_dungeon:
+                if self.ctx.dungeon_manager.selected_target:
+                    self.ctx.dungeon_manager.deselect_target()
+                    return
+                elif self.ctx.dungeon_manager.selected_object:
+                    self.ctx.dungeon_manager.deselect_object()
+                    return
             # Открываем окно подтверждения выхода
             self.ctx.exit_confirmation_open = True
         elif key == pygame.K_TAB:
@@ -963,6 +967,19 @@ class InputHandler:
             # Проверяем, находимся ли в подземелье
             if self.ctx.dungeon_manager.is_in_dungeon:
                 dungeon = self.ctx.dungeon_manager.current_dungeon
+
+                # Если выбран объект (ловушка или тайник), открываем контекстное меню
+                if self.ctx.dungeon_manager.selected_object:
+                    obj_info = self.ctx.dungeon_manager.get_object_info()
+                    if obj_info:
+                        self.game.object_interaction_window.set_object(
+                            self.ctx.dungeon_manager.selected_object_type,
+                            obj_info,
+                            self.ctx.player
+                        )
+                        self.game.object_interaction_open = True
+                    return
+
                 # Проверяем, на выходе ли игрок
                 if dungeon.is_exit_tile(self.ctx.player.x, self.ctx.player.y):
                     self.game.dungeon_exit_window.set_dungeon_name(dungeon.name)

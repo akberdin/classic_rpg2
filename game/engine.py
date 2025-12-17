@@ -26,6 +26,7 @@ from game.ui.windows import (
     DungeonEntryWindow,
     DungeonExitWindow,
 )
+from game.ui.windows.object_interaction import ObjectInteractionWindow
 from game.ui.windows.companion import CompanionWindow
 from game.optimization import PerformanceOptimizer, RenderCache
 from game.quest_system import (
@@ -178,8 +179,10 @@ class Game:
         # Окна подземелий
         self.dungeon_entry_window = DungeonEntryWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.dungeon_exit_window = DungeonExitWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.object_interaction_window = ObjectInteractionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.dungeon_entry_open = False
         self.dungeon_exit_open = False
+        self.object_interaction_open = False
 
         # Окна города/деревни
         self.settlement_menu_window = SettlementMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler, self.game_map)
@@ -410,6 +413,17 @@ class Game:
                     self.dungeon_exit_open = False
                 elif result == "stay":
                     self.dungeon_exit_open = False
+                continue
+
+            # Если открыто окно взаимодействия с объектом, обрабатываем его
+            if self.object_interaction_open:
+                result = self.object_interaction_window.handle_input(event)
+                if result and result != 'cancel':
+                    # Выполняем действие (будет реализовано позже)
+                    self._handle_object_interaction(result)
+                    self.object_interaction_open = False
+                elif result == 'cancel':
+                    self.object_interaction_open = False
                 continue
 
             # Если идет тактический бой, передаем управление системе тактического боя
@@ -710,18 +724,40 @@ class Game:
 
     def _handle_dungeon_target_click(self, mouse_pos):
         """
-        Обработка клика ПКМ по NPC в подземелье для выделения цели.
+        Обработка клика ПКМ в подземелье для выделения цели (NPC или объект).
+        Приоритет: сначала ищем ближайший интерактивный объект, затем NPC на клетке.
 
         Args:
             mouse_pos: Позиция мыши (x, y)
 
         Returns:
-            bool: True если клик был обработан (по NPC)
+            bool: True если клик был обработан
         """
         if not self.dungeon_manager.is_in_dungeon or not self.dungeon_manager.current_dungeon:
             return False
 
-        # Получаем NPC по позиции на экране
+        # Сначала пытаемся найти ближайший интерактивный объект (ловушку или тайник)
+        nearest_result = self.dungeon_manager.get_nearest_interactive_object(
+            self.player.x, self.player.y, max_distance=5
+        )
+
+        if nearest_result:
+            obj, obj_type = nearest_result
+            self.dungeon_manager.select_object(obj, obj_type)
+
+            # Формируем сообщение
+            if obj_type == 'trap':
+                level_name = obj.trap_level.name
+                trap_name = obj.trap_type.value.replace('_', ' ').title()
+                print(f"Объект выбран: {trap_name} (Уровень: {level_name})")
+            elif obj_type == 'stash':
+                level_name = obj.stash_level.name
+                trap_info = " [С ловушкой!]" if obj.trap else ""
+                print(f"Объект выбран: Тайник (Уровень: {level_name}){trap_info}")
+
+            return True
+
+        # Если объектов рядом нет, пробуем выбрать NPC на клетке клика
         npc = self.dungeon_manager.get_npc_at_screen_pos(
             self.player, mouse_pos[0], mouse_pos[1], TILE_SIZE
         )
@@ -731,6 +767,9 @@ class Game:
             dungeon = self.dungeon_manager.current_dungeon
             tile = dungeon.get_tile(npc.x, npc.y)
             if tile and tile.visible:
+                # Снимаем выделение с объекта при выборе NPC
+                if self.dungeon_manager.selected_object:
+                    self.dungeon_manager.deselect_object()
                 # Выбираем цель
                 self.dungeon_manager.select_target(npc)
                 print(f"Цель выбрана: {npc.name} (HP: {npc.health}/{npc.max_health})")
@@ -741,6 +780,153 @@ class Game:
     def _collect_resources(self):
         """Делегирование к ResourceSystem."""
         self.resource_system.collect_resources()
+
+    def _handle_object_interaction(self, action: str):
+        """
+        Обработка действия с выбранным объектом подземелья
+
+        Args:
+            action: Действие ('disarm', 'lockpick', 'loot', 'disarm_stash_trap', 'bypass')
+        """
+        if not self.dungeon_manager.selected_object or not self.dungeon_manager.selected_object_type:
+            print("Объект не выбран")
+            return
+
+        obj = self.dungeon_manager.selected_object
+        obj_type = self.dungeon_manager.selected_object_type
+
+        # Проверяем расстояние до объекта (должны быть рядом)
+        distance = abs(obj.x - self.player.x) + abs(obj.y - self.player.y)
+        if distance > 1:
+            print("Вы слишком далеко от объекта. Подойдите ближе.")
+            return
+
+        if action == 'disarm' and obj_type == 'trap':
+            self._disarm_trap(obj)
+        elif action == 'disarm_stash_trap' and obj_type == 'stash':
+            self._disarm_stash_trap(obj)
+        elif action == 'lockpick' and obj_type == 'stash':
+            self._lockpick_stash(obj)
+        elif action == 'loot' and obj_type == 'stash':
+            self._loot_stash(obj)
+        elif action == 'bypass' and obj_type == 'trap':
+            print("Вы осторожно обошли ловушку.")
+            self.dungeon_manager.deselect_object()
+        else:
+            print(f"Неизвестное действие: {action}")
+
+    def _disarm_trap(self, trap):
+        """Обезвредить ловушку используя навык Disarm Trap"""
+        if not hasattr(self.player, 'skill_manager') or not self.player.skill_manager:
+            print("У вас нет навыков обезвреживания")
+            return
+
+        disarm_skill = self.player.skill_manager.get_skill("Обезвреживание")
+        if not disarm_skill:
+            print("У вас нет навыка 'Обезвреживание'")
+            return
+
+        # Используем навык
+        result = disarm_skill.use(self.player, trap)
+        print(result.get('message', ''))
+
+        # Снимаем выделение после обезвреживания
+        if result.get('success') or trap.is_disarmed:
+            self.dungeon_manager.deselect_object()
+
+    def _disarm_stash_trap(self, stash):
+        """Обезвредить ловушку в тайнике"""
+        if not stash.trap:
+            print("В тайнике нет ловушки")
+            return
+
+        self._disarm_trap(stash.trap)
+
+        # Если ловушка обезврежена, уведомляем
+        if stash.trap.is_disarmed:
+            print("Ловушка в тайнике обезврежена. Теперь можно безопасно обыскать его.")
+
+    def _lockpick_stash(self, stash):
+        """Взломать тайник используя навык Lockpicking"""
+        if stash.is_looted:
+            print("Тайник уже обыскан")
+            self.dungeon_manager.deselect_object()
+            return
+
+        if not hasattr(self.player, 'skill_manager') or not self.player.skill_manager:
+            print("У вас нет навыков взлома")
+            return
+
+        lockpick_skill = self.player.skill_manager.get_skill("Взлом Замков")
+        if not lockpick_skill:
+            print("У вас нет навыка 'Взлом Замков'")
+            return
+
+        # Используем навык (он вызовет loot с бонусами)
+        result = lockpick_skill.use(self.player, stash)
+
+        # Отображаем результат
+        if result.get('success'):
+            loot_result = result.get('loot_result', {})
+            print(loot_result.get('message', 'Тайник взломан!'))
+
+            # Добавляем предметы в инвентарь
+            for item_name, item_id, quantity in loot_result.get('items', []):
+                item = self.item_manager.get_item_by_id(item_id)
+                if item:
+                    self.player.inventory.add_item(item, quantity)
+        else:
+            print(result.get('message', 'Не удалось взломать тайник'))
+
+        # Снимаем выделение после взлома
+        if stash.is_looted:
+            self.dungeon_manager.deselect_object()
+
+    def _loot_stash(self, stash):
+        """Обыскать тайник без использования навыков"""
+        if stash.is_looted:
+            print("Тайник уже обыскан")
+            self.dungeon_manager.deselect_object()
+            return
+
+        # Предупреждаем о ловушке
+        if stash.trap and not stash.trap.is_disarmed:
+            print("⚠️ ВНИМАНИЕ: В тайнике установлена ловушка!")
+            print("Рекомендуется сначала обезвредить её.")
+
+        # Обыскиваем тайник
+        result = stash.loot(self.player)
+
+        if result.get('success'):
+            # Добавляем предметы в инвентарь
+            for item_name, item_id, quantity in result.get('items', []):
+                item = self.item_manager.get_item_by_id(item_id)
+                if item:
+                    self.player.inventory.add_item(item, quantity)
+
+            print(result.get('message', ''))
+        else:
+            print(result.get('message', 'Не удалось обыскать тайник'))
+
+        # Проверяем, жив ли игрок после ловушки
+        if self.player.health <= 0:
+            print("Вы погибли от ловушки!")
+            self.running = False
+            return
+
+        # Снимаем выделение после обыска
+        if stash.is_looted:
+            self.dungeon_manager.deselect_object()
+
+        # Ход врагов после взаимодействия с тайником
+        if self.dungeon_manager.is_in_dungeon:
+            enemy_results = self.dungeon_manager.enemy_turn(self.player)
+            for enemy_result in enemy_results:
+                print(f"{enemy_result['attacker']} наносит {enemy_result['damage']} урона!")
+
+            if self.player.health <= 0:
+                print("Вы погибли в подземелье!")
+                self.running = False
 
     def _start_combat(self, enemy, tactical=False):
         """
@@ -857,10 +1043,12 @@ class Game:
             # Отрисовка подземелья
             dungeon = self.dungeon_manager.current_dungeon
             selected_target = self.dungeon_manager.selected_target
+            selected_object = self.dungeon_manager.selected_object
+            selected_object_type = self.dungeon_manager.selected_object_type
             self.dungeon_renderer.render_dungeon(
                 dungeon, self.player, 0, 0,
                 self.window_width, self.window_height,
-                selected_target
+                selected_target, selected_object, selected_object_type
             )
 
             # Мини-карта подземелья (увеличен размер для лучшей видимости)
@@ -871,6 +1059,12 @@ class Game:
             self.dungeon_renderer.render_minimap(
                 dungeon, self.player,
                 minimap_x, minimap_y, minimap_w, minimap_h
+            )
+
+            # Легенда миникарты (под миникартой)
+            legend_y = minimap_y + minimap_h + 10
+            self.dungeon_renderer.render_minimap_legend(
+                minimap_x, legend_y, minimap_w, self.info_font
             )
 
             # HUD подземелья
@@ -887,9 +1081,17 @@ class Game:
             # Подсказки управления боем
             self.dungeon_renderer.render_combat_hints(self.info_font)
 
+            # Панель статистики исследования
+            self.dungeon_renderer.render_exploration_stats_panel(self.player, self.dungeon_manager, self.info_font)
+
             # Отрисовка окна выхода из подземелья
             if self.dungeon_exit_open:
                 self.dungeon_exit_window.render()
+
+            # Отрисовка окна взаимодействия с объектом
+            if self.object_interaction_open:
+                self.object_interaction_window.render()
+
             # Не выходим рано - позволяем отрисовать остальные UI окна ниже
         else:
             # Отрисовка основной карты

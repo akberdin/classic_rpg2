@@ -47,6 +47,10 @@ class DungeonManager:
         self.skill_targeting_mode = False
         self.pending_skill = None  # Умение, ожидающее выбора цели
 
+        # Smart Target система для объектов подземелья
+        self.selected_object = None  # Выбранный объект (ловушка или тайник)
+        self.selected_object_type = None  # Тип объекта: 'trap' или 'stash'
+
     def can_enter_dungeon(self, player) -> Tuple[bool, str, str]:
         """
         Проверить, может ли игрок войти в подземелье
@@ -976,3 +980,179 @@ class DungeonManager:
             "x": target.x,
             "y": target.y
         }
+
+    # ====================
+    # Smart Target система для объектов подземелья
+    # ====================
+
+    def get_nearest_interactive_object(self, player_x: int, player_y: int, max_distance: int = 5) -> Optional[Tuple[any, str]]:
+        """
+        Найти ближайший интерактивный объект (ловушку или тайник)
+
+        Args:
+            player_x: Координата X игрока
+            player_y: Координата Y игрока
+            max_distance: Максимальное расстояние поиска
+
+        Returns:
+            Tuple[object, str] или None: (объект, тип) где тип 'trap' или 'stash'
+        """
+        if not self.current_dungeon:
+            return None
+
+        nearest_obj = None
+        nearest_type = None
+        min_distance = float('inf')
+
+        # Ищем ближайшую обнаруженную ловушку
+        for trap in self.current_dungeon.trap_manager.traps:
+            if trap.is_detected and not trap.is_triggered:
+                # Проверяем видимость
+                tile = self.current_dungeon.get_tile(trap.x, trap.y)
+                if tile and tile.visible:
+                    distance = abs(trap.x - player_x) + abs(trap.y - player_y)
+                    if distance <= max_distance and distance < min_distance:
+                        min_distance = distance
+                        nearest_obj = trap
+                        nearest_type = 'trap'
+
+        # Ищем ближайший обнаруженный тайник
+        for stash in self.current_dungeon.stash_manager.stashes:
+            if stash.is_detected and not stash.is_looted:
+                # Проверяем видимость
+                tile = self.current_dungeon.get_tile(stash.x, stash.y)
+                if tile and tile.visible:
+                    distance = abs(stash.x - player_x) + abs(stash.y - player_y)
+                    if distance <= max_distance and distance < min_distance:
+                        min_distance = distance
+                        nearest_obj = stash
+                        nearest_type = 'stash'
+
+        if nearest_obj:
+            return (nearest_obj, nearest_type)
+        return None
+
+    def select_object(self, obj, obj_type: str):
+        """
+        Выбрать объект подземелья
+
+        Args:
+            obj: Объект (ловушка или тайник)
+            obj_type: Тип объекта ('trap' или 'stash')
+        """
+        self.selected_object = obj
+        self.selected_object_type = obj_type
+        # Снимаем выделение с NPC при выборе объекта
+        if self.selected_target:
+            self.selected_target = None
+
+    def deselect_object(self):
+        """Снять выделение с объекта"""
+        self.selected_object = None
+        self.selected_object_type = None
+
+    def get_object_at_screen_pos(self, player, screen_x: int, screen_y: int, tile_size: int) -> Optional[Tuple[any, str]]:
+        """
+        Получить объект подземелья по позиции на экране
+
+        Args:
+            player: Объект игрока
+            screen_x: Экранная координата X (пиксели)
+            screen_y: Экранная координата Y (пиксели)
+            tile_size: Размер тайла в пикселях
+
+        Returns:
+            Tuple[object, str] или None: (объект, тип) где тип 'trap' или 'stash'
+        """
+        if not self.current_dungeon:
+            return None
+
+        # Вычисляем количество видимых тайлов
+        tiles_x = (screen_x // tile_size) + 2
+        tiles_y = (screen_y // tile_size) + 2
+
+        # Начальная позиция отрисовки (центрируем на игроке)
+        start_x = player.x - tiles_x // 2
+        start_y = player.y - tiles_y // 2
+
+        # Вычисляем координаты клетки по позиции мыши
+        tile_screen_x = screen_x // tile_size
+        tile_screen_y = screen_y // tile_size
+
+        map_x = start_x + tile_screen_x
+        map_y = start_y + tile_screen_y
+
+        # Проверяем видимость клетки
+        tile = self.current_dungeon.get_tile(map_x, map_y)
+        if not tile or not tile.visible:
+            return None
+
+        # Ищем ловушку на этой позиции
+        for trap in self.current_dungeon.trap_manager.traps:
+            if trap.x == map_x and trap.y == map_y:
+                if trap.is_detected and not trap.is_triggered:
+                    return (trap, 'trap')
+
+        # Ищем тайник на этой позиции
+        for stash in self.current_dungeon.stash_manager.stashes:
+            if stash.x == map_x and stash.y == map_y:
+                if stash.is_detected and not stash.is_looted:
+                    return (stash, 'stash')
+
+        return None
+
+    def get_object_info(self) -> Optional[dict]:
+        """
+        Получить информацию о выбранном объекте
+
+        Returns:
+            dict или None: Информация об объекте
+        """
+        if not self.selected_object or not self.selected_object_type:
+            return None
+
+        obj = self.selected_object
+
+        # Проверяем видимость объекта
+        if self.current_dungeon:
+            tile = self.current_dungeon.get_tile(obj.x, obj.y)
+            if not tile or not tile.visible:
+                # Объект не виден - снимаем выделение
+                self.deselect_object()
+                return None
+
+        if self.selected_object_type == 'trap':
+            # Проверяем, не сработала ли ловушка
+            if obj.is_triggered:
+                self.deselect_object()
+                return None
+
+            return {
+                "type": "trap",
+                "name": obj.trap_type.value.replace('_', ' ').title(),
+                "level": obj.trap_level.value,
+                "level_name": obj.trap_level.name,
+                "detected": obj.is_detected,
+                "dc": obj.dc,
+                "x": obj.x,
+                "y": obj.y
+            }
+        elif self.selected_object_type == 'stash':
+            # Проверяем, не разграблен ли тайник
+            if obj.is_looted:
+                self.deselect_object()
+                return None
+
+            return {
+                "type": "stash",
+                "name": "Тайник",
+                "level": obj.stash_level.value,
+                "level_name": obj.stash_level.name,
+                "detected": obj.is_detected,
+                "dc": obj.dc,
+                "has_trap": obj.trap is not None,
+                "x": obj.x,
+                "y": obj.y
+            }
+
+        return None
