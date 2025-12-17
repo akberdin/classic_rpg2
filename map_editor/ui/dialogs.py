@@ -413,7 +413,7 @@ class GeneratorDialog(Dialog):
     """Dialog for generator settings."""
 
     def __init__(self, params: GeneratorParams = None):
-        super().__init__("Настройки генератора", 450, 520)
+        super().__init__("Настройки генератора", 450, 560)
         self.params = params or GeneratorParams()
         self._setup_controls()
 
@@ -521,6 +521,14 @@ class GeneratorDialog(Dialog):
             key="generate_rivers",
             checked=self.params.generate_rivers
         ))
+        y += 30
+
+        self.checkboxes.append(DialogCheckbox(
+            rect=pygame.Rect(20, y, self.width - 40, 20),
+            label="Без ограничения дистанции объектов",
+            key="ignore_min_distance",
+            checked=self.params.ignore_min_distance
+        ))
         y += 40
 
         # Buttons
@@ -560,7 +568,8 @@ class GeneratorDialog(Dialog):
             mine_count=int(self.data.get('mine_count', 8)),
             temperature_gradient=self.data.get('temperature_gradient', True),
             generate_beaches=self.data.get('generate_beaches', True),
-            generate_rivers=self.data.get('generate_rivers', True)
+            generate_rivers=self.data.get('generate_rivers', True),
+            ignore_min_distance=self.data.get('ignore_min_distance', False)
         )
 
 

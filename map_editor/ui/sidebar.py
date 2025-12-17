@@ -133,7 +133,7 @@ class Sidebar:
 
         if event.type == pygame.MOUSEMOTION:
             local_x = event.pos[0] - self.x
-            local_y = event.pos[1] - self.y + self.scroll_offset
+            local_y = event.pos[1] - self.y
 
             self.hovered_element = None
 
@@ -149,7 +149,7 @@ class Sidebar:
                 return False
 
             local_x = event.pos[0] - self.x
-            local_y = event.pos[1] - self.y + self.scroll_offset
+            local_y = event.pos[1] - self.y
 
             if event.button == 1:  # Left click
                 return self._handle_click(local_x, local_y)
@@ -192,8 +192,9 @@ class Sidebar:
 
     def _handle_brush_click(self, local_x: int, local_y: int) -> bool:
         """Handle click in brush mode."""
-        # Check biome buttons
-        y_offset = 60
+        # Match y_offset to _draw_brush_panel layout
+        y_offset = 10  # Start same as draw method
+        y_offset += 30  # After section header (returns y + 30)
         button_height = 28
         padding = 4
 
@@ -209,8 +210,9 @@ class Sidebar:
                 return True
             y_offset += button_height + padding
 
-        # Check brush size buttons
-        y_offset += 30
+        # Check brush size buttons (after 10px gap + section header)
+        y_offset += 10
+        y_offset += 30  # Section header
         sizes = self.config.get('brushes', {}).get('sizes', [1, 3, 5, 10, 15, 20])
         btn_width = (self.width - padding * (len(sizes) + 1)) // len(sizes)
 
@@ -223,8 +225,10 @@ class Sidebar:
                     self.on_brush_change(self.brush_settings)
                 return True
 
-        # Check brush shape buttons
-        y_offset += button_height + padding + 30
+        # Check brush shape buttons (after button + 10px gap + section header)
+        y_offset += button_height + padding
+        y_offset += 10
+        y_offset += 30  # Section header
         shapes = [BrushShape.CIRCLE, BrushShape.SQUARE, BrushShape.DIAMOND]
         btn_width = (self.width - padding * 4) // 3
 
@@ -237,8 +241,10 @@ class Sidebar:
                     self.on_brush_change(self.brush_settings)
                 return True
 
-        # Check brush mode buttons
-        y_offset += button_height + padding + 30
+        # Check brush mode buttons (after button + 10px gap + section header)
+        y_offset += button_height + padding
+        y_offset += 10
+        y_offset += 30  # Section header
         modes = [BrushMode.PAINT, BrushMode.SMOOTH, BrushMode.RAISE, BrushMode.LOWER]
         btn_width = (self.width - padding * 5) // 4
 
@@ -255,7 +261,9 @@ class Sidebar:
 
     def _handle_object_click(self, local_x: int, local_y: int) -> bool:
         """Handle click in object mode."""
-        y_offset = 60
+        # Match y_offset to _draw_object_panel layout
+        y_offset = 10  # Start same as draw method
+        y_offset += 30  # After section header
         button_height = 28
         padding = 4
 

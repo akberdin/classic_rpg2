@@ -32,7 +32,21 @@ class MapEditor:
 
         # Initialize pygame
         pygame.init()
-        self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
+
+        # Get screen resolution for fullscreen mode
+        display_info = pygame.display.Info()
+        self.screen_width = display_info.current_w
+        self.screen_height = display_info.current_h
+
+        # Use fullscreen mode with screen resolution
+        self.fullscreen = window_config.get('fullscreen', True)
+        if self.fullscreen:
+            self.width = self.screen_width
+            self.height = self.screen_height
+            self.screen = pygame.display.set_mode((self.width, self.height), pygame.FULLSCREEN)
+        else:
+            self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)
+
         pygame.display.set_caption(self.title)
         self.clock = pygame.time.Clock()
         self.running = True
