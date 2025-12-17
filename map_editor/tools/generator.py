@@ -20,6 +20,7 @@ BIOME_SWAMP = "swamp"
 
 # Location constants
 LOCATION_CITY = "city"
+LOCATION_CAPITAL = "capital"
 LOCATION_VILLAGE = "village"
 LOCATION_MINE = "mine"
 LOCATION_BANDIT_CAMP = "bandit_camp"
@@ -27,6 +28,16 @@ LOCATION_RUINS = "ruins"
 LOCATION_MAGIC_SCHOOL = "magic_school"
 LOCATION_WARRIOR_ACADEMY = "warrior_academy"
 LOCATION_SECRET_CAMP = "secret_camp"
+
+# Beast spawn point constants
+LOCATION_SPAWN_WOLF = "spawn_wolf"
+LOCATION_SPAWN_BEAR = "spawn_bear"
+LOCATION_SPAWN_BOAR = "spawn_boar"
+LOCATION_SPAWN_DEER = "spawn_deer"
+LOCATION_SPAWN_GOBLIN = "spawn_goblin"
+LOCATION_SPAWN_ORC = "spawn_orc"
+LOCATION_SPAWN_UNDEAD = "spawn_undead"
+LOCATION_SPAWN_DRAGON = "spawn_dragon"
 
 PASSABLE_BIOMES = [BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST, BIOME_MOUNTAIN, BIOME_SWAMP]
 
@@ -113,15 +124,24 @@ class MapLocation:
     y: int
     location_type: str
     name: str = ""
+    rank: int = 1  # Rank for mines, ruins (1-5)
+    shop_rank: int = 1  # Shop rank for cities, villages (1-5)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for saving."""
-        return {
+        data = {
             'x': self.x,
             'y': self.y,
             'type': self.location_type,
             'name': self.name
         }
+        # Only save rank for relevant location types
+        if self.location_type in [LOCATION_MINE, LOCATION_RUINS]:
+            data['rank'] = self.rank
+        # Only save shop_rank for settlements
+        if self.location_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
+            data['shop_rank'] = self.shop_rank
+        return data
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'MapLocation':
@@ -130,7 +150,9 @@ class MapLocation:
             x=data['x'],
             y=data['y'],
             location_type=data['type'],
-            name=data.get('name', '')
+            name=data.get('name', ''),
+            rank=data.get('rank', 1),
+            shop_rank=data.get('shop_rank', 1)
         )
 
 
@@ -300,17 +322,41 @@ class MapGenerator:
     SECRET_CAMP_NAMES = ["Тайное убежище", "Скрытый лагерь", "Логово отшельника",
                         "Затерянный приют", "Укрытие мудреца", "Тайная поляна"]
 
+    CAPITAL_NAMES = ["Королевская столица", "Имперский престол", "Великий Трон",
+                    "Столица Империи", "Сердце Королевства", "Царский Град"]
+
+    # Spawn point names by beast type
+    SPAWN_NAMES = {
+        LOCATION_SPAWN_WOLF: "Волчье логово",
+        LOCATION_SPAWN_BEAR: "Медвежья берлога",
+        LOCATION_SPAWN_BOAR: "Кабанья тропа",
+        LOCATION_SPAWN_DEER: "Оленья поляна",
+        LOCATION_SPAWN_GOBLIN: "Гоблинское гнездо",
+        LOCATION_SPAWN_ORC: "Орочий лагерь",
+        LOCATION_SPAWN_UNDEAD: "Проклятое место",
+        LOCATION_SPAWN_DRAGON: "Драконье логово"
+    }
+
     def __init__(self, params: GeneratorParams = None):
         self.params = params or GeneratorParams()
         self._used_names: Dict[str, set] = {
             LOCATION_CITY: set(),
+            LOCATION_CAPITAL: set(),
             LOCATION_VILLAGE: set(),
             LOCATION_MINE: set(),
             LOCATION_BANDIT_CAMP: set(),
             LOCATION_RUINS: set(),
             LOCATION_MAGIC_SCHOOL: set(),
             LOCATION_WARRIOR_ACADEMY: set(),
-            LOCATION_SECRET_CAMP: set()
+            LOCATION_SECRET_CAMP: set(),
+            LOCATION_SPAWN_WOLF: set(),
+            LOCATION_SPAWN_BEAR: set(),
+            LOCATION_SPAWN_BOAR: set(),
+            LOCATION_SPAWN_DEER: set(),
+            LOCATION_SPAWN_GOBLIN: set(),
+            LOCATION_SPAWN_ORC: set(),
+            LOCATION_SPAWN_UNDEAD: set(),
+            LOCATION_SPAWN_DRAGON: set()
         }
 
     def generate(self, params: GeneratorParams = None) -> GeneratedMap:
@@ -697,8 +743,20 @@ class MapGenerator:
 
     def _get_location_name(self, location_type: str) -> str:
         """Get a unique name for a location type."""
+        # Handle spawn points - they have fixed names with numbers
+        if location_type in self.SPAWN_NAMES:
+            base_name = self.SPAWN_NAMES[location_type]
+            used = self._used_names.get(location_type, set())
+            i = 1
+            while f"{base_name} {i}" in used:
+                i += 1
+            name = f"{base_name} {i}"
+            self._used_names[location_type].add(name)
+            return name
+
         name_lists = {
             LOCATION_CITY: self.CITY_NAMES,
+            LOCATION_CAPITAL: self.CAPITAL_NAMES,
             LOCATION_VILLAGE: self.VILLAGE_NAMES,
             LOCATION_MINE: self.MINE_NAMES,
             LOCATION_BANDIT_CAMP: self.BANDIT_CAMP_NAMES,

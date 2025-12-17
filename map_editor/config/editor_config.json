@@ -34,6 +34,10 @@
         "default_size": 3
     },
     "locations": {
+        "capital": {
+            "count": 1,
+            "color": [255, 0, 255]
+        },
         "city": {
             "count_min": 4,
             "count_max": 6,
@@ -70,6 +74,30 @@
         "secret_camp": {
             "count": 1,
             "color": [0, 100, 0]
+        },
+        "spawn_wolf": {
+            "color": [150, 75, 75]
+        },
+        "spawn_bear": {
+            "color": [120, 80, 50]
+        },
+        "spawn_boar": {
+            "color": [139, 90, 43]
+        },
+        "spawn_deer": {
+            "color": [210, 180, 140]
+        },
+        "spawn_goblin": {
+            "color": [50, 150, 50]
+        },
+        "spawn_orc": {
+            "color": [100, 100, 50]
+        },
+        "spawn_undead": {
+            "color": [100, 50, 100]
+        },
+        "spawn_dragon": {
+            "color": [255, 50, 50]
         }
     },
     "biomes": {

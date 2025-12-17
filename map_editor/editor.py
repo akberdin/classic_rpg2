@@ -181,6 +181,7 @@ class MapEditor:
             self._fit_view()
         elif action == "toggle_grid":
             self.show_grid = not self.show_grid
+            self.toolbar.set_grid_active(self.show_grid)
 
     def _on_biome_select(self, biome: str) -> None:
         """Handle biome selection."""
@@ -220,7 +221,9 @@ class MapEditor:
             'type_display': location_info.get('type_display', self._editing_location.location_type),
             'x': self._editing_location.x,
             'y': self._editing_location.y,
-            'is_starting': (self._editing_location == self.current_map.starting_village)
+            'is_starting': (self._editing_location == self.current_map.starting_village),
+            'rank': self._editing_location.rank,
+            'shop_rank': self._editing_location.shop_rank
         }
 
         # Create and show the dialog
@@ -243,6 +246,20 @@ class MapEditor:
                 self._editing_location.name = new_name
                 self.has_unsaved_changes = True
                 self._set_status(f"Локация переименована: {new_name}")
+
+            # Update rank for mines and ruins
+            if 'rank' in data:
+                new_rank = int(data.get('rank', 1))
+                if new_rank != self._editing_location.rank:
+                    self._editing_location.rank = new_rank
+                    self.has_unsaved_changes = True
+
+            # Update shop_rank for settlements
+            if 'shop_rank' in data:
+                new_shop_rank = int(data.get('shop_rank', 1))
+                if new_shop_rank != self._editing_location.shop_rank:
+                    self._editing_location.shop_rank = new_shop_rank
+                    self.has_unsaved_changes = True
 
             # Update starting village status (only for villages)
             if self._editing_location.location_type == 'village':

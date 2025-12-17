@@ -6,10 +6,14 @@ from enum import Enum
 
 from .generator import (
     GeneratedMap, MapLocation, PASSABLE_BIOMES,
-    LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MINE, LOCATION_BANDIT_CAMP,
-    LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY,
-    LOCATION_SECRET_CAMP, BIOME_MOUNTAIN, BIOME_HILLS, BIOME_FOREST,
-    BIOME_PLAINS, BIOME_SAND
+    LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE, LOCATION_MINE,
+    LOCATION_BANDIT_CAMP, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL,
+    LOCATION_WARRIOR_ACADEMY, LOCATION_SECRET_CAMP,
+    LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_BOAR,
+    LOCATION_SPAWN_DEER, LOCATION_SPAWN_GOBLIN, LOCATION_SPAWN_ORC,
+    LOCATION_SPAWN_UNDEAD, LOCATION_SPAWN_DRAGON,
+    BIOME_MOUNTAIN, BIOME_HILLS, BIOME_FOREST, BIOME_PLAINS, BIOME_SAND,
+    BIOME_SWAMP
 )
 from ..utils.helpers import distance
 
@@ -42,6 +46,11 @@ class LocationTemplate:
 
 # Default templates for each location type
 LOCATION_TEMPLATES: Dict[str, LocationTemplate] = {
+    LOCATION_CAPITAL: LocationTemplate(
+        location_type=LOCATION_CAPITAL,
+        valid_biomes=[BIOME_PLAINS, BIOME_SAND],
+        min_distance_from_same=100  # Only one capital
+    ),
     LOCATION_CITY: LocationTemplate(
         location_type=LOCATION_CITY,
         valid_biomes=[BIOME_PLAINS, BIOME_SAND],
@@ -84,12 +93,60 @@ LOCATION_TEMPLATES: Dict[str, LocationTemplate] = {
         valid_biomes=[BIOME_FOREST],
         min_distance_from_same=30,
         min_distance_from_settlements=20
+    ),
+    # Spawn points for beasts
+    LOCATION_SPAWN_WOLF: LocationTemplate(
+        location_type=LOCATION_SPAWN_WOLF,
+        valid_biomes=[BIOME_FOREST, BIOME_HILLS],
+        min_distance_from_same=15
+    ),
+    LOCATION_SPAWN_BEAR: LocationTemplate(
+        location_type=LOCATION_SPAWN_BEAR,
+        valid_biomes=[BIOME_FOREST, BIOME_MOUNTAIN],
+        min_distance_from_same=20
+    ),
+    LOCATION_SPAWN_BOAR: LocationTemplate(
+        location_type=LOCATION_SPAWN_BOAR,
+        valid_biomes=[BIOME_FOREST, BIOME_PLAINS],
+        min_distance_from_same=15
+    ),
+    LOCATION_SPAWN_DEER: LocationTemplate(
+        location_type=LOCATION_SPAWN_DEER,
+        valid_biomes=[BIOME_FOREST, BIOME_PLAINS],
+        min_distance_from_same=12
+    ),
+    LOCATION_SPAWN_GOBLIN: LocationTemplate(
+        location_type=LOCATION_SPAWN_GOBLIN,
+        valid_biomes=[BIOME_FOREST, BIOME_HILLS, BIOME_SWAMP],
+        min_distance_from_same=20,
+        min_distance_from_settlements=10
+    ),
+    LOCATION_SPAWN_ORC: LocationTemplate(
+        location_type=LOCATION_SPAWN_ORC,
+        valid_biomes=[BIOME_HILLS, BIOME_MOUNTAIN],
+        min_distance_from_same=25,
+        min_distance_from_settlements=15
+    ),
+    LOCATION_SPAWN_UNDEAD: LocationTemplate(
+        location_type=LOCATION_SPAWN_UNDEAD,
+        valid_biomes=[BIOME_SWAMP, BIOME_FOREST],
+        min_distance_from_same=25,
+        min_distance_from_settlements=15
+    ),
+    LOCATION_SPAWN_DRAGON: LocationTemplate(
+        location_type=LOCATION_SPAWN_DRAGON,
+        valid_biomes=[BIOME_MOUNTAIN],
+        min_distance_from_same=50,
+        min_distance_from_settlements=25
     )
 }
 
 
 # Default names for locations
 DEFAULT_NAMES: Dict[str, List[str]] = {
+    LOCATION_CAPITAL: [
+        "Королевская столица", "Имперский престол", "Великий Трон"
+    ],
     LOCATION_CITY: [
         "Кристальград", "Златоград", "Серебряный Пик", "Королевская Гавань",
         "Драконий Утёс", "Орлиное Гнездо", "Железный Форт", "Солнечный Берег"
@@ -112,7 +169,16 @@ DEFAULT_NAMES: Dict[str, List[str]] = {
     ],
     LOCATION_MAGIC_SCHOOL: ["Академия Магии", "Башня Волшебников"],
     LOCATION_WARRIOR_ACADEMY: ["Академия Воинов", "Школа Боевых Искусств"],
-    LOCATION_SECRET_CAMP: ["Тайное убежище", "Скрытый лагерь"]
+    LOCATION_SECRET_CAMP: ["Тайное убежище", "Скрытый лагерь"],
+    # Spawn point names
+    LOCATION_SPAWN_WOLF: ["Волчье логово"],
+    LOCATION_SPAWN_BEAR: ["Медвежья берлога"],
+    LOCATION_SPAWN_BOAR: ["Кабанья тропа"],
+    LOCATION_SPAWN_DEER: ["Оленья поляна"],
+    LOCATION_SPAWN_GOBLIN: ["Гоблинское гнездо"],
+    LOCATION_SPAWN_ORC: ["Орочий лагерь"],
+    LOCATION_SPAWN_UNDEAD: ["Проклятое место"],
+    LOCATION_SPAWN_DRAGON: ["Драконье логово"]
 }
 
 
@@ -327,18 +393,22 @@ class ObjectPlacer:
 
     def get_location_info(self, location: MapLocation) -> Dict[str, Any]:
         """Get detailed information about a location."""
-        return {
+        info = {
             'type': location.location_type,
             'type_display': self._get_type_display_name(location.location_type),
             'name': location.name,
             'x': location.x,
             'y': location.y,
-            'is_starting': False  # Will be updated by caller
+            'is_starting': False,  # Will be updated by caller
+            'rank': location.rank,
+            'shop_rank': location.shop_rank
         }
+        return info
 
     def _get_type_display_name(self, location_type: str) -> str:
         """Get display name for location type."""
         names = {
+            LOCATION_CAPITAL: "Столица",
             LOCATION_CITY: "Город",
             LOCATION_VILLAGE: "Деревня",
             LOCATION_MINE: "Шахта",
@@ -346,7 +416,15 @@ class ObjectPlacer:
             LOCATION_RUINS: "Руины",
             LOCATION_MAGIC_SCHOOL: "Школа магии",
             LOCATION_WARRIOR_ACADEMY: "Академия воинов",
-            LOCATION_SECRET_CAMP: "Тайный лагерь"
+            LOCATION_SECRET_CAMP: "Тайный лагерь",
+            LOCATION_SPAWN_WOLF: "Спавн: Волки",
+            LOCATION_SPAWN_BEAR: "Спавн: Медведи",
+            LOCATION_SPAWN_BOAR: "Спавн: Кабаны",
+            LOCATION_SPAWN_DEER: "Спавн: Олени",
+            LOCATION_SPAWN_GOBLIN: "Спавн: Гоблины",
+            LOCATION_SPAWN_ORC: "Спавн: Орки",
+            LOCATION_SPAWN_UNDEAD: "Спавн: Нежить",
+            LOCATION_SPAWN_DRAGON: "Спавн: Дракон"
         }
         return names.get(location_type, location_type)
 

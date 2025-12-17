@@ -373,6 +373,11 @@ class Toolbar:
 
         surface.blit(tooltip_surface, (bg_rect.x + padding, bg_rect.y + padding))
 
+    def set_grid_active(self, active: bool) -> None:
+        """Set the grid button active state."""
+        if "toggle_grid" in self.buttons:
+            self.buttons["toggle_grid"].active = active
+
     def resize(self, width: int) -> None:
         """Handle window resize."""
         self.width = width
