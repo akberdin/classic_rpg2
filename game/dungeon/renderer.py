@@ -414,11 +414,94 @@ class DungeonRenderer:
 
                 pygame.draw.rect(self.screen, color, (px, py, pixel_w, pixel_h))
 
+        # Рисуем обнаруженные ловушки
+        for trap in dungeon.traps:
+            if trap.detected:
+                trap_px = x + trap.x * pixel_w
+                trap_py = y + trap.y * pixel_h
+
+                # Цвет зависит от состояния ловушки
+                if trap.disarmed:
+                    trap_color = (100, 100, 100)  # Серый для обезвреженных
+                else:
+                    trap_color = (220, 50, 50)  # Красный для активных
+
+                # Рисуем маркер ловушки (маленький квадрат)
+                marker_size = max(2, min(pixel_w, pixel_h) // 2)
+                marker_x = trap_px + (pixel_w - marker_size) // 2
+                marker_y = trap_py + (pixel_h - marker_size) // 2
+                pygame.draw.rect(self.screen, trap_color,
+                               (marker_x, marker_y, marker_size, marker_size))
+
+        # Рисуем обнаруженные тайники
+        for stash in dungeon.stashes:
+            if stash.detected and not stash.is_looted:
+                stash_px = x + stash.x * pixel_w
+                stash_py = y + stash.y * pixel_h
+
+                # Золотой цвет для тайников
+                stash_color = (255, 215, 0)
+                if stash.has_trap and not stash.trap_disarmed:
+                    # Оранжевый для тайников с ловушками
+                    stash_color = (255, 140, 0)
+
+                # Рисуем маркер тайника (ромб/звезда)
+                marker_size = max(2, min(pixel_w, pixel_h) // 2)
+                center_x = stash_px + pixel_w // 2
+                center_y = stash_py + pixel_h // 2
+
+                # Упрощенная звездочка (крест)
+                pygame.draw.line(self.screen, stash_color,
+                               (center_x - marker_size, center_y),
+                               (center_x + marker_size, center_y), 1)
+                pygame.draw.line(self.screen, stash_color,
+                               (center_x, center_y - marker_size),
+                               (center_x, center_y + marker_size), 1)
+
         # Рисуем игрока
         player_px = x + player.x * pixel_w
         player_py = y + player.y * pixel_h
         pygame.draw.rect(self.screen, (255, 215, 0),
                         (player_px, player_py, max(2, pixel_w), max(2, pixel_h)))
+
+    def render_minimap_legend(self, x: int, y: int, width: int, font):
+        """
+        Отрисовка легенды миникарты подземелья
+
+        Args:
+            x, y: Позиция легенды на экране
+            width: Ширина легенды
+            font: Шрифт для текста
+        """
+        legend_items = [
+            ("□", (255, 215, 0), "Игрок"),
+            ("■", (220, 50, 50), "Ловушка"),
+            ("■", (100, 100, 100), "Обезврежена"),
+            ("✦", (255, 215, 0), "Тайник"),
+            ("✦", (255, 140, 0), "С ловушкой"),
+        ]
+
+        item_height = 18
+        legend_height = len(legend_items) * item_height + 10
+
+        # Фон легенды
+        pygame.draw.rect(self.screen, (20, 20, 25),
+                        (x, y, width, legend_height))
+        pygame.draw.rect(self.screen, (80, 80, 100),
+                        (x, y, width, legend_height), 1)
+
+        # Отрисовка элементов легенды
+        current_y = y + 5
+        for symbol, color, label in legend_items:
+            # Символ
+            symbol_surface = font.render(symbol, True, color)
+            self.screen.blit(symbol_surface, (x + 5, current_y))
+
+            # Название
+            label_surface = font.render(label, True, (180, 180, 180))
+            self.screen.blit(label_surface, (x + 25, current_y))
+
+            current_y += item_height
 
     def render_hud(self, dungeon: DungeonMap, player, font):
         """
@@ -599,3 +682,124 @@ class DungeonRenderer:
             hint_surface = font.render(hint, True, (180, 180, 150))
             self.screen.blit(hint_surface, (hint_x, hint_y))
             hint_y += 22
+
+    def render_exploration_stats_panel(self, player, dungeon_manager, font):
+        """
+        Отрисовка панели статистики исследования
+
+        Args:
+            player: Объект игрока
+            dungeon_manager: Менеджер подземелья
+            font: Шрифт для текста
+        """
+        if not hasattr(player, 'skill_manager') or not player.skill_manager:
+            return
+
+        # Получаем навыки EXPLORATION
+        keen_eye = player.skill_manager.get_skill("Острый Глаз")
+        disarm_trap = player.skill_manager.get_skill("Обезвреживание")
+        lockpicking = player.skill_manager.get_skill("Взлом Замков")
+        treasure_hunter = player.skill_manager.get_skill("Охотник за Сокровищами")
+
+        # Если ни одного навыка нет, не показываем панель
+        if not any([keen_eye, disarm_trap, lockpicking, treasure_hunter]):
+            return
+
+        # Размеры и позиция панели (слева, ниже информации о подземелье)
+        panel_width = 220
+        panel_height = 200
+        panel_x = 10
+        panel_y = 180  # Под информацией о подземелье
+
+        # Фон панели
+        panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
+        panel_surface.fill((30, 40, 30, 230))
+        self.screen.blit(panel_surface, (panel_x, panel_y))
+
+        # Рамка (золотая для исследования)
+        pygame.draw.rect(self.screen, (180, 140, 60),
+                        (panel_x, panel_y, panel_width, panel_height), 2)
+
+        # Заголовок - золотая полоса
+        pygame.draw.rect(self.screen, (100, 80, 40),
+                        (panel_x, panel_y, panel_width, 28))
+
+        current_y = panel_y + 4
+        padding_x = panel_x + 8
+
+        # Заголовок
+        title = "ИССЛЕДОВАНИЕ"
+        title_surface = font.render(title, True, (255, 215, 100))
+        title_x = panel_x + (panel_width - title_surface.get_width()) // 2
+        self.screen.blit(title_surface, (title_x, current_y))
+        current_y += 30
+
+        # Отрисовка навыков
+        skills_data = [
+            ("Keen Eye", keen_eye),
+            ("Disarm", disarm_trap),
+            ("Lockpick", lockpicking),
+            ("Treasure", treasure_hunter)
+        ]
+
+        for skill_name, skill in skills_data:
+            if not skill:
+                continue
+
+            rank = skill.rank
+            # Рисуем звездочки для ранга
+            stars = "★" * rank + "☆" * (5 - rank)
+
+            # Имя навыка (сокращенное)
+            skill_text = f"{skill_name}: {stars}"
+            skill_surface = font.render(skill_text, True, (220, 220, 200))
+            self.screen.blit(skill_surface, (padding_x, current_y))
+            current_y += 20
+
+        current_y += 5
+
+        # Статистика (если есть навыки)
+        if keen_eye:
+            detected = keen_eye.stats.get('objects_detected', 0)
+            stat_text = f"Обнаружено: {detected}"
+            stat_surface = font.render(stat_text, True, (180, 200, 180))
+            self.screen.blit(stat_surface, (padding_x, current_y))
+            current_y += 18
+
+        if disarm_trap:
+            disarmed = disarm_trap.stats.get('traps_disarmed', 0)
+            stat_text = f"Обезврежено: {disarmed}"
+            stat_surface = font.render(stat_text, True, (180, 200, 180))
+            self.screen.blit(stat_surface, (padding_x, current_y))
+            current_y += 18
+
+        if lockpicking:
+            lockpicked = lockpicking.stats.get('stashes_lockpicked', 0)
+            stat_text = f"Взломано: {lockpicked}"
+            stat_surface = font.render(stat_text, True, (180, 200, 180))
+            self.screen.blit(stat_surface, (padding_x, current_y))
+            current_y += 18
+
+        # Информация о выбранном объекте
+        if dungeon_manager.selected_object:
+            obj_info = dungeon_manager.get_object_info()
+            if obj_info:
+                current_y += 5
+                # Разделитель
+                pygame.draw.line(self.screen, (180, 140, 60),
+                               (panel_x + 5, current_y),
+                               (panel_x + panel_width - 5, current_y), 1)
+                current_y += 5
+
+                # Тип объекта
+                obj_name = obj_info.get('name', 'Объект')
+                obj_level = obj_info.get('level_name', '')
+                obj_text = f"{obj_name}"
+                obj_surface = font.render(obj_text, True, (255, 215, 100))
+                self.screen.blit(obj_surface, (padding_x, current_y))
+                current_y += 18
+
+                # Уровень
+                level_text = f"Ур: {obj_level}"
+                level_surface = font.render(level_text, True, (200, 200, 180))
+                self.screen.blit(level_surface, (padding_x, current_y))

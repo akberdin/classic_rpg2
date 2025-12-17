@@ -1061,6 +1061,12 @@ class Game:
                 minimap_x, minimap_y, minimap_w, minimap_h
             )
 
+            # Легенда миникарты (под миникартой)
+            legend_y = minimap_y + minimap_h + 10
+            self.dungeon_renderer.render_minimap_legend(
+                minimap_x, legend_y, minimap_w, self.info_font
+            )
+
             # HUD подземелья
             self.dungeon_renderer.render_hud(dungeon, self.player, self.info_font)
 
