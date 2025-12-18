@@ -63,6 +63,10 @@ class RespawnManager:
                 # Сохраняем параметры шахты для респавна
                 respawn_data['mine_rank'] = mine.rank if hasattr(mine, 'rank') else 1
                 respawn_data['spawn_radius'] = mine.spawn_radius if hasattr(mine, 'spawn_radius') else 3
+                # Сохраняем координаты домашней деревни
+                if hasattr(npc, 'home_village_x') and npc.home_village_x is not None:
+                    respawn_data['home_village_x'] = npc.home_village_x
+                    respawn_data['home_village_y'] = npc.home_village_y
                 # Используем время респавна из конфигурации, если оно больше 0
                 if hasattr(mine, 'respawn_time') and mine.respawn_time > 0:
                     respawn_time = mine.respawn_time
@@ -331,11 +335,13 @@ class RespawnManager:
             # Получаем параметры шахты из respawn_data (если были сохранены)
             spawn_radius = respawn_data.get('spawn_radius', 3)
             mine_rank = respawn_data.get('mine_rank', 1)
+            home_village_x = respawn_data.get('home_village_x', None)
+            home_village_y = respawn_data.get('home_village_y', None)
             # Пересчитываем уровень на основе ранга шахты
             level_min = (mine_rank - 1) * 10 + 1
             level_max = mine_rank * 10
             level = random.randint(level_min, level_max)
-            new_npc = Miner(name, x, y, level, spawn_x, spawn_y, spawn_radius)
+            new_npc = Miner(name, x, y, level, spawn_x, spawn_y, spawn_radius, home_village_x, home_village_y)
             # Используем npc_manager для правильного добавления NPC с инвалидацией кэша
             from game.core.npc_manager import NPCType
             game.npc_manager.add_npc(new_npc, NPCType.MINER)

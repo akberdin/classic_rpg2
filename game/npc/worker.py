@@ -12,7 +12,7 @@ from game.constants import (
 class Miner(NPC):
     """Класс Шахтера с AI работы и побега от опасности"""
 
-    def __init__(self, name, x=0, y=0, level=3, mine_x=None, mine_y=None, spawn_radius=None):
+    def __init__(self, name, x=0, y=0, level=3, mine_x=None, mine_y=None, spawn_radius=None, home_village_x=None, home_village_y=None):
         """
         Инициализация Шахтера
 
@@ -24,6 +24,8 @@ class Miner(NPC):
             mine_x: Координата X шахты (центр территории)
             mine_y: Координата Y шахты (центр территории)
             spawn_radius: Радиус спавна шахтера (определяет территорию работы)
+            home_village_x: Координата X домашней деревни
+            home_village_y: Координата Y домашней деревни
         """
         super().__init__(name, x, y, npc_type=NPC_TYPE_MINER, level=level)
 
@@ -31,12 +33,15 @@ class Miner(NPC):
         self._adjust_miner_stats()
 
         # AI параметры
-        self.state = "work"  # work, rest, flee
+        self.state = "work"  # work, rest, flee, going_home
         self.mine_x = mine_x if mine_x is not None else x  # Центр шахты
         self.mine_y = mine_y if mine_y is not None else y
-        # Максимальная дистанция от шахты зависит от радиуса спавна
+        # Домашняя деревня (куда возвращаться на ночь)
+        self.home_village_x = home_village_x
+        self.home_village_y = home_village_y
+        # Максимальная дистанция от шахты - уменьшена для более компактного поведения
         self.spawn_radius = spawn_radius if spawn_radius is not None else 3
-        self.max_distance_from_mine = max(self.spawn_radius * 3, 10)  # В 3 раза больше радиуса спавна, минимум 10
+        self.max_distance_from_mine = max(self.spawn_radius * 1.5, 5)  # В 1.5 раза больше радиуса спавна, минимум 5
         self.rest_counter = 0
         self.rest_duration = random.randint(3, 5)  # Отдых 3-5 часов
         self.steps_per_hour = 1  # Шагов за час
@@ -230,15 +235,16 @@ class Miner(NPC):
                     self.x += dx
                     self.y += dy
 
-        # Случайный отдых
-        if random.random() < 0.08:  # 8% шанс отдохнуть
+        # Случайный отдых (реже, чтобы больше работали)
+        if random.random() < 0.05:  # 5% шанс отдохнуть
             self.state = "rest"
             self.rest_counter = 0
 
     def _choose_wander_target(self):
         """Выбрать случайную точку для блуждания в пределах территории шахты"""
-        # Выбираем случайную точку в пределах радиуса от шахты
-        max_offset = min(self.max_distance_from_mine, 15)  # Ограничиваем для производительности
+        # Уменьшенный радиус блуждания - шахтеры работают ближе к центру шахты
+        # Используем spawn_radius вместо max_distance_from_mine для более компактного поведения
+        max_offset = int(self.spawn_radius * 1.2)  # Чуть больше радиуса спавна
 
         target_x = self.mine_x + random.randint(-max_offset, max_offset)
         target_y = self.mine_y + random.randint(-max_offset, max_offset)

@@ -694,6 +694,11 @@ class NPCSpawner:
             mine_rank = mine.rank if hasattr(mine, 'rank') else 1
             spawn_radius = mine.spawn_radius if hasattr(mine, 'spawn_radius') else 3
 
+            # Находим ближайшую деревню или город для привязки шахтеров
+            home_village = self._find_nearest_settlement(mine.x, mine.y)
+            home_village_x = home_village.x if home_village else None
+            home_village_y = home_village.y if home_village else None
+
             # Определяем уровень шахтеров на основе ранга шахты
             # Ранг 1: уровень 1-10, Ранг 2: 11-20, Ранг 3: 21-30, Ранг 4: 31-40, Ранг 5: 41-50
             level_min = (mine_rank - 1) * 10 + 1
@@ -728,8 +733,8 @@ class NPCSpawner:
                     miner_level = random.randint(level_min, level_max)
                     miner_name = f"{random.choice(miner_names)} {mine.name}"
 
-                    # Создаем шахтера с привязкой к шахте и радиусом спавна
-                    miner = Miner(miner_name, mx, my, miner_level, mine.x, mine.y, spawn_radius)
+                    # Создаем шахтера с привязкой к шахте, радиусом спавна и домашней деревней
+                    miner = Miner(miner_name, mx, my, miner_level, mine.x, mine.y, spawn_radius, home_village_x, home_village_y)
 
                     miners.append(miner)
 
@@ -936,6 +941,34 @@ class NPCSpawner:
                     print(f"Создан некромант '{necro_name}' в руинах {ruin.name}")
 
         return necromancers
+
+    def _find_nearest_settlement(self, x, y):
+        """
+        Найти ближайший населенный пункт (город или деревню) к заданным координатам
+
+        Args:
+            x: Координата X
+            y: Координата Y
+
+        Returns:
+            Location или None: Ближайший населенный пункт
+        """
+        settlements = [loc for loc in self.game_map.locations
+                      if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]]
+
+        if not settlements:
+            return None
+
+        nearest = None
+        nearest_distance = float('inf')
+
+        for settlement in settlements:
+            distance = abs(settlement.x - x) + abs(settlement.y - y)
+            if distance < nearest_distance:
+                nearest_distance = distance
+                nearest = settlement
+
+        return nearest
 
     def _find_npc_position(self, center_x, center_y, existing_npcs=None):
         """
