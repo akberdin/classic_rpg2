@@ -1,6 +1,7 @@
 """Map generator for procedural terrain creation."""
 
 import random
+import uuid
 from typing import Dict, List, Tuple, Any, Optional
 from dataclasses import dataclass, field
 
@@ -135,8 +136,9 @@ class MapLocation:
     y: int
     location_type: str
     name: str = ""
-    rank: int = 1  # Rank for mines, ruins (1-5)
-    shop_rank: int = 1  # Shop rank for cities, villages (1-5)
+    id: str = ""  # Unique identifier for the location
+    rank: int = 1  # Rank for mines, ruins (1-4)
+    shop_rank: int = 1  # Shop rank for cities, villages (1-4)
     miners_count: int = 0  # Number of miners for mines (0-10)
     respawn_time: int = 0  # Respawn time for mines in turns (0-200)
     player_attitude: int = 0  # Attitude towards player (-10 to 10)
@@ -173,6 +175,7 @@ class MapLocation:
             'y': self.y,
             'type': self.location_type,
             'name': self.name,
+            'id': self.id,  # Always save ID
             'player_attitude': self.player_attitude
         }
         # Only save rank for relevant location types
@@ -197,11 +200,17 @@ class MapLocation:
         if 'connections' in data:
             connections = [tuple(conn) for conn in data['connections']]
 
+        # Generate new ID if not present (for backward compatibility)
+        location_id = data.get('id', '')
+        if not location_id:
+            location_id = str(uuid.uuid4())
+
         return cls(
             x=data['x'],
             y=data['y'],
             location_type=data['type'],
             name=data.get('name', ''),
+            id=location_id,
             rank=data.get('rank', 1),
             shop_rank=data.get('shop_rank', 1),
             miners_count=data.get('miners_count', 0),
@@ -397,7 +406,8 @@ class GeneratedMap:
                         x=sv_x,
                         y=sv_y,
                         location_type=LOCATION_VILLAGE,
-                        name=sv_name
+                        name=sv_name,
+                        id=str(uuid.uuid4())
                     )
                     locations.append(starting_village)
 
@@ -876,7 +886,11 @@ class MapGenerator:
             # Generate name
             name = self._get_location_name(location_type)
             attitude = get_default_player_attitude(location_type)
-            location = MapLocation(x, y, location_type, name, player_attitude=attitude)
+            location = MapLocation(
+                x, y, location_type, name,
+                id=str(uuid.uuid4()),
+                player_attitude=attitude
+            )
             game_map.add_location(location)
             placed += 1
 

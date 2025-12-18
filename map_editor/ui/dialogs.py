@@ -637,7 +637,7 @@ class LocationEditDialog(Dialog):
                 label="Ранг (сложность)",
                 key="rank",
                 value=self.location_info.get('rank', 1),
-                min_val=1, max_val=5, step=1
+                min_val=1, max_val=4, step=1
             ))
             self.data['rank'] = self.location_info.get('rank', 1)
             y += 50
@@ -649,7 +649,7 @@ class LocationEditDialog(Dialog):
                 label="Ранг магазина",
                 key="shop_rank",
                 value=self.location_info.get('shop_rank', 1),
-                min_val=1, max_val=5, step=1
+                min_val=1, max_val=4, step=1
             ))
             self.data['shop_rank'] = self.location_info.get('shop_rank', 1)
             y += 50
