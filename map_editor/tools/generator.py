@@ -324,12 +324,7 @@ class MapGenerator:
     SPAWN_NAMES = {
         LOCATION_SPAWN_WOLF: "Волчье логово",
         LOCATION_SPAWN_BEAR: "Медвежья берлога",
-        LOCATION_SPAWN_BOAR: "Кабанья тропа",
-        LOCATION_SPAWN_DEER: "Оленья поляна",
-        LOCATION_SPAWN_GOBLIN: "Гоблинское гнездо",
-        LOCATION_SPAWN_ORC: "Орочий лагерь",
-        LOCATION_SPAWN_UNDEAD: "Проклятое место",
-        LOCATION_SPAWN_DRAGON: "Драконье логово"
+        LOCATION_SPAWN_DEER: "Оленья поляна"
     }
 
     def __init__(self, params: GeneratorParams = None):
@@ -346,12 +341,7 @@ class MapGenerator:
             LOCATION_SECRET_CAMP: set(),
             LOCATION_SPAWN_WOLF: set(),
             LOCATION_SPAWN_BEAR: set(),
-            LOCATION_SPAWN_BOAR: set(),
-            LOCATION_SPAWN_DEER: set(),
-            LOCATION_SPAWN_GOBLIN: set(),
-            LOCATION_SPAWN_ORC: set(),
-            LOCATION_SPAWN_UNDEAD: set(),
-            LOCATION_SPAWN_DRAGON: set()
+            LOCATION_SPAWN_DEER: set()
         }
 
     def generate(self, params: GeneratorParams = None) -> GeneratedMap:
