@@ -670,7 +670,12 @@ class NPCSpawner:
 
     def spawn_miners(self):
         """
-        Создание шахтеров в шахтах
+        Создание шахтеров в шахтах на основе конфигурации
+
+        Параметры для каждой шахты берутся из map1_config.json:
+        - miners_count: количество шахтеров
+        - rank: ранг шахты (определяет уровень шахтеров)
+        - spawn_radius: радиус спавна шахтеров
 
         Returns:
             list: Список шахтеров
@@ -684,22 +689,51 @@ class NPCSpawner:
         ]
 
         for mine in mines:
-            # Создаем 5-8 шахтеров возле каждой шахты
-            num_miners = random.randint(5, 8)
+            # Получаем параметры из конфигурации шахты
+            num_miners = mine.miners_count if hasattr(mine, 'miners_count') and mine.miners_count > 0 else random.randint(5, 8)
+            mine_rank = mine.rank if hasattr(mine, 'rank') else 1
+            spawn_radius = mine.spawn_radius if hasattr(mine, 'spawn_radius') else 3
+
+            # Определяем уровень шахтеров на основе ранга шахты
+            # Ранг 1: уровень 1-10, Ранг 2: 11-20, Ранг 3: 21-30, Ранг 4: 31-40, Ранг 5: 41-50
+            level_min = (mine_rank - 1) * 10 + 1
+            level_max = mine_rank * 10
 
             for i in range(num_miners):
-                # Находим позицию рядом с шахтой
-                miner_pos = self._find_npc_position(mine.x, mine.y)
+                # Находим позицию в радиусе spawn_radius от шахты
+                miner_pos = None
+                for attempt in range(30):
+                    offset_x = random.randint(-spawn_radius, spawn_radius)
+                    offset_y = random.randint(-spawn_radius, spawn_radius)
+                    mx = mine.x + offset_x
+                    my = mine.y + offset_y
+
+                    if self.game_map.is_valid_position(mx, my):
+                        tile = self.game_map.get_tile(mx, my)
+                        if tile.is_passable():
+                            # Проверяем, нет ли уже шахтера на этой позиции
+                            occupied = False
+                            for existing_miner in miners:
+                                if existing_miner.x == mx and existing_miner.y == my:
+                                    occupied = True
+                                    break
+
+                            if not occupied:
+                                miner_pos = (mx, my)
+                                break
+
                 if miner_pos:
                     mx, my = miner_pos
-                    # Уровень шахтеров от 2 до 8
-                    miner_level = random.randint(2, 8)
+                    # Уровень шахтера зависит от ранга шахты
+                    miner_level = random.randint(level_min, level_max)
                     miner_name = f"{random.choice(miner_names)} {mine.name}"
 
-                    # Создаем шахтера с привязкой к шахте
-                    miner = Miner(miner_name, mx, my, miner_level, mine.x, mine.y)
+                    # Создаем шахтера с привязкой к шахте и радиусом спавна
+                    miner = Miner(miner_name, mx, my, miner_level, mine.x, mine.y, spawn_radius)
 
                     miners.append(miner)
+
+            print(f"Создано {len([m for m in miners if m.mine_x == mine.x and m.mine_y == mine.y])} шахтеров для {mine.name} (Ранг {mine_rank}, Уровни {level_min}-{level_max})")
 
         return miners
 
