@@ -8,7 +8,9 @@ from pathlib import Path
 from ..tools.generator import (
     GeneratorParams,
     LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE,
-    LOCATION_MINE, LOCATION_RUINS
+    LOCATION_MINE, LOCATION_RUINS,
+    LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY,
+    Guard, GUARD_TYPES, GUARD_NONE
 )
 
 
@@ -54,6 +56,17 @@ class DialogTextInput:
     active: bool = False
 
 
+@dataclass
+class DialogDropdown:
+    """Dropdown/combobox control in a dialog."""
+    rect: pygame.Rect
+    label: str
+    key: str
+    options: Dict[str, str]  # key -> display name
+    selected: str = ""  # selected option key
+    expanded: bool = False
+
+
 class Dialog:
     """Base dialog class."""
 
@@ -85,9 +98,11 @@ class Dialog:
         self.sliders: List[DialogSlider] = []
         self.checkboxes: List[DialogCheckbox] = []
         self.text_inputs: List[DialogTextInput] = []
+        self.dropdowns: List[DialogDropdown] = []
         self.hovered_button: Optional[int] = None
         self.active_slider: Optional[DialogSlider] = None
         self.active_text_input: Optional[DialogTextInput] = None
+        self.active_dropdown: Optional[DialogDropdown] = None
 
         # Position (will be set when showing)
         self.x = 0
@@ -174,6 +189,37 @@ class Dialog:
                     text_input.active = False
 
             self.active_text_input = None
+
+            # Check dropdowns
+            for dropdown in self.dropdowns:
+                if dropdown.rect.collidepoint(local_x, local_y):
+                    # Toggle dropdown
+                    dropdown.expanded = not dropdown.expanded
+                    # Close other dropdowns
+                    for dd in self.dropdowns:
+                        if dd != dropdown:
+                            dd.expanded = False
+                    self.active_dropdown = dropdown if dropdown.expanded else None
+                    return True
+                elif dropdown.expanded:
+                    # Check if clicking on an option
+                    option_height = 28
+                    options_y = dropdown.rect.bottom
+                    for i, (key, value) in enumerate(dropdown.options.items()):
+                        option_rect = pygame.Rect(dropdown.rect.x, options_y + i * option_height,
+                                                  dropdown.rect.width, option_height)
+                        if option_rect.collidepoint(local_x, local_y):
+                            dropdown.selected = key
+                            dropdown.expanded = False
+                            self.active_dropdown = None
+                            self.data[dropdown.key] = key
+                            return True
+
+            # Close all dropdowns if clicking outside
+            for dropdown in self.dropdowns:
+                dropdown.expanded = False
+            self.active_dropdown = None
+
             return True
 
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -296,6 +342,10 @@ class Dialog:
         for text_input in self.text_inputs:
             self._draw_text_input(surface, text_input)
 
+        # Draw dropdowns
+        for dropdown in self.dropdowns:
+            self._draw_dropdown(surface, dropdown)
+
         # Draw buttons
         for i, button in enumerate(self.buttons):
             self._draw_button(surface, button, i == self.hovered_button)
@@ -388,6 +438,52 @@ class Dialog:
             text_rect.right = rect.right - 8
 
         surface.blit(text_surface, text_rect)
+
+    def _draw_dropdown(self, surface: pygame.Surface, dropdown: DialogDropdown) -> None:
+        """Draw a dropdown control."""
+        rect = pygame.Rect(
+            self.x + dropdown.rect.x,
+            self.y + dropdown.rect.y,
+            dropdown.rect.width,
+            dropdown.rect.height
+        )
+
+        # Label
+        if dropdown.label:
+            label_surface = self.font.render(dropdown.label, True, self.text_color)
+            surface.blit(label_surface, (rect.x, rect.y - 18))
+
+        # Dropdown background
+        bg_color = (50, 50, 55) if dropdown.expanded else self.slider_bg
+        pygame.draw.rect(surface, bg_color, rect, border_radius=4)
+        pygame.draw.rect(surface, self.border_color, rect, width=1, border_radius=4)
+
+        # Display selected option
+        display_text = dropdown.options.get(dropdown.selected, "Нет")
+        text_surface = self.font.render(display_text, True, self.text_color)
+        surface.blit(text_surface, (rect.x + 8, rect.y + 6))
+
+        # Arrow indicator
+        arrow = "▼" if not dropdown.expanded else "▲"
+        arrow_surface = self.font.render(arrow, True, self.text_color)
+        surface.blit(arrow_surface, (rect.right - 20, rect.y + 6))
+
+        # Draw expanded options if dropdown is open
+        if dropdown.expanded:
+            option_height = 28
+            options_y = rect.bottom
+            for i, (key, value) in enumerate(dropdown.options.items()):
+                option_rect = pygame.Rect(rect.x, options_y + i * option_height,
+                                         rect.width, option_height)
+                # Highlight selected option
+                if key == dropdown.selected:
+                    pygame.draw.rect(surface, (70, 70, 75), option_rect)
+                else:
+                    pygame.draw.rect(surface, self.slider_bg, option_rect)
+                pygame.draw.rect(surface, self.border_color, option_rect, width=1)
+
+                option_text = self.font.render(value, True, self.text_color)
+                surface.blit(option_text, (option_rect.x + 8, option_rect.y + 6))
 
     def _draw_button(self, surface: pygame.Surface, button: DialogButton,
                      hovered: bool) -> None:
@@ -611,7 +707,11 @@ class LocationEditDialog(Dialog):
             height += 50  # Space for shop_rank slider
         if loc_type == LOCATION_MINE:
             height += 100  # Space for miners_count and respawn_time sliders
-        super().__init__("Редактирование локации", 400, height)
+        # Add space for guards (for settlements and academies)
+        if loc_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
+                        LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, 'secret_camp']:
+            height += 280  # Space for 5 guard slots (title + 5*45 + spacing)
+        super().__init__("Редактирование локации", 500, height)  # Increased width to 500 for guards
         self._setup_controls()
 
     def _setup_controls(self) -> None:
@@ -710,6 +810,54 @@ class LocationEditDialog(Dialog):
         ))
         self.data['spawn_radius'] = self.location_info.get('spawn_radius', 5)
         y += 50
+
+        # Guards section (for settlements and academies)
+        if loc_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
+                        LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, 'secret_camp']:
+            # Guards title
+            y += 10
+            guards = self.location_info.get('guards', [Guard() for _ in range(5)])
+            # Ensure we have exactly 5 guards
+            while len(guards) < 5:
+                guards.append(Guard())
+
+            for i in range(5):
+                guard = guards[i] if i < len(guards) else Guard()
+
+                # Guard label
+                # Dropdown for guard type (180px wide)
+                self.dropdowns.append(DialogDropdown(
+                    rect=pygame.Rect(20, y + 20, 180, 28),
+                    label=f"Стража {i+1}:",
+                    key=f"guard_{i}_type",
+                    options=GUARD_TYPES,
+                    selected=guard.guard_type
+                ))
+                self.data[f"guard_{i}_type"] = guard.guard_type
+
+                # Rank input (80px wide)
+                self.text_inputs.append(DialogTextInput(
+                    rect=pygame.Rect(210, y + 20, 80, 28),
+                    label="",  # No label, just input field
+                    key=f"guard_{i}_rank",
+                    value=str(guard.rank),
+                    max_length=1
+                ))
+                self.data[f"guard_{i}_rank"] = str(guard.rank)
+
+                # Count input (80px wide)
+                self.text_inputs.append(DialogTextInput(
+                    rect=pygame.Rect(300, y + 20, 80, 28),
+                    label="",  # No label, just input field
+                    key=f"guard_{i}_count",
+                    value=str(guard.count),
+                    max_length=2
+                ))
+                self.data[f"guard_{i}_count"] = str(guard.count)
+
+                y += 45
+
+            y += 5  # Extra spacing after guards section
 
         # Connections text input (для шахт, деревень и городов)
         if loc_type in [LOCATION_MINE, LOCATION_VILLAGE, LOCATION_CITY]:

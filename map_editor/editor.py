@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 
 from .utils.helpers import load_config
-from .tools.generator import MapGenerator, GeneratedMap, GeneratorParams, MapLocation, MapConfig
+from .tools.generator import MapGenerator, GeneratedMap, GeneratorParams, MapLocation, MapConfig, Guard
 from .tools.brush import BiomeBrush, BrushSettings, BrushMode
 from .tools.objects import ObjectPlacer, PlacementMode
 from .ui.toolbar import Toolbar, ToolType
@@ -236,6 +236,7 @@ class MapEditor:
             'respawn_time': self._editing_location.respawn_time,
             'player_attitude': self._editing_location.player_attitude,
             'spawn_radius': self._editing_location.spawn_radius,
+            'guards': self._editing_location.guards,
             'connections': self._editing_location.connections
         }
 
@@ -332,6 +333,44 @@ class MapEditor:
 
                 if new_connections != self._editing_location.connections:
                     self._editing_location.connections = new_connections
+                    self.has_unsaved_changes = True
+
+            # Update guards (for settlements and academies)
+            guards_updated = False
+            new_guards = []
+            for i in range(5):
+                guard_type_key = f"guard_{i}_type"
+                guard_rank_key = f"guard_{i}_rank"
+                guard_count_key = f"guard_{i}_count"
+
+                if guard_type_key in data:
+                    guard_type = data.get(guard_type_key, "")
+                    try:
+                        guard_rank = int(data.get(guard_rank_key, "1"))
+                        guard_count = int(data.get(guard_count_key, "0"))
+                        # Validate rank (1-4) and count (0-20)
+                        guard_rank = max(1, min(4, guard_rank))
+                        guard_count = max(0, min(20, guard_count))
+                        new_guards.append(Guard(guard_type=guard_type, rank=guard_rank, count=guard_count))
+                    except ValueError:
+                        # Use default values if parsing fails
+                        new_guards.append(Guard(guard_type=guard_type, rank=1, count=0))
+
+            # Update if guards have changed
+            if new_guards:
+                # Compare guards
+                if len(new_guards) != len(self._editing_location.guards):
+                    guards_updated = True
+                else:
+                    for i, (new_guard, old_guard) in enumerate(zip(new_guards, self._editing_location.guards)):
+                        if (new_guard.guard_type != old_guard.guard_type or
+                            new_guard.rank != old_guard.rank or
+                            new_guard.count != old_guard.count):
+                            guards_updated = True
+                            break
+
+                if guards_updated:
+                    self._editing_location.guards = new_guards
                     self.has_unsaved_changes = True
 
             # Update sidebar info
