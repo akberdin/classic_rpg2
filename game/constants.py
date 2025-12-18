@@ -315,64 +315,11 @@ NPC_RELATIONSHIPS = {
 }
 
 # =============================================================================
-# ИМЕНА ЛОКАЦИЙ (статические данные)
+# ИМЕНА ЛОКАЦИЙ
 # =============================================================================
-
-CITY_NAMES = [
-    "Златоград", "Каменск", "Серебряный Град", "Королевская Гавань",
-    "Вольный Город", "Изумрудный Город", "Белокаменск", "Красноярск",
-    "Северная Столица", "Южный Порт", "Восточный Форт", "Западный Град"
-]
-
-VILLAGE_NAMES = [
-    "Зеленая Долина", "Тихий Ручей", "Ясная Поляна", "Светлый Берег",
-    "Дубовая Роща", "Каменный Брод", "Солнечная Деревня", "Хлебное Поле",
-    "Лесная Опушка", "Речная Заводь", "Старая Мельница", "Вишневый Сад",
-    "Медовая Пасека", "Березовая Роща", "Тихая Гавань", "Золотые Нивы",
-    "Рыбацкий Берег", "Горный Приют", "Сосновый Бор", "Кленовая Роща",
-    "Цветочная Долина", "Утренняя Роса", "Ивовая Заводь", "Песчаный Берег",
-    "Зеркальное Озеро", "Каменная Гряда", "Веселая Долина", "Тихая Пристань"
-]
-
-MAGIC_SCHOOL_NAMES = [
-    "Академия Высшей Магии", "Школа Чародейства", "Башня Мудрецов"
-]
-
-WARRIOR_ACADEMY_NAMES = [
-    "Военная Академия", "Школа Воинского Искусства", "Цитадель Воинов"
-]
-
-SECRET_CAMP_NAMES = [
-    "Тайный Лагерь", "Убежище Теней", "Логово Убийц",
-    "Скрытый Приют", "Гнездо Шпионов", "Темный Притон"
-]
-
-MINE_NAMES = [
-    "Медная Шахта", "Медный Рудник", "Великий Медный Рудник",
-    "Железная Шахта", "Железный Рудник", "Глубокая Железная Шахта",
-    "Серебряная Шахта", "Серебряная Жила", "Древняя Серебряная Шахта",
-    "Золотая Шахта", "Золотой Прииск", "Богатая Золотая Жила",
-    "Мифриловая Шахта", "Мифриловый Рудник", "Редкий Мифриловый Прииск",
-    "Угольная Шахта", "Каменоломня", "Самоцветная Жила"
-]
-
-BANDIT_CAMP_NAMES = [
-    "Логово Разбойников", "Лагерь Головорезов", "Стоянка Бандитов",
-    "Волчье Логово", "Разбойничий Стан", "Черный Лагерь",
-    "Темный Лес", "Медвежья Берлога", "Воронье Гнездо", "Лисья Нора",
-    "Дубовый Стан", "Кровавая Поляна"
-]
-
-RUIN_NAMES = [
-    "Древние Руины", "Забытый Храм", "Разрушенная Крепость",
-    "Старое Святилище", "Проклятые Развалины", "Заброшенный Замок",
-    "Руины Старого Города", "Разваленная Башня", "Древнее Капище",
-    "Забытая Обсерватория", "Разрушенный Монастырь", "Старая Цитадель",
-    "Павшая Твердыня", "Мертвый Город", "Призрачный Замок",
-    "Разбитая Крепость", "Заброшенная Башня", "Темный Храм",
-    "Проклятый Собор", "Руины Дворца", "Разваленная Крепость",
-    "Гробница Королей", "Древний Некрополь", "Темные Катакомбы"
-]
+# УДАЛЕНО: Списки имен локаций больше не нужны в основном коде
+# Генерация карт перенесена в map_editor, который имеет свои собственные списки имен
+# Готовые карты (map1.json и т.д.) уже содержат все имена локаций
 
 # =============================================================================
 # ДИНАМИЧЕСКИЕ КОНСТАНТЫ (загружаются из конфигов)
@@ -402,11 +349,6 @@ def _init_dynamic_constants():
     global UI_MIN_FONT_SIZE, UI_DEFAULT_FONT_SIZE, UI_INFO_FONT_SIZE
     global HEALTH_LOW_THRESHOLD, HEALTH_MEDIUM_THRESHOLD
     global LOCATION_MIN_DISTANCE
-    global CITY_COUNT_MIN, CITY_COUNT_MAX
-    global VILLAGE_COUNT_MIN, VILLAGE_COUNT_MAX
-    global MINE_COUNT_MIN, MINE_COUNT_MAX
-    global BANDIT_CAMP_COUNT_MIN, BANDIT_CAMP_COUNT_MAX
-    global RUINS_COUNT_MIN, RUINS_COUNT_MAX, MAGIC_SCHOOL_COUNT
     global GUARDS_PER_CITY, GUARDS_PER_VILLAGE
     global MERCHANTS_PER_CITY, MERCHANTS_PER_VILLAGE
     global BANDITS_PER_CAMP_MIN, BANDITS_PER_CAMP_MAX
@@ -569,28 +511,8 @@ def _init_dynamic_constants():
     HEALTH_LOW_THRESHOLD = config.player.get('health_thresholds', 'low', default=30)
     HEALTH_MEDIUM_THRESHOLD = config.player.get('health_thresholds', 'medium', default=60)
 
-    # Количество локаций
-    cities = world_config.get_location_count('cities', {'min': 4, 'max': 6})
-    CITY_COUNT_MIN = cities.get('min', 4) if isinstance(cities, dict) else 4
-    CITY_COUNT_MAX = cities.get('max', 6) if isinstance(cities, dict) else 6
-
-    villages = world_config.get_location_count('villages', {'min': 12, 'max': 18})
-    VILLAGE_COUNT_MIN = villages.get('min', 12) if isinstance(villages, dict) else 12
-    VILLAGE_COUNT_MAX = villages.get('max', 18) if isinstance(villages, dict) else 18
-
-    mines = world_config.get_location_count('mines', {'min': 6, 'max': 10})
-    MINE_COUNT_MIN = mines.get('min', 6) if isinstance(mines, dict) else 6
-    MINE_COUNT_MAX = mines.get('max', 10) if isinstance(mines, dict) else 10
-
-    camps = world_config.get_location_count('bandit_camps', {'min': 6, 'max': 10})
-    BANDIT_CAMP_COUNT_MIN = camps.get('min', 6) if isinstance(camps, dict) else 6
-    BANDIT_CAMP_COUNT_MAX = camps.get('max', 10) if isinstance(camps, dict) else 10
-
-    ruins = world_config.get_location_count('ruins', {'min': 8, 'max': 12})
-    RUINS_COUNT_MIN = ruins.get('min', 8) if isinstance(ruins, dict) else 8
-    RUINS_COUNT_MAX = ruins.get('max', 12) if isinstance(ruins, dict) else 12
-
-    MAGIC_SCHOOL_COUNT = world_config.get_location_count('magic_schools', 1)
+    # УДАЛЕНО: Параметры количества локаций больше не нужны
+    # Генерация карт перенесена в map_editor
 
     # Спавн NPC
     GUARDS_PER_CITY = npc_config.get_spawn_param('guards_per_city', 4)
@@ -729,17 +651,7 @@ HEALTH_LOW_THRESHOLD = 30
 HEALTH_MEDIUM_THRESHOLD = 60
 
 LOCATION_MIN_DISTANCE = 8
-CITY_COUNT_MIN = 4
-CITY_COUNT_MAX = 6
-VILLAGE_COUNT_MIN = 12
-VILLAGE_COUNT_MAX = 18
-MINE_COUNT_MIN = 6
-MINE_COUNT_MAX = 10
-BANDIT_CAMP_COUNT_MIN = 6
-BANDIT_CAMP_COUNT_MAX = 10
-RUINS_COUNT_MIN = 8
-RUINS_COUNT_MAX = 12
-MAGIC_SCHOOL_COUNT = 1
+# УДАЛЕНО: Константы количества локаций больше не нужны (генерация в map_editor)
 
 GUARDS_PER_CITY = 4
 GUARDS_PER_VILLAGE = 2
