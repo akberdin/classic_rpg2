@@ -341,6 +341,12 @@ class Sidebar:
             self._draw_object_panel(clip_surface)
         elif self.current_tool == ToolType.SELECT:
             self._draw_select_panel(clip_surface)
+        elif self.current_tool == ToolType.CONNECTION:
+            self._draw_connection_panel(clip_surface)
+        elif self.current_tool == ToolType.MOVE:
+            self._draw_move_panel(clip_surface)
+        elif self.current_tool == ToolType.ERASER:
+            self._draw_eraser_panel(clip_surface)
         else:
             self._draw_default_panel(clip_surface)
 
@@ -628,6 +634,120 @@ class Sidebar:
             "E - Ластик",
             "M - Перемещение",
             "C - Связи"
+        ]
+
+        for line in lines:
+            text_surface = self.font.render(line, True, self.text_color)
+            surface.blit(text_surface, (8, y_offset))
+            y_offset += 18
+
+    def _draw_connection_panel(self, surface: pygame.Surface) -> None:
+        """Draw connection tool info panel."""
+        y_offset = 10
+        y_offset = self._draw_section_header(surface, "Связи", y_offset)
+
+        lines = [
+            "Инструмент создания связей",
+            "между объектами",
+            "",
+            "Принцип работы:",
+            "",
+            "1. Кликните на первый объект",
+            "   (источник связи)",
+            "",
+            "2. Кликните на второй объект",
+            "   (цель связи)",
+            "",
+            "3. Связь будет создана и",
+            "   отображена стрелкой A → B",
+            "",
+            "Условия:",
+            "• Связи доступны для:",
+            "  - Деревень",
+            "  - Городов",
+            "  - Шахт",
+            "",
+            "• Связь записывается в",
+            "  конфиг первого объекта",
+            "",
+            "• Можно создать несколько",
+            "  связей от одного объекта"
+        ]
+
+        for line in lines:
+            text_surface = self.font.render(line, True, self.text_color)
+            surface.blit(text_surface, (8, y_offset))
+            y_offset += 18
+
+    def _draw_move_panel(self, surface: pygame.Surface) -> None:
+        """Draw move tool info panel."""
+        y_offset = 10
+        y_offset = self._draw_section_header(surface, "Двигать", y_offset)
+
+        lines = [
+            "Инструмент перемещения",
+            "объектов",
+            "",
+            "Принцип работы:",
+            "",
+            "1. Кликните на объект,",
+            "   который хотите переместить",
+            "",
+            "2. Кликните на новое",
+            "   место на карте",
+            "",
+            "3. Объект переместится",
+            "   на новую позицию",
+            "",
+            "Условия:",
+            "• Работает со всеми типами",
+            "  локаций и точек спавна",
+            "",
+            "• При перемещении объекта",
+            "  автоматически обновляются",
+            "  все связи, указывающие",
+            "  на этот объект",
+            "",
+            "• Новая позиция сохраняется",
+            "  в конфиге"
+        ]
+
+        for line in lines:
+            text_surface = self.font.render(line, True, self.text_color)
+            surface.blit(text_surface, (8, y_offset))
+            y_offset += 18
+
+    def _draw_eraser_panel(self, surface: pygame.Surface) -> None:
+        """Draw eraser tool info panel."""
+        y_offset = 10
+        y_offset = self._draw_section_header(surface, "Удалить", y_offset)
+
+        lines = [
+            "Инструмент удаления",
+            "объектов",
+            "",
+            "Принцип работы:",
+            "",
+            "1. Кликните на объект,",
+            "   который хотите удалить",
+            "",
+            "2. Объект будет удален",
+            "   с карты и из конфига",
+            "",
+            "Условия:",
+            "• Работает со всеми типами",
+            "  локаций и точек спавна",
+            "",
+            "• При удалении объекта",
+            "  автоматически удаляются",
+            "  все связи, указывающие",
+            "  на этот объект",
+            "",
+            "• Если удаляется стартовая",
+            "  деревня, статус стартовой",
+            "  снимается",
+            "",
+            "• Удаление необратимо"
         ]
 
         for line in lines:
