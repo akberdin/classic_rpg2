@@ -25,6 +25,7 @@
       "player_attitude": 0,
       "rank": 2,
       "miners_count": 5,
+      "spawn_radius": 3,
       "respawn_time": 50
     }
   ],

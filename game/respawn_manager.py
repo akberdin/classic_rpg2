@@ -24,7 +24,8 @@ class RespawnManager:
         self.game_map = game_map
         # Очередь респавна: [(npc_data, turns_remaining), ...]
         self.respawn_queue = []
-        # Фиксированное время респавна (в игровых часах) - 48 часов = 2 дня
+        # Фиксированное время респавна (в игровых часах) - 48 часов = 2 дня (по умолчанию)
+        # Для шахтеров используется время из конфигурации шахты
         self.respawn_time = 48
         # Счетчик успешных респавнов
         self.total_respawns = 0
@@ -50,10 +51,46 @@ class RespawnManager:
             'npc_class': type(npc).__name__
         }
 
-        # Фиксированное время респавна
-        self.respawn_queue.append((respawn_data, self.respawn_time))
-        print(f"[РЕСПАВН] {npc.name} ({respawn_data['npc_class']}) зарегистрирован для респавна через {self.respawn_time} часов")
+        # Определяем время респавна
+        respawn_time = self.respawn_time  # По умолчанию
+
+        # Для шахтеров используем время респавна из конфигурации шахты
+        npc_class = type(npc).__name__
+        if npc_class == 'Miner' and hasattr(npc, 'mine_x') and hasattr(npc, 'mine_y'):
+            # Находим шахту по координатам
+            mine = self._find_mine_by_coords(npc.mine_x, npc.mine_y)
+            if mine:
+                # Сохраняем параметры шахты для респавна
+                respawn_data['mine_rank'] = mine.rank if hasattr(mine, 'rank') else 1
+                respawn_data['spawn_radius'] = mine.spawn_radius if hasattr(mine, 'spawn_radius') else 3
+                # Используем время респавна из конфигурации, если оно больше 0
+                if hasattr(mine, 'respawn_time') and mine.respawn_time > 0:
+                    respawn_time = mine.respawn_time
+                elif hasattr(mine, 'respawn_time') and mine.respawn_time == 0:
+                    # Если respawn_time = 0, то респавн не происходит
+                    print(f"[РЕСПАВН] {npc.name} НЕ будет возрождаться (respawn_time=0 для шахты {mine.name})")
+                    return
+
+        self.respawn_queue.append((respawn_data, respawn_time))
+        print(f"[РЕСПАВН] {npc.name} ({respawn_data['npc_class']}) зарегистрирован для респавна через {respawn_time} часов")
         print(f"[РЕСПАВН] Всего в очереди: {len(self.respawn_queue)} NPC")
+
+    def _find_mine_by_coords(self, x, y):
+        """
+        Найти шахту по координатам
+
+        Args:
+            x: Координата X шахты
+            y: Координата Y шахты
+
+        Returns:
+            Location или None: Локация шахты или None
+        """
+        from game.constants import LOCATION_MINE
+        for loc in self.game_map.locations:
+            if loc.location_type == LOCATION_MINE and loc.x == x and loc.y == y:
+                return loc
+        return None
 
     def _remove_dead_npc_from_manager(self, npc, npc_manager):
         """
@@ -241,8 +278,15 @@ class RespawnManager:
 
         spawn_x, spawn_y, location_type = spawn_location
 
-        # Находим позицию для спавна рядом с локацией
-        spawn_pos = self._find_spawn_position(spawn_x, spawn_y)
+        # Для шахтеров используем spawn_radius из конфигурации
+        npc_class = respawn_data['npc_class']
+        if npc_class == 'Miner':
+            spawn_radius = respawn_data.get('spawn_radius', 3)
+            spawn_pos = self._find_spawn_position(spawn_x, spawn_y, radius=spawn_radius)
+        else:
+            # Для остальных NPC используем стандартный радиус
+            spawn_pos = self._find_spawn_position(spawn_x, spawn_y)
+
         if not spawn_pos:
             return None
 
@@ -284,7 +328,14 @@ class RespawnManager:
         elif npc_class == 'Miner':
             miner_names = ["Шахтер", "Рудокоп", "Горняк", "Копатель"]
             name = f"{random.choice(miner_names)} {location_name}"
-            new_npc = Miner(name, x, y, level, spawn_x, spawn_y)
+            # Получаем параметры шахты из respawn_data (если были сохранены)
+            spawn_radius = respawn_data.get('spawn_radius', 3)
+            mine_rank = respawn_data.get('mine_rank', 1)
+            # Пересчитываем уровень на основе ранга шахты
+            level_min = (mine_rank - 1) * 10 + 1
+            level_max = mine_rank * 10
+            level = random.randint(level_min, level_max)
+            new_npc = Miner(name, x, y, level, spawn_x, spawn_y, spawn_radius)
             # Используем npc_manager для правильного добавления NPC с инвалидацией кэша
             from game.core.npc_manager import NPCType
             game.npc_manager.add_npc(new_npc, NPCType.MINER)
@@ -385,21 +436,22 @@ class RespawnManager:
 
         return new_npc
 
-    def _find_spawn_position(self, center_x, center_y):
+    def _find_spawn_position(self, center_x, center_y, radius=5):
         """
         Найти позицию для спавна рядом с центром
 
         Args:
             center_x: X координата центра
             center_y: Y координата центра
+            radius: Радиус поиска позиции (по умолчанию 5)
 
         Returns:
             tuple или None: (x, y) позиция или None
         """
-        # Сначала пробуем найти позицию в случайном направлении
+        # Сначала пробуем найти позицию в случайном направлении в пределах радиуса
         for _ in range(20):
-            offset_x = random.randint(-5, 5)
-            offset_y = random.randint(-5, 5)
+            offset_x = random.randint(-radius, radius)
+            offset_y = random.randint(-radius, radius)
             x = center_x + offset_x
             y = center_y + offset_y
 
@@ -408,10 +460,11 @@ class RespawnManager:
                 if tile.is_passable():
                     return (x, y)
 
-        # Если не нашли, пробуем систематически
-        for radius in range(1, 10):
-            for dx in range(-radius, radius + 1):
-                for dy in range(-radius, radius + 1):
+        # Если не нашли, пробуем систематически до максимального радиуса
+        max_radius = max(radius, 10)
+        for r in range(1, max_radius + 1):
+            for dx in range(-r, r + 1):
+                for dy in range(-r, r + 1):
                     x = center_x + dx
                     y = center_y + dy
 

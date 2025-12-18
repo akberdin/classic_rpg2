@@ -110,6 +110,8 @@ class GameMap:
                 location.miners_count = loc_data["miners_count"]
             if "respawn_time" in loc_data:
                 location.respawn_time = loc_data["respawn_time"]
+            if "spawn_radius" in loc_data:
+                location.spawn_radius = loc_data["spawn_radius"]
             if "connections" in loc_data:
                 location.connections = [tuple(conn) for conn in loc_data["connections"]]
 

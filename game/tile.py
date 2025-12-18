@@ -95,6 +95,7 @@ class Location:
         self.player_attitude = 0  # Отношение к игроку (-10 до 10)
         self.miners_count = 0  # Количество шахтеров для шахт (0-10)
         self.respawn_time = 0  # Время респавна для шахт в ходах (0-200)
+        self.spawn_radius = 3  # Радиус спавна для шахт (по умолчанию 3)
         self.connections = []  # Связи с другими локациями [(x, y), ...]
 
     def _generate_default_name(self):

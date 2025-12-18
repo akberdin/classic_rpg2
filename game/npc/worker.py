@@ -12,7 +12,7 @@ from game.constants import (
 class Miner(NPC):
     """Класс Шахтера с AI работы и побега от опасности"""
 
-    def __init__(self, name, x=0, y=0, level=3, mine_x=None, mine_y=None):
+    def __init__(self, name, x=0, y=0, level=3, mine_x=None, mine_y=None, spawn_radius=None):
         """
         Инициализация Шахтера
 
@@ -23,6 +23,7 @@ class Miner(NPC):
             level: Уровень шахтера
             mine_x: Координата X шахты (центр территории)
             mine_y: Координата Y шахты (центр территории)
+            spawn_radius: Радиус спавна шахтера (определяет территорию работы)
         """
         super().__init__(name, x, y, npc_type=NPC_TYPE_MINER, level=level)
 
@@ -33,7 +34,9 @@ class Miner(NPC):
         self.state = "work"  # work, rest, flee
         self.mine_x = mine_x if mine_x is not None else x  # Центр шахты
         self.mine_y = mine_y if mine_y is not None else y
-        self.max_distance_from_mine = 20  # Максимальная дистанция от шахты
+        # Максимальная дистанция от шахты зависит от радиуса спавна
+        self.spawn_radius = spawn_radius if spawn_radius is not None else 3
+        self.max_distance_from_mine = max(self.spawn_radius * 3, 10)  # В 3 раза больше радиуса спавна, минимум 10
         self.rest_counter = 0
         self.rest_duration = random.randint(3, 5)  # Отдых 3-5 часов
         self.steps_per_hour = 1  # Шагов за час
