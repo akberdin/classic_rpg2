@@ -1,5 +1,6 @@
 """Object placement tool for the map editor."""
 
+import uuid
 from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass, field
 from enum import Enum
@@ -261,7 +262,8 @@ class ObjectPlacer:
             x=x,
             y=y,
             location_type=self.current_template.location_type,
-            name=name
+            name=name,
+            id=str(uuid.uuid4())
         )
 
         game_map.add_location(location)
