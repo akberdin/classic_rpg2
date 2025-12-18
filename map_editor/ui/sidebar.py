@@ -528,6 +528,9 @@ class Sidebar:
             if loc_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
                 info_lines.append(f"Ранг магазина: {self.location_info.get('shop_rank', 1)}")
 
+            # Show spawn_radius for all locations
+            info_lines.append(f"Радиус спавна: {self.location_info.get('spawn_radius', 5)}")
+
             if self.location_info.get('is_starting'):
                 info_lines.append("(Стартовая деревня)")
 
@@ -568,7 +571,8 @@ class Sidebar:
             info_lines = [
                 f"Тип: {self.location_info.get('type_display', '')}",
                 f"Имя: {self.location_info.get('name', '')}",
-                f"Координаты: ({self.location_info.get('x', 0)}, {self.location_info.get('y', 0)})"
+                f"Координаты: ({self.location_info.get('x', 0)}, {self.location_info.get('y', 0)})",
+                f"Радиус спавна: {self.location_info.get('spawn_radius', 5)}"
             ]
 
             if self.location_info.get('is_starting'):

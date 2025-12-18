@@ -142,6 +142,7 @@ class MapLocation:
     miners_count: int = 0  # Number of miners for mines (0-10)
     respawn_time: int = 0  # Respawn time for mines in turns (0-200)
     player_attitude: int = 0  # Attitude towards player (-10 to 10)
+    spawn_radius: int = 5  # Spawn radius for NPCs related to this location (1-20)
     connections: List[Tuple[int, int]] = field(default_factory=list)  # Connections: [(target_x, target_y), ...]
 
     def get_id(self) -> str:
@@ -176,7 +177,8 @@ class MapLocation:
             'type': self.location_type,
             'name': self.name,
             'id': self.id,  # Always save ID
-            'player_attitude': self.player_attitude
+            'player_attitude': self.player_attitude,
+            'spawn_radius': self.spawn_radius  # Save spawn radius for all locations
         }
         # Only save rank for relevant location types
         if self.location_type in [LOCATION_MINE, LOCATION_RUINS]:
@@ -216,6 +218,7 @@ class MapLocation:
             miners_count=data.get('miners_count', 0),
             respawn_time=data.get('respawn_time', 0),
             player_attitude=data.get('player_attitude', 0),
+            spawn_radius=data.get('spawn_radius', 5),
             connections=connections
         )
 

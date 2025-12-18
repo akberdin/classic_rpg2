@@ -235,6 +235,7 @@ class MapEditor:
             'miners_count': self._editing_location.miners_count,
             'respawn_time': self._editing_location.respawn_time,
             'player_attitude': self._editing_location.player_attitude,
+            'spawn_radius': self._editing_location.spawn_radius,
             'connections': self._editing_location.connections
         }
 
@@ -300,6 +301,13 @@ class MapEditor:
                 new_attitude = int(data.get('player_attitude', 0))
                 if new_attitude != self._editing_location.player_attitude:
                     self._editing_location.player_attitude = new_attitude
+                    self.has_unsaved_changes = True
+
+            # Update spawn_radius (for all locations)
+            if 'spawn_radius' in data:
+                new_spawn_radius = int(data.get('spawn_radius', 5))
+                if new_spawn_radius != self._editing_location.spawn_radius:
+                    self._editing_location.spawn_radius = new_spawn_radius
                     self.has_unsaved_changes = True
 
             # Update connections (parse from string)

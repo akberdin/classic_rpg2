@@ -604,7 +604,7 @@ class LocationEditDialog(Dialog):
         self.location_info = location_info or {}
         # Calculate dialog height based on location type
         loc_type = self.location_info.get('type', '')
-        height = 400  # Base height increased for connections
+        height = 450  # Base height increased for spawn_radius slider
         if loc_type in [LOCATION_MINE, LOCATION_RUINS]:
             height += 50  # Space for rank slider
         if loc_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
@@ -698,6 +698,17 @@ class LocationEditDialog(Dialog):
             min_val=-10, max_val=10, step=1
         ))
         self.data['player_attitude'] = self.location_info.get('player_attitude', 0)
+        y += 50
+
+        # Spawn radius slider (for all locations)
+        self.sliders.append(DialogSlider(
+            rect=pygame.Rect(20, y + 20, self.width - 40, 16),
+            label="Радиус спавна NPC (1-20)",
+            key="spawn_radius",
+            value=self.location_info.get('spawn_radius', 5),
+            min_val=1, max_val=20, step=1
+        ))
+        self.data['spawn_radius'] = self.location_info.get('spawn_radius', 5)
         y += 50
 
         # Connections text input (для шахт, деревень и городов)
