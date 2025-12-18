@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 
 from .utils.helpers import load_config
-from .tools.generator import MapGenerator, GeneratedMap, GeneratorParams, MapLocation
+from .tools.generator import MapGenerator, GeneratedMap, GeneratorParams, MapLocation, MapConfig
 from .tools.brush import BiomeBrush, BrushSettings, BrushMode
 from .tools.objects import ObjectPlacer, PlacementMode
 from .ui.toolbar import Toolbar, ToolType
@@ -51,9 +51,9 @@ class MapEditor:
         self.clock = pygame.time.Clock()
         self.running = True
 
-        # Fonts
-        self.font = pygame.font.SysFont('Arial', 12)
-        self.font_large = pygame.font.SysFont('Arial', 14, bold=True)
+        # Fonts - without antialiasing for crisp rendering
+        self.font = pygame.font.Font(None, 18)  # Use default pygame font, size 18
+        self.font_large = pygame.font.Font(None, 22)  # Larger font for headers
 
         # Colors from config
         self.biome_colors = {}
@@ -223,7 +223,10 @@ class MapEditor:
             'y': self._editing_location.y,
             'is_starting': (self._editing_location == self.current_map.starting_village),
             'rank': self._editing_location.rank,
-            'shop_rank': self._editing_location.shop_rank
+            'shop_rank': self._editing_location.shop_rank,
+            'miners_count': self._editing_location.miners_count,
+            'respawn_time': self._editing_location.respawn_time,
+            'player_attitude': self._editing_location.player_attitude
         }
 
         # Create and show the dialog
@@ -269,6 +272,27 @@ class MapEditor:
                     self.has_unsaved_changes = True
                     self._set_status(f"Стартовая деревня: {self._editing_location.name}")
 
+            # Update miners_count for mines
+            if 'miners_count' in data:
+                new_miners_count = int(data.get('miners_count', 0))
+                if new_miners_count != self._editing_location.miners_count:
+                    self._editing_location.miners_count = new_miners_count
+                    self.has_unsaved_changes = True
+
+            # Update respawn_time for mines
+            if 'respawn_time' in data:
+                new_respawn_time = int(data.get('respawn_time', 0))
+                if new_respawn_time != self._editing_location.respawn_time:
+                    self._editing_location.respawn_time = new_respawn_time
+                    self.has_unsaved_changes = True
+
+            # Update player_attitude (for all locations)
+            if 'player_attitude' in data:
+                new_attitude = int(data.get('player_attitude', 0))
+                if new_attitude != self._editing_location.player_attitude:
+                    self._editing_location.player_attitude = new_attitude
+                    self.has_unsaved_changes = True
+
             # Update sidebar info
             info = self.object_placer.get_location_info(self._editing_location)
             info['is_starting'] = (self._editing_location == self.current_map.starting_village)
@@ -304,8 +328,11 @@ class MapEditor:
 
     def _open_map(self) -> None:
         """Open a map file."""
-        # Use game's config directory as default
-        default_dir = Path(__file__).parent.parent / "game" / "config"
+        # Use game's maps directory as default
+        default_dir = Path(__file__).parent.parent / "game" / "maps"
+        if not default_dir.exists():
+            # Fallback to config directory for backward compatibility
+            default_dir = Path(__file__).parent.parent / "game" / "config"
         if not default_dir.exists():
             default_dir = Path.home()
 
@@ -323,10 +350,20 @@ class MapEditor:
     def _load_map(self, filepath: str) -> None:
         """Load a map from file."""
         try:
+            # Load main map file
             with open(filepath, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
-            self.current_map = GeneratedMap.from_dict(data)
+            # Try to load config file
+            config_data = None
+            filepath_obj = Path(filepath)
+            # Check for config file: map1.json -> map1_config.json
+            config_path = filepath_obj.parent / f"{filepath_obj.stem}_config.json"
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config_data = json.load(f)
+
+            self.current_map = GeneratedMap.from_dict(data, config_data)
             self.current_file = filepath
             self.has_unsaved_changes = False
             self.map_surface_dirty = True
@@ -355,8 +392,9 @@ class MapEditor:
         if not self.current_map:
             return
 
-        # Default to game config directory
-        default_dir = Path(__file__).parent.parent / "game" / "config"
+        # Default to game maps directory
+        default_dir = Path(__file__).parent.parent / "game" / "maps"
+        default_dir.mkdir(parents=True, exist_ok=True)
         default_file = default_dir / "map1.json"
 
         self._save_to_file(str(default_file))
@@ -367,14 +405,21 @@ class MapEditor:
             return
 
         try:
+            # Save main map file (terrain only)
             data = self.current_map.to_dict()
-
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
 
+            # Save config file (locations and their properties)
+            filepath_obj = Path(filepath)
+            config_path = filepath_obj.parent / f"{filepath_obj.stem}_config.json"
+            config_data = self.current_map.to_config_dict()
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config_data, f, ensure_ascii=False, indent=2)
+
             self.current_file = filepath
             self.has_unsaved_changes = False
-            self._set_status(f"Сохранено: {Path(filepath).name}")
+            self._set_status(f"Сохранено: {Path(filepath).name} и конфиг")
 
         except Exception as e:
             self._set_status(f"Ошибка сохранения: {e}")

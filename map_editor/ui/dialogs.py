@@ -76,9 +76,9 @@ class Dialog:
         self.slider_bg = (30, 30, 32)
         self.slider_fill = (0, 122, 204)
 
-        # Font
-        self.font = pygame.font.SysFont('Arial', 12)
-        self.font_title = pygame.font.SysFont('Arial', 14, bold=True)
+        # Font - use default pygame font for crisp rendering
+        self.font = pygame.font.Font(None, 18)
+        self.font_title = pygame.font.Font(None, 22)
 
         # UI elements
         self.buttons: List[DialogButton] = []
@@ -604,11 +604,13 @@ class LocationEditDialog(Dialog):
         self.location_info = location_info or {}
         # Calculate dialog height based on location type
         loc_type = self.location_info.get('type', '')
-        height = 280
+        height = 330  # Base height increased for new parameters
         if loc_type in [LOCATION_MINE, LOCATION_RUINS]:
             height += 50  # Space for rank slider
         if loc_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
             height += 50  # Space for shop_rank slider
+        if loc_type == LOCATION_MINE:
+            height += 100  # Space for miners_count and respawn_time sliders
         super().__init__("Редактирование локации", 400, height)
         self._setup_controls()
 
@@ -662,6 +664,41 @@ class LocationEditDialog(Dialog):
             ))
             self.data['set_starting'] = self.location_info.get('is_starting', False)
             y += 40
+
+        # Miners count slider (only for mines)
+        if loc_type == LOCATION_MINE:
+            self.sliders.append(DialogSlider(
+                rect=pygame.Rect(20, y + 20, self.width - 40, 16),
+                label="Количество шахтеров (0-10)",
+                key="miners_count",
+                value=self.location_info.get('miners_count', 0),
+                min_val=0, max_val=10, step=1
+            ))
+            self.data['miners_count'] = self.location_info.get('miners_count', 0)
+            y += 50
+
+        # Respawn time slider (only for mines)
+        if loc_type == LOCATION_MINE:
+            self.sliders.append(DialogSlider(
+                rect=pygame.Rect(20, y + 20, self.width - 40, 16),
+                label="Время респавна (0-200 ходов)",
+                key="respawn_time",
+                value=self.location_info.get('respawn_time', 0),
+                min_val=0, max_val=200, step=5
+            ))
+            self.data['respawn_time'] = self.location_info.get('respawn_time', 0)
+            y += 50
+
+        # Player attitude slider (for all locations)
+        self.sliders.append(DialogSlider(
+            rect=pygame.Rect(20, y + 20, self.width - 40, 16),
+            label="Отношение к игроку (-10 до 10)",
+            key="player_attitude",
+            value=self.location_info.get('player_attitude', 0),
+            min_val=-10, max_val=10, step=1
+        ))
+        self.data['player_attitude'] = self.location_info.get('player_attitude', 0)
+        y += 50
 
         # Buttons
         btn_width = 100
