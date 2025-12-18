@@ -226,7 +226,8 @@ class MapEditor:
             'shop_rank': self._editing_location.shop_rank,
             'miners_count': self._editing_location.miners_count,
             'respawn_time': self._editing_location.respawn_time,
-            'player_attitude': self._editing_location.player_attitude
+            'player_attitude': self._editing_location.player_attitude,
+            'connections': self._editing_location.connections
         }
 
         # Create and show the dialog
@@ -291,6 +292,30 @@ class MapEditor:
                 new_attitude = int(data.get('player_attitude', 0))
                 if new_attitude != self._editing_location.player_attitude:
                     self._editing_location.player_attitude = new_attitude
+                    self.has_unsaved_changes = True
+
+            # Update connections (parse from string)
+            if 'connections' in data:
+                connections_str = data.get('connections', '').strip()
+                new_connections = []
+                if connections_str:
+                    try:
+                        # Парсим строку формата "x,y; x,y; x,y"
+                        pairs = connections_str.split(';')
+                        for pair in pairs:
+                            pair = pair.strip()
+                            if pair:
+                                coords = pair.split(',')
+                                if len(coords) == 2:
+                                    x = int(coords[0].strip())
+                                    y = int(coords[1].strip())
+                                    new_connections.append((x, y))
+                    except (ValueError, IndexError):
+                        # Игнорируем некорректный формат
+                        pass
+
+                if new_connections != self._editing_location.connections:
+                    self._editing_location.connections = new_connections
                     self.has_unsaved_changes = True
 
             # Update sidebar info
