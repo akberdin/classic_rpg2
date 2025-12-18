@@ -129,6 +129,56 @@ class GeneratorParams:
         return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
 
 
+# Guard type constants
+GUARD_WARRIOR = "warrior"
+GUARD_MAGE = "mage"
+GUARD_SHADOW_ADEPT = "shadow_adept"
+GUARD_HUNTER = "hunter"
+GUARD_NONE = ""  # Empty slot
+
+GUARD_TYPES = {
+    GUARD_WARRIOR: "Воин",
+    GUARD_MAGE: "Маг",
+    GUARD_SHADOW_ADEPT: "Адепты тени",
+    GUARD_HUNTER: "Охотник",
+    GUARD_NONE: "Нет"
+}
+
+
+@dataclass
+class Guard:
+    """Represents a guard slot for a location."""
+    guard_type: str = GUARD_NONE  # Type of guard (warrior, mage, shadow_adept, hunter)
+    rank: int = 1  # Guard rank (1-4)
+    count: int = 0  # Number of guards (0-20)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for saving."""
+        return {
+            'type': self.guard_type,
+            'rank': self.rank,
+            'count': self.count
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Guard':
+        """Create from dictionary."""
+        return cls(
+            guard_type=data.get('type', GUARD_NONE),
+            rank=data.get('rank', 1),
+            count=data.get('count', 0)
+        )
+
+    def is_empty(self) -> bool:
+        """Check if guard slot is empty."""
+        return self.guard_type == GUARD_NONE or self.count == 0
+
+
+def _create_empty_guards() -> List[Guard]:
+    """Create 5 empty guard slots."""
+    return [Guard() for _ in range(5)]
+
+
 @dataclass
 class MapLocation:
     """Represents a location on the map."""
@@ -143,6 +193,7 @@ class MapLocation:
     respawn_time: int = 0  # Respawn time for mines in turns (0-200)
     player_attitude: int = 0  # Attitude towards player (-10 to 10)
     spawn_radius: int = 5  # Spawn radius for NPCs related to this location (1-20)
+    guards: List[Guard] = field(default_factory=_create_empty_guards)  # Guard slots (max 5)
     connections: List[Tuple[int, int]] = field(default_factory=list)  # Connections: [(target_x, target_y), ...]
 
     def get_id(self) -> str:
@@ -190,6 +241,13 @@ class MapLocation:
         if self.location_type == LOCATION_MINE:
             data['miners_count'] = self.miners_count
             data['respawn_time'] = self.respawn_time
+        # Save guards for locations that have them
+        if self.location_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
+                                  LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, 'secret_camp']:
+            # Only save non-empty guards
+            guards_data = [guard.to_dict() for guard in self.guards if not guard.is_empty()]
+            if guards_data:
+                data['guards'] = guards_data
         # Save connections if any
         if self.connections:
             data['connections'] = [[x, y] for x, y in self.connections]
@@ -207,6 +265,14 @@ class MapLocation:
         if not location_id:
             location_id = str(uuid.uuid4())
 
+        # Load guards data (for backward compatibility, create empty guards if not present)
+        guards = []
+        if 'guards' in data:
+            guards = [Guard.from_dict(guard_data) for guard_data in data['guards']]
+        # Fill remaining slots with empty guards to maintain 5 total slots
+        while len(guards) < 5:
+            guards.append(Guard())
+
         return cls(
             x=data['x'],
             y=data['y'],
@@ -219,6 +285,7 @@ class MapLocation:
             respawn_time=data.get('respawn_time', 0),
             player_attitude=data.get('player_attitude', 0),
             spawn_radius=data.get('spawn_radius', 5),
+            guards=guards,
             connections=connections
         )
 
