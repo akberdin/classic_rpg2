@@ -258,13 +258,27 @@ class ObjectPlacer:
         if not name:
             name = self._get_next_name(self.current_template.location_type)
 
-        location = MapLocation(
-            x=x,
-            y=y,
-            location_type=self.current_template.location_type,
-            name=name,
-            id=str(uuid.uuid4())
-        )
+        # Set default values for mines
+        if self.current_template.location_type == LOCATION_MINE:
+            location = MapLocation(
+                x=x,
+                y=y,
+                location_type=self.current_template.location_type,
+                name=name,
+                id=str(uuid.uuid4()),
+                rank=1,
+                spawn_radius=3,
+                miners_count=3,
+                respawn_time=100
+            )
+        else:
+            location = MapLocation(
+                x=x,
+                y=y,
+                location_type=self.current_template.location_type,
+                name=name,
+                id=str(uuid.uuid4())
+            )
 
         game_map.add_location(location)
         self._used_names[self.current_template.location_type].add(name)
