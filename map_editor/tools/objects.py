@@ -283,12 +283,25 @@ class ObjectPlacer:
 
         name = location.name
         loc_type = location.location_type
+
+        # Remove all connections pointing to this location before deleting it
+        self._remove_connections_to_location(game_map, x, y)
+
         game_map.remove_location(x, y)
 
         if name in self._used_names.get(loc_type, set()):
             self._used_names[loc_type].discard(name)
 
         return PlacementResult(True, f"Удалено: {name}")
+
+    def _remove_connections_to_location(self, game_map: GeneratedMap, x: int, y: int) -> None:
+        """Remove all connections pointing to a specific location."""
+        for location in game_map.locations:
+            # Remove connections to the deleted location
+            location.connections = [
+                (target_x, target_y) for target_x, target_y in location.connections
+                if not (target_x == x and target_y == y)
+            ]
 
     def _handle_move(self, game_map: GeneratedMap, x: int, y: int) -> PlacementResult:
         """Handle move mode click."""
@@ -313,6 +326,9 @@ class ObjectPlacer:
             self._moving_location.x = x
             self._moving_location.y = y
 
+            # Update all connections that point to old coordinates
+            self._update_connections_after_move(game_map, old_x, old_y, x, y)
+
             result = PlacementResult(
                 True,
                 f"Перемещено: {self._moving_location.name} ({old_x},{old_y}) -> ({x},{y})",
@@ -320,6 +336,21 @@ class ObjectPlacer:
             )
             self._moving_location = None
             return result
+
+    def _update_connections_after_move(self, game_map: GeneratedMap,
+                                       old_x: int, old_y: int,
+                                       new_x: int, new_y: int) -> None:
+        """Update all connections pointing to old coordinates after moving a location."""
+        # Go through all locations and update their connections
+        for location in game_map.locations:
+            updated_connections = []
+            for target_x, target_y in location.connections:
+                # If connection points to old position, update to new position
+                if target_x == old_x and target_y == old_y:
+                    updated_connections.append((new_x, new_y))
+                else:
+                    updated_connections.append((target_x, target_y))
+            location.connections = updated_connections
 
     def cancel_move(self) -> None:
         """Cancel current move operation."""
