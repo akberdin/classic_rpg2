@@ -342,13 +342,13 @@ class Dialog:
         for text_input in self.text_inputs:
             self._draw_text_input(surface, text_input)
 
-        # Draw dropdowns
-        for dropdown in self.dropdowns:
-            self._draw_dropdown(surface, dropdown)
-
         # Draw buttons
         for i, button in enumerate(self.buttons):
             self._draw_button(surface, button, i == self.hovered_button)
+
+        # Draw dropdowns LAST so they appear on top of other elements
+        for dropdown in self.dropdowns:
+            self._draw_dropdown(surface, dropdown)
 
     def _draw_slider(self, surface: pygame.Surface, slider: DialogSlider) -> None:
         """Draw a slider control."""
@@ -710,8 +710,11 @@ class LocationEditDialog(Dialog):
         # Add space for guards (for settlements and academies)
         if loc_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
                         LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, 'secret_camp']:
-            height += 280  # Space for 5 guard slots (title + 5*45 + spacing)
+            height += 305  # Space for 5 guard slots (headers + 5*45 + spacing)
         super().__init__("Редактирование локации", 500, height)  # Increased width to 500 for guards
+        # Guard headers (will be set in _setup_controls if location has guards)
+        self._guard_headers_y = None
+        self._guard_headers = None
         self._setup_controls()
 
     def _setup_controls(self) -> None:
@@ -814,17 +817,25 @@ class LocationEditDialog(Dialog):
         # Guards section (for settlements and academies)
         if loc_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
                         LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, 'secret_camp']:
-            # Guards title
+            # Guards title and column headers
             y += 10
             guards = self.location_info.get('guards', [Guard() for _ in range(5)])
             # Ensure we have exactly 5 guards
             while len(guards) < 5:
                 guards.append(Guard())
 
+            # Add column headers - store them as a special attribute for rendering
+            self._guard_headers_y = y
+            self._guard_headers = [
+                ("Тип", 20, 180),      # (label, x, width)
+                ("Ранг", 210, 80),
+                ("Кол-во", 300, 80)
+            ]
+            y += 25  # Space for headers
+
             for i in range(5):
                 guard = guards[i] if i < len(guards) else Guard()
 
-                # Guard label
                 # Dropdown for guard type (180px wide)
                 self.dropdowns.append(DialogDropdown(
                     rect=pygame.Rect(20, y + 20, 180, 28),
@@ -835,20 +846,26 @@ class LocationEditDialog(Dialog):
                 ))
                 self.data[f"guard_{i}_type"] = guard.guard_type
 
-                # Rank input (80px wide)
-                self.text_inputs.append(DialogTextInput(
+                # Rank dropdown (80px wide) - changed from text input to dropdown
+                rank_options = {
+                    "1": "1",
+                    "2": "2",
+                    "3": "3",
+                    "4": "4"
+                }
+                self.dropdowns.append(DialogDropdown(
                     rect=pygame.Rect(210, y + 20, 80, 28),
-                    label="",  # No label, just input field
+                    label="",  # No label, using column header instead
                     key=f"guard_{i}_rank",
-                    value=str(guard.rank),
-                    max_length=1
+                    options=rank_options,
+                    selected=str(guard.rank)
                 ))
                 self.data[f"guard_{i}_rank"] = str(guard.rank)
 
                 # Count input (80px wide)
                 self.text_inputs.append(DialogTextInput(
                     rect=pygame.Rect(300, y + 20, 80, 28),
-                    label="",  # No label, just input field
+                    label="",  # No label, using column header instead
                     key=f"guard_{i}_count",
                     value=str(guard.count),
                     max_length=2
@@ -917,6 +934,19 @@ class LocationEditDialog(Dialog):
             text_surface = self.font.render(line, True, (180, 180, 180))
             surface.blit(text_surface, (self.x + 20, y))
             y += 20
+
+        # Draw guard column headers if guards section is present
+        if self._guard_headers_y is not None and self._guard_headers is not None:
+            header_y = self.y + self._guard_headers_y
+            for label, col_x, col_width in self._guard_headers:
+                # Draw header text
+                header_text = self.font.render(label, True, (200, 200, 200))
+                surface.blit(header_text, (self.x + col_x, header_y))
+                # Draw underline
+                pygame.draw.line(surface, (100, 100, 105),
+                               (self.x + col_x, header_y + 18),
+                               (self.x + col_x + col_width - 5, header_y + 18),
+                               1)
 
 
 # Keep old name for backwards compatibility
