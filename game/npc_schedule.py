@@ -120,69 +120,59 @@ class NPCSchedule:
 
 
 class MinerSchedule(NPCSchedule):
-    """Расписание для шахтеров"""
+    """Расписание для шахтеров с автоматическим возвращением в деревню"""
 
     def __init__(self, npc):
         super().__init__(npc)
-        # Шахтеры работают с 6 до 20
-        self.active_hours = (6, 20)
-        self.rest_hours = (20, 6)
+        # Шахтеры работают с 6 до 19
+        self.active_hours = (6, 19)
+        self.rest_hours = (19, 6)
 
-        # Параметры посещения локаций
-        self.visit_mine_chance = 0.15      # 15% шанс посетить шахту каждый час
-        self.visit_town_chance = 0.05      # 5% шанс посетить город/деревню
-        self.mine_visit_duration = (2, 4)  # 2-4 часа в шахте
-        self.town_visit_duration = (1, 3)  # 1-3 часа в городе
+        # Часы возвращения домой и выхода на работу
+        self.go_home_hour = 19  # В 19 часов идут домой
+        self.go_to_work_hour = 6  # В 6 часов идут на работу
 
-        # Последнее посещение (для избежания частых визитов)
-        self.last_mine_visit = -10
-        self.last_town_visit = -10
+        # Флаг - дома ли шахтер
+        self.at_home = False
 
     def update(self, current_hour, game_map):
-        """Обновить расписание шахтера"""
-        super().update(current_hour, game_map)
+        """Обновить расписание шахтера с управлением уходом домой"""
+        # Если скрыт, уменьшаем длительность
+        if self.is_hidden:
+            self.hidden_duration -= 1
+            if self.hidden_duration <= 0:
+                self.unhide()
+                # После выхода из деревни утром - возвращаемся к работе
+                if current_hour >= self.go_to_work_hour and current_hour < self.go_home_hour:
+                    self.at_home = False
+                return
 
-        # Если уже скрыт или не активен, ничего не делаем
-        if self.is_hidden or not self.should_be_active(current_hour):
+        # Вечером (19 часов) - прячемся в деревне на ночь
+        if current_hour == self.go_home_hour and not self.is_hidden and not self.at_home:
+            if hasattr(self.npc, 'home_village_x') and self.npc.home_village_x is not None:
+                # Проверяем, близко ли к деревне
+                distance = abs(self.npc.x - self.npc.home_village_x) + abs(self.npc.y - self.npc.home_village_y)
+                if distance <= 8:  # Если в пределах 8 клеток от деревни
+                    # Скрываемся в деревне до утра (13 часов: с 19 до 6)
+                    self.hide_in_location(LOCATION_VILLAGE, 11)
+                    self.at_home = True
+                    return
+
+        # Утром (6 часов) - выходим из деревни
+        if current_hour == self.go_to_work_hour and self.at_home and self.is_hidden:
+            self.unhide()
+            self.at_home = False
             return
 
-        # Проверяем посещение шахты
-        if (current_hour - self.last_mine_visit > 5 and
-            random.random() < self.visit_mine_chance):
-            self._visit_mine(game_map)
-        # Проверяем посещение города
-        elif (current_hour - self.last_town_visit > 8 and
-              random.random() < self.visit_town_chance):
-            self._visit_town(game_map)
+        # Обновляем состояние активности
+        if self.should_rest(current_hour) and not self.is_hidden:
+            if self.npc.state != "rest":
+                self.npc.state = "rest"
+                self.npc.rest_counter = 0
+        elif self.should_be_active(current_hour) and not self.is_hidden:
+            if self.npc.state == "rest":
+                self.npc.state = self._get_default_state()
 
-    def _visit_mine(self, game_map):
-        """Посетить шахту"""
-        if hasattr(self.npc, 'mine_x') and self.npc.mine_x is not None:
-            # Проверяем, рядом ли мы с шахтой
-            distance = abs(self.npc.x - self.npc.mine_x) + abs(self.npc.y - self.npc.mine_y)
-            if distance <= 3:  # Если в пределах 3 клеток от шахты
-                duration = random.randint(*self.mine_visit_duration)
-                self.hide_in_location(LOCATION_MINE, duration)
-                self.last_mine_visit = 0  # Сброс счетчика
-
-    def _visit_town(self, game_map):
-        """Посетить ближайший город или деревню"""
-        # Ищем ближайший город или деревню
-        nearest_location = None
-        nearest_distance = float('inf')
-
-        for location in game_map.locations:
-            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
-                distance = abs(self.npc.x - location.x) + abs(self.npc.y - location.y)
-                if distance < nearest_distance:
-                    nearest_distance = distance
-                    nearest_location = location
-
-        # Если рядом с локацией (в пределах 5 клеток), посещаем
-        if nearest_location and nearest_distance <= 5:
-            duration = random.randint(*self.town_visit_duration)
-            self.hide_in_location(nearest_location.location_type, duration)
-            self.last_town_visit = 0  # Сброс счетчика
 
 
 class GuardSchedule(NPCSchedule):
