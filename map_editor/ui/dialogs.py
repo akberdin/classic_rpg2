@@ -346,9 +346,19 @@ class Dialog:
         for i, button in enumerate(self.buttons):
             self._draw_button(surface, button, i == self.hovered_button)
 
-        # Draw dropdowns LAST so they appear on top of other elements
+        # Draw dropdowns in two passes:
+        # First pass: draw all collapsed dropdowns
+        # Second pass: draw expanded dropdown last (so it's on top)
+        expanded_dropdown = None
         for dropdown in self.dropdowns:
-            self._draw_dropdown(surface, dropdown)
+            if dropdown.expanded:
+                expanded_dropdown = dropdown
+            else:
+                self._draw_dropdown(surface, dropdown)
+
+        # Draw expanded dropdown last so it appears on top
+        if expanded_dropdown:
+            self._draw_dropdown(surface, expanded_dropdown)
 
     def _draw_slider(self, surface: pygame.Surface, slider: DialogSlider) -> None:
         """Draw a slider control."""
