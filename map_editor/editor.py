@@ -2,6 +2,7 @@
 
 import pygame
 import json
+import math
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 
@@ -126,6 +127,9 @@ class MapEditor:
         self.status_message = "Готов"
         self.status_time = 0
 
+        # Connection tool state
+        self.connection_source: Optional[MapLocation] = None  # First selected location (A)
+
     def _setup_callbacks(self) -> None:
         """Setup UI callbacks."""
         # Toolbar callbacks
@@ -148,6 +152,10 @@ class MapEditor:
         """Handle tool change."""
         self.current_tool = tool
         self.sidebar.set_tool(tool)
+
+        # Reset connection tool state when switching tools
+        if tool != ToolType.CONNECTION:
+            self.connection_source = None
 
         # Update object placer mode
         if tool == ToolType.OBJECT:
@@ -672,6 +680,38 @@ class MapEditor:
             if result.success:
                 self.has_unsaved_changes = True
 
+        elif self.current_tool == ToolType.CONNECTION:
+            # Two-click connection mode: A -> B
+            location = self.object_placer.select_location(self.current_map, tile_x, tile_y)
+
+            if not location:
+                self._set_status("Выберите объект для связи")
+                return
+
+            if not self.connection_source:
+                # First click - select source object (A)
+                self.connection_source = location
+                self._set_status(f"Выбран источник: {location.name}. Выберите целевой объект")
+            else:
+                # Second click - select target object (B) and create connection
+                if location == self.connection_source:
+                    self._set_status("Нельзя создать связь с самим собой")
+                    return
+
+                # Check if connection already exists
+                if self.connection_source.has_connection_to(location.x, location.y):
+                    self._set_status(f"Связь уже существует: {self.connection_source.name} -> {location.name}")
+                    self.connection_source = None
+                    return
+
+                # Create connection from A to B
+                self.connection_source.add_connection(location.x, location.y)
+                self.has_unsaved_changes = True
+                self._set_status(f"Создана связь: {self.connection_source.name} -> {location.name}")
+
+                # Reset for next connection
+                self.connection_source = None
+
     def _handle_right_click(self, pos: Tuple[int, int]) -> None:
         """Handle right mouse click."""
         if not self.current_map:
@@ -773,6 +813,7 @@ class MapEditor:
 
             # Draw locations on top
             if self.show_locations:
+                self._render_connections()  # Draw connections first (behind locations)
                 self._render_locations()
 
             # Draw brush preview
@@ -843,6 +884,71 @@ class MapEditor:
                 name_bg.fill((0, 0, 0, 180))
                 self.screen.blit(name_bg, (screen_x, screen_y - 16))
                 self.screen.blit(name_surface, (screen_x + 2, screen_y - 15))
+
+    def _render_connections(self) -> None:
+        """Render arrows between connected locations."""
+        if not self.current_map:
+            return
+
+        # Draw all connections
+        for source_location in self.current_map.locations:
+            for target_x, target_y in source_location.connections:
+                # Find target location
+                target_location = self.current_map.get_location_at(target_x, target_y)
+                if not target_location:
+                    continue  # Skip invalid connections
+
+                # Get screen positions
+                source_screen = self._tile_to_screen(source_location.x, source_location.y)
+                target_screen = self._tile_to_screen(target_x, target_y)
+
+                # Calculate center points
+                source_center = (
+                    source_screen[0] + self.tile_size // 2,
+                    source_screen[1] + self.tile_size // 2
+                )
+                target_center = (
+                    target_screen[0] + self.tile_size // 2,
+                    target_screen[1] + self.tile_size // 2
+                )
+
+                # Draw arrow line
+                arrow_color = (100, 200, 255)  # Light blue
+                pygame.draw.line(self.screen, arrow_color, source_center, target_center, 2)
+
+                # Draw arrowhead at target
+                dx = target_center[0] - source_center[0]
+                dy = target_center[1] - source_center[1]
+                angle = math.atan2(dy, dx)
+
+                arrow_size = 8
+                arrow_angle = math.pi / 6  # 30 degrees
+
+                # Calculate arrowhead points
+                p1 = target_center
+                p2 = (
+                    target_center[0] - arrow_size * math.cos(angle - arrow_angle),
+                    target_center[1] - arrow_size * math.sin(angle - arrow_angle)
+                )
+                p3 = (
+                    target_center[0] - arrow_size * math.cos(angle + arrow_angle),
+                    target_center[1] - arrow_size * math.sin(angle + arrow_angle)
+                )
+
+                pygame.draw.polygon(self.screen, arrow_color, [p1, p2, p3])
+
+        # Highlight source location when in connection mode
+        if self.current_tool == ToolType.CONNECTION and self.connection_source:
+            source_screen = self._tile_to_screen(
+                self.connection_source.x,
+                self.connection_source.y
+            )
+            center = (
+                source_screen[0] + self.tile_size // 2,
+                source_screen[1] + self.tile_size // 2
+            )
+            marker_size = max(10, self.tile_size + 4)
+            pygame.draw.circle(self.screen, (255, 255, 0), center, marker_size // 2, 3)
 
     def _render_brush_preview(self) -> None:
         """Render brush preview at mouse position."""

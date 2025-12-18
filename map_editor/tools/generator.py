@@ -140,7 +140,31 @@ class MapLocation:
     miners_count: int = 0  # Number of miners for mines (0-10)
     respawn_time: int = 0  # Respawn time for mines in turns (0-200)
     player_attitude: int = 0  # Attitude towards player (-10 to 10)
-    connections: List[Tuple[int, int]] = field(default_factory=list)  # Connections to other locations (x, y)
+    connections: List[Tuple[int, int]] = field(default_factory=list)  # Connections: [(target_x, target_y), ...]
+
+    def get_id(self) -> str:
+        """Get unique identifier for this location (based on coordinates)."""
+        return f"{self.x},{self.y}"
+
+    def add_connection(self, target_x: int, target_y: int) -> bool:
+        """Add connection to another location. Returns True if added, False if already exists."""
+        conn = (target_x, target_y)
+        if conn not in self.connections:
+            self.connections.append(conn)
+            return True
+        return False
+
+    def remove_connection(self, target_x: int, target_y: int) -> bool:
+        """Remove connection to another location. Returns True if removed, False if not found."""
+        conn = (target_x, target_y)
+        if conn in self.connections:
+            self.connections.remove(conn)
+            return True
+        return False
+
+    def has_connection_to(self, target_x: int, target_y: int) -> bool:
+        """Check if this location has connection to target."""
+        return (target_x, target_y) in self.connections
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for saving."""
@@ -282,6 +306,27 @@ class GeneratedMap:
                 return True
         return False
 
+    def validate_connections(self) -> int:
+        """
+        Validate all connections and remove invalid ones.
+        Returns the number of invalid connections removed.
+        """
+        removed_count = 0
+
+        for location in self.locations:
+            valid_connections = []
+            for target_x, target_y in location.connections:
+                # Check if target location exists
+                target_location = self.get_location_at(target_x, target_y)
+                if target_location:
+                    valid_connections.append((target_x, target_y))
+                else:
+                    removed_count += 1
+
+            location.connections = valid_connections
+
+        return removed_count
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for saving (terrain only)."""
         data = {
@@ -356,7 +401,8 @@ class GeneratedMap:
                     )
                     locations.append(starting_village)
 
-        return cls(
+        # Create map instance
+        map_instance = cls(
             width=width,
             height=height,
             seed=seed,
@@ -366,6 +412,13 @@ class GeneratedMap:
             locations=locations,
             starting_village=starting_village
         )
+
+        # Validate connections (remove invalid ones)
+        removed = map_instance.validate_connections()
+        if removed > 0:
+            print(f"Внимание: удалено {removed} недействительных связей")
+
+        return map_instance
 
 
 class MapGenerator:

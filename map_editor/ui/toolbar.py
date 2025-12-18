@@ -14,6 +14,7 @@ class ToolType(Enum):
     OBJECT = "object"
     ERASER = "eraser"
     MOVE = "move"
+    CONNECTION = "connection"
 
 
 @dataclass
@@ -97,6 +98,7 @@ class Toolbar:
             ("Объекты", "Размещение объектов (O)", "tool_object", ToolType.OBJECT, 60),
             ("Удалить", "Удаление объектов (E)", "tool_eraser", ToolType.ERASER, 58),
             ("Двигать", "Перемещение объектов (M)", "tool_move", ToolType.MOVE, 55),
+            ("Связи", "Создание связей между объектами (C)", "tool_connection", ToolType.CONNECTION, 50),
         ]
 
         for text, tooltip, action, tool_type, btn_width in tool_buttons:
@@ -183,7 +185,8 @@ class Toolbar:
                 "tool_fill": ToolType.FILL,
                 "tool_object": ToolType.OBJECT,
                 "tool_eraser": ToolType.ERASER,
-                "tool_move": ToolType.MOVE
+                "tool_move": ToolType.MOVE,
+                "tool_connection": ToolType.CONNECTION
             }
             if action in tool_map:
                 self.set_tool(tool_map[action])
@@ -205,7 +208,8 @@ class Toolbar:
                 pygame.K_g: ToolType.FILL,
                 pygame.K_o: ToolType.OBJECT,
                 pygame.K_e: ToolType.ERASER,
-                pygame.K_m: ToolType.MOVE
+                pygame.K_m: ToolType.MOVE,
+                pygame.K_c: ToolType.CONNECTION
             }
             if event.key in tool_keys:
                 self.set_tool(tool_keys[event.key])
@@ -269,7 +273,8 @@ class Toolbar:
                     "tool_fill": ToolType.FILL,
                     "tool_object": ToolType.OBJECT,
                     "tool_eraser": ToolType.ERASER,
-                    "tool_move": ToolType.MOVE
+                    "tool_move": ToolType.MOVE,
+                    "tool_connection": ToolType.CONNECTION
                 }
                 button.active = (tool_map.get(name) == tool)
 
@@ -303,9 +308,9 @@ class Toolbar:
         if "save" in self.buttons:
             sep_positions.append(self.buttons["save"].rect.right + 6)
 
-        # After tool buttons (after "tool_move")
-        if "tool_move" in self.buttons:
-            sep_positions.append(self.buttons["tool_move"].rect.right + 6)
+        # After tool buttons (after "tool_connection")
+        if "tool_connection" in self.buttons:
+            sep_positions.append(self.buttons["tool_connection"].rect.right + 6)
 
         # After generation buttons (after "regenerate")
         if "regenerate" in self.buttons:

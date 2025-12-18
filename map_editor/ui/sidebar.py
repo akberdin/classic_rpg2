@@ -579,6 +579,23 @@ class Sidebar:
                 surface.blit(text_surface, (8, y_offset))
                 y_offset += 18
 
+            # Show connections if any
+            connections = self.location_info.get('connections', [])
+            if connections:
+                y_offset += 5
+                y_offset = self._draw_section_header(surface, "Связи", y_offset)
+
+                for target_x, target_y in connections:
+                    conn_text = f"→ ({target_x}, {target_y})"
+                    text_surface = self.font.render(conn_text, True, (100, 200, 255))
+                    surface.blit(text_surface, (8, y_offset))
+                    y_offset += 18
+            else:
+                y_offset += 5
+                text_surface = self.font.render("Нет связей", True, (150, 150, 150))
+                surface.blit(text_surface, (8, y_offset))
+                y_offset += 18
+
             # Edit button
             y_offset += 10
             btn_rect = pygame.Rect(8, y_offset, self.width - 16, 30)
@@ -605,7 +622,8 @@ class Sidebar:
             "G - Заливка",
             "O - Объекты",
             "E - Ластик",
-            "M - Перемещение"
+            "M - Перемещение",
+            "C - Связи"
         ]
 
         for line in lines:
