@@ -956,11 +956,24 @@ class MapGenerator:
             # Generate name
             name = self._get_location_name(location_type)
             attitude = get_default_player_attitude(location_type)
-            location = MapLocation(
-                x, y, location_type, name,
-                id=str(uuid.uuid4()),
-                player_attitude=attitude
-            )
+
+            # Set default values for mines
+            if location_type == LOCATION_MINE:
+                location = MapLocation(
+                    x, y, location_type, name,
+                    id=str(uuid.uuid4()),
+                    rank=1,
+                    spawn_radius=3,
+                    miners_count=3,
+                    respawn_time=100,
+                    player_attitude=attitude
+                )
+            else:
+                location = MapLocation(
+                    x, y, location_type, name,
+                    id=str(uuid.uuid4()),
+                    player_attitude=attitude
+                )
             game_map.add_location(location)
             placed += 1
 
