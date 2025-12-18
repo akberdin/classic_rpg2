@@ -1031,7 +1031,7 @@ class NPCSpawner:
 
         # Количество животных на одну точку спавна
         ANIMALS_PER_SPAWN = 10
-        SPAWN_RADIUS = 10
+        SPAWN_RADIUS = 5
 
         # Распределение по режимам поведения
         PATROL_PERCENT = 60  # 60% патрулируют вокруг точки спавна

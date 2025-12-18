@@ -118,7 +118,8 @@ class WorldRenderer:
                     )
 
                     # Отрисовка спрайта поверх клетки
-                    if tile.has_location():
+                    # Пропускаем точки спавна животных - они невидимы на карте
+                    if tile.has_location() and not tile.location.location_type.startswith('spawn_'):
                         # Отрисовываем спрайт локации поверх базового цвета
                         # Спрайт отображается даже в тумане войны (но затемненный)
                         self.ctx.sprite_manager.render_location(
@@ -160,7 +161,10 @@ class WorldRenderer:
                 tile = self.ctx.game_map.get_tile(map_x, map_y)
 
                 # Отрисовываем название локации, если она видима и исследована
+                # Пропускаем точки спавна животных - они не должны отображаться на карте
                 if tile.explored and tile.has_location():
+                    if tile.location.location_type.startswith('spawn_'):
+                        continue
                     if self.ctx.fog_of_war.is_visible(map_x, map_y, self.ctx.player.x, self.ctx.player.y):
                         screen_x = dx * TILE_SIZE
                         screen_y = dy * TILE_SIZE
@@ -806,8 +810,8 @@ class WorldRenderer:
                     minimap_px = minimap_x + int(map_x * pixel_per_tile)
                     minimap_py = minimap_y + int(map_y * pixel_per_tile)
 
-                    # Определяем цвет
-                    if tile.has_location():
+                    # Определяем цвет (точки спавна не отображаем)
+                    if tile.has_location() and not tile.location.location_type.startswith('spawn_'):
                         color = COLORS.get(tile.location.location_type, COLORS['background'])
                     else:
                         color = COLORS.get(tile.biome, COLORS['background'])
