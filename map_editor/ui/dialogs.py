@@ -604,7 +604,7 @@ class LocationEditDialog(Dialog):
         self.location_info = location_info or {}
         # Calculate dialog height based on location type
         loc_type = self.location_info.get('type', '')
-        height = 330  # Base height increased for new parameters
+        height = 400  # Base height increased for connections
         if loc_type in [LOCATION_MINE, LOCATION_RUINS]:
             height += 50  # Space for rank slider
         if loc_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
@@ -699,6 +699,22 @@ class LocationEditDialog(Dialog):
         ))
         self.data['player_attitude'] = self.location_info.get('player_attitude', 0)
         y += 50
+
+        # Connections text input (для шахт, деревень и городов)
+        if loc_type in [LOCATION_MINE, LOCATION_VILLAGE, LOCATION_CITY]:
+            # Форматируем существующие связи для отображения
+            connections = self.location_info.get('connections', [])
+            connections_str = '; '.join([f"{x},{y}" for x, y in connections])
+
+            self.text_inputs.append(DialogTextInput(
+                rect=pygame.Rect(20, y + 20, self.width - 40, 28),
+                label="Связи (x,y; x,y):",
+                key="connections",
+                value=connections_str,
+                max_length=100
+            ))
+            self.data['connections'] = connections_str
+            y += 70
 
         # Buttons
         btn_width = 100

@@ -89,6 +89,14 @@ class Location:
         self.loot_collected = False
         self.can_collect_loot = location_type in [LOCATION_MINE, LOCATION_RUINS, LOCATION_BANDIT_CAMP]
 
+        # Новые параметры из редактора карт
+        self.rank = 1  # Ранг для шахт и руин (1-5)
+        self.shop_rank = 1  # Ранг магазина для городов и деревень (1-5)
+        self.player_attitude = 0  # Отношение к игроку (-10 до 10)
+        self.miners_count = 0  # Количество шахтеров для шахт (0-10)
+        self.respawn_time = 0  # Время респавна для шахт в ходах (0-200)
+        self.connections = []  # Связи с другими локациями [(x, y), ...]
+
     def _generate_default_name(self):
         """Генерация названия по умолчанию"""
         names = {

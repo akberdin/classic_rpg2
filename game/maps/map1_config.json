@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "locations": [
+    {
+      "x": 25,
+      "y": 25,
+      "type": "village",
+      "name": "Тихая",
+      "player_attitude": 0,
+      "shop_rank": 1
+    },
+    {
+      "x": 30,
+      "y": 20,
+      "type": "city",
+      "name": "Королевская Гавань",
+      "player_attitude": -1,
+      "shop_rank": 3
+    },
+    {
+      "x": 15,
+      "y": 30,
+      "type": "mine",
+      "name": "Железная жила",
+      "player_attitude": 0,
+      "rank": 2,
+      "miners_count": 5,
+      "respawn_time": 50
+    }
+  ],
+  "starting_village": {
+    "x": 25,
+    "y": 25
+  }
+}

@@ -16,8 +16,10 @@ from game.constants import (
 class GameMap:
     """Класс игровой карты"""
 
-    # Путь к файлу карты по умолчанию
-    DEFAULT_MAP_FILE = os.path.join(os.path.dirname(__file__), 'config', 'map1.json')
+    # Путь к файлу карты по умолчанию (новое расположение)
+    DEFAULT_MAP_FILE = os.path.join(os.path.dirname(__file__), 'maps', 'map1.json')
+    # Старый путь для обратной совместимости
+    LEGACY_MAP_FILE = os.path.join(os.path.dirname(__file__), 'config', 'map1.json')
 
     def __init__(self, width=MAP_WIDTH, height=MAP_HEIGHT, map_file=None):
         """
@@ -32,13 +34,22 @@ class GameMap:
             map_file: Путь к файлу карты (по умолчанию map1.json)
         """
         # Определяем путь к файлу карты
-        filepath = map_file if map_file else self.DEFAULT_MAP_FILE
+        if map_file:
+            filepath = map_file
+        else:
+            # Проверяем новый путь, затем старый для обратной совместимости
+            if os.path.exists(self.DEFAULT_MAP_FILE):
+                filepath = self.DEFAULT_MAP_FILE
+            elif os.path.exists(self.LEGACY_MAP_FILE):
+                filepath = self.LEGACY_MAP_FILE
+            else:
+                filepath = self.DEFAULT_MAP_FILE
 
         # Проверяем существование файла
         if not os.path.exists(filepath):
             raise FileNotFoundError(
                 f"Файл карты не найден: {filepath}\n"
-                f"Используйте map_editor для создания карты или убедитесь, что файл map1.json существует в папке game/config/"
+                f"Используйте map_editor для создания карты или убедитесь, что файл map1.json существует в папке game/maps/"
             )
 
         # Загружаем карту из файла
@@ -53,6 +64,13 @@ class GameMap:
         """
         with open(filepath, 'r', encoding='utf-8') as f:
             data = json.load(f)
+
+        # Попытка загрузить конфиг файл (новый формат)
+        config_data = None
+        config_filepath = filepath.replace('.json', '_config.json')
+        if os.path.exists(config_filepath):
+            with open(config_filepath, 'r', encoding='utf-8') as f:
+                config_data = json.load(f)
 
         self.width = data["width"]
         self.height = data["height"]
@@ -70,26 +88,46 @@ class GameMap:
                 row.append(tile)
             self.tiles.append(row)
 
+        # Определяем источник данных о локациях
+        locations_data = config_data.get("locations", []) if config_data else data.get("locations", [])
+
         # Восстанавливаем локации
-        for loc_data in data["locations"]:
+        for loc_data in locations_data:
             location = Location(
                 loc_data["x"],
                 loc_data["y"],
                 loc_data["type"],
                 loc_data["name"]
             )
+            # Загружаем дополнительные параметры если они есть
+            if "rank" in loc_data:
+                location.rank = loc_data["rank"]
+            if "shop_rank" in loc_data:
+                location.shop_rank = loc_data["shop_rank"]
+            if "player_attitude" in loc_data:
+                location.player_attitude = loc_data["player_attitude"]
+            if "miners_count" in loc_data:
+                location.miners_count = loc_data["miners_count"]
+            if "respawn_time" in loc_data:
+                location.respawn_time = loc_data["respawn_time"]
+            if "connections" in loc_data:
+                location.connections = [tuple(conn) for conn in loc_data["connections"]]
+
             self.locations.append(location)
             self.tiles[loc_data["y"]][loc_data["x"]].set_location(location)
 
         # Восстанавливаем стартовую деревню
-        if data.get("starting_village"):
-            sv = data["starting_village"]
+        sv_data = config_data.get("starting_village") if config_data else data.get("starting_village")
+        if sv_data:
             for loc in self.locations:
-                if loc.x == sv["x"] and loc.y == sv["y"]:
+                if loc.x == sv_data["x"] and loc.y == sv_data["y"]:
                     self.starting_village = loc
                     break
 
-        print(f"Карта загружена из {filepath}")
+        if config_data:
+            print(f"Карта загружена из {filepath} (с конфигом)")
+        else:
+            print(f"Карта загружена из {filepath}")
 
     def get_tile(self, x, y):
         """

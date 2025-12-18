@@ -368,7 +368,8 @@ class ObjectPlacer:
             'shop_rank': location.shop_rank,
             'miners_count': location.miners_count,
             'respawn_time': location.respawn_time,
-            'player_attitude': location.player_attitude
+            'player_attitude': location.player_attitude,
+            'connections': location.connections
         }
         return info
 
