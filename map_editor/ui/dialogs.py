@@ -417,7 +417,7 @@ class GeneratorDialog(Dialog):
     """Dialog for generator settings."""
 
     def __init__(self, params: GeneratorParams = None):
-        super().__init__("Настройки генератора", 450, 560)
+        super().__init__("Настройки генератора", 450, 650)
         self.params = params or GeneratorParams()
         self._setup_controls()
 
@@ -489,7 +489,7 @@ class GeneratorDialog(Dialog):
             label="Количество деревень",
             key="village_count",
             value=self.params.village_count,
-            min_val=5, max_val=40, step=1
+            min_val=0, max_val=40, step=1
         ))
         y += spacing
 
@@ -498,7 +498,25 @@ class GeneratorDialog(Dialog):
             label="Количество шахт",
             key="mine_count",
             value=self.params.mine_count,
-            min_val=1, max_val=20, step=1
+            min_val=0, max_val=20, step=1
+        ))
+        y += spacing
+
+        self.sliders.append(DialogSlider(
+            rect=pygame.Rect(20, y, self.width - 40, slider_height),
+            label="Количество руин",
+            key="ruins_count",
+            value=self.params.ruins_count,
+            min_val=0, max_val=100, step=1
+        ))
+        y += spacing
+
+        self.sliders.append(DialogSlider(
+            rect=pygame.Rect(20, y, self.width - 40, slider_height),
+            label="Количество лагерей бандитов",
+            key="bandit_camp_count",
+            value=self.params.bandit_camp_count,
+            min_val=0, max_val=100, step=1
         ))
         y += spacing
 
@@ -570,6 +588,8 @@ class GeneratorDialog(Dialog):
             city_count=int(self.data.get('city_count', 5)),
             village_count=int(self.data.get('village_count', 15)),
             mine_count=int(self.data.get('mine_count', 8)),
+            ruins_count=int(self.data.get('ruins_count', 10)),
+            bandit_camp_count=int(self.data.get('bandit_camp_count', 10)),
             temperature_gradient=self.data.get('temperature_gradient', True),
             generate_beaches=self.data.get('generate_beaches', True),
             generate_rivers=self.data.get('generate_rivers', True),

@@ -70,7 +70,7 @@ class GeneratorParams:
     city_count: int = 5
     village_count: int = 15
     mine_count: int = 8
-    bandit_camp_count: int = 8
+    bandit_camp_count: int = 10
     ruins_count: int = 10
 
     # Placement options
