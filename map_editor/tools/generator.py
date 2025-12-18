@@ -37,6 +37,22 @@ LOCATION_SPAWN_DEER = "spawn_deer"
 PASSABLE_BIOMES = [BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST, BIOME_MOUNTAIN, BIOME_SWAMP]
 
 
+def get_default_player_attitude(location_type: str) -> int:
+    """Get default player attitude for a location type."""
+    attitude_map = {
+        LOCATION_MINE: 0,
+        LOCATION_VILLAGE: 0,
+        LOCATION_CITY: -1,
+        LOCATION_CAPITAL: -3,
+        LOCATION_MAGIC_SCHOOL: -2,
+        LOCATION_WARRIOR_ACADEMY: -2,
+        LOCATION_SECRET_CAMP: -2,
+        LOCATION_BANDIT_CAMP: -10,
+        LOCATION_RUINS: -10,
+    }
+    return attitude_map.get(location_type, 0)
+
+
 @dataclass
 class GeneratorParams:
     """Parameters for map generation."""
@@ -121,6 +137,10 @@ class MapLocation:
     name: str = ""
     rank: int = 1  # Rank for mines, ruins (1-5)
     shop_rank: int = 1  # Shop rank for cities, villages (1-5)
+    miners_count: int = 0  # Number of miners for mines (0-10)
+    respawn_time: int = 0  # Respawn time for mines in turns (0-200)
+    player_attitude: int = 0  # Attitude towards player (-10 to 10)
+    connections: List[Tuple[int, int]] = field(default_factory=list)  # Connections to other locations (x, y)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for saving."""
@@ -128,7 +148,8 @@ class MapLocation:
             'x': self.x,
             'y': self.y,
             'type': self.location_type,
-            'name': self.name
+            'name': self.name,
+            'player_attitude': self.player_attitude
         }
         # Only save rank for relevant location types
         if self.location_type in [LOCATION_MINE, LOCATION_RUINS]:
@@ -136,18 +157,80 @@ class MapLocation:
         # Only save shop_rank for settlements
         if self.location_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
             data['shop_rank'] = self.shop_rank
+        # Only save miners_count and respawn_time for mines
+        if self.location_type == LOCATION_MINE:
+            data['miners_count'] = self.miners_count
+            data['respawn_time'] = self.respawn_time
+        # Save connections if any
+        if self.connections:
+            data['connections'] = [[x, y] for x, y in self.connections]
         return data
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'MapLocation':
         """Create from dictionary."""
+        connections = []
+        if 'connections' in data:
+            connections = [tuple(conn) for conn in data['connections']]
+
         return cls(
             x=data['x'],
             y=data['y'],
             location_type=data['type'],
             name=data.get('name', ''),
             rank=data.get('rank', 1),
-            shop_rank=data.get('shop_rank', 1)
+            shop_rank=data.get('shop_rank', 1),
+            miners_count=data.get('miners_count', 0),
+            respawn_time=data.get('respawn_time', 0),
+            player_attitude=data.get('player_attitude', 0),
+            connections=connections
+        )
+
+
+@dataclass
+class MapConfig:
+    """Configuration for map locations and their properties."""
+    locations: List[MapLocation] = field(default_factory=list)
+    starting_village: Optional[Tuple[int, int]] = None  # (x, y) coordinates
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for saving."""
+        data = {
+            'version': '1.0',
+            'locations': [loc.to_dict() for loc in self.locations]
+        }
+        if self.starting_village:
+            data['starting_village'] = {
+                'x': self.starting_village[0],
+                'y': self.starting_village[1]
+            }
+        return data
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], locations: List[MapLocation] = None) -> 'MapConfig':
+        """Create from dictionary."""
+        config_locations = [MapLocation.from_dict(loc) for loc in data.get('locations', [])]
+
+        # If locations provided (from main map), merge configs
+        if locations:
+            # Update locations with config data
+            for loc in locations:
+                for config_loc in config_locations:
+                    if loc.x == config_loc.x and loc.y == config_loc.y:
+                        loc.miners_count = config_loc.miners_count
+                        loc.respawn_time = config_loc.respawn_time
+                        loc.player_attitude = config_loc.player_attitude
+                        loc.connections = config_loc.connections
+                        break
+
+        starting_village = None
+        if 'starting_village' in data:
+            sv_data = data['starting_village']
+            starting_village = (sv_data['x'], sv_data['y'])
+
+        return cls(
+            locations=config_locations if not locations else locations,
+            starting_village=starting_village
         )
 
 
@@ -200,25 +283,25 @@ class GeneratedMap:
         return False
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for saving."""
+        """Convert to dictionary for saving (terrain only)."""
         data = {
             'version': '1.0',
             'width': self.width,
             'height': self.height,
             'seed': self.seed,
-            'biomes': self.biomes,
-            'locations': [loc.to_dict() for loc in self.locations]
+            'biomes': self.biomes
         }
-        if self.starting_village:
-            data['starting_village'] = {
-                'x': self.starting_village.x,
-                'y': self.starting_village.y,
-                'name': self.starting_village.name
-            }
         return data
 
+    def to_config_dict(self) -> Dict[str, Any]:
+        """Convert location config to dictionary for saving."""
+        config = MapConfig(locations=self.locations)
+        if self.starting_village:
+            config.starting_village = (self.starting_village.x, self.starting_village.y)
+        return config.to_dict()
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'GeneratedMap':
+    def from_dict(cls, data: Dict[str, Any], config_data: Dict[str, Any] = None) -> 'GeneratedMap':
         """Create from dictionary."""
         width = data['width']
         height = data['height']
@@ -229,32 +312,49 @@ class GeneratedMap:
         elevation = [[0.5 for _ in range(width)] for _ in range(height)]
         moisture = [[0.5 for _ in range(width)] for _ in range(height)]
 
-        locations = [MapLocation.from_dict(loc) for loc in data.get('locations', [])]
-
-        # Find starting village in locations list (by coordinates)
+        # Load locations from config if provided, otherwise from main data (backward compatibility)
+        locations = []
         starting_village = None
-        if 'starting_village' in data:
-            sv_data = data['starting_village']
-            sv_x, sv_y = sv_data['x'], sv_data['y']
-            sv_name = sv_data.get('name', 'Тихая')
 
-            # Find matching location in list
-            for loc in locations:
-                if loc.x == sv_x and loc.y == sv_y:
-                    starting_village = loc
-                    if not loc.name:
-                        loc.name = sv_name
-                    break
+        if config_data:
+            # New format: locations in separate config file
+            config = MapConfig.from_dict(config_data)
+            locations = config.locations
 
-            # If not found in locations, create new and add
-            if starting_village is None:
-                starting_village = MapLocation(
-                    x=sv_x,
-                    y=sv_y,
-                    location_type=LOCATION_VILLAGE,
-                    name=sv_name
-                )
-                locations.append(starting_village)
+            # Find starting village
+            if config.starting_village:
+                sv_x, sv_y = config.starting_village
+                for loc in locations:
+                    if loc.x == sv_x and loc.y == sv_y:
+                        starting_village = loc
+                        break
+        else:
+            # Old format: locations in main map file (backward compatibility)
+            locations = [MapLocation.from_dict(loc) for loc in data.get('locations', [])]
+
+            # Find starting village in locations list (by coordinates)
+            if 'starting_village' in data:
+                sv_data = data['starting_village']
+                sv_x, sv_y = sv_data['x'], sv_data['y']
+                sv_name = sv_data.get('name', 'Тихая')
+
+                # Find matching location in list
+                for loc in locations:
+                    if loc.x == sv_x and loc.y == sv_y:
+                        starting_village = loc
+                        if not loc.name:
+                            loc.name = sv_name
+                        break
+
+                # If not found in locations, create new and add
+                if starting_village is None:
+                    starting_village = MapLocation(
+                        x=sv_x,
+                        y=sv_y,
+                        location_type=LOCATION_VILLAGE,
+                        name=sv_name
+                    )
+                    locations.append(starting_village)
 
         return cls(
             width=width,
@@ -722,7 +822,8 @@ class MapGenerator:
 
             # Generate name
             name = self._get_location_name(location_type)
-            location = MapLocation(x, y, location_type, name)
+            attitude = get_default_player_attitude(location_type)
+            location = MapLocation(x, y, location_type, name, player_attitude=attitude)
             game_map.add_location(location)
             placed += 1
 

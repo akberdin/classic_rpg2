@@ -365,7 +365,10 @@ class ObjectPlacer:
             'y': location.y,
             'is_starting': False,  # Will be updated by caller
             'rank': location.rank,
-            'shop_rank': location.shop_rank
+            'shop_rank': location.shop_rank,
+            'miners_count': location.miners_count,
+            'respawn_time': location.respawn_time,
+            'player_attitude': location.player_attitude
         }
         return info
 

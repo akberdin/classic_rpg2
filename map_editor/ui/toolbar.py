@@ -46,10 +46,10 @@ class Toolbar:
         self.border_color = tuple(ui_config.get('border_color', [70, 70, 75]))
         self.separator_color = (80, 80, 85)
 
-        # Font
+        # Font - use default pygame font for crisp rendering
         pygame.font.init()
-        self.font = pygame.font.SysFont('Arial', 11)
-        self.font_small = pygame.font.SysFont('Arial', 10)
+        self.font = pygame.font.Font(None, 16)
+        self.font_small = pygame.font.Font(None, 14)
 
         # Current state
         self.current_tool = ToolType.SELECT

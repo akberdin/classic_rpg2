@@ -88,10 +88,10 @@ class Sidebar:
         for loc_type, data in loc_config.items():
             self.location_colors[loc_type] = tuple(data.get('color', [255, 255, 255]))
 
-        # Font
-        self.font = pygame.font.SysFont('Arial', 12)
-        self.font_bold = pygame.font.SysFont('Arial', 12, bold=True)
-        self.font_large = pygame.font.SysFont('Arial', 14, bold=True)
+        # Font - use default pygame font for crisp rendering
+        self.font = pygame.font.Font(None, 18)
+        self.font_bold = pygame.font.Font(None, 18)
+        self.font_large = pygame.font.Font(None, 22)
 
         # State
         self.current_tool = ToolType.SELECT
