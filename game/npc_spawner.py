@@ -34,18 +34,19 @@ class NPCSpawner:
             dict: Словарь со списками NPC по типам
         """
         npcs = {
-            'guards': self.spawn_guards(),  # Новая система спавна на основе конфигурации
+            'guards': self.spawn_guards(),  # Система спавна стражи на основе конфигурации guards
             'merchants': [],  # Временно отключено
-            'mages': self.spawn_mages(),
             'bandits': self.spawn_bandits(),
             'miners': self.spawn_miners(),
             'undead': self.spawn_undead(),
-            'shadow_adepts': self.spawn_shadow_adepts(),
             'alchemists': self.spawn_alchemists(),
-            'hunters': self.spawn_hunters(),
             'necromancers': self.spawn_necromancers(),
             'animals': self.spawn_animals()
         }
+
+        # УСТАРЕВШИЕ методы spawn_mages(), spawn_shadow_adepts(), spawn_hunters() удалены
+        # Эти типы NPC (warrior, mage, shadow_adept, hunter) теперь создаются
+        # только через систему guards из конфигурации map1_config.json
 
         # Временно отключаем всех торговцев
         # magic_merchant = self.spawn_magic_merchant()
@@ -406,218 +407,7 @@ class NPCSpawner:
 
         return None
 
-    def spawn_shadow_adepts(self):
-        """
-        Создание Адептов тени в Тайном лагере
-        4 ранга: новичок (1-10), обычный (11-20), ветеран (21-30), эксперт (31-40)
 
-        ВАЖНО: Если у тайного лагеря есть параметр guards, адепты НЕ создаются этим методом,
-        а создаются через систему guards в spawn_guards()
-
-        Returns:
-            list: Список адептов тени
-        """
-        shadow_adepts = []
-
-        # Находим Тайный лагерь
-        secret_camp = None
-        for loc in self.game_map.locations:
-            if loc.location_type == LOCATION_SECRET_CAMP:
-                secret_camp = loc
-                break
-
-        if not secret_camp:
-            return shadow_adepts
-
-        # Проверяем, есть ли у лагеря параметр guards
-        # Если есть, то адептов создавать не нужно (они создаются через guards)
-        if hasattr(secret_camp, 'guards') and secret_camp.guards:
-            print(f"Адепты тени для {secret_camp.name} создаются через систему guards, пропускаем spawn_shadow_adepts()")
-            return shadow_adepts
-
-        # Имена адептов тени по рангам
-        adept_names_rank1 = ["Ученик Тени", "Послушник", "Начинающий Убийца"]
-        adept_names_rank2 = ["Адепт Тени", "Теневой Агент", "Шпион"]
-        adept_names_rank3 = ["Мастер Теней", "Убийца", "Теневой Охотник"]
-        adept_names_rank4 = ["Теневой Лорд", "Верховный Убийца", "Владыка Теней"]
-
-        # Ранг 1: 3 адепта (уровень 1-10)
-        for i in range(3):
-            adept_pos = None
-            for attempt in range(30):
-                offset_x = random.randint(-15, 15)
-                offset_y = random.randint(-15, 15)
-                ax = secret_camp.x + offset_x
-                ay = secret_camp.y + offset_y
-
-                if self.game_map.is_valid_position(ax, ay):
-                    tile = self.game_map.get_tile(ax, ay)
-                    if tile.is_passable():
-                        occupied = False
-                        for existing in shadow_adepts:
-                            if existing.x == ax and existing.y == ay:
-                                occupied = True
-                                break
-                        if not occupied:
-                            adept_pos = (ax, ay)
-                            break
-
-            if adept_pos:
-                ax, ay = adept_pos
-                adept_level = random.randint(1, 10)
-                adept_name = f"{random.choice(adept_names_rank1)} {secret_camp.name}"
-                adept = ShadowAdept(adept_name, ax, ay, adept_level, secret_camp.x, secret_camp.y)
-                shadow_adepts.append(adept)
-
-        # Ранг 2: 2 адепта (уровень 11-20)
-        for i in range(2):
-            adept_pos = None
-            for attempt in range(30):
-                offset_x = random.randint(-15, 15)
-                offset_y = random.randint(-15, 15)
-                ax = secret_camp.x + offset_x
-                ay = secret_camp.y + offset_y
-
-                if self.game_map.is_valid_position(ax, ay):
-                    tile = self.game_map.get_tile(ax, ay)
-                    if tile.is_passable():
-                        occupied = False
-                        for existing in shadow_adepts:
-                            if existing.x == ax and existing.y == ay:
-                                occupied = True
-                                break
-                        if not occupied:
-                            adept_pos = (ax, ay)
-                            break
-
-            if adept_pos:
-                ax, ay = adept_pos
-                adept_level = random.randint(11, 20)
-                adept_name = f"{random.choice(adept_names_rank2)} {secret_camp.name}"
-                adept = ShadowAdept(adept_name, ax, ay, adept_level, secret_camp.x, secret_camp.y)
-                shadow_adepts.append(adept)
-
-        # Ранг 3: 2 адепта (уровень 21-30)
-        for i in range(2):
-            adept_pos = None
-            for attempt in range(30):
-                offset_x = random.randint(-15, 15)
-                offset_y = random.randint(-15, 15)
-                ax = secret_camp.x + offset_x
-                ay = secret_camp.y + offset_y
-
-                if self.game_map.is_valid_position(ax, ay):
-                    tile = self.game_map.get_tile(ax, ay)
-                    if tile.is_passable():
-                        occupied = False
-                        for existing in shadow_adepts:
-                            if existing.x == ax and existing.y == ay:
-                                occupied = True
-                                break
-                        if not occupied:
-                            adept_pos = (ax, ay)
-                            break
-
-            if adept_pos:
-                ax, ay = adept_pos
-                adept_level = random.randint(21, 30)
-                adept_name = f"{random.choice(adept_names_rank3)} {secret_camp.name}"
-                adept = ShadowAdept(adept_name, ax, ay, adept_level, secret_camp.x, secret_camp.y)
-                shadow_adepts.append(adept)
-
-        # Ранг 4: 1 адепт (уровень 31-40)
-        adept_pos = None
-        for attempt in range(30):
-            offset_x = random.randint(-15, 15)
-            offset_y = random.randint(-15, 15)
-            ax = secret_camp.x + offset_x
-            ay = secret_camp.y + offset_y
-
-            if self.game_map.is_valid_position(ax, ay):
-                tile = self.game_map.get_tile(ax, ay)
-                if tile.is_passable():
-                    occupied = False
-                    for existing in shadow_adepts:
-                        if existing.x == ax and existing.y == ay:
-                            occupied = True
-                            break
-                    if not occupied:
-                        adept_pos = (ax, ay)
-                        break
-
-        if adept_pos:
-            ax, ay = adept_pos
-            adept_level = random.randint(31, 40)
-            adept_name = f"{random.choice(adept_names_rank4)} {secret_camp.name}"
-            adept = ShadowAdept(adept_name, ax, ay, adept_level, secret_camp.x, secret_camp.y)
-            shadow_adepts.append(adept)
-
-        print(f"Создано Адептов тени: {len(shadow_adepts)} (3 ранга 1, 2 ранга 2, 2 ранга 3, 1 ранга 4)")
-        return shadow_adepts
-
-
-    def spawn_mages(self):
-        """
-        Создание магов-патрульных в академии магии
-
-        ВАЖНО: Если у академии есть параметр guards, маги НЕ создаются этим методом,
-        а создаются через систему guards в spawn_guards()
-
-        Returns:
-            list: Список магов
-        """
-        mages = []
-        # Находим академию магии
-        magic_school = None
-        for loc in self.game_map.locations:
-            if loc.location_type == LOCATION_MAGIC_SCHOOL:
-                magic_school = loc
-                break
-
-        if not magic_school:
-            return mages
-
-        # Проверяем, есть ли у академии параметр guards
-        # Если есть, то магов создавать не нужно (они создаются через guards)
-        if hasattr(magic_school, 'guards') and magic_school.guards:
-            print(f"Маги для {magic_school.name} создаются через систему guards, пропускаем spawn_mages()")
-            return mages
-
-        # Создаем 3-5 магов-патрульных возле академии
-        num_mages = random.randint(3, 5)
-
-        mage_names = [
-            "Адепт", "Чародей", "Волшебник", "Маг",
-            "Заклинатель", "Колдун", "Ученик мага", "Магистр"
-        ]
-
-        for i in range(num_mages):
-            # Находим позицию рядом с академией (в пределах 10 клеток)
-            mage_pos = None
-            for attempt in range(20):
-                offset_x = random.randint(-10, 10)
-                offset_y = random.randint(-10, 10)
-                mx = magic_school.x + offset_x
-                my = magic_school.y + offset_y
-
-                if self.game_map.is_valid_position(mx, my):
-                    tile = self.game_map.get_tile(mx, my)
-                    if tile.is_passable():
-                        mage_pos = (mx, my)
-                        break
-
-            if mage_pos:
-                mx, my = mage_pos
-                # Уровень магов от 31 до 40
-                mage_level = random.randint(31, 40)
-                mage_name = f"{random.choice(mage_names)} {magic_school.name}"
-
-                # Создаем мага с привязкой к академии
-                mage = MagePatrol(mage_name, mx, my, mage_level, magic_school.x, magic_school.y)
-
-                mages.append(mage)
-
-        return mages
 
     def spawn_bandits(self):
         """
@@ -911,62 +701,6 @@ class NPCSpawner:
 
         return alchemists
 
-    def spawn_hunters(self):
-        """
-        Создание охотников в лесных и диких областях
-
-        ВАЖНО: Если у деревни есть параметр guards с охотниками, охотники НЕ создаются этим методом,
-        а создаются через систему guards в spawn_guards()
-
-        Returns:
-            list: Список охотников
-        """
-        hunters = []
-
-        # Находим деревни как базы для охотников
-        villages = [loc for loc in self.game_map.locations
-                   if loc.location_type == LOCATION_VILLAGE]
-
-        hunter_names = [
-            "Охотник Орион", "Следопыт Артемис", "Рейнджер Робин",
-            "Охотник Немрод", "Следопыт Иван", "Ловчий Степан"
-        ]
-
-        # Создаем 1-2 охотника возле каждой деревни
-        for village in villages:
-            # Проверяем, есть ли у деревни параметр guards
-            # Если есть, то вся стража (включая охотников) создается через guards
-            if hasattr(village, 'guards') and village.guards:
-                print(f"Стража для {village.name} создается через систему guards, пропускаем spawn_hunters()")
-                continue
-
-            if random.random() < 0.5:  # 50% шанс
-                num_hunters = random.randint(1, 2)
-                for i in range(num_hunters):
-                    # Позиция немного дальше от деревни
-                    hunter_pos = None
-                    for attempt in range(20):
-                        offset_x = random.randint(-15, 15)
-                        offset_y = random.randint(-15, 15)
-                        hx = village.x + offset_x
-                        hy = village.y + offset_y
-
-                        if self.game_map.is_valid_position(hx, hy):
-                            tile = self.game_map.get_tile(hx, hy)
-                            if tile.is_passable():
-                                hunter_pos = (hx, hy)
-                                break
-
-                    if hunter_pos:
-                        hx, hy = hunter_pos
-                        hunter_level = random.randint(10, 25)
-                        hunter_name = random.choice(hunter_names)
-
-                        hunter = Hunter(hunter_name, hx, hy, hunter_level, village.x, village.y)
-                        hunters.append(hunter)
-                        print(f"Создан охотник '{hunter_name}' возле {village.name}")
-
-        return hunters
 
     def spawn_necromancers(self):
         """
