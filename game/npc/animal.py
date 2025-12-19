@@ -392,6 +392,27 @@ class Animal(NPC):
         """Пометить животное как провоцированное (атакованное игроком)"""
         self.provoked = True
 
+    def set_spawn_point_attitude(self, attitude):
+        """
+        Установить отношение точки спавна к игроку и обновить relationship
+
+        Args:
+            attitude: Значение player_attitude из конфига (-10 до 10)
+        """
+        self.spawn_point_attitude = attitude
+
+        # Устанавливаем relationship на основе player_attitude
+        # Это важно для системы враждебности (find_hostile и т.д.)
+        if attitude <= -10:
+            # Очень агрессивная зона - враждебное отношение
+            self.relationship = RELATIONSHIP_HOSTILE
+        elif attitude < -5:
+            # Агрессивная зона - недружелюбное отношение
+            self.relationship = RELATIONSHIP_UNFRIENDLY
+        else:
+            # Нейтральная или дружелюбная зона
+            self.relationship = RELATIONSHIP_NEUTRAL
+
 
 class Wolf(Animal):
     """Класс Волка - быстрый и агрессивный хищник"""

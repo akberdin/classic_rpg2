@@ -416,7 +416,8 @@ class RespawnManager:
             if 'spawn_point_name' in respawn_data:
                 new_npc.spawn_point_name = respawn_data['spawn_point_name']
             if 'spawn_point_attitude' in respawn_data:
-                new_npc.spawn_point_attitude = respawn_data['spawn_point_attitude']
+                # Используем метод для установки отношения (также установит self.relationship)
+                new_npc.set_spawn_point_attitude(respawn_data['spawn_point_attitude'])
             if 'patrol_radius' in respawn_data:
                 new_npc.patrol_radius = respawn_data['patrol_radius']
             if 'max_distance_from_spawn' in respawn_data:
@@ -438,7 +439,8 @@ class RespawnManager:
             if 'spawn_point_name' in respawn_data:
                 new_npc.spawn_point_name = respawn_data['spawn_point_name']
             if 'spawn_point_attitude' in respawn_data:
-                new_npc.spawn_point_attitude = respawn_data['spawn_point_attitude']
+                # Используем метод для установки отношения (также установит self.relationship)
+                new_npc.set_spawn_point_attitude(respawn_data['spawn_point_attitude'])
             if 'patrol_radius' in respawn_data:
                 new_npc.patrol_radius = respawn_data['patrol_radius']
             if 'max_distance_from_spawn' in respawn_data:
@@ -460,7 +462,8 @@ class RespawnManager:
             if 'spawn_point_name' in respawn_data:
                 new_npc.spawn_point_name = respawn_data['spawn_point_name']
             if 'spawn_point_attitude' in respawn_data:
-                new_npc.spawn_point_attitude = respawn_data['spawn_point_attitude']
+                # Используем метод для установки отношения (также установит self.relationship)
+                new_npc.set_spawn_point_attitude(respawn_data['spawn_point_attitude'])
             if 'patrol_radius' in respawn_data:
                 new_npc.patrol_radius = respawn_data['patrol_radius']
             if 'max_distance_from_spawn' in respawn_data:
