@@ -160,4 +160,7 @@ def update_all_npc_ai_with_context(game: 'Game', context: 'AIContext' = None) ->
         npcs = getattr(game, group_name, [])
         for npc in npcs:
             if context.should_update(npc):
+                # Сначала обновляем состояние скрытия (для системы работа/отдых)
+                npc.update_hidden_state()
+                # Затем обновляем AI
                 npc.update_ai(context)
