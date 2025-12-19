@@ -10,6 +10,7 @@ from ..tools.generator import (
     LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE,
     LOCATION_MINE, LOCATION_RUINS,
     LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY,
+    LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER,
     Guard, GUARD_TYPES, GUARD_NONE,
     RESOURCE_TYPES
 )
@@ -718,6 +719,9 @@ class LocationEditDialog(Dialog):
             height += 50  # Space for shop_rank slider
         if loc_type == LOCATION_MINE:
             height += 170  # Space for miners_count, respawn_time sliders and resource_type dropdown
+        # Add space for animal spawn points
+        if loc_type in [LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER]:
+            height += 150  # Space for animal_count, respawn_time, and spawn_radius sliders
         # Add space for guards (for settlements and academies)
         if loc_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
                         LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, 'secret_camp']:
@@ -814,6 +818,41 @@ class LocationEditDialog(Dialog):
             ))
             self.data['resource_type'] = self.location_info.get('resource_type', 'copper')
             y += 70
+
+        # Animal spawn settings (only for animal spawn points)
+        if loc_type in [LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER]:
+            # Animal count slider
+            self.sliders.append(DialogSlider(
+                rect=pygame.Rect(20, y + 20, self.width - 40, 16),
+                label="Количество животных (1-10)",
+                key="animal_count",
+                value=self.location_info.get('animal_count', 3),
+                min_val=1, max_val=10, step=1
+            ))
+            self.data['animal_count'] = self.location_info.get('animal_count', 3)
+            y += 50
+
+            # Respawn time slider
+            self.sliders.append(DialogSlider(
+                rect=pygame.Rect(20, y + 20, self.width - 40, 16),
+                label="Время респавна (0-999 ходов)",
+                key="respawn_time",
+                value=self.location_info.get('respawn_time', 50),
+                min_val=0, max_val=999, step=5
+            ))
+            self.data['respawn_time'] = self.location_info.get('respawn_time', 50)
+            y += 50
+
+            # Spawn radius slider
+            self.sliders.append(DialogSlider(
+                rect=pygame.Rect(20, y + 20, self.width - 40, 16),
+                label="Зона действия (3-10)",
+                key="spawn_radius",
+                value=self.location_info.get('spawn_radius', 5),
+                min_val=3, max_val=10, step=1
+            ))
+            self.data['spawn_radius'] = self.location_info.get('spawn_radius', 5)
+            y += 50
 
         # Player attitude slider (for all locations)
         self.sliders.append(DialogSlider(
@@ -1121,3 +1160,82 @@ class LoadDialog(Dialog):
 
         # Border
         pygame.draw.rect(surface, self.border_color, list_rect, width=1, border_radius=4)
+
+
+class ConfirmDialog(Dialog):
+    """Dialog for confirmation with Yes/No buttons."""
+
+    def __init__(self, message: str, title: str = "Подтверждение"):
+        super().__init__(title, 400, 180)
+        self.message = message
+        self._setup_controls()
+
+    def _setup_controls(self) -> None:
+        """Setup dialog controls."""
+        btn_width = 100
+        btn_height = 30
+        btn_y = self.height - btn_height - 15
+
+        # No button (Esc / Right click)
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(self.width - btn_width * 2 - 20, btn_y, btn_width, btn_height),
+            text="Нет",
+            action="no"
+        ))
+
+        # Yes button (Enter / Left click) - primary
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(self.width - btn_width - 10, btn_y, btn_width, btn_height),
+            text="Да",
+            action="yes",
+            primary=True
+        ))
+
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """Handle pygame event. Returns True if event was consumed."""
+        if not self.visible:
+            return False
+
+        # Handle right click as "No"
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:  # Right click
+            self.result = "no"
+            self.hide()
+            if self.on_close:
+                self.on_close("no", self.data)
+            return True
+
+        # Call parent handle_event for normal handling
+        return super().handle_event(event)
+
+    def draw(self, surface: pygame.Surface) -> None:
+        """Draw the dialog."""
+        super().draw(surface)
+
+        if not self.visible:
+            return
+
+        # Draw message
+        y = self.y + 60
+        # Split message into multiple lines if needed
+        words = self.message.split(' ')
+        lines = []
+        current_line = ""
+        max_width = self.width - 40
+
+        for word in words:
+            test_line = current_line + " " + word if current_line else word
+            test_surface = self.font.render(test_line, True, self.text_color)
+            if test_surface.get_width() <= max_width:
+                current_line = test_line
+            else:
+                if current_line:
+                    lines.append(current_line)
+                current_line = word
+        if current_line:
+            lines.append(current_line)
+
+        for line in lines:
+            text_surface = self.font.render(line, True, self.text_color)
+            text_rect = text_surface.get_rect(center=(self.x + self.width // 2, y))
+            surface.blit(text_surface, text_rect)
+            y += 25
