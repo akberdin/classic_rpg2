@@ -1263,8 +1263,10 @@ class NPCSpawner:
                     # Сохраняем параметры точки спавна для респавна и AI
                     animal.spawn_point_id = spawn_id
                     animal.spawn_point_name = spawn_name
-                    animal.spawn_point_attitude = player_attitude
                     animal.spawn_point_respawn_time = respawn_time
+
+                    # Устанавливаем отношение к игроку (это также установит self.relationship)
+                    animal.set_spawn_point_attitude(player_attitude)
 
                     # Устанавливаем patrol_radius и max_distance_from_spawn на основе spawn_radius
                     animal.patrol_radius = spawn_radius
