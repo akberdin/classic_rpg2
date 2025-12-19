@@ -726,7 +726,7 @@ class LocationEditDialog(Dialog):
         if loc_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
                         LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, 'secret_camp']:
             height += 305  # Space for 5 guard slots (headers + 5*45 + spacing)
-        super().__init__("Редактирование локации", 500, height)  # Increased width to 500 for guards
+        super().__init__("Редактирование локации", 600, height)  # Increased width to 600 for guards with patrol radius
         # Guard headers (will be set in _setup_controls if location has guards)
         self._guard_headers_y = None
         self._guard_headers = None
@@ -891,9 +891,10 @@ class LocationEditDialog(Dialog):
             # Add column headers - store them as a special attribute for rendering
             self._guard_headers_y = y
             self._guard_headers = [
-                ("Тип", 20, 180),      # (label, x, width)
+                ("Тип", 20, 180),           # (label, x, width)
                 ("Ранг", 210, 80),
-                ("Кол-во", 300, 80)
+                ("Кол-во", 300, 80),
+                ("Радиус патр.", 390, 100)  # Patrol radius column
             ]
             y += 25  # Space for headers
 
@@ -935,6 +936,16 @@ class LocationEditDialog(Dialog):
                     max_length=2
                 ))
                 self.data[f"guard_{i}_count"] = str(guard.count)
+
+                # Patrol radius input (100px wide)
+                self.text_inputs.append(DialogTextInput(
+                    rect=pygame.Rect(390, y + 20, 100, 28),
+                    label="",  # No label, using column header instead
+                    key=f"guard_{i}_patrol_radius",
+                    value=str(guard.patrol_radius),
+                    max_length=2
+                ))
+                self.data[f"guard_{i}_patrol_radius"] = str(guard.patrol_radius)
 
                 y += 45
 
@@ -987,17 +998,24 @@ class LocationEditDialog(Dialog):
         if not self.visible:
             return
 
-        # Draw location type and coordinates info
+        # Draw location type info (coordinates moved to bottom)
         y = self.y + 140
         info_lines = [
-            f"Тип: {self.location_info.get('type_display', '')}",
-            f"Координаты: ({self.location_info.get('x', 0)}, {self.location_info.get('y', 0)})"
+            f"Тип: {self.location_info.get('type_display', '')}"
         ]
 
         for line in info_lines:
             text_surface = self.font.render(line, True, (180, 180, 180))
             surface.blit(text_surface, (self.x + 20, y))
             y += 20
+
+        # Draw coordinates at bottom, above "Delete" button
+        btn_height = 30
+        btn_y = self.height - btn_height - 15
+        coords_y = self.y + btn_y - 30  # 30px above the buttons
+        coords_text = f"Координаты: ({self.location_info.get('x', 0)}, {self.location_info.get('y', 0)})"
+        coords_surface = self.font.render(coords_text, True, (180, 180, 180))
+        surface.blit(coords_surface, (self.x + 20, coords_y))
 
         # Draw guard column headers if guards section is present
         if self._guard_headers_y is not None and self._guard_headers is not None:
