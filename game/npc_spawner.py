@@ -28,14 +28,13 @@ class NPCSpawner:
         Создать всех NPC на карте
 
         ВРЕМЕННО ОТКЛЮЧЕНЫ:
-        - guards (стража)
         - merchants (торговцы)
 
         Returns:
             dict: Словарь со списками NPC по типам
         """
         npcs = {
-            'guards': [],  # Временно отключено
+            'guards': self.spawn_guards(),  # Новая система спавна на основе конфигурации
             'merchants': [],  # Временно отключено
             'mages': self.spawn_mages(),
             'bandits': self.spawn_bandits(),
@@ -61,63 +60,155 @@ class NPCSpawner:
         # if shadow_merchant:
         #     npcs['merchants'].append(shadow_merchant)
 
-        # Временно отключаем воинов (часть стражи)
-        # warriors = self.spawn_warriors()
-        # if warriors:
-        #     npcs['guards'].extend(warriors)
-
-        print("ВНИМАНИЕ: Спавн стражи и торговцев временно отключен")
+        print("ВНИМАНИЕ: Спавн торговцев временно отключен")
         return npcs
 
     def spawn_guards(self):
         """
-        Создание стражников в городах и деревнях
+        Создание стражников на основе конфигурации locations.
+
+        Для каждой локации с параметром guards создаются NPC разных типов и рангов.
+        Параметры guards определяют:
+        - type: тип стражи (warrior, mage, shadow_adept, hunter)
+        - rank: ранг (1-4), определяет уровень
+        - count: количество стражей данного типа
+        - patrol_radius: радиус патрулирования
+        - respawn_time: время респавна при смерти
 
         Returns:
-            list: Список стражников
+            list: Список стражников всех типов
         """
         guards = []
-        # Находим все города на карте
-        cities = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_CITY]
-        villages = [loc for loc in self.game_map.locations if loc.location_type == LOCATION_VILLAGE]
 
-        # Спавн стражников в городах (8 стражников 3-4 ранга)
-        for city in cities:
-            num_guards = 8
+        # Находим все локации с параметром guards
+        locations_with_guards = [
+            loc for loc in self.game_map.locations
+            if hasattr(loc, 'guards') and loc.guards
+        ]
 
-            for i in range(num_guards):
-                guard_pos = self._find_npc_position(city.x, city.y, guards)
-                if guard_pos:
-                    gx, gy = guard_pos
-                    # Уровень стражников 3-4 ранга (15-40 уровень)
-                    guard_level = random.randint(15, 40)
-                    guard = Guard(f"Стражник {city.name}", gx, gy, guard_level)
+        for location in locations_with_guards:
+            spawn_radius = getattr(location, 'spawn_radius', 5)
+            location_name = getattr(location, 'name', 'Неизвестно')
 
-                    # Увеличенный радиус патрулирования для городов
-                    patrol_route = self._create_patrol_route(gx, gy, radius=8)
-                    guard.set_patrol_route(patrol_route)
+            # Обрабатываем каждую запись в массиве guards
+            for guard_config in location.guards:
+                guard_type = guard_config.get('type', 'warrior')
+                rank = guard_config.get('rank', 1)
+                count = guard_config.get('count', 1)
+                patrol_radius = guard_config.get('patrol_radius', 5)
+                respawn_time = guard_config.get('respawn_time', 0)
 
-                    guards.append(guard)
+                # Определяем диапазон уровней по рангу
+                # Ранг 1: 1-10, Ранг 2: 11-20, Ранг 3: 21-30, Ранг 4: 31-40
+                level_min = (rank - 1) * 10 + 1
+                level_max = rank * 10
 
-        # Спавн стражников в деревнях (4 стражника 1-2 ранга)
-        for village in villages:
-            num_guards = 4
+                # Создаем count стражей данного типа и ранга
+                for i in range(count):
+                    # Находим позицию в радиусе spawn_radius от локации
+                    guard_pos = None
+                    for attempt in range(30):
+                        offset_x = random.randint(-spawn_radius, spawn_radius)
+                        offset_y = random.randint(-spawn_radius, spawn_radius)
+                        gx = location.x + offset_x
+                        gy = location.y + offset_y
 
-            for i in range(num_guards):
-                guard_pos = self._find_npc_position(village.x, village.y, guards)
-                if guard_pos:
-                    gx, gy = guard_pos
-                    # Уровень стражников 1-2 ранга (1-15 уровень)
-                    guard_level = random.randint(1, 15)
-                    guard = Guard(f"Стражник {village.name}", gx, gy, guard_level)
+                        if self.game_map.is_valid_position(gx, gy):
+                            tile = self.game_map.get_tile(gx, gy)
+                            if tile.is_passable():
+                                # Проверяем, нет ли уже NPC на этой позиции
+                                occupied = False
+                                for existing_guard in guards:
+                                    if existing_guard.x == gx and existing_guard.y == gy:
+                                        occupied = True
+                                        break
 
-                    # Увеличенный радиус патрулирования для деревень
-                    patrol_route = self._create_patrol_route(gx, gy, radius=6)
-                    guard.set_patrol_route(patrol_route)
+                                if not occupied:
+                                    guard_pos = (gx, gy)
+                                    break
 
-                    guards.append(guard)
+                    if guard_pos:
+                        gx, gy = guard_pos
+                        guard_level = random.randint(level_min, level_max)
+
+                        # Создаем стражника в зависимости от типа
+                        guard = self._create_guard_by_type(
+                            guard_type, location_name, gx, gy, guard_level,
+                            location.x, location.y, patrol_radius, respawn_time
+                        )
+
+                        if guard:
+                            guards.append(guard)
+
+        if guards:
+            print(f"Создано стражей: {len(guards)} на основе конфигурации")
 
         return guards
+
+    def _create_guard_by_type(self, guard_type, location_name, x, y, level, home_x, home_y, patrol_radius, respawn_time):
+        """
+        Создать стражника заданного типа
+
+        Args:
+            guard_type: тип стражи (warrior, mage, shadow_adept, hunter)
+            location_name: название локации
+            x, y: координаты спавна
+            level: уровень стражи
+            home_x, home_y: координаты домашней точки (центр локации)
+            patrol_radius: радиус патрулирования
+            respawn_time: время респавна
+
+        Returns:
+            NPC объект стражи или None
+        """
+        guard_names = {
+            'warrior': ['Стражник', 'Воин', 'Защитник', 'Страж'],
+            'mage': ['Маг', 'Чародей', 'Волшебник', 'Адепт'],
+            'shadow_adept': ['Адепт Тени', 'Теневой Страж', 'Ночной Дозор'],
+            'hunter': ['Охотник', 'Следопыт', 'Рейнджер', 'Ловчий']
+        }
+
+        # Выбираем имя
+        name_prefix = random.choice(guard_names.get(guard_type, ['Стражник']))
+        guard_name = f"{name_prefix} {location_name}"
+
+        guard = None
+
+        if guard_type == 'warrior':
+            # Используем класс Guard для воинов
+            guard = Guard(guard_name, x, y, level)
+            # Устанавливаем маршрут патрулирования
+            patrol_route = self._create_patrol_route(x, y, radius=patrol_radius)
+            guard.set_patrol_route(patrol_route)
+
+        elif guard_type == 'mage':
+            # Используем класс MagePatrol для магов
+            guard = MagePatrol(guard_name, x, y, level, home_x, home_y)
+            # У магов свой встроенный механизм патрулирования на основе academy_x/y
+            guard.max_distance_from_academy = patrol_radius
+
+        elif guard_type == 'shadow_adept':
+            # Используем класс ShadowAdept для адептов тени
+            guard = ShadowAdept(guard_name, x, y, level, home_x, home_y)
+            # У адептов тени свой встроенный механизм патрулирования
+            if hasattr(guard, 'max_distance_from_camp'):
+                guard.max_distance_from_camp = patrol_radius
+
+        elif guard_type == 'hunter':
+            # Используем класс Hunter для охотников
+            guard = Hunter(guard_name, x, y, level, home_x, home_y)
+            # У охотников свой встроенный механизм патрулирования
+            if hasattr(guard, 'max_distance_from_home'):
+                guard.max_distance_from_home = patrol_radius
+
+        # Сохраняем параметры респавна для всех типов стражей
+        if guard:
+            guard.respawn_time = respawn_time
+            guard.spawn_location_x = home_x
+            guard.spawn_location_y = home_y
+            guard.spawn_radius = patrol_radius
+
+        return guard
 
     def spawn_merchants(self):
         """
@@ -455,93 +546,6 @@ class NPCSpawner:
         print(f"Создано Адептов тени: {len(shadow_adepts)} (3 ранга 1, 2 ранга 2, 2 ранга 3, 1 ранга 4)")
         return shadow_adepts
 
-    def spawn_warriors(self):
-        """
-        Создание воинов возле военной академии
-        4 воина 3 ранга (уровень 21-30) и 4 воина 4 ранга (уровень 31-40)
-
-        Returns:
-            list: Список воинов
-        """
-        warriors = []
-        # Находим военную академию
-        warrior_academy = None
-        for loc in self.game_map.locations:
-            if loc.location_type == LOCATION_WARRIOR_ACADEMY:
-                warrior_academy = loc
-                break
-
-        if not warrior_academy:
-            return warriors
-
-        warrior_names = [
-            "Воин", "Боец", "Ветеран", "Рыцарь",
-            "Защитник", "Страж", "Воитель", "Гвардеец"
-        ]
-
-        # Создаем 4 воина 3 ранга (уровень 21-30)
-        for i in range(4):
-            # Находим позицию рядом с академией (в пределах 10 клеток)
-            warrior_pos = None
-            for attempt in range(20):
-                offset_x = random.randint(-10, 10)
-                offset_y = random.randint(-10, 10)
-                wx = warrior_academy.x + offset_x
-                wy = warrior_academy.y + offset_y
-
-                if self.game_map.is_valid_position(wx, wy):
-                    tile = self.game_map.get_tile(wx, wy)
-                    if tile.is_passable():
-                        warrior_pos = (wx, wy)
-                        break
-
-            if warrior_pos:
-                wx, wy = warrior_pos
-                # Уровень воина 3 ранга
-                warrior_level = random.randint(21, 30)
-                warrior_name = f"{random.choice(warrior_names)} {warrior_academy.name}"
-
-                # Создаем воина (используем класс Guard)
-                warrior = Guard(warrior_name, wx, wy, warrior_level)
-
-                # Создаем маршрут патрулирования вокруг академии
-                patrol_route = self._create_patrol_route(wx, wy, radius=8)
-                warrior.set_patrol_route(patrol_route)
-
-                warriors.append(warrior)
-
-        # Создаем 4 воина 4 ранга (уровень 31-40)
-        for i in range(4):
-            # Находим позицию рядом с академией (в пределах 10 клеток)
-            warrior_pos = None
-            for attempt in range(20):
-                offset_x = random.randint(-10, 10)
-                offset_y = random.randint(-10, 10)
-                wx = warrior_academy.x + offset_x
-                wy = warrior_academy.y + offset_y
-
-                if self.game_map.is_valid_position(wx, wy):
-                    tile = self.game_map.get_tile(wx, wy)
-                    if tile.is_passable():
-                        warrior_pos = (wx, wy)
-                        break
-
-            if warrior_pos:
-                wx, wy = warrior_pos
-                # Уровень воина 4 ранга
-                warrior_level = random.randint(31, 40)
-                warrior_name = f"{random.choice(warrior_names)} {warrior_academy.name}"
-
-                # Создаем воина (используем класс Guard)
-                warrior = Guard(warrior_name, wx, wy, warrior_level)
-
-                # Создаем маршрут патрулирования вокруг академии
-                patrol_route = self._create_patrol_route(wx, wy, radius=8)
-                warrior.set_patrol_route(patrol_route)
-
-                warriors.append(warrior)
-
-        return warriors
 
     def spawn_mages(self):
         """
