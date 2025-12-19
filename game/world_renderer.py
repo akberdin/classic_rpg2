@@ -371,6 +371,10 @@ class WorldRenderer:
                     if not miner.is_alive:
                         continue
 
+                    # Не отрисовываем скрытых NPC (работа/отдых в локации)
+                    if miner.is_hidden():
+                        continue
+
                     miner_screen_x = (miner.x - camera_x) * TILE_SIZE
                     miner_screen_y = (miner.y - camera_y) * TILE_SIZE
 

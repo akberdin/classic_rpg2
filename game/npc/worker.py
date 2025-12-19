@@ -113,15 +113,13 @@ class Miner(NPC):
         if not self.is_alive:
             return
 
-        # Обновляем состояние скрытия (если скрыт)
-        just_appeared = self.update_hidden_state()
-
         # Если NPC скрыт, не обновляем AI
+        # (update_hidden_state уже вызван в npc_manager перед этим методом)
         if self.is_hidden():
             return
 
-        # Если только что появился на карте, переходим к следующему этапу цикла
-        if just_appeared:
+        # Проверяем только что ли появился (по состоянию working/resting)
+        if self.state in ["working", "resting"]:
             self._handle_appearance()
             return
 
@@ -289,9 +287,8 @@ class Miner(NPC):
         Args:
             game_map: Объект карты игры
         """
-        # Проверяем, достигли ли места отдыха (в пределах 2 клеток)
-        distance = abs(self.x - self.rest_x) + abs(self.y - self.rest_y)
-        if distance <= 2:
+        # Проверяем, достигли ли места отдыха (точное попадание на клетку)
+        if self.x == self.rest_x and self.y == self.rest_y:
             # Достигли места отдыха - начинаем отдыхать
             self.state = "resting"
             rest_duration = random.randint(35, 40)
