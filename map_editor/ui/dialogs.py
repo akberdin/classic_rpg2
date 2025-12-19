@@ -726,7 +726,7 @@ class LocationEditDialog(Dialog):
         if loc_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
                         LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, 'secret_camp']:
             height += 305  # Space for 5 guard slots (headers + 5*45 + spacing)
-        super().__init__("Редактирование локации", 600, height)  # Increased width to 600 for guards with patrol radius
+        super().__init__("Редактирование локации", 720, height)  # Increased width to 720 for guards with respawn_time
         # Guard headers (will be set in _setup_controls if location has guards)
         self._guard_headers_y = None
         self._guard_headers = None
@@ -894,7 +894,8 @@ class LocationEditDialog(Dialog):
                 ("Тип", 20, 180),           # (label, x, width)
                 ("Ранг", 210, 80),
                 ("Кол-во", 300, 80),
-                ("Радиус патр.", 390, 100)  # Patrol radius column
+                ("Радиус патр.", 390, 100),  # Patrol radius column
+                ("Время респ.", 500, 110)    # Respawn time column
             ]
             y += 25  # Space for headers
 
@@ -946,6 +947,16 @@ class LocationEditDialog(Dialog):
                     max_length=2
                 ))
                 self.data[f"guard_{i}_patrol_radius"] = str(guard.patrol_radius)
+
+                # Respawn time input (110px wide)
+                self.text_inputs.append(DialogTextInput(
+                    rect=pygame.Rect(500, y + 20, 110, 28),
+                    label="",  # No label, using column header instead
+                    key=f"guard_{i}_respawn_time",
+                    value=str(guard.respawn_time),
+                    max_length=3
+                ))
+                self.data[f"guard_{i}_respawn_time"] = str(guard.respawn_time)
 
                 y += 45
 

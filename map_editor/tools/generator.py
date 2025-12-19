@@ -167,6 +167,7 @@ class Guard:
     rank: int = 1  # Guard rank (1-4)
     count: int = 0  # Number of guards (0-20)
     patrol_radius: int = 5  # Patrol radius (3-20)
+    respawn_time: int = 0  # Respawn time in turns (0-999)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for saving."""
@@ -174,7 +175,8 @@ class Guard:
             'type': self.guard_type,
             'rank': self.rank,
             'count': self.count,
-            'patrol_radius': self.patrol_radius
+            'patrol_radius': self.patrol_radius,
+            'respawn_time': self.respawn_time
         }
 
     @classmethod
@@ -184,7 +186,8 @@ class Guard:
             guard_type=data.get('type', GUARD_NONE),
             rank=data.get('rank', 1),
             count=data.get('count', 0),
-            patrol_radius=data.get('patrol_radius', 5)
+            patrol_radius=data.get('patrol_radius', 5),
+            respawn_time=data.get('respawn_time', 0)
         )
 
     def is_empty(self) -> bool:

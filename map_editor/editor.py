@@ -370,6 +370,7 @@ class MapEditor:
                 guard_rank_key = f"guard_{i}_rank"
                 guard_count_key = f"guard_{i}_count"
                 guard_patrol_radius_key = f"guard_{i}_patrol_radius"
+                guard_respawn_time_key = f"guard_{i}_respawn_time"
 
                 if guard_type_key in data:
                     guard_type = data.get(guard_type_key, "")
@@ -377,14 +378,17 @@ class MapEditor:
                         guard_rank = int(data.get(guard_rank_key, "1"))
                         guard_count = int(data.get(guard_count_key, "0"))
                         guard_patrol_radius = int(data.get(guard_patrol_radius_key, "5"))
-                        # Validate rank (1-4), count (0-20), and patrol_radius (3-20)
+                        guard_respawn_time = int(data.get(guard_respawn_time_key, "0"))
+                        # Validate rank (1-4), count (0-20), patrol_radius (3-20), and respawn_time (0-999)
                         guard_rank = max(1, min(4, guard_rank))
                         guard_count = max(0, min(20, guard_count))
                         guard_patrol_radius = max(3, min(20, guard_patrol_radius))
-                        new_guards.append(Guard(guard_type=guard_type, rank=guard_rank, count=guard_count, patrol_radius=guard_patrol_radius))
+                        guard_respawn_time = max(0, min(999, guard_respawn_time))
+                        new_guards.append(Guard(guard_type=guard_type, rank=guard_rank, count=guard_count,
+                                                patrol_radius=guard_patrol_radius, respawn_time=guard_respawn_time))
                     except ValueError:
                         # Use default values if parsing fails
-                        new_guards.append(Guard(guard_type=guard_type, rank=1, count=0, patrol_radius=5))
+                        new_guards.append(Guard(guard_type=guard_type, rank=1, count=0, patrol_radius=5, respawn_time=0))
 
             # Update if guards have changed
             if new_guards:
@@ -396,7 +400,8 @@ class MapEditor:
                         if (new_guard.guard_type != old_guard.guard_type or
                             new_guard.rank != old_guard.rank or
                             new_guard.count != old_guard.count or
-                            new_guard.patrol_radius != old_guard.patrol_radius):
+                            new_guard.patrol_radius != old_guard.patrol_radius or
+                            new_guard.respawn_time != old_guard.respawn_time):
                             guards_updated = True
                             break
 
