@@ -53,10 +53,6 @@ class Miner(NPC):
         self.rest_y = rest_y if rest_y is not None else y
         self.rest_location_name = rest_location_name or "Город"
 
-        # Параметры для работы/отдыха
-        self.work_turns = random.randint(35, 40)  # Длительность работы в шахте
-        self.rest_turns = random.randint(35, 40)  # Длительность отдыха
-
         # Состояния цикла работы
         # going_to_mine -> working -> going_to_rest -> resting -> going_to_mine ...
         # fleeing - особое состояние при угрозе
@@ -67,11 +63,8 @@ class Miner(NPC):
         self.detection_range = 8  # Дальность обнаружения угроз
         self.previous_state = None  # Состояние до бегства
 
-        # Радиус спавна (для совместимости)
+        # Радиус спавна (для respawn_manager)
         self.spawn_radius = spawn_radius
-
-        # Состояние по умолчанию (не используется в новой логике)
-        self.default_state = "going_to_mine"
 
     def _adjust_miner_stats(self):
         """
