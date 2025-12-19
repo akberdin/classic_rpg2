@@ -110,7 +110,6 @@ class NPC(Character):
         self._hidden = True
         self._hidden_turns_remaining = turns
         self._hidden_location_name = location_name
-        print(f"[СКРЫТИЕ] {self.name} скрывается в '{location_name}' на {turns} ходов (позиция: {self.x},{self.y})")
 
     def unhide_from_map(self):
         """
@@ -132,7 +131,6 @@ class NPC(Character):
             self._hidden_turns_remaining -= 1
             if self._hidden_turns_remaining <= 0:
                 self.unhide_from_map()
-                print(f"[СКРЫТИЕ] {self.name} появляется на карте после '{self._hidden_location_name}' (позиция: {self.x},{self.y})")
                 return True  # NPC появился
         return False
 
