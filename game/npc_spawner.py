@@ -1124,28 +1124,30 @@ class NPCSpawner:
 
     def spawn_animals(self):
         """
-        Создание животных NPC только в радиусе 10 клеток от точек спавна.
+        Создание животных NPC на основе конфигурации точек спавна.
         Животные спавнятся только около соответствующих точек спавна:
         - spawn_wolf -> волки
         - spawn_bear -> медведи
         - spawn_deer -> олени
+
+        Параметры из конфигурации:
+        - animal_count: количество животных (если 0, то не спавнить)
+        - spawn_radius: радиус зоны спавна и патрулирования
+        - player_attitude: отношение к игроку (влияет на агрессивность)
+        - respawn_time: время респавна животных
 
         Returns:
             list: Список всех животных (волки, медведи, олени)
         """
         animals = []
 
-        # Количество животных на одну точку спавна
-        ANIMALS_PER_SPAWN = 10
-        SPAWN_RADIUS = 5
-
         # Распределение по режимам поведения
-        PATROL_PERCENT = 60  # 60% патрулируют вокруг точки спавна
+        PATROL_PERCENT = 100  # 100% патрулируют вокруг точки спавна (не путешествуют)
 
         # Уровни животных
         level_min, level_max = 1, 15
 
-        # Собираем точки спавна по типам
+        # Собираем точки спавна по типам с параметрами из конфигурации
         spawn_points = {
             'wolf': [],
             'bear': [],
@@ -1154,35 +1156,76 @@ class NPCSpawner:
 
         for loc in self.game_map.locations:
             loc_type = getattr(loc, 'location_type', None) or getattr(loc, 'type', None)
-            if loc_type == 'spawn_wolf':
-                spawn_points['wolf'].append((loc.x, loc.y))
-            elif loc_type == 'spawn_bear':
-                spawn_points['bear'].append((loc.x, loc.y))
-            elif loc_type == 'spawn_deer':
-                spawn_points['deer'].append((loc.x, loc.y))
 
-        print(f"Найдено точек спавна: волки={len(spawn_points['wolf'])}, "
+            # Проверяем, что это точка спавна животных
+            if loc_type not in ['spawn_wolf', 'spawn_bear', 'spawn_deer']:
+                continue
+
+            # Получаем параметры из конфигурации
+            animal_count = getattr(loc, 'animal_count', 0)
+            spawn_radius = getattr(loc, 'spawn_radius', 8)
+            player_attitude = getattr(loc, 'player_attitude', 0)
+            respawn_time = getattr(loc, 'respawn_time', 50)
+            spawn_id = getattr(loc, 'id', None)
+
+            # Если animal_count = 0, пропускаем эту точку
+            if animal_count == 0:
+                print(f"Пропуск точки спавна {loc.name} ({loc_type}): animal_count=0")
+                continue
+
+            # Определяем тип животного
+            if loc_type == 'spawn_wolf':
+                animal_type = 'wolf'
+            elif loc_type == 'spawn_bear':
+                animal_type = 'bear'
+            elif loc_type == 'spawn_deer':
+                animal_type = 'deer'
+            else:
+                continue
+
+            # Сохраняем параметры точки спавна
+            spawn_points[animal_type].append({
+                'x': loc.x,
+                'y': loc.y,
+                'name': loc.name,
+                'animal_count': animal_count,
+                'spawn_radius': spawn_radius,
+                'player_attitude': player_attitude,
+                'respawn_time': respawn_time,
+                'spawn_id': spawn_id
+            })
+
+        print(f"Найдено активных точек спавна: волки={len(spawn_points['wolf'])}, "
               f"медведи={len(spawn_points['bear'])}, олени={len(spawn_points['deer'])}")
 
         # Если нет точек спавна, выходим
         total_spawn_points = sum(len(pts) for pts in spawn_points.values())
         if total_spawn_points == 0:
-            print("Точки спавна животных не найдены на карте!")
+            print("Активные точки спавна животных не найдены на карте!")
             return animals
 
         # Спавним животных около каждой точки
-        for animal_type, points in spawn_points.items():
-            for spawn_center_x, spawn_center_y in points:
+        for animal_type, spawn_configs in spawn_points.items():
+            for spawn_config in spawn_configs:
+                spawn_center_x = spawn_config['x']
+                spawn_center_y = spawn_config['y']
+                spawn_name = spawn_config['name']
+                animal_count = spawn_config['animal_count']
+                spawn_radius = spawn_config['spawn_radius']
+                player_attitude = spawn_config['player_attitude']
+                respawn_time = spawn_config['respawn_time']
+                spawn_id = spawn_config['spawn_id']
+
                 spawned_at_point = 0
                 attempts = 0
                 max_attempts = 100
 
-                while spawned_at_point < ANIMALS_PER_SPAWN and attempts < max_attempts:
+                while spawned_at_point < animal_count and attempts < max_attempts:
                     attempts += 1
 
                     # Случайная позиция в радиусе от точки спавна
-                    offset_x = random.randint(-SPAWN_RADIUS, SPAWN_RADIUS)
-                    offset_y = random.randint(-SPAWN_RADIUS, SPAWN_RADIUS)
+                    offset_x = random.randint(-spawn_radius, spawn_radius)
+                    offset_y = random.randint(-spawn_radius, spawn_radius)
                     spawn_x = spawn_center_x + offset_x
                     spawn_y = spawn_center_y + offset_y
 
@@ -1217,8 +1260,20 @@ class NPCSpawner:
                     else:  # deer
                         animal = Deer("Олень", ax, ay, level, spawn_center_x, spawn_center_y, behavior_mode)
 
+                    # Сохраняем параметры точки спавна для респавна и AI
+                    animal.spawn_point_id = spawn_id
+                    animal.spawn_point_name = spawn_name
+                    animal.spawn_point_attitude = player_attitude
+                    animal.spawn_point_respawn_time = respawn_time
+
+                    # Устанавливаем patrol_radius и max_distance_from_spawn на основе spawn_radius
+                    animal.patrol_radius = spawn_radius
+                    animal.max_distance_from_spawn = spawn_radius  # Строго ограничиваем зону
+
                     animals.append(animal)
                     spawned_at_point += 1
+
+                print(f"  {spawn_name}: создано {spawned_at_point}/{animal_count} животных")
 
         # Подсчитываем статистику
         wolves = sum(1 for a in animals if isinstance(a, Wolf))

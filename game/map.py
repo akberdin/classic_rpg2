@@ -114,6 +114,10 @@ class GameMap:
                 location.spawn_radius = loc_data["spawn_radius"]
             if "connections" in loc_data:
                 location.connections = [tuple(conn) for conn in loc_data["connections"]]
+            if "animal_count" in loc_data:
+                location.animal_count = loc_data["animal_count"]
+            if "id" in loc_data:
+                location.id = loc_data["id"]
 
             self.locations.append(location)
             self.tiles[loc_data["y"]][loc_data["x"]].set_location(location)
