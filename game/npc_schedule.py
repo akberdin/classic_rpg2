@@ -119,13 +119,6 @@ class NPCSchedule:
         self.npc.state = self._get_default_state()
 
 
-# УСТАРЕВШЕЕ: MinerSchedule больше не используется
-# Шахтеры теперь используют новую логику на основе ходов без привязки ко времени суток
-# class MinerSchedule(NPCSchedule):
-#     """УСТАРЕВШЕЕ - Расписание для шахтеров с автоматическим возвращением в деревню"""
-#     pass
-
-
 class GuardSchedule(NPCSchedule):
     """Расписание для стражников"""
 

@@ -379,12 +379,14 @@ class WorldRenderer:
                     miner_screen_y = (miner.y - camera_y) * TILE_SIZE
 
                     # Цвет зависит от состояния шахтера
-                    if miner.state == "rest":
-                        miner_color = (100, 70, 40)  # Коричневый для отдыха
-                    elif miner.state == "flee":
+                    if miner.state == "fleeing":
                         miner_color = (200, 150, 100)  # Светло-коричневый для побега
+                    elif miner.state == "going_to_rest":
+                        miner_color = (100, 70, 40)  # Коричневый для движения к отдыху
+                    elif miner.state == "going_to_mine":
+                        miner_color = (150, 100, 50)  # Темно-коричневый для движения к шахте
                     else:
-                        miner_color = (150, 100, 50)  # Темно-коричневый для работы
+                        miner_color = (150, 100, 50)  # По умолчанию
 
                     # Функция отрисовки по умолчанию (геометрическая фигура)
                     def draw_miner_default(screen=self.ctx.screen, color=miner_color,
