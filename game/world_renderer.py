@@ -192,14 +192,13 @@ class WorldRenderer:
 
     def _render_all_npcs(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка всех NPC"""
-        self._render_guards(tiles_x, tiles_y, camera_x, camera_y)
+        self._render_guards(tiles_x, tiles_y, camera_x, camera_y)  # Включает warriors, mages, shadow_adepts, hunters
         self._render_merchants(tiles_x, tiles_y, camera_x, camera_y)
         self._render_bandits(tiles_x, tiles_y, camera_x, camera_y)
         self._render_miners(tiles_x, tiles_y, camera_x, camera_y)
         self._render_undead(tiles_x, tiles_y, camera_x, camera_y)
-        self._render_mages(tiles_x, tiles_y, camera_x, camera_y)
+        # _render_mages() и _render_hunters() удалены - эти NPC теперь рендерятся через _render_guards()
         self._render_alchemists(tiles_x, tiles_y, camera_x, camera_y)
-        self._render_hunters(tiles_x, tiles_y, camera_x, camera_y)
         self._render_necromancers(tiles_x, tiles_y, camera_x, camera_y)
         self._render_animals(tiles_x, tiles_y, camera_x, camera_y)
 
@@ -260,8 +259,9 @@ class WorldRenderer:
                             )
 
                     # Отрисовка стражника (спрайт или геометрическая фигура)
+                    # Используем реальный npc_type для правильного отображения спрайтов
                     self.ctx.sprite_manager.render_npc(
-                        self.ctx.screen, 'guard', guard_screen_x, guard_screen_y,
+                        self.ctx.screen, guard.npc_type, guard_screen_x, guard_screen_y,
                         draw_guard_default, guard.level
                     )
 
@@ -471,71 +471,6 @@ class WorldRenderer:
                         draw_undead_default, undead_npc.level
                     )
 
-    def _render_mages(self, tiles_x, tiles_y, camera_x, camera_y):
-        """Отрисовка магов"""
-        for mage in self.ctx.mages:
-            # Проверяем, находится ли маг в зоне видимости камеры
-            if (camera_x <= mage.x < camera_x + tiles_x and
-                camera_y <= mage.y < camera_y + tiles_y):
-
-                # Проверяем, исследован ли тайл с магом
-                tile = self.ctx.game_map.get_tile(mage.x, mage.y)
-                # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
-                is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(mage.x, mage.y, self.ctx.player.x, self.ctx.player.y)
-
-                if tile.explored and is_visible:
-                    if not mage.is_alive:
-                        continue
-
-                    mage_screen_x = (mage.x - camera_x) * TILE_SIZE
-                    mage_screen_y = (mage.y - camera_y) * TILE_SIZE
-
-                    # Цвет зависит от уровня мага
-                    if mage.level <= 10:
-                        base_color = (100, 100, 200)  # Светло-синий для адептов
-                    elif mage.level <= 15:
-                        base_color = (80, 80, 220)  # Синий для чародеев
-                    else:
-                        base_color = (138, 43, 226)  # Фиолетовый для магистров
-
-                    # Модификация цвета в зависимости от состояния
-                    if mage.state == "rest":
-                        mage_color = tuple(max(0, c - 30) for c in base_color)
-                    elif mage.state == "combat":
-                        mage_color = tuple(min(255, c + 50) for c in base_color)
-                    else:
-                        mage_color = base_color
-
-                    # Функция отрисовки по умолчанию (квадрат для мага)
-                    def draw_mage_default(screen=self.ctx.screen, color=mage_color,
-                                         sx=mage_screen_x, sy=mage_screen_y, level=mage.level):
-                        pygame.draw.rect(
-                            screen,
-                            color,
-                            (sx + TILE_SIZE // 4,
-                             sy + TILE_SIZE // 4,
-                             TILE_SIZE // 2,
-                             TILE_SIZE // 2)
-                        )
-
-                        # Обводка для высокоуровневых магов
-                        if level > 15:
-                            pygame.draw.rect(
-                                screen,
-                                (200, 150, 255),
-                                (sx + TILE_SIZE // 4,
-                                 sy + TILE_SIZE // 4,
-                                 TILE_SIZE // 2,
-                                 TILE_SIZE // 2),
-                                2
-                            )
-
-                    # Отрисовка мага (спрайт или геометрическая фигура)
-                    self.ctx.sprite_manager.render_npc(
-                        self.ctx.screen, 'mage', mage_screen_x, mage_screen_y,
-                        draw_mage_default, mage.level
-                    )
-
     def _render_alchemists(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка алхимиков"""
         for alchemist in self.ctx.alchemists:
@@ -572,49 +507,6 @@ class WorldRenderer:
                     self.ctx.sprite_manager.render_npc(
                         self.ctx.screen, 'alchemist', screen_x, screen_y,
                         draw_alchemist_default, alchemist.level
-                    )
-
-    def _render_hunters(self, tiles_x, tiles_y, camera_x, camera_y):
-        """Отрисовка охотников"""
-        for hunter in self.ctx.hunters:
-            if (camera_x <= hunter.x < camera_x + tiles_x and
-                camera_y <= hunter.y < camera_y + tiles_y):
-
-                # Проверяем, исследован ли тайл с охотником
-                tile = self.ctx.game_map.get_tile(hunter.x, hunter.y)
-                # Проверяем, видим ли NPC (не в тумане войны) или включен чит-режим
-                is_visible = self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or self.ctx.fog_of_war.is_visible(hunter.x, hunter.y, self.ctx.player.x, self.ctx.player.y)
-
-                if tile.explored and is_visible:
-                    if not hunter.is_alive:
-                        continue
-
-                    screen_x = (hunter.x - camera_x) * TILE_SIZE
-                    screen_y = (hunter.y - camera_y) * TILE_SIZE
-
-                    # Коричнево-зеленый для охотников
-                    if hunter.state == "hunt":
-                        hunter_color = (200, 150, 50)  # Оранжевый при охоте
-                    elif hunter.state == "rest":
-                        hunter_color = (100, 80, 50)  # Темный при отдыхе
-                    else:
-                        hunter_color = (139, 120, 85)  # Коричневый
-
-                    def draw_hunter_default(screen=self.ctx.screen, color=hunter_color,
-                                           sx=screen_x, sy=screen_y):
-                        # Квадрат для охотника
-                        pygame.draw.rect(
-                            screen,
-                            color,
-                            (sx + TILE_SIZE // 4,
-                             sy + TILE_SIZE // 4,
-                             TILE_SIZE // 2,
-                             TILE_SIZE // 2)
-                        )
-
-                    self.ctx.sprite_manager.render_npc(
-                        self.ctx.screen, 'hunter', screen_x, screen_y,
-                        draw_hunter_default, hunter.level
                     )
 
     def _render_necromancers(self, tiles_x, tiles_y, camera_x, camera_y):
