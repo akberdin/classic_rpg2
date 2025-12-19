@@ -164,14 +164,14 @@ class Animal(NPC):
                 # Был атакован - защищаемся
                 should_react = True
             elif spawn_point_attitude <= -10:
-                # Очень агрессивная зона - преследуем игрока на большом расстоянии
-                if distance <= self.detection_range * 2:
+                # Очень агрессивная зона - преследуем игрока в радиусе 4 клеток
+                if distance <= 4:
                     should_react = True
                     # Увеличиваем дальность преследования
                     self.max_pursuit_steps = 30
             elif spawn_point_attitude < -5:
                 # Агрессивная зона - атакуем, если игрок проходит мимо
-                if distance <= self.detection_range:
+                if distance <= 4:
                     should_react = True
 
             if should_react and distance < closest_distance:
@@ -309,8 +309,8 @@ class Animal(NPC):
         # Проверяем расстояние до врага
         distance = abs(self.x - self.target_enemy.x) + abs(self.y - self.target_enemy.y)
 
-        if distance > self.detection_range * 2:
-            # Враг слишком далеко, прекращаем преследование
+        if distance > 4:
+            # Враг слишком далеко (больше 4 клеток), прекращаем преследование
             self.pursuit_counter = 0
             self.state = self.behavior_mode
             self.target_enemy = None
