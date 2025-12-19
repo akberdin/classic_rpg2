@@ -2,35 +2,125 @@
   "version": "1.0",
   "locations": [
     {
-      "x": 25,
-      "y": 25,
+      "x": 21,
+      "y": 17,
       "type": "village",
       "name": "Тихая",
+      "id": "53d1fc68-0a51-4d9e-8cc3-6a3741176673",
       "player_attitude": 0,
-      "shop_rank": 1
+      "spawn_radius": 5,
+      "shop_rank": 1,
+      "guards": [
+        {
+          "type": "warrior",
+          "rank": 2,
+          "count": 2
+        },
+        {
+          "type": "warrior",
+          "rank": 3,
+          "count": 1
+        }
+      ],
+      "connections": [
+        [
+          29,
+          22
+        ],
+        [
+          17,
+          9
+        ],
+        [
+          9,
+          15
+        ]
+      ]
     },
     {
-      "x": 30,
-      "y": 20,
-      "type": "city",
-      "name": "Королевская Гавань",
-      "player_attitude": -1,
-      "shop_rank": 3
-    },
-    {
-      "x": 15,
-      "y": 30,
+      "x": 17,
+      "y": 9,
       "type": "mine",
       "name": "Железная жила",
+      "id": "97a39aea-b225-4613-a114-f8106e7daa18",
       "player_attitude": 0,
-      "rank": 2,
-      "miners_count": 5,
       "spawn_radius": 3,
-      "respawn_time": 50
+      "rank": 2,
+      "miners_count": 2,
+      "respawn_time": 35,
+      "resource_type": "copper",
+      "connections": [
+        [
+          21,
+          17
+        ]
+      ]
+    },
+    {
+      "x": 9,
+      "y": 15,
+      "type": "mine",
+      "name": "Медный рудник",
+      "id": "e1f7c97b-359d-4f8b-bc0d-038bfd77a989",
+      "player_attitude": 0,
+      "spawn_radius": 5,
+      "rank": 1,
+      "miners_count": 1,
+      "respawn_time": 95,
+      "resource_type": "copper",
+      "connections": [
+        [
+          21,
+          17
+        ]
+      ]
+    },
+    {
+      "x": 29,
+      "y": 11,
+      "type": "village",
+      "name": "Дубравка",
+      "id": "d91738da-0057-413a-95f8-2031b277191e",
+      "player_attitude": 0,
+      "spawn_radius": 5,
+      "shop_rank": 1,
+      "connections": [
+        [
+          29,
+          22
+        ]
+      ]
+    },
+    {
+      "x": 29,
+      "y": 22,
+      "type": "city",
+      "name": "Кристальград",
+      "id": "84334b75-22d1-419f-be11-4b1329b0fa9f",
+      "player_attitude": 0,
+      "spawn_radius": 5,
+      "shop_rank": 1,
+      "guards": [
+        {
+          "type": "warrior",
+          "rank": 4,
+          "count": 5
+        }
+      ],
+      "connections": [
+        [
+          29,
+          11
+        ],
+        [
+          21,
+          17
+        ]
+      ]
     }
   ],
   "starting_village": {
-    "x": 25,
-    "y": 25
+    "x": 21,
+    "y": 17
   }
 }
