@@ -1,5 +1,5 @@
 """
-Класс Шахтера с AI работы и побега от опасности
+Класс Шахтера с новой AI логикой на основе ходов
 """
 import random
 from game.npc.base import NPC
@@ -10,90 +10,119 @@ from game.constants import (
 
 
 class Miner(NPC):
-    """Класс Шахтера с AI работы и побега от опасности"""
+    """
+    Класс Шахтера с циклической логикой работы на основе ходов:
+    1. После спавна идёт к шахте
+    2. Скрывается на 35-40 ходов (работает в шахте)
+    3. Появляется и идёт в город/деревню для отдыха
+    4. Скрывается на 35-40 ходов (отдыхает)
+    5. Появляется и идёт к шахте - цикл повторяется
+    6. При появлении агрессивных NPC убегает
+    """
 
-    def __init__(self, name, x=0, y=0, level=3, mine_x=None, mine_y=None, spawn_radius=None, home_village_x=None, home_village_y=None):
+    def __init__(self, name, x=0, y=0, level=3, mine_x=None, mine_y=None, mine_name=None,
+                 rest_x=None, rest_y=None, rest_location_name=None, spawn_radius=3):
         """
         Инициализация Шахтера
 
         Args:
             name: Имя шахтера
-            x: Позиция X
-            y: Позиция Y
+            x: Позиция X спавна
+            y: Позиция Y спавна
             level: Уровень шахтера
-            mine_x: Координата X шахты (центр территории)
-            mine_y: Координата Y шахты (центр территории)
-            spawn_radius: Радиус спавна шахтера (определяет территорию работы)
-            home_village_x: Координата X домашней деревни
-            home_village_y: Координата Y домашней деревни
+            mine_x: Координата X шахты
+            mine_y: Координата Y шахты
+            mine_name: Название шахты
+            rest_x: Координата X места отдыха (город/деревня)
+            rest_y: Координата Y места отдыха
+            rest_location_name: Название места отдыха
+            spawn_radius: Радиус спавна от шахты
         """
         super().__init__(name, x, y, npc_type=NPC_TYPE_MINER, level=level)
 
-        # Модификация статов для шахтера: физический труд, низкий дух
+        # Модификация статов для шахтера: больше силы и телосложения
         self._adjust_miner_stats()
 
-        # AI параметры
-        self.state = "work"  # work, rest, flee, going_home
-        self.mine_x = mine_x if mine_x is not None else x  # Центр шахты
+        # Координаты рабочего места (шахта)
+        self.mine_x = mine_x if mine_x is not None else x
         self.mine_y = mine_y if mine_y is not None else y
-        # Домашняя деревня (куда возвращаться на ночь)
-        self.home_village_x = home_village_x
-        self.home_village_y = home_village_y
-        # Максимальная дистанция от шахты - уменьшена для более компактного поведения
-        self.spawn_radius = spawn_radius if spawn_radius is not None else 3
-        self.max_distance_from_mine = max(self.spawn_radius * 1.5, 5)  # В 1.5 раза больше радиуса спавна, минимум 5
-        self.rest_counter = 0
-        self.rest_duration = random.randint(3, 5)  # Отдых 3-5 часов
-        self.steps_per_hour = 1  # Шагов за час
-        self.threat = None  # Текущая угроза от которой убегаем
-        self.detection_range = 8  # Дальность обнаружения угроз
-        self.wander_target = None  # Целевая точка для блуждания
+        self.mine_name = mine_name or "Шахта"
 
-        # Состояние по умолчанию для расписания
-        self.default_state = "work"
+        # Координаты места отдыха (город/деревня)
+        self.rest_x = rest_x if rest_x is not None else x
+        self.rest_y = rest_y if rest_y is not None else y
+        self.rest_location_name = rest_location_name or "Город"
+
+        # Параметры для работы/отдыха
+        self.work_turns = random.randint(35, 40)  # Длительность работы в шахте
+        self.rest_turns = random.randint(35, 40)  # Длительность отдыха
+
+        # Состояния цикла работы
+        # going_to_mine -> working -> going_to_rest -> resting -> going_to_mine ...
+        # fleeing - особое состояние при угрозе
+        self.state = "going_to_mine"
+
+        # Параметры обнаружения угроз
+        self.threat = None  # Текущая угроза
+        self.detection_range = 8  # Дальность обнаружения угроз
+        self.previous_state = None  # Состояние до бегства
+
+        # Радиус спавна (для совместимости)
+        self.spawn_radius = spawn_radius
+
+        # Состояние по умолчанию (не используется в новой логике)
+        self.default_state = "going_to_mine"
 
     def _adjust_miner_stats(self):
-        """Модификация статов для шахтера - физический труженик"""
-        # Повышаем физические характеристики (макс +5% для баланса)
-        self.strength = int(self.strength * 1.05)
-        self.constitution = int(self.constitution * 1.05)
+        """
+        Модификация статов для шахтера - физический труженик.
+        Фокус на силе и телосложении.
+        """
+        # Значительно повышаем физические характеристики
+        self.strength = int(self.strength * 1.25)  # +25% к силе
+        self.constitution = int(self.constitution * 1.25)  # +25% к телосложению
 
-        # Снижаем магические характеристики
-        self.spirit = max(1, int(self.spirit * 0.35))
-        self.intelligence = max(1, int(self.intelligence * 0.6))
+        # Сильно снижаем магические характеристики
+        self.spirit = max(1, int(self.spirit * 0.3))
+        self.intelligence = max(1, int(self.intelligence * 0.5))
 
         # Немного снижаем ловкость
-        self.dexterity = max(1, int(self.dexterity * 0.9))
+        self.dexterity = max(1, int(self.dexterity * 0.85))
 
         # Обновляем производные статы
         self.update_derived_stats()
 
     def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
+        """
+        Обновление AI шахтера каждый ход
+
+        Args:
+            context_or_map: AIContext или карта игры
+            all_npcs: Список всех NPC для обнаружения угроз
+            current_hour: Текущий час суток (не используется в новой логике)
+        """
         # Поддержка AIContext и старого способа вызова
         from game.core.ai_context import AIContext
         if isinstance(context_or_map, AIContext):
             context = context_or_map
             game_map = context.game_map
             all_npcs = context.all_npcs
-            current_hour = context.current_hour
         else:
             game_map = context_or_map
-        """
-        Обновление AI шахтера за 1 час игрового времени
 
-        Args:
-            game_map: Объект карты игры
-            all_npcs: Список всех NPC для обнаружения угроз
-            current_hour: Текущий час суток (0-23)
-        """
         if not self.is_alive:
             return
 
-        # Обновляем расписание (проверка времени активности и посещение локаций)
-        self.update_schedule(current_hour, game_map)
+        # Обновляем состояние скрытия (если скрыт)
+        just_appeared = self.update_hidden_state()
 
-        # Если NPC скрыт (в локации), не обновляем AI
+        # Если NPC скрыт, не обновляем AI
         if self.is_hidden():
+            return
+
+        # Если только что появился на карте, переходим к следующему этапу цикла
+        if just_appeared:
+            self._handle_appearance()
             return
 
         # Восстанавливаем выносливость
@@ -107,14 +136,26 @@ class Miner(NPC):
         if all_npcs:
             self._check_for_threats(all_npcs)
 
-        if self.state == "flee":
+        # Обрабатываем состояния
+        if self.state == "fleeing":
             self._flee_step(game_map)
-        elif self.state == "work":
-            # Делаем 1 шаг за 1 час (избегаем телепортации)
-            if self.consume_stamina():
-                self._work_step(game_map)
-        elif self.state == "rest":
-            self._rest()
+        elif self.state == "going_to_mine":
+            self._go_to_mine(game_map)
+        elif self.state == "going_to_rest":
+            self._go_to_rest(game_map)
+        # working и resting обрабатываются через механизм скрытия
+
+    def _handle_appearance(self):
+        """
+        Обработка появления NPC на карте после скрытия.
+        Определяет следующий этап цикла.
+        """
+        if self.state == "working":
+            # Закончили работать - идём отдыхать
+            self.state = "going_to_rest"
+        elif self.state == "resting":
+            # Закончили отдыхать - идём работать
+            self.state = "going_to_mine"
 
     def _check_for_threats(self, all_npcs):
         """
@@ -128,7 +169,7 @@ class Miner(NPC):
         closest_distance = float('inf')
 
         for npc in all_npcs:
-            if not npc.is_alive:
+            if not npc.is_alive or npc == self:
                 continue
 
             # Проверяем отношение к этому NPC
@@ -144,12 +185,15 @@ class Miner(NPC):
 
         # Если есть угроза, убегаем
         if closest_threat:
+            if self.state != "fleeing":
+                self.previous_state = self.state
+                self.state = "fleeing"
             self.threat = closest_threat
-            self.state = "flee"
-        elif self.state == "flee":
-            # Если угрозы больше нет, возвращаемся к работе
+        elif self.state == "fleeing":
+            # Если угрозы больше нет, возвращаемся к предыдущей деятельности
+            self.state = self.previous_state if self.previous_state else "going_to_mine"
             self.threat = None
-            self.state = "work"
+            self.previous_state = None
 
     def _flee_step(self, game_map):
         """
@@ -160,9 +204,14 @@ class Miner(NPC):
         """
         # Если угроза исчезла или мертва, возвращаемся к работе
         if not self.threat or not self.threat.is_alive:
+            self.state = self.previous_state if self.previous_state else "going_to_mine"
             self.threat = None
-            self.state = "work"
+            self.previous_state = None
             return
+
+        # Проверяем выносливость
+        if not self.consume_stamina():
+            return  # Нет выносливости - стоим на месте
 
         # Убегаем в противоположную от угрозы сторону
         dx_away = self.x - self.threat.x
@@ -189,71 +238,73 @@ class Miner(NPC):
             dy = random.choice([-1, 0, 1])
 
         # Пытаемся двигаться
-        if self.consume_stamina():
-            new_x = self.x + dx
-            new_y = self.y + dy
+        new_x = self.x + dx
+        new_y = self.y + dy
 
-            if self._can_move(new_x, new_y, game_map):
-                self.x = new_x
-                self.y = new_y
-            else:
-                # Если не можем идти прямо, пробуем другие направления
-                directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
-                random.shuffle(directions)
-                for alt_dx, alt_dy in directions:
-                    new_x = self.x + alt_dx
-                    new_y = self.y + alt_dy
-                    if self._can_move(new_x, new_y, game_map):
-                        self.x = new_x
-                        self.y = new_y
-                        break
+        if self._can_move(new_x, new_y, game_map):
+            self.x = new_x
+            self.y = new_y
+        else:
+            # Если не можем идти прямо, пробуем другие направления
+            directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+            random.shuffle(directions)
+            for alt_dx, alt_dy in directions:
+                new_x = self.x + alt_dx
+                new_y = self.y + alt_dy
+                if self._can_move(new_x, new_y, game_map):
+                    self.x = new_x
+                    self.y = new_y
+                    break
 
-    def _work_step(self, game_map):
-        """Один шаг работы - патрулирование территории шахты"""
-        # Проверяем расстояние до шахты
-        distance_to_mine = abs(self.x - self.mine_x) + abs(self.y - self.mine_y)
+    def _go_to_mine(self, game_map):
+        """
+        Идти к шахте. При достижении - скрываемся для работы.
 
-        # Если слишком далеко от шахты, возвращаемся
-        if distance_to_mine > self.max_distance_from_mine:
-            # Идем в сторону шахты
-            dx, dy = self._find_next_step(self.mine_x, self.mine_y, game_map, max_search_distance=50)
-            if dx != 0 or dy != 0:
-                if self._can_move(self.x + dx, self.y + dy, game_map):
-                    self.x += dx
-                    self.y += dy
+        Args:
+            game_map: Объект карты игры
+        """
+        # Проверяем, достигли ли шахты
+        if self.x == self.mine_x and self.y == self.mine_y:
+            # Достигли шахты - начинаем работать
+            self.state = "working"
+            work_duration = random.randint(35, 40)
+            self.hide_from_map(work_duration, f"{self.mine_name} (работа)")
             return
 
-        # Если достигли цели блуждания или цели нет, выбираем новую
-        if not self.wander_target or (self.x == self.wander_target[0] and self.y == self.wander_target[1]):
-            self._choose_wander_target()
+        # Проверяем выносливость
+        if not self.consume_stamina():
+            return  # Нет выносливости
 
-        # Идем к цели блуждания
-        if self.wander_target:
-            dx, dy = self._find_next_step(self.wander_target[0], self.wander_target[1], game_map, max_search_distance=30)
-            if dx != 0 or dy != 0:
-                if self._can_move(self.x + dx, self.y + dy, game_map):
-                    self.x += dx
-                    self.y += dy
+        # Делаем шаг к шахте
+        dx, dy = self._find_next_step(self.mine_x, self.mine_y, game_map, max_search_distance=100)
+        if dx != 0 or dy != 0:
+            if self._can_move(self.x + dx, self.y + dy, game_map):
+                self.x += dx
+                self.y += dy
 
-        # Случайный отдых (реже, чтобы больше работали)
-        if random.random() < 0.05:  # 5% шанс отдохнуть
-            self.state = "rest"
-            self.rest_counter = 0
+    def _go_to_rest(self, game_map):
+        """
+        Идти к месту отдыха (город/деревня). При достижении - скрываемся для отдыха.
 
-    def _choose_wander_target(self):
-        """Выбрать случайную точку для блуждания в пределах территории шахты"""
-        # Уменьшенный радиус блуждания - шахтеры работают ближе к центру шахты
-        # Используем spawn_radius вместо max_distance_from_mine для более компактного поведения
-        max_offset = int(self.spawn_radius * 1.2)  # Чуть больше радиуса спавна
+        Args:
+            game_map: Объект карты игры
+        """
+        # Проверяем, достигли ли места отдыха (в пределах 2 клеток)
+        distance = abs(self.x - self.rest_x) + abs(self.y - self.rest_y)
+        if distance <= 2:
+            # Достигли места отдыха - начинаем отдыхать
+            self.state = "resting"
+            rest_duration = random.randint(35, 40)
+            self.hide_from_map(rest_duration, f"{self.rest_location_name} (отдых)")
+            return
 
-        target_x = self.mine_x + random.randint(-max_offset, max_offset)
-        target_y = self.mine_y + random.randint(-max_offset, max_offset)
+        # Проверяем выносливость
+        if not self.consume_stamina():
+            return  # Нет выносливости
 
-        self.wander_target = (target_x, target_y)
-
-    def _rest(self):
-        """Отдых - обновляется каждый игровой час"""
-        self.rest_counter += 1
-        if self.rest_counter >= self.rest_duration:
-            self.state = "work"
-            self.rest_counter = 0
+        # Делаем шаг к месту отдыха
+        dx, dy = self._find_next_step(self.rest_x, self.rest_y, game_map, max_search_distance=100)
+        if dx != 0 or dy != 0:
+            if self._can_move(self.x + dx, self.y + dy, game_map):
+                self.x += dx
+                self.y += dy
