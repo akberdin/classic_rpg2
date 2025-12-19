@@ -7,13 +7,16 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 
 from .utils.helpers import load_config
-from .tools.generator import MapGenerator, GeneratedMap, GeneratorParams, MapLocation, MapConfig, Guard
+from .tools.generator import (
+    MapGenerator, GeneratedMap, GeneratorParams, MapLocation, MapConfig, Guard,
+    LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER
+)
 from .tools.brush import BiomeBrush, BrushSettings, BrushMode
 from .tools.objects import ObjectPlacer, PlacementMode
 from .ui.toolbar import Toolbar, ToolType
 from .ui.sidebar import Sidebar
 from .ui.dialogs import (
-    Dialog, GeneratorDialog, LocationEditDialog, SaveDialog, LoadDialog
+    Dialog, GeneratorDialog, LocationEditDialog, SaveDialog, LoadDialog, ConfirmDialog
 )
 
 
@@ -190,6 +193,8 @@ class MapEditor:
         elif action == "toggle_grid":
             self.show_grid = not self.show_grid
             self.toolbar.set_grid_active(self.show_grid)
+        elif action == "exit":
+            self.running = False
 
     def _on_biome_select(self, biome: str) -> None:
         """Handle biome selection."""
@@ -317,6 +322,21 @@ class MapEditor:
                 if new_spawn_radius != self._editing_location.spawn_radius:
                     self._editing_location.spawn_radius = new_spawn_radius
                     self.has_unsaved_changes = True
+
+            # Update animal_count (for animal spawn points)
+            if self._editing_location.location_type in [LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER]:
+                if 'animal_count' in data:
+                    new_animal_count = int(data.get('animal_count', 3))
+                    if new_animal_count != self._editing_location.animal_count:
+                        self._editing_location.animal_count = new_animal_count
+                        self.has_unsaved_changes = True
+
+                # respawn_time for animal spawns
+                if 'respawn_time' in data:
+                    new_respawn_time = int(data.get('respawn_time', 50))
+                    if new_respawn_time != self._editing_location.respawn_time:
+                        self._editing_location.respawn_time = new_respawn_time
+                        self.has_unsaved_changes = True
 
             # Update connections (parse from string)
             if 'connections' in data:
@@ -488,6 +508,33 @@ class MapEditor:
 
     def _save_to_file(self, filepath: str) -> None:
         """Save map to specified file."""
+        if not self.current_map:
+            return
+
+        # Check if file already exists
+        filepath_obj = Path(filepath)
+        config_path = filepath_obj.parent / f"{filepath_obj.stem}_config.json"
+
+        if filepath_obj.exists() or config_path.exists():
+            # Show confirmation dialog
+            message = f"Файл {filepath_obj.name} уже существует. Перезаписать?"
+            dialog = ConfirmDialog(message, "Подтверждение перезаписи")
+            dialog.on_close = lambda action, data: self._on_save_confirm_dialog_close(action, filepath)
+            self.active_dialog = dialog
+            dialog.show(self.width, self.height)
+            return
+
+        # If file doesn't exist, save directly
+        self._do_save_to_file(filepath)
+
+    def _on_save_confirm_dialog_close(self, action: str, filepath: str) -> None:
+        """Handle save confirmation dialog close."""
+        self.active_dialog = None
+        if action == "yes":
+            self._do_save_to_file(filepath)
+
+    def _do_save_to_file(self, filepath: str) -> None:
+        """Actually save map to specified file."""
         if not self.current_map:
             return
 

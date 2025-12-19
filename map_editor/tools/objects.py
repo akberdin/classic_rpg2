@@ -271,6 +271,18 @@ class ObjectPlacer:
                 miners_count=3,
                 respawn_time=100
             )
+        # Set default values for animal spawn points
+        elif self.current_template.location_type in [LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER]:
+            location = MapLocation(
+                x=x,
+                y=y,
+                location_type=self.current_template.location_type,
+                name=name,
+                id=str(uuid.uuid4()),
+                animal_count=3,
+                respawn_time=50,
+                spawn_radius=5
+            )
         else:
             location = MapLocation(
                 x=x,
@@ -417,6 +429,8 @@ class ObjectPlacer:
             'respawn_time': location.respawn_time,
             'resource_type': location.resource_type,
             'player_attitude': location.player_attitude,
+            'spawn_radius': location.spawn_radius,
+            'animal_count': location.animal_count,
             'connections': location.connections
         }
         return info
