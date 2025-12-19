@@ -212,7 +212,8 @@ class Animal(NPC):
             if not self.wander_target or (self.x, self.y) == self.wander_target:
                 # Выбираем новую цель в пределах радиуса патрулирования
                 angle = random.uniform(0, 2 * 3.14159)
-                radius = random.randint(5, self.patrol_radius)
+                min_radius = min(5, self.patrol_radius)
+                radius = random.randint(min_radius, max(min_radius, self.patrol_radius))
                 target_x = self.spawn_x + int(radius * random.choice([-1, 1]))
                 target_y = self.spawn_y + int(radius * random.choice([-1, 1]))
                 self.wander_target = (target_x, target_y)
