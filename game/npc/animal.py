@@ -146,10 +146,34 @@ class Animal(NPC):
         closest_threat = None
         closest_distance = float('inf')
 
-        # Проверяем игрока (если был провоцирован атакой)
-        if player and player.is_alive and self.provoked:
+        # Получаем отношение точки спавна к игроку
+        spawn_point_attitude = getattr(self, 'spawn_point_attitude', 0)
+
+        # Проверяем игрока
+        if player and player.is_alive:
             distance = abs(self.x - player.x) + abs(self.y - player.y)
-            if distance <= self.detection_range:
+
+            # Логика агрессивности на основе player_attitude:
+            # 1. Если был провоцирован атакой - всегда реагируем
+            # 2. Если player_attitude < -5 - атакуем, если игрок близко
+            # 3. Если player_attitude = -10 - активно преследуем игрока
+            should_react = False
+
+            if self.provoked:
+                # Был атакован - защищаемся
+                should_react = True
+            elif spawn_point_attitude <= -10:
+                # Очень агрессивная зона - преследуем игрока на большом расстоянии
+                if distance <= self.detection_range * 2:
+                    should_react = True
+                    # Увеличиваем дальность преследования
+                    self.max_pursuit_steps = 30
+            elif spawn_point_attitude < -5:
+                # Агрессивная зона - атакуем, если игрок проходит мимо
+                if distance <= self.detection_range:
+                    should_react = True
+
+            if should_react and distance < closest_distance:
                 closest_threat = player
                 closest_distance = distance
 
@@ -180,7 +204,7 @@ class Animal(NPC):
         distance_from_spawn = abs(self.x - self.spawn_x) + abs(self.y - self.spawn_y)
 
         if distance_from_spawn > self.max_distance_from_spawn:
-            # Возвращаемся к точке спавна
+            # Возвращаемся к точке спавна - ОБЯЗАТЕЛЬНО
             dx = 1 if self.spawn_x > self.x else -1 if self.spawn_x < self.x else 0
             dy = 1 if self.spawn_y > self.y else -1 if self.spawn_y < self.y else 0
         else:
@@ -199,6 +223,14 @@ class Animal(NPC):
 
         # Пытаемся двигаться
         new_x, new_y = self.x + dx, self.y + dy
+
+        # ВАЖНО: Проверяем, что новая позиция не выходит за пределы spawn_radius
+        new_distance_from_spawn = abs(new_x - self.spawn_x) + abs(new_y - self.spawn_y)
+        if new_distance_from_spawn > self.max_distance_from_spawn:
+            # Если выходим за пределы, не двигаемся, выбираем новую цель
+            self.wander_target = None
+            return
+
         if self._can_move(new_x, new_y, game_map):
             self.x, self.y = new_x, new_y
 
@@ -307,6 +339,16 @@ class Animal(NPC):
         dy = 1 if self.target_enemy.y > self.y else -1 if self.target_enemy.y < self.y else 0
 
         new_x, new_y = self.x + dx, self.y + dy
+
+        # ВАЖНО: Проверяем, что не выходим за пределы spawn_radius при преследовании
+        distance_from_spawn = abs(new_x - self.spawn_x) + abs(new_y - self.spawn_y)
+        if distance_from_spawn > self.max_distance_from_spawn:
+            # Достигли границы зоны, прекращаем преследование
+            self.pursuit_counter = 0
+            self.state = self.behavior_mode
+            self.target_enemy = None
+            return
+
         if self._can_move(new_x, new_y, game_map):
             self.x, self.y = new_x, new_y
 
