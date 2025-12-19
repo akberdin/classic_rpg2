@@ -694,7 +694,8 @@ class NPCSpawner:
 
         for mine in mines:
             # Получаем параметры из конфигурации шахты
-            num_miners = mine.miners_count if hasattr(mine, 'miners_count') and mine.miners_count > 0 else random.randint(5, 8)
+            # ВАЖНО: если miners_count = 0 в конфиге, то не создаем шахтеров
+            num_miners = mine.miners_count if hasattr(mine, 'miners_count') else random.randint(5, 8)
             mine_rank = mine.rank if hasattr(mine, 'rank') else 1
             spawn_radius = mine.spawn_radius if hasattr(mine, 'spawn_radius') else 3
 
