@@ -144,6 +144,21 @@ GUARD_TYPES = {
     GUARD_NONE: "Нет"
 }
 
+# Resource type constants for mines
+RESOURCE_COPPER = "copper"
+RESOURCE_IRON = "iron"
+RESOURCE_SILVER = "silver"
+RESOURCE_GOLD = "gold"
+RESOURCE_MITHRIL = "mithril"
+
+RESOURCE_TYPES = {
+    RESOURCE_COPPER: "Медь",
+    RESOURCE_IRON: "Железо",
+    RESOURCE_SILVER: "Серебро",
+    RESOURCE_GOLD: "Золото",
+    RESOURCE_MITHRIL: "Мифрил"
+}
+
 
 @dataclass
 class Guard:
@@ -191,6 +206,7 @@ class MapLocation:
     shop_rank: int = 1  # Shop rank for cities, villages (1-4)
     miners_count: int = 0  # Number of miners for mines (0-10)
     respawn_time: int = 0  # Respawn time for mines in turns (0-200)
+    resource_type: str = "copper"  # Resource type for mines: copper, iron, silver, gold, mithril
     player_attitude: int = 0  # Attitude towards player (-10 to 10)
     spawn_radius: int = 5  # Spawn radius for NPCs related to this location (1-20)
     guards: List[Guard] = field(default_factory=_create_empty_guards)  # Guard slots (max 5)
@@ -237,10 +253,11 @@ class MapLocation:
         # Only save shop_rank for settlements
         if self.location_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
             data['shop_rank'] = self.shop_rank
-        # Only save miners_count and respawn_time for mines
+        # Only save miners_count, respawn_time and resource_type for mines
         if self.location_type == LOCATION_MINE:
             data['miners_count'] = self.miners_count
             data['respawn_time'] = self.respawn_time
+            data['resource_type'] = self.resource_type
         # Save guards for locations that have them
         if self.location_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
                                   LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, 'secret_camp']:
@@ -283,6 +300,7 @@ class MapLocation:
             shop_rank=data.get('shop_rank', 1),
             miners_count=data.get('miners_count', 0),
             respawn_time=data.get('respawn_time', 0),
+            resource_type=data.get('resource_type', 'copper'),
             player_attitude=data.get('player_attitude', 0),
             spawn_radius=data.get('spawn_radius', 5),
             guards=guards,
