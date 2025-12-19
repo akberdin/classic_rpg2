@@ -256,6 +256,9 @@ class NPCManager:
             npc: NPC для обновления
             context: Контекст AI
         """
+        # Сначала обновляем состояние скрытия (для системы работа/отдых)
+        npc.update_hidden_state()
+
         # Унифицированный вызов - все NPC теперь поддерживают AIContext
         npc.update_ai(context)
 
