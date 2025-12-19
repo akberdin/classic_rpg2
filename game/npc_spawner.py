@@ -411,6 +411,9 @@ class NPCSpawner:
         Создание Адептов тени в Тайном лагере
         4 ранга: новичок (1-10), обычный (11-20), ветеран (21-30), эксперт (31-40)
 
+        ВАЖНО: Если у тайного лагеря есть параметр guards, адепты НЕ создаются этим методом,
+        а создаются через систему guards в spawn_guards()
+
         Returns:
             list: Список адептов тени
         """
@@ -424,6 +427,12 @@ class NPCSpawner:
                 break
 
         if not secret_camp:
+            return shadow_adepts
+
+        # Проверяем, есть ли у лагеря параметр guards
+        # Если есть, то адептов создавать не нужно (они создаются через guards)
+        if hasattr(secret_camp, 'guards') and secret_camp.guards:
+            print(f"Адепты тени для {secret_camp.name} создаются через систему guards, пропускаем spawn_shadow_adepts()")
             return shadow_adepts
 
         # Имена адептов тени по рангам
@@ -551,6 +560,9 @@ class NPCSpawner:
         """
         Создание магов-патрульных в академии магии
 
+        ВАЖНО: Если у академии есть параметр guards, маги НЕ создаются этим методом,
+        а создаются через систему guards в spawn_guards()
+
         Returns:
             list: Список магов
         """
@@ -563,6 +575,12 @@ class NPCSpawner:
                 break
 
         if not magic_school:
+            return mages
+
+        # Проверяем, есть ли у академии параметр guards
+        # Если есть, то магов создавать не нужно (они создаются через guards)
+        if hasattr(magic_school, 'guards') and magic_school.guards:
+            print(f"Маги для {magic_school.name} создаются через систему guards, пропускаем spawn_mages()")
             return mages
 
         # Создаем 3-5 магов-патрульных возле академии
@@ -897,6 +915,9 @@ class NPCSpawner:
         """
         Создание охотников в лесных и диких областях
 
+        ВАЖНО: Если у деревни есть параметр guards с охотниками, охотники НЕ создаются этим методом,
+        а создаются через систему guards в spawn_guards()
+
         Returns:
             list: Список охотников
         """
@@ -913,6 +934,12 @@ class NPCSpawner:
 
         # Создаем 1-2 охотника возле каждой деревни
         for village in villages:
+            # Проверяем, есть ли у деревни параметр guards
+            # Если есть, то вся стража (включая охотников) создается через guards
+            if hasattr(village, 'guards') and village.guards:
+                print(f"Стража для {village.name} создается через систему guards, пропускаем spawn_hunters()")
+                continue
+
             if random.random() < 0.5:  # 50% шанс
                 num_hunters = random.randint(1, 2)
                 for i in range(num_hunters):
