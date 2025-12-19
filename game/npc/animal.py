@@ -72,6 +72,7 @@ class Animal(NPC):
             context = context_or_map
             game_map = context.game_map
             all_npcs = context.all_npcs
+            player = context.player
             current_hour = context.current_hour
         else:
             game_map = context_or_map
@@ -326,7 +327,14 @@ class Animal(NPC):
 
         # Проверяем, можем ли атаковать (если враг рядом)
         if self.can_attack(self.target_enemy):
-            # Используем упрощенный бой для NPC vs NPC
+            # Если цель - игрок, устанавливаем флаг для открытия интерфейса боя
+            if hasattr(self.target_enemy, 'attacked_by_npc'):
+                self.target_enemy.attacked_by_npc = self
+                # Не атакуем игрока напрямую, ждем открытия интерфейса боя
+                self.pursuit_counter = 0
+                return
+
+            # Атакуем только NPC (упрощенный бой за один ход)
             enemy_killed = self._simplified_npc_combat(self.target_enemy, context)
             if enemy_killed:
                 print(f"{self.name} победил {self.target_enemy.name} в быстром бою!")
