@@ -268,7 +268,6 @@ class Miner(NPC):
 
         # Делаем шаг к шахте
         dx, dy = self._find_next_step(self.mine_x, self.mine_y, game_map, max_search_distance=100)
-        print(f"[ДВИЖЕНИЕ] {self.name}: позиция ({self.x},{self.y}) -> шахта ({self.mine_x},{self.mine_y}), шаг: ({dx},{dy})")
         if dx != 0 or dy != 0:
             if self._can_move(self.x + dx, self.y + dy, game_map):
                 self.x += dx
@@ -295,7 +294,6 @@ class Miner(NPC):
 
         # Делаем шаг к месту отдыха
         dx, dy = self._find_next_step(self.rest_x, self.rest_y, game_map, max_search_distance=100)
-        print(f"[ДВИЖЕНИЕ] {self.name}: позиция ({self.x},{self.y}) -> отдых ({self.rest_x},{self.rest_y}), шаг: ({dx},{dy})")
         if dx != 0 or dy != 0:
             if self._can_move(self.x + dx, self.y + dy, game_map):
                 self.x += dx

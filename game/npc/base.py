@@ -215,13 +215,6 @@ class NPC(Character):
         if self.x == target_x and self.y == target_y:
             return (0, 0)
 
-        # Отладка: показываем начальную информацию
-        is_miner = hasattr(self, 'mine_x')
-        debug_enabled = is_miner  # Отладка только для шахтеров
-
-        if debug_enabled:
-            print(f"[BFS DEBUG] {self.name}: старт ({self.x},{self.y}) -> цель ({target_x},{target_y})")
-
         # BFS для поиска кратчайшего пути
         queue = deque([(self.x, self.y, None)])  # (x, y, first_step)
         visited = {(self.x, self.y)}
@@ -244,10 +237,7 @@ class NPC(Character):
                 # Достигли цели
                 if nx == target_x and ny == target_y:
                     # Возвращаем первый шаг из найденного пути
-                    result = first_step if first_step else (dx, dy)
-                    if debug_enabled:
-                        print(f"[BFS DEBUG] {self.name}: найден путь! Первый шаг: {result}")
-                    return result
+                    return first_step if first_step else (dx, dy)
 
                 # Проверяем валидность и проходимость
                 if (nx, ny) not in visited:
@@ -261,15 +251,8 @@ class NPC(Character):
                                 # Сохраняем первый шаг (если это первый шаг из начальной позиции)
                                 next_first_step = first_step if first_step else (dx, dy)
                                 queue.append((nx, ny, next_first_step))
-                        elif debug_enabled and (x == self.x and y == self.y):
-                            # Отладка: показываем заблокированные клетки на первом шаге
-                            print(f"[BFS DEBUG] {self.name}: направление {(dx, dy)} -> ({nx},{ny}) НЕПРОХОДИМО")
-                    elif debug_enabled and (x == self.x and y == self.y):
-                        print(f"[BFS DEBUG] {self.name}: направление {(dx, dy)} -> ({nx},{ny}) ВНЕ КАРТЫ")
 
         # Путь не найден - возвращаем (0, 0)
-        if debug_enabled:
-            print(f"[BFS DEBUG] {self.name}: путь НЕ НАЙДЕН!")
         return (0, 0)
 
     def _can_move(self, x, y, game_map):
