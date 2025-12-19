@@ -865,16 +865,18 @@ class LocationEditDialog(Dialog):
         self.data['player_attitude'] = self.location_info.get('player_attitude', 0)
         y += 50
 
-        # Spawn radius slider (for all locations)
-        self.sliders.append(DialogSlider(
-            rect=pygame.Rect(20, y + 20, self.width - 40, 16),
-            label="Радиус спавна NPC (1-20)",
-            key="spawn_radius",
-            value=self.location_info.get('spawn_radius', 5),
-            min_val=1, max_val=20, step=1
-        ))
-        self.data['spawn_radius'] = self.location_info.get('spawn_radius', 5)
-        y += 50
+        # Spawn radius slider (for all locations except animal spawns)
+        # Animal spawns have their own spawn_radius slider in the animal spawn settings section
+        if loc_type not in [LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER]:
+            self.sliders.append(DialogSlider(
+                rect=pygame.Rect(20, y + 20, self.width - 40, 16),
+                label="Радиус спавна NPC (1-20)",
+                key="spawn_radius",
+                value=self.location_info.get('spawn_radius', 5),
+                min_val=1, max_val=20, step=1
+            ))
+            self.data['spawn_radius'] = self.location_info.get('spawn_radius', 5)
+            y += 50
 
         # Guards section (for settlements and academies)
         if loc_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
