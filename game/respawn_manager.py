@@ -63,10 +63,12 @@ class RespawnManager:
                 # Сохраняем параметры шахты для респавна
                 respawn_data['mine_rank'] = mine.rank if hasattr(mine, 'rank') else 1
                 respawn_data['spawn_radius'] = mine.spawn_radius if hasattr(mine, 'spawn_radius') else 3
-                # Сохраняем координаты домашней деревни
-                if hasattr(npc, 'home_village_x') and npc.home_village_x is not None:
-                    respawn_data['home_village_x'] = npc.home_village_x
-                    respawn_data['home_village_y'] = npc.home_village_y
+                respawn_data['mine_name'] = mine.name if hasattr(mine, 'name') else "Шахта"
+                # Сохраняем координаты и название места отдыха (новая логика)
+                if hasattr(npc, 'rest_x') and npc.rest_x is not None:
+                    respawn_data['rest_x'] = npc.rest_x
+                    respawn_data['rest_y'] = npc.rest_y
+                    respawn_data['rest_location_name'] = npc.rest_location_name
                 # Используем время респавна из конфигурации, если оно больше 0
                 if hasattr(mine, 'respawn_time') and mine.respawn_time > 0:
                     respawn_time = mine.respawn_time
@@ -331,17 +333,33 @@ class RespawnManager:
 
         elif npc_class == 'Miner':
             miner_names = ["Шахтер", "Рудокоп", "Горняк", "Копатель"]
-            name = f"{random.choice(miner_names)} {location_name}"
             # Получаем параметры шахты из respawn_data (если были сохранены)
             spawn_radius = respawn_data.get('spawn_radius', 3)
             mine_rank = respawn_data.get('mine_rank', 1)
-            home_village_x = respawn_data.get('home_village_x', None)
-            home_village_y = respawn_data.get('home_village_y', None)
+            mine_name = respawn_data.get('mine_name', location_name)
+            # Получаем параметры места отдыха (новая логика)
+            rest_x = respawn_data.get('rest_x', None)
+            rest_y = respawn_data.get('rest_y', None)
+            rest_location_name = respawn_data.get('rest_location_name', None)
+            name = f"{random.choice(miner_names)} {mine_name}"
             # Пересчитываем уровень на основе ранга шахты
             level_min = (mine_rank - 1) * 10 + 1
             level_max = mine_rank * 10
             level = random.randint(level_min, level_max)
-            new_npc = Miner(name, x, y, level, spawn_x, spawn_y, spawn_radius, home_village_x, home_village_y)
+            # Создаем шахтера с новой логикой на основе ходов
+            new_npc = Miner(
+                name=name,
+                x=x,
+                y=y,
+                level=level,
+                mine_x=spawn_x,
+                mine_y=spawn_y,
+                mine_name=mine_name,
+                rest_x=rest_x,
+                rest_y=rest_y,
+                rest_location_name=rest_location_name,
+                spawn_radius=spawn_radius
+            )
             # Используем npc_manager для правильного добавления NPC с инвалидацией кэша
             from game.core.npc_manager import NPCType
             game.npc_manager.add_npc(new_npc, NPCType.MINER)

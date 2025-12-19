@@ -55,6 +55,11 @@ class NPC(Character):
         self.schedule = None
         self._init_schedule()
 
+        # Универсальный механизм скрытия с карты (для работы/отдыха в локациях)
+        self._hidden = False
+        self._hidden_turns_remaining = 0
+        self._hidden_location_name = None  # Название локации где скрыт NPC
+
         # Механизм дискомфорта от совместного нахождения с другими NPC
         self.collision_tracker = {}  # {npc_id: turns_count}
 
@@ -87,7 +92,47 @@ class NPC(Character):
         Returns:
             bool: True если NPC скрыт
         """
+        # Новая универсальная система скрытия (приоритет)
+        if self._hidden:
+            return True
+        # Старая система через расписание (для совместимости)
         return self.schedule and self.schedule.is_hidden
+
+    def hide_from_map(self, turns, location_name=None):
+        """
+        Скрыть NPC с карты на указанное количество ходов.
+        Используется для симуляции работы в шахте, отдыха в городе и т.д.
+
+        Args:
+            turns: Количество ходов, на которые NPC будет скрыт
+            location_name: Опциональное название локации (для информации)
+        """
+        self._hidden = True
+        self._hidden_turns_remaining = turns
+        self._hidden_location_name = location_name
+
+    def unhide_from_map(self):
+        """
+        Вернуть NPC на карту (досрочно).
+        """
+        self._hidden = False
+        self._hidden_turns_remaining = 0
+        self._hidden_location_name = None
+
+    def update_hidden_state(self):
+        """
+        Обновить состояние скрытия NPC.
+        Вызывается каждый ход для уменьшения счетчика скрытия.
+
+        Returns:
+            bool: True если NPC только что появился на карте
+        """
+        if self._hidden and self._hidden_turns_remaining > 0:
+            self._hidden_turns_remaining -= 1
+            if self._hidden_turns_remaining <= 0:
+                self.unhide_from_map()
+                return True  # NPC появился
+        return False
 
     def update_schedule(self, current_hour, game_map):
         """

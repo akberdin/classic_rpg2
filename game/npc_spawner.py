@@ -27,12 +27,16 @@ class NPCSpawner:
         """
         Создать всех NPC на карте
 
+        ВРЕМЕННО ОТКЛЮЧЕНЫ:
+        - guards (стража)
+        - merchants (торговцы)
+
         Returns:
             dict: Словарь со списками NPC по типам
         """
         npcs = {
-            'guards': self.spawn_guards(),
-            'merchants': self.spawn_merchants(),
+            'guards': [],  # Временно отключено
+            'merchants': [],  # Временно отключено
             'mages': self.spawn_mages(),
             'bandits': self.spawn_bandits(),
             'miners': self.spawn_miners(),
@@ -44,26 +48,25 @@ class NPCSpawner:
             'animals': self.spawn_animals()
         }
 
-        # Добавляем магического торговца к торговцам
-        magic_merchant = self.spawn_magic_merchant()
-        if magic_merchant:
-            npcs['merchants'].append(magic_merchant)
+        # Временно отключаем всех торговцев
+        # magic_merchant = self.spawn_magic_merchant()
+        # if magic_merchant:
+        #     npcs['merchants'].append(magic_merchant)
 
-        # Добавляем воинского торговца к торговцам
-        warrior_merchant = self.spawn_warrior_merchant()
-        if warrior_merchant:
-            npcs['merchants'].append(warrior_merchant)
+        # warrior_merchant = self.spawn_warrior_merchant()
+        # if warrior_merchant:
+        #     npcs['merchants'].append(warrior_merchant)
 
-        # Добавляем теневого торговца к торговцам (Тайный лагерь)
-        shadow_merchant = self.spawn_shadow_merchant()
-        if shadow_merchant:
-            npcs['merchants'].append(shadow_merchant)
+        # shadow_merchant = self.spawn_shadow_merchant()
+        # if shadow_merchant:
+        #     npcs['merchants'].append(shadow_merchant)
 
-        # Добавляем воинов возле Военной академии к стражникам
-        warriors = self.spawn_warriors()
-        if warriors:
-            npcs['guards'].extend(warriors)
+        # Временно отключаем воинов (часть стражи)
+        # warriors = self.spawn_warriors()
+        # if warriors:
+        #     npcs['guards'].extend(warriors)
 
+        print("ВНИМАНИЕ: Спавн стражи и торговцев временно отключен")
         return npcs
 
     def spawn_guards(self):
@@ -676,6 +679,7 @@ class NPCSpawner:
         - miners_count: количество шахтеров
         - rank: ранг шахты (определяет уровень шахтеров)
         - spawn_radius: радиус спавна шахтеров
+        - connections: координаты города/деревни для отдыха
 
         Returns:
             list: Список шахтеров
@@ -694,10 +698,32 @@ class NPCSpawner:
             mine_rank = mine.rank if hasattr(mine, 'rank') else 1
             spawn_radius = mine.spawn_radius if hasattr(mine, 'spawn_radius') else 3
 
-            # Находим ближайшую деревню или город для привязки шахтеров
-            home_village = self._find_nearest_settlement(mine.x, mine.y)
-            home_village_x = home_village.x if home_village else None
-            home_village_y = home_village.y if home_village else None
+            # Находим город/деревню для отдыха из connections шахты
+            rest_location = None
+            rest_x = None
+            rest_y = None
+            rest_location_name = None
+
+            if hasattr(mine, 'connections') and mine.connections:
+                # Берем первое подключение из списка connections
+                connection_coords = mine.connections[0]
+                rest_x, rest_y = connection_coords[0], connection_coords[1]
+
+                # Находим локацию по координатам
+                for loc in self.game_map.locations:
+                    if loc.x == rest_x and loc.y == rest_y:
+                        if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
+                            rest_location = loc
+                            rest_location_name = loc.name
+                            break
+
+            # Если не нашли через connections, используем ближайшую деревню/город
+            if not rest_location:
+                rest_location = self._find_nearest_settlement(mine.x, mine.y)
+                if rest_location:
+                    rest_x = rest_location.x
+                    rest_y = rest_location.y
+                    rest_location_name = rest_location.name
 
             # Определяем уровень шахтеров на основе ранга шахты
             # Ранг 1: уровень 1-10, Ранг 2: 11-20, Ранг 3: 21-30, Ранг 4: 31-40, Ранг 5: 41-50
@@ -733,12 +759,24 @@ class NPCSpawner:
                     miner_level = random.randint(level_min, level_max)
                     miner_name = f"{random.choice(miner_names)} {mine.name}"
 
-                    # Создаем шахтера с привязкой к шахте, радиусом спавна и домашней деревней
-                    miner = Miner(miner_name, mx, my, miner_level, mine.x, mine.y, spawn_radius, home_village_x, home_village_y)
+                    # Создаем шахтера с новой логикой на основе ходов
+                    miner = Miner(
+                        name=miner_name,
+                        x=mx,
+                        y=my,
+                        level=miner_level,
+                        mine_x=mine.x,
+                        mine_y=mine.y,
+                        mine_name=mine.name,
+                        rest_x=rest_x,
+                        rest_y=rest_y,
+                        rest_location_name=rest_location_name,
+                        spawn_radius=spawn_radius
+                    )
 
                     miners.append(miner)
 
-            print(f"Создано {len([m for m in miners if m.mine_x == mine.x and m.mine_y == mine.y])} шахтеров для {mine.name} (Ранг {mine_rank}, Уровни {level_min}-{level_max})")
+            print(f"Создано {len([m for m in miners if m.mine_x == mine.x and m.mine_y == mine.y])} шахтеров для {mine.name} (Ранг {mine_rank}, Уровни {level_min}-{level_max}, Отдых: {rest_location_name})")
 
         return miners
 

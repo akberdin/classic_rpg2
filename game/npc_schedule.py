@@ -119,60 +119,11 @@ class NPCSchedule:
         self.npc.state = self._get_default_state()
 
 
-class MinerSchedule(NPCSchedule):
-    """Расписание для шахтеров с автоматическим возвращением в деревню"""
-
-    def __init__(self, npc):
-        super().__init__(npc)
-        # Шахтеры работают с 6 до 19
-        self.active_hours = (6, 19)
-        self.rest_hours = (19, 6)
-
-        # Часы возвращения домой и выхода на работу
-        self.go_home_hour = 19  # В 19 часов идут домой
-        self.go_to_work_hour = 6  # В 6 часов идут на работу
-
-        # Флаг - дома ли шахтер
-        self.at_home = False
-
-    def update(self, current_hour, game_map):
-        """Обновить расписание шахтера с управлением уходом домой"""
-        # Если скрыт, уменьшаем длительность
-        if self.is_hidden:
-            self.hidden_duration -= 1
-            if self.hidden_duration <= 0:
-                self.unhide()
-                # После выхода из деревни утром - возвращаемся к работе
-                if current_hour >= self.go_to_work_hour and current_hour < self.go_home_hour:
-                    self.at_home = False
-                return
-
-        # Вечером (19 часов) - прячемся в деревне на ночь
-        if current_hour == self.go_home_hour and not self.is_hidden and not self.at_home:
-            if hasattr(self.npc, 'home_village_x') and self.npc.home_village_x is not None:
-                # Проверяем, близко ли к деревне
-                distance = abs(self.npc.x - self.npc.home_village_x) + abs(self.npc.y - self.npc.home_village_y)
-                if distance <= 8:  # Если в пределах 8 клеток от деревни
-                    # Скрываемся в деревне до утра (13 часов: с 19 до 6)
-                    self.hide_in_location(LOCATION_VILLAGE, 11)
-                    self.at_home = True
-                    return
-
-        # Утром (6 часов) - выходим из деревни
-        if current_hour == self.go_to_work_hour and self.at_home and self.is_hidden:
-            self.unhide()
-            self.at_home = False
-            return
-
-        # Обновляем состояние активности
-        if self.should_rest(current_hour) and not self.is_hidden:
-            if self.npc.state != "rest":
-                self.npc.state = "rest"
-                self.npc.rest_counter = 0
-        elif self.should_be_active(current_hour) and not self.is_hidden:
-            if self.npc.state == "rest":
-                self.npc.state = self._get_default_state()
-
+# УСТАРЕВШЕЕ: MinerSchedule больше не используется
+# Шахтеры теперь используют новую логику на основе ходов без привязки ко времени суток
+# class MinerSchedule(NPCSchedule):
+#     """УСТАРЕВШЕЕ - Расписание для шахтеров с автоматическим возвращением в деревню"""
+#     pass
 
 
 class GuardSchedule(NPCSchedule):
@@ -237,8 +188,9 @@ def create_schedule_for_npc(npc):
     Returns:
         NPCSchedule: Объект расписания
     """
+    # Шахтеры теперь используют новую логику на основе ходов, им не нужно расписание по времени суток
     if npc.npc_type == NPC_TYPE_MINER:
-        return MinerSchedule(npc)
+        return NPCSchedule(npc)  # Базовое расписание (не используется)
     elif npc.npc_type == NPC_TYPE_GUARD:
         return GuardSchedule(npc)
     elif npc.npc_type == NPC_TYPE_BANDIT:
