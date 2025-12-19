@@ -415,6 +415,7 @@ class ObjectPlacer:
             'shop_rank': location.shop_rank,
             'miners_count': location.miners_count,
             'respawn_time': location.respawn_time,
+            'resource_type': location.resource_type,
             'player_attitude': location.player_attitude,
             'connections': location.connections
         }

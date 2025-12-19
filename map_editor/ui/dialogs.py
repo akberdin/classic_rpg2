@@ -10,7 +10,8 @@ from ..tools.generator import (
     LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE,
     LOCATION_MINE, LOCATION_RUINS,
     LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY,
-    Guard, GUARD_TYPES, GUARD_NONE
+    Guard, GUARD_TYPES, GUARD_NONE,
+    RESOURCE_TYPES
 )
 
 
@@ -716,7 +717,7 @@ class LocationEditDialog(Dialog):
         if loc_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
             height += 50  # Space for shop_rank slider
         if loc_type == LOCATION_MINE:
-            height += 100  # Space for miners_count and respawn_time sliders
+            height += 170  # Space for miners_count, respawn_time sliders and resource_type dropdown
         # Add space for guards (for settlements and academies)
         if loc_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
                         LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, 'secret_camp']:
@@ -801,6 +802,18 @@ class LocationEditDialog(Dialog):
             ))
             self.data['respawn_time'] = self.location_info.get('respawn_time', 0)
             y += 50
+
+        # Resource type dropdown (only for mines)
+        if loc_type == LOCATION_MINE:
+            self.dropdowns.append(DialogDropdown(
+                rect=pygame.Rect(20, y + 20, self.width - 40, 28),
+                label="Тип добываемого ресурса:",
+                key="resource_type",
+                options=RESOURCE_TYPES,
+                selected=self.location_info.get('resource_type', 'copper')
+            ))
+            self.data['resource_type'] = self.location_info.get('resource_type', 'copper')
+            y += 70
 
         # Player attitude slider (for all locations)
         self.sliders.append(DialogSlider(

@@ -297,6 +297,13 @@ class MapEditor:
                     self._editing_location.respawn_time = new_respawn_time
                     self.has_unsaved_changes = True
 
+            # Update resource_type for mines
+            if 'resource_type' in data:
+                new_resource_type = data.get('resource_type', 'copper')
+                if new_resource_type != self._editing_location.resource_type:
+                    self._editing_location.resource_type = new_resource_type
+                    self.has_unsaved_changes = True
+
             # Update player_attitude (for all locations)
             if 'player_attitude' in data:
                 new_attitude = int(data.get('player_attitude', 0))
@@ -597,6 +604,56 @@ class MapEditor:
         screen_y = tile_y * self.tile_size + self.camera_y + self.toolbar_height
         return screen_x, screen_y
 
+    def _distance_to_line(self, px: int, py: int, x1: int, y1: int, x2: int, y2: int) -> float:
+        """Calculate distance from point (px, py) to line segment (x1, y1) - (x2, y2)."""
+        # Vector from point 1 to point 2
+        dx = x2 - x1
+        dy = y2 - y1
+
+        # If the line segment has zero length
+        if dx == 0 and dy == 0:
+            return math.sqrt((px - x1) ** 2 + (py - y1) ** 2)
+
+        # Calculate parameter t for the closest point on the line
+        t = max(0, min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)))
+
+        # Find the closest point on the line segment
+        closest_x = x1 + t * dx
+        closest_y = y1 + t * dy
+
+        # Return distance from point to closest point
+        return math.sqrt((px - closest_x) ** 2 + (py - closest_y) ** 2)
+
+    def _find_connection_near_click(self, tile_x: int, tile_y: int) -> Optional[Tuple]:
+        """Find connection near the click point. Returns (source_location, target_location) or None."""
+        if not self.current_map:
+            return None
+
+        max_distance = 3  # Maximum distance in tiles to consider a click "near" a connection
+        closest_connection = None
+        closest_distance = float('inf')
+
+        # Check all connections
+        for source_loc in self.current_map.locations:
+            for target_x, target_y in source_loc.connections:
+                # Find target location
+                target_loc = self.current_map.get_location_at(target_x, target_y)
+                if not target_loc:
+                    continue
+
+                # Calculate distance from click to connection line
+                distance = self._distance_to_line(
+                    tile_x, tile_y,
+                    source_loc.x, source_loc.y,
+                    target_x, target_y
+                )
+
+                if distance < closest_distance and distance <= max_distance:
+                    closest_distance = distance
+                    closest_connection = (source_loc, target_loc)
+
+        return closest_connection
+
     def handle_events(self) -> None:
         """Handle all pygame events."""
         for event in pygame.event.get():
@@ -728,11 +785,21 @@ class MapEditor:
                 self.has_unsaved_changes = True
 
         elif self.current_tool == ToolType.CONNECTION:
-            # Two-click connection mode: A -> B
+            # Connection mode: click on location to create connection, click near line to delete
             location = self.object_placer.select_location(self.current_map, tile_x, tile_y)
 
             if not location:
-                self._set_status("Выберите объект для связи")
+                # No location at click - try to find and delete connection near click
+                connection = self._find_connection_near_click(tile_x, tile_y)
+                if connection:
+                    source_loc, target_loc = connection
+                    # Remove bidirectional connection
+                    source_loc.remove_connection(target_loc.x, target_loc.y)
+                    target_loc.remove_connection(source_loc.x, source_loc.y)
+                    self.has_unsaved_changes = True
+                    self._set_status(f"Удалена связь: {source_loc.name} <-> {target_loc.name}")
+                else:
+                    self._set_status("Выберите объект для связи или кликните на линию для удаления")
                 return
 
             if not self.connection_source:
@@ -751,10 +818,11 @@ class MapEditor:
                     self.connection_source = None
                     return
 
-                # Create connection from A to B
+                # Create bidirectional connection: A <-> B
                 self.connection_source.add_connection(location.x, location.y)
+                location.add_connection(self.connection_source.x, self.connection_source.y)
                 self.has_unsaved_changes = True
-                self._set_status(f"Создана связь: {self.connection_source.name} -> {location.name}")
+                self._set_status(f"Создана связь: {self.connection_source.name} <-> {location.name}")
 
                 # Reset for next connection
                 self.connection_source = None
