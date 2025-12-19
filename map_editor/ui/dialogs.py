@@ -178,32 +178,10 @@ class Dialog:
                     self.data[checkbox.key] = checkbox.checked
                     return True
 
-            # Check text inputs
-            for text_input in self.text_inputs:
-                if text_input.rect.collidepoint(local_x, local_y):
-                    # Deactivate all other inputs
-                    for ti in self.text_inputs:
-                        ti.active = False
-                    text_input.active = True
-                    self.active_text_input = text_input
-                    return True
-                else:
-                    text_input.active = False
-
-            self.active_text_input = None
-
-            # Check dropdowns
+            # Check dropdowns FIRST (so expanded dropdowns are on top)
+            # First pass: check if clicking on expanded dropdown options
             for dropdown in self.dropdowns:
-                if dropdown.rect.collidepoint(local_x, local_y):
-                    # Toggle dropdown
-                    dropdown.expanded = not dropdown.expanded
-                    # Close other dropdowns
-                    for dd in self.dropdowns:
-                        if dd != dropdown:
-                            dd.expanded = False
-                    self.active_dropdown = dropdown if dropdown.expanded else None
-                    return True
-                elif dropdown.expanded:
+                if dropdown.expanded:
                     # Check if clicking on an option
                     option_height = 28
                     options_y = dropdown.rect.bottom
@@ -217,10 +195,41 @@ class Dialog:
                             self.data[dropdown.key] = key
                             return True
 
-            # Close all dropdowns if clicking outside
+            # Second pass: check if clicking on dropdown headers
+            for dropdown in self.dropdowns:
+                if dropdown.rect.collidepoint(local_x, local_y):
+                    # Toggle dropdown
+                    dropdown.expanded = not dropdown.expanded
+                    # Close other dropdowns
+                    for dd in self.dropdowns:
+                        if dd != dropdown:
+                            dd.expanded = False
+                    self.active_dropdown = dropdown if dropdown.expanded else None
+                    return True
+
+            # Close all dropdowns if clicking elsewhere
+            dropdown_was_open = any(dd.expanded for dd in self.dropdowns)
             for dropdown in self.dropdowns:
                 dropdown.expanded = False
             self.active_dropdown = None
+
+            # If a dropdown was open and we closed it, consume the click
+            if dropdown_was_open:
+                return True
+
+            # Check text inputs
+            for text_input in self.text_inputs:
+                if text_input.rect.collidepoint(local_x, local_y):
+                    # Deactivate all other inputs
+                    for ti in self.text_inputs:
+                        ti.active = False
+                    text_input.active = True
+                    self.active_text_input = text_input
+                    return True
+                else:
+                    text_input.active = False
+
+            self.active_text_input = None
 
             return True
 
