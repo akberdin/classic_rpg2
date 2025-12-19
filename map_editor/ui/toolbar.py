@@ -149,6 +149,16 @@ class Toolbar:
             )
             x += btn_width + padding
 
+        # Exit button in the top-right corner
+        exit_btn_width = 60
+        exit_x = self.width - exit_btn_width - padding
+        self.buttons["exit"] = ToolbarButton(
+            rect=pygame.Rect(exit_x, y, exit_btn_width, button_height),
+            text="Выход",
+            tooltip="Выход из редактора (Esc)",
+            action="exit"
+        )
+
     def handle_event(self, event: pygame.event.Event) -> bool:
         """Handle pygame event. Returns True if event was consumed."""
         if event.type == pygame.MOUSEMOTION:
@@ -256,6 +266,12 @@ class Toolbar:
         elif event.key == pygame.K_HOME:
             if self.on_action:
                 self.on_action("fit_view")
+            return True
+
+        # Exit hotkey
+        if event.key == pygame.K_ESCAPE:
+            if self.on_action:
+                self.on_action("exit")
             return True
 
         return False
@@ -386,3 +402,9 @@ class Toolbar:
     def resize(self, width: int) -> None:
         """Handle window resize."""
         self.width = width
+        # Update exit button position
+        if "exit" in self.buttons:
+            exit_btn_width = 60
+            padding = 4
+            exit_x = self.width - exit_btn_width - padding
+            self.buttons["exit"].rect.x = exit_x

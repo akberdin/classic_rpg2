@@ -205,10 +205,11 @@ class MapLocation:
     rank: int = 1  # Rank for mines, ruins (1-4)
     shop_rank: int = 1  # Shop rank for cities, villages (1-4)
     miners_count: int = 0  # Number of miners for mines (0-10)
-    respawn_time: int = 0  # Respawn time for mines in turns (0-200)
+    respawn_time: int = 0  # Respawn time for mines and animal spawns (0-999)
     resource_type: str = "copper"  # Resource type for mines: copper, iron, silver, gold, mithril
     player_attitude: int = 0  # Attitude towards player (-10 to 10)
-    spawn_radius: int = 5  # Spawn radius for NPCs related to this location (1-20)
+    spawn_radius: int = 5  # Spawn radius for NPCs and animals related to this location (3-10 for animals, 1-20 for others)
+    animal_count: int = 1  # Number of animals for spawn points (1-10)
     guards: List[Guard] = field(default_factory=_create_empty_guards)  # Guard slots (max 5)
     connections: List[Tuple[int, int]] = field(default_factory=list)  # Connections: [(target_x, target_y), ...]
 
@@ -258,6 +259,11 @@ class MapLocation:
             data['miners_count'] = self.miners_count
             data['respawn_time'] = self.respawn_time
             data['resource_type'] = self.resource_type
+        # Save animal_count, respawn_time and spawn_radius for animal spawn points
+        if self.location_type in [LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER]:
+            data['animal_count'] = self.animal_count
+            data['respawn_time'] = self.respawn_time
+            data['spawn_radius'] = self.spawn_radius
         # Save guards for locations that have them
         if self.location_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
                                   LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, 'secret_camp']:
@@ -303,6 +309,7 @@ class MapLocation:
             resource_type=data.get('resource_type', 'copper'),
             player_attitude=data.get('player_attitude', 0),
             spawn_radius=data.get('spawn_radius', 5),
+            animal_count=data.get('animal_count', 1),
             guards=guards,
             connections=connections
         )
