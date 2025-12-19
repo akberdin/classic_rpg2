@@ -84,6 +84,15 @@
       "player_attitude": 0,
       "spawn_radius": 5,
       "shop_rank": 1,
+      "guards": [
+        {
+          "type": "warrior",
+          "rank": 2,
+          "count": 3,
+          "patrol_radius": 5,
+          "respawn_time": 0
+        }
+      ],
       "connections": [
         [
           29,

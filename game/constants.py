@@ -515,8 +515,7 @@ def _init_dynamic_constants():
     # Генерация карт перенесена в map_editor
 
     # Спавн NPC
-    GUARDS_PER_CITY = npc_config.get_spawn_param('guards_per_city', 4)
-    GUARDS_PER_VILLAGE = npc_config.get_spawn_param('guards_per_village', 2)
+    # УДАЛЕНО: GUARDS_PER_CITY и GUARDS_PER_VILLAGE - используется система guards из конфигурации map
     MERCHANTS_PER_CITY = npc_config.get_spawn_param('merchants_per_city', 3)
     MERCHANTS_PER_VILLAGE = npc_config.get_spawn_param('merchants_per_village', 2)
 
@@ -652,9 +651,8 @@ HEALTH_MEDIUM_THRESHOLD = 60
 
 LOCATION_MIN_DISTANCE = 8
 # УДАЛЕНО: Константы количества локаций больше не нужны (генерация в map_editor)
+# УДАЛЕНО: GUARDS_PER_CITY и GUARDS_PER_VILLAGE - используется система guards из конфигурации map
 
-GUARDS_PER_CITY = 4
-GUARDS_PER_VILLAGE = 2
 MERCHANTS_PER_CITY = 3
 MERCHANTS_PER_VILLAGE = 2
 BANDITS_PER_CAMP_MIN = 3

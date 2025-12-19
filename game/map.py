@@ -118,6 +118,8 @@ class GameMap:
                 location.animal_count = loc_data["animal_count"]
             if "id" in loc_data:
                 location.id = loc_data["id"]
+            if "guards" in loc_data:
+                location.guards = loc_data["guards"]
 
             self.locations.append(location)
             self.tiles[loc_data["y"]][loc_data["x"]].set_location(location)
