@@ -66,6 +66,15 @@ class Animal(NPC):
         pass
 
     def update_ai(self, context_or_map, all_npcs=None, player=None, current_hour=12):
+        """
+        Обновление AI животного за 1 час игрового времени
+
+        Args:
+            context_or_map: AIContext или объект карты игры
+            all_npcs: Список всех NPC для поиска врагов (опционально при AIContext)
+            player: Объект игрока (опционально при AIContext)
+            current_hour: Текущий час суток 0-23 (опционально при AIContext)
+        """
         # Поддержка AIContext и старого способа вызова
         from game.core.ai_context import AIContext
         if isinstance(context_or_map, AIContext):
@@ -76,15 +85,6 @@ class Animal(NPC):
             current_hour = context.current_hour
         else:
             game_map = context_or_map
-        """
-        Обновление AI животного за 1 час игрового времени
-
-        Args:
-            game_map: Объект карты игры
-            all_npcs: Список всех NPC для поиска врагов
-            player: Объект игрока
-            current_hour: Текущий час суток (0-23)
-        """
         if not self.is_alive:
             return
 
@@ -212,7 +212,6 @@ class Animal(NPC):
             # Случайное блуждание
             if not self.wander_target or (self.x, self.y) == self.wander_target:
                 # Выбираем новую цель в пределах радиуса патрулирования
-                angle = random.uniform(0, 2 * 3.14159)
                 min_radius = min(5, self.patrol_radius)
                 radius = random.randint(min_radius, max(min_radius, self.patrol_radius))
                 target_x = self.spawn_x + int(radius * random.choice([-1, 1]))

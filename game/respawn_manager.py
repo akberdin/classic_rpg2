@@ -69,7 +69,6 @@ class RespawnManager:
         respawn_time = self.respawn_time  # По умолчанию
 
         # Для шахтеров используем время респавна из конфигурации шахты
-        npc_class = type(npc).__name__
         if npc_class == 'Miner' and hasattr(npc, 'mine_x') and hasattr(npc, 'mine_y'):
             # Находим шахту по координатам
             mine = self._find_mine_by_coords(npc.mine_x, npc.mine_y)
@@ -402,60 +401,32 @@ class RespawnManager:
             from game.core.npc_manager import NPCType
             game.npc_manager.add_npc(new_npc, NPCType.MAGE)
 
-        elif npc_class == 'Wolf':
-            wolf_names = ["Волк", "Серый волк", "Лесной волк", "Степной волк"]
-            # Используем сохраненное имя точки спавна, если есть
-            spawn_point_name = respawn_data.get('spawn_point_name', location_name)
-            name = f"{random.choice(wolf_names)} {spawn_point_name}"
-            # Волки всегда патрулируют (не путешествуют)
-            behavior_mode = "patrol"
-            new_npc = Wolf(name, x, y, level, spawn_x, spawn_y, behavior_mode)
-            # Восстанавливаем параметры точки спавна
-            if 'spawn_point_id' in respawn_data:
-                new_npc.spawn_point_id = respawn_data['spawn_point_id']
-            if 'spawn_point_name' in respawn_data:
-                new_npc.spawn_point_name = respawn_data['spawn_point_name']
-            if 'spawn_point_attitude' in respawn_data:
-                # Используем метод для установки отношения (также установит self.relationship)
-                new_npc.set_spawn_point_attitude(respawn_data['spawn_point_attitude'])
-            if 'patrol_radius' in respawn_data:
-                new_npc.patrol_radius = respawn_data['patrol_radius']
-            if 'max_distance_from_spawn' in respawn_data:
-                new_npc.max_distance_from_spawn = respawn_data['max_distance_from_spawn']
+        elif npc_class in ['Wolf', 'Bear', 'Deer']:
+            # Общий код для всех животных
             from game.core.npc_manager import NPCType
-            game.npc_manager.add_npc(new_npc, NPCType.ANIMAL)
 
-        elif npc_class == 'Bear':
-            bear_names = ["Медведь", "Бурый медведь", "Лесной медведь", "Горный медведь"]
-            # Используем сохраненное имя точки спавна, если есть
-            spawn_point_name = respawn_data.get('spawn_point_name', location_name)
-            name = f"{random.choice(bear_names)} {spawn_point_name}"
-            # Медведи всегда патрулируют (не путешествуют)
-            behavior_mode = "patrol"
-            new_npc = Bear(name, x, y, level, spawn_x, spawn_y, behavior_mode)
-            # Восстанавливаем параметры точки спавна
-            if 'spawn_point_id' in respawn_data:
-                new_npc.spawn_point_id = respawn_data['spawn_point_id']
-            if 'spawn_point_name' in respawn_data:
-                new_npc.spawn_point_name = respawn_data['spawn_point_name']
-            if 'spawn_point_attitude' in respawn_data:
-                # Используем метод для установки отношения (также установит self.relationship)
-                new_npc.set_spawn_point_attitude(respawn_data['spawn_point_attitude'])
-            if 'patrol_radius' in respawn_data:
-                new_npc.patrol_radius = respawn_data['patrol_radius']
-            if 'max_distance_from_spawn' in respawn_data:
-                new_npc.max_distance_from_spawn = respawn_data['max_distance_from_spawn']
-            from game.core.npc_manager import NPCType
-            game.npc_manager.add_npc(new_npc, NPCType.ANIMAL)
+            # Выбираем имя в зависимости от типа животного
+            animal_names = {
+                'Wolf': ["Волк", "Серый волк", "Лесной волк", "Степной волк"],
+                'Bear': ["Медведь", "Бурый медведь", "Лесной медведь", "Горный медведь"],
+                'Deer': ["Олень", "Благородный олень", "Лесной олень", "Пятнистый олень"]
+            }
 
-        elif npc_class == 'Deer':
-            deer_names = ["Олень", "Благородный олень", "Лесной олень", "Пятнистый олень"]
             # Используем сохраненное имя точки спавна, если есть
             spawn_point_name = respawn_data.get('spawn_point_name', location_name)
-            name = f"{random.choice(deer_names)} {spawn_point_name}"
-            # Олени всегда патрулируют (не путешествуют)
+            name = f"{random.choice(animal_names[npc_class])} {spawn_point_name}"
+
+            # Животные всегда патрулируют (не путешествуют)
             behavior_mode = "patrol"
-            new_npc = Deer(name, x, y, level, spawn_x, spawn_y, behavior_mode)
+
+            # Создаем животное нужного класса
+            if npc_class == 'Wolf':
+                new_npc = Wolf(name, x, y, level, spawn_x, spawn_y, behavior_mode)
+            elif npc_class == 'Bear':
+                new_npc = Bear(name, x, y, level, spawn_x, spawn_y, behavior_mode)
+            else:  # Deer
+                new_npc = Deer(name, x, y, level, spawn_x, spawn_y, behavior_mode)
+
             # Восстанавливаем параметры точки спавна
             if 'spawn_point_id' in respawn_data:
                 new_npc.spawn_point_id = respawn_data['spawn_point_id']
@@ -468,7 +439,7 @@ class RespawnManager:
                 new_npc.patrol_radius = respawn_data['patrol_radius']
             if 'max_distance_from_spawn' in respawn_data:
                 new_npc.max_distance_from_spawn = respawn_data['max_distance_from_spawn']
-            from game.core.npc_manager import NPCType
+
             game.npc_manager.add_npc(new_npc, NPCType.ANIMAL)
 
         elif npc_class == 'Alchemist':
