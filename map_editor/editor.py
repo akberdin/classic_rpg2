@@ -369,19 +369,22 @@ class MapEditor:
                 guard_type_key = f"guard_{i}_type"
                 guard_rank_key = f"guard_{i}_rank"
                 guard_count_key = f"guard_{i}_count"
+                guard_patrol_radius_key = f"guard_{i}_patrol_radius"
 
                 if guard_type_key in data:
                     guard_type = data.get(guard_type_key, "")
                     try:
                         guard_rank = int(data.get(guard_rank_key, "1"))
                         guard_count = int(data.get(guard_count_key, "0"))
-                        # Validate rank (1-4) and count (0-20)
+                        guard_patrol_radius = int(data.get(guard_patrol_radius_key, "5"))
+                        # Validate rank (1-4), count (0-20), and patrol_radius (3-20)
                         guard_rank = max(1, min(4, guard_rank))
                         guard_count = max(0, min(20, guard_count))
-                        new_guards.append(Guard(guard_type=guard_type, rank=guard_rank, count=guard_count))
+                        guard_patrol_radius = max(3, min(20, guard_patrol_radius))
+                        new_guards.append(Guard(guard_type=guard_type, rank=guard_rank, count=guard_count, patrol_radius=guard_patrol_radius))
                     except ValueError:
                         # Use default values if parsing fails
-                        new_guards.append(Guard(guard_type=guard_type, rank=1, count=0))
+                        new_guards.append(Guard(guard_type=guard_type, rank=1, count=0, patrol_radius=5))
 
             # Update if guards have changed
             if new_guards:
@@ -392,7 +395,8 @@ class MapEditor:
                     for i, (new_guard, old_guard) in enumerate(zip(new_guards, self._editing_location.guards)):
                         if (new_guard.guard_type != old_guard.guard_type or
                             new_guard.rank != old_guard.rank or
-                            new_guard.count != old_guard.count):
+                            new_guard.count != old_guard.count or
+                            new_guard.patrol_radius != old_guard.patrol_radius):
                             guards_updated = True
                             break
 

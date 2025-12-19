@@ -166,13 +166,15 @@ class Guard:
     guard_type: str = GUARD_NONE  # Type of guard (warrior, mage, shadow_adept, hunter)
     rank: int = 1  # Guard rank (1-4)
     count: int = 0  # Number of guards (0-20)
+    patrol_radius: int = 5  # Patrol radius (3-20)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for saving."""
         return {
             'type': self.guard_type,
             'rank': self.rank,
-            'count': self.count
+            'count': self.count,
+            'patrol_radius': self.patrol_radius
         }
 
     @classmethod
@@ -181,7 +183,8 @@ class Guard:
         return cls(
             guard_type=data.get('type', GUARD_NONE),
             rank=data.get('rank', 1),
-            count=data.get('count', 0)
+            count=data.get('count', 0),
+            patrol_radius=data.get('patrol_radius', 5)
         )
 
     def is_empty(self) -> bool:
