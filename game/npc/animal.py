@@ -66,6 +66,15 @@ class Animal(NPC):
         pass
 
     def update_ai(self, context_or_map, all_npcs=None, player=None, current_hour=12):
+        """
+        Обновление AI животного за 1 час игрового времени
+
+        Args:
+            context_or_map: AIContext или объект карты игры
+            all_npcs: Список всех NPC для поиска врагов (опционально при AIContext)
+            player: Объект игрока (опционально при AIContext)
+            current_hour: Текущий час суток 0-23 (опционально при AIContext)
+        """
         # Поддержка AIContext и старого способа вызова
         from game.core.ai_context import AIContext
         if isinstance(context_or_map, AIContext):
@@ -76,15 +85,6 @@ class Animal(NPC):
             current_hour = context.current_hour
         else:
             game_map = context_or_map
-        """
-        Обновление AI животного за 1 час игрового времени
-
-        Args:
-            game_map: Объект карты игры
-            all_npcs: Список всех NPC для поиска врагов
-            player: Объект игрока
-            current_hour: Текущий час суток (0-23)
-        """
         if not self.is_alive:
             return
 
@@ -164,14 +164,14 @@ class Animal(NPC):
                 # Был атакован - защищаемся
                 should_react = True
             elif spawn_point_attitude <= -10:
-                # Очень агрессивная зона - преследуем игрока на большом расстоянии
-                if distance <= self.detection_range * 2:
+                # Очень агрессивная зона - преследуем игрока в радиусе 4 клеток
+                if distance <= 4:
                     should_react = True
                     # Увеличиваем дальность преследования
                     self.max_pursuit_steps = 30
             elif spawn_point_attitude < -5:
                 # Агрессивная зона - атакуем, если игрок проходит мимо
-                if distance <= self.detection_range:
+                if distance <= 4:
                     should_react = True
 
             if should_react and distance < closest_distance:
@@ -212,7 +212,6 @@ class Animal(NPC):
             # Случайное блуждание
             if not self.wander_target or (self.x, self.y) == self.wander_target:
                 # Выбираем новую цель в пределах радиуса патрулирования
-                angle = random.uniform(0, 2 * 3.14159)
                 min_radius = min(5, self.patrol_radius)
                 radius = random.randint(min_radius, max(min_radius, self.patrol_radius))
                 target_x = self.spawn_x + int(radius * random.choice([-1, 1]))
@@ -309,8 +308,8 @@ class Animal(NPC):
         # Проверяем расстояние до врага
         distance = abs(self.x - self.target_enemy.x) + abs(self.y - self.target_enemy.y)
 
-        if distance > self.detection_range * 2:
-            # Враг слишком далеко, прекращаем преследование
+        if distance > 4:
+            # Враг слишком далеко (больше 4 клеток), прекращаем преследование
             self.pursuit_counter = 0
             self.state = self.behavior_mode
             self.target_enemy = None
