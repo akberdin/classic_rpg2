@@ -596,6 +596,10 @@ class Game:
             if not npc.is_alive:
                 continue
 
+            # Не взаимодействуем со скрытыми NPC (работа/отдых в локации)
+            if npc.is_hidden():
+                continue
+
             distance = abs(self.player.x - npc.x) + abs(self.player.y - npc.y)
             if distance <= 1:  # Соседняя клетка
                 nearby_npcs.append(npc)

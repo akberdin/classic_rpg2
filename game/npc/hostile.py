@@ -180,6 +180,10 @@ class Bandit(NPC):
                 if not npc.is_alive:
                     continue
 
+                # Не атакуем скрытых NPC (работа/отдых в локации)
+                if npc.is_hidden():
+                    continue
+
                 # Пропускаем самого себя
                 if npc is self:
                     continue
@@ -522,6 +526,10 @@ class Undead(NPC):
                 if not npc.is_alive:
                     continue
 
+                # Не атакуем скрытых NPC (работа/отдых в локации)
+                if npc.is_hidden():
+                    continue
+
                 # Нежита не атакует другую нежить
                 if npc.npc_type == NPC_TYPE_UNDEAD:
                     continue
@@ -839,6 +847,10 @@ class ShadowAdept(NPC):
         if all_npcs:
             for npc in all_npcs:
                 if not npc.is_alive:
+                    continue
+
+                # Не атакуем скрытых NPC (работа/отдых в локации)
+                if npc.is_hidden():
                     continue
 
                 if npc is self:
