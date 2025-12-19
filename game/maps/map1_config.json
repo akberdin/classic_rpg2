@@ -14,12 +14,16 @@
         {
           "type": "warrior",
           "rank": 2,
-          "count": 2
+          "count": 2,
+          "patrol_radius": 5,
+          "respawn_time": 0
         },
         {
           "type": "warrior",
           "rank": 3,
-          "count": 1
+          "count": 1,
+          "patrol_radius": 5,
+          "respawn_time": 0
         }
       ],
       "connections": [
@@ -28,12 +32,8 @@
           22
         ],
         [
-          17,
-          9
-        ],
-        [
           9,
-          15
+          17
         ]
       ]
     },
@@ -43,30 +43,30 @@
       "type": "mine",
       "name": "Железная жила",
       "id": "97a39aea-b225-4613-a114-f8106e7daa18",
-      "player_attitude": 0,
+      "player_attitude": -9,
       "spawn_radius": 3,
       "rank": 2,
-      "miners_count": 2,
+      "miners_count": 0,
       "respawn_time": 35,
-      "resource_type": "copper",
+      "resource_type": "iron",
       "connections": [
         [
-          21,
-          17
+          29,
+          11
         ]
       ]
     },
     {
       "x": 9,
-      "y": 15,
+      "y": 17,
       "type": "mine",
       "name": "Медный рудник",
       "id": "e1f7c97b-359d-4f8b-bc0d-038bfd77a989",
       "player_attitude": 0,
-      "spawn_radius": 5,
+      "spawn_radius": 3,
       "rank": 1,
       "miners_count": 1,
-      "respawn_time": 95,
+      "respawn_time": 60,
       "resource_type": "copper",
       "connections": [
         [
@@ -88,6 +88,10 @@
         [
           29,
           22
+        ],
+        [
+          17,
+          9
         ]
       ]
     },
@@ -104,7 +108,37 @@
         {
           "type": "warrior",
           "rank": 4,
-          "count": 5
+          "count": 5,
+          "patrol_radius": 6,
+          "respawn_time": 30
+        },
+        {
+          "type": "mage",
+          "rank": 3,
+          "count": 1,
+          "patrol_radius": 7,
+          "respawn_time": 30
+        },
+        {
+          "type": "shadow_adept",
+          "rank": 1,
+          "count": 1,
+          "patrol_radius": 4,
+          "respawn_time": 150
+        },
+        {
+          "type": "hunter",
+          "rank": 1,
+          "count": 1,
+          "patrol_radius": 10,
+          "respawn_time": 20
+        },
+        {
+          "type": "warrior",
+          "rank": 3,
+          "count": 3,
+          "patrol_radius": 8,
+          "respawn_time": 20
         }
       ],
       "connections": [
@@ -117,6 +151,17 @@
           17
         ]
       ]
+    },
+    {
+      "x": 9,
+      "y": 8,
+      "type": "spawn_wolf",
+      "name": "Волчье логово",
+      "id": "373df51e-3e7a-4d6b-9403-753552966dc5",
+      "player_attitude": -10,
+      "spawn_radius": 10,
+      "animal_count": 6,
+      "respawn_time": 20
     }
   ],
   "starting_village": {
