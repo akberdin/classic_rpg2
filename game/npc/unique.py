@@ -363,14 +363,19 @@ class Hunter(NPC):
 
     def _adjust_hunter_stats(self):
         """Настройка характеристик охотника"""
-        # Охотники ловкие и наблюдательные (макс +5% для баланса)
-        self.dexterity = int(self.dexterity * 1.05)
-        self.luck = int(self.luck * 1.05)
-        self.strength = int(self.strength * 1.04)
-        self.constitution = int(self.constitution * 1.03)
-        # Средний интеллект и дух
-        self.intelligence = int(self.intelligence * 0.9)
-        self.spirit = int(self.spirit * 0.9)
+        # Охотники - ловкие следопыты с хорошей выносливостью
+        # Фокус на ловкости и телосложении (+30% для баланса с другими классами)
+        self.dexterity = int(self.dexterity * 1.30)  # +30% к ловкости (основная характеристика)
+        self.constitution = int(self.constitution * 1.30)  # +30% к телосложению (основная характеристика)
+
+        # Небольшой бонус к силе и удаче
+        self.strength = int(self.strength * 1.10)  # +10% к силе
+        self.luck = int(self.luck * 1.10)  # +10% к удаче
+
+        # Снижаем магические характеристики
+        self.intelligence = int(self.intelligence * 0.7)  # -30% к интеллекту
+        self.spirit = int(self.spirit * 0.7)  # -30% к духу
+
         self.update_derived_stats()
 
         # Охотники дружелюбны к игрокам
@@ -477,6 +482,10 @@ class Hunter(NPC):
             self.steps_in_current_state = 0
             return
 
+        # Проверяем выносливость перед движением
+        if not self.consume_stamina():
+            return  # Нет выносливости - стоим на месте и восстанавливаемся
+
         # Случайное движение
         dx = random.choice([-1, 0, 1])
         dy = random.choice([-1, 0, 1])
@@ -534,6 +543,10 @@ class Hunter(NPC):
                     self.steps_in_current_state = 0
             return
 
+        # Проверяем выносливость перед движением
+        if not self.consume_stamina():
+            return  # Нет выносливости - стоим на месте и восстанавливаемся
+
         # Двигаемся к цели
         dx, dy = self._find_next_step(
             self.hunt_target.x, self.hunt_target.y, game_map
@@ -574,6 +587,10 @@ class Hunter(NPC):
             self.state = "patrol"
             self.steps_in_current_state = 0
             return
+
+        # Проверяем выносливость перед движением
+        if not self.consume_stamina():
+            return  # Нет выносливости - стоим на месте и восстанавливаемся
 
         dx, dy = self._find_next_step(self.home_x, self.home_y, game_map)
         if dx != 0 or dy != 0:
