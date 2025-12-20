@@ -107,9 +107,6 @@ class HUDRenderer:
         # Серия убийств (если активна)
         self._render_killstreak(ui_y)
 
-        # Индикатор нераспределённых очков
-        self._render_stat_points_indicator(ui_y)
-
         # Отрисовка всплывающих подсказок (в конце, чтобы они были поверх всего)
         self._render_tooltips()
 
@@ -223,20 +220,6 @@ class HUDRenderer:
             )
             time_gold_x = self.ctx.window_width - self.ui_scaler.scale_width(350)
             self.screen.blit(streak_text, (time_gold_x, ui_y + 25))
-
-    def _render_stat_points_indicator(self, ui_y):
-        """Отрисовка индикатора нераспределённых очков характеристик."""
-        if self.player.stat_points > 0:
-            # Мигающий индикатор
-            indicator_text = self.info_font.render(
-                f"+{self.player.stat_points}",
-                True,
-                (100, 255, 100)
-            )
-            # Располагаем рядом с кнопкой "Характеристики"
-            if 'character' in self.menu_button_rects:
-                rect = self.menu_button_rects['character']
-                self.screen.blit(indicator_text, (rect.right + 5, rect.top + 2))
 
     def _render_skill_panel(self, start_x, ui_y):
         """
@@ -490,8 +473,14 @@ class HUDRenderer:
             # Проверка наведения
             is_hovered = rect.collidepoint(mouse_pos)
 
-            # Цвета в зависимости от наведения
-            if is_hovered:
+            # Специальная обработка кнопки характеристик при наличии свободных очков
+            has_stat_points = button['action'] == 'character' and self.player.stat_points > 0
+
+            # Цвета в зависимости от наведения и наличия очков
+            if has_stat_points:
+                bg_color = (40, 80, 40) if not is_hovered else (60, 120, 60)
+                border_color = (100, 200, 100)
+            elif is_hovered:
                 bg_color = (70, 70, 80)
                 border_color = (150, 150, 180)
                 self.hovered_menu_button = button
@@ -499,13 +488,19 @@ class HUDRenderer:
                 bg_color = (45, 45, 55)
                 border_color = (80, 80, 100)
 
+            if is_hovered:
+                self.hovered_menu_button = button
+
             # Фон кнопки
             pygame.draw.rect(self.screen, bg_color, rect, border_radius=4)
             pygame.draw.rect(self.screen, border_color, rect, 1, border_radius=4)
 
-            # Текст клавиши
+            # Текст клавиши (или "+" для характеристик при наличии очков)
             small_font = pygame.font.Font(None, self.ui_scaler.scale_value(16))
-            key_text = small_font.render(button['key'], True, (200, 200, 200) if is_hovered else (150, 150, 150))
+            if has_stat_points:
+                key_text = small_font.render("+", True, (100, 255, 100))
+            else:
+                key_text = small_font.render(button['key'], True, (200, 200, 200) if is_hovered else (150, 150, 150))
             key_rect = key_text.get_rect(center=rect.center)
             self.screen.blit(key_text, key_rect)
 
