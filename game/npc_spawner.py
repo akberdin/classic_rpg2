@@ -33,9 +33,30 @@ class NPCSpawner:
         Returns:
             dict: Словарь со списками NPC по типам
         """
+        # Получаем всех стражей из конфигурации
+        all_guards = self.spawn_guards()
+
+        # Разделяем стражей по типам для правильной работы AI системы
+        guards = []  # Только warrior
+        mages = []   # Только mage
+        hunters = [] # Только hunter
+        shadow_adepts_from_guards = []  # Только shadow_adept
+
+        for guard in all_guards:
+            if guard.npc_type == 'mage':
+                mages.append(guard)
+            elif guard.npc_type == 'hunter':
+                hunters.append(guard)
+            elif guard.npc_type == 'shadow_adept':
+                shadow_adepts_from_guards.append(guard)
+            else:  # guard (warrior)
+                guards.append(guard)
+
         npcs = {
-            'guards': self.spawn_guards(),  # Система спавна стражи на основе конфигурации guards
+            'guards': guards,
             'merchants': [],  # Временно отключено
+            'mages': mages,
+            'hunters': hunters,
             'bandits': self.spawn_bandits(),
             'miners': self.spawn_miners(),
             'undead': self.spawn_undead(),
@@ -43,6 +64,12 @@ class NPCSpawner:
             'necromancers': self.spawn_necromancers(),
             'animals': self.spawn_animals()
         }
+
+        # Добавляем shadow_adepts, если они есть
+        if shadow_adepts_from_guards:
+            # В NPCManager нет отдельного типа для shadow_adept,
+            # поэтому добавляем их к guards для совместимости
+            npcs['guards'].extend(shadow_adepts_from_guards)
 
         # УСТАРЕВШИЕ методы spawn_mages(), spawn_shadow_adepts(), spawn_hunters() удалены
         # Эти типы NPC (warrior, mage, shadow_adept, hunter) теперь создаются
