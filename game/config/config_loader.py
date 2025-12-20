@@ -366,37 +366,6 @@ class AssetsConfig(ConfigLoader):
         return self.get('sprite_size', default=default)
 
 
-class QuestConfig(ConfigLoader):
-    """Конфигурация системы квестов"""
-
-    def __init__(self):
-        super().__init__('quest_config')
-
-    def get_quest_limit(self, param_name: str, default=None):
-        """Получить параметр лимитов квестов"""
-        return self.get('quest_limits', param_name, default=default)
-
-    def get_rank_threshold(self, param_name: str, default=None):
-        """Получить порог ранга"""
-        return self.get('rank_thresholds', param_name, default=default)
-
-    def get_unique_quest_probability(self, location_type: str, default=None):
-        """Получить вероятность уникального квеста для локации"""
-        return self.get('unique_quest_probabilities', location_type, default=default)
-
-    def get_quest_amount(self, quest_type: str, difficulty: str, default=None):
-        """Получить количество целей для квеста"""
-        return self.get('quest_amounts', quest_type, difficulty, default=default)
-
-    def get_reward_param(self, quest_type: str, param_name: str, default=None):
-        """Получить параметр наград для квеста"""
-        return self.get('rewards', quest_type, param_name, default=default)
-
-    def get_difficulty_resources(self, difficulty: str, default=None):
-        """Получить список ресурсов для сложности"""
-        return self.get('difficulty_ranges', f'{difficulty}_resources', default=default or [])
-
-
 class GameConfig:
     """
     Главный класс конфигурации игры - агрегатор всех профильных конфигов
@@ -423,7 +392,7 @@ class GameConfig:
         self.world = WorldConfig()
         self.ui = UIConfig()
         self.assets = AssetsConfig()
-        self.quest = QuestConfig()
+        # Система квестов на переработке - QuestConfig удален
 
         # Для обратной совместимости загружаем старый balance_config если он есть
         self._legacy_config = self._load_legacy_config()
@@ -613,6 +582,5 @@ def get_assets_config() -> AssetsConfig:
     """Получить конфигурацию ассетов"""
     return get_config().assets
 
-def get_quest_config() -> QuestConfig:
-    """Получить конфигурацию квестов"""
-    return get_config().quest
+
+# Система квестов на переработке - get_quest_config удален

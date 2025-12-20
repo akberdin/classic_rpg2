@@ -121,13 +121,13 @@ class GameContext:
 
     @property
     def quest_manager(self):
-        """Получить менеджер квестов."""
-        return getattr(self._game, 'quest_manager', None)
+        """Получить менеджер квестов (система квестов на переработке)."""
+        return None
 
     @property
     def achievement_manager(self):
-        """Получить менеджер достижений."""
-        return getattr(self._game, 'achievement_manager', None)
+        """Получить менеджер достижений (система квестов на переработке)."""
+        return None
 
     @property
     def performance_optimizer(self):

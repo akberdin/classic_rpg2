@@ -37,17 +37,15 @@ class LootSystem:
 
         return cls._config_cache
 
-    def __init__(self, player, quest_manager=None, killstreak_system=None):
+    def __init__(self, player, killstreak_system=None):
         """
         Инициализация системы лута.
 
         Args:
             player: Объект игрока
-            quest_manager: Менеджер квестов (опционально)
             killstreak_system: Система серий убийств (опционально)
         """
         self.player = player
-        self.quest_manager = quest_manager
         self.killstreak_system = killstreak_system
         self.config = self._load_config()
 
@@ -295,18 +293,8 @@ class LootSystem:
         for item, quantity in loot_items:
             self.player.inventory.add_item(item, quantity)
 
-            # Обновляем прогресс квестов на сбор для частей животных
-            if self.quest_manager and hasattr(item, 'name'):
-                item_key = self._get_item_key_by_name(item.name)
-                if item_key:
-                    self.quest_manager.update_gather_progress(item_key, quantity, self.player)
-
         # Обновляем статистику игрока
         self._update_kill_stats(enemy)
-
-        # Обновляем квесты
-        if self.quest_manager and hasattr(enemy, 'npc_type'):
-            self._update_quest_progress(enemy.npc_type)
 
         return result
 
@@ -348,15 +336,3 @@ class LootSystem:
         item_name_to_key = self.config.get('item_name_to_key', {})
         return item_name_to_key.get(item_name)
 
-    def _update_quest_progress(self, enemy_type):
-        """Обновить прогресс квестов на убийство."""
-        if not self.quest_manager:
-            return
-
-        # Типы врагов, которые отслеживаются квестами
-        quest_enemy_types = ['bandit', 'undead', 'wolf', 'bear', 'deer', 'necromancer']
-
-        if enemy_type in quest_enemy_types:
-            messages = self.quest_manager.update_kill_progress(enemy_type)
-            for msg in messages:
-                print(f"  {msg}")

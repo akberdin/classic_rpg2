@@ -220,12 +220,10 @@ class SaveSystem:
                 'fog_of_war': SaveSystem._serialize_fog(game.fog_of_war),
             }
 
-            # Добавляем данные квестов если есть
-            if hasattr(game, 'quest_manager'):
-                save_data['quests'] = SaveSystem._serialize_quest_manager(game.quest_manager)
+            # Система квестов на переработке - сериализация квестов отключена
 
             # Добавляем данные достижений если есть
-            if hasattr(game, 'achievement_manager'):
+            if hasattr(game, 'achievement_manager') and game.achievement_manager:
                 save_data['achievements'] = SaveSystem._serialize_achievement_manager(game.achievement_manager)
 
             # Добавляем данные спутников если есть
@@ -439,14 +437,6 @@ class SaveSystem:
                     explored.append((x, y))
 
         return {'explored': explored}
-
-    @staticmethod
-    def _serialize_quest_manager(quest_manager):
-        """Сериализовать менеджер квестов"""
-        return {
-            'active_quests': [q.quest_id for q in quest_manager.active_quests],
-            'completed_quests': [q.quest_id for q in quest_manager.completed_quests],
-        }
 
     @staticmethod
     def _serialize_achievement_manager(achievement_manager):

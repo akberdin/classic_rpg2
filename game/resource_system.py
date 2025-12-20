@@ -38,21 +38,19 @@ ITEM_KEY_MAPPING = {
 class ResourceSystem:
     """Система сбора ресурсов с локаций"""
 
-    def __init__(self, player, game_map, quest_manager, game_time, start_combat_callback=None, resource_window_callback=None):
+    def __init__(self, player, game_map, game_time, start_combat_callback=None, resource_window_callback=None):
         """
         Инициализация системы ресурсов.
 
         Args:
             player: Объект игрока
             game_map: Карта игры
-            quest_manager: Менеджер квестов
             game_time: Система игрового времени
             start_combat_callback: Функция для начала боя
             resource_window_callback: Функция для показа окна сбора ресурсов
         """
         self.player = player
         self.game_map = game_map
-        self.quest_manager = quest_manager
         self.game_time = game_time
         self.start_combat_callback = start_combat_callback
         self.resource_window_callback = resource_window_callback
@@ -115,14 +113,12 @@ class ResourceSystem:
         # Помечаем локацию как обыскованную
         location.loot_collected = True
 
-        # Обновляем прогресс квеста "Охотник за сокровищами"
+        # Обновляем статистику сбора ресурсов
         self.player.resources_collected += 1
-        self.quest_manager.update_quest_progress("treasure_hunter", 0, 1)
 
-        # Добавляем тип локации в посещенные и обновляем квест "Исследователь"
+        # Добавляем тип локации в посещенные
         if location.location_type not in self.player.visited_location_types:
             self.player.visited_location_types.add(location.location_type)
-            self.quest_manager.update_quest_progress("explorer_start", 0, 1)
 
         # Продвигаем время на 20 минут (1/3 часа)
         self.game_time.advance_time(1/3)
@@ -166,13 +162,6 @@ class ResourceSystem:
             else:
                 self.player.inventory.add_item(item, quantity)
                 collected_items.append((item, quantity))
-
-                # Обновляем прогресс квестов на сбор ресурсов
-                item_key = self.get_item_key(item.name)
-                if item_key:
-                    self.quest_manager.update_gather_progress(
-                        item_key, quantity, self.player
-                    )
 
         return collected_items, collected_gold
 
