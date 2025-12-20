@@ -446,9 +446,14 @@ class DungeonRenderer:
 
                 pygame.draw.rect(self.screen, color, (px, py, pixel_w, pixel_h))
 
-        # Рисуем обнаруженные ловушки
+        # Рисуем обнаруженные ловушки (только на исследованных клетках)
         for trap in dungeon.trap_manager.traps:
             if trap.is_detected:
+                # Проверяем, что клетка была исследована игроком
+                tile = dungeon.get_tile(trap.x, trap.y)
+                if not tile or not tile.explored:
+                    continue
+
                 trap_px = x + trap.x * pixel_w
                 trap_py = y + trap.y * pixel_h
 
@@ -465,9 +470,14 @@ class DungeonRenderer:
                 pygame.draw.rect(self.screen, trap_color,
                                (marker_x, marker_y, marker_size, marker_size))
 
-        # Рисуем обнаруженные тайники
+        # Рисуем обнаруженные тайники (только на исследованных клетках)
         for stash in dungeon.stash_manager.stashes:
             if stash.is_detected and not stash.is_looted:
+                # Проверяем, что клетка была исследована игроком
+                tile = dungeon.get_tile(stash.x, stash.y)
+                if not tile or not tile.explored:
+                    continue
+
                 stash_px = x + stash.x * pixel_w
                 stash_py = y + stash.y * pixel_h
 
@@ -594,13 +604,11 @@ class DungeonRenderer:
         if target_info is None:
             return
 
-        # Размеры и позиция панели (справа)
-        # Миникарта: y=10, h=180, легенда: y=200, h~100
-        # Панель NPC должна быть ниже легенды
+        # Размеры и позиция панели (правый верхний угол - где раньше была мини-карта)
         panel_width = 200
         panel_height = 180
         panel_x = self.screen.get_width() - panel_width - 10
-        panel_y = 310  # Под мини-картой и легендой (10+180+10+100+10=310)
+        panel_y = 10  # Верхний угол
 
         # Фон панели
         panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
