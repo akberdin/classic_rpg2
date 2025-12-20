@@ -364,73 +364,16 @@ class InputHandler:
                 print("Нельзя уйти! Враг уже напал на вас!")
 
     def handle_unique_npc_quest(self):
-        """Обработка получения квеста от уникального NPC"""
-        from game.quest_system.generators.npc import create_alchemist_npc_quests, create_hunter_npc_quests
-
+        """Обработка получения квеста от уникального NPC (система квестов на переработке)"""
         if not self.ctx.nearby_npc:
             return
-
-        npc_type = self.ctx.nearby_npc.npc_type
-        npc_name = self.ctx.nearby_npc.name
-
-        # Генерируем квесты в зависимости от типа NPC
-        if npc_type == "alchemist":
-            quests = create_alchemist_npc_quests(npc_name)
-        elif npc_type == "hunter":
-            quests = create_hunter_npc_quests(npc_name)
-        else:
-            print(f"{npc_name} не даёт квесты.")
-            return
-
-        if not quests:
-            print(f"У {npc_name} нет доступных квестов.")
-            return
-
-        # Пытаемся принять первый доступный квест
-        if not self.ctx.quest_manager.can_accept_quest():
-            print("У вас уже максимум активных квестов!")
-            return
-
-        quest = quests[0]
-        self.ctx.quest_manager.add_available_quest(quest)
-        success, message = self.ctx.quest_manager.accept_quest(quest.quest_id, player=self.ctx.player)
-        print(message)
+        print(f"Система квестов на переработке. {self.ctx.nearby_npc.name} пока не даёт квесты.")
 
     def handle_turn_in_quest(self):
-        """Обработка сдачи квеста уникальному NPC"""
+        """Обработка сдачи квеста уникальному NPC (система квестов на переработке)"""
         if not self.ctx.nearby_npc:
             return
-
-        npc_name = self.ctx.nearby_npc.name
-
-        # Сначала проверяем прогресс всех квестов
-        self.ctx.quest_manager.check_all_quest_progress(self.ctx.player)
-
-        # Ищем квесты готовые к сдаче у этого NPC
-        ready_quests = []
-        for quest in self.ctx.quest_manager.active_quests:
-            # Проверяем статус завершения
-            quest.check_completion()
-
-            if quest.is_ready_to_turn_in():
-                # Стартовые квесты можно сдать любому NPC
-                if quest.is_starter or quest.giver_location == "Любая локация":
-                    ready_quests.append(quest)
-                # Обычные квесты - только тому NPC, который их дал
-                elif quest.giver_location == npc_name:
-                    ready_quests.append(quest)
-
-        if not ready_quests:
-            print(f"У вас нет квестов готовых к сдаче для {npc_name}.")
-            return
-
-        # Сдаём все готовые квесты
-        for quest in ready_quests:
-            success, messages = self.ctx.quest_manager.complete_quest(quest.quest_id, self.ctx.player)
-            if success:
-                print(f"Квест '{quest.name}' завершён!")
-                for msg in messages:
-                    print(f"  {msg}")
+        print("Система квестов на переработке. Сдача квестов недоступна.")
 
     def handle_magic_training(self):
         """Обработка магического обучения от мага"""
@@ -612,9 +555,8 @@ class InputHandler:
                             else:
                                 print(f"Вы продали {item.name} x{actual_sell_quantity} за {total_price} золота")
 
-                            # Обновляем прогресс квеста "Начинающий торговец"
+                            # Обновляем статистику продаж
                             self.ctx.player.items_sold += actual_sell_quantity
-                            self.ctx.quest_manager.update_quest_progress("merchant", 0, actual_sell_quantity)
 
                             # Предупреждаем, если не удалось продать весь стэк
                             if sell_all and actual_sell_quantity < sell_quantity:
@@ -717,9 +659,8 @@ class InputHandler:
                     else:
                         print(f"Вы продали {item.name} x{actual_sell_quantity} за {total_price} золота")
 
-                    # Обновляем прогресс квеста "Начинающий торговец"
+                    # Обновляем статистику продаж
                     self.ctx.player.items_sold += actual_sell_quantity
-                    self.ctx.quest_manager.update_quest_progress("merchant", 0, actual_sell_quantity)
 
                     # Предупреждаем, если не удалось продать весь стэк
                     if sell_all and actual_sell_quantity < sell_quantity:
@@ -1111,13 +1052,6 @@ class InputHandler:
                     result = self.ctx.player.skill_manager.use_skill_from_slot(slot_index)
                     print(result['message'])
 
-                    # Обновляем прогресс квестов при добыче ресурсов
-                    if result.get('success') and 'gathered' in result:
-                        for item_key, quantity in result['gathered']:
-                            messages = self.ctx.quest_manager.update_gather_progress(item_key, quantity, self.ctx.player)
-                            for msg in messages:
-                                print(f"  {msg}")
-
                     # Использование рабочего умения затрачивает стандартный ход (20 минут)
                     # Магические умения восстановления не затрачивают дополнительное время
                     if result.get('success') and skill.category.value == 'crafting':
@@ -1287,7 +1221,7 @@ class InputHandler:
 
     def handle_quest_input(self, key):
         """
-        Обработка ввода в окне квестов
+        Обработка ввода в окне квестов (система квестов на переработке)
 
         Args:
             key: Нажатая клавиша
@@ -1305,72 +1239,17 @@ class InputHandler:
             self.ctx.quest_window.scroll_offset = 0
             return
 
-        # Навигация по списку
-        quests = self.ctx.quest_window.get_current_list()
-        if key == pygame.K_UP or key == pygame.K_w:
-            if quests:
-                self.ctx.quest_window.selected_index = max(0, self.ctx.quest_window.selected_index - 1)
-        elif key == pygame.K_DOWN or key == pygame.K_s:
-            if quests:
-                self.ctx.quest_window.selected_index = min(len(quests) - 1, self.ctx.quest_window.selected_index + 1)
-        elif key == pygame.K_RETURN:
-            # Принять или сдать квест
-            quest = self.ctx.quest_window.get_selected_quest()
-            if quest:
-                if self.ctx.quest_window.mode == "available":
-                    # Принять квест
-                    success, message = self.ctx.quest_manager.accept_quest(
-                        quest.quest_id,
-                        self.ctx.quest_window.location_id,
-                        self.ctx.player
-                    )
-                    print(message)
-                    if success:
-                        # Обновляем данные окна
-                        self._refresh_quest_window()
-                elif self.ctx.quest_window.mode == "turn_in":
-                    # Сдать квест
-                    success, messages = self.ctx.quest_manager.complete_quest(
-                        quest.quest_id,
-                        self.ctx.player
-                    )
-                    if success:
-                        print(f"Квест '{quest.name}' завершён!")
-                        for msg in messages:
-                            print(f"  {msg}")
-                        # Обновляем данные окна
-                        self._refresh_quest_window()
-                    else:
-                        print("Не удалось сдать квест")
-        elif key == pygame.K_DELETE:
-            # Отменить квест (только для активных)
-            if self.ctx.quest_window.mode == "active":
-                quest = self.ctx.quest_window.get_selected_quest()
-                if quest:
-                    success, message = self.ctx.quest_manager.abandon_quest(quest.quest_id)
-                    print(message)
-                    if success:
-                        # Обновляем данные окна
-                        self._refresh_quest_window()
+        # Система квестов на переработке - действия недоступны
 
     def _refresh_quest_window(self):
-        """Обновить данные в окне квестов"""
-        location_id = self.ctx.quest_window.location_id
-        location_name = self.ctx.quest_window.location_name
-
-        # Проверяем прогресс всех квестов на сбор ресурсов
-        self.ctx.quest_manager.check_all_quest_progress(self.ctx.player)
-
-        available_quests = self.ctx.quest_manager.get_location_quests(location_id)
-        active_quests = self.ctx.quest_manager.get_active_quests()
-        turn_in_quests = self.ctx.quest_manager.get_quests_ready_to_turn_in(location_id)
-
+        """Обновить данные в окне квестов (система квестов на переработке)"""
+        # Система квестов на переработке - окно показывает пустые списки
         self.ctx.quest_window.set_data(
-            location_name,
-            location_id,
-            available_quests,
-            active_quests,
-            turn_in_quests
+            self.ctx.quest_window.location_name,
+            self.ctx.quest_window.location_id,
+            [],
+            [],
+            []
         )
 
     def route_menu_event(self, event, quest_action_handler=None):

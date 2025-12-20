@@ -54,15 +54,7 @@ class GameTime:
         self.game_hour += hours
         self.game_turn += 1  # Увеличиваем счетчик ходов
 
-        # Проверяем и обновляем квесты каждый ход (но ротация происходит раз в 120 ходов)
-        if self.ctx.quest_manager and self.ctx.game_map:
-            updated_locations = self.ctx.quest_manager.check_and_rotate_all_quests(
-                self.ctx.game_map,
-                self.game_turn,
-                self.ctx.player.level
-            )
-            if updated_locations:
-                print(f"Квесты обновлены в следующих локациях: {', '.join(updated_locations)}")
+        # Система квестов на переработке - ротация квестов отключена
 
         # Если прошло 24 часа, начинается новый день
         while self.game_hour >= 24:

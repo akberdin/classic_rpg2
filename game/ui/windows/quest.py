@@ -1,12 +1,14 @@
 """
 Окно квестов.
+
+Система квестов на переработке - окно показывает заглушку.
 """
 import pygame
 from game.ui.base import UIHelper
 
 
 class QuestWindow:
-    """Окно квестов города"""
+    """Окно квестов (система квестов на переработке)"""
 
     def __init__(self, screen, font, info_font, ui_scaler=None):
         """
@@ -92,10 +94,8 @@ class QuestWindow:
             game: Объект игры
 
         Returns:
-            str: Действие для выполнения ('accept', 'turn_in', 'abandon') или None
+            str: Действие для выполнения или None
         """
-        import pygame
-
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = event.pos
 
@@ -108,38 +108,6 @@ class QuestWindow:
                     self.scroll_offset = 0
                     return None
 
-            # Проверяем клик по квестам
-            for i, rect in enumerate(self.quest_rects):
-                if rect.collidepoint(mouse_pos):
-                    quest_idx = i + self.scroll_offset
-                    quests = self.get_current_list()
-                    if quest_idx < len(quests):
-                        self.selected_index = quest_idx
-
-                        # Левая кнопка - выбор, двойной клик - действие
-                        if event.button == 1:
-                            # Проверяем двойной клик
-                            if hasattr(self, '_last_click_time'):
-                                import time
-                                if time.time() - self._last_click_time < 0.3:
-                                    # Двойной клик - выполняем действие
-                                    if self.mode == "available":
-                                        return 'accept'
-                                    elif self.mode == "turn_in":
-                                        return 'turn_in'
-                            import time
-                            self._last_click_time = time.time()
-
-                        # Правая кнопка - действие
-                        elif event.button == 3:
-                            if self.mode == "available":
-                                return 'accept'
-                            elif self.mode == "active":
-                                return 'abandon'
-                            elif self.mode == "turn_in":
-                                return 'turn_in'
-                    return None
-
             # Прокрутка колёсиком мыши
             if event.button == 4:  # Колёсико вверх
                 if self.scroll_offset > 0:
@@ -147,7 +115,6 @@ class QuestWindow:
                 return None
             elif event.button == 5:  # Колёсико вниз
                 quests = self.get_current_list()
-                # Определяем количество видимых квестов
                 if self.window_rect:
                     quest_height = 95
                     list_height = self.window_rect.height - 200
@@ -161,9 +128,6 @@ class QuestWindow:
 
     def render(self, player):
         """Отрисовать окно квестов"""
-        import pygame
-        from game.quest_system.models import QuestStatus
-
         # Затемняем фон
         overlay = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
         overlay.set_alpha(180)
@@ -217,16 +181,13 @@ class QuestWindow:
         title_rect.y = window_y + 15
         self.screen.blit(title_text, title_rect)
 
-        # Информация о лимите квестов
-        from game.config.config_loader import get_quest_config
-        config = get_quest_config()
-        max_active = config.get_quest_limit('max_active_quests', default=5)
-        limit_text = self.info_font.render(
-            f"Активных квестов: {len(self.active_quests)}/{max_active}",
+        # Информация о системе квестов
+        info_text = self.info_font.render(
+            "Система квестов на переработке",
             True,
-            (150, 150, 150)
+            (200, 150, 100)
         )
-        self.screen.blit(limit_text, (window_x + 20, window_y + 50))
+        self.screen.blit(info_text, (window_x + 20, window_y + 50))
 
         # Вкладки
         tab_y = window_y + 75
@@ -286,316 +247,29 @@ class QuestWindow:
             (window_x + 20, list_y, list_width, list_height)
         )
 
-        # Текущий список квестов
-        quests = self.get_current_list()
+        # Сообщение о переработке системы квестов
+        message_lines = [
+            "Система квестов находится на переработке.",
+            "",
+            "Новая система квестов будет доступна в следующем обновлении.",
+            "Приносим извинения за временные неудобства."
+        ]
 
-        if not quests:
-            no_quests_text = self.info_font.render(
-                "Нет доступных квестов" if self.mode == "available"
-                else "Нет активных квестов" if self.mode == "active"
-                else "Нет квестов для сдачи",
-                True,
-                (150, 150, 150)
-            )
-            no_quests_rect = no_quests_text.get_rect()
-            no_quests_rect.centerx = window_x + window_width // 2
-            no_quests_rect.centery = list_y + list_height // 2
-            self.screen.blit(no_quests_text, no_quests_rect)
-        else:
-            # Отображаем список квестов
-            quest_height = 95
-
-            # Для активных квестов используем два столбца
-            if self.mode == "active":
-                # Два столбца по 5 квестов
-                column_width = (list_width - 30) // 2
-                quests_per_column = 5
-                visible_quests = quests_per_column * 2
-
-                for i in range(min(visible_quests, len(quests))):
-                    quest_idx = i + self.scroll_offset
-                    if quest_idx >= len(quests):
-                        break
-
-                    quest = quests[quest_idx]
-
-                    # Определяем столбец и позицию в столбце
-                    column = i // quests_per_column
-                    row = i % quests_per_column
-
-                    quest_x = window_x + 25 + column * (column_width + 10)
-                    quest_y = list_y + row * quest_height
-
-                    # Сохраняем прямоугольник квеста
-                    quest_rect = pygame.Rect(quest_x, quest_y + 5, column_width - 10, quest_height - 10)
-                    self.quest_rects.append(quest_rect)
-
-                    # Фон элемента
-                    is_selected = quest_idx == self.selected_index
-                    is_unique = getattr(quest, 'is_unique', False)
-                    is_starter = getattr(quest, 'is_starter', False)
-
-                    # Цвет фона: уникальные - темно-красный, стартовые - темно-зеленый, обычные - серый
-                    if is_unique:
-                        bg_color = (70, 40, 40) if is_selected else (50, 30, 30)
-                    elif is_starter:
-                        bg_color = (40, 60, 40) if is_selected else (30, 45, 30)
-                    else:
-                        bg_color = (60, 60, 70) if is_selected else (40, 40, 45)
-
-                    pygame.draw.rect(
-                        self.screen,
-                        bg_color,
-                        (quest_x, quest_y + 5, column_width - 10, quest_height - 10)
-                    )
-
-                    # Рамка: уникальные - красная, стартовые - зеленая, выбранные - золотая
-                    if is_unique:
-                        border_color = (255, 100, 100) if is_selected else (200, 50, 50)
-                        pygame.draw.rect(
-                            self.screen,
-                            border_color,
-                            (quest_x, quest_y + 5, column_width - 10, quest_height - 10),
-                            3 if is_selected else 2
-                        )
-                    elif is_starter:
-                        border_color = (100, 255, 100) if is_selected else (50, 200, 50)
-                        pygame.draw.rect(
-                            self.screen,
-                            border_color,
-                            (quest_x, quest_y + 5, column_width - 10, quest_height - 10),
-                            3 if is_selected else 2
-                        )
-                    elif is_selected:
-                        pygame.draw.rect(
-                            self.screen,
-                            (255, 215, 0),
-                            (quest_x, quest_y + 5, column_width - 10, quest_height - 10),
-                            2
-                        )
-
-                    # Название квеста с цветом по типу
-                    difficulty_str = f" [{quest.difficulty.display_name}]" if hasattr(quest.difficulty, 'display_name') else ""
-                    if is_unique:
-                        name_color = (255, 150, 150)
-                    elif is_starter:
-                        name_color = (150, 255, 150)
-                    else:
-                        name_color = (255, 255, 255)
-
-                    # Укорачиваем название для компактности в двух столбцах
-                    max_name_len = 20
-                    quest_name = quest.name[:max_name_len] + "..." if len(quest.name) > max_name_len else quest.name
-                    name_text = self.font.render(
-                        f"{quest_name}",
-                        True,
-                        name_color
-                    )
-                    self.screen.blit(name_text, (quest_x + 10, quest_y + 10))
-
-                    # Описание (укороченное)
-                    max_desc_len = 30
-                    desc_text = self.info_font.render(
-                        quest.description[:max_desc_len] + "..." if len(quest.description) > max_desc_len else quest.description,
-                        True,
-                        (180, 180, 180)
-                    )
-                    self.screen.blit(desc_text, (quest_x + 10, quest_y + 32))
-
-                    # Цели
-                    if quest.objectives:
-                        from game.quest_system.models import QuestType
-                        from game.quest_system.quest_data import ITEM_KEY_TO_NAME
-                        obj = quest.objectives[0]
-
-                        # Для квестов на сбор ресурсов всегда показываем количество из инвентаря
-                        if quest.target_item and player:
-                            # Конвертируем английский ключ в русское название для поиска в инвентаре
-                            item_name = ITEM_KEY_TO_NAME.get(quest.target_item, quest.target_item)
-                            inventory_count = player.inventory.get_item_count(item_name)
-                            progress = f"{inventory_count}/{obj.required_count}"
-                            is_objective_complete = inventory_count >= obj.required_count
-                        else:
-                            progress = f"{obj.current_count}/{obj.required_count}"
-                            is_objective_complete = obj.is_completed()
-
-                        obj_text = self.info_font.render(
-                            f"({progress})",
-                            True,
-                            (100, 255, 100) if is_objective_complete else (200, 200, 100)
-                        )
-                        self.screen.blit(obj_text, (quest_x + 10, quest_y + 54))
-
-                    # Награды
-                    rewards_parts = []
-                    if 'exp' in quest.rewards:
-                        rewards_parts.append(f"{quest.rewards['exp']} XP")
-                    if 'gold' in quest.rewards:
-                        rewards_parts.append(f"{quest.rewards['gold']}g")
-                    rewards_str = " | ".join(rewards_parts)
-
-                    rewards_text = self.info_font.render(
-                        rewards_str,
-                        True,
-                        (255, 215, 0)
-                    )
-                    self.screen.blit(rewards_text, (quest_x + 10, quest_y + 76))
-            else:
-                # Для остальных режимов - один столбец
-                visible_quests = list_height // quest_height
-
-                for i in range(min(visible_quests, len(quests))):
-                    quest_idx = i + self.scroll_offset
-                    if quest_idx >= len(quests):
-                        break
-
-                    quest = quests[quest_idx]
-                    quest_y = list_y + i * quest_height
-
-                    # Сохраняем прямоугольник квеста
-                    quest_rect = pygame.Rect(window_x + 25, quest_y + 5, list_width - 10, quest_height - 10)
-                    self.quest_rects.append(quest_rect)
-
-                    # Фон элемента
-                    is_selected = quest_idx == self.selected_index
-                    is_unique = getattr(quest, 'is_unique', False)
-                    is_starter = getattr(quest, 'is_starter', False)
-
-                    # Цвет фона: уникальные - темно-красный, стартовые - темно-зеленый, обычные - серый
-                    if is_unique:
-                        bg_color = (70, 40, 40) if is_selected else (50, 30, 30)
-                    elif is_starter:
-                        bg_color = (40, 60, 40) if is_selected else (30, 45, 30)
-                    else:
-                        bg_color = (60, 60, 70) if is_selected else (40, 40, 45)
-
-                    pygame.draw.rect(
-                        self.screen,
-                        bg_color,
-                        (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10)
-                    )
-
-                    # Рамка: уникальные - красная, стартовые - зеленая, выбранные - золотая
-                    if is_unique:
-                        # Красная рамка для уникальных квестов (всегда)
-                        border_color = (255, 100, 100) if is_selected else (200, 50, 50)
-                        pygame.draw.rect(
-                            self.screen,
-                            border_color,
-                            (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10),
-                            3 if is_selected else 2
-                        )
-                    elif is_starter:
-                        # Зеленая рамка для стартовых квестов (всегда)
-                        border_color = (100, 255, 100) if is_selected else (50, 200, 50)
-                        pygame.draw.rect(
-                            self.screen,
-                            border_color,
-                            (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10),
-                            3 if is_selected else 2
-                        )
-                    elif is_selected:
-                        # Золотая рамка только для выбранных обычных квестов
-                        pygame.draw.rect(
-                            self.screen,
-                            (255, 215, 0),
-                            (window_x + 25, quest_y + 5, list_width - 10, quest_height - 10),
-                            2
-                        )
-
-                    # Название квеста с цветом по типу
-                    difficulty_str = f" [{quest.difficulty.display_name}]" if hasattr(quest.difficulty, 'display_name') else ""
-                    if is_unique:
-                        name_color = (255, 150, 150)  # Красноватый для уникальных
-                    elif is_starter:
-                        name_color = (150, 255, 150)  # Зеленоватый для стартовых
-                    else:
-                        name_color = (255, 255, 255)  # Белый для обычных
-
-                    name_text = self.font.render(
-                        f"{quest.name}{difficulty_str}",
-                        True,
-                        name_color
-                    )
-                    self.screen.blit(name_text, (window_x + 35, quest_y + 10))
-
-                    # Место выдачи квеста (если есть)
-                    if quest.giver_location:
-                        giver_text = self.info_font.render(
-                            f"Место: {quest.giver_location}",
-                            True,
-                            (150, 200, 255)
-                        )
-                        self.screen.blit(giver_text, (window_x + 35, quest_y + 32))
-                        desc_y_offset = 50
-                    else:
-                        desc_y_offset = 32
-
-                    # Описание
-                    desc_text = self.info_font.render(
-                        quest.description[:60] + "..." if len(quest.description) > 60 else quest.description,
-                        True,
-                        (180, 180, 180)
-                    )
-                    self.screen.blit(desc_text, (window_x + 35, quest_y + desc_y_offset))
-
-                    # Цели и награды
-                    if quest.objectives:
-                        from game.quest_system.models import QuestType
-                        from game.quest_system.quest_data import ITEM_KEY_TO_NAME
-                        obj = quest.objectives[0]
-
-                        # Для квестов где требуются предметы, показываем количество в инвентаре
-                        # Это включает квесты на сбор ресурсов и квесты на убийство животных (части животных)
-                        if quest.target_item and player:
-                            # Конвертируем английский ключ в русское название для поиска в инвентаре
-                            item_name = ITEM_KEY_TO_NAME.get(quest.target_item, quest.target_item)
-                            inventory_count = player.inventory.get_item_count(item_name)
-                            progress = f"{inventory_count}/{obj.required_count}"
-                            is_objective_complete = inventory_count >= obj.required_count
-                        else:
-                            progress = f"{obj.current_count}/{obj.required_count}"
-                            is_objective_complete = obj.is_completed()
-
-                        obj_text = self.info_font.render(
-                            f"Цель: {obj.description[:30]}... ({progress})" if len(obj.description) > 30
-                            else f"Цель: {obj.description} ({progress})",
-                            True,
-                            (100, 255, 100) if is_objective_complete else (200, 200, 100)
-                        )
-                        obj_y_offset = desc_y_offset + 22
-                        self.screen.blit(obj_text, (window_x + 35, quest_y + obj_y_offset))
-
-                    # Награды (справа)
-                    rewards_parts = []
-                    if 'exp' in quest.rewards:
-                        rewards_parts.append(f"{quest.rewards['exp']} XP")
-                    if 'gold' in quest.rewards:
-                        rewards_parts.append(f"{quest.rewards['gold']}g")
-                    rewards_str = " | ".join(rewards_parts)
-
-                    rewards_text = self.info_font.render(
-                        rewards_str,
-                        True,
-                        (255, 215, 0)
-                    )
-                    rewards_rect = rewards_text.get_rect()
-                    rewards_rect.right = window_x + window_width - 35
-                    rewards_rect.y = quest_y + 32
-                    self.screen.blit(rewards_text, rewards_rect)
+        line_y = list_y + list_height // 2 - len(message_lines) * 15
+        for line in message_lines:
+            if line:
+                line_text = self.info_font.render(line, True, (150, 150, 150))
+                line_rect = line_text.get_rect()
+                line_rect.centerx = window_x + window_width // 2
+                line_rect.y = line_y
+                self.screen.blit(line_text, line_rect)
+            line_y += 30
 
         # Подсказки управления
         controls_y = window_y + window_height - 50
 
-        if self.mode == "available":
-            action_text = "Enter/ПКМ - Принять"
-        elif self.mode == "active":
-            action_text = "Delete/ПКМ - Отменить"
-        else:
-            action_text = "Enter/ПКМ - Сдать"
-
         controls_text = self.info_font.render(
-            f"Tab/Клик - Вкладки | W/S/Колёсико - Выбор | {action_text} | Esc - Закрыть",
+            "Tab - Вкладки | Esc - Закрыть",
             True,
             (150, 150, 150)
         )
@@ -603,5 +277,3 @@ class QuestWindow:
         controls_rect.centerx = window_x + window_width // 2
         controls_rect.y = controls_y
         self.screen.blit(controls_text, controls_rect)
-
-

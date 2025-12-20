@@ -29,11 +29,6 @@ from game.ui.windows import (
 from game.ui.windows.object_interaction import ObjectInteractionWindow
 from game.ui.windows.companion import CompanionWindow
 from game.optimization import PerformanceOptimizer, RenderCache
-from game.quest_system import (
-    QuestManager, AchievementManager,
-    create_unique_quests, get_unique_quest_for_location,
-    auto_assign_starter_quests
-)
 from game.constants import (
     FPS, TILE_SIZE, COLORS,
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY
@@ -50,7 +45,6 @@ from game.events import create_game_systems, TimeOfDayBonuses
 from game.loot_system import LootSystem
 from game.hud_renderer import HUDRenderer
 from game.resource_system import ResourceSystem
-from game.quest_ui_controller import QuestUIController
 from game.crafting_system import CraftingSystem
 from game.item_registry import get_item
 
@@ -236,22 +230,15 @@ class Game:
         self.performance_optimizer = PerformanceOptimizer()
         self.render_cache = RenderCache()
 
-        # Инициализация менеджера квестов
-        self.quest_manager = QuestManager()
-        # Автоматически назначаем стартовые квесты игроку
-        auto_assign_starter_quests(self.quest_manager)
-        # Добавляем уникальные квесты с хорошими наградами в доступные
-        for quest in create_unique_quests():
-            self.quest_manager.add_available_quest(quest)
-
-        # Инициализация менеджера достижений с наградами
-        self.achievement_manager = AchievementManager()
+        # Менеджеры квестов и достижений удалены (система квестов на переработке)
+        self.quest_manager = None
+        self.achievement_manager = None
 
         # Инициализация систем событий, погоды и серий убийств
         self.weather_system, self.random_event_system, self.killstreak_system = create_game_systems()
 
         # Инициализация системы лута
-        self.loot_system = LootSystem(self.player, self.quest_manager, self.killstreak_system)
+        self.loot_system = LootSystem(self.player, killstreak_system=self.killstreak_system)
 
         # Инициализация системы крафта
         self.crafting_system = CraftingSystem()
@@ -288,15 +275,12 @@ class Game:
 
         # Инициализация системы ресурсов
         self.resource_system = ResourceSystem(
-            self.player, self.game_map, self.quest_manager,
+            self.player, self.game_map,
             self.game_time, self._start_combat, self._show_resource_collection_window
         )
 
-        # Инициализация контроллера квестов
-        self.quest_ui_controller = QuestUIController(
-            self.player, self.quest_manager, self.quest_window,
-            self.input_handler._refresh_quest_window
-        )
+        # Контроллер квестов удален (система квестов на переработке)
+        self.quest_ui_controller = None
 
         print("Игра готова к запуску!")
 
@@ -622,18 +606,33 @@ class Game:
         print(f"Рядом находится {len(nearby_npcs)} NPC. Выберите с кем взаимодействовать.")
 
     def open_quest_window(self, location):
-        """Делегирование к QuestUIController."""
-        self.quest_ui_controller.open_for_location(location)
-        self.quest_window_open = self.quest_ui_controller.is_open
+        """Открыть окно квестов (система квестов на переработке)."""
+        # Система квестов на переработке - окно показывает заглушку
+        self.quest_window.set_data(
+            location.name if location else "Журнал квестов",
+            None,
+            [],  # available_quests
+            [],  # active_quests
+            []   # turn_in_quests
+        )
+        self.quest_window_open = True
 
     def open_quest_window_anywhere(self):
-        """Делегирование к QuestUIController."""
-        self.quest_ui_controller.open_anywhere()
-        self.quest_window_open = self.quest_ui_controller.is_open
+        """Открыть окно квестов из любого места (система квестов на переработке)."""
+        self.quest_window.set_data(
+            "Журнал квестов",
+            None,
+            [],  # available_quests
+            [],  # active_quests
+            []   # turn_in_quests
+        )
+        self.quest_window.mode = "active"
+        self.quest_window_open = True
 
     def _handle_quest_action(self, action):
-        """Делегирование к QuestUIController."""
-        self.quest_ui_controller.handle_action(action)
+        """Обработка действий квестов (система квестов на переработке)."""
+        # Система квестов на переработке - действия не выполняются
+        pass
 
     def _handle_potion_slot_click(self, mouse_pos):
         """
