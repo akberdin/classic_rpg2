@@ -26,14 +26,14 @@ def test_hunter_rest_after_kill():
     game_map = GameMap()
 
     # Создаем охотника в точке (50, 50) - это его дом
-    hunter = Hunter(name="Тестовый охотник", x=50, y=50, level=20, home_x=50, home_y=50)
+    hunter = Hunter(name="Тестовый охотник", x=25, y=25, level=20, home_x=25, home_y=25)
     print(f"\n✓ Создан охотник: {hunter.name}")
     print(f"  Позиция: ({hunter.x}, {hunter.y})")
     print(f"  Дом: ({hunter.home_x}, {hunter.home_y})")
     print(f"  Состояние: {hunter.state}")
 
     # Создаем волка рядом с охотником (прямо рядом для быстрого боя)
-    wolf = Wolf(name="Тестовый волк", x=51, y=50, level=1)
+    wolf = Wolf(name="Тестовый волк", x=26, y=25, level=1)
     # Делаем волка слабым, чтобы охотник гарантированно убил его
     wolf.health = 5
     wolf.max_health = 5
