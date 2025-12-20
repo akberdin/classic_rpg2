@@ -12,6 +12,18 @@ from game.core.game_context import GameContext
 class HUDRenderer:
     """Класс для отрисовки HUD игрока"""
 
+    # Определение кнопок меню
+    MENU_BUTTONS = [
+        {'key': 'C', 'name': 'Характеристики', 'action': 'character'},
+        {'key': 'I', 'name': 'Инвентарь', 'action': 'inventory'},
+        {'key': 'K', 'name': 'Умения', 'action': 'skills'},
+        {'key': 'V', 'name': 'Крафт', 'action': 'crafting'},
+        {'key': 'Q', 'name': 'Квесты', 'action': 'quests'},
+        {'key': 'P', 'name': 'Спутники', 'action': 'companions'},
+        {'key': 'F1', 'name': 'Справка', 'action': 'help'},
+        {'key': 'F2', 'name': 'Читы', 'action': 'cheats'},
+    ]
+
     def __init__(self, game):
         """
         Инициализация рендерера HUD.
@@ -21,6 +33,12 @@ class HUDRenderer:
         """
         self.game = game
         self.ctx = GameContext(game)
+
+        # Координаты для обнаружения наведения мыши
+        self.status_bar_rects = {}  # {name: pygame.Rect}
+        self.menu_button_rects = {}  # {action: pygame.Rect}
+        self.hovered_status_bar = None
+        self.hovered_menu_button = None
 
     @property
     def screen(self):
@@ -49,7 +67,7 @@ class HUDRenderer:
     def render(self):
         """Отрисовка пользовательского интерфейса"""
         # Панель внизу экрана (масштабируется под разрешение)
-        ui_height = self.ui_scaler.scale_height(100)
+        ui_height = self.ui_scaler.scale_height(70)  # Уменьшена высота
         ui_y = self.ctx.window_height - ui_height
 
         # Фон панели
@@ -68,48 +86,120 @@ class HUDRenderer:
             2
         )
 
-        # Информация об игроке
-        info_x = 20
-        info_y = ui_y + 10
+        # Прогресс-бар опыта (2 пикселя во всю ширину, над панелью)
+        self._render_experience_bar(ui_y)
 
-        # Имя и уровень
-        player_rank = self.player.get_rank()
-        name_text = self.font.render(
-            f"{self.player.name} | Ур: {self.player.level} ({player_rank})",
-            True,
-            COLORS['text']
-        )
-        self.screen.blit(name_text, (info_x, info_y))
+        # Компактные полосы статусов слева
+        bars_end_x = self._render_compact_status_bars(ui_y)
 
-        # Игровое время, погода и золото
-        self._render_time_weather_gold(info_y)
+        # Панель умений (справа от полос статуса)
+        skills_end_x = self._render_skill_panel(bars_end_x, ui_y)
+
+        # Панель зелий (справа от панели умений)
+        self._render_potion_panel(skills_end_x, ui_y)
+
+        # Кнопки меню (справа)
+        self._render_menu_buttons(ui_y)
+
+        # Игровое время, погода и золото (справа вверху панели)
+        self._render_time_weather_gold(ui_y)
 
         # Серия убийств (если активна)
-        self._render_killstreak(info_y)
+        self._render_killstreak(ui_y)
 
-        # Прогресс-бары
-        bar_y = info_y + 35
-        self._render_status_bars(info_x, bar_y)
+        # Индикатор нераспределённых очков
+        self._render_stat_points_indicator(ui_y)
 
-        # Опыт и информация о статах
-        self._render_exp_and_stats(info_x, bar_y)
+        # Отрисовка всплывающих подсказок (в конце, чтобы они были поверх всего)
+        self._render_tooltips()
 
-        # Подсказка о помощи
-        help_hint = self.info_font.render(
-            "F1 - Справка | C - Характеристики | I - Инвентарь | K - Книга умений",
-            True,
-            (180, 180, 180)
+    def _render_experience_bar(self, ui_y):
+        """Отрисовка тонкой полосы опыта во всю ширину экрана."""
+        bar_height = 3
+        bar_y = ui_y - bar_height
+
+        # Фон полосы
+        pygame.draw.rect(
+            self.screen,
+            (20, 20, 40),
+            (0, bar_y, self.ctx.window_width, bar_height)
         )
-        help_hint_x = self.ui_scaler.scale_width(800)
-        self.screen.blit(help_hint, (info_x + 0, info_y + 55))
 
-        # Панель умений (8 слотов)
-        self._render_skill_panel()
+        # Заполнение опыта
+        if self.player.experience_to_next_level > 0:
+            exp_ratio = min(1.0, self.player.experience / self.player.experience_to_next_level)
+            exp_width = int(exp_ratio * self.ctx.window_width)
+            if exp_width > 0:
+                pygame.draw.rect(
+                    self.screen,
+                    (100, 180, 255),
+                    (0, bar_y, exp_width, bar_height)
+                )
 
-        # Панель зелий (рядом с умениями)
-        self._render_potion_panel()
+    def _render_compact_status_bars(self, ui_y):
+        """
+        Отрисовка компактных полос здоровья, маны и выносливости.
+        Полосы расположены вертикально друг под другом без надписей.
 
-    def _render_time_weather_gold(self, info_y):
+        Returns:
+            int: X координата конца полос для размещения следующих элементов
+        """
+        bar_x = self.ui_scaler.scale_width(15)
+        bar_width = self.ui_scaler.scale_width(150)  # Ширина уменьшена в 2 раза
+        bar_height = self.ui_scaler.scale_height(12)  # Толщина уменьшена в 1.5 раза
+        bar_spacing = self.ui_scaler.scale_height(4)  # Вертикальный отступ
+
+        # Начальная Y позиция для центрирования полос
+        total_bars_height = 3 * bar_height + 2 * bar_spacing
+        ui_height = self.ui_scaler.scale_height(70)
+        start_y = ui_y + (ui_height - total_bars_height) // 2
+
+        # Получаем эффективные максимумы с учетом экипировки
+        effective_max_health = self.player.get_effective_max_health()
+        effective_max_mana = self.player.get_effective_max_mana()
+        effective_max_stamina = self.player.get_effective_max_stamina()
+
+        # Очищаем старые rect'ы
+        self.status_bar_rects.clear()
+
+        # Полоса здоровья (красная)
+        hp_y = start_y
+        UIHelper.draw_rounded_progress_bar(
+            self.screen,
+            bar_x, hp_y, bar_width, bar_height,
+            self.player.health, effective_max_health,
+            bg_color=(60, 20, 20),
+            fill_color=(200, 50, 50)
+        )
+        self.status_bar_rects['hp'] = pygame.Rect(bar_x, hp_y, bar_width, bar_height)
+
+        # Полоса маны (синяя)
+        mp_y = hp_y + bar_height + bar_spacing
+        UIHelper.draw_rounded_progress_bar(
+            self.screen,
+            bar_x, mp_y, bar_width, bar_height,
+            self.player.mana, effective_max_mana,
+            bg_color=(20, 20, 60),
+            fill_color=(50, 100, 200)
+        )
+        self.status_bar_rects['mp'] = pygame.Rect(bar_x, mp_y, bar_width, bar_height)
+
+        # Полоса выносливости (оранжевая)
+        stamina_y = mp_y + bar_height + bar_spacing
+        stamina_color = (200, 120, 50) if not self.player.is_resting else (150, 70, 30)
+        UIHelper.draw_rounded_progress_bar(
+            self.screen,
+            bar_x, stamina_y, bar_width, bar_height,
+            self.player.stamina, effective_max_stamina,
+            bg_color=(60, 40, 20),
+            fill_color=stamina_color
+        )
+        self.status_bar_rects['stamina'] = pygame.Rect(bar_x, stamina_y, bar_width, bar_height)
+
+        # Возвращаем X координату конца полос
+        return bar_x + bar_width + self.ui_scaler.scale_width(15)
+
+    def _render_time_weather_gold(self, ui_y):
         """Отрисовка времени, погоды и золота."""
         weather_str = ""
         if self.ctx.weather_system:
@@ -120,10 +210,10 @@ class HUDRenderer:
             True,
             (255, 215, 0)
         )
-        time_gold_x = self.ctx.window_width - self.ui_scaler.scale_width(450)
-        self.screen.blit(time_gold_text, (time_gold_x, info_y + 5))
+        time_gold_x = self.ctx.window_width - self.ui_scaler.scale_width(350)
+        self.screen.blit(time_gold_text, (time_gold_x, ui_y + 8))
 
-    def _render_killstreak(self, info_y):
+    def _render_killstreak(self, ui_y):
         """Отрисовка серии убийств."""
         if self.ctx.killstreak_system and self.ctx.killstreak_system.current_streak >= 3:
             streak_text = self.info_font.render(
@@ -131,97 +221,43 @@ class HUDRenderer:
                 True,
                 (255, 100, 100)
             )
-            time_gold_x = self.ctx.window_width - self.ui_scaler.scale_width(450)
-            self.screen.blit(streak_text, (time_gold_x, info_y + 22))
+            time_gold_x = self.ctx.window_width - self.ui_scaler.scale_width(350)
+            self.screen.blit(streak_text, (time_gold_x, ui_y + 25))
 
-    def _render_status_bars(self, info_x, bar_y):
-        """Отрисовка полос здоровья, маны и выносливости."""
-        bar_width = self.ui_scaler.scale_width(350)
-        bar_height = 18
-        bar_spacing = self.ui_scaler.scale_width(30)
-
-        # Получаем эффективные максимумы с учетом экипировки
-        effective_max_health = self.player.get_effective_max_health()
-        effective_max_mana = self.player.get_effective_max_mana()
-        effective_max_stamina = self.player.get_effective_max_stamina()
-
-        # Вычисляем проценты
-        health_percent = int((self.player.health / effective_max_health * 100) if effective_max_health > 0 else 0)
-        mana_percent = int((self.player.mana / effective_max_mana * 100) if effective_max_mana > 0 else 0)
-        stamina_percent = int((self.player.stamina / effective_max_stamina * 100) if effective_max_stamina > 0 else 0)
-
-        # Полоса здоровья (красная)
-        UIHelper.draw_progress_bar(
-            self.screen,
-            info_x, bar_y, bar_width, bar_height,
-            self.player.health, effective_max_health,
-            bg_color=(60, 20, 20),
-            fill_color=(200, 50, 50),
-            border_color=(255, 100, 100),
-            text=f"HP: {self.player.health}/{effective_max_health} ({health_percent}%)",
-            font=self.info_font
-        )
-
-        # Полоса маны (синяя)
-        mana_x = info_x + bar_width + bar_spacing
-        UIHelper.draw_progress_bar(
-            self.screen,
-            mana_x, bar_y, bar_width, bar_height,
-            self.player.mana, effective_max_mana,
-            bg_color=(20, 20, 60),
-            fill_color=(50, 100, 200),
-            border_color=(100, 150, 255),
-            text=f"MP: {self.player.mana}/{effective_max_mana} ({mana_percent}%)",
-            font=self.info_font
-        )
-
-        # Полоса выносливости (оранжевая)
-        stamina_x = mana_x + bar_width + bar_spacing
-        stamina_color = (200, 120, 50) if not self.player.is_resting else (150, 70, 30)
-        stamina_status = " [ОТДЫХ]" if self.player.is_resting else ""
-        UIHelper.draw_progress_bar(
-            self.screen,
-            stamina_x, bar_y, bar_width, bar_height,
-            self.player.stamina, effective_max_stamina,
-            bg_color=(60, 40, 20),
-            fill_color=stamina_color,
-            border_color=(255, 165, 0),
-            text=f"Stamina: {self.player.stamina}/{effective_max_stamina} ({stamina_percent}%){stamina_status}",
-            font=self.info_font
-        )
-
-    def _render_exp_and_stats(self, info_x, bar_y):
-        """Отрисовка опыта и очков характеристик."""
-        exp_text = self.info_font.render(
-            f"Опыт: {self.player.experience}/{self.player.experience_to_next_level}",
-            True,
-            (180, 180, 180)
-        )
-        self.screen.blit(exp_text, (info_x, bar_y + 30))
-
-        # Нераспределенные очки характеристик (если есть)
+    def _render_stat_points_indicator(self, ui_y):
+        """Отрисовка индикатора нераспределённых очков характеристик."""
         if self.player.stat_points > 0:
-            stat_points_text = self.info_font.render(
-                f"Свободных очков: {self.player.stat_points} [Нажми C]",
+            # Мигающий индикатор
+            indicator_text = self.info_font.render(
+                f"+{self.player.stat_points}",
                 True,
                 (100, 255, 100)
             )
-            stat_points_x = self.ui_scaler.scale_width(320)
-            self.screen.blit(stat_points_text, (stat_points_x, bar_y + 30))
+            # Располагаем рядом с кнопкой "Характеристики"
+            if 'character' in self.menu_button_rects:
+                rect = self.menu_button_rects['character']
+                self.screen.blit(indicator_text, (rect.right + 5, rect.top + 2))
 
-    def _render_skill_panel(self):
-        """Отрисовка панели умений над панелью параметров."""
-        slot_size = self.ui_scaler.scale_value(48)
-        slot_spacing = self.ui_scaler.scale_value(8)
-        panel_x = (self.ctx.window_width - (slot_size + slot_spacing) * 8) // 2
+    def _render_skill_panel(self, start_x, ui_y):
+        """
+        Отрисовка панели умений.
 
-        ui_height = self.ui_scaler.scale_height(100)
-        ui_y = self.ctx.window_height - ui_height
-        panel_offset = self.ui_scaler.scale_value(15)
-        panel_y = ui_y - slot_size - panel_offset
+        Args:
+            start_x: X координата начала панели
+            ui_y: Y координата верха UI панели
+
+        Returns:
+            int: X координата конца панели
+        """
+        slot_size = self.ui_scaler.scale_value(40)  # Чуть меньше для компактности
+        slot_spacing = self.ui_scaler.scale_value(4)
+
+        ui_height = self.ui_scaler.scale_height(70)
+        # Центрируем по вертикали
+        panel_y = ui_y + (ui_height - slot_size - 5) // 2
 
         for i in range(8):
-            slot_x = panel_x + i * (slot_size + slot_spacing)
+            slot_x = start_x + i * (slot_size + slot_spacing)
             skill = self.player.skill_manager.get_slot_skill(i)
 
             # Проверяем, доступно ли умение для использования
@@ -233,27 +269,29 @@ class HUDRenderer:
             # Фон и рамка слота
             bg_color, border_color = self._get_slot_colors(skill, is_usable)
 
-            pygame.draw.rect(self.screen, bg_color, (slot_x, panel_y, slot_size, slot_size))
-            pygame.draw.rect(self.screen, border_color, (slot_x, panel_y, slot_size, slot_size), 2)
+            pygame.draw.rect(self.screen, bg_color, (slot_x, panel_y, slot_size, slot_size), border_radius=4)
+            pygame.draw.rect(self.screen, border_color, (slot_x, panel_y, slot_size, slot_size), 2, border_radius=4)
 
-            # Номер слота (клавиша)
-            key_text = self.info_font.render(str(i + 1), True, (200, 200, 200))
-            self.screen.blit(key_text, (slot_x + 4, panel_y + 4))
+            # Номер слота (клавиша) - маленький в углу
+            small_font = pygame.font.Font(None, self.ui_scaler.scale_value(16))
+            key_text = small_font.render(str(i + 1), True, (150, 150, 150))
+            self.screen.blit(key_text, (slot_x + 3, panel_y + 2))
 
             # Если есть умение, показываем его информацию
             if skill:
                 skill_id = self.player.skill_manager.get_slot_skill_id(i)
                 self._render_skill_slot(skill, skill_id, slot_x, panel_y, slot_size)
 
-            # Шкала прогресса использований для повышения ранга (под всеми слотами)
-            progress_bar_height = 3
-            progress_bar_y = panel_y + slot_size  # Сразу под слотом, без отступа
+            # Шкала прогресса использований для повышения ранга (под слотом)
+            progress_bar_height = 2
+            progress_bar_y = panel_y + slot_size + 1
 
             # Темный фон шкалы
             pygame.draw.rect(
                 self.screen,
                 (30, 30, 30),
-                (slot_x, progress_bar_y, slot_size, progress_bar_height)
+                (slot_x, progress_bar_y, slot_size, progress_bar_height),
+                border_radius=1
             )
 
             # Заполнение шкалы если есть умение
@@ -266,26 +304,29 @@ class HUDRenderer:
                     filled_width = int(slot_size * progress)
 
                     if filled_width > 0:
-                        # Цвет зависит от прогресса: желтый -> зеленый
                         if progress >= 1.0:
-                            bar_color = (100, 255, 100)  # Зеленый - готово
+                            bar_color = (100, 255, 100)
                         elif progress >= 0.5:
-                            bar_color = (255, 215, 0)  # Золотой - половина
+                            bar_color = (255, 215, 0)
                         else:
-                            bar_color = (200, 150, 50)  # Темно-желтый - начало
+                            bar_color = (200, 150, 50)
 
                         pygame.draw.rect(
                             self.screen,
                             bar_color,
-                            (slot_x, progress_bar_y, filled_width, progress_bar_height)
+                            (slot_x, progress_bar_y, filled_width, progress_bar_height),
+                            border_radius=1
                         )
             elif skill and skill.rank >= skill.max_rank:
-                # Максимальный ранг - заполняем синим
                 pygame.draw.rect(
                     self.screen,
                     (100, 150, 255),
-                    (slot_x, progress_bar_y, slot_size, progress_bar_height)
+                    (slot_x, progress_bar_y, slot_size, progress_bar_height),
+                    border_radius=1
                 )
+
+        # Возвращаем X координату конца панели
+        return start_x + 8 * (slot_size + slot_spacing) + self.ui_scaler.scale_width(15)
 
     def _get_slot_colors(self, skill, is_usable):
         """
@@ -297,7 +338,6 @@ class HUDRenderer:
         if not skill:
             return (30, 30, 30), (100, 100, 100)
 
-        # Цветовые схемы по категориям
         color_map = {
             'combat': ((80, 50, 50), (40, 25, 25)),
             'magic': ((50, 50, 80), (25, 25, 40)),
@@ -314,12 +354,10 @@ class HUDRenderer:
 
     def _render_skill_slot(self, skill, skill_id, slot_x, panel_y, slot_size):
         """Отрисовка содержимого слота умения."""
-        # Иконка умения (спрайт или первая буква названия как fallback)
-        icon_size = slot_size - 8  # Немного меньше слота для отступов
+        icon_size = slot_size - 8
         icon_x = slot_x + 4
         icon_y = panel_y + 4
 
-        # Пробуем отрисовать спрайт умения
         if skill_id and self.sprite_manager:
             self.sprite_manager.render_skill_icon(
                 self.screen,
@@ -330,49 +368,50 @@ class HUDRenderer:
                 fallback_text=skill.name[0]
             )
         else:
-            # Fallback: первая буква названия
-            icon_font = pygame.font.Font(None, 32)
+            icon_font = pygame.font.Font(None, self.ui_scaler.scale_value(24))
             icon_text = icon_font.render(skill.name[0], True, (255, 255, 255))
             icon_rect = icon_text.get_rect()
-            icon_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2 + 4)
+            icon_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2 + 2)
             self.screen.blit(icon_text, icon_rect)
 
-        # Ранг умения
-        rank_text = self.info_font.render(f"R{skill.rank}", True, (255, 215, 0))
-        self.screen.blit(rank_text, (slot_x + slot_size - 22, panel_y + slot_size - 18))
+        # Ранг умения (маленький, в правом нижнем углу)
+        small_font = pygame.font.Font(None, self.ui_scaler.scale_value(14))
+        rank_text = small_font.render(f"R{skill.rank}", True, (255, 215, 0))
+        self.screen.blit(rank_text, (slot_x + slot_size - 18, panel_y + slot_size - 14))
 
-        # Перезарядка (текст если есть)
+        # Перезарядка
         if skill.current_cooldown > 0:
-            cooldown_text = self.info_font.render(
-                str(skill.current_cooldown), True, (255, 100, 100)
-            )
+            # Затемнение слота
+            overlay = pygame.Surface((slot_size, slot_size), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 150))
+            self.screen.blit(overlay, (slot_x, panel_y))
+
+            cooldown_font = pygame.font.Font(None, self.ui_scaler.scale_value(20))
+            cooldown_text = cooldown_font.render(str(skill.current_cooldown), True, (255, 100, 100))
             cooldown_rect = cooldown_text.get_rect()
             cooldown_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2)
             self.screen.blit(cooldown_text, cooldown_rect)
 
-    def _render_potion_panel(self):
-        """Отрисовка панели быстрых зелий справа от панели умений."""
+    def _render_potion_panel(self, start_x, ui_y):
+        """
+        Отрисовка панели быстрых зелий справа от панели умений.
+
+        Args:
+            start_x: X координата начала панели
+            ui_y: Y координата верха UI панели
+        """
         from game.inventory import EquipmentSlot
 
-        # Получаем пояс игрока
         belt = self.player.inventory.get_equipped_item(EquipmentSlot.BELT)
         if not belt or not hasattr(belt, 'potion_slots') or belt.potion_slots == 0:
-            return  # Нет пояса или нет слотов для зелий
+            return
 
-        slot_size = self.ui_scaler.scale_value(48)
-        slot_spacing = self.ui_scaler.scale_value(8)
+        slot_size = self.ui_scaler.scale_value(40)
+        slot_spacing = self.ui_scaler.scale_value(4)
 
-        # Позиция панели умений
-        skills_panel_x = (self.ctx.window_width - (slot_size + slot_spacing) * 8) // 2
-        ui_height = self.ui_scaler.scale_height(100)
-        ui_y = self.ctx.window_height - ui_height
-        panel_offset = self.ui_scaler.scale_value(15)
-        panel_y = ui_y - slot_size - panel_offset
+        ui_height = self.ui_scaler.scale_height(70)
+        panel_y = ui_y + (ui_height - slot_size - 5) // 2
 
-        # Панель зелий справа от панели умений
-        potions_panel_x = skills_panel_x + (slot_size + slot_spacing) * 8 + self.ui_scaler.scale_value(20)
-
-        # Слоты зелий
         potion_slots = [
             EquipmentSlot.BELT_POTION_1,
             EquipmentSlot.BELT_POTION_2,
@@ -380,41 +419,31 @@ class HUDRenderer:
             EquipmentSlot.BELT_POTION_4
         ][:belt.potion_slots]
 
-        # Сохраняем координаты слотов для обработки кликов
         if not hasattr(self, 'potion_slot_rects'):
             self.potion_slot_rects = {}
 
         self.potion_slot_rects.clear()
 
         for i, slot in enumerate(potion_slots):
-            slot_x = potions_panel_x + i * (slot_size + slot_spacing)
+            slot_x = start_x + i * (slot_size + slot_spacing)
             potion = self.player.inventory.get_equipped_item(slot)
 
-            # Фон и рамка слота
             bg_color = (60, 40, 60) if potion else (30, 30, 30)
             border_color = (150, 100, 150) if potion else (100, 100, 100)
 
-            pygame.draw.rect(self.screen, bg_color, (slot_x, panel_y, slot_size, slot_size))
-            pygame.draw.rect(self.screen, border_color, (slot_x, panel_y, slot_size, slot_size), 2)
+            pygame.draw.rect(self.screen, bg_color, (slot_x, panel_y, slot_size, slot_size), border_radius=4)
+            pygame.draw.rect(self.screen, border_color, (slot_x, panel_y, slot_size, slot_size), 2, border_radius=4)
 
-            # Сохраняем rect для обработки кликов
             self.potion_slot_rects[i] = (pygame.Rect(slot_x, panel_y, slot_size, slot_size), slot, potion)
 
-            # Метка "ПКМ"
-            label_text = self.info_font.render("ПКМ", True, (180, 180, 180))
-            self.screen.blit(label_text, (slot_x + 4, panel_y + 4))
-
-            # Если есть зелье, отображаем информацию
             if potion:
-                # Иконка зелья (спрайт или первая буква названия как fallback)
-                icon_size = slot_size - 8  # Немного меньше слота для отступов
+                icon_size = slot_size - 8
                 icon_x = slot_x + 4
                 icon_y = panel_y + 4
 
                 potion_name = potion.get_full_name() if hasattr(potion, 'get_full_name') else potion.name
                 potion_id = potion.item_id if hasattr(potion, 'item_id') else None
 
-                # Пробуем отрисовать спрайт зелья
                 if potion_id and self.sprite_manager:
                     self.sprite_manager.render_potion_icon(
                         self.screen,
@@ -425,15 +454,148 @@ class HUDRenderer:
                         fallback_text=potion_name[0]
                     )
                 else:
-                    # Fallback: первая буква названия
-                    icon_font = pygame.font.Font(None, 32)
+                    icon_font = pygame.font.Font(None, self.ui_scaler.scale_value(24))
                     icon_text = icon_font.render(potion_name[0], True, (200, 100, 200))
                     icon_rect = icon_text.get_rect()
-                    icon_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2 + 4)
+                    icon_rect.center = (slot_x + slot_size // 2, panel_y + slot_size // 2 + 2)
                     self.screen.blit(icon_text, icon_rect)
 
-                # Количество зелий в инвентаре (если больше 1)
+                # Количество зелий
                 potion_count = self.player.inventory.get_item_count(potion)
                 if potion_count > 1:
-                    count_text = self.info_font.render(f"x{potion_count}", True, (255, 215, 0))
-                    self.screen.blit(count_text, (slot_x + slot_size - 24, panel_y + slot_size - 18))
+                    small_font = pygame.font.Font(None, self.ui_scaler.scale_value(14))
+                    count_text = small_font.render(f"x{potion_count}", True, (255, 215, 0))
+                    self.screen.blit(count_text, (slot_x + slot_size - 20, panel_y + slot_size - 14))
+
+    def _render_menu_buttons(self, ui_y):
+        """Отрисовка кнопок меню с подсветкой при наведении."""
+        button_width = self.ui_scaler.scale_width(30)
+        button_height = self.ui_scaler.scale_height(30)
+        button_spacing = self.ui_scaler.scale_width(4)
+
+        # Начинаем справа
+        start_x = self.ctx.window_width - len(self.MENU_BUTTONS) * (button_width + button_spacing) - self.ui_scaler.scale_width(15)
+        ui_height = self.ui_scaler.scale_height(70)
+        button_y = ui_y + ui_height - button_height - self.ui_scaler.scale_height(8)
+
+        self.menu_button_rects.clear()
+
+        mouse_pos = pygame.mouse.get_pos()
+
+        for i, button in enumerate(self.MENU_BUTTONS):
+            button_x = start_x + i * (button_width + button_spacing)
+            rect = pygame.Rect(button_x, button_y, button_width, button_height)
+            self.menu_button_rects[button['action']] = rect
+
+            # Проверка наведения
+            is_hovered = rect.collidepoint(mouse_pos)
+
+            # Цвета в зависимости от наведения
+            if is_hovered:
+                bg_color = (70, 70, 80)
+                border_color = (150, 150, 180)
+                self.hovered_menu_button = button
+            else:
+                bg_color = (45, 45, 55)
+                border_color = (80, 80, 100)
+
+            # Фон кнопки
+            pygame.draw.rect(self.screen, bg_color, rect, border_radius=4)
+            pygame.draw.rect(self.screen, border_color, rect, 1, border_radius=4)
+
+            # Текст клавиши
+            small_font = pygame.font.Font(None, self.ui_scaler.scale_value(16))
+            key_text = small_font.render(button['key'], True, (200, 200, 200) if is_hovered else (150, 150, 150))
+            key_rect = key_text.get_rect(center=rect.center)
+            self.screen.blit(key_text, key_rect)
+
+        # Сбрасываем hovered если ни одна кнопка не под курсором
+        if not any(rect.collidepoint(mouse_pos) for rect in self.menu_button_rects.values()):
+            self.hovered_menu_button = None
+
+    def _render_tooltips(self):
+        """Отрисовка всплывающих подсказок."""
+        mouse_pos = pygame.mouse.get_pos()
+
+        # Проверяем наведение на полосы статусов
+        for name, rect in self.status_bar_rects.items():
+            if rect.collidepoint(mouse_pos):
+                tooltip_text = self._get_status_tooltip(name)
+                if tooltip_text:
+                    UIHelper.draw_tooltip(
+                        self.screen,
+                        tooltip_text,
+                        mouse_pos[0] + 15,
+                        mouse_pos[1] - 30,
+                        self.info_font,
+                        bg_color=(30, 30, 35),
+                        text_color=(255, 255, 255)
+                    )
+                return
+
+        # Проверяем наведение на кнопки меню
+        if self.hovered_menu_button:
+            button = self.hovered_menu_button
+            rect = self.menu_button_rects.get(button['action'])
+            if rect:
+                tooltip_text = f"{button['name']} [{button['key']}]"
+                UIHelper.draw_tooltip(
+                    self.screen,
+                    tooltip_text,
+                    rect.centerx,
+                    rect.top - 25,
+                    self.info_font,
+                    bg_color=(30, 30, 35),
+                    text_color=(255, 255, 255)
+                )
+
+    def _get_status_tooltip(self, status_name):
+        """Получить текст подсказки для полосы статуса."""
+        if status_name == 'hp':
+            effective_max = self.player.get_effective_max_health()
+            percent = int((self.player.health / effective_max * 100) if effective_max > 0 else 0)
+            return f"Здоровье: {self.player.health}/{effective_max} ({percent}%)"
+        elif status_name == 'mp':
+            effective_max = self.player.get_effective_max_mana()
+            percent = int((self.player.mana / effective_max * 100) if effective_max > 0 else 0)
+            return f"Мана: {self.player.mana}/{effective_max} ({percent}%)"
+        elif status_name == 'stamina':
+            effective_max = self.player.get_effective_max_stamina()
+            percent = int((self.player.stamina / effective_max * 100) if effective_max > 0 else 0)
+            status = " [ОТДЫХ]" if self.player.is_resting else ""
+            return f"Выносливость: {self.player.stamina}/{effective_max} ({percent}%){status}"
+        return None
+
+    def handle_menu_button_click(self, mouse_pos):
+        """
+        Обработка клика по кнопке меню.
+
+        Args:
+            mouse_pos: Позиция мыши (x, y)
+
+        Returns:
+            str or None: Название действия кнопки или None если клик не по кнопке
+        """
+        for action, rect in self.menu_button_rects.items():
+            if rect.collidepoint(mouse_pos):
+                return action
+        return None
+
+    def handle_potion_click(self, mouse_pos, button):
+        """
+        Обработка клика по слоту зелья.
+
+        Args:
+            mouse_pos: Позиция мыши (x, y)
+            button: Кнопка мыши (1 = левая, 3 = правая)
+
+        Returns:
+            tuple or None: (slot, potion) или None если клик не по слоту
+        """
+        if not hasattr(self, 'potion_slot_rects'):
+            return None
+
+        for i, (rect, slot, potion) in self.potion_slot_rects.items():
+            if rect.collidepoint(mouse_pos):
+                return (slot, potion)
+        return None

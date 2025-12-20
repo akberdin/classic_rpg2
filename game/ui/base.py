@@ -159,6 +159,78 @@ class UIHelper:
             surface.blit(text_surface, text_rect)
 
     @staticmethod
+    def draw_rounded_progress_bar(surface, x, y, width, height, current, maximum,
+                                   bg_color=(40, 40, 40), fill_color=(100, 200, 100),
+                                   border_radius=None):
+        """
+        Отрисовка закруглённой полосы прогресса без текста
+
+        Args:
+            surface: Поверхность для рисования
+            x, y: Координаты
+            width, height: Размеры
+            current, maximum: Текущее и максимальное значение
+            bg_color: Цвет фона
+            fill_color: Цвет заполнения
+            border_radius: Радиус закругления (по умолчанию height // 2)
+        """
+        if border_radius is None:
+            border_radius = height // 2
+
+        # Фон с закруглением
+        bg_rect = pygame.Rect(x, y, width, height)
+        pygame.draw.rect(surface, bg_color, bg_rect, border_radius=border_radius)
+
+        # Заполнение с закруглением
+        if maximum > 0:
+            fill_ratio = min(1.0, max(0.0, current / maximum))
+            fill_width = int(fill_ratio * width)
+            if fill_width > 0:
+                # Минимальная ширина для корректного закругления
+                min_fill_width = border_radius * 2 if fill_width >= border_radius else fill_width
+                actual_fill_width = max(min_fill_width, fill_width)
+                if actual_fill_width > width:
+                    actual_fill_width = width
+                fill_rect = pygame.Rect(x, y, actual_fill_width, height)
+                pygame.draw.rect(surface, fill_color, fill_rect, border_radius=border_radius)
+
+    @staticmethod
+    def draw_tooltip(surface, text, x, y, font, bg_color=(40, 40, 40), text_color=(255, 255, 255), padding=8):
+        """
+        Отрисовка всплывающей подсказки
+
+        Args:
+            surface: Поверхность для рисования
+            text: Текст подсказки
+            x, y: Координаты
+            font: Шрифт
+            bg_color: Цвет фона
+            text_color: Цвет текста
+            padding: Отступ от краёв
+        """
+        text_surface = font.render(text, True, text_color)
+        text_rect = text_surface.get_rect()
+
+        # Размеры окна подсказки
+        tooltip_width = text_rect.width + padding * 2
+        tooltip_height = text_rect.height + padding * 2
+
+        # Корректируем позицию, чтобы не выходить за экран
+        screen_width, screen_height = surface.get_size()
+        if x + tooltip_width > screen_width:
+            x = screen_width - tooltip_width - 5
+        if y + tooltip_height > screen_height:
+            y = y - tooltip_height - 10
+
+        # Фон подсказки с рамкой
+        tooltip_rect = pygame.Rect(x, y, tooltip_width, tooltip_height)
+        pygame.draw.rect(surface, bg_color, tooltip_rect, border_radius=4)
+        pygame.draw.rect(surface, (100, 100, 100), tooltip_rect, 1, border_radius=4)
+
+        # Текст
+        surface.blit(text_surface, (x + padding, y + padding))
+
+    @staticmethod
     def wrap_text(text, font, max_width):
         """
         Разбивает текст на строки с переносом по словам

@@ -528,6 +528,9 @@ class Game:
             # Обработка кликов мыши на основном экране (если ни одно меню не открыто)
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # ЛКМ
+                    # Проверяем клик по кнопкам меню на HUD
+                    if self._handle_menu_button_click(event.pos):
+                        continue
                     # В подземелье - клик для перемещения
                     if self.dungeon_manager.is_in_dungeon:
                         if self._handle_dungeon_move_click(event.pos):
@@ -666,6 +669,55 @@ class Game:
                     return True
 
         return False
+
+    def _handle_menu_button_click(self, mouse_pos):
+        """
+        Обработка клика ЛКМ по кнопке меню на HUD.
+
+        Args:
+            mouse_pos: Позиция мыши (x, y)
+
+        Returns:
+            bool: True если клик был обработан
+        """
+        action = self.hud_renderer.handle_menu_button_click(mouse_pos)
+        if action is None:
+            return False
+
+        # Обрабатываем действие
+        if action == 'character':
+            self.character_menu_open = True
+        elif action == 'inventory':
+            self.inventory_menu_open = True
+        elif action == 'skills':
+            self.skill_book_open = True
+        elif action == 'crafting':
+            self.crafting_menu_open = True
+        elif action == 'quests':
+            self._open_quest_journal()
+        elif action == 'companions':
+            self.companion_menu_open = True
+        elif action == 'help':
+            self.help_menu_open = True
+        elif action == 'cheats':
+            self.cheat_menu_open = True
+        else:
+            return False
+
+        return True
+
+    def _open_quest_journal(self):
+        """Открытие журнала квестов."""
+        # Система квестов на переработке
+        self.quest_window.set_data(
+            "Журнал квестов",
+            None,
+            [],  # available_quests
+            [],  # active_quests
+            []   # turn_in_quests
+        )
+        self.quest_window.mode = "active"
+        self.quest_window_open = True
 
     def _handle_dungeon_move_click(self, mouse_pos):
         """
