@@ -164,8 +164,16 @@ def test_hunter_rest_after_kill():
 
     # Фаза 4: Возвращение к патрулированию
     print("\n" + "=" * 60)
-    print("ФАЗА 4: Возвращение к патрулированию")
+    print("ФАЗА 4: Возвращение к патрулированию и восстановление")
     print("=" * 60)
+
+    # Запоминаем здоровье и выносливость перед отдыхом (уменьшаем для теста)
+    hunter.health = int(hunter.get_effective_max_health() * 0.5)  # 50% здоровья
+    hunter.stamina = int(hunter.get_effective_max_stamina() * 0.3)  # 30% выносливости
+
+    print(f"\n✓ Перед появлением охотник имеет:")
+    print(f"  HP: {hunter.health}/{hunter.get_effective_max_health()} ({int(hunter.health/hunter.get_effective_max_health()*100)}%)")
+    print(f"  Stamina: {hunter.stamina}/{hunter.get_effective_max_stamina()} ({int(hunter.stamina/hunter.get_effective_max_stamina()*100)}%)")
 
     # Обновляем AI один раз для обработки появления
     hunter.update_ai(context)
@@ -174,9 +182,23 @@ def test_hunter_rest_after_kill():
         print(f"\n✗ ОШИБКА: После отдыха охотник должен быть в состоянии 'patrol', но в состоянии '{hunter.state}'")
         return False
 
+    # Проверяем что здоровье и выносливость восстановились полностью
+    max_health = hunter.get_effective_max_health()
+    max_stamina = hunter.get_effective_max_stamina()
+
+    if hunter.health != max_health:
+        print(f"\n✗ ОШИБКА: Здоровье не восстановилось полностью: {hunter.health}/{max_health}")
+        return False
+
+    if hunter.stamina != max_stamina:
+        print(f"\n✗ ОШИБКА: Выносливость не восстановилась полностью: {hunter.stamina}/{max_stamina}")
+        return False
+
     print(f"\n✓ Охотник вернулся к патрулированию")
     print(f"  Состояние: {hunter.state}")
     print(f"  Позиция: ({hunter.x}, {hunter.y})")
+    print(f"  HP: {hunter.health}/{max_health} (100% - ВОССТАНОВЛЕНО)")
+    print(f"  Stamina: {hunter.stamina}/{max_stamina} (100% - ВОССТАНОВЛЕНО)")
 
     print("\n" + "=" * 60)
     print("✓ ВСЕ ТЕСТЫ ПРОЙДЕНЫ УСПЕШНО!")
@@ -186,6 +208,7 @@ def test_hunter_rest_after_kill():
     print("2. ✓ Охотник возвращается в город (returning_to_town)")
     print("3. ✓ Охотник скрывается на 20 ходов (resting)")
     print("4. ✓ После отдыха охотник возвращается к патрулированию (patrol)")
+    print("5. ✓ Здоровье и выносливость полностью восстанавливаются (с учетом экипировки)")
 
     return True
 
