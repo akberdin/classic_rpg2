@@ -218,6 +218,10 @@ class WorldRenderer:
                     if not guard.is_alive:
                         continue
 
+                    # Не рендерим скрытых NPC (в режиме отдыха/работы)
+                    if guard.is_hidden():
+                        continue
+
                     guard_screen_x = (guard.x - camera_x) * TILE_SIZE
                     guard_screen_y = (guard.y - camera_y) * TILE_SIZE
 
@@ -281,6 +285,10 @@ class WorldRenderer:
                     if not merchant.is_alive:
                         continue
 
+                    # Не рендерим скрытых NPC (в режиме отдыха/работы)
+                    if merchant.is_hidden():
+                        continue
+
                     merchant_screen_x = (merchant.x - camera_x) * TILE_SIZE
                     merchant_screen_y = (merchant.y - camera_y) * TILE_SIZE
 
@@ -324,6 +332,10 @@ class WorldRenderer:
 
                 if tile.explored and is_visible:
                     if not bandit.is_alive:
+                        continue
+
+                    # Не рендерим скрытых NPC (в режиме отдыха/работы)
+                    if bandit.is_hidden():
                         continue
 
                     bandit_screen_x = (bandit.x - camera_x) * TILE_SIZE
@@ -420,6 +432,10 @@ class WorldRenderer:
                     if not undead_npc.is_alive:
                         continue
 
+                    # Не рендерим скрытых NPC (в режиме отдыха/работы)
+                    if undead_npc.is_hidden():
+                        continue
+
                     undead_screen_x = (undead_npc.x - camera_x) * TILE_SIZE
                     undead_screen_y = (undead_npc.y - camera_y) * TILE_SIZE
 
@@ -486,6 +502,10 @@ class WorldRenderer:
                     if not alchemist.is_alive:
                         continue
 
+                    # Не рендерим скрытых NPC (в режиме отдыха/работы)
+                    if alchemist.is_hidden():
+                        continue
+
                     screen_x = (alchemist.x - camera_x) * TILE_SIZE
                     screen_y = (alchemist.y - camera_y) * TILE_SIZE
 
@@ -522,6 +542,10 @@ class WorldRenderer:
 
                 if tile.explored and is_visible:
                     if not necromancer.is_alive:
+                        continue
+
+                    # Не рендерим скрытых NPC (в режиме отдыха/работы)
+                    if necromancer.is_hidden():
                         continue
 
                     screen_x = (necromancer.x - camera_x) * TILE_SIZE
@@ -574,6 +598,10 @@ class WorldRenderer:
 
                 if tile.explored and is_visible:
                     if not animal.is_alive:
+                        continue
+
+                    # Не рендерим скрытых NPC (в режиме отдыха/работы)
+                    if animal.is_hidden():
                         continue
 
                     screen_x = (animal.x - camera_x) * TILE_SIZE
