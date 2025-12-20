@@ -615,10 +615,15 @@ class Hunter(NPC):
         """
         Обработка появления NPC на карте после скрытия.
         Возвращает охотника к патрулированию.
+        Полностью восстанавливает здоровье и выносливость.
         """
         if self.state == "resting":
+            # Полностью восстанавливаем здоровье и выносливость (с учетом экипировки)
+            self.health = self.get_effective_max_health()
+            self.stamina = self.get_effective_max_stamina()
+
             # Закончили отдыхать - возвращаемся к патрулированию
-            print(f"{self.name} закончил отдых и возвращается к патрулированию")
+            print(f"{self.name} закончил отдых и возвращается к патрулированию (HP: {self.health}/{self.get_effective_max_health()}, Stamina: {self.stamina}/{self.get_effective_max_stamina()})")
             self.state = "patrol"
             self.steps_in_current_state = 0
 
