@@ -690,17 +690,17 @@ class Game:
         elif action == 'inventory':
             self.inventory_menu_open = True
         elif action == 'skills':
-            self.skill_book_open = True
+            self.skill_book_menu_open = True
         elif action == 'crafting':
-            self.crafting_menu_open = True
+            self.crafting_window_open = True
         elif action == 'quests':
             self._open_quest_journal()
         elif action == 'companions':
-            self.companion_menu_open = True
+            self.companion_window_open = True
         elif action == 'help':
-            self.help_menu_open = True
+            self.help_window.toggle()
         elif action == 'cheats':
-            self.cheat_menu_open = True
+            self.cheat_menu_open = not self.cheat_menu_open
         else:
             return False
 
