@@ -351,7 +351,7 @@ class Hunter(NPC):
         self._adjust_hunter_stats()
 
         # AI параметры
-        self.state = "patrol"  # patrol, rest, hunt, return_home
+        self.state = "patrol"  # patrol, rest, hunt, return_home, returning_to_town, resting
         self.detection_range = 12
         self.hunt_target = None
         self.max_distance_from_home = 30
@@ -430,6 +430,11 @@ class Hunter(NPC):
         if self.is_hidden():
             return
 
+        # Проверяем только что ли появился после отдыха
+        if self.state == "resting":
+            self._handle_appearance()
+            return
+
         # Восстанавливаем выносливость
         self.recover_stamina()
 
@@ -447,6 +452,8 @@ class Hunter(NPC):
             self._rest_step()
         elif self.state == "return_home":
             self._return_home_step(game_map)
+        elif self.state == "returning_to_town":
+            self._returning_to_town_step(game_map)
 
     def _patrol_step(self, game_map, all_npcs):
         """Шаг патрулирования"""
@@ -509,12 +516,22 @@ class Hunter(NPC):
         # Проверяем, можем ли атаковать
         if self.can_attack(self.hunt_target):
             # Используем упрощенный бой для NPC vs NPC
+            target_type = self.hunt_target.npc_type
             enemy_killed = self._simplified_npc_combat(self.hunt_target, context)
             if enemy_killed:
                 print(f"{self.name} победил {self.hunt_target.name} в быстром бою!")
-                self.hunt_target = None
-                self.state = "patrol"
-                self.steps_in_current_state = 0
+
+                # Если убили животное - идем в город на отдых
+                if target_type in ['wolf', 'bear', 'deer']:
+                    print(f"{self.name} убил {target_type} и возвращается в город для отдыха")
+                    self.hunt_target = None
+                    self.state = "returning_to_town"
+                    self.steps_in_current_state = 0
+                else:
+                    # Если убили врага - продолжаем патрулирование
+                    self.hunt_target = None
+                    self.state = "patrol"
+                    self.steps_in_current_state = 0
             return
 
         # Двигаемся к цели
@@ -565,6 +582,45 @@ class Hunter(NPC):
             if self._can_move(new_x, new_y, game_map):
                 self.x = new_x
                 self.y = new_y
+
+    def _returning_to_town_step(self, game_map):
+        """
+        Возвращение в город после удачной охоты.
+        При достижении дома - скрывается для отдыха на 20 ходов.
+
+        Args:
+            game_map: Объект карты игры
+        """
+        # Проверяем, достигли ли дома (точное попадание на клетку)
+        if self.x == self.home_x and self.y == self.home_y:
+            # Достигли дома - начинаем отдыхать
+            self.state = "resting"
+            rest_duration = 20  # 20 ходов отдыха
+            self.hide_from_map(rest_duration, f"Город (отдых после охоты)")
+            print(f"{self.name} достиг города и отдыхает {rest_duration} ходов")
+            return
+
+        # Проверяем выносливость
+        if not self.consume_stamina():
+            return  # Нет выносливости
+
+        # Делаем шаг к дому
+        dx, dy = self._find_next_step(self.home_x, self.home_y, game_map, max_search_distance=100)
+        if dx != 0 or dy != 0:
+            if self._can_move(self.x + dx, self.y + dy, game_map):
+                self.x += dx
+                self.y += dy
+
+    def _handle_appearance(self):
+        """
+        Обработка появления NPC на карте после скрытия.
+        Возвращает охотника к патрулированию.
+        """
+        if self.state == "resting":
+            # Закончили отдыхать - возвращаемся к патрулированию
+            print(f"{self.name} закончил отдых и возвращается к патрулированию")
+            self.state = "patrol"
+            self.steps_in_current_state = 0
 
     def _find_hunt_target(self, all_npcs):
         """
