@@ -456,7 +456,7 @@ class Hunter(NPC):
             self.state = "return_home"
             return
 
-        # Ищем врагов (бандитов и нежить)
+        # Ищем цели для охоты (приоритет - животные, потом враги)
         target = self._find_hunt_target(all_npcs)
         if target:
             self.hunt_target = target
@@ -488,6 +488,24 @@ class Hunter(NPC):
             self.steps_in_current_state = 0
             return
 
+        # Проверяем, не вышла ли цель за пределы patrol_radius от дома
+        distance_target_to_home = abs(self.hunt_target.x - self.home_x) + abs(self.hunt_target.y - self.home_y)
+        if distance_target_to_home > self.max_distance_from_home:
+            # Цель ушла за пределы patrol_radius - прекращаем охоту
+            self.hunt_target = None
+            self.state = "patrol"
+            self.steps_in_current_state = 0
+            return
+
+        # Проверяем, не слишком ли далеко охотник от дома
+        distance_from_home = abs(self.x - self.home_x) + abs(self.y - self.home_y)
+        if distance_from_home > self.max_distance_from_home:
+            # Вышли за пределы patrol_radius - возвращаемся
+            self.hunt_target = None
+            self.state = "return_home"
+            self.steps_in_current_state = 0
+            return
+
         # Проверяем, можем ли атаковать
         if self.can_attack(self.hunt_target):
             # Используем упрощенный бой для NPC vs NPC
@@ -506,6 +524,16 @@ class Hunter(NPC):
         if dx != 0 or dy != 0:
             new_x = self.x + dx
             new_y = self.y + dy
+
+            # Проверяем, не выведет ли это движение за пределы patrol_radius
+            new_distance_from_home = abs(new_x - self.home_x) + abs(new_y - self.home_y)
+            if new_distance_from_home > self.max_distance_from_home:
+                # Движение выведет за пределы - прекращаем охоту
+                self.hunt_target = None
+                self.state = "patrol"
+                self.steps_in_current_state = 0
+                return
+
             if self._can_move(new_x, new_y, game_map):
                 self.x = new_x
                 self.y = new_y
@@ -513,6 +541,7 @@ class Hunter(NPC):
             # Не можем найти путь
             self.hunt_target = None
             self.state = "patrol"
+            self.steps_in_current_state = 0
 
     def _rest_step(self):
         """Шаг отдыха"""
@@ -538,9 +567,22 @@ class Hunter(NPC):
                 self.y = new_y
 
     def _find_hunt_target(self, all_npcs):
-        """Найти цель для охоты"""
+        """
+        Найти цель для охоты
+
+        Приоритет целей:
+        1. Животные (wolf, bear, deer) в пределах patrol_radius от дома
+        2. Враги (bandit, undead, necromancer) в detection_range
+
+        Returns:
+            NPC или None
+        """
         if not all_npcs:
             return None
+
+        # Список животных и врагов в зоне обнаружения
+        animals_in_range = []
+        enemies_in_range = []
 
         for npc in all_npcs:
             if not npc.is_alive:
@@ -548,11 +590,33 @@ class Hunter(NPC):
             if npc == self:
                 continue
 
-            # Охотимся на бандитов, нежить и животных
-            if npc.npc_type in ['bandit', 'undead', 'necromancer', 'wolf', 'bear', 'deer']:
-                distance = abs(self.x - npc.x) + abs(self.y - npc.y)
-                if distance <= self.detection_range:
-                    return npc
+            distance_to_target = abs(self.x - npc.x) + abs(self.y - npc.y)
+
+            # Проверяем, что цель находится в пределах обнаружения
+            if distance_to_target > self.detection_range:
+                continue
+
+            # Проверяем, что цель не уведет охотника за пределы patrol_radius от дома
+            # (для охотников-стражников)
+            distance_target_to_home = abs(npc.x - self.home_x) + abs(npc.y - self.home_y)
+            if distance_target_to_home > self.max_distance_from_home:
+                continue
+
+            # Разделяем на животных и врагов
+            if npc.npc_type in ['wolf', 'bear', 'deer']:
+                animals_in_range.append((distance_to_target, npc))
+            elif npc.npc_type in ['bandit', 'undead', 'necromancer']:
+                enemies_in_range.append((distance_to_target, npc))
+
+        # Приоритет 1: Ближайшее животное
+        if animals_in_range:
+            animals_in_range.sort(key=lambda x: x[0])  # Сортируем по расстоянию
+            return animals_in_range[0][1]
+
+        # Приоритет 2: Ближайший враг
+        if enemies_in_range:
+            enemies_in_range.sort(key=lambda x: x[0])
+            return enemies_in_range[0][1]
 
         return None
 
