@@ -1311,8 +1311,8 @@ class MerchantEditDialog(Dialog):
         self.is_new = is_new
         self.waypoints_copy = [MerchantWaypoint(wp.x, wp.y, wp.duration) for wp in self.merchant.waypoints]
 
-        # Dialog size (includes respawn_time slider)
-        height = 530
+        # Dialog size (includes all sliders)
+        height = 630
         width = 700
 
         title = "Создать торговца" if is_new else "Редактировать торговца"
@@ -1384,17 +1384,41 @@ class MerchantEditDialog(Dialog):
                 selected=str(self.merchant.get_specialization(spec_key))
             ))
 
-        # === RESPAWN TIME SLIDER ===
+        # === SLIDERS SECTION ===
         # Calculate position after specializations (4 rows * 50)
-        respawn_y = spec_y + 4 * 50 + 10
+        slider_y = spec_y + 4 * 50 + 10
+
+        # Respawn time slider
         self.sliders.append(DialogSlider(
-            rect=pygame.Rect(20, respawn_y + 20, self.width - 40, 16),
+            rect=pygame.Rect(20, slider_y + 20, self.width - 40, 16),
             label="Время респавна (ходов)",
             key="respawn_time",
             value=self.merchant.respawn_time,
             min_val=0, max_val=999, step=10
         ))
         self.data['respawn_time'] = self.merchant.respawn_time
+        slider_y += 50
+
+        # Assortment update slider
+        self.sliders.append(DialogSlider(
+            rect=pygame.Rect(20, slider_y + 20, self.width - 40, 16),
+            label="Обновление ассортимента (ходов)",
+            key="assortment_update",
+            value=self.merchant.assortment_update,
+            min_val=10, max_val=1000, step=10
+        ))
+        self.data['assortment_update'] = self.merchant.assortment_update
+        slider_y += 50
+
+        # Wealth slider
+        self.sliders.append(DialogSlider(
+            rect=pygame.Rect(20, slider_y + 20, self.width - 40, 16),
+            label="Состояние (золото)",
+            key="wealth",
+            value=self.merchant.wealth,
+            min_val=1000, max_val=50000, step=500
+        ))
+        self.data['wealth'] = self.merchant.wealth
 
         # Buttons at the bottom
         btn_width = 100
@@ -1503,6 +1527,8 @@ class MerchantEditDialog(Dialog):
         rank = int(self.data.get('rank', '1'))
         color_data = self.data.get('color', [255, 165, 0])
         respawn_time = int(self.data.get('respawn_time', 200))
+        assortment_update = int(self.data.get('assortment_update', 100))
+        wealth = int(self.data.get('wealth', 3000))
 
         if isinstance(color_data, (list, tuple)):
             color = tuple(int(c) for c in color_data[:3])
@@ -1515,6 +1541,8 @@ class MerchantEditDialog(Dialog):
         self.merchant.color = color
         self.merchant.waypoints = self.waypoints_copy
         self.merchant.respawn_time = max(0, min(999, respawn_time))
+        self.merchant.assortment_update = max(10, min(1000, assortment_update))
+        self.merchant.wealth = max(1000, min(50000, wealth))
 
         # Update specializations
         for spec_key in MERCHANT_SPECIALIZATIONS.keys():

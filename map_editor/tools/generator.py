@@ -270,6 +270,8 @@ class Merchant:
     is_loop: bool = True  # Whether route loops back to start
     specializations: Dict[str, int] = field(default_factory=dict)  # Category -> rank (1-4), 0 = disabled
     respawn_time: int = 200  # Respawn time in game turns
+    assortment_update: int = 100  # Turns until assortment update (10-1000)
+    wealth: int = 3000  # Merchant's wealth/state (1000-50000)
 
     def __post_init__(self):
         """Generate ID if not provided."""
@@ -338,7 +340,9 @@ class Merchant:
             'color': list(self.color),
             'is_loop': self.is_loop,
             'specializations': self.specializations,
-            'respawn_time': self.respawn_time
+            'respawn_time': self.respawn_time,
+            'assortment_update': self.assortment_update,
+            'wealth': self.wealth
         }
 
     @classmethod
@@ -357,7 +361,9 @@ class Merchant:
             color=color,
             is_loop=data.get('is_loop', True),
             specializations=full_specs,
-            respawn_time=data.get('respawn_time', 200)
+            respawn_time=data.get('respawn_time', 200),
+            assortment_update=data.get('assortment_update', 100),
+            wealth=data.get('wealth', 3000)
         )
 
 
