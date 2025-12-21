@@ -10,7 +10,7 @@ from game.ui.windows.inventory import InventoryWindow
 from game.ui.windows.trade import TradeWindow
 from game.ui.windows.character import CharacterWindow
 from game.ui.windows.skill_book import SkillBookWindow
-from game.ui.windows.loot import LootWindow
+from game.ui.windows.loot import LootWindow, DungeonLootWindow
 from game.ui.windows.resource_collection import ResourceCollectionWindow
 from game.ui.windows.quest import QuestWindow
 from game.ui.windows.random_event import RandomEventWindow
@@ -35,6 +35,7 @@ __all__ = [
     'CharacterWindow',
     'SkillBookWindow',
     'LootWindow',
+    'DungeonLootWindow',
     'ResourceCollectionWindow',
     'QuestWindow',
     'RandomEventWindow',

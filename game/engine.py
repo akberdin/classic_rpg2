@@ -128,10 +128,11 @@ class Game:
         self.inventory_window = InventoryWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.trade_window = TradeWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.character_window = CharacterWindow(self.screen, self.font, self.info_font, self.ui_scaler)
-        from game.ui import SkillBookWindow, LootWindow
+        from game.ui import SkillBookWindow, LootWindow, DungeonLootWindow
         from game.ui.windows import ResourceCollectionWindow
         self.skill_book_window = SkillBookWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.loot_window = LootWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.dungeon_loot_window = DungeonLootWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.resource_collection_window = ResourceCollectionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.companion_window = CompanionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
 
@@ -141,6 +142,7 @@ class Game:
         self.character_menu_open = False
         self.skill_book_menu_open = False
         self.loot_window_open = False
+        self.dungeon_loot_window_open = False  # Окно лута подземелий (тайники, останки)
         self.resource_collection_window_open = False
         self.quest_window_open = False
         self.companion_window_open = False
@@ -1100,20 +1102,16 @@ class Game:
                 selected_target, selected_object, selected_object_type
             )
 
-            # Мини-карта подземелья (увеличен размер для лучшей видимости)
+            # Мини-карта подземелья (позиция аналогична карте мира - правый нижний угол)
             minimap_w = 220
             minimap_h = 180
-            minimap_x = self.window_width - minimap_w - 10
-            minimap_y = 10
+            panel_height = 100  # Высота нижней панели HUD
+            margin = 10
+            minimap_x = self.window_width - minimap_w - margin
+            minimap_y = self.window_height - minimap_h - panel_height - margin
             self.dungeon_renderer.render_minimap(
                 dungeon, self.player,
                 minimap_x, minimap_y, minimap_w, minimap_h
-            )
-
-            # Легенда миникарты (под миникартой)
-            legend_y = minimap_y + minimap_h + 10
-            self.dungeon_renderer.render_minimap_legend(
-                minimap_x, legend_y, minimap_w, self.info_font
             )
 
             # HUD подземелья
@@ -1122,13 +1120,10 @@ class Game:
             # Отрисовка стандартного HUD (здоровье, мана, выносливость)
             self.hud_renderer.render()
 
-            # Панель информации о выбранном враге
+            # Панель информации о выбранном враге (в правом верхнем углу, где раньше была мини-карта)
             target_info = self.dungeon_manager.get_target_info()
             if target_info:
                 self.dungeon_renderer.render_target_info_panel(target_info, self.info_font)
-
-            # Подсказки управления боем
-            self.dungeon_renderer.render_combat_hints(self.info_font)
 
             # Панель статистики исследования
             self.dungeon_renderer.render_exploration_stats_panel(self.player, self.dungeon_manager, self.info_font)
@@ -1205,6 +1200,10 @@ class Game:
         # Если открыто окно лута, отрисовываем его
         if self.loot_window_open:
             self.loot_window.render()
+
+        # Если открыто окно лута подземелий, отрисовываем его
+        if self.dungeon_loot_window_open:
+            self.dungeon_loot_window.render()
 
         # Если открыто окно сбора ресурсов, отрисовываем его
         if self.resource_collection_window_open:

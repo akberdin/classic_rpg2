@@ -926,7 +926,10 @@ class InputHandler:
                 if remains and not remains.get('looted', False):
                     result = self.ctx.dungeon_manager.interact_with_tile(self.ctx.player)
                     if result and result.get('success'):
-                        print(result.get('message', 'Вы обыскали останки'))
+                        # Открываем окно лута подземелий
+                        enemy_name = remains.get('enemy_name', 'Враг')
+                        self.game.dungeon_loot_window.set_loot_from_remains(result, enemy_name)
+                        self.game.dungeon_loot_window_open = True
                     return
 
                 # Проверяем тайник под игроком (прямое взаимодействие)
@@ -935,7 +938,10 @@ class InputHandler:
                     result = self.ctx.dungeon_manager.interact_with_tile(self.ctx.player)
                     if result:
                         if result.get('success'):
-                            print(f"Тайник обыскан! Получено: {result.get('gold', 0)} золота")
+                            # Открываем окно лута подземелий для тайника
+                            stash_name = f"{stash.name} ({stash.level_name})"
+                            self.game.dungeon_loot_window.set_loot_from_stash(result, stash_name)
+                            self.game.dungeon_loot_window_open = True
                         else:
                             print(result.get('message', 'Не удалось обыскать тайник'))
                     return
@@ -1344,6 +1350,12 @@ class InputHandler:
         if self.ctx.loot_window_open:
             if event.type == pygame.KEYDOWN:
                 self.ctx.loot_window_open = False
+            return True
+
+        # Окно лута подземелий (тайники и останки)
+        if self.ctx.dungeon_loot_window_open:
+            if event.type == pygame.KEYDOWN:
+                self.ctx.dungeon_loot_window_open = False
             return True
 
         # Окно сбора ресурсов

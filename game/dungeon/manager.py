@@ -227,7 +227,8 @@ class DungeonManager:
             ]
             name = f"{random.choice(npc_names)} (Ур. {level})"
 
-            undead = Undead(name, x, y, level, dungeon.entrance[0], dungeon.entrance[1])
+            # Нежить привязана к своей начальной позиции спавна (не к входу)
+            undead = Undead(name, x, y, level, x, y)
 
             # Уменьшаем радиус патрулирования для подземелий
             undead.patrol_radius = 10
@@ -841,13 +842,18 @@ class DungeonManager:
                 # Проверяем линию видимости для преследования
                 has_los = dungeon.has_line_of_sight(npc.x, npc.y, player.x, player.y)
 
+                # Получаем радиус обнаружения NPC (используем detection_range_player если есть)
+                detection_range = getattr(npc, 'detection_range_player', 5)
+
                 # Если NPC агрессивен (был атакован или атаковал), преследует игрока (но только если видит)
                 if hasattr(npc, '_aggro_target') and npc._aggro_target == player:
                     if has_los:
                         self._move_enemy_towards_player(npc, player)
-                elif dist <= 5 and has_los:
+                elif dist <= detection_range and has_los:
                     # Обычное поведение - движение к игроку если в радиусе обнаружения И видит игрока
                     self._move_enemy_towards_player(npc, player)
+                    # Помечаем NPC как агрессивного при первом обнаружении
+                    npc._aggro_target = player
 
         return results
 
