@@ -114,8 +114,8 @@ class Item:
     @property
     def is_stackable(self):
         """Проверить, можно ли стекировать предмет"""
-        # Экипируемые предметы не стекируются
-        return self.item_type not in ["equipment", "skill_book"]
+        # Экипируемые предметы, книги умений и рецепты не стекируются
+        return self.item_type not in ["equipment", "skill_book", "recipe"]
 
     def get_full_name(self):
         """Полное название с качеством"""
@@ -1174,11 +1174,29 @@ class Inventory:
         if old_item:
             self.add_item(old_item)
 
+        # Снимаем бонусы умений от старого предмета
+        if old_item and hasattr(old_item, 'skill_bonus') and old_item.skill_bonus:
+            if hasattr(self, 'owner') and self.owner and hasattr(self.owner, 'skill_manager'):
+                for skill_id, skill_rank in old_item.skill_bonus.items():
+                    self.owner.skill_manager.revoke_equipment_skill(skill_id, skill_rank)
+
         # Удаляем предмет из инвентаря
         self.remove_item(item, 1)
 
         # Экипируем предмет в целевой слот
         self.equipment[target_slot] = item
+
+        # Применяем бонусы умений от нового предмета
+        if hasattr(item, 'skill_bonus') and item.skill_bonus:
+            if hasattr(self, 'owner') and self.owner and hasattr(self.owner, 'skill_manager'):
+                for skill_id, skill_rank in item.skill_bonus.items():
+                    self.owner.skill_manager.grant_equipment_skill(skill_id, skill_rank)
+
+        # Обновляем max_slots если экипирован рюкзак
+        if isinstance(item, BackpackItem):
+            self.max_slots = self.base_max_slots + item.get_bonus_slots()
+        elif isinstance(old_item, BackpackItem):
+            self.max_slots = self.base_max_slots
 
         return (True, f"{item.get_full_name() if hasattr(item, 'get_full_name') else item.name} экипирован в слот {target_slot.value}")
 
@@ -1323,8 +1341,8 @@ class Inventory:
         """
         from game.item_registry import get_item
         # Для добавления ресурса нужно получить объект предмета
-        if get_item(resource_name):
-            resource_item = get_item(resource_name)
+        resource_item = get_item(resource_name)
+        if resource_item:
             return self.add_item(resource_item, quantity)
         return False
 
@@ -1849,14 +1867,22 @@ class ItemGenerator:
         Args:
             level: Уровень (влияет на параметры)
             quality: Качество предмета (если None - генерируется случайно)
-            max_quality: Максимальное качество (ограничение)
+            max_quality: Максимальное качество (ограничение, ItemQuality)
 
         Returns:
             BeltItem: Сгенерированный пояс
         """
         # Определяем качество
         if quality is None:
-            quality = cls.generate_quality(max_quality)
+            quality = cls.generate_quality()
+            # Ограничиваем качество если указан max_quality
+            if max_quality is not None:
+                quality_order = [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON,
+                                ItemQuality.RARE, ItemQuality.EPIC, ItemQuality.LEGENDARY, ItemQuality.ARTIFACT]
+                max_index = quality_order.index(max_quality)
+                current_index = quality_order.index(quality)
+                if current_index > max_index:
+                    quality = max_quality
 
         # Генерируем процентные бонусы к параметрам (только для необычного и выше)
         param_bonus = None
@@ -1904,14 +1930,22 @@ class ItemGenerator:
         Args:
             level: Уровень (влияет на параметры)
             quality: Качество предмета (если None - генерируется случайно)
-            max_quality: Максимальное качество (ограничение)
+            max_quality: Максимальное качество (ограничение, ItemQuality)
 
         Returns:
             BackpackItem: Сгенерированный рюкзак
         """
         # Определяем качество
         if quality is None:
-            quality = cls.generate_quality(max_quality)
+            quality = cls.generate_quality()
+            # Ограничиваем качество если указан max_quality
+            if max_quality is not None:
+                quality_order = [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON,
+                                ItemQuality.RARE, ItemQuality.EPIC, ItemQuality.LEGENDARY, ItemQuality.ARTIFACT]
+                max_index = quality_order.index(max_quality)
+                current_index = quality_order.index(quality)
+                if current_index > max_index:
+                    quality = max_quality
 
         # Генерируем название
         name = cls.generate_item_name("Рюкзак", "Рюкзак", quality)
@@ -1931,14 +1965,22 @@ class ItemGenerator:
         Args:
             level: Уровень (влияет на параметры)
             quality: Качество предмета (если None - генерируется случайно)
-            max_quality: Максимальное качество (ограничение)
+            max_quality: Максимальное качество (ограничение, ItemQuality)
 
         Returns:
             TalismanItem: Сгенерированный талисман
         """
         # Определяем качество
         if quality is None:
-            quality = cls.generate_quality(max_quality)
+            quality = cls.generate_quality()
+            # Ограничиваем качество если указан max_quality
+            if max_quality is not None:
+                quality_order = [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON,
+                                ItemQuality.RARE, ItemQuality.EPIC, ItemQuality.LEGENDARY, ItemQuality.ARTIFACT]
+                max_index = quality_order.index(max_quality)
+                current_index = quality_order.index(quality)
+                if current_index > max_index:
+                    quality = max_quality
 
         # Генерируем бонусы к характеристикам
         stats_bonus = {}

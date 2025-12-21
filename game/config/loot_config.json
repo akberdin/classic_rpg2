@@ -45,12 +45,13 @@
     "rank_4": {
       "max_level": 999,
       "weights": {
-        "POOR": 0.05,
-        "COMMON": 0.15,
-        "UNCOMMON": 0.25,
-        "RARE": 0.3,
-        "EPIC": 0.2,
-        "LEGENDARY": 0.05
+        "POOR": 0.04,
+        "COMMON": 0.14,
+        "UNCOMMON": 0.24,
+        "RARE": 0.28,
+        "EPIC": 0.20,
+        "LEGENDARY": 0.08,
+        "ARTIFACT": 0.02
       }
     }
   },
