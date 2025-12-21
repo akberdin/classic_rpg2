@@ -1303,7 +1303,7 @@ class MerchantEditDialog(Dialog):
         self.waypoints_copy = [MerchantWaypoint(wp.x, wp.y, wp.duration) for wp in self.merchant.waypoints]
 
         # Calculate dialog height based on waypoints
-        base_height = 400
+        base_height = 450  # Increased for "Add points on map" button
         waypoints_height = min(200, len(self.waypoints_copy) * 30 + 60)
         height = base_height + waypoints_height
 
@@ -1313,7 +1313,11 @@ class MerchantEditDialog(Dialog):
         self._waypoint_delete_rects: List[Tuple[pygame.Rect, int]] = []
         self._color_rects: List[Tuple[pygame.Rect, Tuple[int, int, int]]] = []
         self._add_waypoint_rect: Optional[pygame.Rect] = None
+        self._add_waypoint_on_map_rect: Optional[pygame.Rect] = None  # Button for adding waypoints on map
         self._selected_color = self.merchant.color
+
+        # Callback for adding waypoints on map
+        self.on_add_waypoints_on_map: Optional[Callable[[], None]] = None
 
         self._setup_controls()
 
@@ -1414,6 +1418,12 @@ class MerchantEditDialog(Dialog):
                 self._update_waypoints_data()
                 return True
 
+            # Check "Add waypoints on map" button
+            if self._add_waypoint_on_map_rect and self._add_waypoint_on_map_rect.collidepoint(local_x, local_y):
+                if self.on_add_waypoints_on_map:
+                    self.on_add_waypoints_on_map()
+                return True
+
         return super().handle_event(event)
 
     def _update_waypoints_data(self) -> None:
@@ -1431,6 +1441,7 @@ class MerchantEditDialog(Dialog):
 
     def draw(self, surface: pygame.Surface) -> None:
         """Draw the dialog with merchant-specific elements."""
+        # Call parent draw but we'll redraw the expanded dropdown last
         super().draw(surface)
 
         if not self.visible:
@@ -1527,28 +1538,48 @@ class MerchantEditDialog(Dialog):
 
         y += 10
 
-        # Add waypoint button
-        add_btn_rect = pygame.Rect(self.x + 20, y, 180, 26)
-        self._add_waypoint_rect = pygame.Rect(20, y - self.y, 180, 26)
+        # Add waypoint button (manual entry)
+        add_btn_rect = pygame.Rect(self.x + 20, y, 150, 26)
+        self._add_waypoint_rect = pygame.Rect(20, y - self.y, 150, 26)
         pygame.draw.rect(surface, (50, 120, 50), add_btn_rect, border_radius=4)
         add_text = self.font.render("+ Добавить точку", True, (255, 255, 255))
         add_text_rect = add_text.get_rect(center=add_btn_rect.center)
         surface.blit(add_text, add_text_rect)
 
+        # Add waypoints on map button
+        map_btn_rect = pygame.Rect(self.x + 180, y, 200, 26)
+        self._add_waypoint_on_map_rect = pygame.Rect(180, y - self.y, 200, 26)
+        pygame.draw.rect(surface, (50, 80, 150), map_btn_rect, border_radius=4)
+        map_text = self.font.render("Добавить на карте", True, (255, 255, 255))
+        map_text_rect = map_text.get_rect(center=map_btn_rect.center)
+        surface.blit(map_text, map_text_rect)
+
         # Hint text
         y += 35
-        hint_text = self.font.render("Совет: кликните на карте для добавления точек", True, (150, 150, 150))
+        hint_text = self.font.render("Совет: ПКМ для завершения добавления на карте", True, (150, 150, 150))
         surface.blit(hint_text, (self.x + 20, y))
+
+        # IMPORTANT: Redraw expanded dropdown LAST to fix z-order issue
+        # This ensures dropdown options appear on top of all other elements
+        for dropdown in self.dropdowns:
+            if dropdown.expanded:
+                self._draw_dropdown(surface, dropdown)
+                break
 
     def get_merchant(self) -> Merchant:
         """Get the edited merchant with updated values."""
         name = self.data.get('name', '').strip()
         rank = int(self.data.get('rank', '1'))
-        color = tuple(self.data.get('color', [255, 165, 0]))
+        color_data = self.data.get('color', [255, 165, 0])
+        # Ensure color is a tuple of 3 integers
+        if isinstance(color_data, (list, tuple)):
+            color = tuple(int(c) for c in color_data[:3])
+        else:
+            color = (255, 165, 0)
 
         # Update merchant
-        self.merchant.name = name
-        self.merchant.rank = rank
+        self.merchant.name = name if name else f"Торговец"
+        self.merchant.rank = max(1, min(4, rank))  # Clamp rank to 1-4
         self.merchant.color = color
         self.merchant.waypoints = self.waypoints_copy
 
