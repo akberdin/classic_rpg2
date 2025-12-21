@@ -259,6 +259,14 @@ class GameContext:
         self._game.loot_window_open = value
 
     @property
+    def dungeon_loot_window_open(self) -> bool:
+        return getattr(self._game, 'dungeon_loot_window_open', False)
+
+    @dungeon_loot_window_open.setter
+    def dungeon_loot_window_open(self, value: bool):
+        self._game.dungeon_loot_window_open = value
+
+    @property
     def resource_collection_window_open(self) -> bool:
         return getattr(self._game, 'resource_collection_window_open', False)
 
@@ -368,6 +376,11 @@ class GameContext:
     def loot_window(self):
         """Получить окно лута."""
         return getattr(self._game, 'loot_window', None)
+
+    @property
+    def dungeon_loot_window(self):
+        """Получить окно лута подземелий."""
+        return getattr(self._game, 'dungeon_loot_window', None)
 
     @property
     def resource_collection_window(self):
