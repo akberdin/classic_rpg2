@@ -170,6 +170,21 @@ class MerchantSchedule(NPCSchedule):
         self.active_hours = (7, 21)  # С 7 утра до 21 вечера
         self.rest_hours = (21, 7)
 
+    def update(self, current_hour, game_map):
+        """
+        Обновить расписание торговца
+
+        Странствующие торговцы с waypoints не используют
+        расписание дня/ночи - они следуют своему маршруту.
+        """
+        # Если у торговца есть waypoints, не применяем стандартное расписание
+        if hasattr(self.npc, 'waypoints') and self.npc.waypoints:
+            # Странствующие торговцы с маршрутом игнорируют расписание
+            return
+
+        # Стандартная логика расписания для стационарных торговцев
+        super().update(current_hour, game_map)
+
 
 def create_schedule_for_npc(npc):
     """
