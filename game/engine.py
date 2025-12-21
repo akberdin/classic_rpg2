@@ -762,6 +762,20 @@ class Game:
         if dx == 0 and dy == 0:
             return False  # Клик на самого себя
 
+        # Проверяем перегрузку инвентаря перед движением
+        if self.player.inventory.is_overloaded():
+            print("Вы перегружены!")
+            return True  # Клик обработан, но движение запрещено
+
+        # Проверяем выносливость перед движением
+        if self.player.is_resting:
+            print("Вы слишком устали и должны отдохнуть!")
+            return True
+
+        if not self.player.consume_stamina():
+            print("У вас недостаточно выносливости! Нажмите R для отдыха.")
+            return True
+
         # Пытаемся переместиться
         result = self.dungeon_manager.move_player(self.player, dx, dy)
         if result and result.get('success'):
