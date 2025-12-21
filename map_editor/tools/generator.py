@@ -2,7 +2,7 @@
 
 import random
 import uuid
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Dict, List, Tuple, Any, Optional, Union
 from dataclasses import dataclass, field
 
 from ..utils.helpers import (
@@ -200,6 +200,112 @@ def _create_empty_guards() -> List[Guard]:
     return [Guard() for _ in range(5)]
 
 
+# Merchant rank constants
+MERCHANT_RANK_1 = 1  # Бродячий торговец
+MERCHANT_RANK_2 = 2  # Странствующий купец
+MERCHANT_RANK_3 = 3  # Караванщик
+MERCHANT_RANK_4 = 4  # Гильдейский торговец
+
+MERCHANT_RANKS = {
+    MERCHANT_RANK_1: "Бродячий торговец",
+    MERCHANT_RANK_2: "Странствующий купец",
+    MERCHANT_RANK_3: "Караванщик",
+    MERCHANT_RANK_4: "Гильдейский торговец"
+}
+
+
+@dataclass
+class MerchantWaypoint:
+    """Represents a waypoint (stop point) in a merchant's route."""
+    x: int
+    y: int
+    duration: int = 10  # Duration of stay at this waypoint (in game turns)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for saving."""
+        return {
+            'x': self.x,
+            'y': self.y,
+            'duration': self.duration
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'MerchantWaypoint':
+        """Create from dictionary."""
+        return cls(
+            x=data['x'],
+            y=data['y'],
+            duration=data.get('duration', 10)
+        )
+
+
+@dataclass
+class Merchant:
+    """Represents a merchant with a route on the map."""
+    id: str = ""  # Unique identifier
+    name: str = ""  # Merchant name
+    rank: int = 1  # Merchant rank (1-4)
+    waypoints: List[MerchantWaypoint] = field(default_factory=list)  # Route waypoints
+    current_waypoint_index: int = 0  # Current position in route (for game state)
+    color: Tuple[int, int, int] = (255, 165, 0)  # Display color (orange by default)
+
+    def __post_init__(self):
+        """Generate ID if not provided."""
+        if not self.id:
+            self.id = str(uuid.uuid4())
+
+    def add_waypoint(self, x: int, y: int, duration: int = 10) -> None:
+        """Add a waypoint to the route."""
+        self.waypoints.append(MerchantWaypoint(x=x, y=y, duration=duration))
+
+    def remove_waypoint(self, index: int) -> bool:
+        """Remove waypoint at index. Returns True if removed."""
+        if 0 <= index < len(self.waypoints):
+            self.waypoints.pop(index)
+            return True
+        return False
+
+    def update_waypoint(self, index: int, x: int = None, y: int = None, duration: int = None) -> bool:
+        """Update waypoint at index. Returns True if updated."""
+        if 0 <= index < len(self.waypoints):
+            wp = self.waypoints[index]
+            if x is not None:
+                wp.x = x
+            if y is not None:
+                wp.y = y
+            if duration is not None:
+                wp.duration = duration
+            return True
+        return False
+
+    def get_route_length(self) -> int:
+        """Get the number of waypoints in the route."""
+        return len(self.waypoints)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for saving."""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'rank': self.rank,
+            'waypoints': [wp.to_dict() for wp in self.waypoints],
+            'color': list(self.color)
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Merchant':
+        """Create from dictionary."""
+        waypoints = [MerchantWaypoint.from_dict(wp) for wp in data.get('waypoints', [])]
+        color = tuple(data.get('color', [255, 165, 0]))
+        return cls(
+            id=data.get('id', str(uuid.uuid4())),
+            name=data.get('name', ''),
+            rank=data.get('rank', 1),
+            waypoints=waypoints,
+            color=color
+        )
+
+
 @dataclass
 class MapLocation:
     """Represents a location on the map."""
@@ -326,6 +432,7 @@ class MapConfig:
     """Configuration for map locations and their properties."""
     locations: List[MapLocation] = field(default_factory=list)
     starting_village: Optional[Tuple[int, int]] = None  # (x, y) coordinates
+    merchants: List[Merchant] = field(default_factory=list)  # List of merchants with routes
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for saving."""
@@ -338,6 +445,9 @@ class MapConfig:
                 'x': self.starting_village[0],
                 'y': self.starting_village[1]
             }
+        # Save merchants
+        if self.merchants:
+            data['merchants'] = [merchant.to_dict() for merchant in self.merchants]
         return data
 
     @classmethod
@@ -362,9 +472,13 @@ class MapConfig:
             sv_data = data['starting_village']
             starting_village = (sv_data['x'], sv_data['y'])
 
+        # Load merchants
+        merchants = [Merchant.from_dict(m) for m in data.get('merchants', [])]
+
         return cls(
             locations=config_locations if not locations else locations,
-            starting_village=starting_village
+            starting_village=starting_village,
+            merchants=merchants
         )
 
 
@@ -379,6 +493,7 @@ class GeneratedMap:
     moisture: List[List[float]]
     locations: List[MapLocation] = field(default_factory=list)
     starting_village: Optional[MapLocation] = None
+    merchants: List[Merchant] = field(default_factory=list)  # List of merchants with routes
 
     def get_biome(self, x: int, y: int) -> str:
         """Get biome at coordinates."""
@@ -450,7 +565,7 @@ class GeneratedMap:
 
     def to_config_dict(self) -> Dict[str, Any]:
         """Convert location config to dictionary for saving."""
-        config = MapConfig(locations=self.locations)
+        config = MapConfig(locations=self.locations, merchants=self.merchants)
         if self.starting_village:
             config.starting_village = (self.starting_village.x, self.starting_village.y)
         return config.to_dict()
@@ -470,11 +585,13 @@ class GeneratedMap:
         # Load locations from config if provided, otherwise from main data (backward compatibility)
         locations = []
         starting_village = None
+        merchants = []
 
         if config_data:
             # New format: locations in separate config file
             config = MapConfig.from_dict(config_data)
             locations = config.locations
+            merchants = config.merchants
 
             # Find starting village
             if config.starting_village:
@@ -521,7 +638,8 @@ class GeneratedMap:
             elevation=elevation,
             moisture=moisture,
             locations=locations,
-            starting_village=starting_village
+            starting_village=starting_village,
+            merchants=merchants
         )
 
         # Validate connections (remove invalid ones)
@@ -530,6 +648,37 @@ class GeneratedMap:
             print(f"Внимание: удалено {removed} недействительных связей")
 
         return map_instance
+
+    def add_merchant(self, merchant: Merchant) -> None:
+        """Add a merchant to the map."""
+        self.merchants.append(merchant)
+
+    def remove_merchant(self, merchant_id: str) -> bool:
+        """Remove merchant by ID. Returns True if removed."""
+        for i, merchant in enumerate(self.merchants):
+            if merchant.id == merchant_id:
+                self.merchants.pop(i)
+                return True
+        return False
+
+    def get_merchant_by_id(self, merchant_id: str) -> Optional[Merchant]:
+        """Get merchant by ID."""
+        for merchant in self.merchants:
+            if merchant.id == merchant_id:
+                return merchant
+        return None
+
+    def get_merchant_at(self, x: int, y: int) -> Optional[Merchant]:
+        """Get merchant that has a waypoint at the given coordinates."""
+        for merchant in self.merchants:
+            for wp in merchant.waypoints:
+                if wp.x == x and wp.y == y:
+                    return merchant
+        return None
+
+    def get_merchants_count(self) -> int:
+        """Get the number of merchants on the map."""
+        return len(self.merchants)
 
 
 class MapGenerator:
