@@ -221,8 +221,9 @@ class Trap:
 
         self.is_triggered = True
 
-        # Определяем, игрок это или NPC
-        is_player = hasattr(target, 'inventory')  # У игрока есть инвентарь
+        # Определяем, игрок это или NPC (проверяем класс Player)
+        from game.character import Player
+        is_player = isinstance(target, Player)
 
         # Проверка режима бессмертия для игрока
         if is_player and getattr(target, 'godmode', False):
