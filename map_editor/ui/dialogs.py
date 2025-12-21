@@ -13,7 +13,7 @@ from ..tools.generator import (
     LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER,
     Guard, GUARD_TYPES, GUARD_NONE,
     RESOURCE_TYPES,
-    Merchant, MerchantWaypoint, MERCHANT_RANKS
+    Merchant, MerchantWaypoint, MERCHANT_RANKS, MERCHANT_SPECIALIZATIONS
 )
 
 
@@ -1283,7 +1283,7 @@ class ConfirmDialog(Dialog):
 
 
 class MerchantEditDialog(Dialog):
-    """Dialog for editing merchant properties and waypoints."""
+    """Dialog for editing merchant properties, waypoints and specializations."""
 
     # Predefined merchant colors
     MERCHANT_COLORS = [
@@ -1297,24 +1297,39 @@ class MerchantEditDialog(Dialog):
         ((64, 224, 208), "Бирюзовый")
     ]
 
+    # Specialization rank options (0 = disabled)
+    SPEC_RANK_OPTIONS = {
+        "0": "Нет",
+        "1": "Ранг 1",
+        "2": "Ранг 2",
+        "3": "Ранг 3",
+        "4": "Ранг 4"
+    }
+
     def __init__(self, merchant: Merchant = None, is_new: bool = False):
         self.merchant = merchant or Merchant()
         self.is_new = is_new
         self.waypoints_copy = [MerchantWaypoint(wp.x, wp.y, wp.duration) for wp in self.merchant.waypoints]
 
-        # Calculate dialog height based on waypoints
-        base_height = 450  # Increased for "Add points on map" button
-        waypoints_height = min(200, len(self.waypoints_copy) * 30 + 60)
-        height = base_height + waypoints_height
+        # Fixed height - larger dialog for all content
+        height = 750
+        width = 700
 
         title = "Создать торговца" if is_new else "Редактировать торговца"
-        super().__init__(title, 550, height)
+        super().__init__(title, width, height)
 
         self._waypoint_delete_rects: List[Tuple[pygame.Rect, int]] = []
+        self._waypoint_duration_rects: List[Tuple[pygame.Rect, int]] = []  # For duration editing
         self._color_rects: List[Tuple[pygame.Rect, Tuple[int, int, int]]] = []
         self._add_waypoint_rect: Optional[pygame.Rect] = None
-        self._add_waypoint_on_map_rect: Optional[pygame.Rect] = None  # Button for adding waypoints on map
+        self._add_waypoint_on_map_rect: Optional[pygame.Rect] = None
         self._selected_color = self.merchant.color
+        self._editing_duration_idx: Optional[int] = None  # Index of waypoint being edited for duration
+        self._duration_input_value: str = ""
+
+        # Scroll offset for waypoints list
+        self._waypoints_scroll_offset = 0
+        self._waypoints_visible_count = 5  # Max visible waypoints
 
         # Callback for adding waypoints on map
         self.on_add_waypoints_on_map: Optional[Callable[[], None]] = None
@@ -1325,21 +1340,22 @@ class MerchantEditDialog(Dialog):
         """Setup dialog controls."""
         y = 50
 
+        # === LEFT COLUMN: Basic info and waypoints ===
+
         # Name input
         self.text_inputs.append(DialogTextInput(
-            rect=pygame.Rect(20, y + 20, self.width - 40, 28),
+            rect=pygame.Rect(20, y + 20, 320, 28),
             label="Имя торговца:",
             key="name",
             value=self.merchant.name,
             max_length=40
         ))
         self.data['name'] = self.merchant.name
-        y += 70
 
-        # Rank dropdown
+        # Rank dropdown (right side of name)
         rank_options = {str(k): v for k, v in MERCHANT_RANKS.items()}
         self.dropdowns.append(DialogDropdown(
-            rect=pygame.Rect(20, y + 20, self.width - 40, 28),
+            rect=pygame.Rect(360, y + 20, 320, 28),
             label="Ранг торговца:",
             key="rank",
             options=rank_options,
@@ -1348,20 +1364,56 @@ class MerchantEditDialog(Dialog):
         self.data['rank'] = str(self.merchant.rank)
         y += 70
 
-        # Color selection will be drawn manually
+        # Color selection and is_loop checkbox on same row
         self.data['color'] = list(self._selected_color)
+        self.data['is_loop'] = self.merchant.is_loop
+
+        # Checkbox for loop route
+        self.checkboxes.append(DialogCheckbox(
+            rect=pygame.Rect(360, y + 25, 200, 20),
+            label="Замкнутый маршрут",
+            key="is_loop",
+            checked=self.merchant.is_loop
+        ))
         y += 60  # Space for color selection
 
-        # Waypoints section - header drawn in draw()
-        y += 40  # Space for "Маршрут" header
+        # === SPECIALIZATIONS SECTION ===
+        # Store specializations data
+        for spec_key in MERCHANT_SPECIALIZATIONS.keys():
+            spec_rank = self.merchant.get_specialization(spec_key)
+            self.data[f'spec_{spec_key}'] = str(spec_rank)
 
+        # Create 2 columns of specialization dropdowns
+        spec_items = list(MERCHANT_SPECIALIZATIONS.items())
+        spec_y = y + 25
+        col_width = 330
+
+        for i, (spec_key, spec_name) in enumerate(spec_items):
+            col = i % 2
+            row = i // 2
+            x_pos = 20 + col * col_width
+            y_pos = spec_y + row * 50
+
+            self.dropdowns.append(DialogDropdown(
+                rect=pygame.Rect(x_pos, y_pos + 20, col_width - 20, 28),
+                label=f"{spec_name}:" if col == 0 or i == len(spec_items) - 1 else f"{spec_name}:",
+                key=f"spec_{spec_key}",
+                options=self.SPEC_RANK_OPTIONS,
+                selected=str(self.merchant.get_specialization(spec_key))
+            ))
+
+        # Calculate height for specializations section
+        spec_rows = (len(spec_items) + 1) // 2
+        y += 25 + spec_rows * 50 + 20
+
+        # Waypoints section starts after specializations
         # Store waypoints data
         for i, wp in enumerate(self.waypoints_copy):
             self.data[f'wp_{i}_x'] = str(wp.x)
             self.data[f'wp_{i}_y'] = str(wp.y)
             self.data[f'wp_{i}_duration'] = str(wp.duration)
 
-        # Buttons
+        # Buttons at the bottom
         btn_width = 100
         btn_height = 30
         btn_y = self.height - btn_height - 15
@@ -1402,18 +1454,28 @@ class MerchantEditDialog(Dialog):
                     self.data['color'] = list(color)
                     return True
 
+            # Check waypoint duration editing
+            for rect, idx in self._waypoint_duration_rects:
+                if rect.collidepoint(local_x, local_y):
+                    self._editing_duration_idx = idx
+                    if 0 <= idx < len(self.waypoints_copy):
+                        self._duration_input_value = str(self.waypoints_copy[idx].duration)
+                    return True
+
             # Check waypoint delete buttons
             for rect, idx in self._waypoint_delete_rects:
                 if rect.collidepoint(local_x, local_y):
                     if 0 <= idx < len(self.waypoints_copy):
                         self.waypoints_copy.pop(idx)
-                        # Update data
                         self._update_waypoints_data()
+                        # Adjust scroll if needed
+                        max_scroll = max(0, len(self.waypoints_copy) - self._waypoints_visible_count)
+                        if self._waypoints_scroll_offset > max_scroll:
+                            self._waypoints_scroll_offset = max_scroll
                     return True
 
             # Check add waypoint button
             if self._add_waypoint_rect and self._add_waypoint_rect.collidepoint(local_x, local_y):
-                # Add new waypoint at (0, 0) with default duration
                 self.waypoints_copy.append(MerchantWaypoint(x=0, y=0, duration=10))
                 self._update_waypoints_data()
                 return True
@@ -1424,16 +1486,61 @@ class MerchantEditDialog(Dialog):
                     self.on_add_waypoints_on_map()
                 return True
 
+            # Click elsewhere - stop duration editing
+            if self._editing_duration_idx is not None:
+                self._apply_duration_edit()
+                self._editing_duration_idx = None
+
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button in (4, 5):
+            # Scroll waypoints list
+            local_x = event.pos[0] - self.x
+            local_y = event.pos[1] - self.y
+
+            # Check if in waypoints area (approximate)
+            if 20 <= local_x <= self.width - 20 and 370 <= local_y <= 550:
+                max_scroll = max(0, len(self.waypoints_copy) - self._waypoints_visible_count)
+                if event.button == 4:  # Scroll up
+                    self._waypoints_scroll_offset = max(0, self._waypoints_scroll_offset - 1)
+                else:  # Scroll down
+                    self._waypoints_scroll_offset = min(max_scroll, self._waypoints_scroll_offset + 1)
+                return True
+
+        elif event.type == pygame.KEYDOWN and self._editing_duration_idx is not None:
+            # Handle duration input
+            if event.key == pygame.K_RETURN:
+                self._apply_duration_edit()
+                self._editing_duration_idx = None
+                return True
+            elif event.key == pygame.K_ESCAPE:
+                self._editing_duration_idx = None
+                return True
+            elif event.key == pygame.K_BACKSPACE:
+                self._duration_input_value = self._duration_input_value[:-1]
+                return True
+            elif event.unicode.isdigit() and len(self._duration_input_value) < 4:
+                self._duration_input_value += event.unicode
+                return True
+            return True
+
         return super().handle_event(event)
+
+    def _apply_duration_edit(self) -> None:
+        """Apply the duration edit to the waypoint."""
+        if self._editing_duration_idx is not None and 0 <= self._editing_duration_idx < len(self.waypoints_copy):
+            try:
+                duration = int(self._duration_input_value) if self._duration_input_value else 10
+                duration = max(1, min(999, duration))
+                self.waypoints_copy[self._editing_duration_idx].duration = duration
+                self._update_waypoints_data()
+            except ValueError:
+                pass
 
     def _update_waypoints_data(self) -> None:
         """Update waypoints data dictionary."""
-        # Clear old waypoint data
         keys_to_remove = [k for k in self.data.keys() if k.startswith('wp_')]
         for k in keys_to_remove:
             del self.data[k]
 
-        # Add current waypoints
         for i, wp in enumerate(self.waypoints_copy):
             self.data[f'wp_{i}_x'] = str(wp.x)
             self.data[f'wp_{i}_y'] = str(wp.y)
@@ -1441,43 +1548,56 @@ class MerchantEditDialog(Dialog):
 
     def draw(self, surface: pygame.Surface) -> None:
         """Draw the dialog with merchant-specific elements."""
-        # Call parent draw but we'll redraw the expanded dropdown last
         super().draw(surface)
 
         if not self.visible:
             return
 
-        # Draw color selection
-        y = self.y + 170
+        # === Draw color selection ===
+        y = self.y + 120
         color_label = self.font.render("Цвет маркера:", True, self.text_color)
         surface.blit(color_label, (self.x + 20, y))
-        y += 25
+        y += 20
 
         self._color_rects = []
-        color_size = 24
-        padding = 8
+        color_size = 22
+        padding = 6
         x_offset = self.x + 20
 
         for color, name in self.MERCHANT_COLORS:
             rect = pygame.Rect(x_offset, y, color_size, color_size)
             self._color_rects.append((pygame.Rect(x_offset - self.x, y - self.y, color_size, color_size), color))
 
-            pygame.draw.rect(surface, color, rect, border_radius=4)
+            pygame.draw.rect(surface, color, rect, border_radius=3)
             if color == self._selected_color:
-                pygame.draw.rect(surface, (255, 255, 255), rect, width=2, border_radius=4)
+                pygame.draw.rect(surface, (255, 255, 255), rect, width=2, border_radius=3)
             else:
-                pygame.draw.rect(surface, (100, 100, 100), rect, width=1, border_radius=4)
+                pygame.draw.rect(surface, (80, 80, 80), rect, width=1, border_radius=3)
 
             x_offset += color_size + padding
 
-        y += 40
+        # === Draw specializations header ===
+        y = self.y + 175
+        spec_label = self.font.render("Специализации товаров:", True, self.text_color)
+        surface.blit(spec_label, (self.x + 20, y))
 
-        # Draw waypoints section
-        waypoints_label = self.font.render("Маршрут (точки стоянки):", True, self.text_color)
+        # === Draw waypoints section ===
+        y = self.y + 390
+        waypoints_label = self.font.render("Маршрут:", True, self.text_color)
         surface.blit(waypoints_label, (self.x + 20, y))
-        y += 25
+
+        # Route closed indicator
+        if len(self.waypoints_copy) >= 2:
+            is_closed = (self.waypoints_copy[0].x == self.waypoints_copy[-1].x and
+                        self.waypoints_copy[0].y == self.waypoints_copy[-1].y)
+            if is_closed:
+                closed_text = self.font.render("(маршрут замкнут)", True, (100, 200, 100))
+                surface.blit(closed_text, (self.x + 100, y))
+
+        y += 20
 
         self._waypoint_delete_rects = []
+        self._waypoint_duration_rects = []
 
         if not self.waypoints_copy:
             no_wp_text = self.font.render("Нет точек маршрута", True, (150, 150, 150))
@@ -1486,102 +1606,123 @@ class MerchantEditDialog(Dialog):
         else:
             # Header row
             header_x = self.x + 20
-            headers = [("№", 30), ("X", 60), ("Y", 60), ("Длит.", 70), ("", 30)]
+            headers = [("№", 25), ("X", 50), ("Y", 50), ("Ост.", 55), ("", 25)]
             for header, width in headers:
                 header_surface = self.font.render(header, True, (180, 180, 180))
                 surface.blit(header_surface, (header_x, y))
                 header_x += width
-            y += 20
+            y += 18
 
-            # Waypoint rows
-            for i, wp in enumerate(self.waypoints_copy):
+            # Waypoint rows with scroll
+            visible_waypoints = self.waypoints_copy[self._waypoints_scroll_offset:
+                                                    self._waypoints_scroll_offset + self._waypoints_visible_count]
+
+            for display_idx, wp in enumerate(visible_waypoints):
+                actual_idx = display_idx + self._waypoints_scroll_offset
                 row_x = self.x + 20
 
                 # Number
-                num_surface = self.font.render(f"{i + 1}.", True, self.text_color)
-                surface.blit(num_surface, (row_x, y + 5))
-                row_x += 30
+                num_surface = self.font.render(f"{actual_idx + 1}.", True, self.text_color)
+                surface.blit(num_surface, (row_x, y + 4))
+                row_x += 25
 
-                # X input (simplified - just show value)
-                x_rect = pygame.Rect(row_x, y, 50, 24)
-                pygame.draw.rect(surface, (50, 50, 55), x_rect, border_radius=4)
-                pygame.draw.rect(surface, (70, 70, 75), x_rect, width=1, border_radius=4)
+                # X value
+                x_rect = pygame.Rect(row_x, y, 42, 22)
+                pygame.draw.rect(surface, (45, 45, 50), x_rect, border_radius=3)
+                pygame.draw.rect(surface, (60, 60, 65), x_rect, width=1, border_radius=3)
                 x_text = self.font.render(str(wp.x), True, self.text_color)
-                surface.blit(x_text, (x_rect.x + 5, x_rect.y + 5))
-                row_x += 60
+                surface.blit(x_text, (x_rect.x + 4, x_rect.y + 4))
+                row_x += 50
 
-                # Y input
-                y_rect = pygame.Rect(row_x, y, 50, 24)
-                pygame.draw.rect(surface, (50, 50, 55), y_rect, border_radius=4)
-                pygame.draw.rect(surface, (70, 70, 75), y_rect, width=1, border_radius=4)
+                # Y value
+                y_rect = pygame.Rect(row_x, y, 42, 22)
+                pygame.draw.rect(surface, (45, 45, 50), y_rect, border_radius=3)
+                pygame.draw.rect(surface, (60, 60, 65), y_rect, width=1, border_radius=3)
                 y_text = self.font.render(str(wp.y), True, self.text_color)
-                surface.blit(y_text, (y_rect.x + 5, y_rect.y + 5))
-                row_x += 60
+                surface.blit(y_text, (y_rect.x + 4, y_rect.y + 4))
+                row_x += 50
 
-                # Duration input
-                dur_rect = pygame.Rect(row_x, y, 60, 24)
-                pygame.draw.rect(surface, (50, 50, 55), dur_rect, border_radius=4)
-                pygame.draw.rect(surface, (70, 70, 75), dur_rect, width=1, border_radius=4)
-                dur_text = self.font.render(str(wp.duration), True, self.text_color)
-                surface.blit(dur_text, (dur_rect.x + 5, dur_rect.y + 5))
-                row_x += 70
+                # Duration (editable)
+                dur_rect = pygame.Rect(row_x, y, 48, 22)
+                self._waypoint_duration_rects.append((pygame.Rect(row_x - self.x, y - self.y, 48, 22), actual_idx))
+
+                if self._editing_duration_idx == actual_idx:
+                    pygame.draw.rect(surface, (60, 60, 70), dur_rect, border_radius=3)
+                    pygame.draw.rect(surface, (0, 122, 204), dur_rect, width=2, border_radius=3)
+                    dur_text = self.font.render(self._duration_input_value + "|", True, self.text_color)
+                else:
+                    pygame.draw.rect(surface, (45, 45, 50), dur_rect, border_radius=3)
+                    pygame.draw.rect(surface, (60, 60, 65), dur_rect, width=1, border_radius=3)
+                    dur_text = self.font.render(str(wp.duration), True, self.text_color)
+                surface.blit(dur_text, (dur_rect.x + 4, dur_rect.y + 4))
+                row_x += 55
 
                 # Delete button
-                del_rect = pygame.Rect(row_x, y, 24, 24)
-                self._waypoint_delete_rects.append((pygame.Rect(row_x - self.x, y - self.y, 24, 24), i))
-                pygame.draw.rect(surface, (150, 50, 50), del_rect, border_radius=4)
+                del_rect = pygame.Rect(row_x, y, 22, 22)
+                self._waypoint_delete_rects.append((pygame.Rect(row_x - self.x, y - self.y, 22, 22), actual_idx))
+                pygame.draw.rect(surface, (140, 45, 45), del_rect, border_radius=3)
                 del_text = self.font.render("X", True, (255, 255, 255))
                 del_text_rect = del_text.get_rect(center=del_rect.center)
                 surface.blit(del_text, del_text_rect)
 
-                y += 28
+                y += 24
 
-        y += 10
+            # Draw scroll indicator if needed
+            if len(self.waypoints_copy) > self._waypoints_visible_count:
+                scroll_text = f"({self._waypoints_scroll_offset + 1}-{min(self._waypoints_scroll_offset + self._waypoints_visible_count, len(self.waypoints_copy))} из {len(self.waypoints_copy)})"
+                scroll_surface = self.font.render(scroll_text, True, (150, 150, 150))
+                surface.blit(scroll_surface, (self.x + 230, self.y + 390))
 
-        # Add waypoint button (manual entry)
-        add_btn_rect = pygame.Rect(self.x + 20, y, 150, 26)
-        self._add_waypoint_rect = pygame.Rect(20, y - self.y, 150, 26)
-        pygame.draw.rect(surface, (50, 120, 50), add_btn_rect, border_radius=4)
-        add_text = self.font.render("+ Добавить точку", True, (255, 255, 255))
+        y = self.y + 530
+
+        # Add waypoint buttons
+        add_btn_rect = pygame.Rect(self.x + 20, y, 130, 24)
+        self._add_waypoint_rect = pygame.Rect(20, y - self.y, 130, 24)
+        pygame.draw.rect(surface, (45, 100, 45), add_btn_rect, border_radius=3)
+        add_text = self.font.render("+ Добавить", True, (255, 255, 255))
         add_text_rect = add_text.get_rect(center=add_btn_rect.center)
         surface.blit(add_text, add_text_rect)
 
-        # Add waypoints on map button
-        map_btn_rect = pygame.Rect(self.x + 180, y, 200, 26)
-        self._add_waypoint_on_map_rect = pygame.Rect(180, y - self.y, 200, 26)
-        pygame.draw.rect(surface, (50, 80, 150), map_btn_rect, border_radius=4)
-        map_text = self.font.render("Добавить на карте", True, (255, 255, 255))
+        map_btn_rect = pygame.Rect(self.x + 160, y, 150, 24)
+        self._add_waypoint_on_map_rect = pygame.Rect(160, y - self.y, 150, 24)
+        pygame.draw.rect(surface, (45, 70, 130), map_btn_rect, border_radius=3)
+        map_text = self.font.render("На карте", True, (255, 255, 255))
         map_text_rect = map_text.get_rect(center=map_btn_rect.center)
         surface.blit(map_text, map_text_rect)
 
-        # Hint text
-        y += 35
-        hint_text = self.font.render("Совет: ПКМ для завершения добавления на карте", True, (150, 150, 150))
+        # Hint
+        y += 30
+        hint_text = self.font.render("Клик на 'Ост.' для редактирования. Скролл для прокрутки.", True, (130, 130, 130))
         surface.blit(hint_text, (self.x + 20, y))
 
-        # IMPORTANT: Redraw expanded dropdown LAST to fix z-order issue
-        # This ensures dropdown options appear on top of all other elements
+        # IMPORTANT: Redraw ALL expanded dropdowns LAST to fix z-order issue
         for dropdown in self.dropdowns:
             if dropdown.expanded:
                 self._draw_dropdown(surface, dropdown)
-                break
 
     def get_merchant(self) -> Merchant:
         """Get the edited merchant with updated values."""
         name = self.data.get('name', '').strip()
         rank = int(self.data.get('rank', '1'))
         color_data = self.data.get('color', [255, 165, 0])
-        # Ensure color is a tuple of 3 integers
+        is_loop = self.data.get('is_loop', True)
+
         if isinstance(color_data, (list, tuple)):
             color = tuple(int(c) for c in color_data[:3])
         else:
             color = (255, 165, 0)
 
-        # Update merchant
-        self.merchant.name = name if name else f"Торговец"
-        self.merchant.rank = max(1, min(4, rank))  # Clamp rank to 1-4
+        # Update merchant basic properties
+        self.merchant.name = name if name else "Торговец"
+        self.merchant.rank = max(1, min(4, rank))
         self.merchant.color = color
+        self.merchant.is_loop = is_loop
         self.merchant.waypoints = self.waypoints_copy
+
+        # Update specializations
+        for spec_key in MERCHANT_SPECIALIZATIONS.keys():
+            spec_rank = int(self.data.get(f'spec_{spec_key}', '0'))
+            self.merchant.set_specialization(spec_key, spec_rank)
 
         return self.merchant
 
