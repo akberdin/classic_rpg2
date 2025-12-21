@@ -2,8 +2,8 @@
   "version": "1.0",
   "locations": [
     {
-      "x": 21,
-      "y": 17,
+      "x": 17,
+      "y": 15,
       "type": "village",
       "name": "Тихая",
       "id": "53d1fc68-0a51-4d9e-8cc3-6a3741176673",
@@ -12,18 +12,11 @@
       "shop_rank": 1,
       "guards": [
         {
-          "type": "warrior",
+          "type": "hunter",
           "rank": 2,
           "count": 2,
-          "patrol_radius": 5,
-          "respawn_time": 0
-        },
-        {
-          "type": "warrior",
-          "rank": 3,
-          "count": 1,
-          "patrol_radius": 5,
-          "respawn_time": 0
+          "patrol_radius": 8,
+          "respawn_time": 20
         }
       ],
       "connections": [
@@ -70,8 +63,8 @@
       "resource_type": "copper",
       "connections": [
         [
-          21,
-          17
+          17,
+          15
         ]
       ]
     },
@@ -84,15 +77,6 @@
       "player_attitude": 0,
       "spawn_radius": 5,
       "shop_rank": 1,
-      "guards": [
-        {
-          "type": "warrior",
-          "rank": 2,
-          "count": 3,
-          "patrol_radius": 5,
-          "respawn_time": 0
-        }
-      ],
       "connections": [
         [
           29,
@@ -113,68 +97,85 @@
       "player_attitude": 0,
       "spawn_radius": 5,
       "shop_rank": 1,
-      "guards": [
-        {
-          "type": "warrior",
-          "rank": 4,
-          "count": 5,
-          "patrol_radius": 6,
-          "respawn_time": 30
-        },
-        {
-          "type": "mage",
-          "rank": 3,
-          "count": 1,
-          "patrol_radius": 7,
-          "respawn_time": 30
-        },
-        {
-          "type": "shadow_adept",
-          "rank": 1,
-          "count": 1,
-          "patrol_radius": 4,
-          "respawn_time": 150
-        },
-        {
-          "type": "hunter",
-          "rank": 1,
-          "count": 1,
-          "patrol_radius": 10,
-          "respawn_time": 20
-        },
-        {
-          "type": "warrior",
-          "rank": 3,
-          "count": 3,
-          "patrol_radius": 8,
-          "respawn_time": 20
-        }
-      ],
       "connections": [
         [
           29,
           11
         ],
         [
-          21,
-          17
+          17,
+          15
         ]
       ]
     },
     {
-      "x": 9,
-      "y": 8,
+      "x": 11,
+      "y": 11,
       "type": "spawn_wolf",
       "name": "Волчье логово",
       "id": "373df51e-3e7a-4d6b-9403-753552966dc5",
-      "player_attitude": -10,
+      "player_attitude": 0,
       "spawn_radius": 10,
-      "animal_count": 6,
+      "animal_count": 5,
       "respawn_time": 20
+    },
+    {
+      "x": 0,
+      "y": 30,
+      "type": "ruins",
+      "name": "Забытый храм",
+      "id": "5018fa88-1ca2-4809-b51e-a2c3ef9171d5",
+      "player_attitude": -10,
+      "spawn_radius": 5,
+      "rank": 1
     }
   ],
   "starting_village": {
-    "x": 21,
-    "y": 17
-  }
+    "x": 17,
+    "y": 15
+  },
+  "merchants": [
+    {
+      "id": "412cdcf6-062e-4767-be50-abc5a2a991f1",
+      "name": "Хитрый Хан",
+      "rank": 1,
+      "waypoints": [
+        {
+          "x": 30,
+          "y": 22,
+          "duration": 20
+        },
+        {
+          "x": 30,
+          "y": 11,
+          "duration": 20
+        },
+        {
+          "x": 18,
+          "y": 15,
+          "duration": 20
+        },
+        {
+          "x": 30,
+          "y": 22,
+          "duration": 20
+        }
+      ],
+      "color": [
+        255,
+        165,
+        0
+      ],
+      "is_loop": true,
+      "specializations": {
+        "jewelry": 0,
+        "books": 0,
+        "resources": 1,
+        "armor": 1,
+        "weapons": 1,
+        "potions": 1,
+        "recipes": 1
+      }
+    }
+  ]
 }
