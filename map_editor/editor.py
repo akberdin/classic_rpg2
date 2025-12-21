@@ -9,14 +9,16 @@ from typing import Dict, List, Tuple, Optional, Any
 from .utils.helpers import load_config
 from .tools.generator import (
     MapGenerator, GeneratedMap, GeneratorParams, MapLocation, MapConfig, Guard,
-    LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER
+    LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER,
+    Merchant, MerchantWaypoint, MERCHANT_RANKS
 )
 from .tools.brush import BiomeBrush, BrushSettings, BrushMode
 from .tools.objects import ObjectPlacer, PlacementMode
 from .ui.toolbar import Toolbar, ToolType
 from .ui.sidebar import Sidebar
 from .ui.dialogs import (
-    Dialog, GeneratorDialog, LocationEditDialog, SaveDialog, LoadDialog, ConfirmDialog
+    Dialog, GeneratorDialog, LocationEditDialog, SaveDialog, LoadDialog, ConfirmDialog,
+    MerchantEditDialog
 )
 
 
@@ -133,6 +135,11 @@ class MapEditor:
         # Connection tool state
         self.connection_source: Optional[MapLocation] = None  # First selected location (A)
 
+        # Merchant tool state
+        self.selected_merchant: Optional[Merchant] = None
+        self.merchant_edit_dialog: Optional[MerchantEditDialog] = None
+        self.merchant_adding_waypoint: bool = False  # True when adding waypoints by clicking on map
+
     def _setup_callbacks(self) -> None:
         """Setup UI callbacks."""
         # Toolbar callbacks
@@ -144,6 +151,10 @@ class MapEditor:
         self.sidebar.on_location_select = self._on_location_select
         self.sidebar.on_brush_change = self._on_brush_change
         self.sidebar.on_edit_location = self._on_edit_location
+        self.sidebar.on_create_merchant = self._on_create_merchant
+        self.sidebar.on_edit_merchant = self._on_edit_merchant
+        self.sidebar.on_delete_merchant = self._on_delete_merchant
+        self.sidebar.on_select_merchant = self._on_select_merchant
 
         # Dialog callbacks
         self.generator_dialog.on_close = self._on_generator_dialog_close
@@ -159,6 +170,14 @@ class MapEditor:
         # Reset connection tool state when switching tools
         if tool != ToolType.CONNECTION:
             self.connection_source = None
+
+        # Reset merchant tool state when switching tools
+        if tool != ToolType.MERCHANT:
+            self.merchant_adding_waypoint = False
+        else:
+            # Update sidebar with merchants list
+            if self.current_map:
+                self.sidebar.set_merchants(self.current_map.merchants)
 
         # Update object placer mode
         if tool == ToolType.OBJECT:
@@ -433,6 +452,86 @@ class MapEditor:
         if action == "ok":
             params = self.generator_dialog.get_params()
             self._generate_map(params)
+
+    def _on_create_merchant(self) -> None:
+        """Handle create merchant request."""
+        if not self.current_map:
+            return
+
+        # Create new merchant with default values
+        new_merchant = Merchant()
+        new_merchant.name = f"Торговец {len(self.current_map.merchants) + 1}"
+
+        dialog = MerchantEditDialog(new_merchant, is_new=True)
+        dialog.on_close = self._on_merchant_dialog_close
+        self.active_dialog = dialog
+        self.merchant_edit_dialog = dialog
+        dialog.show(self.width, self.height)
+
+    def _on_edit_merchant(self, merchant: Merchant) -> None:
+        """Handle edit merchant request."""
+        if not self.current_map or not merchant:
+            return
+
+        dialog = MerchantEditDialog(merchant, is_new=False)
+        dialog.on_close = self._on_merchant_dialog_close
+        self.active_dialog = dialog
+        self.merchant_edit_dialog = dialog
+        dialog.show(self.width, self.height)
+
+    def _on_delete_merchant(self, merchant: Merchant) -> None:
+        """Handle delete merchant request."""
+        if not self.current_map or not merchant:
+            return
+
+        self.current_map.remove_merchant(merchant.id)
+        self.selected_merchant = None
+        self.sidebar.set_selected_merchant(None)
+        self.sidebar.set_merchants(self.current_map.merchants)
+        self.has_unsaved_changes = True
+        self._set_status(f"Торговец удалён: {merchant.name}")
+
+    def _on_select_merchant(self, merchant: Merchant) -> None:
+        """Handle merchant selection."""
+        self.selected_merchant = merchant
+        self.sidebar.set_selected_merchant(merchant)
+
+    def _on_merchant_dialog_close(self, action: str, data: Dict[str, Any]) -> None:
+        """Handle merchant edit dialog close."""
+        self.active_dialog = None
+        dialog = self.merchant_edit_dialog
+        self.merchant_edit_dialog = None
+
+        if not dialog or not self.current_map:
+            return
+
+        if action == "ok":
+            # Get updated merchant from dialog
+            merchant = dialog.get_merchant()
+
+            # Check if it's a new merchant or existing one
+            existing = self.current_map.get_merchant_by_id(merchant.id)
+            if not existing:
+                # New merchant
+                self.current_map.add_merchant(merchant)
+                self._set_status(f"Торговец создан: {merchant.name}")
+            else:
+                # Update existing merchant (reference is same, so already updated)
+                self._set_status(f"Торговец обновлён: {merchant.name}")
+
+            self.has_unsaved_changes = True
+            self.selected_merchant = merchant
+            self.sidebar.set_selected_merchant(merchant)
+            self.sidebar.set_merchants(self.current_map.merchants)
+
+        elif action == "delete":
+            merchant = dialog.merchant
+            self.current_map.remove_merchant(merchant.id)
+            self.selected_merchant = None
+            self.sidebar.set_selected_merchant(None)
+            self.sidebar.set_merchants(self.current_map.merchants)
+            self.has_unsaved_changes = True
+            self._set_status(f"Торговец удалён: {merchant.name}")
 
     def _new_map(self) -> None:
         """Create a new empty map."""
@@ -883,6 +982,25 @@ class MapEditor:
                 # Reset for next connection
                 self.connection_source = None
 
+        elif self.current_tool == ToolType.MERCHANT:
+            # Merchant mode: click to add waypoint to selected merchant or select waypoint
+            if self.selected_merchant:
+                # Add waypoint at click position
+                self.selected_merchant.add_waypoint(tile_x, tile_y, duration=10)
+                self.has_unsaved_changes = True
+                self.sidebar.set_merchants(self.current_map.merchants)
+                self.sidebar.set_selected_merchant(self.selected_merchant)
+                self._set_status(f"Добавлена точка маршрута ({tile_x}, {tile_y})")
+            else:
+                # Try to select a waypoint/merchant at click position
+                merchant = self.current_map.get_merchant_at(tile_x, tile_y)
+                if merchant:
+                    self.selected_merchant = merchant
+                    self.sidebar.set_selected_merchant(merchant)
+                    self._set_status(f"Выбран торговец: {merchant.name}")
+                else:
+                    self._set_status("Выберите торговца в боковой панели")
+
     def _handle_right_click(self, pos: Tuple[int, int]) -> None:
         """Handle right mouse click."""
         if not self.current_map:
@@ -986,6 +1104,9 @@ class MapEditor:
             if self.show_locations:
                 self._render_connections()  # Draw connections first (behind locations)
                 self._render_locations()
+
+            # Draw merchants and their routes
+            self._render_merchants()
 
             # Draw brush preview
             if self.current_tool == ToolType.BRUSH:
@@ -1120,6 +1241,106 @@ class MapEditor:
             )
             marker_size = max(10, self.tile_size + 4)
             pygame.draw.circle(self.screen, (255, 255, 0), center, marker_size // 2, 3)
+
+    def _render_merchants(self) -> None:
+        """Render merchants and their routes."""
+        if not self.current_map or not self.current_map.merchants:
+            return
+
+        for merchant in self.current_map.merchants:
+            if not merchant.waypoints:
+                continue
+
+            # Draw route lines between waypoints
+            color = merchant.color
+            waypoints = merchant.waypoints
+
+            for i in range(len(waypoints)):
+                wp = waypoints[i]
+                next_wp = waypoints[(i + 1) % len(waypoints)]  # Loop back to start
+
+                # Get screen positions
+                wp_screen = self._tile_to_screen(wp.x, wp.y)
+                next_screen = self._tile_to_screen(next_wp.x, next_wp.y)
+
+                wp_center = (
+                    wp_screen[0] + self.tile_size // 2,
+                    wp_screen[1] + self.tile_size // 2
+                )
+                next_center = (
+                    next_screen[0] + self.tile_size // 2,
+                    next_screen[1] + self.tile_size // 2
+                )
+
+                # Draw route line
+                pygame.draw.line(self.screen, color, wp_center, next_center, 2)
+
+                # Draw arrowhead
+                dx = next_center[0] - wp_center[0]
+                dy = next_center[1] - wp_center[1]
+                angle = math.atan2(dy, dx)
+
+                arrow_size = 8
+                arrow_angle = math.pi / 6
+
+                # Midpoint of the line
+                mid_x = (wp_center[0] + next_center[0]) // 2
+                mid_y = (wp_center[1] + next_center[1]) // 2
+
+                p1 = (mid_x, mid_y)
+                p2 = (
+                    mid_x - arrow_size * math.cos(angle - arrow_angle),
+                    mid_y - arrow_size * math.sin(angle - arrow_angle)
+                )
+                p3 = (
+                    mid_x - arrow_size * math.cos(angle + arrow_angle),
+                    mid_y - arrow_size * math.sin(angle + arrow_angle)
+                )
+
+                pygame.draw.polygon(self.screen, color, [p1, p2, p3])
+
+            # Draw waypoint markers
+            for i, wp in enumerate(waypoints):
+                wp_screen = self._tile_to_screen(wp.x, wp.y)
+                center = (
+                    wp_screen[0] + self.tile_size // 2,
+                    wp_screen[1] + self.tile_size // 2
+                )
+
+                # Check if visible
+                if center[0] < -20 or center[0] > self.width + 20:
+                    continue
+                if center[1] < self.toolbar_height - 20 or center[1] > self.height + 20:
+                    continue
+
+                marker_size = max(8, self.tile_size)
+
+                # Highlight selected merchant's waypoints
+                if merchant == self.selected_merchant:
+                    # Outer highlight
+                    pygame.draw.circle(self.screen, (255, 255, 255), center, marker_size // 2 + 3, 2)
+
+                # Waypoint marker (diamond shape)
+                diamond_size = marker_size // 2
+                diamond_points = [
+                    (center[0], center[1] - diamond_size),  # Top
+                    (center[0] + diamond_size, center[1]),  # Right
+                    (center[0], center[1] + diamond_size),  # Bottom
+                    (center[0] - diamond_size, center[1])   # Left
+                ]
+                pygame.draw.polygon(self.screen, (0, 0, 0), diamond_points)  # Border
+                pygame.draw.polygon(self.screen, color, diamond_points, 0)
+
+                # Draw waypoint number
+                if self.tile_size >= 6:
+                    num_text = self.font.render(str(i + 1), True, (255, 255, 255))
+                    num_rect = num_text.get_rect(center=center)
+                    self.screen.blit(num_text, num_rect)
+
+                # Draw duration on hover/selection
+                if merchant == self.selected_merchant and self.tile_size >= 8:
+                    duration_text = self.font.render(f"{wp.duration}ход", True, (200, 200, 200))
+                    self.screen.blit(duration_text, (center[0] + marker_size, center[1] - 8))
 
     def _render_brush_preview(self) -> None:
         """Render brush preview at mouse position."""

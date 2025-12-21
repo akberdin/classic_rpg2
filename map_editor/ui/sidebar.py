@@ -11,7 +11,8 @@ from ..tools.generator import (
     LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE, LOCATION_MINE,
     LOCATION_BANDIT_CAMP, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL,
     LOCATION_WARRIOR_ACADEMY, LOCATION_SECRET_CAMP,
-    LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER
+    LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER,
+    MERCHANT_RANKS, Merchant
 )
 from .toolbar import ToolType
 
@@ -112,12 +113,25 @@ class Sidebar:
         self.on_brush_change: Optional[Callable[[BrushSettings], None]] = None
         self.on_slider_change: Optional[Callable[[str, float], None]] = None
         self.on_edit_location: Optional[Callable[[Dict[str, Any]], None]] = None
+        self.on_create_merchant: Optional[Callable[[], None]] = None
+        self.on_edit_merchant: Optional[Callable[[Merchant], None]] = None
+        self.on_delete_merchant: Optional[Callable[[Merchant], None]] = None
+        self.on_select_merchant: Optional[Callable[[Merchant], None]] = None
 
         # Location info display
         self.location_info: Optional[Dict[str, Any]] = None
 
+        # Merchant state
+        self.merchants: List[Merchant] = []  # List of merchants on the map
+        self.selected_merchant: Optional[Merchant] = None  # Currently selected merchant
+        self.merchant_edit_mode: str = "select"  # "select", "add_waypoint", "edit_waypoint"
+
         # Edit button rect (stored for click detection)
         self._edit_button_rect: Optional[pygame.Rect] = None
+        self._create_merchant_btn_rect: Optional[pygame.Rect] = None
+        self._edit_merchant_btn_rect: Optional[pygame.Rect] = None
+        self._delete_merchant_btn_rect: Optional[pygame.Rect] = None
+        self._merchant_list_rects: List[Tuple[pygame.Rect, Merchant]] = []
 
     def set_tool(self, tool: ToolType) -> None:
         """Set the current tool to display appropriate options."""
@@ -131,6 +145,18 @@ class Sidebar:
     def set_location_info(self, info: Optional[Dict[str, Any]]) -> None:
         """Set location info for display."""
         self.location_info = info
+
+    def set_merchants(self, merchants: List[Merchant]) -> None:
+        """Set the list of merchants to display."""
+        self.merchants = merchants
+
+    def set_selected_merchant(self, merchant: Optional[Merchant]) -> None:
+        """Set the currently selected merchant."""
+        self.selected_merchant = merchant
+
+    def set_merchant_edit_mode(self, mode: str) -> None:
+        """Set merchant edit mode: 'select', 'add_waypoint', 'edit_waypoint'."""
+        self.merchant_edit_mode = mode
 
     def handle_event(self, event: pygame.event.Event) -> bool:
         """Handle pygame event. Returns True if event was consumed."""
@@ -191,11 +217,43 @@ class Sidebar:
             return self._handle_brush_click(local_x, local_y)
         elif self.current_tool == ToolType.SELECT:
             return self._handle_select_click(local_x, local_y)
+        elif self.current_tool == ToolType.MERCHANT:
+            return self._handle_merchant_click(local_x, local_y)
         return True
 
     def _handle_select_click(self, local_x: int, local_y: int) -> bool:
         """Handle click in select mode."""
         # Edit button is handled above
+        return True
+
+    def _handle_merchant_click(self, local_x: int, local_y: int) -> bool:
+        """Handle click in merchant mode."""
+        # Check create merchant button
+        if self._create_merchant_btn_rect and self._create_merchant_btn_rect.collidepoint(local_x, local_y):
+            if self.on_create_merchant:
+                self.on_create_merchant()
+            return True
+
+        # Check edit merchant button
+        if self._edit_merchant_btn_rect and self._edit_merchant_btn_rect.collidepoint(local_x, local_y):
+            if self.on_edit_merchant and self.selected_merchant:
+                self.on_edit_merchant(self.selected_merchant)
+            return True
+
+        # Check delete merchant button
+        if self._delete_merchant_btn_rect and self._delete_merchant_btn_rect.collidepoint(local_x, local_y):
+            if self.on_delete_merchant and self.selected_merchant:
+                self.on_delete_merchant(self.selected_merchant)
+            return True
+
+        # Check merchant list clicks
+        for rect, merchant in self._merchant_list_rects:
+            if rect.collidepoint(local_x, local_y):
+                self.selected_merchant = merchant
+                if self.on_select_merchant:
+                    self.on_select_merchant(merchant)
+                return True
+
         return True
 
     def _handle_brush_click(self, local_x: int, local_y: int) -> bool:
@@ -347,6 +405,8 @@ class Sidebar:
             self._draw_move_panel(clip_surface)
         elif self.current_tool == ToolType.ERASER:
             self._draw_eraser_panel(clip_surface)
+        elif self.current_tool == ToolType.MERCHANT:
+            self._draw_merchant_panel(clip_surface)
         else:
             self._draw_default_panel(clip_surface)
 
@@ -754,6 +814,136 @@ class Sidebar:
             text_surface = self.font.render(line, True, self.text_color)
             surface.blit(text_surface, (8, y_offset))
             y_offset += 18
+
+    def _draw_merchant_panel(self, surface: pygame.Surface) -> None:
+        """Draw merchant tool panel."""
+        y_offset = 10
+        padding = 4
+        button_height = 28
+
+        # Reset button rects
+        self._create_merchant_btn_rect = None
+        self._edit_merchant_btn_rect = None
+        self._delete_merchant_btn_rect = None
+        self._merchant_list_rects = []
+
+        # Section: Instructions
+        y_offset = self._draw_section_header(surface, "Торговцы", y_offset)
+
+        lines = [
+            "Управление торговцами",
+            "и их маршрутами",
+            "",
+            "ЛКМ - выбрать торговца",
+            "или точку маршрута",
+            "Двойной клик - редактировать"
+        ]
+
+        for line in lines:
+            text_surface = self.font.render(line, True, self.text_color)
+            surface.blit(text_surface, (8, y_offset))
+            y_offset += 18
+
+        y_offset += 10
+
+        # Create merchant button
+        btn_rect = pygame.Rect(padding, y_offset, self.width - padding * 2, button_height)
+        self._create_merchant_btn_rect = btn_rect
+        pygame.draw.rect(surface, self.button_active, btn_rect, border_radius=4)
+        btn_text = self.font.render("+ Создать торговца", True, self.text_color)
+        text_rect = btn_text.get_rect(center=btn_rect.center)
+        surface.blit(btn_text, text_rect)
+        y_offset += button_height + padding + 10
+
+        # Section: Merchant list
+        y_offset = self._draw_section_header(surface, "Список торговцев", y_offset)
+
+        if not self.merchants:
+            text_surface = self.font.render("Нет торговцев", True, (150, 150, 150))
+            surface.blit(text_surface, (8, y_offset))
+            y_offset += 20
+        else:
+            for merchant in self.merchants:
+                # Merchant item
+                btn_rect = pygame.Rect(padding, y_offset, self.width - padding * 2, button_height + 8)
+                self._merchant_list_rects.append((btn_rect, merchant))
+
+                # Highlight selected merchant
+                if merchant == self.selected_merchant:
+                    pygame.draw.rect(surface, self.button_active, btn_rect, border_radius=4)
+                else:
+                    pygame.draw.rect(surface, self.button_color, btn_rect, border_radius=4)
+
+                # Merchant color indicator
+                color_rect = pygame.Rect(btn_rect.x + 4, btn_rect.y + 4, 16, btn_rect.height - 8)
+                pygame.draw.rect(surface, merchant.color, color_rect, border_radius=2)
+
+                # Merchant name and rank
+                rank_name = MERCHANT_RANKS.get(merchant.rank, "Торговец")
+                name_text = merchant.name if merchant.name else f"Торговец #{self.merchants.index(merchant) + 1}"
+                text_surface = self.font.render(name_text, True, self.text_color)
+                surface.blit(text_surface, (btn_rect.x + 26, btn_rect.y + 4))
+
+                # Rank and waypoints info
+                info_text = f"Ранг: {merchant.rank} | Точек: {len(merchant.waypoints)}"
+                info_surface = self.font.render(info_text, True, (180, 180, 180))
+                surface.blit(info_surface, (btn_rect.x + 26, btn_rect.y + 20))
+
+                y_offset += button_height + 12
+
+        y_offset += 10
+
+        # Section: Selected merchant info
+        if self.selected_merchant:
+            y_offset = self._draw_section_header(surface, "Выбранный торговец", y_offset)
+
+            merchant = self.selected_merchant
+            rank_name = MERCHANT_RANKS.get(merchant.rank, "Торговец")
+            info_lines = [
+                f"Имя: {merchant.name or 'Без имени'}",
+                f"Ранг: {rank_name}",
+                f"Точек маршрута: {len(merchant.waypoints)}"
+            ]
+
+            for line in info_lines:
+                text_surface = self.font.render(line, True, self.text_color)
+                surface.blit(text_surface, (8, y_offset))
+                y_offset += 18
+
+            # Waypoints list
+            if merchant.waypoints:
+                y_offset += 5
+                text_surface = self.font.render("Маршрут:", True, (180, 180, 180))
+                surface.blit(text_surface, (8, y_offset))
+                y_offset += 18
+
+                for i, wp in enumerate(merchant.waypoints):
+                    wp_text = f"  {i + 1}. ({wp.x}, {wp.y}) - {wp.duration} ходов"
+                    text_surface = self.font.render(wp_text, True, (150, 200, 255))
+                    surface.blit(text_surface, (8, y_offset))
+                    y_offset += 16
+
+            y_offset += 10
+
+            # Edit button
+            btn_rect = pygame.Rect(padding, y_offset, (self.width - padding * 3) // 2, button_height)
+            self._edit_merchant_btn_rect = btn_rect
+            pygame.draw.rect(surface, self.button_color, btn_rect, border_radius=4)
+            btn_text = self.font.render("Редактировать", True, self.text_color)
+            text_rect = btn_text.get_rect(center=btn_rect.center)
+            surface.blit(btn_text, text_rect)
+
+            # Delete button
+            del_rect = pygame.Rect(btn_rect.right + padding, y_offset, (self.width - padding * 3) // 2, button_height)
+            self._delete_merchant_btn_rect = del_rect
+            pygame.draw.rect(surface, (150, 50, 50), del_rect, border_radius=4)
+            del_text = self.font.render("Удалить", True, self.text_color)
+            del_text_rect = del_text.get_rect(center=del_rect.center)
+            surface.blit(del_text, del_text_rect)
+
+            y_offset += button_height + 10
+
+        self.max_scroll = max(0, y_offset + 50 - self.height)
 
     def resize(self, x: int, y: int, width: int, height: int) -> None:
         """Handle window resize."""
