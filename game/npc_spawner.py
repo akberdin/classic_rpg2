@@ -27,9 +27,6 @@ class NPCSpawner:
         """
         Создать всех NPC на карте
 
-        ВРЕМЕННО ОТКЛЮЧЕНЫ:
-        - merchants (торговцы)
-
         Returns:
             dict: Словарь со списками NPC по типам
         """
@@ -42,9 +39,12 @@ class NPCSpawner:
         mages = [g for g in all_guards if g.npc_type == 'mage']
         hunters = [g for g in all_guards if g.npc_type == 'hunter']
 
+        # Спавним странствующих торговцев из конфига карты
+        wandering_merchants = self.spawn_wandering_merchants()
+
         npcs = {
             'guards': all_guards,  # ВСЕ типы стражи (warrior, mage, shadow_adept, hunter)
-            'merchants': [],  # Временно отключено
+            'merchants': wandering_merchants,  # Странствующие торговцы из конфига
             'mages': mages,    # Дубликат для AI системы
             'hunters': hunters,  # Дубликат для AI системы
             'bandits': self.spawn_bandits(),
@@ -59,21 +59,66 @@ class NPCSpawner:
         # Эти типы NPC (warrior, mage, shadow_adept, hunter) теперь создаются
         # только через систему guards из конфигурации map1_config.json
 
-        # Временно отключаем всех торговцев
-        # magic_merchant = self.spawn_magic_merchant()
-        # if magic_merchant:
-        #     npcs['merchants'].append(magic_merchant)
+        # Специализированные торговцы (магический, военный, теневой)
+        magic_merchant = self.spawn_magic_merchant()
+        if magic_merchant:
+            npcs['merchants'].append(magic_merchant)
 
-        # warrior_merchant = self.spawn_warrior_merchant()
-        # if warrior_merchant:
-        #     npcs['merchants'].append(warrior_merchant)
+        warrior_merchant = self.spawn_warrior_merchant()
+        if warrior_merchant:
+            npcs['merchants'].append(warrior_merchant)
 
-        # shadow_merchant = self.spawn_shadow_merchant()
-        # if shadow_merchant:
-        #     npcs['merchants'].append(shadow_merchant)
+        shadow_merchant = self.spawn_shadow_merchant()
+        if shadow_merchant:
+            npcs['merchants'].append(shadow_merchant)
 
-        print("ВНИМАНИЕ: Спавн торговцев временно отключен")
         return npcs
+
+    def spawn_wandering_merchants(self):
+        """
+        Создание странствующих торговцев на основе конфигурации карты (merchants в map_config)
+
+        Returns:
+            list: Список странствующих торговцев
+        """
+        merchants = []
+
+        # Получаем конфигурацию торговцев из map_config
+        merchant_configs = getattr(self.game_map, 'merchant_configs', [])
+
+        if not merchant_configs:
+            print("Странствующие торговцы: конфигурация не найдена в map_config")
+            return merchants
+
+        for config in merchant_configs:
+            merchant_id = config.get('id', '')
+            name = config.get('name', 'Торговец')
+            waypoints = config.get('waypoints', [])
+
+            if not waypoints:
+                print(f"Странствующий торговец {name}: нет waypoints, пропускаем")
+                continue
+
+            # Начальная позиция - первая точка маршрута
+            first_waypoint = waypoints[0]
+            start_x = first_waypoint.get('x', 0)
+            start_y = first_waypoint.get('y', 0)
+
+            # Создаём торговца с полной конфигурацией
+            merchant = Merchant(
+                name=name,
+                x=start_x,
+                y=start_y,
+                level=1,  # Уровень будет установлен из ранга в _apply_config
+                merchant_config=config
+            )
+
+            merchants.append(merchant)
+            print(f"Создан странствующий торговец '{name}' (ID: {merchant_id}) "
+                  f"в точке ({start_x}, {start_y}), waypoints: {len(waypoints)}")
+
+        print(f"Создано странствующих торговцев: {len(merchants)}")
+        return merchants
 
     def spawn_guards(self):
         """

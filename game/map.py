@@ -132,6 +132,13 @@ class GameMap:
                     self.starting_village = loc
                     break
 
+        # Загружаем конфигурацию странствующих торговцев
+        self.merchant_configs = []
+        merchants_data = config_data.get("merchants", []) if config_data else data.get("merchants", [])
+        if merchants_data:
+            self.merchant_configs = merchants_data
+            print(f"Загружено конфигураций торговцев: {len(self.merchant_configs)}")
+
         if config_data:
             print(f"Карта загружена из {filepath} (с конфигом)")
         else:

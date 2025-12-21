@@ -176,7 +176,9 @@
         "potions": 1,
         "recipes": 1
       },
-      "respawn_time": 20
+      "respawn_time": 20,
+      "assortment_update": 100,
+      "wealth": 3500
     }
   ]
 }
