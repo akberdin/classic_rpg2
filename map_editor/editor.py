@@ -773,6 +773,36 @@ class MapEditor:
         screen_y = tile_y * self.tile_size + self.camera_y + self.toolbar_height
         return screen_x, screen_y
 
+    def _draw_dashed_line(self, surface: pygame.Surface, color: Tuple[int, int, int],
+                          start: Tuple[int, int], end: Tuple[int, int],
+                          width: int = 1, dash_length: int = 8) -> None:
+        """Draw a dashed line between two points."""
+        dx = end[0] - start[0]
+        dy = end[1] - start[1]
+        distance = math.sqrt(dx * dx + dy * dy)
+        if distance == 0:
+            return
+
+        # Normalize direction
+        dx /= distance
+        dy /= distance
+
+        # Draw dashes
+        current = 0
+        drawing = True
+        while current < distance:
+            segment_length = min(dash_length, distance - current)
+            if drawing:
+                start_x = start[0] + dx * current
+                start_y = start[1] + dy * current
+                end_x = start[0] + dx * (current + segment_length)
+                end_y = start[1] + dy * (current + segment_length)
+                pygame.draw.line(surface, color,
+                               (int(start_x), int(start_y)),
+                               (int(end_x), int(end_y)), width)
+            current += dash_length
+            drawing = not drawing
+
     def _distance_to_line(self, px: int, py: int, x1: int, y1: int, x2: int, y2: int) -> float:
         """Calculate distance from point (px, py) to line segment (x1, y1) - (x2, y2)."""
         # Vector from point 1 to point 2
@@ -1304,9 +1334,15 @@ class MapEditor:
             color = merchant.color
             waypoints = merchant.waypoints
 
-            for i in range(len(waypoints)):
+            # Determine how many lines to draw
+            # If is_loop is True or route is physically closed, draw all lines including loop back
+            should_loop = merchant.is_loop or merchant.is_route_closed()
+            line_count = len(waypoints) if should_loop else len(waypoints) - 1
+
+            for i in range(line_count):
                 wp = waypoints[i]
-                next_wp = waypoints[(i + 1) % len(waypoints)]  # Loop back to start
+                next_idx = (i + 1) % len(waypoints)
+                next_wp = waypoints[next_idx]
 
                 # Get screen positions
                 wp_screen = self._tile_to_screen(wp.x, wp.y)
@@ -1321,32 +1357,39 @@ class MapEditor:
                     next_screen[1] + self.tile_size // 2
                 )
 
-                # Draw route line
-                pygame.draw.line(self.screen, color, wp_center, next_center, 2)
+                # Use dashed line for loop-back segment
+                is_loop_segment = (i == len(waypoints) - 1 and should_loop)
+                if is_loop_segment:
+                    # Draw dashed line for loop segment
+                    self._draw_dashed_line(self.screen, color, wp_center, next_center, 2, 8)
+                else:
+                    # Draw solid line for regular segments
+                    pygame.draw.line(self.screen, color, wp_center, next_center, 2)
 
                 # Draw arrowhead
                 dx = next_center[0] - wp_center[0]
                 dy = next_center[1] - wp_center[1]
-                angle = math.atan2(dy, dx)
+                if dx != 0 or dy != 0:  # Avoid division by zero
+                    angle = math.atan2(dy, dx)
 
-                arrow_size = 8
-                arrow_angle = math.pi / 6
+                    arrow_size = 8
+                    arrow_angle = math.pi / 6
 
-                # Midpoint of the line
-                mid_x = (wp_center[0] + next_center[0]) // 2
-                mid_y = (wp_center[1] + next_center[1]) // 2
+                    # Midpoint of the line
+                    mid_x = (wp_center[0] + next_center[0]) // 2
+                    mid_y = (wp_center[1] + next_center[1]) // 2
 
-                p1 = (mid_x, mid_y)
-                p2 = (
-                    mid_x - arrow_size * math.cos(angle - arrow_angle),
-                    mid_y - arrow_size * math.sin(angle - arrow_angle)
-                )
-                p3 = (
-                    mid_x - arrow_size * math.cos(angle + arrow_angle),
-                    mid_y - arrow_size * math.sin(angle + arrow_angle)
-                )
+                    p1 = (mid_x, mid_y)
+                    p2 = (
+                        mid_x - arrow_size * math.cos(angle - arrow_angle),
+                        mid_y - arrow_size * math.sin(angle - arrow_angle)
+                    )
+                    p3 = (
+                        mid_x - arrow_size * math.cos(angle + arrow_angle),
+                        mid_y - arrow_size * math.sin(angle + arrow_angle)
+                    )
 
-                pygame.draw.polygon(self.screen, color, [p1, p2, p3])
+                    pygame.draw.polygon(self.screen, color, [p1, p2, p3])
 
             # Draw waypoint markers
             for i, wp in enumerate(waypoints):

@@ -213,6 +213,25 @@ MERCHANT_RANKS = {
     MERCHANT_RANK_4: "Гильдейский торговец"
 }
 
+# Merchant specialization constants
+SPEC_JEWELRY = "jewelry"        # Украшения
+SPEC_BOOKS = "books"            # Книги
+SPEC_RESOURCES = "resources"    # Ресурсы и материалы
+SPEC_ARMOR = "armor"            # Броня
+SPEC_WEAPONS = "weapons"        # Оружие
+SPEC_POTIONS = "potions"        # Зелья
+SPEC_RECIPES = "recipes"        # Рецепты
+
+MERCHANT_SPECIALIZATIONS = {
+    SPEC_JEWELRY: "Украшения",
+    SPEC_BOOKS: "Книги",
+    SPEC_RESOURCES: "Ресурсы и материалы",
+    SPEC_ARMOR: "Броня",
+    SPEC_WEAPONS: "Оружие",
+    SPEC_POTIONS: "Зелья",
+    SPEC_RECIPES: "Рецепты"
+}
+
 
 @dataclass
 class MerchantWaypoint:
@@ -248,11 +267,16 @@ class Merchant:
     waypoints: List[MerchantWaypoint] = field(default_factory=list)  # Route waypoints
     current_waypoint_index: int = 0  # Current position in route (for game state)
     color: Tuple[int, int, int] = (255, 165, 0)  # Display color (orange by default)
+    is_loop: bool = True  # Whether route loops back to start
+    specializations: Dict[str, int] = field(default_factory=dict)  # Category -> rank (1-4), 0 = disabled
 
     def __post_init__(self):
         """Generate ID if not provided."""
         if not self.id:
             self.id = str(uuid.uuid4())
+        # Initialize empty specializations if not provided
+        if not self.specializations:
+            self.specializations = {key: 0 for key in MERCHANT_SPECIALIZATIONS.keys()}
 
     def add_waypoint(self, x: int, y: int, duration: int = 10) -> None:
         """Add a waypoint to the route."""
@@ -282,6 +306,27 @@ class Merchant:
         """Get the number of waypoints in the route."""
         return len(self.waypoints)
 
+    def is_route_closed(self) -> bool:
+        """Check if route is closed (first and last waypoint are the same)."""
+        if len(self.waypoints) < 2:
+            return False
+        first = self.waypoints[0]
+        last = self.waypoints[-1]
+        return first.x == last.x and first.y == last.y
+
+    def set_specialization(self, spec_key: str, rank: int) -> None:
+        """Set specialization rank (0 = disabled, 1-4 = enabled with rank)."""
+        if spec_key in MERCHANT_SPECIALIZATIONS:
+            self.specializations[spec_key] = max(0, min(4, rank))
+
+    def get_specialization(self, spec_key: str) -> int:
+        """Get specialization rank (0 if disabled)."""
+        return self.specializations.get(spec_key, 0)
+
+    def get_active_specializations(self) -> Dict[str, int]:
+        """Get only active specializations (rank > 0)."""
+        return {k: v for k, v in self.specializations.items() if v > 0}
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for saving."""
         return {
@@ -289,7 +334,9 @@ class Merchant:
             'name': self.name,
             'rank': self.rank,
             'waypoints': [wp.to_dict() for wp in self.waypoints],
-            'color': list(self.color)
+            'color': list(self.color),
+            'is_loop': self.is_loop,
+            'specializations': self.specializations
         }
 
     @classmethod
@@ -297,12 +344,17 @@ class Merchant:
         """Create from dictionary."""
         waypoints = [MerchantWaypoint.from_dict(wp) for wp in data.get('waypoints', [])]
         color = tuple(data.get('color', [255, 165, 0]))
+        # Load specializations with defaults
+        specs = data.get('specializations', {})
+        full_specs = {key: specs.get(key, 0) for key in MERCHANT_SPECIALIZATIONS.keys()}
         return cls(
             id=data.get('id', str(uuid.uuid4())),
             name=data.get('name', ''),
             rank=data.get('rank', 1),
             waypoints=waypoints,
-            color=color
+            color=color,
+            is_loop=data.get('is_loop', True),
+            specializations=full_specs
         )
 
 
