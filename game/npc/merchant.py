@@ -701,9 +701,8 @@ class Merchant(NPC):
             target_x = self.target_location.x
             target_y = self.target_location.y
 
-        # Проверяем, достигли ли цели (в пределах 2 клеток)
-        distance = abs(self.x - target_x) + abs(self.y - target_y)
-        if distance <= 2:
+        # Проверяем, достигли ли цели (точные координаты waypoint)
+        if self.x == target_x and self.y == target_y:
             # Достигли точки, переходим в режим отдыха
             self.state = "rest"
             self.rest_counter = 0
