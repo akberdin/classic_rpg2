@@ -175,7 +175,8 @@
         "weapons": 1,
         "potions": 1,
         "recipes": 1
-      }
+      },
+      "respawn_time": 20
     }
   ]
 }
