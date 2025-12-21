@@ -464,6 +464,7 @@ class MapEditor:
 
         dialog = MerchantEditDialog(new_merchant, is_new=True)
         dialog.on_close = self._on_merchant_dialog_close
+        dialog.on_add_waypoints_on_map = self._on_add_waypoints_on_map
         self.active_dialog = dialog
         self.merchant_edit_dialog = dialog
         dialog.show(self.width, self.height)
@@ -475,9 +476,21 @@ class MapEditor:
 
         dialog = MerchantEditDialog(merchant, is_new=False)
         dialog.on_close = self._on_merchant_dialog_close
+        dialog.on_add_waypoints_on_map = self._on_add_waypoints_on_map
         self.active_dialog = dialog
         self.merchant_edit_dialog = dialog
         dialog.show(self.width, self.height)
+
+    def _on_add_waypoints_on_map(self) -> None:
+        """Handle request to add waypoints by clicking on map."""
+        if not self.merchant_edit_dialog:
+            return
+
+        # Hide dialog temporarily
+        self.merchant_edit_dialog.hide()
+        self.active_dialog = None
+        self.merchant_adding_waypoint = True
+        self._set_status("Кликните на карте для добавления точек маршрута. ПКМ - завершить")
 
     def _on_delete_merchant(self, merchant: Merchant) -> None:
         """Handle delete merchant request."""
@@ -501,6 +514,7 @@ class MapEditor:
         self.active_dialog = None
         dialog = self.merchant_edit_dialog
         self.merchant_edit_dialog = None
+        self.merchant_adding_waypoint = False  # Reset adding mode
 
         if not dialog or not self.current_map:
             return
@@ -820,6 +834,17 @@ class MapEditor:
                 self._handle_resize(event.w, event.h)
                 continue
 
+            # Handle Escape during waypoint adding mode
+            if self.merchant_adding_waypoint and event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                if self.merchant_edit_dialog:
+                    # Cancel adding mode and return to dialog
+                    self.merchant_adding_waypoint = False
+                    self.merchant_edit_dialog.show(self.width, self.height)
+                    self.active_dialog = self.merchant_edit_dialog
+                    waypoints_count = len(self.merchant_edit_dialog.waypoints_copy)
+                    self._set_status(f"Добавлено точек: {waypoints_count}")
+                continue
+
             # Handle active dialog first
             if self.active_dialog and self.active_dialog.visible:
                 self.active_dialog.handle_event(event)
@@ -897,6 +922,16 @@ class MapEditor:
 
         if not (0 <= tile_x < self.current_map.width and
                 0 <= tile_y < self.current_map.height):
+            return
+
+        # Handle waypoint adding mode
+        if self.merchant_adding_waypoint and self.merchant_edit_dialog:
+            # Add waypoint to dialog's waypoints list
+            self.merchant_edit_dialog.waypoints_copy.append(
+                MerchantWaypoint(x=tile_x, y=tile_y, duration=10)
+            )
+            self.merchant_edit_dialog._update_waypoints_data()
+            self._set_status(f"Добавлена точка ({tile_x}, {tile_y}). ПКМ - завершить")
             return
 
         self.mouse_down = True
@@ -1004,6 +1039,16 @@ class MapEditor:
     def _handle_right_click(self, pos: Tuple[int, int]) -> None:
         """Handle right mouse click."""
         if not self.current_map:
+            return
+
+        # Handle waypoint adding mode - finish and return to dialog
+        if self.merchant_adding_waypoint and self.merchant_edit_dialog:
+            self.merchant_adding_waypoint = False
+            # Re-show the dialog
+            self.merchant_edit_dialog.show(self.width, self.height)
+            self.active_dialog = self.merchant_edit_dialog
+            waypoints_count = len(self.merchant_edit_dialog.waypoints_copy)
+            self._set_status(f"Добавлено точек: {waypoints_count}")
             return
 
         tile_x, tile_y = self._screen_to_tile(pos[0], pos[1])
@@ -1244,7 +1289,11 @@ class MapEditor:
 
     def _render_merchants(self) -> None:
         """Render merchants and their routes."""
-        if not self.current_map or not self.current_map.merchants:
+        if not self.current_map:
+            return
+
+        # Render existing merchants
+        if not self.current_map.merchants and not self.merchant_adding_waypoint:
             return
 
         for merchant in self.current_map.merchants:
@@ -1341,6 +1390,58 @@ class MapEditor:
                 if merchant == self.selected_merchant and self.tile_size >= 8:
                     duration_text = self.font.render(f"{wp.duration}ход", True, (200, 200, 200))
                     self.screen.blit(duration_text, (center[0] + marker_size, center[1] - 8))
+
+        # Render temporary waypoints during adding mode
+        if self.merchant_adding_waypoint and self.merchant_edit_dialog:
+            waypoints = self.merchant_edit_dialog.waypoints_copy
+            temp_color = (100, 200, 255)  # Light blue for temporary waypoints
+
+            # Draw lines between waypoints
+            for i in range(len(waypoints)):
+                if i < len(waypoints) - 1:
+                    wp = waypoints[i]
+                    next_wp = waypoints[i + 1]
+
+                    wp_screen = self._tile_to_screen(wp.x, wp.y)
+                    next_screen = self._tile_to_screen(next_wp.x, next_wp.y)
+
+                    wp_center = (
+                        wp_screen[0] + self.tile_size // 2,
+                        wp_screen[1] + self.tile_size // 2
+                    )
+                    next_center = (
+                        next_screen[0] + self.tile_size // 2,
+                        next_screen[1] + self.tile_size // 2
+                    )
+
+                    pygame.draw.line(self.screen, temp_color, wp_center, next_center, 2)
+
+            # Draw waypoint markers
+            for i, wp in enumerate(waypoints):
+                wp_screen = self._tile_to_screen(wp.x, wp.y)
+                center = (
+                    wp_screen[0] + self.tile_size // 2,
+                    wp_screen[1] + self.tile_size // 2
+                )
+
+                marker_size = max(8, self.tile_size)
+
+                # Diamond shape
+                diamond_size = marker_size // 2
+                diamond_points = [
+                    (center[0], center[1] - diamond_size),
+                    (center[0] + diamond_size, center[1]),
+                    (center[0], center[1] + diamond_size),
+                    (center[0] - diamond_size, center[1])
+                ]
+                pygame.draw.polygon(self.screen, (0, 0, 0), diamond_points)
+                pygame.draw.polygon(self.screen, temp_color, diamond_points, 0)
+
+                # Draw waypoint number
+                if self.tile_size >= 6:
+                    num_text = self.font.render(str(i + 1), True, (255, 255, 255))
+                    num_rect = num_text.get_rect(center=center)
+                    self.screen.blit(num_text, num_rect)
 
     def _render_brush_preview(self) -> None:
         """Render brush preview at mouse position."""
