@@ -18,7 +18,7 @@ from .ui.toolbar import Toolbar, ToolType
 from .ui.sidebar import Sidebar
 from .ui.dialogs import (
     Dialog, GeneratorDialog, LocationEditDialog, SaveDialog, LoadDialog, ConfirmDialog,
-    MerchantEditDialog
+    MerchantEditDialog, RouteEditDialog
 )
 
 
@@ -138,6 +138,7 @@ class MapEditor:
         # Merchant tool state
         self.selected_merchant: Optional[Merchant] = None
         self.merchant_edit_dialog: Optional[MerchantEditDialog] = None
+        self.route_edit_dialog: Optional[RouteEditDialog] = None
         self.merchant_adding_waypoint: bool = False  # True when adding waypoints by clicking on map
 
     def _setup_callbacks(self) -> None:
@@ -464,7 +465,7 @@ class MapEditor:
 
         dialog = MerchantEditDialog(new_merchant, is_new=True)
         dialog.on_close = self._on_merchant_dialog_close
-        dialog.on_add_waypoints_on_map = self._on_add_waypoints_on_map
+        dialog.on_edit_route = self._on_open_route_dialog
         self.active_dialog = dialog
         self.merchant_edit_dialog = dialog
         dialog.show(self.width, self.height)
@@ -476,21 +477,74 @@ class MapEditor:
 
         dialog = MerchantEditDialog(merchant, is_new=False)
         dialog.on_close = self._on_merchant_dialog_close
-        dialog.on_add_waypoints_on_map = self._on_add_waypoints_on_map
+        dialog.on_edit_route = self._on_open_route_dialog
         self.active_dialog = dialog
         self.merchant_edit_dialog = dialog
         dialog.show(self.width, self.height)
 
-    def _on_add_waypoints_on_map(self) -> None:
-        """Handle request to add waypoints by clicking on map."""
+    def _on_open_route_dialog(self) -> None:
+        """Handle request to open route edit dialog."""
         if not self.merchant_edit_dialog:
             return
 
+        # Create route dialog with current waypoints from merchant dialog
+        waypoints = self.merchant_edit_dialog.waypoints_copy
+        is_loop = self.merchant_edit_dialog.merchant.is_loop
+
+        route_dialog = RouteEditDialog(waypoints, is_loop)
+        route_dialog.on_close = self._on_route_dialog_close
+        route_dialog.on_add_waypoints_on_map = self._on_add_waypoints_on_map
+        self.route_edit_dialog = route_dialog
+        self.active_dialog = route_dialog
+        route_dialog.show(self.width, self.height)
+
+    def _on_route_dialog_close(self, action: str, data: Dict[str, Any]) -> None:
+        """Handle route edit dialog close."""
+        route_dialog = self.route_edit_dialog
+        self.route_edit_dialog = None
+
+        if action == "ok" and route_dialog and self.merchant_edit_dialog:
+            # Update merchant dialog with new waypoints
+            new_waypoints = route_dialog.get_waypoints()
+            new_is_loop = route_dialog.get_is_loop()
+            self.merchant_edit_dialog.update_waypoints(new_waypoints, new_is_loop)
+            self._set_status(f"Маршрут обновлён: {len(new_waypoints)} точек")
+
+        # Return to merchant dialog
+        if self.merchant_edit_dialog:
+            self.active_dialog = self.merchant_edit_dialog
+            self.merchant_edit_dialog.show(self.width, self.height)
+        else:
+            self.active_dialog = None
+
+    def _on_add_waypoints_on_map(self) -> None:
+        """Handle request to add waypoints by clicking on map."""
+        # Check which dialog to use for adding waypoints
+        active_dialog = self.route_edit_dialog or self.merchant_edit_dialog
+        if not active_dialog:
+            return
+
         # Hide dialog temporarily
-        self.merchant_edit_dialog.hide()
+        active_dialog.hide()
         self.active_dialog = None
         self.merchant_adding_waypoint = True
-        self._set_status("Кликните на карте для добавления точек маршрута. ПКМ - завершить")
+        self._set_status("Кликните на карте для добавления точек маршрута. ПКМ/ESC - завершить")
+
+    def _finish_adding_waypoints(self) -> None:
+        """Finish adding waypoints and return to dialog."""
+        self.merchant_adding_waypoint = False
+
+        # Return to route dialog if it exists, otherwise to merchant dialog
+        if self.route_edit_dialog:
+            waypoints_count = len(self.route_edit_dialog.waypoints_copy)
+            self.route_edit_dialog.show(self.width, self.height)
+            self.active_dialog = self.route_edit_dialog
+            self._set_status(f"Добавлено точек: {waypoints_count}")
+        elif self.merchant_edit_dialog:
+            waypoints_count = len(self.merchant_edit_dialog.waypoints_copy)
+            self.merchant_edit_dialog.show(self.width, self.height)
+            self.active_dialog = self.merchant_edit_dialog
+            self._set_status(f"Добавлено точек: {waypoints_count}")
 
     def _on_delete_merchant(self, merchant: Merchant) -> None:
         """Handle delete merchant request."""
@@ -866,13 +920,7 @@ class MapEditor:
 
             # Handle Escape during waypoint adding mode
             if self.merchant_adding_waypoint and event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                if self.merchant_edit_dialog:
-                    # Cancel adding mode and return to dialog
-                    self.merchant_adding_waypoint = False
-                    self.merchant_edit_dialog.show(self.width, self.height)
-                    self.active_dialog = self.merchant_edit_dialog
-                    waypoints_count = len(self.merchant_edit_dialog.waypoints_copy)
-                    self._set_status(f"Добавлено точек: {waypoints_count}")
+                self._finish_adding_waypoints()
                 continue
 
             # Handle active dialog first
@@ -955,13 +1003,16 @@ class MapEditor:
             return
 
         # Handle waypoint adding mode
-        if self.merchant_adding_waypoint and self.merchant_edit_dialog:
-            # Add waypoint to dialog's waypoints list
-            self.merchant_edit_dialog.waypoints_copy.append(
-                MerchantWaypoint(x=tile_x, y=tile_y, duration=10)
-            )
-            self.merchant_edit_dialog._update_waypoints_data()
-            self._set_status(f"Добавлена точка ({tile_x}, {tile_y}). ПКМ - завершить")
+        if self.merchant_adding_waypoint:
+            # Determine which dialog to add waypoints to
+            target_dialog = self.route_edit_dialog or self.merchant_edit_dialog
+            if target_dialog:
+                # Add waypoint to dialog's waypoints list
+                target_dialog.waypoints_copy.append(
+                    MerchantWaypoint(x=tile_x, y=tile_y, duration=10)
+                )
+                target_dialog._update_waypoints_data()
+                self._set_status(f"Добавлена точка ({tile_x}, {tile_y}). ПКМ/ESC - завершить")
             return
 
         self.mouse_down = True
@@ -1072,13 +1123,8 @@ class MapEditor:
             return
 
         # Handle waypoint adding mode - finish and return to dialog
-        if self.merchant_adding_waypoint and self.merchant_edit_dialog:
-            self.merchant_adding_waypoint = False
-            # Re-show the dialog
-            self.merchant_edit_dialog.show(self.width, self.height)
-            self.active_dialog = self.merchant_edit_dialog
-            waypoints_count = len(self.merchant_edit_dialog.waypoints_copy)
-            self._set_status(f"Добавлено точек: {waypoints_count}")
+        if self.merchant_adding_waypoint:
+            self._finish_adding_waypoints()
             return
 
         tile_x, tile_y = self._screen_to_tile(pos[0], pos[1])
@@ -1435,8 +1481,11 @@ class MapEditor:
                     self.screen.blit(duration_text, (center[0] + marker_size, center[1] - 8))
 
         # Render temporary waypoints during adding mode
-        if self.merchant_adding_waypoint and self.merchant_edit_dialog:
-            waypoints = self.merchant_edit_dialog.waypoints_copy
+        if self.merchant_adding_waypoint:
+            target_dialog = self.route_edit_dialog or self.merchant_edit_dialog
+            if not target_dialog:
+                return
+            waypoints = target_dialog.waypoints_copy
             temp_color = (100, 200, 255)  # Light blue for temporary waypoints
 
             # Draw lines between waypoints
