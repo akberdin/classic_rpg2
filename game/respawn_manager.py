@@ -90,6 +90,25 @@ class RespawnManager:
                     print(f"[РЕСПАВН] {npc.name} НЕ будет возрождаться (respawn_time=0 для шахты {mine.name})")
                     return
 
+        # Для странствующих торговцев сохраняем конфигурацию
+        if npc_class == 'Merchant' and hasattr(npc, 'merchant_id') and npc.merchant_id:
+            # Сохраняем полную конфигурацию для респавна
+            respawn_data['merchant_config'] = {
+                'id': npc.merchant_id,
+                'name': npc.name,
+                'rank': npc.get_merchant_rank(),
+                'waypoints': npc.waypoints,
+                'color': list(npc.color) if isinstance(npc.color, tuple) else npc.color,
+                'is_loop': npc.is_loop,
+                'specializations': npc.specializations.copy(),
+                'respawn_time': npc.respawn_time,
+                'assortment_update': npc.assortment_update,
+                'wealth': npc.wealth
+            }
+            # Используем время респавна из конфига торговца
+            respawn_time = npc.respawn_time
+            print(f"[РЕСПАВН] Странствующий торговец {npc.name} (ID: {npc.merchant_id}) сохранён для респавна")
+
         self.respawn_queue.append((respawn_data, respawn_time))
         print(f"[РЕСПАВН] {npc.name} ({respawn_data['npc_class']}) зарегистрирован для респавна через {respawn_time} часов")
         print(f"[РЕСПАВН] Всего в очереди: {len(self.respawn_queue)} NPC")
@@ -231,8 +250,11 @@ class RespawnManager:
             # Алхимики стационарны
             return (npc.x, npc.y, None)
         elif npc_class == 'Merchant':
-            # Торговцы странствуют между населенными пунктами
-            # Спавним в случайном населенном пункте
+            # Странствующие торговцы спавнятся в первой точке waypoints
+            if hasattr(npc, 'waypoints') and npc.waypoints:
+                first_wp = npc.waypoints[0]
+                return (first_wp.get('x', npc.x), first_wp.get('y', npc.y), None)
+            # Обычные торговцы странствуют между населенными пунктами
             settlements = [loc for loc in self.game_map.locations
                           if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]]
             if settlements:
@@ -449,15 +471,34 @@ class RespawnManager:
             game.npc_manager.add_npc(new_npc, NPCType.ALCHEMIST)
 
         elif npc_class == 'Merchant':
-            merchant_names = [
-                "Торговец", "Купец", "Торговка", "Купчиха"
-            ]
-            name = f"{random.choice(merchant_names)} {location_name}"
-            new_npc = Merchant(name, x, y, level)
-            # Устанавливаем населенные пункты для торговца
-            settlements = [loc for loc in self.game_map.locations
-                          if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]]
-            new_npc.set_settlements(settlements)
+            # Проверяем, есть ли сохранённая конфигурация странствующего торговца
+            merchant_config = respawn_data.get('merchant_config')
+            if merchant_config:
+                # Респавним странствующего торговца с полной конфигурацией
+                waypoints = merchant_config.get('waypoints', [])
+                if waypoints:
+                    first_wp = waypoints[0]
+                    x = first_wp.get('x', x)
+                    y = first_wp.get('y', y)
+                new_npc = Merchant(
+                    name=merchant_config.get('name', 'Торговец'),
+                    x=x,
+                    y=y,
+                    level=level,
+                    merchant_config=merchant_config
+                )
+                print(f"[РЕСПАВН] Странствующий торговец {new_npc.name} восстановлен с конфигурацией")
+            else:
+                # Старая логика для обычных торговцев
+                merchant_names = [
+                    "Торговец", "Купец", "Торговка", "Купчиха"
+                ]
+                name = f"{random.choice(merchant_names)} {location_name}"
+                new_npc = Merchant(name, x, y, level)
+                # Устанавливаем населенные пункты для торговца
+                settlements = [loc for loc in self.game_map.locations
+                              if loc.location_type in [LOCATION_CITY, LOCATION_VILLAGE]]
+                new_npc.set_settlements(settlements)
             from game.core.npc_manager import NPCType
             game.npc_manager.add_npc(new_npc, NPCType.MERCHANT)
 

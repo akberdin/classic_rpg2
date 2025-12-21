@@ -11,9 +11,9 @@ from game.item_registry import get_item
 
 
 class Merchant(NPC):
-    """Класс Торговца с AI перемещения между городами и побега от опасности"""
+    """Класс Торговца с AI перемещения по waypoints и побега от опасности"""
 
-    def __init__(self, name, x=0, y=0, level=3):
+    def __init__(self, name, x=0, y=0, level=3, merchant_config=None):
         """
         Инициализация Торговца
 
@@ -22,6 +22,7 @@ class Merchant(NPC):
             x: Позиция X
             y: Позиция Y
             level: Уровень торговца
+            merchant_config: Конфигурация торговца из map config (опционально)
         """
         super().__init__(name, x, y, npc_type=NPC_TYPE_MERCHANT, level=level)
 
@@ -30,11 +31,7 @@ class Merchant(NPC):
 
         # AI параметры
         self.state = "travel"  # travel, rest, flee
-        self.target_location = None  # Целевая локация (город/деревня)
-        self.rest_counter = 0
-        self.rest_duration = random.randint(5, 8)  # Отдых 5-8 часов в городе
-        self.steps_per_hour = 1  # Количество шагов за 1 час игрового времени (только соседние клетки)
-        self.settlements = []  # Список всех населенных пунктов
+        self.steps_per_hour = 1  # Количество шагов за 1 час игрового времени
         self.stuck_counter = 0  # Счетчик для определения застревания
         self.last_position = (x, y)
         self.threat = None  # Текущая угроза от которой убегаем
@@ -43,8 +40,104 @@ class Merchant(NPC):
         # Состояние по умолчанию для расписания
         self.default_state = "travel"
 
-        # Торговая система
+        # Параметры из конфигурации (новая система waypoints)
+        self.merchant_id = None  # Уникальный ID торговца
+        self.waypoints = []  # Маршрут: [{"x": int, "y": int, "duration": int}, ...]
+        self.current_waypoint_index = 0  # Текущая точка маршрута
+        self.is_loop = True  # Зациклен ли маршрут
+        self.color = (255, 165, 0)  # Цвет отображения (по умолчанию оранжевый)
+
+        # Специализации торговца (категории товаров с качеством 0-N)
+        # 0 = не торгует данной категорией
+        self.specializations = {
+            "jewelry": 1,
+            "books": 1,
+            "resources": 1,
+            "armor": 1,
+            "weapons": 1,
+            "potions": 1,
+            "recipes": 1
+        }
+
+        # Параметры респавна и обновления
+        self.respawn_time = 48  # Время респавна в глобальных ходах
+        self.assortment_update = 120  # Ходов до обновления ассортимента
+        self.assortment_update_counter = 0  # Счётчик ходов для обновления
+        self.wealth = 1000  # Стартовый капитал торговца
+
+        # Счётчик отдыха в текущей точке (в глобальных ходах)
+        self.rest_counter = 0
+        self.current_waypoint_duration = 0  # Длительность остановки в текущей точке
+
+        # Старая система для совместимости (будет удалена)
+        self.settlements = []
+        self.target_location = None
+        self.rest_duration = 0
+
+        # Применяем конфигурацию если есть
+        if merchant_config:
+            self._apply_config(merchant_config)
+
+        # Торговая система - генерируем товары с учётом специализаций
         self._generate_merchant_goods()
+
+    def _apply_config(self, config):
+        """
+        Применить конфигурацию торговца из map config
+
+        Args:
+            config: Словарь с параметрами торговца
+        """
+        self.merchant_id = config.get('id')
+        self.name = config.get('name', self.name)
+
+        # Ранг торговца определяет качество товаров
+        rank = config.get('rank', 1)
+        # Устанавливаем уровень на основе ранга (ранг 1: 1-10, ранг 2: 11-20, и т.д.)
+        self.level = (rank - 1) * 10 + random.randint(1, 10)
+
+        # Waypoints маршрут
+        self.waypoints = config.get('waypoints', [])
+        if self.waypoints:
+            # Начинаем с первой точки
+            self.current_waypoint_index = 0
+            first_waypoint = self.waypoints[0]
+            self.x = first_waypoint.get('x', self.x)
+            self.y = first_waypoint.get('y', self.y)
+            self.current_waypoint_duration = first_waypoint.get('duration', 20)
+
+        self.is_loop = config.get('is_loop', True)
+
+        # Цвет
+        color = config.get('color', [255, 165, 0])
+        if isinstance(color, list) and len(color) >= 3:
+            self.color = tuple(color[:3])
+
+        # Специализации
+        specs = config.get('specializations', {})
+        for category, value in specs.items():
+            if category in self.specializations:
+                self.specializations[category] = value
+
+        # Параметры респавна и обновления
+        self.respawn_time = config.get('respawn_time', 48)
+        self.assortment_update = config.get('assortment_update', 120)
+        self.wealth = config.get('wealth', 1000)
+
+    def set_waypoints(self, waypoints, is_loop=True):
+        """
+        Установить маршрут движения торговца
+
+        Args:
+            waypoints: Список точек [{"x": int, "y": int, "duration": int}, ...]
+            is_loop: Зациклить маршрут
+        """
+        self.waypoints = waypoints
+        self.is_loop = is_loop
+        self.current_waypoint_index = 0
+        if waypoints:
+            first_wp = waypoints[0]
+            self.current_waypoint_duration = first_wp.get('duration', 20)
 
     def _adjust_merchant_stats(self):
         """Модификация статов для торговца - не боец, не маг"""
@@ -218,7 +311,7 @@ class Merchant(NPC):
         return allowed_books
 
     def _generate_merchant_goods(self):
-        """Генерация начальных товаров торговца с учетом ранга"""
+        """Генерация товаров торговца с учетом ранга и специализаций"""
         from game.inventory import ItemGenerator, EquipmentSlot
 
         # Очищаем старый ассортимент перед генерацией нового
@@ -227,135 +320,143 @@ class Merchant(NPC):
         # Получаем ранг торговца
         rank = self.get_merchant_rank()
 
-        # Увеличиваем инвентарь и золото торговца в зависимости от ранга
+        # Увеличиваем инвентарь торговца в зависимости от ранга
         self.inventory.max_slots = 40 + (rank * 10)
         self.inventory.max_weight = 200.0 + (rank * 50)
 
-        # Даем торговцу стартовое золото
-        base_gold = 200 + self.level * 50
-        self.inventory.gold = int(base_gold * (1 + rank * 0.5) * 3)
-
-        # Генерируем зелья
-        if rank == 1:
-            # Ранг 1: малые зелья здоровья и выносливости
-            self.inventory.add_item(get_item("minor_health_potion"), random.randint(2, 4))
-            self.inventory.add_item(get_item("minor_stamina_potion"), random.randint(1, 3))
-        elif rank == 2:
-            # Ранг 2: зелье здоровья, маны, выносливости (не большие)
-            self.inventory.add_item(get_item("minor_health_potion"), random.randint(2, 4))
-            self.inventory.add_item(get_item("health_potion"), random.randint(2, 4))
-            self.inventory.add_item(get_item("minor_mana_potion"), random.randint(2, 3))
-            self.inventory.add_item(get_item("mana_potion"), random.randint(1, 2))
-            self.inventory.add_item(get_item("minor_stamina_potion"), random.randint(2, 3))
-            self.inventory.add_item(get_item("stamina_potion"), random.randint(1, 2))
-        elif rank in [3, 4]:
-            # Ранги 3-4: зелье здоровья, маны, выносливости (не большие)
-            self.inventory.add_item(get_item("health_potion"), random.randint(2, 4))
-            self.inventory.add_item(get_item("mana_potion"), random.randint(2, 3))
-            self.inventory.add_item(get_item("stamina_potion"), random.randint(2, 3))
-
-        # Генерируем оружие (с ограничениями по типам для ранга 1)
-        allowed_weapon_types = self._get_allowed_weapon_types(rank)
-        if rank == 1:
-            num_weapons = random.randint(2, 4)  # Минимальный объем
+        # Используем wealth из конфига или вычисляем по старой формуле
+        if self.wealth > 0:
+            self.inventory.gold = self.wealth
         else:
-            num_weapons = min(random.randint(5, 10), 10)  # Не более 10
+            base_gold = 200 + self.level * 50
+            self.inventory.gold = int(base_gold * (1 + rank * 0.5) * 3)
 
-        for _ in range(num_weapons):
-            quality = ItemGenerator.generate_quality_for_shop(rank)
-            weapon_type = random.choice(allowed_weapon_types)
-            weapon = ItemGenerator.generate_weapon_by_type(weapon_type, quality=quality)
-            self.inventory.add_item(weapon, 1)
+        # Генерируем зелья (если специализация > 0)
+        if self.can_trade_category("potions"):
+            spec_quality = self.get_category_quality("potions")
+            if rank == 1:
+                self.inventory.add_item(get_item("minor_health_potion"), random.randint(2, 4) * spec_quality)
+                self.inventory.add_item(get_item("minor_stamina_potion"), random.randint(1, 3) * spec_quality)
+            elif rank == 2:
+                self.inventory.add_item(get_item("minor_health_potion"), random.randint(2, 4))
+                self.inventory.add_item(get_item("health_potion"), random.randint(2, 4))
+                self.inventory.add_item(get_item("minor_mana_potion"), random.randint(2, 3))
+                self.inventory.add_item(get_item("mana_potion"), random.randint(1, 2))
+                self.inventory.add_item(get_item("minor_stamina_potion"), random.randint(2, 3))
+                self.inventory.add_item(get_item("stamina_potion"), random.randint(1, 2))
+            elif rank in [3, 4]:
+                self.inventory.add_item(get_item("health_potion"), random.randint(2, 4))
+                self.inventory.add_item(get_item("mana_potion"), random.randint(2, 3))
+                self.inventory.add_item(get_item("stamina_potion"), random.randint(2, 3))
 
-        # Генерируем броню (с ограничениями по типам для ранга 1)
-        allowed_armor_types = self._get_allowed_armor_types(rank)
-        if rank == 1:
-            num_armors = random.randint(3, 5)  # Минимальный объем
-        else:
-            num_armors = min(random.randint(6, 10), 10)  # Не более 10
+        # Генерируем оружие (если специализация > 0)
+        if self.can_trade_category("weapons"):
+            spec_quality = self.get_category_quality("weapons")
+            allowed_weapon_types = self._get_allowed_weapon_types(rank)
+            if rank == 1:
+                num_weapons = random.randint(2, 4) * spec_quality
+            else:
+                num_weapons = min(random.randint(5, 10), 10)
 
-        for _ in range(num_armors):
-            quality = ItemGenerator.generate_quality_for_shop(rank)
-            armor_type = random.choice(allowed_armor_types)
-            slot = random.choice([EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET])
-            armor = ItemGenerator.generate_armor(self.level, slot=slot, armor_type=armor_type, quality=quality)
-            self.inventory.add_item(armor, 1)
+            for _ in range(num_weapons):
+                quality = ItemGenerator.generate_quality_for_shop(rank)
+                weapon_type = random.choice(allowed_weapon_types)
+                weapon = ItemGenerator.generate_weapon_by_type(weapon_type, quality=quality)
+                self.inventory.add_item(weapon, 1)
 
-        # Генерируем пояса и рюкзаки (для ранга 1 - плохого качества, минимальный объем)
-        if rank == 1:
+        # Генерируем броню (если специализация > 0)
+        if self.can_trade_category("armor"):
+            spec_quality = self.get_category_quality("armor")
+            allowed_armor_types = self._get_allowed_armor_types(rank)
+            if rank == 1:
+                num_armors = random.randint(3, 5) * spec_quality
+            else:
+                num_armors = min(random.randint(6, 10), 10)
+
+            for _ in range(num_armors):
+                quality = ItemGenerator.generate_quality_for_shop(rank)
+                armor_type = random.choice(allowed_armor_types)
+                slot = random.choice([EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.HANDS, EquipmentSlot.FEET])
+                armor = ItemGenerator.generate_armor(self.level, slot=slot, armor_type=armor_type, quality=quality)
+                self.inventory.add_item(armor, 1)
+
+            # Пояса и рюкзаки как часть категории armor
             num_belts = random.randint(1, 2)
             num_backpacks = random.randint(1, 2)
-        else:
-            num_belts = random.randint(1, 2)
-            num_backpacks = random.randint(1, 2)
 
-        for _ in range(num_belts):
-            quality = ItemGenerator.generate_quality_for_shop(rank)
-            belt = ItemGenerator.generate_belt(self.level, quality=quality)
-            self.inventory.add_item(belt, 1)
+            for _ in range(num_belts):
+                quality = ItemGenerator.generate_quality_for_shop(rank)
+                belt = ItemGenerator.generate_belt(self.level, quality=quality)
+                self.inventory.add_item(belt, 1)
 
-        for _ in range(num_backpacks):
-            quality = ItemGenerator.generate_quality_for_shop(rank)
-            backpack = ItemGenerator.generate_backpack(self.level, quality=quality)
-            self.inventory.add_item(backpack, 1)
+            for _ in range(num_backpacks):
+                quality = ItemGenerator.generate_quality_for_shop(rank)
+                backpack = ItemGenerator.generate_backpack(self.level, quality=quality)
+                self.inventory.add_item(backpack, 1)
 
-        # Генерируем украшения
-        if rank == 1:
-            num_jewelry = random.randint(1, 3)  # Не более 3
-        elif rank in [2, 3]:
-            num_jewelry = random.randint(2, 5)  # Не более 5
-        elif rank == 4:
-            num_jewelry = random.randint(2, 5)  # Не более 5
-
-        for _ in range(num_jewelry):
-            quality = ItemGenerator.generate_quality_for_shop(rank)
-            jewelry = ItemGenerator.generate_jewelry(self.level, quality=quality)
-            self.inventory.add_item(jewelry, 1)
-
-        # Генерируем ресурсы
-        resources = self._get_resources_for_rank(rank)
-        for resource_id, (min_qty, max_qty) in resources.items():
-            if get_item(resource_id):
-                quantity = random.randint(min_qty, max_qty)
-                self.inventory.add_item(get_item(resource_id), quantity)
-
-        # Генерируем книги умений (только не магические)
-        allowed_books = self._get_books_for_rank(rank)
-        if allowed_books:
+        # Генерируем украшения (если специализация > 0)
+        if self.can_trade_category("jewelry"):
+            spec_quality = self.get_category_quality("jewelry")
             if rank == 1:
-                num_books = 0  # НЕТ книг для ранга 1
-            elif rank == 2:
-                num_books = random.randint(1, 3)  # 1-3 книги
-            elif rank == 3:
-                num_books = random.randint(1, 2)  # 1-2 книги
-            elif rank == 4:
-                num_books = random.randint(1, 3)  # 1-3 книги
-            else:
-                num_books = 0
+                num_jewelry = random.randint(1, 3) * spec_quality
+            elif rank in [2, 3, 4]:
+                num_jewelry = random.randint(2, 5) * spec_quality
 
-            if num_books > 0:
-                selected_books = random.sample(allowed_books, min(num_books, len(allowed_books)))
-                for book_id in selected_books:
-                    self.inventory.add_item(get_item(book_id), 1)
+            for _ in range(min(num_jewelry, 10)):
+                quality = ItemGenerator.generate_quality_for_shop(rank)
+                jewelry = ItemGenerator.generate_jewelry(self.level, quality=quality)
+                self.inventory.add_item(jewelry, 1)
 
-        # Генерируем рецепты
-        allowed_recipes = self._get_recipes_for_rank(rank)
-        if allowed_recipes:
-            if rank == 1:
-                num_recipes = random.randint(5, 8)  # Не менее 5 различных рецептов
-            elif rank == 2:
-                num_recipes = random.randint(5, 8)  # Не менее 5 различных рецептов
-            elif rank == 3:
-                num_recipes = random.randint(10, 15)  # Не менее 10 различных рецептов
-            elif rank == 4:
-                num_recipes = random.randint(10, 15)  # Не менее 10 различных рецептов
-            else:
-                num_recipes = 0
+        # Генерируем ресурсы (если специализация > 0)
+        if self.can_trade_category("resources"):
+            spec_quality = self.get_category_quality("resources")
+            resources = self._get_resources_for_rank(rank)
+            for resource_id, (min_qty, max_qty) in resources.items():
+                if get_item(resource_id):
+                    quantity = random.randint(min_qty, max_qty) * spec_quality
+                    self.inventory.add_item(get_item(resource_id), quantity)
 
-            if num_recipes > 0:
-                selected_recipes = random.sample(allowed_recipes, min(num_recipes, len(allowed_recipes)))
-                for recipe_id in selected_recipes:
-                    self.inventory.add_item(get_item(recipe_id), 1)
+        # Генерируем книги умений (если специализация > 0)
+        if self.can_trade_category("books"):
+            spec_quality = self.get_category_quality("books")
+            allowed_books = self._get_books_for_rank(rank)
+            if allowed_books:
+                if rank == 1:
+                    num_books = 0  # НЕТ книг для ранга 1
+                elif rank == 2:
+                    num_books = random.randint(1, 3) * spec_quality
+                elif rank == 3:
+                    num_books = random.randint(1, 2) * spec_quality
+                elif rank == 4:
+                    num_books = random.randint(1, 3) * spec_quality
+                else:
+                    num_books = 0
+
+                if num_books > 0:
+                    selected_books = random.sample(allowed_books, min(num_books, len(allowed_books)))
+                    for book_id in selected_books:
+                        self.inventory.add_item(get_item(book_id), 1)
+
+        # Генерируем рецепты (если специализация > 0)
+        if self.can_trade_category("recipes"):
+            spec_quality = self.get_category_quality("recipes")
+            allowed_recipes = self._get_recipes_for_rank(rank)
+            if allowed_recipes:
+                if rank == 1:
+                    num_recipes = random.randint(5, 8) * spec_quality
+                elif rank == 2:
+                    num_recipes = random.randint(5, 8) * spec_quality
+                elif rank == 3:
+                    num_recipes = random.randint(10, 15)
+                elif rank == 4:
+                    num_recipes = random.randint(10, 15)
+                else:
+                    num_recipes = 0
+
+                if num_recipes > 0:
+                    selected_recipes = random.sample(allowed_recipes, min(num_recipes, len(allowed_recipes)))
+                    for recipe_id in selected_recipes:
+                        self.inventory.add_item(get_item(recipe_id), 1)
 
 
     def set_settlements(self, settlements):
@@ -370,6 +471,14 @@ class Merchant(NPC):
             self._choose_new_destination()
 
     def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
+        """
+        Обновление AI торговца за 1 глобальный ход
+
+        Args:
+            context_or_map: AIContext или карта игры
+            all_npcs: Список всех NPC для обнаружения угроз
+            current_hour: Текущий час суток (0-23)
+        """
         # Поддержка AIContext и старого способа вызова
         from game.core.ai_context import AIContext
         if isinstance(context_or_map, AIContext):
@@ -379,14 +488,7 @@ class Merchant(NPC):
             current_hour = context.current_hour
         else:
             game_map = context_or_map
-        """
-        Обновление AI торговца за 1 час игрового времени
 
-        Args:
-            game_map: Объект карты игры
-            all_npcs: Список всех NPC для обнаружения угроз
-            current_hour: Текущий час суток (0-23)
-        """
         if not self.is_alive:
             return
 
@@ -400,6 +502,9 @@ class Merchant(NPC):
         # Восстанавливаем выносливость
         self.recover_stamina()
 
+        # Проверяем обновление ассортимента
+        self._check_assortment_update()
+
         # Если отдыхаем из-за выносливости, ничего не делаем
         if self.is_resting:
             return
@@ -411,11 +516,19 @@ class Merchant(NPC):
         if self.state == "flee":
             self._flee_step(game_map)
         elif self.state == "travel":
-            # Делаем 1 шаг за 1 час (избегаем телепортации)
+            # Делаем 1 шаг за 1 ход
             if self.consume_stamina():
                 self._travel_step(game_map)
         elif self.state == "rest":
-            self._rest()
+            self._rest_at_waypoint()
+
+    def _check_assortment_update(self):
+        """Проверить необходимость обновления ассортимента"""
+        self.assortment_update_counter += 1
+        if self.assortment_update_counter >= self.assortment_update:
+            self.assortment_update_counter = 0
+            self._generate_merchant_goods()
+            print(f"[Торговец] {self.name}: ассортимент обновлён")
 
     def _check_for_threats(self, all_npcs):
         """
@@ -510,7 +623,13 @@ class Merchant(NPC):
                         break
 
     def _choose_new_destination(self):
-        """Выбрать новую цель для путешествия"""
+        """Выбрать новую цель для путешествия (для совместимости со старой системой)"""
+        # Если есть waypoints, используем новую систему
+        if self.waypoints:
+            self._advance_to_next_waypoint()
+            return
+
+        # Старая система через settlements
         if not self.settlements:
             return
 
@@ -525,31 +644,77 @@ class Merchant(NPC):
 
         self.stuck_counter = 0
 
+    def _get_current_waypoint(self):
+        """Получить текущую целевую точку маршрута"""
+        if not self.waypoints:
+            return None
+        if self.current_waypoint_index >= len(self.waypoints):
+            if self.is_loop:
+                self.current_waypoint_index = 0
+            else:
+                return None
+        return self.waypoints[self.current_waypoint_index]
+
+    def _advance_to_next_waypoint(self):
+        """Перейти к следующей точке маршрута"""
+        if not self.waypoints:
+            return
+
+        self.current_waypoint_index += 1
+        if self.current_waypoint_index >= len(self.waypoints):
+            if self.is_loop:
+                self.current_waypoint_index = 0
+            else:
+                # Маршрут завершён
+                self.state = "rest"
+                return
+
+        # Устанавливаем duration для новой точки
+        current_wp = self._get_current_waypoint()
+        if current_wp:
+            self.current_waypoint_duration = current_wp.get('duration', 20)
+
+        self.rest_counter = 0
+        self.stuck_counter = 0
+
     def _travel_step(self, game_map):
         """
-        Один шаг путешествия к цели
+        Один шаг путешествия к текущей точке waypoint
 
         Returns:
             bool: True если торговец продолжает движение
         """
-        if not self.target_location:
-            self._choose_new_destination()
-            return False
+        # Новая система waypoints
+        if self.waypoints:
+            current_wp = self._get_current_waypoint()
+            if not current_wp:
+                return False
 
-        target_x = self.target_location.x
-        target_y = self.target_location.y
+            target_x = current_wp.get('x', self.x)
+            target_y = current_wp.get('y', self.y)
+        else:
+            # Старая система через target_location
+            if not self.target_location:
+                self._choose_new_destination()
+                return False
+
+            target_x = self.target_location.x
+            target_y = self.target_location.y
 
         # Проверяем, достигли ли цели (в пределах 2 клеток)
         distance = abs(self.x - target_x) + abs(self.y - target_y)
         if distance <= 2:
-            # Достигли города, переходим в режим отдыха/торговли
+            # Достигли точки, переходим в режим отдыха
             self.state = "rest"
             self.rest_counter = 0
-            self.rest_duration = random.randint(5, 8)
+            if self.waypoints:
+                current_wp = self._get_current_waypoint()
+                self.current_waypoint_duration = current_wp.get('duration', 20) if current_wp else 20
+            else:
+                self.rest_duration = random.randint(5, 8)
             return False
 
         # Используем алгоритм поиска пути для определения следующего шага
-        # Торговцы ищут путь на большие расстояния
         dx, dy = self._find_next_step(target_x, target_y, game_map, max_search_distance=100)
 
         # Сохраняем текущую позицию для проверки застревания
@@ -567,8 +732,11 @@ class Merchant(NPC):
         if not moved or (self.x == old_x and self.y == old_y):
             self.stuck_counter += 1
             if self.stuck_counter > 20:
-                # Если застряли, выбираем новую цель
-                self._choose_new_destination()
+                # Если застряли, переходим к следующей точке
+                if self.waypoints:
+                    self._advance_to_next_waypoint()
+                else:
+                    self._choose_new_destination()
                 self.stuck_counter = 0
                 return False
         else:
@@ -576,15 +744,51 @@ class Merchant(NPC):
 
         return True
 
-    def _rest(self):
-        """Отдых/торговля в городе"""
+    def _rest_at_waypoint(self):
+        """Отдых/торговля в текущей точке waypoint"""
         self.rest_counter += 1
 
-        if self.rest_counter >= self.rest_duration:
-            # Закончили отдых, выбираем новый город
-            self.state = "travel"
-            self.rest_counter = 0  # Сбрасываем счетчик для следующего отдыха
-            self._choose_new_destination()
+        # Используем duration из текущей точки waypoint
+        if self.waypoints:
+            if self.rest_counter >= self.current_waypoint_duration:
+                # Закончили отдых, переходим к следующей точке
+                self.state = "travel"
+                self.rest_counter = 0
+                self._advance_to_next_waypoint()
+        else:
+            # Старая система
+            if self.rest_counter >= self.rest_duration:
+                self.state = "travel"
+                self.rest_counter = 0
+                self._choose_new_destination()
+
+    def _rest(self):
+        """Отдых/торговля (для совместимости)"""
+        self._rest_at_waypoint()
+
+    def can_trade_category(self, category):
+        """
+        Проверить, торгует ли торговец данной категорией товаров
+
+        Args:
+            category: Категория (jewelry, books, resources, armor, weapons, potions, recipes)
+
+        Returns:
+            bool: True если торговец торгует этой категорией
+        """
+        return self.specializations.get(category, 0) > 0
+
+    def get_category_quality(self, category):
+        """
+        Получить качество товаров для категории (влияет на генерацию)
+
+        Args:
+            category: Категория товаров
+
+        Returns:
+            int: Уровень качества (0 = не торгует, 1+ = качество)
+        """
+        return self.specializations.get(category, 0)
 
 
 class MagicMerchant(Merchant):
