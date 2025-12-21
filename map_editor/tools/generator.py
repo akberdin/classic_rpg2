@@ -269,6 +269,7 @@ class Merchant:
     color: Tuple[int, int, int] = (255, 165, 0)  # Display color (orange by default)
     is_loop: bool = True  # Whether route loops back to start
     specializations: Dict[str, int] = field(default_factory=dict)  # Category -> rank (1-4), 0 = disabled
+    respawn_time: int = 200  # Respawn time in game turns
 
     def __post_init__(self):
         """Generate ID if not provided."""
@@ -336,7 +337,8 @@ class Merchant:
             'waypoints': [wp.to_dict() for wp in self.waypoints],
             'color': list(self.color),
             'is_loop': self.is_loop,
-            'specializations': self.specializations
+            'specializations': self.specializations,
+            'respawn_time': self.respawn_time
         }
 
     @classmethod
@@ -354,7 +356,8 @@ class Merchant:
             waypoints=waypoints,
             color=color,
             is_loop=data.get('is_loop', True),
-            specializations=full_specs
+            specializations=full_specs,
+            respawn_time=data.get('respawn_time', 200)
         )
 
 
