@@ -934,7 +934,29 @@
 
     "book_whirlwind_strike": {"name": "Книга Вихревого Удара", "skill_id": "whirlwind_strike", "value": 450, "quality": "RARE"},
     "book_shield_breaker": {"name": "Книга Разрушителя Щита", "skill_id": "shield_breaker", "value": 400, "quality": "UNCOMMON"},
-    "book_blade_dance": {"name": "Книга Танца Клинка", "skill_id": "blade_dance", "value": 600, "quality": "RARE"}
+    "book_blade_dance": {"name": "Книга Танца Клинка", "skill_id": "blade_dance", "value": 600, "quality": "RARE"},
+
+    "_comment_advanced": "Продвинутые умения (uncommon)",
+    "book_deadly_poison": {"name": "Книга Смертельного Яда", "skill_id": "deadly_poison", "value": 450, "quality": "RARE"},
+    "book_stealth": {"name": "Книга Скрытности", "skill_id": "stealth", "value": 400, "quality": "RARE"},
+    "book_shadow_agility": {"name": "Книга Теневой Ловкости", "skill_id": "shadow_agility", "value": 500, "quality": "RARE"},
+    "book_iron_stance": {"name": "Книга Железной Стойки", "skill_id": "iron_stance", "value": 350, "quality": "UNCOMMON"},
+    "book_intimidate": {"name": "Книга Запугивания", "skill_id": "intimidate", "value": 300, "quality": "UNCOMMON"},
+    "book_counterattack": {"name": "Книга Контратаки", "skill_id": "counterattack", "value": 450, "quality": "RARE"},
+    "book_hunters_mark": {"name": "Книга Метки Охотника", "skill_id": "hunters_mark", "value": 400, "quality": "RARE"},
+    "book_stamina_boost": {"name": "Книга Прилива Сил", "skill_id": "stamina_boost", "value": 300, "quality": "UNCOMMON"},
+    "book_eagle_eye": {"name": "Книга Орлиного Глаза", "skill_id": "eagle_eye", "value": 350, "quality": "UNCOMMON"},
+    "book_long_range_shot": {"name": "Книга Дальнего Выстрела", "skill_id": "long_range_shot", "value": 400, "quality": "RARE"},
+    "book_lunge_strike": {"name": "Книга Выпада", "skill_id": "lunge_strike", "value": 350, "quality": "UNCOMMON"},
+    "book_spear_sweep": {"name": "Книга Подсечки Копьём", "skill_id": "spear_sweep", "value": 400, "quality": "RARE"},
+    "book_armor_breach": {"name": "Книга Пробивания Брони", "skill_id": "armor_breach", "value": 500, "quality": "RARE"},
+
+    "_comment_epic": "Эпические умения (rare)",
+    "book_critical_strike": {"name": "Книга Критического Удара", "skill_id": "critical_strike", "value": 800, "quality": "EPIC"},
+    "book_steel_skin": {"name": "Книга Стальной Кожи", "skill_id": "steel_skin", "value": 700, "quality": "EPIC"},
+    "book_berserker": {"name": "Книга Берсерка", "skill_id": "berserker", "value": 900, "quality": "EPIC"},
+    "book_explosive_arrow": {"name": "Книга Взрывной Стрелы", "skill_id": "explosive_arrow", "value": 850, "quality": "EPIC"},
+    "book_trap": {"name": "Книга Установки Ловушек", "skill_id": "trap", "value": 600, "quality": "EPIC"}
   },
 
   "recipes": {
