@@ -499,15 +499,12 @@ class Merchant(NPC):
         if self.is_hidden():
             return
 
-        # Восстанавливаем выносливость
-        self.recover_stamina()
+        # Восстанавливаем выносливость (для торговца всегда активный отдых,
+        # чтобы не застревать из-за истощения)
+        self.recover_stamina(is_active_rest=True)
 
         # Проверяем обновление ассортимента
         self._check_assortment_update()
-
-        # Если отдыхаем из-за выносливости, ничего не делаем
-        if self.is_resting:
-            return
 
         # Проверяем наличие угроз поблизости
         if all_npcs:
@@ -516,9 +513,8 @@ class Merchant(NPC):
         if self.state == "flee":
             self._flee_step(game_map)
         elif self.state == "travel":
-            # Делаем 1 шаг за 1 ход
-            if self.consume_stamina():
-                self._travel_step(game_map)
+            # Делаем 1 шаг за 1 ход (торговец всегда может двигаться)
+            self._travel_step(game_map)
         elif self.state == "rest":
             self._rest_at_waypoint()
 
