@@ -451,9 +451,14 @@ class DungeonManager:
             if loot_result:
                 messages = [f"Вы обыскали останки {loot_result['enemy_name']}:"]
                 if loot_result['gold'] > 0:
-                    messages.append(f"  Золото: {loot_result['gold']}")
+                    messages.append(f"  +{loot_result['gold']} золота")
                 for item_name, quantity in loot_result['items']:
-                    messages.append(f"  {item_name} x{quantity}")
+                    messages.append(f"  +{item_name} x{quantity}")
+
+                # Если ничего не найдено
+                if loot_result['gold'] == 0 and not loot_result['items']:
+                    messages.append("  Пусто!")
+
                 return {
                     "type": "remains",
                     "success": True,
@@ -604,7 +609,7 @@ class DungeonManager:
         # Проверяем тайники (автообнаружение)
         stash = dungeon.stash_manager.get_stash_at(new_x, new_y)
         if stash and not stash.is_detected:
-            stash.detect()
+            stash.is_detected = True  # Помечаем тайник как обнаруженный
             result["stash_found"] = True
             result["message"] = "Вы обнаружили тайник! Нажмите E чтобы обыскать."
 

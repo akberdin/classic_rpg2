@@ -192,16 +192,16 @@ DUNGEON_LOOT_TABLES = {
         "common_items": [
             ("Лечебное зелье (среднее)", "potion_health_medium", 35),
             ("Зелье маны (среднее)", "potion_mana_medium", 30),
-            ("Масло оружия", "weapon_oil", 20),
+            ("Зелье выносливости", "potion_stamina", 25),
         ],
         "uncommon_items": [
-            ("Лечебное зелье (большое)", "potion_health_large", 20),
-            ("Эликсир силы", "elixir_strength", 15),
-            ("Эликсир ловкости", "elixir_dexterity", 15),
+            ("Лечебное зелье (большое)", "potion_health_large", 25),
+            ("Зелье маны (большое)", "potion_mana_large", 20),
+            ("Противоядие", "antidote", 20),
         ],
         "rare_items": [
-            ("Свиток воскрешения", "scroll_resurrect", 5),
-            ("Камень душ", "soul_gem", 10),
+            ("Камень душ", "soul_gem", 15),
+            ("Свиток телепортации", "scroll_teleport", 10),
         ],
         "ores": [
             ("Железная руда", "iron_ore", 40),
@@ -214,15 +214,14 @@ DUNGEON_LOOT_TABLES = {
         "common_items": [
             ("Лечебное зелье (большое)", "potion_health_large", 40),
             ("Зелье маны (большое)", "potion_mana_large", 35),
+            ("Зелье выносливости", "potion_stamina", 30),
         ],
         "uncommon_items": [
-            ("Эликсир неуязвимости", "elixir_invulnerability", 15),
-            ("Эликсир мудрости", "elixir_wisdom", 15),
+            ("Противоядие", "antidote", 25),
+            ("Свиток телепортации", "scroll_teleport", 20),
         ],
         "rare_items": [
-            ("Свиток желания", "scroll_wish", 3),
-            ("Философский камень", "philosopher_stone", 2),
-            ("Древний артефакт", "ancient_artifact", 5),
+            ("Камень душ", "soul_gem", 20),
         ],
         "ores": [
             ("Золотая руда", "gold_ore", 35),
