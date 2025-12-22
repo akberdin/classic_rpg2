@@ -1148,6 +1148,10 @@ class InputHandler:
 
             # Проверяем, находимся ли в подземелье
             if self.ctx.dungeon_manager.is_in_dungeon:
+                # Вычисляем смещение для move_player
+                dx = new_x - self.ctx.player.x
+                dy = new_y - self.ctx.player.y
+
                 # Проверяем, есть ли NPC на целевой клетке
                 dungeon = self.ctx.dungeon_manager.current_dungeon
                 npc_on_tile = dungeon.get_npc_at(new_x, new_y)
@@ -1158,11 +1162,10 @@ class InputHandler:
                     print(f"Цель выбрана: {npc_on_tile.name}")
                     return
 
-                # Движение в подземелье
-                if self.ctx.dungeon_manager.can_move_in_dungeon(self.ctx.player, new_x, new_y):
-                    self.ctx.player.x = new_x
-                    self.ctx.player.y = new_y
+                # Движение в подземелье через move_player (автоматически обновляет видимость)
+                move_result = self.ctx.dungeon_manager.move_player(self.ctx.player, dx, dy)
 
+                if move_result and move_result.get("success"):
                     # Обновляем состояние подземелья
                     dungeon_result = self.ctx.dungeon_manager.update_dungeon(self.ctx.player)
 
@@ -1184,8 +1187,8 @@ class InputHandler:
                             print("Вы погибли в подземелье!")
                             self.game.running = False
                             return
-                else:
-                    print("Туда нельзя пройти!")
+                elif move_result:
+                    print(move_result.get("message", "Туда нельзя пройти!"))
                 return
 
             # Игрок может проходить сквозь NPC (коллизии убраны) - основная карта
