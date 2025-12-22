@@ -730,6 +730,20 @@ class Merchant(NPC):
                 self.rest_duration = random.randint(5, 8)
             return False
 
+        # Проверяем, проходима ли целевая точка
+        if not game_map.is_valid_position(target_x, target_y):
+            # Целевая точка невалидна, пропускаем
+            if self.waypoints:
+                self._advance_to_next_waypoint()
+            return False
+
+        target_tile = game_map.get_tile(target_x, target_y)
+        if not target_tile.is_passable():
+            # Целевая точка непроходима, пропускаем
+            if self.waypoints:
+                self._advance_to_next_waypoint()
+            return False
+
         # Используем алгоритм поиска пути для определения следующего шага
         dx, dy = self._find_next_step(target_x, target_y, game_map, max_search_distance=100)
 
@@ -744,11 +758,41 @@ class Merchant(NPC):
                 self.y += dy
                 moved = True
 
+        # Если BFS не нашёл путь, пробуем двигаться напрямую к цели
+        if not moved:
+            # Вычисляем прямое направление к цели
+            direct_dx = 0
+            direct_dy = 0
+            if target_x > self.x:
+                direct_dx = 1
+            elif target_x < self.x:
+                direct_dx = -1
+            if target_y > self.y:
+                direct_dy = 1
+            elif target_y < self.y:
+                direct_dy = -1
+
+            # Пробуем разные комбинации направлений
+            directions_to_try = [
+                (direct_dx, direct_dy),  # Диагональ к цели
+                (direct_dx, 0),          # Горизонтально к цели
+                (0, direct_dy),          # Вертикально к цели
+            ]
+
+            for try_dx, try_dy in directions_to_try:
+                if try_dx == 0 and try_dy == 0:
+                    continue
+                if self._can_move(self.x + try_dx, self.y + try_dy, game_map):
+                    self.x += try_dx
+                    self.y += try_dy
+                    moved = True
+                    break
+
         # Проверка застревания
         if not moved or (self.x == old_x and self.y == old_y):
             self.stuck_counter += 1
-            if self.stuck_counter > 20:
-                # Если застряли, переходим к следующей точке
+            if self.stuck_counter > 10:
+                # Если застряли надолго, переходим к следующей точке
                 if self.waypoints:
                     self._advance_to_next_waypoint()
                 else:
