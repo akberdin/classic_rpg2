@@ -369,6 +369,36 @@ class DungeonGenerator:
                     if tile and tile.tile_type == DungeonTileType.WALL:
                         dungeon.set_tile_type(tile_x, y, DungeonTileType.CORRIDOR)
 
+    def _find_nearby_floor(self, dungeon: DungeonMap, center_x: int, center_y: int) -> Optional[Tuple[int, int]]:
+        """
+        Найти ближайший тайл пола вокруг указанной позиции
+
+        Args:
+            dungeon: Карта подземелья
+            center_x: Центральная X координата
+            center_y: Центральная Y координата
+
+        Returns:
+            Кортеж (x, y) с координатами найденного пола, или None если не найден
+        """
+        # Проверяем сначала центральную клетку
+        if 0 < center_x < dungeon.width - 1 and 0 < center_y < dungeon.height - 1:
+            tile = dungeon.get_tile(center_x, center_y)
+            if tile and tile.tile_type == DungeonTileType.FLOOR:
+                return (center_x, center_y)
+
+        # Проверяем клетки вокруг в порядке близости
+        for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]:
+            test_x = center_x + dx
+            test_y = center_y + dy
+
+            if 0 < test_x < dungeon.width - 1 and 0 < test_y < dungeon.height - 1:
+                tile = dungeon.get_tile(test_x, test_y)
+                if tile and tile.tile_type == DungeonTileType.FLOOR:
+                    return (test_x, test_y)
+
+        return None
+
     def _place_entrance_and_exits(self, dungeon: DungeonMap, current_depth: int = 1, max_depth: int = 5):
         """
         Разместить вход, выходы и лестницы
@@ -386,16 +416,30 @@ class DungeonGenerator:
         entrance_x = first_room[0] + first_room[2] // 2
         entrance_y = first_room[1] + first_room[3] // 2
 
+        # Устанавливаем вход СНАЧАЛА
+        dungeon.set_entrance(entrance_x, entrance_y)
+
         # Если это НЕ первый уровень - ставим лестницу вверх рядом с входом
         if current_depth > 1:
-            # Лестница вверх рядом с входом
-            stairs_up_x = entrance_x + 1 if entrance_x + 1 < dungeon.width - 1 else entrance_x - 1
-            stairs_up_y = entrance_y
-            dungeon.set_tile_type(stairs_up_x, stairs_up_y, DungeonTileType.STAIRS_UP)
-            # Сохраняем позицию лестницы вверх
-            dungeon.stairs_up = (stairs_up_x, stairs_up_y)
+            # Ищем ближайший пол ВОКРУГ входа (не сам вход!)
+            stairs_up_x, stairs_up_y = None, None
 
-        dungeon.set_entrance(entrance_x, entrance_y)
+            # Проверяем клетки вокруг входа (не включая сам вход)
+            for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]:
+                test_x = entrance_x + dx
+                test_y = entrance_y + dy
+
+                if 0 < test_x < dungeon.width - 1 and 0 < test_y < dungeon.height - 1:
+                    tile = dungeon.get_tile(test_x, test_y)
+                    if tile and tile.tile_type == DungeonTileType.FLOOR:
+                        stairs_up_x = test_x
+                        stairs_up_y = test_y
+                        break
+
+            # Если нашли подходящую клетку - устанавливаем лестницу
+            if stairs_up_x is not None:
+                dungeon.set_tile_type(stairs_up_x, stairs_up_y, DungeonTileType.STAIRS_UP)
+                dungeon.stairs_up = (stairs_up_x, stairs_up_y)
 
         # В последней комнате размещаем либо выход, либо лестницу вниз
         last_room = dungeon.rooms[-1]
@@ -404,11 +448,16 @@ class DungeonGenerator:
 
         if current_depth < max_depth:
             # Не последний уровень - ставим лестницу вниз
-            dungeon.set_tile_type(exit_x, exit_y, DungeonTileType.STAIRS_DOWN)
-            dungeon.stairs_down = (exit_x, exit_y)
+            stairs_down_pos = self._find_nearby_floor(dungeon, exit_x, exit_y)
+            if stairs_down_pos:
+                stairs_down_x, stairs_down_y = stairs_down_pos
+                dungeon.set_tile_type(stairs_down_x, stairs_down_y, DungeonTileType.STAIRS_DOWN)
+                dungeon.stairs_down = (stairs_down_x, stairs_down_y)
         else:
             # Последний уровень - ставим выход
-            dungeon.add_exit(exit_x, exit_y)
+            exit_pos = self._find_nearby_floor(dungeon, exit_x, exit_y)
+            if exit_pos:
+                dungeon.add_exit(exit_pos[0], exit_pos[1])
 
         # Дополнительный выход в случайной комнате (только на последнем уровне)
         if current_depth == max_depth and len(dungeon.rooms) >= 5:
@@ -420,15 +469,23 @@ class DungeonGenerator:
 
             # Убеждаемся, что это не совпадает с входом
             if (alt_exit_x, alt_exit_y) != (entrance_x, entrance_y):
-                dungeon.add_exit(alt_exit_x, alt_exit_y)
+                alt_exit_pos = self._find_nearby_floor(dungeon, alt_exit_x, alt_exit_y)
+                if alt_exit_pos:
+                    dungeon.add_exit(alt_exit_pos[0], alt_exit_pos[1])
 
     def _place_traps(self, dungeon: DungeonMap, trap_chance: float):
         """Разместить ловушки"""
         floor_tiles = dungeon.get_all_floor_tiles()
 
         for x, y in floor_tiles:
-            # Не ставим ловушки на входе/выходе
+            tile = dungeon.get_tile(x, y)
+            if not tile:
+                continue
+
+            # Не ставим ловушки на входе/выходе/лестницах
             if dungeon.is_entrance_tile(x, y) or dungeon.is_exit_tile(x, y):
+                continue
+            if tile.tile_type in (DungeonTileType.STAIRS_UP, DungeonTileType.STAIRS_DOWN):
                 continue
 
             if random.random() < trap_chance:
@@ -443,8 +500,14 @@ class DungeonGenerator:
         is_mine = dungeon.dungeon_type == "mine"
 
         for x, y in floor_tiles:
-            # Не ставим тайники на входе/выходе или на ловушках
+            tile = dungeon.get_tile(x, y)
+            if not tile:
+                continue
+
+            # Не ставим тайники на входе/выходе/лестницах или на ловушках
             if dungeon.is_entrance_tile(x, y) or dungeon.is_exit_tile(x, y):
+                continue
+            if tile.tile_type in (DungeonTileType.STAIRS_UP, DungeonTileType.STAIRS_DOWN):
                 continue
             if dungeon.trap_manager.get_trap_at(x, y) is not None:
                 continue
