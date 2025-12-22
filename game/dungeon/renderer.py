@@ -40,6 +40,8 @@ class DungeonRenderer:
         self.tile_symbols = {
             DungeonTileType.ENTRANCE: "E",
             DungeonTileType.EXIT: "X",
+            DungeonTileType.STAIRS_DOWN: ">",  # Лестница вниз
+            DungeonTileType.STAIRS_UP: "<",    # Лестница вверх
             DungeonTileType.TRAP: "^",
             DungeonTileType.TRAP_TRIGGERED: "v",
             DungeonTileType.STASH: "$",
@@ -180,6 +182,8 @@ class DungeonRenderer:
         colors = {
             DungeonTileType.ENTRANCE: (100, 255, 100),    # Зеленый
             DungeonTileType.EXIT: (255, 100, 100),        # Красный
+            DungeonTileType.STAIRS_DOWN: (100, 150, 255),  # Синий (вниз)
+            DungeonTileType.STAIRS_UP: (255, 255, 150),    # Жёлтый (вверх)
             DungeonTileType.TRAP: (255, 200, 100),        # Оранжевый
             DungeonTileType.TRAP_TRIGGERED: (150, 100, 100),
             DungeonTileType.STASH: (255, 255, 100),       # Желтый
@@ -545,7 +549,7 @@ class DungeonRenderer:
 
             current_y += item_height
 
-    def render_hud(self, dungeon: DungeonMap, player, font):
+    def render_hud(self, dungeon: DungeonMap, player, font, dungeon_manager=None):
         """
         Отрисовка HUD для подземелья
 
@@ -553,6 +557,7 @@ class DungeonRenderer:
             dungeon: Карта подземелья
             player: Объект игрока
             font: Шрифт для текста
+            dungeon_manager: Менеджер подземелий (опционально, для отображения глубины)
         """
         # Информация о подземелье в верхнем левом углу
         padding = 10
@@ -560,7 +565,7 @@ class DungeonRenderer:
 
         # Фон панели
         panel_width = 300
-        panel_height = 100
+        panel_height = 125  # Увеличено для новой строки
         pygame.draw.rect(self.screen, (30, 30, 40, 200),
                         (padding, padding, panel_width, panel_height))
         pygame.draw.rect(self.screen, (80, 80, 100),
@@ -573,8 +578,15 @@ class DungeonRenderer:
         self.screen.blit(name_surface, (padding + 10, current_y))
         current_y += line_height
 
-        # Уровень
-        level_text = f"Уровень: {dungeon.dungeon_level}"
+        # Глубина (если доступен менеджер)
+        if dungeon_manager:
+            depth_text = f"Глубина: {dungeon_manager.current_depth}/{dungeon_manager.max_depth}"
+            depth_surface = font.render(depth_text, True, (150, 200, 255))
+            self.screen.blit(depth_surface, (padding + 10, current_y))
+            current_y += line_height
+
+        # Уровень сложности
+        level_text = f"Уровень сложности: {dungeon.dungeon_level}"
         level_surface = font.render(level_text, True, (200, 200, 200))
         self.screen.blit(level_surface, (padding + 10, current_y))
         current_y += line_height
@@ -584,14 +596,25 @@ class DungeonRenderer:
         pos_surface = font.render(pos_text, True, (180, 180, 180))
         self.screen.blit(pos_surface, (padding + 10, current_y))
 
-        # Подсказка о выходе
+        # Подсказки о выходе и лестницах
         tile = dungeon.get_tile(player.x, player.y)
-        if tile and tile.is_exit():
-            hint_text = "[E] Покинуть подземелье"
-            hint_surface = font.render(hint_text, True, (100, 255, 100))
-            hint_x = (self.screen.get_width() - hint_surface.get_width()) // 2
-            hint_y = self.screen.get_height() - 50
-            self.screen.blit(hint_surface, (hint_x, hint_y))
+        hint_y = self.screen.get_height() - 50
+        if tile:
+            if tile.is_exit():
+                hint_text = "[E] Покинуть подземелье"
+                hint_surface = font.render(hint_text, True, (100, 255, 100))
+                hint_x = (self.screen.get_width() - hint_surface.get_width()) // 2
+                self.screen.blit(hint_surface, (hint_x, hint_y))
+            elif tile.is_stairs_down():
+                hint_text = "[>] Спуститься на следующий уровень"
+                hint_surface = font.render(hint_text, True, (100, 150, 255))
+                hint_x = (self.screen.get_width() - hint_surface.get_width()) // 2
+                self.screen.blit(hint_surface, (hint_x, hint_y))
+            elif tile.is_stairs_up():
+                hint_text = "[<] Подняться на предыдущий уровень"
+                hint_surface = font.render(hint_text, True, (255, 255, 150))
+                hint_x = (self.screen.get_width() - hint_surface.get_width()) // 2
+                self.screen.blit(hint_surface, (hint_x, hint_y))
 
     def render_target_info_panel(self, target_info: dict, font):
         """

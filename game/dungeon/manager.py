@@ -36,6 +36,12 @@ class DungeonManager:
         # Кэш сгенерированных подземелий (по координатам локации)
         self._dungeon_cache: dict = {}
 
+        # Многоуровневость подземелий
+        self.current_depth: int = 1  # Текущая глубина (1-based)
+        self.max_depth: int = 5      # Максимальная глубина подземелья
+        self.dungeon_levels: dict = {}  # Кэш уровней текущего подземелья {depth: DungeonMap}
+        self.current_dungeon_key: Optional[str] = None  # Ключ текущего подземелья
+
         # NPC для подземелий
         self.dungeon_npcs: List = []
 
@@ -102,29 +108,35 @@ class DungeonManager:
         self.saved_world_x = player.x
         self.saved_world_y = player.y
 
-        # Проверяем кэш подземелий
-        cache_key = (self.saved_world_x, self.saved_world_y)
+        # Инициализируем многоуровневость
+        self.current_depth = 1
+        self.current_dungeon_key = f"{self.saved_world_x}_{self.saved_world_y}"
 
-        if cache_key in self._dungeon_cache:
-            # Используем сохраненное подземелье (уже посещенное)
-            self.current_dungeon = self._dungeon_cache[cache_key]
+        # Проверяем кэш уровней
+        if self.current_dungeon_key not in self.dungeon_levels:
+            self.dungeon_levels[self.current_dungeon_key] = {}
 
-            # Восстанавливаем список NPC из сохраненного подземелья
+        cache = self.dungeon_levels[self.current_dungeon_key]
+
+        if 1 in cache:
+            # Используем сохраненный первый уровень
+            self.current_dungeon = cache[1]
             self.dungeon_npcs = self.current_dungeon.npcs.copy()
         else:
-            # Генерируем новое подземелье
+            # Генерируем новое подземелье (первый уровень)
             tile = self.game.game_map.get_tile(player.x, player.y)
             location_type = "mine" if dungeon_type == "mine" else "ruins"
 
             self.current_dungeon = self.generator.generate_dungeon_for_location(
-                location_type, location_name, player.x, player.y
+                location_type, location_name, player.x, player.y,
+                current_depth=1, max_depth=self.max_depth
             )
 
             # Генерируем NPC для подземелья
             self._spawn_dungeon_npcs()
 
-            # Сохраняем в кэш
-            self._dungeon_cache[cache_key] = self.current_dungeon
+            # Сохраняем первый уровень в кэш
+            cache[1] = self.current_dungeon
 
         # Перемещаем игрока на вход подземелья
         if self.current_dungeon.entrance:
@@ -176,6 +188,146 @@ class DungeonManager:
         return {
             "success": True,
             "message": f"Вы покинули {dungeon_name}",
+        }
+
+    def go_down_stairs(self, player) -> dict:
+        """
+        Спуститься на следующий уровень подземелья
+
+        Args:
+            player: Объект игрока
+
+        Returns:
+            dict: Результат перехода
+        """
+        if not self.is_in_dungeon or not self.current_dungeon:
+            return {
+                "success": False,
+                "message": "Вы не находитесь в подземелье!"
+            }
+
+        # Проверяем, на лестнице ли игрок
+        tile = self.current_dungeon.get_tile(player.x, player.y)
+        if not tile or not tile.is_stairs_down():
+            return {
+                "success": False,
+                "message": "Здесь нет лестницы вниз!"
+            }
+
+        # Проверяем, не достигнут ли предел глубины
+        if self.current_depth >= self.max_depth:
+            return {
+                "success": False,
+                "message": "Это последний уровень подземелья!"
+            }
+
+        # Сохраняем NPC текущего уровня
+        self.current_dungeon.npcs = self.dungeon_npcs.copy()
+
+        # Переходим на следующий уровень
+        self.current_depth += 1
+
+        # Проверяем кэш уровней
+        cache = self.dungeon_levels[self.current_dungeon_key]
+
+        if self.current_depth in cache:
+            # Загружаем сохранённый уровень
+            self.current_dungeon = cache[self.current_depth]
+            self.dungeon_npcs = self.current_dungeon.npcs.copy()
+        else:
+            # Генерируем новый уровень
+            tile = self.game.game_map.get_tile(self.saved_world_x, self.saved_world_y)
+            location_type = "mine" if self.current_dungeon.dungeon_type == "mine" else "ruins"
+            location_name = self.current_dungeon.name.split(" (")[0].replace("Подземелье под ", "").replace("Шахта ", "")
+
+            self.current_dungeon = self.generator.generate_dungeon_for_location(
+                location_type, location_name, self.saved_world_x, self.saved_world_y,
+                current_depth=self.current_depth, max_depth=self.max_depth
+            )
+
+            # Генерируем NPC для нового уровня
+            self._spawn_dungeon_npcs()
+
+            # Сохраняем в кэш
+            cache[self.current_depth] = self.current_dungeon
+
+        # Перемещаем игрока на лестницу вверх (точку входа нового уровня)
+        if self.current_dungeon.stairs_up:
+            player.x, player.y = self.current_dungeon.stairs_up
+        elif self.current_dungeon.entrance:
+            player.x, player.y = self.current_dungeon.entrance
+        else:
+            player.x = self.current_dungeon.width // 2
+            player.y = self.current_dungeon.height // 2
+
+        # Обновляем видимость
+        self.current_dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
+
+        return {
+            "success": True,
+            "message": f"Вы спустились на уровень {self.current_depth}",
+            "dungeon_name": self.current_dungeon.name,
+            "current_depth": self.current_depth,
+            "max_depth": self.max_depth
+        }
+
+    def go_up_stairs(self, player) -> dict:
+        """
+        Подняться на предыдущий уровень подземелья
+
+        Args:
+            player: Объект игрока
+
+        Returns:
+            dict: Результат перехода
+        """
+        if not self.is_in_dungeon or not self.current_dungeon:
+            return {
+                "success": False,
+                "message": "Вы не находитесь в подземелье!"
+            }
+
+        # Проверяем, на лестнице ли игрок
+        tile = self.current_dungeon.get_tile(player.x, player.y)
+        if not tile or not tile.is_stairs_up():
+            return {
+                "success": False,
+                "message": "Здесь нет лестницы вверх!"
+            }
+
+        # Проверяем, не на первом ли уровне
+        if self.current_depth <= 1:
+            return {
+                "success": False,
+                "message": "Это первый уровень подземелья! Используйте выход для возврата."
+            }
+
+        # Сохраняем NPC текущего уровня
+        self.current_dungeon.npcs = self.dungeon_npcs.copy()
+
+        # Переходим на предыдущий уровень
+        self.current_depth -= 1
+
+        # Загружаем предыдущий уровень из кэша
+        cache = self.dungeon_levels[self.current_dungeon_key]
+        self.current_dungeon = cache[self.current_depth]
+        self.dungeon_npcs = self.current_dungeon.npcs.copy()
+
+        # Перемещаем игрока на лестницу вниз
+        if self.current_dungeon.stairs_down:
+            player.x, player.y = self.current_dungeon.stairs_down
+        else:
+            player.x, player.y = self.current_dungeon.entrance
+
+        # Обновляем видимость
+        self.current_dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
+
+        return {
+            "success": True,
+            "message": f"Вы поднялись на уровень {self.current_depth}",
+            "dungeon_name": self.current_dungeon.name,
+            "current_depth": self.current_depth,
+            "max_depth": self.max_depth
         }
 
     def _spawn_dungeon_npcs(self):

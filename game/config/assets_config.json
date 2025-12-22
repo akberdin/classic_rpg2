@@ -207,6 +207,8 @@
     "corridor": "assets/dungeon/tiles/corridor.png",
     "entrance": "assets/dungeon/tiles/entrance.png",
     "exit": "assets/dungeon/tiles/exit.png",
+    "stairs_down": "assets/dungeon/tiles/stairs_down.png",
+    "stairs_up": "assets/dungeon/tiles/stairs_up.png",
     "rubble": "assets/dungeon/tiles/rubble.png",
     "water": "assets/dungeon/tiles/water.png",
     "bones": "assets/dungeon/tiles/bones.png",

@@ -14,6 +14,8 @@ class DungeonTileType(Enum):
     # Специальные типы
     ENTRANCE = "entrance"      # Точка входа
     EXIT = "exit"              # Точка выхода
+    STAIRS_DOWN = "stairs_down"  # Лестница на следующий уровень
+    STAIRS_UP = "stairs_up"    # Лестница на предыдущий уровень
 
     # Интерактивные типы
     TRAP = "trap"              # Ловушка (проходима, наносит урон)
@@ -47,6 +49,8 @@ DUNGEON_TILE_COLORS = {
     # Специальные
     DungeonTileType.ENTRANCE: (100, 150, 100),     # Зеленоватый
     DungeonTileType.EXIT: (150, 100, 100),         # Красноватый (выход)
+    DungeonTileType.STAIRS_DOWN: (100, 100, 150),  # Синеватый (вниз)
+    DungeonTileType.STAIRS_UP: (150, 150, 100),    # Желтоватый (вверх)
 
     # Интерактивные
     DungeonTileType.TRAP: (80, 80, 80),            # Как пол (скрытая)
@@ -76,6 +80,8 @@ PASSABLE_DUNGEON_TILES = [
     DungeonTileType.CORRIDOR,
     DungeonTileType.ENTRANCE,
     DungeonTileType.EXIT,
+    DungeonTileType.STAIRS_DOWN,
+    DungeonTileType.STAIRS_UP,
     DungeonTileType.TRAP,
     DungeonTileType.TRAP_TRIGGERED,
     DungeonTileType.STASH,
@@ -130,6 +136,14 @@ class DungeonTile:
     def is_exit(self) -> bool:
         """Это точка выхода?"""
         return self.tile_type == DungeonTileType.EXIT
+
+    def is_stairs_down(self) -> bool:
+        """Это лестница вниз?"""
+        return self.tile_type == DungeonTileType.STAIRS_DOWN
+
+    def is_stairs_up(self) -> bool:
+        """Это лестница вверх?"""
+        return self.tile_type == DungeonTileType.STAIRS_UP
 
     def is_trap(self) -> bool:
         """Это ловушка?"""

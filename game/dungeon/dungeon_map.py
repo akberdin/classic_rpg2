@@ -46,6 +46,10 @@ class DungeonMap:
         self.entrance: Optional[Tuple[int, int]] = None
         self.exits: List[Tuple[int, int]] = []
 
+        # Лестницы между уровнями
+        self.stairs_down: Optional[Tuple[int, int]] = None  # Лестница на следующий уровень
+        self.stairs_up: Optional[Tuple[int, int]] = None    # Лестница на предыдущий уровень
+
         # NPC в подземелье
         self.npcs: List = []
 
