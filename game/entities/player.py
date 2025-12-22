@@ -329,9 +329,13 @@ class Player(Character):
         self.max_stamina = original_max_stamina
         stamina_restored = self.stamina - old_stamina
 
-        print(f"Здоровье восстановлено: +{health_restored} ({self.health}/{effective_max_health})")
-        print(f"Мана восстановлена: +{mana_restored} ({self.mana}/{effective_max_mana})")
-        print(f"Выносливость восстановлена: +{stamina_restored} ({self.stamina}/{effective_max_stamina})")
+        # Выводим сообщения только если было восстановление
+        if health_restored > 0:
+            print(f"Здоровье восстановлено: +{health_restored} ({self.health}/{effective_max_health})")
+        if mana_restored > 0:
+            print(f"Мана восстановлена: +{mana_restored} ({self.mana}/{effective_max_mana})")
+        if stamina_restored > 0:
+            print(f"Выносливость восстановлена: +{stamina_restored} ({self.stamina}/{effective_max_stamina})")
 
         # Восстанавливаем здоровье и выносливость спутников
         if hasattr(self, 'companion_manager') and self.companion_manager:
