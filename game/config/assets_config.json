@@ -198,45 +198,6 @@
     "wolf_devour": "assets/skills/companion/wolf_devour.png"
   },
 
-  "dungeon_tiles": {
-    "_description": "Спрайты тайлов подземелья (64x64 пикселя)",
-    "_folder": "assets/dungeon/tiles/",
-    "_comment": "Тайлы пола, стен и окружения",
-    "floor": "assets/dungeon/tiles/floor.png",
-    "wall": "assets/dungeon/tiles/wall.png",
-    "corridor": "assets/dungeon/tiles/floor.png",
-    "entrance": "assets/dungeon/tiles/entrance.png",
-    "exit": "assets/dungeon/tiles/exit.png",
-    "stairs_down": "assets/dungeon/tiles/stairs_down.png",
-    "stairs_up": "assets/dungeon/tiles/stairs_up.png",
-    "rubble": "assets/dungeon/tiles/rubble.png",
-    "water": "assets/dungeon/tiles/water.png",
-    "bones": "assets/dungeon/tiles/bones.png",
-    "altar": "assets/dungeon/tiles/altar.png",
-    "ore_vein": "assets/dungeon/tiles/ore_vein.png",
-    "minecart": "assets/dungeon/tiles/minecart.png",
-    "support": "assets/dungeon/tiles/support.png"
-  },
-
-  "dungeon_objects": {
-    "_description": "Спрайты интерактивных объектов подземелья (64x64 пикселя)",
-    "_folder": "assets/dungeon/objects/",
-    "_comment": "Ловушки, тайники, сундуки, останки врагов",
-    "trap": "assets/dungeon/objects/trap.png",
-    "trap_triggered": "assets/dungeon/objects/trap_triggered.png",
-    "stash": "assets/dungeon/objects/stash.png",
-    "stash_looted": "assets/dungeon/objects/stash_looted.png",
-    "remains": "assets/dungeon/objects/remains.png",
-    "remains_looted": "assets/dungeon/objects/remains_looted.png",
-    "chest": "assets/dungeon/objects/chest.png",
-    "chest_open": "assets/dungeon/objects/chest_open.png",
-    "lever": "assets/dungeon/objects/lever.png",
-    "lever_active": "assets/dungeon/objects/lever_active.png",
-    "torch": "assets/dungeon/objects/torch.png",
-    "door": "assets/dungeon/objects/door.png",
-    "door_open": "assets/dungeon/objects/door_open.png"
-  },
-
   "fallback": {
     "_comment": "Если спрайт не найден, используется геометрическая фигура или текст",
     "use_placeholder": true,

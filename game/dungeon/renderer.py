@@ -193,11 +193,7 @@ class DungeonRenderer:
                     pygame.draw.rect(self.screen, color_lit,
                                     (pixel_x, pixel_y, self.tile_size, self.tile_size))
 
-                # Добавляем сетку для видимых клеток
-                if tile.visible:
-                    grid_color = tuple(min(255, int(c * light_factor) + 20) for c in color)
-                    pygame.draw.rect(self.screen, grid_color,
-                                    (pixel_x, pixel_y, self.tile_size, self.tile_size), 1)
+                # Сетка убрана для бесшовного отображения спрайтов
 
                 # Рисуем специальные символы
                 if tile.visible and tile.tile_type in self.tile_symbols:

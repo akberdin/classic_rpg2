@@ -11,6 +11,8 @@ class SpriteManager:
 
     # Путь к единому конфигу ассетов
     DEFAULT_CONFIG_PATH = "game/config/assets_config.json"
+    DUNGEON_TILES_CONFIG_PATH = "game/config/dungeon_tiles_config.json"
+    MINE_TILES_CONFIG_PATH = "game/config/mine_tiles_config.json"
 
     def __init__(self, config_path=None, tile_size=32):
         """
@@ -22,12 +24,16 @@ class SpriteManager:
         """
         self.tile_size = tile_size
         self.config = {}
+        self.dungeon_config = {}
+        self.mine_config = {}
         self.sprites = {}
         self.sprite_size = 64  # Размер исходных спрайтов
 
-        # Загружаем конфигурацию
+        # Загружаем конфигурации
         actual_config_path = config_path if config_path else self.DEFAULT_CONFIG_PATH
         self.load_config(actual_config_path)
+        self.load_dungeon_config(self.DUNGEON_TILES_CONFIG_PATH)
+        self.load_mine_config(self.MINE_TILES_CONFIG_PATH)
 
         # Загружаем спрайты
         self.load_sprites()
@@ -52,6 +58,42 @@ class SpriteManager:
         except Exception as e:
             print(f"Ошибка загрузки конфигурации спрайтов: {e}")
             print("Будут использоваться геометрические фигуры")
+
+    def load_dungeon_config(self, config_path):
+        """
+        Загрузка конфигурации тайлов подземелий
+
+        Args:
+            config_path: Путь к конфигурационному файлу
+        """
+        if not os.path.exists(config_path):
+            print(f"Конфиг тайлов подземелий не найден: {config_path}")
+            return
+
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                self.dungeon_config = json.load(f)
+                print(f"Конфиг тайлов подземелий загружен: {config_path}")
+        except Exception as e:
+            print(f"Ошибка загрузки конфига тайлов подземелий: {e}")
+
+    def load_mine_config(self, config_path):
+        """
+        Загрузка конфигурации тайлов шахт
+
+        Args:
+            config_path: Путь к конфигурационному файлу
+        """
+        if not os.path.exists(config_path):
+            print(f"Конфиг тайлов шахт не найден: {config_path}")
+            return
+
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                self.mine_config = json.load(f)
+                print(f"Конфиг тайлов шахт загружен: {config_path}")
+        except Exception as e:
+            print(f"Ошибка загрузки конфига тайлов шахт: {e}")
 
     def load_sprites(self):
         """Загрузка всех спрайтов из конфигурации"""
@@ -106,15 +148,25 @@ class SpriteManager:
                 # Простая структура: строка с путем
                 self.load_sprite(companion_type, companion_data, 'companion')
 
-        # Загружаем спрайты тайлов подземелья
-        for tile_type, sprite_path in self.config.get('dungeon_tiles', {}).items():
-            if not tile_type.startswith('_'):  # Пропускаем служебные поля (_description, _folder, _comment)
+        # Загружаем спрайты тайлов подземелья из отдельного конфига
+        for tile_type, sprite_path in self.dungeon_config.get('tiles', {}).items():
+            if not tile_type.startswith('_'):  # Пропускаем служебные поля
                 self.load_sprite(tile_type, sprite_path, 'dungeon_tile')
 
-        # Загружаем спрайты объектов подземелья
-        for object_type, sprite_path in self.config.get('dungeon_objects', {}).items():
+        # Загружаем спрайты объектов подземелья из отдельного конфига
+        for object_type, sprite_path in self.dungeon_config.get('objects', {}).items():
             if not object_type.startswith('_'):  # Пропускаем служебные поля
                 self.load_sprite(object_type, sprite_path, 'dungeon_object')
+
+        # Загружаем спрайты тайлов шахт из отдельного конфига
+        for tile_type, sprite_path in self.mine_config.get('tiles', {}).items():
+            if not tile_type.startswith('_'):  # Пропускаем служебные поля
+                self.load_sprite(tile_type, sprite_path, 'mine_tile')
+
+        # Загружаем спрайты объектов шахт из отдельного конфига
+        for object_type, sprite_path in self.mine_config.get('objects', {}).items():
+            if not object_type.startswith('_'):  # Пропускаем служебные поля
+                self.load_sprite(object_type, sprite_path, 'mine_object')
 
         print(f"Загружено спрайтов: {len(self.sprites)}")
 
@@ -158,6 +210,52 @@ class SpriteManager:
         """
         key = f"{category}_{sprite_type}"
         return self.sprites.get(key)
+
+    def get_dungeon_tile_sprite(self, tile_type, dungeon_type="dungeon"):
+        """
+        Получить спрайт тайла подземелья или шахты
+
+        Args:
+            tile_type: Тип тайла (floor, wall, stairs_down и т.д.)
+            dungeon_type: Тип подземелья ("dungeon" или "mine")
+
+        Returns:
+            pygame.Surface или None если спрайт не найден
+        """
+        if dungeon_type == "mine":
+            key = f"mine_tile_{tile_type}"
+            sprite = self.sprites.get(key)
+            if sprite:
+                return sprite
+            # Fallback к тайлам подземелья
+            key = f"dungeon_tile_{tile_type}"
+            return self.sprites.get(key)
+        else:
+            key = f"dungeon_tile_{tile_type}"
+            return self.sprites.get(key)
+
+    def get_dungeon_object_sprite(self, object_type, dungeon_type="dungeon"):
+        """
+        Получить спрайт объекта подземелья или шахты
+
+        Args:
+            object_type: Тип объекта (trap, stash, remains и т.д.)
+            dungeon_type: Тип подземелья ("dungeon" или "mine")
+
+        Returns:
+            pygame.Surface или None если спрайт не найден
+        """
+        if dungeon_type == "mine":
+            key = f"mine_object_{object_type}"
+            sprite = self.sprites.get(key)
+            if sprite:
+                return sprite
+            # Fallback к объектам подземелья
+            key = f"dungeon_object_{object_type}"
+            return self.sprites.get(key)
+        else:
+            key = f"dungeon_object_{object_type}"
+            return self.sprites.get(key)
 
     def get_rank_suffix(self, level):
         """
