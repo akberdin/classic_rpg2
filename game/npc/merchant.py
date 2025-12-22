@@ -660,19 +660,36 @@ class Merchant(NPC):
         if not self.waypoints:
             return
 
-        self.current_waypoint_index += 1
-        if self.current_waypoint_index >= len(self.waypoints):
-            if self.is_loop:
-                self.current_waypoint_index = 0
-            else:
-                # Маршрут завершён
-                self.state = "rest"
-                return
+        # Пропускаем waypoints, на которых торговец уже находится
+        # (например, если последняя точка совпадает с первой в цикле)
+        attempts = 0
+        max_attempts = len(self.waypoints)
 
-        # Устанавливаем duration для новой точки
-        current_wp = self._get_current_waypoint()
-        if current_wp:
-            self.current_waypoint_duration = current_wp.get('duration', 20)
+        while attempts < max_attempts:
+            self.current_waypoint_index += 1
+            if self.current_waypoint_index >= len(self.waypoints):
+                if self.is_loop:
+                    self.current_waypoint_index = 0
+                else:
+                    # Маршрут завершён
+                    self.state = "rest"
+                    return
+
+            current_wp = self._get_current_waypoint()
+            if current_wp:
+                target_x = current_wp.get('x', self.x)
+                target_y = current_wp.get('y', self.y)
+
+                # Если торговец уже на этой точке, пропускаем её
+                if self.x == target_x and self.y == target_y:
+                    attempts += 1
+                    continue
+
+                # Нашли точку, куда нужно идти
+                self.current_waypoint_duration = current_wp.get('duration', 20)
+                break
+
+            attempts += 1
 
         self.rest_counter = 0
         self.stuck_counter = 0
