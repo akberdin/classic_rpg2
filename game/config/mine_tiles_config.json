@@ -1,0 +1,39 @@
+{
+  "_description": "Конфигурация тайлов шахт",
+  "_version": "1.0.0",
+
+  "sprite_size": 64,
+
+  "tiles": {
+    "_description": "Спрайты тайлов шахты (64x64 пикселя)",
+    "_folder": "assets/mine/tiles/",
+    "_comment": "Тайлы пола, стен, шахтных конструкций",
+    "floor": "assets/mine/tiles/floor.png",
+    "wall": "assets/mine/tiles/wall.png",
+    "corridor": "assets/mine/tiles/floor.png",
+    "entrance": "assets/mine/tiles/entrance.png",
+    "exit": "assets/mine/tiles/exit.png",
+    "stairs_down": "assets/mine/tiles/stairs_down.png",
+    "stairs_up": "assets/mine/tiles/stairs_up.png",
+    "ore_vein": "assets/mine/tiles/ore_vein.png",
+    "minecart": "assets/mine/tiles/minecart.png",
+    "support": "assets/mine/tiles/support.png",
+    "rubble": "assets/mine/tiles/rubble.png",
+    "water": "assets/mine/tiles/water.png"
+  },
+
+  "objects": {
+    "_description": "Спрайты интерактивных объектов шахты (64x64 пикселя)",
+    "_folder": "assets/mine/objects/",
+    "_comment": "Ловушки, тайники, руда",
+    "trap": "assets/mine/objects/trap.png",
+    "trap_triggered": "assets/mine/objects/trap_triggered.png",
+    "stash": "assets/mine/objects/stash.png",
+    "stash_looted": "assets/mine/objects/stash_looted.png",
+    "remains": "assets/mine/objects/remains.png",
+    "remains_looted": "assets/mine/objects/remains_looted.png",
+    "chest": "assets/mine/objects/chest.png",
+    "chest_open": "assets/mine/objects/chest_open.png",
+    "torch": "assets/mine/objects/torch.png"
+  }
+}
