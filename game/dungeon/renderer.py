@@ -53,6 +53,51 @@ class DungeonRenderer:
             DungeonTileType.REMAINS_LOOTED: "r",
         }
 
+        # Маппинг типов тайлов на имена спрайтов
+        self.tile_sprite_names = {
+            DungeonTileType.FLOOR: "floor",
+            DungeonTileType.WALL: "wall",
+            DungeonTileType.CORRIDOR: "corridor",
+            DungeonTileType.ENTRANCE: "entrance",
+            DungeonTileType.EXIT: "exit",
+            DungeonTileType.STAIRS_DOWN: "stairs_down",
+            DungeonTileType.STAIRS_UP: "stairs_up",
+            DungeonTileType.TRAP: "trap",
+            DungeonTileType.TRAP_TRIGGERED: "trap_triggered",
+            DungeonTileType.STASH: "chest",
+            DungeonTileType.STASH_LOOTED: "chest_open",
+            DungeonTileType.RUBBLE: "rubble",
+            DungeonTileType.WATER: "water",
+            DungeonTileType.BONES: "bones",
+            DungeonTileType.ALTAR: "altar",
+            DungeonTileType.PILLAR: "pillar",
+            DungeonTileType.FOUNTAIN: "fountain",
+            DungeonTileType.MINECART: "minecart",
+            DungeonTileType.SUPPORT: "support",
+            DungeonTileType.ORE_VEIN: "ore_vein",
+            DungeonTileType.REMAINS: "remains",
+            DungeonTileType.REMAINS_LOOTED: "remains_looted",
+        }
+
+    def get_tile_sprite(self, tile_type):
+        """
+        Получить спрайт для тайла подземелья
+
+        Args:
+            tile_type: Тип тайла (DungeonTileType)
+
+        Returns:
+            pygame.Surface или None
+        """
+        if not self.sprite_manager:
+            return None
+
+        sprite_name = self.tile_sprite_names.get(tile_type)
+        if not sprite_name:
+            return None
+
+        return self.sprite_manager.get_sprite(sprite_name, 'dungeon_tile')
+
     def render_dungeon(self, dungeon: DungeonMap, player, camera_x: int, camera_y: int,
                        viewport_width: int, viewport_height: int, selected_target=None,
                        selected_object=None, selected_object_type=None):
@@ -117,24 +162,42 @@ class DungeonRenderer:
                         # Показываем как обычный пол
                         color = DUNGEON_TILE_COLORS.get(DungeonTileType.FLOOR, (80, 80, 80))
 
-                # Если клетка не видна сейчас, затемняем
+                # Вычисляем коэффициент освещения
                 if not tile.visible:
-                    color = tuple(int(c * self.dim_factor) for c in color)
+                    light_factor = self.dim_factor
                 else:
                     # Эффект затухания света от игрока
                     dist = ((map_x - player.x) ** 2 + (map_y - player.y) ** 2) ** 0.5
                     if dist > 0:
                         # Коэффициент освещения: 1.0 в центре, уменьшается к краям
                         light_factor = max(0.3, 1.0 - (dist / (self.light_radius + 1)) * 0.7)
-                        color = tuple(int(c * light_factor) for c in color)
+                    else:
+                        light_factor = 1.0
 
-                # Рисуем клетку
-                pygame.draw.rect(self.screen, color,
-                                (pixel_x, pixel_y, self.tile_size, self.tile_size))
+                # Пробуем получить спрайт для тайла
+                sprite = self.get_tile_sprite(tile.tile_type)
+
+                if sprite:
+                    # Масштабируем спрайт под размер тайла если нужно
+                    if sprite.get_width() != self.tile_size or sprite.get_height() != self.tile_size:
+                        sprite = pygame.transform.scale(sprite, (self.tile_size, self.tile_size))
+
+                    # Применяем затемнение через альфа-канал
+                    if light_factor < 1.0:
+                        sprite = sprite.copy()
+                        sprite.set_alpha(int(255 * light_factor))
+
+                    # Рисуем спрайт
+                    self.screen.blit(sprite, (pixel_x, pixel_y))
+                else:
+                    # Fallback - рисуем цветом
+                    color_lit = tuple(int(c * light_factor) for c in color)
+                    pygame.draw.rect(self.screen, color_lit,
+                                    (pixel_x, pixel_y, self.tile_size, self.tile_size))
 
                 # Добавляем сетку для видимых клеток
                 if tile.visible:
-                    grid_color = tuple(min(255, c + 20) for c in color)
+                    grid_color = tuple(min(255, int(c * light_factor) + 20) for c in color)
                     pygame.draw.rect(self.screen, grid_color,
                                     (pixel_x, pixel_y, self.tile_size, self.tile_size), 1)
 

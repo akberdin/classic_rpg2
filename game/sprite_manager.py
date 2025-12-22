@@ -106,6 +106,16 @@ class SpriteManager:
                 # Простая структура: строка с путем
                 self.load_sprite(companion_type, companion_data, 'companion')
 
+        # Загружаем спрайты тайлов подземелья
+        for tile_type, sprite_path in self.config.get('dungeon_tiles', {}).items():
+            if not tile_type.startswith('_'):  # Пропускаем служебные поля (_description, _folder, _comment)
+                self.load_sprite(tile_type, sprite_path, 'dungeon_tile')
+
+        # Загружаем спрайты объектов подземелья
+        for object_type, sprite_path in self.config.get('dungeon_objects', {}).items():
+            if not object_type.startswith('_'):  # Пропускаем служебные поля
+                self.load_sprite(object_type, sprite_path, 'dungeon_object')
+
         print(f"Загружено спрайтов: {len(self.sprites)}")
 
     def load_sprite(self, sprite_type, sprite_path, category):
