@@ -846,3 +846,11 @@ class DungeonRenderer:
                 level_text = f"Ур: {obj_level}"
                 level_surface = font.render(level_text, True, (200, 200, 180))
                 self.screen.blit(level_surface, (padding_x, current_y))
+                current_y += 18
+
+                # DC для обезвреживания/взлома
+                dc = obj_info.get('dc', 0)
+                if dc > 0:
+                    dc_text = f"DC: {dc}"
+                    dc_surface = font.render(dc_text, True, (220, 180, 180))
+                    self.screen.blit(dc_surface, (padding_x, current_y))

@@ -467,17 +467,7 @@ class Stash:
             player.inventory.add_gold(loot["gold"])
 
         # Формируем сообщение
-        messages = []
-
-        # Если была ловушка
-        if self.has_trap and self.trap and not self.trap.is_disarmed:
-            messages.append(f"⚠️ ЛОВУШКА! При обыске {self.name} ({self.level_name}) сработала ловушка!")
-            trap_result = self.trap.trigger(player)
-            if trap_result.get("success"):
-                messages.append(trap_result["message"])
-            messages.append("")
-
-        messages.append(f"Вы обыскали {self.name} ({self.level_name}):")
+        messages = [f"Вы обыскали {self.name} ({self.level_name}):"]
 
         if loot["gold"] > 0:
             messages.append(f"  +{loot['gold']} золота")
