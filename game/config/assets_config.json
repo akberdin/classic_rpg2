@@ -204,7 +204,7 @@
     "_comment": "Тайлы пола, стен и окружения",
     "floor": "assets/dungeon/tiles/floor.png",
     "wall": "assets/dungeon/tiles/wall.png",
-    "corridor": "assets/dungeon/tiles/corridor.png",
+    "corridor": "assets/dungeon/tiles/floor.png",
     "entrance": "assets/dungeon/tiles/entrance.png",
     "exit": "assets/dungeon/tiles/exit.png",
     "stairs_down": "assets/dungeon/tiles/stairs_down.png",

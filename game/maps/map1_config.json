@@ -120,12 +120,12 @@
       "respawn_time": 20
     },
     {
-      "x": 0,
-      "y": 30,
+      "x": 6,
+      "y": 45,
       "type": "ruins",
       "name": "Забытый храм",
-      "id": "5018fa88-1ca2-4809-b51e-a2c3ef9171d5",
-      "player_attitude": -10,
+      "id": "b9f3e62d-21e2-451e-9667-daa2c53de032",
+      "player_attitude": 0,
       "spawn_radius": 5,
       "rank": 1
     }
@@ -138,27 +138,27 @@
     {
       "id": "412cdcf6-062e-4767-be50-abc5a2a991f1",
       "name": "Хитрый Хан",
-      "rank": 1,
+      "rank": 3,
       "waypoints": [
         {
           "x": 30,
           "y": 22,
-          "duration": 20
+          "duration": 2
         },
         {
           "x": 30,
           "y": 11,
-          "duration": 20
+          "duration": 2
         },
         {
           "x": 18,
           "y": 15,
-          "duration": 20
+          "duration": 2
         },
         {
-          "x": 30,
-          "y": 22,
-          "duration": 20
+          "x": 19,
+          "y": 25,
+          "duration": 10
         }
       ],
       "color": [
