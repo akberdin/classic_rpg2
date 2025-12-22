@@ -148,6 +148,9 @@ class DungeonManager:
 
         self.is_in_dungeon = True
 
+        # Обновляем видимость для инициализации fog of war
+        self.current_dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
+
         return {
             "success": True,
             "message": f"Вы вошли в {self.current_dungeon.name}",
