@@ -1109,7 +1109,7 @@ class InputHandler:
         elif key == pygame.K_q:
             # Открыть окно квестов (можно просматривать активные из любого места)
             tile = self.ctx.game_map.get_tile(self.ctx.player.x, self.ctx.player.y)
-            if tile.has_location():
+            if tile and tile.has_location():
                 location = tile.location
                 if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
                     # В городе/деревне - полный доступ к квестам
