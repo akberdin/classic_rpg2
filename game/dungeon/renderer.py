@@ -70,8 +70,6 @@ class DungeonRenderer:
             DungeonTileType.WATER: "water",
             DungeonTileType.BONES: "bones",
             DungeonTileType.ALTAR: "altar",
-            DungeonTileType.PILLAR: "pillar",
-            DungeonTileType.FOUNTAIN: "fountain",
             DungeonTileType.MINECART: "minecart",
             DungeonTileType.SUPPORT: "support",
             DungeonTileType.ORE_VEIN: "ore_vein",
