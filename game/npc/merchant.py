@@ -31,9 +31,7 @@ class Merchant(NPC):
 
         # AI параметры
         self.state = "travel"  # travel, rest, flee
-        self.steps_per_hour = 1  # Количество шагов за 1 час игрового времени
         self.stuck_counter = 0  # Счетчик для определения застревания
-        self.last_position = (x, y)
         self.threat = None  # Текущая угроза от которой убегаем
         self.detection_range = 8  # Дальность обнаружения угроз
 
@@ -69,7 +67,7 @@ class Merchant(NPC):
         self.rest_counter = 0
         self.current_waypoint_duration = 0  # Длительность остановки в текущей точке
 
-        # Старая система для совместимости (будет удалена)
+        # Система для торговцев без waypoints (используется respawn_manager)
         self.settlements = []
         self.target_location = None
         self.rest_duration = 0
@@ -598,25 +596,24 @@ class Merchant(NPC):
             dx = random.choice([-1, 0, 1])
             dy = random.choice([-1, 0, 1])
 
-        # Пытаемся двигаться
-        if self.consume_stamina():
-            new_x = self.x + dx
-            new_y = self.y + dy
+        # Пытаемся двигаться (торговец всегда может двигаться при побеге)
+        new_x = self.x + dx
+        new_y = self.y + dy
 
-            if self._can_move(new_x, new_y, game_map):
-                self.x = new_x
-                self.y = new_y
-            else:
-                # Если не можем идти прямо, пробуем другие направления
-                directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
-                random.shuffle(directions)
-                for alt_dx, alt_dy in directions:
-                    new_x = self.x + alt_dx
-                    new_y = self.y + alt_dy
-                    if self._can_move(new_x, new_y, game_map):
-                        self.x = new_x
-                        self.y = new_y
-                        break
+        if self._can_move(new_x, new_y, game_map):
+            self.x = new_x
+            self.y = new_y
+        else:
+            # Если не можем идти прямо, пробуем другие направления
+            directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+            random.shuffle(directions)
+            for alt_dx, alt_dy in directions:
+                new_x = self.x + alt_dx
+                new_y = self.y + alt_dy
+                if self._can_move(new_x, new_y, game_map):
+                    self.x = new_x
+                    self.y = new_y
+                    break
 
     def _choose_new_destination(self):
         """Выбрать новую цель для путешествия (для совместимости со старой системой)"""
@@ -812,15 +809,11 @@ class Merchant(NPC):
                 self.rest_counter = 0
                 self._advance_to_next_waypoint()
         else:
-            # Старая система
+            # Система для торговцев без waypoints
             if self.rest_counter >= self.rest_duration:
                 self.state = "travel"
                 self.rest_counter = 0
                 self._choose_new_destination()
-
-    def _rest(self):
-        """Отдых/торговля (для совместимости)"""
-        self._rest_at_waypoint()
 
     def can_trade_category(self, category):
         """
@@ -861,9 +854,8 @@ class MagicMerchant(Merchant):
             level: Уровень торговца
         """
         super().__init__(name, x, y, level)
-        # Торговец магией не путешествует
+        # Стационарный торговец - не путешествует
         self.state = "rest"
-        self.settlements = []
         # Перегенерируем товары для магического торговца
         self._generate_magic_goods()
 
@@ -968,26 +960,22 @@ class MagicMerchant(Merchant):
 
 
     def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
-        # Поддержка AIContext и старого способа вызова
+        """Стационарный торговец - только обновляем расписание и выносливость"""
         from game.core.ai_context import AIContext
         if isinstance(context_or_map, AIContext):
             context = context_or_map
             game_map = context.game_map
-            all_npcs = context.all_npcs
             current_hour = context.current_hour
         else:
             game_map = context_or_map
-        """Магический торговец не перемещается"""
-        # Обновляем расписание
+
         self.update_schedule(current_hour, game_map)
 
-        # Если NPC скрыт (в локации), не обновляем AI
         if self.is_hidden():
             return
 
-        # Восстанавливаем энергию стоя на месте
-        if self.stamina < self.max_stamina:
-            self.stamina = min(self.max_stamina, self.stamina + 2)
+        # Восстанавливаем выносливость
+        self.recover_stamina(is_active_rest=True)
 
 
 class WarriorMerchant(Merchant):
@@ -1004,9 +992,8 @@ class WarriorMerchant(Merchant):
             level: Уровень торговца
         """
         super().__init__(name, x, y, level)
-        # Торговец не путешествует
+        # Стационарный торговец - не путешествует
         self.state = "rest"
-        self.settlements = []
         # Перегенерируем товары для военного торговца
         self._generate_warrior_goods()
 
@@ -1116,26 +1103,22 @@ class WarriorMerchant(Merchant):
                 self.inventory.add_item(get_item(recipe_id), 1)
 
     def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
-        # Поддержка AIContext и старого способа вызова
+        """Стационарный торговец - только обновляем расписание и выносливость"""
         from game.core.ai_context import AIContext
         if isinstance(context_or_map, AIContext):
             context = context_or_map
             game_map = context.game_map
-            all_npcs = context.all_npcs
             current_hour = context.current_hour
         else:
             game_map = context_or_map
-        """Военный торговец не перемещается"""
-        # Обновляем расписание
+
         self.update_schedule(current_hour, game_map)
 
-        # Если NPC скрыт (в локации), не обновляем AI
         if self.is_hidden():
             return
 
-        # Восстанавливаем энергию стоя на месте
-        if self.stamina < self.max_stamina:
-            self.stamina = min(self.max_stamina, self.stamina + 2)
+        # Восстанавливаем выносливость
+        self.recover_stamina(is_active_rest=True)
 
 
 class ShadowMerchant(Merchant):
@@ -1152,9 +1135,8 @@ class ShadowMerchant(Merchant):
             level: Уровень торговца
         """
         super().__init__(name, x, y, level)
-        # Торговец тени не путешествует
+        # Стационарный торговец - не путешествует
         self.state = "rest"
-        self.settlements = []
         # Перегенерируем товары для теневого торговца
         self._generate_shadow_goods()
 
@@ -1227,23 +1209,19 @@ class ShadowMerchant(Merchant):
         # Рецепты: не продаёт рецепты (Тайный лагерь специализируется на книгах)
 
     def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
-        # Поддержка AIContext и старого способа вызова
+        """Стационарный торговец - только обновляем расписание и выносливость"""
         from game.core.ai_context import AIContext
         if isinstance(context_or_map, AIContext):
             context = context_or_map
             game_map = context.game_map
-            all_npcs = context.all_npcs
             current_hour = context.current_hour
         else:
             game_map = context_or_map
-        """Теневой торговец не перемещается"""
-        # Обновляем расписание
+
         self.update_schedule(current_hour, game_map)
 
-        # Если NPC скрыт (в локации), не обновляем AI
         if self.is_hidden():
             return
 
-        # Восстанавливаем энергию стоя на месте
-        if self.stamina < self.max_stamina:
-            self.stamina = min(self.max_stamina, self.stamina + 2)
+        # Восстанавливаем выносливость
+        self.recover_stamina(is_active_rest=True)
