@@ -136,9 +136,6 @@ class DungeonManager:
 
         self.is_in_dungeon = True
 
-        # Обновляем видимость (используем увеличенный радиус для подземелий)
-        self.current_dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
-
         return {
             "success": True,
             "message": f"Вы вошли в {self.current_dungeon.name}",
@@ -249,9 +246,6 @@ class DungeonManager:
 
         dungeon = self.current_dungeon
 
-        # Обновляем видимость (используем увеличенный радиус для подземелий)
-        dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
-
         # Проверяем ловушки
         trap_result = dungeon.trap_manager.check_player_position(player)
         if trap_result:
@@ -275,26 +269,6 @@ class DungeonManager:
 
         # Примечание: НЕ обновляем AI NPC здесь, так как enemy_turn() вызывается
         # отдельно после каждого действия игрока (одно действие за ход)
-
-    def _update_dungeon_npcs(self, player):
-        """Обновление AI NPC в подземелье"""
-        if not self.current_dungeon:
-            return
-
-        # Создаем контекст AI
-        from game.core.ai_context import AIContext
-
-        context = AIContext(
-            game_map=self.current_dungeon,  # Используем карту подземелья
-            all_npcs=self.dungeon_npcs,
-            player=player,
-            current_hour=self.game.game_time.hour if hasattr(self.game, 'game_time') else 12
-        )
-
-        # Обновляем каждого NPC
-        for npc in self.dungeon_npcs:
-            if npc.is_alive:
-                npc.update_ai(context)
 
     def interact_with_tile(self, player) -> Optional[dict]:
         """
