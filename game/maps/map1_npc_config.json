@@ -1,0 +1,288 @@
+{
+  "_description": "Конфигурация типовых NPC для карты",
+  "_version": "1.0.0",
+  "templates": [
+    {
+      "id": "bandit_recruit",
+      "name": "Бандит-новобранец",
+      "type": "bandit",
+      "rank": 1,
+      "relationship": "hostile",
+      "stats": {
+        "strength": {"min": 5, "max": 10},
+        "dexterity": {"min": 6, "max": 12},
+        "constitution": {"min": 4, "max": 8},
+        "spirit": {"min": 3, "max": 6},
+        "intelligence": {"min": 3, "max": 7},
+        "luck": {"min": 4, "max": 8}
+      },
+      "equipment": {
+        "weapon": {"quality_min": "poor", "quality_max": "common"},
+        "light_armor": {"quality_min": "poor", "quality_max": "common"}
+      },
+      "loot": {
+        "ancient_coin": {"chance": 0.3},
+        "minor_health_potion": {"chance": 0.15}
+      },
+      "skills": {
+        "basic_attack": {"rank": 1}
+      },
+      "sprite": "bandits/bandit1.png"
+    },
+    {
+      "id": "bandit_veteran",
+      "name": "Бандит-ветеран",
+      "type": "bandit",
+      "rank": 2,
+      "relationship": "hostile",
+      "stats": {
+        "strength": {"min": 12, "max": 18},
+        "dexterity": {"min": 10, "max": 16},
+        "constitution": {"min": 10, "max": 15},
+        "spirit": {"min": 5, "max": 10},
+        "intelligence": {"min": 5, "max": 10},
+        "luck": {"min": 6, "max": 12}
+      },
+      "equipment": {
+        "weapon": {"quality_min": "common", "quality_max": "uncommon"},
+        "medium_armor": {"quality_min": "common", "quality_max": "uncommon"}
+      },
+      "loot": {
+        "ancient_coin": {"chance": 0.5},
+        "health_potion": {"chance": 0.2},
+        "raw_amethyst": {"chance": 0.1}
+      },
+      "skills": {
+        "basic_attack": {"rank": 2},
+        "power_strike": {"rank": 1}
+      },
+      "sprite": "bandits/bandit2.png"
+    },
+    {
+      "id": "bandit_chief",
+      "name": "Главарь бандитов",
+      "type": "bandit",
+      "rank": 3,
+      "relationship": "hostile",
+      "stats": {
+        "strength": {"min": 20, "max": 28},
+        "dexterity": {"min": 16, "max": 24},
+        "constitution": {"min": 18, "max": 25},
+        "spirit": {"min": 8, "max": 14},
+        "intelligence": {"min": 10, "max": 16},
+        "luck": {"min": 10, "max": 18}
+      },
+      "equipment": {
+        "weapon": {"quality_min": "uncommon", "quality_max": "rare"},
+        "heavy_armor": {"quality_min": "uncommon", "quality_max": "rare"},
+        "ring": {"quality_min": "common", "quality_max": "uncommon"}
+      },
+      "loot": {
+        "ancient_coin": {"chance": 0.8},
+        "health_potion": {"chance": 0.4},
+        "raw_ruby": {"chance": 0.2},
+        "raw_emerald": {"chance": 0.1}
+      },
+      "skills": {
+        "basic_attack": {"rank": 3},
+        "power_strike": {"rank": 2},
+        "battle_cry": {"rank": 1}
+      },
+      "sprite": "bandits/bandit4.png"
+    },
+    {
+      "id": "skeleton_weak",
+      "name": "Скелет",
+      "type": "undead",
+      "rank": 1,
+      "relationship": "hostile",
+      "stats": {
+        "strength": {"min": 6, "max": 10},
+        "dexterity": {"min": 4, "max": 8},
+        "constitution": {"min": 8, "max": 12},
+        "spirit": {"min": 2, "max": 5},
+        "intelligence": {"min": 1, "max": 3},
+        "luck": {"min": 2, "max": 5}
+      },
+      "equipment": {
+        "weapon": {"quality_min": "poor", "quality_max": "common"}
+      },
+      "loot": {
+        "magic_crystal": {"chance": 0.3},
+        "old_scroll": {"chance": 0.25}
+      },
+      "skills": {
+        "basic_attack": {"rank": 1}
+      },
+      "sprite": "skeletons/skeleton1.png"
+    },
+    {
+      "id": "skeleton_warrior",
+      "name": "Скелет-воин",
+      "type": "undead",
+      "rank": 2,
+      "relationship": "hostile",
+      "stats": {
+        "strength": {"min": 14, "max": 20},
+        "dexterity": {"min": 10, "max": 16},
+        "constitution": {"min": 16, "max": 22},
+        "spirit": {"min": 4, "max": 8},
+        "intelligence": {"min": 3, "max": 6},
+        "luck": {"min": 4, "max": 8}
+      },
+      "equipment": {
+        "weapon": {"quality_min": "common", "quality_max": "rare"},
+        "heavy_armor": {"quality_min": "common", "quality_max": "uncommon"}
+      },
+      "loot": {
+        "magic_crystal": {"chance": 0.5},
+        "old_scroll": {"chance": 0.4},
+        "raw_sapphire": {"chance": 0.15}
+      },
+      "skills": {
+        "basic_attack": {"rank": 2},
+        "power_strike": {"rank": 1}
+      },
+      "sprite": "skeletons/skeleton3.png"
+    },
+    {
+      "id": "mage_apprentice",
+      "name": "Ученик мага",
+      "type": "mage",
+      "rank": 1,
+      "relationship": "neutral",
+      "stats": {
+        "strength": {"min": 3, "max": 6},
+        "dexterity": {"min": 4, "max": 8},
+        "constitution": {"min": 4, "max": 8},
+        "spirit": {"min": 8, "max": 14},
+        "intelligence": {"min": 10, "max": 16},
+        "luck": {"min": 5, "max": 10}
+      },
+      "equipment": {
+        "weapon": {"quality_min": "common", "quality_max": "uncommon"},
+        "light_armor": {"quality_min": "common", "quality_max": "uncommon"}
+      },
+      "loot": {
+        "magic_crystal": {"chance": 0.6},
+        "minor_mana_potion": {"chance": 0.4}
+      },
+      "skills": {
+        "magic_missile": {"rank": 1},
+        "mage_shield": {"rank": 1}
+      },
+      "sprite": "mage/mage1.png"
+    },
+    {
+      "id": "mage_master",
+      "name": "Мастер магии",
+      "type": "mage",
+      "rank": 3,
+      "relationship": "neutral",
+      "stats": {
+        "strength": {"min": 5, "max": 10},
+        "dexterity": {"min": 8, "max": 14},
+        "constitution": {"min": 10, "max": 16},
+        "spirit": {"min": 18, "max": 28},
+        "intelligence": {"min": 22, "max": 35},
+        "luck": {"min": 10, "max": 18}
+      },
+      "equipment": {
+        "weapon": {"quality_min": "rare", "quality_max": "epic"},
+        "light_armor": {"quality_min": "rare", "quality_max": "epic"},
+        "amulet": {"quality_min": "uncommon", "quality_max": "rare"}
+      },
+      "loot": {
+        "magic_crystal": {"chance": 0.9},
+        "mana_potion": {"chance": 0.6},
+        "raw_sapphire": {"chance": 0.3}
+      },
+      "skills": {
+        "magic_missile": {"rank": 3},
+        "fireball": {"rank": 2},
+        "ice_bolt": {"rank": 2},
+        "mage_shield": {"rank": 2},
+        "heal": {"rank": 1}
+      },
+      "sprite": "mage/mage4.png"
+    },
+    {
+      "id": "wolf_common",
+      "name": "Волк",
+      "type": "wolf",
+      "rank": 1,
+      "relationship": "neutral",
+      "stats": {
+        "strength": {"min": 8, "max": 14},
+        "dexterity": {"min": 12, "max": 18},
+        "constitution": {"min": 6, "max": 12},
+        "spirit": {"min": 2, "max": 5},
+        "intelligence": {"min": 2, "max": 4},
+        "luck": {"min": 5, "max": 10}
+      },
+      "equipment": {},
+      "loot": {
+        "wolf_fang": {"chance": 0.7},
+        "wolf_hide": {"chance": 0.5}
+      },
+      "skills": {
+        "basic_attack": {"rank": 1}
+      },
+      "sprite": "wolf/wolf1.png"
+    },
+    {
+      "id": "bear_common",
+      "name": "Медведь",
+      "type": "bear",
+      "rank": 2,
+      "relationship": "neutral",
+      "stats": {
+        "strength": {"min": 18, "max": 28},
+        "dexterity": {"min": 6, "max": 12},
+        "constitution": {"min": 20, "max": 30},
+        "spirit": {"min": 3, "max": 6},
+        "intelligence": {"min": 2, "max": 4},
+        "luck": {"min": 4, "max": 8}
+      },
+      "equipment": {},
+      "loot": {
+        "bear_fang": {"chance": 0.6},
+        "bear_hide": {"chance": 0.7},
+        "bear_meat": {"chance": 0.8}
+      },
+      "skills": {
+        "basic_attack": {"rank": 2},
+        "power_strike": {"rank": 1}
+      },
+      "sprite": "bear/bear1.png"
+    },
+    {
+      "id": "hunter_forest",
+      "name": "Лесной охотник",
+      "type": "hunter",
+      "rank": 2,
+      "relationship": "friendly",
+      "stats": {
+        "strength": {"min": 10, "max": 16},
+        "dexterity": {"min": 16, "max": 24},
+        "constitution": {"min": 10, "max": 16},
+        "spirit": {"min": 6, "max": 12},
+        "intelligence": {"min": 8, "max": 14},
+        "luck": {"min": 10, "max": 16}
+      },
+      "equipment": {
+        "weapon": {"quality_min": "common", "quality_max": "rare"},
+        "medium_armor": {"quality_min": "common", "quality_max": "uncommon"}
+      },
+      "loot": {
+        "wolf_hide": {"chance": 0.3},
+        "deer_meat": {"chance": 0.4}
+      },
+      "skills": {
+        "basic_shot": {"rank": 2},
+        "precise_shot": {"rank": 1}
+      },
+      "sprite": "hunter/hunter2.png"
+    }
+  ]
+}
