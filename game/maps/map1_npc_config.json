@@ -1,6 +1,6 @@
 {
   "_description": "Конфигурация типовых NPC для карты",
-  "_version": "1.0.0",
+  "_version": "2.0.0",
   "templates": [
     {
       "id": "bandit_recruit",
@@ -8,21 +8,39 @@
       "type": "bandit",
       "rank": 1,
       "relationship": "hostile",
-      "stats": {
-        "strength": {"min": 5, "max": 10},
-        "dexterity": {"min": 6, "max": 12},
-        "constitution": {"min": 4, "max": 8},
-        "spirit": {"min": 3, "max": 6},
-        "intelligence": {"min": 3, "max": 7},
-        "luck": {"min": 4, "max": 8}
+      "stat_distribution": {
+        "strength": 25,
+        "dexterity": 20,
+        "constitution": 15,
+        "spirit": 10,
+        "intelligence": 10,
+        "luck": 20
       },
-      "equipment": {
-        "weapon": {"quality_min": "poor", "quality_max": "common"},
-        "light_armor": {"quality_min": "poor", "quality_max": "common"}
+      "gold": {
+        "base": 15,
+        "variance_percent": 30
       },
       "loot": {
-        "ancient_coin": {"chance": 0.3},
-        "minor_health_potion": {"chance": 0.15}
+        "weapon": {
+          "chance": 20,
+          "qualities": {
+            "poor": {"enabled": true, "weight": 60},
+            "common": {"enabled": true, "weight": 40}
+          }
+        },
+        "armor": {
+          "chance": 15,
+          "qualities": {
+            "poor": {"enabled": true, "weight": 70},
+            "common": {"enabled": true, "weight": 30}
+          }
+        },
+        "material": {
+          "chance": 30,
+          "qualities": {
+            "common": {"enabled": true, "weight": 100}
+          }
+        }
       },
       "skills": {
         "basic_attack": {"rank": 1}
@@ -35,22 +53,46 @@
       "type": "bandit",
       "rank": 2,
       "relationship": "hostile",
-      "stats": {
-        "strength": {"min": 12, "max": 18},
-        "dexterity": {"min": 10, "max": 16},
-        "constitution": {"min": 10, "max": 15},
-        "spirit": {"min": 5, "max": 10},
-        "intelligence": {"min": 5, "max": 10},
-        "luck": {"min": 6, "max": 12}
+      "stat_distribution": {
+        "strength": 28,
+        "dexterity": 22,
+        "constitution": 20,
+        "spirit": 8,
+        "intelligence": 8,
+        "luck": 14
       },
-      "equipment": {
-        "weapon": {"quality_min": "common", "quality_max": "uncommon"},
-        "medium_armor": {"quality_min": "common", "quality_max": "uncommon"}
+      "gold": {
+        "base": 40,
+        "variance_percent": 25
       },
       "loot": {
-        "ancient_coin": {"chance": 0.5},
-        "health_potion": {"chance": 0.2},
-        "raw_amethyst": {"chance": 0.1}
+        "weapon": {
+          "chance": 30,
+          "qualities": {
+            "common": {"enabled": true, "weight": 60},
+            "uncommon": {"enabled": true, "weight": 40}
+          }
+        },
+        "armor": {
+          "chance": 25,
+          "qualities": {
+            "common": {"enabled": true, "weight": 50},
+            "uncommon": {"enabled": true, "weight": 50}
+          }
+        },
+        "jewelry": {
+          "chance": 10,
+          "qualities": {
+            "common": {"enabled": true, "weight": 80},
+            "uncommon": {"enabled": true, "weight": 20}
+          }
+        },
+        "potion": {
+          "chance": 20,
+          "qualities": {
+            "common": {"enabled": true, "weight": 100}
+          }
+        }
       },
       "skills": {
         "basic_attack": {"rank": 2},
@@ -64,24 +106,41 @@
       "type": "bandit",
       "rank": 3,
       "relationship": "hostile",
-      "stats": {
-        "strength": {"min": 20, "max": 28},
-        "dexterity": {"min": 16, "max": 24},
-        "constitution": {"min": 18, "max": 25},
-        "spirit": {"min": 8, "max": 14},
-        "intelligence": {"min": 10, "max": 16},
-        "luck": {"min": 10, "max": 18}
+      "stat_distribution": {
+        "strength": 30,
+        "dexterity": 20,
+        "constitution": 25,
+        "spirit": 5,
+        "intelligence": 8,
+        "luck": 12
       },
-      "equipment": {
-        "weapon": {"quality_min": "uncommon", "quality_max": "rare"},
-        "heavy_armor": {"quality_min": "uncommon", "quality_max": "rare"},
-        "ring": {"quality_min": "common", "quality_max": "uncommon"}
+      "gold": {
+        "base": 120,
+        "variance_percent": 20
       },
       "loot": {
-        "ancient_coin": {"chance": 0.8},
-        "health_potion": {"chance": 0.4},
-        "raw_ruby": {"chance": 0.2},
-        "raw_emerald": {"chance": 0.1}
+        "weapon": {
+          "chance": 45,
+          "qualities": {
+            "uncommon": {"enabled": true, "weight": 50},
+            "rare": {"enabled": true, "weight": 40},
+            "epic": {"enabled": true, "weight": 10}
+          }
+        },
+        "armor": {
+          "chance": 40,
+          "qualities": {
+            "uncommon": {"enabled": true, "weight": 50},
+            "rare": {"enabled": true, "weight": 50}
+          }
+        },
+        "jewelry": {
+          "chance": 25,
+          "qualities": {
+            "uncommon": {"enabled": true, "weight": 60},
+            "rare": {"enabled": true, "weight": 40}
+          }
+        }
       },
       "skills": {
         "basic_attack": {"rank": 3},
@@ -96,20 +155,32 @@
       "type": "undead",
       "rank": 1,
       "relationship": "hostile",
-      "stats": {
-        "strength": {"min": 6, "max": 10},
-        "dexterity": {"min": 4, "max": 8},
-        "constitution": {"min": 8, "max": 12},
-        "spirit": {"min": 2, "max": 5},
-        "intelligence": {"min": 1, "max": 3},
-        "luck": {"min": 2, "max": 5}
+      "stat_distribution": {
+        "strength": 20,
+        "dexterity": 15,
+        "constitution": 30,
+        "spirit": 10,
+        "intelligence": 5,
+        "luck": 20
       },
-      "equipment": {
-        "weapon": {"quality_min": "poor", "quality_max": "common"}
+      "gold": {
+        "base": 8,
+        "variance_percent": 40
       },
       "loot": {
-        "magic_crystal": {"chance": 0.3},
-        "old_scroll": {"chance": 0.25}
+        "weapon": {
+          "chance": 15,
+          "qualities": {
+            "poor": {"enabled": true, "weight": 80},
+            "common": {"enabled": true, "weight": 20}
+          }
+        },
+        "material": {
+          "chance": 40,
+          "qualities": {
+            "common": {"enabled": true, "weight": 100}
+          }
+        }
       },
       "skills": {
         "basic_attack": {"rank": 1}
@@ -122,22 +193,41 @@
       "type": "undead",
       "rank": 2,
       "relationship": "hostile",
-      "stats": {
-        "strength": {"min": 14, "max": 20},
-        "dexterity": {"min": 10, "max": 16},
-        "constitution": {"min": 16, "max": 22},
-        "spirit": {"min": 4, "max": 8},
-        "intelligence": {"min": 3, "max": 6},
-        "luck": {"min": 4, "max": 8}
+      "stat_distribution": {
+        "strength": 25,
+        "dexterity": 15,
+        "constitution": 35,
+        "spirit": 8,
+        "intelligence": 5,
+        "luck": 12
       },
-      "equipment": {
-        "weapon": {"quality_min": "common", "quality_max": "rare"},
-        "heavy_armor": {"quality_min": "common", "quality_max": "uncommon"}
+      "gold": {
+        "base": 25,
+        "variance_percent": 30
       },
       "loot": {
-        "magic_crystal": {"chance": 0.5},
-        "old_scroll": {"chance": 0.4},
-        "raw_sapphire": {"chance": 0.15}
+        "weapon": {
+          "chance": 30,
+          "qualities": {
+            "common": {"enabled": true, "weight": 50},
+            "uncommon": {"enabled": true, "weight": 40},
+            "rare": {"enabled": true, "weight": 10}
+          }
+        },
+        "armor": {
+          "chance": 25,
+          "qualities": {
+            "common": {"enabled": true, "weight": 60},
+            "uncommon": {"enabled": true, "weight": 40}
+          }
+        },
+        "material": {
+          "chance": 50,
+          "qualities": {
+            "common": {"enabled": true, "weight": 70},
+            "uncommon": {"enabled": true, "weight": 30}
+          }
+        }
       },
       "skills": {
         "basic_attack": {"rank": 2},
@@ -151,21 +241,39 @@
       "type": "mage",
       "rank": 1,
       "relationship": "neutral",
-      "stats": {
-        "strength": {"min": 3, "max": 6},
-        "dexterity": {"min": 4, "max": 8},
-        "constitution": {"min": 4, "max": 8},
-        "spirit": {"min": 8, "max": 14},
-        "intelligence": {"min": 10, "max": 16},
-        "luck": {"min": 5, "max": 10}
+      "stat_distribution": {
+        "strength": 8,
+        "dexterity": 12,
+        "constitution": 12,
+        "spirit": 25,
+        "intelligence": 30,
+        "luck": 13
       },
-      "equipment": {
-        "weapon": {"quality_min": "common", "quality_max": "uncommon"},
-        "light_armor": {"quality_min": "common", "quality_max": "uncommon"}
+      "gold": {
+        "base": 20,
+        "variance_percent": 20
       },
       "loot": {
-        "magic_crystal": {"chance": 0.6},
-        "minor_mana_potion": {"chance": 0.4}
+        "weapon": {
+          "chance": 15,
+          "qualities": {
+            "common": {"enabled": true, "weight": 70},
+            "uncommon": {"enabled": true, "weight": 30}
+          }
+        },
+        "material": {
+          "chance": 60,
+          "qualities": {
+            "common": {"enabled": true, "weight": 50},
+            "uncommon": {"enabled": true, "weight": 50}
+          }
+        },
+        "potion": {
+          "chance": 40,
+          "qualities": {
+            "common": {"enabled": true, "weight": 100}
+          }
+        }
       },
       "skills": {
         "magic_missile": {"rank": 1},
@@ -179,23 +287,41 @@
       "type": "mage",
       "rank": 3,
       "relationship": "neutral",
-      "stats": {
-        "strength": {"min": 5, "max": 10},
-        "dexterity": {"min": 8, "max": 14},
-        "constitution": {"min": 10, "max": 16},
-        "spirit": {"min": 18, "max": 28},
-        "intelligence": {"min": 22, "max": 35},
-        "luck": {"min": 10, "max": 18}
+      "stat_distribution": {
+        "strength": 5,
+        "dexterity": 10,
+        "constitution": 12,
+        "spirit": 28,
+        "intelligence": 35,
+        "luck": 10
       },
-      "equipment": {
-        "weapon": {"quality_min": "rare", "quality_max": "epic"},
-        "light_armor": {"quality_min": "rare", "quality_max": "epic"},
-        "amulet": {"quality_min": "uncommon", "quality_max": "rare"}
+      "gold": {
+        "base": 150,
+        "variance_percent": 15
       },
       "loot": {
-        "magic_crystal": {"chance": 0.9},
-        "mana_potion": {"chance": 0.6},
-        "raw_sapphire": {"chance": 0.3}
+        "weapon": {
+          "chance": 35,
+          "qualities": {
+            "rare": {"enabled": true, "weight": 60},
+            "epic": {"enabled": true, "weight": 40}
+          }
+        },
+        "armor": {
+          "chance": 30,
+          "qualities": {
+            "rare": {"enabled": true, "weight": 70},
+            "epic": {"enabled": true, "weight": 30}
+          }
+        },
+        "jewelry": {
+          "chance": 40,
+          "qualities": {
+            "uncommon": {"enabled": true, "weight": 30},
+            "rare": {"enabled": true, "weight": 50},
+            "epic": {"enabled": true, "weight": 20}
+          }
+        }
       },
       "skills": {
         "magic_missile": {"rank": 3},
@@ -212,18 +338,26 @@
       "type": "wolf",
       "rank": 1,
       "relationship": "neutral",
-      "stats": {
-        "strength": {"min": 8, "max": 14},
-        "dexterity": {"min": 12, "max": 18},
-        "constitution": {"min": 6, "max": 12},
-        "spirit": {"min": 2, "max": 5},
-        "intelligence": {"min": 2, "max": 4},
-        "luck": {"min": 5, "max": 10}
+      "stat_distribution": {
+        "strength": 25,
+        "dexterity": 35,
+        "constitution": 18,
+        "spirit": 5,
+        "intelligence": 5,
+        "luck": 12
       },
-      "equipment": {},
+      "gold": {
+        "base": 0,
+        "variance_percent": 0
+      },
       "loot": {
-        "wolf_fang": {"chance": 0.7},
-        "wolf_hide": {"chance": 0.5}
+        "material": {
+          "chance": 70,
+          "qualities": {
+            "common": {"enabled": true, "weight": 80},
+            "uncommon": {"enabled": true, "weight": 20}
+          }
+        }
       },
       "skills": {
         "basic_attack": {"rank": 1}
@@ -236,19 +370,26 @@
       "type": "bear",
       "rank": 2,
       "relationship": "neutral",
-      "stats": {
-        "strength": {"min": 18, "max": 28},
-        "dexterity": {"min": 6, "max": 12},
-        "constitution": {"min": 20, "max": 30},
-        "spirit": {"min": 3, "max": 6},
-        "intelligence": {"min": 2, "max": 4},
-        "luck": {"min": 4, "max": 8}
+      "stat_distribution": {
+        "strength": 35,
+        "dexterity": 12,
+        "constitution": 38,
+        "spirit": 5,
+        "intelligence": 3,
+        "luck": 7
       },
-      "equipment": {},
+      "gold": {
+        "base": 0,
+        "variance_percent": 0
+      },
       "loot": {
-        "bear_fang": {"chance": 0.6},
-        "bear_hide": {"chance": 0.7},
-        "bear_meat": {"chance": 0.8}
+        "material": {
+          "chance": 80,
+          "qualities": {
+            "common": {"enabled": true, "weight": 60},
+            "uncommon": {"enabled": true, "weight": 40}
+          }
+        }
       },
       "skills": {
         "basic_attack": {"rank": 2},
@@ -262,21 +403,41 @@
       "type": "hunter",
       "rank": 2,
       "relationship": "friendly",
-      "stats": {
-        "strength": {"min": 10, "max": 16},
-        "dexterity": {"min": 16, "max": 24},
-        "constitution": {"min": 10, "max": 16},
-        "spirit": {"min": 6, "max": 12},
-        "intelligence": {"min": 8, "max": 14},
-        "luck": {"min": 10, "max": 16}
+      "stat_distribution": {
+        "strength": 18,
+        "dexterity": 32,
+        "constitution": 18,
+        "spirit": 10,
+        "intelligence": 10,
+        "luck": 12
       },
-      "equipment": {
-        "weapon": {"quality_min": "common", "quality_max": "rare"},
-        "medium_armor": {"quality_min": "common", "quality_max": "uncommon"}
+      "gold": {
+        "base": 35,
+        "variance_percent": 20
       },
       "loot": {
-        "wolf_hide": {"chance": 0.3},
-        "deer_meat": {"chance": 0.4}
+        "weapon": {
+          "chance": 25,
+          "qualities": {
+            "common": {"enabled": true, "weight": 50},
+            "uncommon": {"enabled": true, "weight": 40},
+            "rare": {"enabled": true, "weight": 10}
+          }
+        },
+        "armor": {
+          "chance": 20,
+          "qualities": {
+            "common": {"enabled": true, "weight": 60},
+            "uncommon": {"enabled": true, "weight": 40}
+          }
+        },
+        "material": {
+          "chance": 40,
+          "qualities": {
+            "common": {"enabled": true, "weight": 70},
+            "uncommon": {"enabled": true, "weight": 30}
+          }
+        }
       },
       "skills": {
         "basic_shot": {"rank": 2},
