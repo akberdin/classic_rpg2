@@ -1,11 +1,11 @@
 {
   "_description": "Конфигурация уникальных NPC для карты",
-  "_version": "1.0.0",
+  "_version": "2.0.0",
   "unique_npcs": [
     {
       "id": "dark_lord_mortis",
       "name": "Тёмный Лорд Мортис",
-      "description": "Древний некромант, правящий руинами Тёмной Цитадели. Говорят, он жил ещё до основания королевства.",
+      "description": "Древний некромант, правящий руинами Тёмной Цитадели.",
       "type": "necromancer",
       "level": 40,
       "relationship": "hostile",
@@ -18,16 +18,12 @@
         "intelligence": 55,
         "luck": 20
       },
+      "gold": 500,
       "equipment": {
         "weapon": {"quality": "legendary"},
         "light_armor": {"quality": "legendary"},
         "amulet": {"quality": "epic"},
         "ring": {"quality": "epic"}
-      },
-      "loot": {
-        "magic_crystal": {"count": 5},
-        "cut_diamond": {"count": 2},
-        "old_scroll": {"count": 3}
       },
       "skills": {
         "magic_missile": {"rank": 5},
@@ -42,7 +38,7 @@
     {
       "id": "captain_varen",
       "name": "Капитан Варен",
-      "description": "Командир городской стражи Солнечного Града. Ветеран множества сражений, уважаемый воин.",
+      "description": "Командир городской стражи Солнечного Града.",
       "type": "guard",
       "level": 30,
       "relationship": "friendly",
@@ -55,12 +51,12 @@
         "intelligence": 18,
         "luck": 15
       },
+      "gold": 200,
       "equipment": {
         "weapon": {"quality": "epic"},
         "heavy_armor": {"quality": "epic"},
         "ring": {"quality": "rare"}
       },
-      "loot": {},
       "skills": {
         "basic_attack": {"rank": 4},
         "power_strike": {"rank": 3},
@@ -73,7 +69,7 @@
     {
       "id": "shadow_master_kyra",
       "name": "Мастер Теней Кира",
-      "description": "Загадочная лидер Гильдии Теней. Никто не знает её настоящего имени или прошлого.",
+      "description": "Загадочная лидер Гильдии Теней.",
       "type": "shadow_adept",
       "level": 35,
       "relationship": "neutral",
@@ -86,21 +82,17 @@
         "intelligence": 30,
         "luck": 35
       },
+      "gold": 350,
       "equipment": {
         "weapon": {"quality": "legendary"},
         "light_armor": {"quality": "epic"},
         "amulet": {"quality": "rare"},
-        "ring": {"quality": "rare"},
-        "bracelet": {"quality": "rare"}
-      },
-      "loot": {
-        "cut_diamond": {"count": 1}
+        "ring": {"quality": "rare"}
       },
       "skills": {
         "backstab": {"rank": 5},
         "shadow_step": {"rank": 4},
-        "bleeding_cut": {"rank": 3},
-        "poison_strike": {"rank": 3}
+        "bleeding_cut": {"rank": 3}
       },
       "sprite": "mage/mage3.png",
       "dialog_id": "dialog_kyra"
@@ -108,7 +100,7 @@
     {
       "id": "old_hermit_sage",
       "name": "Отшельник Мудрец",
-      "description": "Древний алхимик, живущий в уединении. Знает секреты забытых зелий.",
+      "description": "Древний алхимик, знающий секреты забытых зелий.",
       "type": "alchemist",
       "level": 25,
       "relationship": "friendly",
@@ -121,14 +113,10 @@
         "intelligence": 45,
         "luck": 25
       },
+      "gold": 150,
       "equipment": {
         "light_armor": {"quality": "uncommon"},
         "amulet": {"quality": "rare"}
-      },
-      "loot": {
-        "magic_crystal": {"count": 3},
-        "health_potion": {"count": 2},
-        "mana_potion": {"count": 2}
       },
       "skills": {
         "heal": {"rank": 4},
@@ -141,7 +129,7 @@
     {
       "id": "bandit_king_raven",
       "name": "Разбойничий Король Ворон",
-      "description": "Лидер крупнейшей банды в регионе. Беспощадный и хитрый.",
+      "description": "Лидер крупнейшей банды в регионе.",
       "type": "bandit",
       "level": 38,
       "relationship": "hostile",
@@ -154,17 +142,12 @@
         "intelligence": 22,
         "luck": 28
       },
+      "gold": 800,
       "equipment": {
         "weapon": {"quality": "epic"},
         "heavy_armor": {"quality": "epic"},
         "amulet": {"quality": "rare"},
         "ring": {"quality": "uncommon"}
-      },
-      "loot": {
-        "ancient_coin": {"count": 10},
-        "raw_ruby": {"count": 2},
-        "raw_emerald": {"count": 1},
-        "cut_diamond": {"count": 1}
       },
       "skills": {
         "basic_attack": {"rank": 4},
@@ -178,7 +161,7 @@
     {
       "id": "wandering_trader_felix",
       "name": "Странствующий Торговец Феликс",
-      "description": "Весёлый торговец, путешествующий между городами. Всегда имеет редкие товары.",
+      "description": "Весёлый торговец с редкими товарами.",
       "type": "merchant",
       "level": 15,
       "relationship": "friendly",
@@ -191,10 +174,10 @@
         "intelligence": 20,
         "luck": 30
       },
+      "gold": 500,
       "equipment": {
         "light_armor": {"quality": "uncommon"}
       },
-      "loot": {},
       "skills": {},
       "sprite": "trader/trader2.png",
       "dialog_id": "dialog_felix"
@@ -202,7 +185,7 @@
     {
       "id": "alpha_wolf_grey",
       "name": "Серый Вожак",
-      "description": "Огромный волк-альфа, лидер крупной стаи. Опасен даже для опытных охотников.",
+      "description": "Огромный волк-альфа, лидер крупной стаи.",
       "type": "wolf",
       "level": 20,
       "relationship": "hostile",
@@ -215,11 +198,8 @@
         "intelligence": 6,
         "luck": 18
       },
+      "gold": 0,
       "equipment": {},
-      "loot": {
-        "wolf_fang": {"count": 3},
-        "wolf_hide": {"count": 2}
-      },
       "skills": {
         "basic_attack": {"rank": 3},
         "power_strike": {"rank": 2}
@@ -230,7 +210,7 @@
     {
       "id": "master_miner_borin",
       "name": "Мастер-Шахтёр Борин",
-      "description": "Опытнейший горняк, знающий каждый туннель в шахтах. Может научить добыче редких руд.",
+      "description": "Опытнейший горняк, знающий каждый туннель.",
       "type": "miner",
       "level": 20,
       "relationship": "friendly",
@@ -243,14 +223,10 @@
         "intelligence": 12,
         "luck": 20
       },
+      "gold": 100,
       "equipment": {
         "weapon": {"quality": "uncommon"},
         "medium_armor": {"quality": "uncommon"}
-      },
-      "loot": {
-        "copper_ore": {"count": 5},
-        "iron_ore": {"count": 3},
-        "silver_ore": {"count": 1}
       },
       "skills": {
         "basic_attack": {"rank": 2}
