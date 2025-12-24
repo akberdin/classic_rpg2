@@ -77,7 +77,6 @@ STASH_LEVEL_DATA = {
         },
         "trap_chance": 0.60,           # 60% шанс ловушки (уровень 3)
         "extra_items": 2,              # +2 предмета
-        "skill_book_chance": 0.05,    # 5% шанс книги умений
     },
     StashLevel.LEGENDARY_TREASURE: {
         "name": "Легендарное Сокровище",
@@ -92,8 +91,6 @@ STASH_LEVEL_DATA = {
         },
         "trap_chance": 0.90,           # 90% шанс ловушки (уровень 4-5)
         "extra_items": 3,              # +3 предмета
-        "skill_book_chance": 1.0,     # Гарантированная книга умений
-        "recipe_chance": 0.15,        # 15% шанс рецепта
     },
 }
 
