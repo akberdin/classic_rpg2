@@ -28,4 +28,12 @@ from .models import (
     VisualData,
     AnimationFrameData,
     AnimationLoopMode,
+    # Новые типы анимации
+    AnimationDisplayType,
+    ProjectileTrajectory,
+    AnimationAnchor,
+    ProjectileData,
+    BeamData,
+    AreaEffectData,
+    AnimationTimingData,
 )
