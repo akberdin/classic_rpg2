@@ -10,4 +10,7 @@ from .widgets import (
     LabeledCheckbox,
     ScrollableFrame,
     CollapsibleFrame,
+    AnimationPreview,
+    AnimationEditor,
+    AnimationFrameItem,
 )

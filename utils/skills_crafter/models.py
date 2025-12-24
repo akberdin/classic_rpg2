@@ -512,6 +512,44 @@ class RankProgressionData:
         )
 
 
+class AnimationLoopMode(Enum):
+    """Режим воспроизведения анимации"""
+    ONCE = "once"              # Один раз
+    LOOP = "loop"              # Зацикленно
+    PING_PONG = "ping_pong"    # Туда-обратно
+
+    @classmethod
+    def get_display_names(cls) -> Dict[str, str]:
+        return {
+            cls.ONCE.value: "Один раз",
+            cls.LOOP.value: "Зацикленно",
+            cls.PING_PONG.value: "Туда-обратно",
+        }
+
+
+@dataclass
+class AnimationFrameData:
+    """Данные кадра анимации"""
+    sprite_path: str = ""
+    duration_ms: int = 100  # Длительность кадра в мс (можно переопределить)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "sprite_path": self.sprite_path,
+            "duration_ms": self.duration_ms,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "AnimationFrameData":
+        if isinstance(data, str):
+            # Обратная совместимость - если просто строка пути
+            return cls(sprite_path=data)
+        return cls(
+            sprite_path=data.get("sprite_path", ""),
+            duration_ms=data.get("duration_ms", 100),
+        )
+
+
 @dataclass
 class VisualData:
     """Визуальные данные умения"""
@@ -522,6 +560,11 @@ class VisualData:
     sound_hit: str = ""
     color_primary: str = "#FFFFFF"
     color_secondary: str = "#888888"
+    # Анимация из спрайтов (1-8 кадров)
+    animation_frames: List[AnimationFrameData] = field(default_factory=list)
+    animation_fps: int = 10  # Кадров в секунду (по умолчанию)
+    animation_loop_mode: str = "once"  # once, loop, ping_pong
+    animation_scale: float = 1.0  # Масштаб анимации
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -532,10 +575,18 @@ class VisualData:
             "sound_hit": self.sound_hit,
             "color_primary": self.color_primary,
             "color_secondary": self.color_secondary,
+            "animation_frames": [f.to_dict() for f in self.animation_frames],
+            "animation_fps": self.animation_fps,
+            "animation_loop_mode": self.animation_loop_mode,
+            "animation_scale": self.animation_scale,
         }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "VisualData":
+        frames = []
+        for f in data.get("animation_frames", []):
+            frames.append(AnimationFrameData.from_dict(f))
+
         return cls(
             icon_path=data.get("icon_path", ""),
             animation_type=data.get("animation_type", "default"),
@@ -544,6 +595,10 @@ class VisualData:
             sound_hit=data.get("sound_hit", ""),
             color_primary=data.get("color_primary", "#FFFFFF"),
             color_secondary=data.get("color_secondary", "#888888"),
+            animation_frames=frames,
+            animation_fps=data.get("animation_fps", 10),
+            animation_loop_mode=data.get("animation_loop_mode", "once"),
+            animation_scale=data.get("animation_scale", 1.0),
         )
 
 
