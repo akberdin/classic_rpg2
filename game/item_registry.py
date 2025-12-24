@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Tuple, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from game.inventory import (
-        Item, ResourceItem, PotionItem, SkillBookItem, RecipeItem,
+        Item, ResourceItem, PotionItem,
         WeaponItem, ArmorItem, WeaponType, ArmorType, EquipmentSlot,
         ItemQuality
     )
@@ -80,7 +80,7 @@ class ItemRegistry:
             return
 
         # Обработка каждой категории
-        categories = ['resources', 'potions', 'weapons', 'armor', 'jewelry', 'skill_books', 'recipes']
+        categories = ['resources', 'potions', 'weapons', 'armor', 'jewelry']
 
         for category in categories:
             if category not in raw_data:
@@ -236,7 +236,7 @@ class ItemRegistry:
         Получить список ID предметов определенного типа.
 
         Args:
-            item_type: Тип предметов (resources, potions, weapons, armor, skill_books, recipes)
+            item_type: Тип предметов (resources, potions, weapons, armor, jewelry)
 
         Returns:
             Список ID предметов
@@ -340,7 +340,7 @@ class ItemRegistry:
             Объект предмета соответствующего типа
         """
         from game.inventory import (
-            Item, ResourceItem, PotionItem, SkillBookItem, RecipeItem,
+            Item, ResourceItem, PotionItem,
             WeaponItem, ArmorItem, JewelryItem, BeltItem, BackpackItem
         )
         category = data.get('_category', '')
@@ -432,15 +432,6 @@ class ItemRegistry:
                     param_bonus=param_bonus,
                     skill_bonus=skill_bonus
                 )
-
-            elif category == 'skill_books':
-                skill_id = data.get('skill_id', '')
-                item = SkillBookItem(name, skill_id, value, 0.5, quality)
-
-            elif category == 'recipes':
-                recipe_id = data.get('recipe_id', '')
-                description = data.get('description', '')
-                item = RecipeItem(name, recipe_id, value, 0.1, quality, description)
 
             else:
                 # Базовый предмет

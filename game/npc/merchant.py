@@ -49,12 +49,10 @@ class Merchant(NPC):
         # 0 = не торгует данной категорией
         self.specializations = {
             "jewelry": 1,
-            "books": 1,
             "resources": 1,
             "armor": 1,
             "weapons": 1,
-            "potions": 1,
-            "recipes": 1
+            "potions": 1
         }
 
         # Параметры респавна и обновления
@@ -228,86 +226,6 @@ class Merchant(NPC):
             }
         return {}
 
-    def _get_recipes_for_rank(self, rank):
-        """Получить рецепты для данного ранга с механизмом автоматического определения ранга"""
-        from game.inventory import ItemQuality
-        from game.item_registry import ItemRegistry
-        from game.crafting_system import CraftingSystem
-
-        # Получаем список базовых рецептов (которые даются при открытии крафта)
-        crafting_system = CraftingSystem()
-        basic_recipe_ids = set(crafting_system.get_basic_recipes())
-
-        # Группируем все рецепты по качеству предмета, который они создают
-        all_recipe_ids = ItemRegistry.get_instance().get_items_by_type('recipes')
-
-        rank_recipes = []
-        for recipe_id in all_recipe_ids:
-            recipe_item = get_item(recipe_id)
-            recipe_quality = recipe_item.quality
-
-            # Пропускаем базовые рецепты - они не продаются
-            # Получаем ID рецепта из предмета рецепта
-            if hasattr(recipe_item, 'recipe_id') and recipe_item.recipe_id in basic_recipe_ids:
-                continue
-
-            # Определяем ранг рецепта по качеству
-            if rank == 1:
-                # Ранг 1: рецепты для POOR и COMMON качества
-                if recipe_quality in [ItemQuality.POOR, ItemQuality.COMMON]:
-                    rank_recipes.append(recipe_id)
-            elif rank == 2:
-                # Ранг 2: рецепты для POOR и COMMON качества
-                if recipe_quality in [ItemQuality.POOR, ItemQuality.COMMON]:
-                    rank_recipes.append(recipe_id)
-            elif rank == 3:
-                # Ранг 3: рецепты для COMMON и UNCOMMON качества
-                if recipe_quality in [ItemQuality.COMMON, ItemQuality.UNCOMMON]:
-                    rank_recipes.append(recipe_id)
-            elif rank == 4:
-                # Ранг 4: рецепты для UNCOMMON и RARE качества
-                if recipe_quality in [ItemQuality.UNCOMMON, ItemQuality.RARE]:
-                    rank_recipes.append(recipe_id)
-
-        return rank_recipes
-
-    def _get_books_for_rank(self, rank):
-        """Получить книги умений для данного ранга (только не магические)"""
-        from game.inventory import ItemQuality
-
-        # Только боевые книги (не магические)
-        combat_books = [
-            "book_power_strike", "book_poison_strike", "book_stun_strike", "book_battle_cry",
-            "book_precise_shot", "book_rapid_fire", "book_piercing_arrow",
-            "book_backstab", "book_bleeding_cut", "book_shadow_step",
-            "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance"
-        ]
-
-        allowed_books = []
-        for book_id in combat_books:
-            book = get_item(book_id)
-            if book:
-                book_quality = book.quality
-
-                # Фильтруем по качеству в зависимости от ранга
-                if rank == 1:
-                    # Ранг 1: НЕТ книг
-                    pass
-                elif rank == 2:
-                    # Ранг 2: до необычного качества включительно
-                    if book_quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON]:
-                        allowed_books.append(book_id)
-                elif rank == 3:
-                    # Ранг 3: ТОЛЬКО редкого качества
-                    if book_quality == ItemQuality.RARE:
-                        allowed_books.append(book_id)
-                elif rank == 4:
-                    # Ранг 4: ТОЛЬКО эпического качества
-                    if book_quality == ItemQuality.EPIC:
-                        allowed_books.append(book_id)
-
-        return allowed_books
-
     def _generate_merchant_goods(self):
         """Генерация товаров торговца с учетом ранга и специализаций"""
         from game.inventory import ItemGenerator, EquipmentSlot
@@ -413,48 +331,6 @@ class Merchant(NPC):
                 if get_item(resource_id):
                     quantity = random.randint(min_qty, max_qty) * spec_quality
                     self.inventory.add_item(get_item(resource_id), quantity)
-
-        # Генерируем книги умений (если специализация > 0)
-        if self.can_trade_category("books"):
-            spec_quality = self.get_category_quality("books")
-            allowed_books = self._get_books_for_rank(rank)
-            if allowed_books:
-                if rank == 1:
-                    num_books = 0  # НЕТ книг для ранга 1
-                elif rank == 2:
-                    num_books = random.randint(1, 3) * spec_quality
-                elif rank == 3:
-                    num_books = random.randint(1, 2) * spec_quality
-                elif rank == 4:
-                    num_books = random.randint(1, 3) * spec_quality
-                else:
-                    num_books = 0
-
-                if num_books > 0:
-                    selected_books = random.sample(allowed_books, min(num_books, len(allowed_books)))
-                    for book_id in selected_books:
-                        self.inventory.add_item(get_item(book_id), 1)
-
-        # Генерируем рецепты (если специализация > 0)
-        if self.can_trade_category("recipes"):
-            spec_quality = self.get_category_quality("recipes")
-            allowed_recipes = self._get_recipes_for_rank(rank)
-            if allowed_recipes:
-                if rank == 1:
-                    num_recipes = random.randint(5, 8) * spec_quality
-                elif rank == 2:
-                    num_recipes = random.randint(5, 8) * spec_quality
-                elif rank == 3:
-                    num_recipes = random.randint(10, 15)
-                elif rank == 4:
-                    num_recipes = random.randint(10, 15)
-                else:
-                    num_recipes = 0
-
-                if num_recipes > 0:
-                    selected_recipes = random.sample(allowed_recipes, min(num_recipes, len(allowed_recipes)))
-                    for recipe_id in selected_recipes:
-                        self.inventory.add_item(get_item(recipe_id), 1)
 
 
     def set_settlements(self, settlements):
@@ -820,7 +696,7 @@ class Merchant(NPC):
         Проверить, торгует ли торговец данной категорией товаров
 
         Args:
-            category: Категория (jewelry, books, resources, armor, weapons, potions, recipes)
+            category: Категория (jewelry, resources, armor, weapons, potions)
 
         Returns:
             bool: True если торговец торгует этой категорией
@@ -841,7 +717,7 @@ class Merchant(NPC):
 
 
 class MagicMerchant(Merchant):
-    """Класс Торговца магическими книгами для академии магии"""
+    """Класс Торговца магическими товарами для академии магии"""
 
     def __init__(self, name, x=0, y=0, level=5):
         """
@@ -917,47 +793,6 @@ class MagicMerchant(Merchant):
         self.inventory.add_item(get_item("mana_potion"), random.randint(4, 8))
         self.inventory.add_item(get_item("stamina_potion"), random.randint(3, 6))
 
-        # Книги: только магические умения всех видов, не менее 5
-        magic_books = [
-            # Магические умения поддержки
-            "book_heal", "book_regeneration", "book_mage_shield", "book_stamina_recovery",
-            # Магические умения атаки
-            "book_magic_missile", "book_ice_bolt", "book_fireball", "book_lightning", "book_fire_arrow"
-        ]
-
-        # Добавляем все доступные магические книги (гарантируем минимум 5)
-        books_added = 0
-        for book_id in magic_books:
-            book = get_item(book_id)
-            if book:
-                if book.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE, ItemQuality.EPIC]:
-                    self.inventory.add_item(book, 1)
-                    books_added += 1
-
-        # Если меньше 5 книг, добавляем дубликаты
-        if books_added < 5:
-            available_books = [bid for bid in magic_books if get_item(bid)]
-            while books_added < 5 and available_books:
-                book_id = random.choice(available_books)
-                self.inventory.add_item(get_item(book_id), 1)
-                books_added += 1
-
-        # Рецепты: все ранги (POOR, COMMON, UNCOMMON, RARE), не менее 10
-        from game.item_registry import ItemRegistry
-        all_recipe_ids = ItemRegistry.get_instance().get_items_by_type('recipes')
-        all_rank_recipes = []
-        for recipe_id in all_recipe_ids:
-            recipe_item = get_item(recipe_id)
-            # Рецепты всех рангов (POOR, COMMON, UNCOMMON, RARE)
-            if recipe_item.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE]:
-                all_rank_recipes.append(recipe_id)
-
-        # Добавляем 10-15 рецептов всех рангов
-        if all_rank_recipes:
-            num_recipes = random.randint(10, min(15, len(all_rank_recipes)))
-            for recipe_id in random.sample(all_rank_recipes, num_recipes):
-                self.inventory.add_item(get_item(recipe_id), 1)
-
 
     def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
         """Стационарный торговец - только обновляем расписание и выносливость"""
@@ -979,7 +814,7 @@ class MagicMerchant(Merchant):
 
 
 class WarriorMerchant(Merchant):
-    """Класс Торговца воинскими книгами для военной академии"""
+    """Класс Торговца воинскими товарами для военной академии"""
 
     def __init__(self, name, x=0, y=0, level=5):
         """
@@ -1058,49 +893,6 @@ class WarriorMerchant(Merchant):
         self.inventory.add_item(get_item("greater_health_potion"), random.randint(3, 6))
         self.inventory.add_item(get_item("stamina_potion"), random.randint(4, 8))
 
-        # Книги: только воинские умения всех видов, не менее 5
-        warrior_books = [
-            # Воинские умения ближнего боя
-            "book_power_strike", "book_poison_strike", "book_stun_strike", "book_battle_cry",
-            "book_whirlwind_strike", "book_shield_breaker", "book_blade_dance",
-            # Воинские умения дальнего боя
-            "book_precise_shot", "book_rapid_fire", "book_piercing_arrow",
-            # Воинские умения скрытности
-            "book_backstab", "book_bleeding_cut", "book_shadow_step"
-        ]
-
-        # Добавляем все доступные воинские книги (гарантируем минимум 5)
-        books_added = 0
-        for book_id in warrior_books:
-            book = get_item(book_id)
-            if book:
-                if book.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE, ItemQuality.EPIC]:
-                    self.inventory.add_item(book, 1)
-                    books_added += 1
-
-        # Если меньше 5 книг, добавляем дубликаты
-        if books_added < 5:
-            available_books = [bid for bid in warrior_books if get_item(bid)]
-            while books_added < 5 and available_books:
-                book_id = random.choice(available_books)
-                self.inventory.add_item(get_item(book_id), 1)
-                books_added += 1
-
-        # Рецепты: все ранги (POOR, COMMON, UNCOMMON, RARE), не менее 10
-        from game.item_registry import ItemRegistry
-        all_recipe_ids = ItemRegistry.get_instance().get_items_by_type('recipes')
-        all_rank_recipes = []
-        for recipe_id in all_recipe_ids:
-            recipe_item = get_item(recipe_id)
-            # Рецепты всех рангов (POOR, COMMON, UNCOMMON, RARE)
-            if recipe_item.quality in [ItemQuality.POOR, ItemQuality.COMMON, ItemQuality.UNCOMMON, ItemQuality.RARE]:
-                all_rank_recipes.append(recipe_id)
-
-        # Добавляем 10-15 рецептов всех рангов
-        if all_rank_recipes:
-            num_recipes = random.randint(10, min(15, len(all_rank_recipes)))
-            for recipe_id in random.sample(all_rank_recipes, num_recipes):
-                self.inventory.add_item(get_item(recipe_id), 1)
 
     def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
         """Стационарный торговец - только обновляем расписание и выносливость"""
@@ -1122,7 +914,7 @@ class WarriorMerchant(Merchant):
 
 
 class ShadowMerchant(Merchant):
-    """Класс Торговца книгами Тени для Тайного лагеря"""
+    """Класс Торговца теневыми товарами для Тайного лагеря"""
 
     def __init__(self, name, x=0, y=0, level=5):
         """
@@ -1193,20 +985,6 @@ class ShadowMerchant(Merchant):
         self.inventory.add_item(get_item("greater_health_potion"), random.randint(2, 4))
         self.inventory.add_item(get_item("stamina_potion"), random.randint(3, 6))
 
-        # Книги: ВСЕ книги вкладки "Тень" (backstab, bleeding_cut, shadow_step)
-        shadow_books = [
-            "book_backstab",      # Удар в спину
-            "book_bleeding_cut",  # Кровоточащий порез
-            "book_shadow_step"    # Шаг тени
-        ]
-
-        # Добавляем все теневые книги
-        for book_id in shadow_books:
-            book = get_item(book_id)
-            if book:
-                self.inventory.add_item(book, 1)
-
-        # Рецепты: не продаёт рецепты (Тайный лагерь специализируется на книгах)
 
     def update_ai(self, context_or_map, all_npcs=None, current_hour=12):
         """Стационарный торговец - только обновляем расписание и выносливость"""

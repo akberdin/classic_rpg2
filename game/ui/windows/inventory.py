@@ -18,7 +18,7 @@ class InventoryWindow:
         self.selected_equipment_slot = None
         self.mode = "inventory"  # "inventory" или "equipment"
         self.equipment_slot_rects = {}  # Словарь {slot: (rect, item)} для tooltip экипировки
-        self.item_type_filter = "all"  # Фильтр по типу предметов: "all", "armor", "weapon", "jewelry", "potion", "resource", "book"
+        self.item_type_filter = "all"  # Фильтр по типу предметов: "all", "armor", "weapon", "jewelry", "potion", "resource"
         self.filter_buttons = {}  # Словарь {filter_type: rect} для кнопок фильтра
 
     def render(self, player, mouse_pos=None):
@@ -363,8 +363,7 @@ class InventoryWindow:
             ("weapon", "Оружие"),
             ("jewelry", "Украшен."),
             ("potion", "Зелья"),
-            ("resource", "Ресурсы"),
-            ("book", "Книги")
+            ("resource", "Ресурсы")
         ]
 
         self.filter_buttons.clear()
@@ -980,8 +979,7 @@ class InventoryWindow:
             bool: True если предмет соответствует фильтру
         """
         from game.inventory import (WeaponItem, ArmorItem, JewelryItem, PotionItem,
-                                     ResourceItem, SkillBookItem, RecipeItem,
-                                     BeltItem, BackpackItem, TalismanItem)
+                                     ResourceItem, BeltItem, BackpackItem, TalismanItem)
 
         if self.item_type_filter == "all":
             return True
@@ -995,8 +993,6 @@ class InventoryWindow:
             return isinstance(item, PotionItem)
         elif self.item_type_filter == "resource":
             return isinstance(item, ResourceItem)
-        elif self.item_type_filter == "book":
-            return isinstance(item, (SkillBookItem, RecipeItem))
         return True
 
     def set_filter(self, filter_type):
@@ -1004,9 +1000,9 @@ class InventoryWindow:
         Устанавливает фильтр по типу предметов
 
         Args:
-            filter_type: Тип фильтра ("all", "armor", "weapon", "jewelry", "potion", "resource", "book")
+            filter_type: Тип фильтра ("all", "armor", "weapon", "jewelry", "potion", "resource")
         """
-        if filter_type in ["all", "armor", "weapon", "jewelry", "potion", "resource", "book"]:
+        if filter_type in ["all", "armor", "weapon", "jewelry", "potion", "resource"]:
             self.item_type_filter = filter_type
             self.selected_inventory_index = 0  # Сбрасываем выбор при смене фильтра
 

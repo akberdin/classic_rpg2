@@ -10,16 +10,14 @@ class TradeWindow:
     """Окно торговли с NPC"""
 
     # Типы фильтров
-    FILTER_TYPES = ["all", "weapon", "armor", "jewelry", "potion", "resource", "book", "recipe"]
+    FILTER_TYPES = ["all", "weapon", "armor", "jewelry", "potion", "resource"]
     FILTER_NAMES = {
         "all": "Все",
         "weapon": "Оружие",
         "armor": "Броня",
         "jewelry": "Украш.",
         "potion": "Зелья",
-        "resource": "Ресурсы",
-        "book": "Книги",
-        "recipe": "Рецепты"
+        "resource": "Ресурсы"
     }
 
     # Типы сортировки
@@ -296,27 +294,8 @@ class TradeWindow:
             item_name = item.get_full_name() if hasattr(item, 'get_full_name') else item.name
             item_color = item.quality.color if hasattr(item, 'quality') else (200, 200, 200)
 
-            # Проверяем, является ли предмет рецептом или книгой и изучен ли он
-            from game.inventory import RecipeItem, SkillBookItem
-            is_learned = False
-
-            if isinstance(item, RecipeItem):
-                # Проверяем, изучен ли рецепт
-                if hasattr(player, 'known_recipes') and hasattr(item, 'recipe_id'):
-                    if item.recipe_id in player.known_recipes:
-                        is_learned = True
-            elif isinstance(item, SkillBookItem):
-                # Проверяем, изучена ли книга (имеет ли игрок это умение)
-                if hasattr(player, 'skill_manager') and hasattr(item, 'skill_id'):
-                    skill = player.skill_manager.get_skill(item.skill_id)
-                    if skill is not None:
-                        is_learned = True
-
             # Показываем количество только если > 1
             display_name = f"{item_name} x{quantity}" if quantity > 1 else item_name
-            # Добавляем пометку, если уже изучено
-            if is_learned:
-                display_name += " [Изучено]"
 
             name_text = self.info_font.render(
                 display_name,
@@ -480,7 +459,7 @@ class TradeWindow:
 
     def _get_item_type(self, item):
         """Определить тип предмета для фильтрации"""
-        from game.inventory import WeaponItem, ArmorItem, JewelryItem, PotionItem, ResourceItem, SkillBookItem, RecipeItem, BeltItem, BackpackItem, EquipmentSlot
+        from game.inventory import WeaponItem, ArmorItem, JewelryItem, PotionItem, ResourceItem, BeltItem, BackpackItem, EquipmentSlot
         if isinstance(item, WeaponItem):
             return "weapon"
         elif isinstance(item, (ArmorItem, BeltItem, BackpackItem)):
@@ -495,10 +474,6 @@ class TradeWindow:
             return "potion"
         elif isinstance(item, ResourceItem):
             return "resource"
-        elif isinstance(item, SkillBookItem):
-            return "book"
-        elif isinstance(item, RecipeItem):
-            return "recipe"
         return "other"
 
     def _get_quality_value(self, item):
@@ -673,13 +648,6 @@ class TradeWindow:
             effect_names = {'health': 'Здоровье', 'mana': 'Мана', 'stamina': 'Выносливость'}
             effect_name = effect_names.get(item.effect_type, item.effect_type)
             lines.append((f"Восстановление: +{item.effect_value} {effect_name}", (100, 255, 100), False))
-
-        # Описание книг умений
-        from game.inventory import SkillBookItem
-        if isinstance(item, SkillBookItem):
-            lines.append(("", (0, 0, 0), False))
-            if hasattr(item, 'description') and item.description:
-                lines.append((item.description, (200, 200, 150), False))
 
         # Вес и стоимость
         lines.append(("", (0, 0, 0), False))

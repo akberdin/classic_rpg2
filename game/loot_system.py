@@ -99,36 +99,6 @@ class LootSystem:
             ]))
         return choices
 
-    def _get_book_pool(self, enemy_level):
-        """Получить взвешенный пул книг умений для уровня врага."""
-        books_config = self.config.get('skill_books', {})
-        book_pool = []
-
-        for tier in ['common', 'uncommon', 'rare']:
-            tier_config = books_config.get(tier, {})
-            min_level = tier_config.get('min_level', 1)
-            weight = tier_config.get('weight', 10)
-            books = tier_config.get('books', [])
-
-            if enemy_level >= min_level:
-                for book in books:
-                    book_pool.extend([book] * weight)
-
-        return book_pool
-
-    def _get_available_recipes(self, enemy_level):
-        """Получить список доступных рецептов для уровня врага."""
-        recipes_config = self.config.get('recipes', {})
-        tiers = recipes_config.get('tiers', [])
-        available = []
-
-        for tier in tiers:
-            min_level = tier.get('min_level', 1)
-            if enemy_level >= min_level:
-                available.extend(tier.get('recipes', []))
-
-        return available
-
     def generate_loot(self, enemy):
         """
         Генерировать лут с поверженного врага.
@@ -206,36 +176,6 @@ class LootSystem:
                             potions_config.get('quantity_max', 2)
                         )
                         loot_items.append((potion, quantity))
-
-        # Книги умений (из конфига)
-        books_config = self.config.get('skill_books', {})
-        book_drop_chance = min(
-            books_config.get('drop_chance_base', 0.05) + enemy.level * books_config.get('drop_chance_per_level', 0.005),
-            books_config.get('drop_chance_max', 0.20)
-        )
-
-        if random.random() < book_drop_chance:
-            book_pool = self._get_book_pool(enemy.level)
-            if book_pool:
-                book_id = random.choice(book_pool)
-                book = self._get_item_safe(book_id)
-                if book:
-                    loot_items.append((book, 1))
-
-        # Рецепты крафта (из конфига)
-        recipes_config = self.config.get('recipes', {})
-        recipe_drop_chance = min(
-            recipes_config.get('drop_chance_base', 0.03) + enemy.level * recipes_config.get('drop_chance_per_level', 0.003),
-            recipes_config.get('drop_chance_max', 0.15)
-        )
-
-        if random.random() < recipe_drop_chance:
-            available_recipes = self._get_available_recipes(enemy.level)
-            if available_recipes:
-                recipe_id = random.choice(available_recipes)
-                recipe = self._get_item_safe(recipe_id)
-                if recipe:
-                    loot_items.append((recipe, 1))
 
         # Специальный лут по типам врагов (из конфига)
         special_loot = self.config.get('special_loot', {})
