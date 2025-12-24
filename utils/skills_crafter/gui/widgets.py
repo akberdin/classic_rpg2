@@ -481,3 +481,612 @@ class ScalingEditor(ttk.Frame):
         self.attr_combo.set(data.get("attribute", "strength"))
         self.multiplier.set(data.get("multiplier", 1.0))
         self.per_rank.set(data.get("multiplier_per_rank", 0))
+
+
+class AnimationFrameItem(ttk.Frame):
+    """Элемент кадра анимации с превью и кнопками"""
+
+    def __init__(
+        self,
+        parent: tk.Widget,
+        frame_index: int,
+        on_select: Callable = None,
+        on_delete: Callable = None,
+        on_move_up: Callable = None,
+        on_move_down: Callable = None,
+        **kwargs
+    ):
+        super().__init__(parent, **kwargs)
+        self.frame_index = frame_index
+        self.sprite_path = ""
+        self.image = None
+        self.photo_image = None
+
+        self.configure(relief=tk.GROOVE, padding=3)
+
+        # Верхняя часть - номер кадра и кнопки
+        header = ttk.Frame(self)
+        header.pack(fill=tk.X)
+
+        ttk.Label(header, text=f"Кадр {frame_index + 1}", font=("TkDefaultFont", 9, "bold")).pack(side=tk.LEFT)
+
+        btn_frame = ttk.Frame(header)
+        btn_frame.pack(side=tk.RIGHT)
+
+        if on_move_up:
+            ttk.Button(btn_frame, text="↑", width=2, command=lambda: on_move_up(self)).pack(side=tk.LEFT, padx=1)
+        if on_move_down:
+            ttk.Button(btn_frame, text="↓", width=2, command=lambda: on_move_down(self)).pack(side=tk.LEFT, padx=1)
+        if on_delete:
+            ttk.Button(btn_frame, text="✕", width=2, command=lambda: on_delete(self)).pack(side=tk.LEFT, padx=1)
+
+        # Превью спрайта
+        preview_frame = ttk.Frame(self)
+        preview_frame.pack(fill=tk.X, pady=5)
+
+        self.preview_container = ttk.Frame(preview_frame, width=64, height=64, relief=tk.SUNKEN)
+        self.preview_container.pack(side=tk.LEFT, padx=5)
+        self.preview_container.pack_propagate(False)
+
+        self.preview_label = ttk.Label(self.preview_container, text="—")
+        self.preview_label.pack(expand=True)
+
+        # Кнопка выбора
+        select_btn = ttk.Button(preview_frame, text="Выбрать спрайт", command=lambda: on_select(self) if on_select else None)
+        select_btn.pack(side=tk.LEFT, padx=5)
+
+        # Путь к файлу
+        self.path_label = ttk.Label(preview_frame, text="Не выбран", wraplength=200)
+        self.path_label.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+
+    def set_sprite(self, path: str, image=None):
+        """Установка спрайта"""
+        self.sprite_path = path
+        self.path_label.configure(text=path if path else "Не выбран")
+
+        if image:
+            try:
+                # Импорт здесь, чтобы избежать проблем при отсутствии PIL
+                from PIL import Image, ImageTk
+
+                # Ресайз для превью
+                img = image.copy()
+                img.thumbnail((64, 64), Image.Resampling.LANCZOS)
+                self.photo_image = ImageTk.PhotoImage(img)
+                self.preview_label.configure(image=self.photo_image, text="")
+            except Exception as e:
+                self.preview_label.configure(image="", text="!")
+        else:
+            self.preview_label.configure(image="", text="—")
+
+    def get_data(self) -> Dict[str, Any]:
+        return {
+            "sprite_path": self.sprite_path,
+            "duration_ms": 100,  # По умолчанию
+        }
+
+
+class AnimationPreview(ttk.Frame):
+    """Виджет предпросмотра анимации с управлением воспроизведением"""
+
+    def __init__(
+        self,
+        parent: tk.Widget,
+        preview_size: int = 128,
+        **kwargs
+    ):
+        super().__init__(parent, **kwargs)
+        self.preview_size = preview_size
+        self.frames: List[Any] = []  # PIL Images
+        self.photo_frames: List[Any] = []  # PhotoImage для отображения
+        self.current_frame = 0
+        self.is_playing = False
+        self.fps = 10
+        self.loop_mode = "loop"  # once, loop, ping_pong
+        self.direction = 1  # 1 = вперед, -1 = назад (для ping_pong)
+        self.animation_job = None
+
+        # Основной контейнер
+        main_frame = ttk.Frame(self)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Превью анимации
+        preview_container = ttk.Frame(main_frame)
+        preview_container.pack(pady=10)
+
+        self.canvas = tk.Canvas(
+            preview_container,
+            width=preview_size,
+            height=preview_size,
+            bg="#2c2c2c",
+            highlightthickness=1,
+            highlightbackground="#555"
+        )
+        self.canvas.pack()
+
+        # Текст по умолчанию
+        self.default_text = self.canvas.create_text(
+            preview_size // 2, preview_size // 2,
+            text="Нет кадров",
+            fill="#888",
+            font=("TkDefaultFont", 10)
+        )
+        self.image_item = None
+
+        # Индикатор кадра
+        self.frame_label = ttk.Label(main_frame, text="Кадр: 0 / 0")
+        self.frame_label.pack()
+
+        # Панель управления
+        controls = ttk.Frame(main_frame)
+        controls.pack(pady=10)
+
+        # Кнопки управления воспроизведением
+        self.prev_btn = ttk.Button(controls, text="◀◀", width=4, command=self._prev_frame)
+        self.prev_btn.pack(side=tk.LEFT, padx=2)
+
+        self.play_btn = ttk.Button(controls, text="▶", width=4, command=self._toggle_play)
+        self.play_btn.pack(side=tk.LEFT, padx=2)
+
+        self.next_btn = ttk.Button(controls, text="▶▶", width=4, command=self._next_frame)
+        self.next_btn.pack(side=tk.LEFT, padx=2)
+
+        self.stop_btn = ttk.Button(controls, text="◼", width=4, command=self._stop)
+        self.stop_btn.pack(side=tk.LEFT, padx=2)
+
+        # Настройки
+        settings = ttk.Frame(main_frame)
+        settings.pack(fill=tk.X, pady=5)
+
+        # FPS
+        fps_frame = ttk.Frame(settings)
+        fps_frame.pack(fill=tk.X, pady=2)
+
+        ttk.Label(fps_frame, text="FPS:").pack(side=tk.LEFT, padx=5)
+        self.fps_var = tk.IntVar(value=10)
+        self.fps_spinbox = ttk.Spinbox(
+            fps_frame,
+            from_=1, to=60,
+            textvariable=self.fps_var,
+            width=5,
+            command=self._on_fps_change
+        )
+        self.fps_spinbox.pack(side=tk.LEFT)
+        self.fps_spinbox.bind("<Return>", lambda e: self._on_fps_change())
+
+        # Режим воспроизведения
+        mode_frame = ttk.Frame(settings)
+        mode_frame.pack(fill=tk.X, pady=2)
+
+        ttk.Label(mode_frame, text="Режим:").pack(side=tk.LEFT, padx=5)
+        self.mode_var = tk.StringVar(value="loop")
+        self.mode_combo = ttk.Combobox(
+            mode_frame,
+            textvariable=self.mode_var,
+            values=["once", "loop", "ping_pong"],
+            state="readonly",
+            width=12
+        )
+        self.mode_combo.pack(side=tk.LEFT)
+        self.mode_combo.bind("<<ComboboxSelected>>", lambda e: self._on_mode_change())
+
+        # Шкала времени (слайдер)
+        timeline_frame = ttk.Frame(main_frame)
+        timeline_frame.pack(fill=tk.X, pady=5, padx=10)
+
+        self.timeline = ttk.Scale(
+            timeline_frame,
+            from_=0, to=1,
+            orient=tk.HORIZONTAL,
+            command=self._on_timeline_change
+        )
+        self.timeline.pack(fill=tk.X)
+
+    def set_frames(self, images: List[Any]):
+        """Установка кадров анимации (PIL Images)"""
+        self.frames = images
+        self.photo_frames = []
+
+        if not images:
+            self.canvas.delete(self.image_item) if self.image_item else None
+            self.image_item = None
+            self.canvas.itemconfigure(self.default_text, state="normal")
+            self.frame_label.configure(text="Кадр: 0 / 0")
+            self.timeline.configure(to=1)
+            return
+
+        try:
+            from PIL import Image, ImageTk
+
+            # Конвертируем все кадры
+            for img in images:
+                # Ресайз с сохранением пропорций
+                img_copy = img.copy()
+                img_copy.thumbnail((self.preview_size, self.preview_size), Image.Resampling.LANCZOS)
+
+                # Центрирование на холсте
+                photo = ImageTk.PhotoImage(img_copy)
+                self.photo_frames.append(photo)
+
+            self.canvas.itemconfigure(self.default_text, state="hidden")
+            self.timeline.configure(to=max(0, len(images) - 1))
+            self.current_frame = 0
+            self._show_frame(0)
+
+        except Exception as e:
+            print(f"Error loading frames: {e}")
+
+    def _show_frame(self, index: int):
+        """Отображение кадра по индексу"""
+        if not self.photo_frames or index < 0 or index >= len(self.photo_frames):
+            return
+
+        self.current_frame = index
+
+        # Удаляем старое изображение
+        if self.image_item:
+            self.canvas.delete(self.image_item)
+
+        # Отображаем новое
+        self.image_item = self.canvas.create_image(
+            self.preview_size // 2,
+            self.preview_size // 2,
+            image=self.photo_frames[index],
+            anchor=tk.CENTER
+        )
+
+        # Обновляем индикаторы
+        self.frame_label.configure(text=f"Кадр: {index + 1} / {len(self.photo_frames)}")
+        self.timeline.set(index)
+
+    def _toggle_play(self):
+        """Переключение воспроизведения"""
+        if self.is_playing:
+            self._pause()
+        else:
+            self._play()
+
+    def _play(self):
+        """Запуск воспроизведения"""
+        if not self.photo_frames:
+            return
+
+        self.is_playing = True
+        self.play_btn.configure(text="⏸")
+        self._animate()
+
+    def _pause(self):
+        """Пауза"""
+        self.is_playing = False
+        self.play_btn.configure(text="▶")
+        if self.animation_job:
+            self.after_cancel(self.animation_job)
+            self.animation_job = None
+
+    def _stop(self):
+        """Остановка и сброс"""
+        self._pause()
+        self.current_frame = 0
+        self.direction = 1
+        self._show_frame(0)
+
+    def _animate(self):
+        """Анимация кадра"""
+        if not self.is_playing or not self.photo_frames:
+            return
+
+        # Следующий кадр
+        next_frame = self.current_frame + self.direction
+
+        if self.loop_mode == "once":
+            if next_frame >= len(self.photo_frames):
+                self._pause()
+                return
+            elif next_frame < 0:
+                next_frame = 0
+        elif self.loop_mode == "loop":
+            next_frame = next_frame % len(self.photo_frames)
+        elif self.loop_mode == "ping_pong":
+            if next_frame >= len(self.photo_frames):
+                self.direction = -1
+                next_frame = len(self.photo_frames) - 2
+            elif next_frame < 0:
+                self.direction = 1
+                next_frame = 1
+            next_frame = max(0, min(next_frame, len(self.photo_frames) - 1))
+
+        self._show_frame(next_frame)
+
+        # Следующий тик
+        delay = int(1000 / self.fps)
+        self.animation_job = self.after(delay, self._animate)
+
+    def _prev_frame(self):
+        """Предыдущий кадр"""
+        if self.photo_frames:
+            new_frame = (self.current_frame - 1) % len(self.photo_frames)
+            self._show_frame(new_frame)
+
+    def _next_frame(self):
+        """Следующий кадр"""
+        if self.photo_frames:
+            new_frame = (self.current_frame + 1) % len(self.photo_frames)
+            self._show_frame(new_frame)
+
+    def _on_timeline_change(self, value):
+        """Обработка изменения таймлайна"""
+        if self.photo_frames:
+            frame = int(float(value))
+            if frame != self.current_frame:
+                self._show_frame(frame)
+
+    def _on_fps_change(self):
+        """Обработка изменения FPS"""
+        try:
+            self.fps = max(1, min(60, self.fps_var.get()))
+        except tk.TclError:
+            self.fps = 10
+
+    def _on_mode_change(self):
+        """Обработка изменения режима"""
+        self.loop_mode = self.mode_var.get()
+        self.direction = 1
+
+    def get_fps(self) -> int:
+        return self.fps
+
+    def set_fps(self, fps: int):
+        self.fps = max(1, min(60, fps))
+        self.fps_var.set(self.fps)
+
+    def get_loop_mode(self) -> str:
+        return self.loop_mode
+
+    def set_loop_mode(self, mode: str):
+        if mode in ["once", "loop", "ping_pong"]:
+            self.loop_mode = mode
+            self.mode_var.set(mode)
+
+
+class AnimationEditor(ttk.Frame):
+    """Полный редактор анимации с кадрами и предпросмотром"""
+
+    MAX_FRAMES = 8
+
+    def __init__(
+        self,
+        parent: tk.Widget,
+        assets_path: str = "",
+        on_change: Callable = None,
+        **kwargs
+    ):
+        super().__init__(parent, **kwargs)
+        self.assets_path = assets_path
+        self.on_change = on_change
+        self.frame_items: List[AnimationFrameItem] = []
+        self.loaded_images: List[Any] = []  # PIL Images
+
+        # Горизонтальный layout
+        main_paned = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
+        main_paned.pack(fill=tk.BOTH, expand=True)
+
+        # Левая часть - список кадров
+        left_frame = ttk.Frame(main_paned)
+        main_paned.add(left_frame, weight=2)
+
+        # Заголовок
+        header = ttk.Frame(left_frame)
+        header.pack(fill=tk.X, pady=5)
+
+        ttk.Label(header, text="Кадры анимации (1-8)", font=("TkDefaultFont", 10, "bold")).pack(side=tk.LEFT)
+
+        self.frame_count_label = ttk.Label(header, text="0 / 8")
+        self.frame_count_label.pack(side=tk.RIGHT, padx=10)
+
+        # Кнопка добавления
+        ttk.Button(header, text="+ Добавить кадр", command=self._add_frame).pack(side=tk.RIGHT)
+
+        # Прокручиваемый список кадров
+        self.frames_container = ScrollableFrame(left_frame)
+        self.frames_container.pack(fill=tk.BOTH, expand=True)
+
+        # Правая часть - превью
+        right_frame = ttk.Frame(main_paned)
+        main_paned.add(right_frame, weight=1)
+
+        ttk.Label(right_frame, text="Предпросмотр", font=("TkDefaultFont", 10, "bold")).pack(pady=5)
+
+        self.preview = AnimationPreview(right_frame, preview_size=128)
+        self.preview.pack(fill=tk.BOTH, expand=True)
+
+    def _add_frame(self):
+        """Добавление кадра"""
+        if len(self.frame_items) >= self.MAX_FRAMES:
+            return
+
+        frame_item = AnimationFrameItem(
+            self.frames_container.scrollable_frame,
+            frame_index=len(self.frame_items),
+            on_select=self._on_select_sprite,
+            on_delete=self._on_delete_frame,
+            on_move_up=self._on_move_up,
+            on_move_down=self._on_move_down,
+        )
+        frame_item.pack(fill=tk.X, pady=2, padx=5)
+        self.frame_items.append(frame_item)
+        self.loaded_images.append(None)
+
+        self._update_frame_count()
+        self._notify_change()
+
+    def _on_select_sprite(self, frame_item: AnimationFrameItem):
+        """Выбор спрайта для кадра"""
+        from tkinter import filedialog
+        import os
+
+        initial_dir = self.assets_path
+        if not os.path.exists(initial_dir):
+            initial_dir = os.getcwd()
+
+        filepath = filedialog.askopenfilename(
+            title="Выберите спрайт",
+            initialdir=initial_dir,
+            filetypes=[
+                ("Изображения", "*.png *.jpg *.jpeg *.gif *.bmp"),
+                ("Все файлы", "*.*")
+            ]
+        )
+
+        if filepath:
+            try:
+                from PIL import Image
+
+                # Загружаем изображение
+                img = Image.open(filepath)
+
+                # Относительный путь
+                try:
+                    rel_path = os.path.relpath(filepath, self.assets_path)
+                except ValueError:
+                    rel_path = filepath
+
+                # Находим индекс кадра
+                idx = self.frame_items.index(frame_item)
+
+                # Обновляем данные
+                frame_item.set_sprite(rel_path, img)
+                self.loaded_images[idx] = img
+
+                # Обновляем превью
+                self._update_preview()
+                self._notify_change()
+
+            except Exception as e:
+                print(f"Error loading sprite: {e}")
+
+    def _on_delete_frame(self, frame_item: AnimationFrameItem):
+        """Удаление кадра"""
+        if frame_item in self.frame_items:
+            idx = self.frame_items.index(frame_item)
+            self.frame_items.remove(frame_item)
+            del self.loaded_images[idx]
+            frame_item.destroy()
+
+            # Перенумеровываем кадры
+            for i, item in enumerate(self.frame_items):
+                item.frame_index = i
+
+            self._update_frame_count()
+            self._update_preview()
+            self._notify_change()
+
+    def _on_move_up(self, frame_item: AnimationFrameItem):
+        """Перемещение кадра вверх"""
+        idx = self.frame_items.index(frame_item)
+        if idx > 0:
+            # Меняем местами
+            self.frame_items[idx], self.frame_items[idx-1] = self.frame_items[idx-1], self.frame_items[idx]
+            self.loaded_images[idx], self.loaded_images[idx-1] = self.loaded_images[idx-1], self.loaded_images[idx]
+
+            # Перепаковываем виджеты
+            self._repack_frames()
+            self._update_preview()
+            self._notify_change()
+
+    def _on_move_down(self, frame_item: AnimationFrameItem):
+        """Перемещение кадра вниз"""
+        idx = self.frame_items.index(frame_item)
+        if idx < len(self.frame_items) - 1:
+            # Меняем местами
+            self.frame_items[idx], self.frame_items[idx+1] = self.frame_items[idx+1], self.frame_items[idx]
+            self.loaded_images[idx], self.loaded_images[idx+1] = self.loaded_images[idx+1], self.loaded_images[idx]
+
+            # Перепаковываем виджеты
+            self._repack_frames()
+            self._update_preview()
+            self._notify_change()
+
+    def _repack_frames(self):
+        """Перепаковка виджетов кадров"""
+        for i, item in enumerate(self.frame_items):
+            item.frame_index = i
+            item.pack_forget()
+
+        for item in self.frame_items:
+            item.pack(fill=tk.X, pady=2, padx=5)
+
+    def _update_frame_count(self):
+        """Обновление счетчика кадров"""
+        self.frame_count_label.configure(text=f"{len(self.frame_items)} / {self.MAX_FRAMES}")
+
+    def _update_preview(self):
+        """Обновление превью анимации"""
+        valid_images = [img for img in self.loaded_images if img is not None]
+        self.preview.set_frames(valid_images)
+
+    def _notify_change(self):
+        """Уведомление об изменении"""
+        if self.on_change:
+            self.on_change()
+
+    def get_frames_data(self) -> List[Dict[str, Any]]:
+        """Получение данных кадров"""
+        return [item.get_data() for item in self.frame_items]
+
+    def set_frames_data(self, frames: List[Dict[str, Any]]):
+        """Установка данных кадров"""
+        # Очищаем
+        for item in self.frame_items:
+            item.destroy()
+        self.frame_items.clear()
+        self.loaded_images.clear()
+
+        # Добавляем кадры
+        for frame_data in frames[:self.MAX_FRAMES]:
+            frame_item = AnimationFrameItem(
+                self.frames_container.scrollable_frame,
+                frame_index=len(self.frame_items),
+                on_select=self._on_select_sprite,
+                on_delete=self._on_delete_frame,
+                on_move_up=self._on_move_up,
+                on_move_down=self._on_move_down,
+            )
+            frame_item.pack(fill=tk.X, pady=2, padx=5)
+
+            # Загружаем спрайт если есть путь
+            sprite_path = frame_data.get("sprite_path", "")
+            if sprite_path:
+                try:
+                    from PIL import Image
+                    import os
+
+                    full_path = os.path.join(self.assets_path, sprite_path)
+                    if os.path.exists(full_path):
+                        img = Image.open(full_path)
+                        frame_item.set_sprite(sprite_path, img)
+                        self.loaded_images.append(img)
+                    else:
+                        frame_item.set_sprite(sprite_path, None)
+                        self.loaded_images.append(None)
+                except Exception:
+                    frame_item.set_sprite(sprite_path, None)
+                    self.loaded_images.append(None)
+            else:
+                self.loaded_images.append(None)
+
+            self.frame_items.append(frame_item)
+
+        self._update_frame_count()
+        self._update_preview()
+
+    def get_fps(self) -> int:
+        return self.preview.get_fps()
+
+    def set_fps(self, fps: int):
+        self.preview.set_fps(fps)
+
+    def get_loop_mode(self) -> str:
+        return self.preview.get_loop_mode()
+
+    def set_loop_mode(self, mode: str):
+        self.preview.set_loop_mode(mode)

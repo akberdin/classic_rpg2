@@ -25,4 +25,7 @@ from .models import (
     DamageData,
     CostData,
     RequirementData,
+    VisualData,
+    AnimationFrameData,
+    AnimationLoopMode,
 )

@@ -920,36 +920,71 @@ class SkillsCrafterApp:
         )
         self.secondary_color_btn.pack(side=tk.LEFT)
 
-        # Анимация и эффекты
-        fx_frame = CollapsibleFrame(content, "Анимация и эффекты")
+        # Анимация из спрайтов
+        animation_frame = CollapsibleFrame(content, "Анимация умения (1-8 кадров)")
+        animation_frame.pack(fill=tk.BOTH, expand=True, pady=5, padx=5)
+
+        from .widgets import AnimationEditor
+        self.animation_editor = AnimationEditor(
+            animation_frame.content,
+            assets_path=str(self.assets_path),
+            on_change=self._mark_modified
+        )
+        self.animation_editor.pack(fill=tk.BOTH, expand=True)
+
+        # Тип анимации и эффекты
+        fx_frame = CollapsibleFrame(content, "Тип анимации и эффекты")
         fx_frame.pack(fill=tk.X, pady=5, padx=5)
 
         self.animation_type = LabeledCombobox(
             fx_frame.content, "Тип анимации:",
             values=["default", "slash", "stab", "projectile", "explosion", "heal", "buff"],
+            display_names={
+                "default": "По умолчанию",
+                "slash": "Рубящий удар",
+                "stab": "Колющий удар",
+                "projectile": "Снаряд",
+                "explosion": "Взрыв",
+                "heal": "Лечение",
+                "buff": "Усиление",
+            },
             default="default"
         )
         self.animation_type.pack(fill=tk.X, pady=2)
         self.animation_type.bind_change(self._mark_modified)
 
         self.particle_effect = LabeledEntry(
-            fx_frame.content, "Эффект частиц:", 30, ""
+            fx_frame.content, "Эффект частиц:", 30, "",
+            tooltip="Идентификатор эффекта частиц"
         )
         self.particle_effect.pack(fill=tk.X, pady=2)
         self.particle_effect.bind_change(self._mark_modified)
+
+        # Масштаб анимации
+        scale_row = ttk.Frame(fx_frame.content)
+        scale_row.pack(fill=tk.X, pady=2)
+
+        self.animation_scale = LabeledSpinbox(
+            scale_row, "Масштаб анимации:", 0.1, 5.0, 0.1, 1.0, is_float=True,
+            tooltip="Множитель размера спрайтов анимации"
+        )
+        self.animation_scale.pack(side=tk.LEFT, padx=5)
+        self.animation_scale.bind_change(self._mark_modified)
 
         # Звуки
         sound_frame = CollapsibleFrame(content, "Звуки")
         sound_frame.pack(fill=tk.X, pady=5, padx=5)
 
         self.sound_use = LabeledEntry(
-            sound_frame.content, "Звук применения:", 30, ""
+            sound_frame.content, "Звук применения:", 30, "",
+            tooltip="Путь к звуковому файлу при использовании"
         )
         self.sound_use.pack(fill=tk.X, pady=2)
         self.sound_use.bind_change(self._mark_modified)
 
         self.sound_hit = LabeledEntry(
-            sound_frame.content, "Звук попадания:", 30, ""
+            sound_frame.content, "Звук попадания:", 30, "",
+            tooltip="Путь к звуковому файлу при попадании"
         )
         self.sound_hit.pack(fill=tk.X, pady=2)
         self.sound_hit.bind_change(self._mark_modified)
@@ -1266,6 +1301,12 @@ class SkillsCrafterApp:
         )
 
         # Визуал
+        from ..models import AnimationFrameData
+        animation_frames = [
+            AnimationFrameData.from_dict(f)
+            for f in self.animation_editor.get_frames_data()
+        ]
+
         skill.visuals = VisualData(
             icon_path=self.icon_path_entry.get(),
             animation_type=self.animation_type.get(),
@@ -1274,6 +1315,10 @@ class SkillsCrafterApp:
             sound_hit=self.sound_hit.get(),
             color_primary=self.color_primary.get(),
             color_secondary=self.color_secondary.get(),
+            animation_frames=animation_frames,
+            animation_fps=self.animation_editor.get_fps(),
+            animation_loop_mode=self.animation_editor.get_loop_mode(),
+            animation_scale=float(self.animation_scale.get()),
         )
 
         return skill
@@ -1417,6 +1462,13 @@ class SkillsCrafterApp:
         self.sound_hit.set(skill.visuals.sound_hit)
         self.color_primary.set(skill.visuals.color_primary)
         self.color_secondary.set(skill.visuals.color_secondary)
+        self.animation_scale.set(skill.visuals.animation_scale)
+
+        # Загрузка кадров анимации
+        frames_data = [f.to_dict() for f in skill.visuals.animation_frames]
+        self.animation_editor.set_frames_data(frames_data)
+        self.animation_editor.set_fps(skill.visuals.animation_fps)
+        self.animation_editor.set_loop_mode(skill.visuals.animation_loop_mode)
 
         if skill.visuals.icon_path:
             self._preview_icon()
