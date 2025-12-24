@@ -217,6 +217,47 @@ class SkillsCrafterLoader:
         """
         return self._convert_to_test_skill(data)
 
+    def load_from_test_config(self, config_path: str = None) -> Dict[str, TestSkill]:
+        """
+        Загрузить умения из test_skills.json (формат Skills Crafter)
+
+        Args:
+            config_path: Путь к конфигу (по умолчанию utils/skills_crafter/test_skills.json)
+
+        Returns:
+            Словарь загруженных умений
+        """
+        if config_path is None:
+            config_path = "utils/skills_crafter/test_skills.json"
+
+        skills = {}
+
+        if not os.path.exists(config_path):
+            print(f"Конфиг {config_path} не найден")
+            return skills
+
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                skills_data = json.load(f)
+
+            if isinstance(skills_data, list):
+                for skill_data in skills_data:
+                    skill = self._convert_to_test_skill(skill_data)
+                    if skill:
+                        skills[skill.skill_id] = skill
+            elif isinstance(skills_data, dict):
+                # Поддержка старого формата {skills: [...]}
+                for skill_data in skills_data.get("skills", []):
+                    skill = self._convert_to_test_skill(skill_data)
+                    if skill:
+                        skills[skill.skill_id] = skill
+
+            print(f"Загружено {len(skills)} умений из {config_path}")
+        except Exception as e:
+            print(f"Ошибка загрузки умений из {config_path}: {e}")
+
+        return skills
+
     def _convert_to_test_skill(self, data: Dict[str, Any]) -> TestSkill:
         """
         Преобразовать данные Skills Crafter в TestSkill
@@ -227,9 +268,11 @@ class SkillsCrafterLoader:
         # Извлекаем данные урона
         damage_data = data.get("damage", {})
         healing_data = data.get("healing", {})
-        cost_data = data.get("cost", {})
+        # Поддержка обоих форматов: cost и costs
+        cost_data = data.get("costs", data.get("cost", {}))
         targeting_data = data.get("targeting", {})
-        visual_data = data.get("visual", {})
+        # Поддержка обоих форматов: visual и visuals
+        visual_data = data.get("visuals", data.get("visual", {}))
         effects_data = data.get("status_effects", [])
 
         # Преобразуем статус-эффекты
@@ -257,36 +300,48 @@ class SkillsCrafterLoader:
             if projectile_data:
                 projectile_speed = projectile_data.get("speed", 200.0)
 
+        # Извлекаем данные масштабирования
+        scaling_attr = "strength"
+        scaling_factor = 0.0
+        scaling_list = damage_data.get("scaling", [])
+        if scaling_list and isinstance(scaling_list, list) and len(scaling_list) > 0:
+            scaling_attr = scaling_list[0].get("attribute", "strength")
+            scaling_factor = scaling_list[0].get("factor", 0.0)
+        elif damage_data.get("scaling_attribute"):
+            scaling_attr = damage_data.get("scaling_attribute")
+            scaling_factor = damage_data.get("scaling_factor", 0.0)
+
         skill = TestSkill(
-            skill_id=data.get("id", "unknown_skill"),
+            # Поддержка обоих форматов: id и skill_id
+            skill_id=data.get("skill_id", data.get("id", "unknown_skill")),
             name=data.get("name", "Неизвестное умение"),
             description=data.get("description", ""),
 
             skill_type=data.get("skill_type", "active"),
             category=data.get("category", "combat"),
 
-            # Стоимость
-            mana_cost=cost_data.get("mana", 0),
-            stamina_cost=cost_data.get("stamina", 0),
-            health_cost=cost_data.get("health", 0),
+            # Стоимость (поддержка обоих форматов: mana/mana_cost)
+            mana_cost=cost_data.get("mana_cost", cost_data.get("mana", 0)),
+            stamina_cost=cost_data.get("stamina_cost", cost_data.get("stamina", 0)),
+            health_cost=cost_data.get("health_cost", cost_data.get("health", 0)),
             cooldown=cost_data.get("cooldown", 0),
 
             # Урон
-            base_damage=damage_data.get("base_damage", 0),
+            base_damage=int(damage_data.get("base_damage", 0)),
             damage_per_rank=damage_data.get("damage_per_rank", 0),
-            damage_scaling_attribute=damage_data.get("scaling_attribute", "strength"),
-            damage_scaling_factor=damage_data.get("scaling_factor", 0.0),
+            damage_scaling_attribute=scaling_attr,
+            damage_scaling_factor=scaling_factor,
             damage_type=damage_data.get("damage_type", "physical"),
 
             # Лечение
             base_healing=healing_data.get("base_healing", 0),
             healing_per_rank=healing_data.get("healing_per_rank", 0),
 
-            # Targeting
+            # Targeting (поддержка обоих форматов: range/tactical_range)
             target_type=targeting_data.get("target_type", "single_enemy"),
-            tactical_range=targeting_data.get("range", 1),
+            tactical_range=targeting_data.get("tactical_range", targeting_data.get("range", 1)),
             area_type=targeting_data.get("area_type", "single"),
-            area_radius=targeting_data.get("area_radius", 0),
+            area_radius=targeting_data.get("aoe_radius", targeting_data.get("area_radius", 0)),
 
             # Эффекты
             status_effects=status_effects,
