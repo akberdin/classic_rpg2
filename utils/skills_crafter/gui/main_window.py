@@ -971,6 +971,17 @@ class SkillsCrafterApp:
         self.animation_scale.pack(side=tk.LEFT, padx=5)
         self.animation_scale.bind_change(self._mark_modified)
 
+        # Настройки отображения анимации на поле боя
+        display_frame = CollapsibleFrame(content, "Отображение на поле боя")
+        display_frame.pack(fill=tk.X, pady=5, padx=5)
+
+        from .widgets import AnimationDisplaySettings
+        self.animation_display = AnimationDisplaySettings(
+            display_frame.content,
+            on_change=self._mark_modified
+        )
+        self.animation_display.pack(fill=tk.X, expand=True)
+
         # Звуки
         sound_frame = CollapsibleFrame(content, "Звуки")
         sound_frame.pack(fill=tk.X, pady=5, padx=5)
@@ -1301,11 +1312,36 @@ class SkillsCrafterApp:
         )
 
         # Визуал
-        from ..models import AnimationFrameData
+        from ..models import (
+            AnimationFrameData,
+            ProjectileData,
+            BeamData,
+            AreaEffectData,
+            AnimationTimingData,
+        )
+
         animation_frames = [
             AnimationFrameData.from_dict(f)
             for f in self.animation_editor.get_frames_data()
         ]
+
+        # Получаем настройки отображения
+        display_data = self.animation_display.get_data()
+
+        # Создаём объекты для специфичных настроек
+        projectile = None
+        if "projectile" in display_data:
+            projectile = ProjectileData.from_dict(display_data["projectile"])
+
+        beam = None
+        if "beam" in display_data:
+            beam = BeamData.from_dict(display_data["beam"])
+
+        area_effect = None
+        if "area_effect" in display_data:
+            area_effect = AreaEffectData.from_dict(display_data["area_effect"])
+
+        timing = AnimationTimingData.from_dict(display_data.get("timing", {}))
 
         skill.visuals = VisualData(
             icon_path=self.icon_path_entry.get(),
@@ -1319,6 +1355,12 @@ class SkillsCrafterApp:
             animation_fps=self.animation_editor.get_fps(),
             animation_loop_mode=self.animation_editor.get_loop_mode(),
             animation_scale=float(self.animation_scale.get()),
+            display_type=display_data.get("display_type", "on_target"),
+            anchor_point=display_data.get("anchor_point", "center"),
+            projectile=projectile,
+            beam=beam,
+            area_effect=area_effect,
+            timing=timing,
         )
 
         return skill
@@ -1469,6 +1511,21 @@ class SkillsCrafterApp:
         self.animation_editor.set_frames_data(frames_data)
         self.animation_editor.set_fps(skill.visuals.animation_fps)
         self.animation_editor.set_loop_mode(skill.visuals.animation_loop_mode)
+
+        # Загрузка настроек отображения анимации
+        display_data = {
+            "display_type": skill.visuals.display_type,
+            "anchor_point": skill.visuals.anchor_point,
+            "timing": skill.visuals.timing.to_dict() if skill.visuals.timing else {},
+        }
+        if skill.visuals.projectile:
+            display_data["projectile"] = skill.visuals.projectile.to_dict()
+        if skill.visuals.beam:
+            display_data["beam"] = skill.visuals.beam.to_dict()
+        if skill.visuals.area_effect:
+            display_data["area_effect"] = skill.visuals.area_effect.to_dict()
+
+        self.animation_display.set_data(display_data)
 
         if skill.visuals.icon_path:
             self._preview_icon()
