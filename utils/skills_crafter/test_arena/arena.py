@@ -187,8 +187,13 @@ class TestArena:
 
     def setup_default_arena(self):
         """Настроить арену с дефолтным расположением"""
-        # Загружаем умения по умолчанию
-        self.available_skills = self.skill_loader.create_default_skills()
+        # Загружаем умения из test_skills.json
+        self.available_skills = self.skill_loader.load_from_test_config()
+
+        # Если конфиг пуст, используем умения по умолчанию
+        if not self.available_skills:
+            print("Конфиг test_skills.json не найден, используем дефолтные умения")
+            self.available_skills = self.skill_loader.create_default_skills()
 
         # Создаем игрока
         player = TestPlayer("Герой", level=15)
@@ -270,6 +275,53 @@ class TestArena:
         screen_x = self.arena_x + cell_x * self.CELL_SIZE + self.CELL_SIZE // 2
         screen_y = self.arena_y + cell_y * self.CELL_SIZE + self.CELL_SIZE // 2
         return (screen_x, screen_y)
+
+    def can_move_to(self, cell_x: int, cell_y: int) -> bool:
+        """Проверить, можно ли переместиться в клетку"""
+        # Проверяем границы
+        if cell_x < 0 or cell_x >= self.ARENA_WIDTH:
+            return False
+        if cell_y < 0 or cell_y >= self.ARENA_HEIGHT:
+            return False
+
+        # Проверяем, занята ли клетка
+        if self.get_unit_at_cell(cell_x, cell_y):
+            return False
+
+        return True
+
+    def move_player_to(self, cell_x: int, cell_y: int) -> bool:
+        """Переместить игрока в указанную клетку"""
+        if not self.player_unit:
+            return False
+
+        if not self.can_move_to(cell_x, cell_y):
+            return False
+
+        old_x, old_y = self.player_unit.x, self.player_unit.y
+        self.player_unit.x = cell_x
+        self.player_unit.y = cell_y
+
+        # Логируем перемещение (опционально)
+        # self.add_to_log(f"Герой перемещается ({old_x},{old_y}) -> ({cell_x},{cell_y})")
+
+        return True
+
+    def get_movement_range(self) -> List[Tuple[int, int]]:
+        """Получить список клеток, доступных для перемещения"""
+        if not self.player_unit:
+            return []
+
+        reachable = []
+        px, py = self.player_unit.x, self.player_unit.y
+
+        # Простое перемещение - любая клетка в пределах арены
+        for x in range(self.ARENA_WIDTH):
+            for y in range(self.ARENA_HEIGHT):
+                if self.can_move_to(x, y):
+                    reachable.append((x, y))
+
+        return reachable
 
     def use_skill_on_target(self, skill: TestSkill, caster: ArenaUnit, target: ArenaUnit):
         """Использовать умение на цель"""
@@ -391,22 +443,7 @@ class TestArena:
 
     def handle_click(self, pos: Tuple[int, int]):
         """Обработка клика мыши"""
-        # Проверяем клик по арене
-        cell = self.get_cell_at_screen_pos(*pos)
-        if cell:
-            unit = self.get_unit_at_cell(*cell)
-
-            if self.selected_skill and unit:
-                # Используем умение на цель
-                if self.player_unit and unit != self.player_unit:
-                    self.use_skill_on_target(self.selected_skill, self.player_unit, unit)
-                    self.selected_skill = None
-            elif unit:
-                # Выбираем юнита
-                self.target_unit = unit
-                self.add_to_log(f"Выбрана цель: {unit.character.name}")
-
-        # Проверяем клик по кнопкам умений
+        # Сначала проверяем клик по кнопкам умений
         for rect, skill in self.skill_buttons:
             if rect.collidepoint(pos):
                 self.selected_skill = skill
@@ -422,6 +459,26 @@ class TestArena:
                     self.tick_all_effects()
                     self.add_to_log("--- Новый ход ---")
                 return
+
+        # Проверяем клик по арене
+        cell = self.get_cell_at_screen_pos(*pos)
+        if cell:
+            unit = self.get_unit_at_cell(*cell)
+
+            if self.selected_skill and unit:
+                # Используем умение на цель
+                if self.player_unit and unit != self.player_unit:
+                    self.use_skill_on_target(self.selected_skill, self.player_unit, unit)
+                    self.selected_skill = None
+            elif unit:
+                # Выбираем юнита как цель
+                self.target_unit = unit
+                self.add_to_log(f"Выбрана цель: {unit.character.name}")
+            else:
+                # Клик на пустую клетку - перемещение игрока
+                if self.move_player_to(cell[0], cell[1]):
+                    pass  # Перемещение успешно
+                    # self.add_to_log(f"Перемещение в ({cell[0]}, {cell[1]})")
 
     def render(self):
         """Отрисовка арены"""
@@ -462,11 +519,12 @@ class TestArena:
 
         # Подсказки
         hints = [
-            "1-8: выбор умения",
-            "ЛКМ: применить/выбрать",
+            "1-8: умение",
+            "ЛКМ(пусто): ходить",
+            "ЛКМ(враг): атака/цель",
             "ПКМ: отмена",
             "R: сброс",
-            "Space: новый ход",
+            "Space: ход",
             "Esc: выход"
         ]
         hint_text = " | ".join(hints)
