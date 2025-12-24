@@ -103,6 +103,8 @@ class SkillsCrafterApp:
         tools_menu.add_command(label="Валидация", command=self._validate_skill)
         tools_menu.add_separator()
         tools_menu.add_command(label="Калькулятор урона", command=self._show_damage_calculator)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="Тестовая арена", command=self._launch_test_arena, accelerator="F5")
 
         # Справка
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -113,6 +115,7 @@ class SkillsCrafterApp:
         self.root.bind("<Control-n>", lambda e: self._new_skill())
         self.root.bind("<Control-o>", lambda e: self._open_file())
         self.root.bind("<Control-s>", lambda e: self._save_file())
+        self.root.bind("<F5>", lambda e: self._launch_test_arena())
 
     def _create_main_layout(self):
         """Создание основного layout"""
@@ -2059,6 +2062,30 @@ class SkillsCrafterApp:
             result_label.configure(text=f"{total:.0f} урона ({hits} x {damage:.0f})")
 
         ttk.Button(calc_window, text="Рассчитать", command=calculate).pack(pady=10)
+
+    def _launch_test_arena(self):
+        """Запуск тестовой арены для проверки умений"""
+        try:
+            import subprocess
+            import sys
+
+            # Путь к скрипту запуска арены
+            arena_script = self.project_root / "run_test_arena.py"
+
+            if arena_script.exists():
+                # Запускаем в отдельном процессе
+                subprocess.Popen(
+                    [sys.executable, str(arena_script)],
+                    cwd=str(self.project_root)
+                )
+                self._set_status("Тестовая арена запущена")
+            else:
+                messagebox.showerror(
+                    "Ошибка",
+                    f"Скрипт тестовой арены не найден:\n{arena_script}"
+                )
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось запустить арену:\n{e}")
 
     def _show_about(self):
         """О программе"""
