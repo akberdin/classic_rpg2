@@ -883,8 +883,8 @@ class AnimationEditor(ttk.Frame):
         self.frame_count_label = ttk.Label(header, text="0 / 8")
         self.frame_count_label.pack(side=tk.RIGHT, padx=10)
 
-        # Кнопка добавления
-        ttk.Button(header, text="+ Добавить кадр", command=self._add_frame).pack(side=tk.RIGHT)
+        # Кнопка загрузки спрайтов
+        ttk.Button(header, text="Загрузить спрайты...", command=self._load_sprites).pack(side=tk.RIGHT)
 
         # Прокручиваемый список кадров
         self.frames_container = ScrollableFrame(left_frame)
@@ -899,24 +899,81 @@ class AnimationEditor(ttk.Frame):
         self.preview = AnimationPreview(right_frame, preview_size=128)
         self.preview.pack(fill=tk.BOTH, expand=True)
 
-    def _add_frame(self):
-        """Добавление кадра"""
-        if len(self.frame_items) >= self.MAX_FRAMES:
+    def _load_sprites(self):
+        """Загрузка нескольких спрайтов для анимации"""
+        from tkinter import filedialog, messagebox
+        import os
+
+        # Проверяем лимит
+        available_slots = self.MAX_FRAMES - len(self.frame_items)
+        if available_slots <= 0:
+            messagebox.showwarning(
+                "Лимит кадров",
+                f"Достигнут максимум кадров ({self.MAX_FRAMES}). Удалите существующие кадры для добавления новых."
+            )
             return
 
-        frame_item = AnimationFrameItem(
-            self.frames_container.scrollable_frame,
-            frame_index=len(self.frame_items),
-            on_select=self._on_select_sprite,
-            on_delete=self._on_delete_frame,
-            on_move_up=self._on_move_up,
-            on_move_down=self._on_move_down,
+        initial_dir = self.assets_path
+        if not os.path.exists(initial_dir):
+            initial_dir = os.getcwd()
+
+        filepaths = filedialog.askopenfilenames(
+            title=f"Выберите спрайты (макс. {available_slots})",
+            initialdir=initial_dir,
+            filetypes=[
+                ("Изображения", "*.png *.jpg *.jpeg *.gif *.bmp"),
+                ("Все файлы", "*.*")
+            ]
         )
-        frame_item.pack(fill=tk.X, pady=2, padx=5)
-        self.frame_items.append(frame_item)
-        self.loaded_images.append(None)
+
+        if not filepaths:
+            return
+
+        # Ограничиваем количество файлов
+        if len(filepaths) > available_slots:
+            messagebox.showinfo(
+                "Ограничение",
+                f"Выбрано {len(filepaths)} файлов, но доступно только {available_slots} слотов. "
+                f"Будут добавлены первые {available_slots} файлов."
+            )
+            filepaths = filepaths[:available_slots]
+
+        # Загружаем каждый спрайт
+        from PIL import Image
+
+        for filepath in filepaths:
+            try:
+                # Загружаем изображение
+                img = Image.open(filepath)
+
+                # Относительный путь
+                try:
+                    rel_path = os.path.relpath(filepath, self.assets_path)
+                except ValueError:
+                    rel_path = filepath
+
+                # Создаем элемент кадра
+                frame_item = AnimationFrameItem(
+                    self.frames_container.scrollable_frame,
+                    frame_index=len(self.frame_items),
+                    on_select=self._on_select_sprite,
+                    on_delete=self._on_delete_frame,
+                    on_move_up=self._on_move_up,
+                    on_move_down=self._on_move_down,
+                )
+                frame_item.pack(fill=tk.X, pady=2, padx=5)
+
+                # Устанавливаем спрайт
+                frame_item.set_sprite(rel_path, img)
+
+                self.frame_items.append(frame_item)
+                self.loaded_images.append(img)
+
+            except Exception as e:
+                print(f"Error loading sprite {filepath}: {e}")
 
         self._update_frame_count()
+        self._update_preview()
         self._notify_change()
 
     def _on_select_sprite(self, frame_item: AnimationFrameItem):
