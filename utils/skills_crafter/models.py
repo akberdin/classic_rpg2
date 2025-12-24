@@ -527,6 +527,227 @@ class AnimationLoopMode(Enum):
         }
 
 
+class AnimationDisplayType(Enum):
+    """Тип отображения анимации на поле боя"""
+    STATIC = "static"          # Статическая анимация в одном месте
+    PROJECTILE = "projectile"  # Снаряд летит от кастера к цели (стрела, фаербол)
+    BEAM = "beam"              # Луч/линия от кастера к цели (молния, лазер)
+    IMPACT = "impact"          # Появляется в точке попадания (взрыв, удар)
+    AREA = "area"              # Покрывает область (AoE эффекты)
+    ON_CASTER = "on_caster"    # Отображается на кастере (баффы, ауры)
+    ON_TARGET = "on_target"    # Отображается на цели (дебаффы)
+    CHAIN = "chain"            # Цепная анимация между несколькими целями
+
+    @classmethod
+    def get_display_names(cls) -> Dict[str, str]:
+        return {
+            cls.STATIC.value: "Статическая",
+            cls.PROJECTILE.value: "Снаряд (летит к цели)",
+            cls.BEAM.value: "Луч (линия к цели)",
+            cls.IMPACT.value: "Удар (в точке попадания)",
+            cls.AREA.value: "Область (AoE)",
+            cls.ON_CASTER.value: "На кастере",
+            cls.ON_TARGET.value: "На цели",
+            cls.CHAIN.value: "Цепная (между целями)",
+        }
+
+
+class ProjectileTrajectory(Enum):
+    """Траектория снаряда"""
+    STRAIGHT = "straight"      # Прямая линия
+    ARC = "arc"                # Дуга (парабола)
+    HOMING = "homing"          # Самонаводящийся
+    WAVE = "wave"              # Волнообразная
+
+    @classmethod
+    def get_display_names(cls) -> Dict[str, str]:
+        return {
+            cls.STRAIGHT.value: "Прямая",
+            cls.ARC.value: "Дуга",
+            cls.HOMING.value: "Самонаведение",
+            cls.WAVE.value: "Волна",
+        }
+
+
+class AnimationAnchor(Enum):
+    """Точка привязки анимации относительно юнита"""
+    CENTER = "center"          # Центр
+    TOP = "top"                # Сверху
+    BOTTOM = "bottom"          # Снизу (у ног)
+    WEAPON = "weapon"          # У оружия/руки
+    HEAD = "head"              # У головы
+
+    @classmethod
+    def get_display_names(cls) -> Dict[str, str]:
+        return {
+            cls.CENTER.value: "Центр",
+            cls.TOP.value: "Сверху",
+            cls.BOTTOM.value: "Снизу (у ног)",
+            cls.WEAPON.value: "У оружия",
+            cls.HEAD.value: "Над головой",
+        }
+
+
+@dataclass
+class ProjectileData:
+    """Настройки снаряда для projectile-анимаций"""
+    speed: float = 300.0              # Скорость в пикселях/сек
+    trajectory: str = "straight"       # Тип траектории
+    arc_height: float = 50.0          # Высота дуги (для arc траектории)
+    auto_rotate: bool = True          # Авто-поворот к цели
+    rotation_offset: float = 0.0      # Смещение угла в градусах
+    # Эффект при попадании
+    impact_animation: str = ""        # ID анимации при попадании
+    impact_scale: float = 1.0         # Масштаб анимации попадания
+    # Эффект следа
+    trail_enabled: bool = False       # Включить след
+    trail_color: str = "#FFFFFF"      # Цвет следа
+    trail_length: int = 5             # Длина следа в кадрах
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "speed": self.speed,
+            "trajectory": self.trajectory,
+            "arc_height": self.arc_height,
+            "auto_rotate": self.auto_rotate,
+            "rotation_offset": self.rotation_offset,
+            "impact_animation": self.impact_animation,
+            "impact_scale": self.impact_scale,
+            "trail_enabled": self.trail_enabled,
+            "trail_color": self.trail_color,
+            "trail_length": self.trail_length,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ProjectileData":
+        return cls(
+            speed=data.get("speed", 300.0),
+            trajectory=data.get("trajectory", "straight"),
+            arc_height=data.get("arc_height", 50.0),
+            auto_rotate=data.get("auto_rotate", True),
+            rotation_offset=data.get("rotation_offset", 0.0),
+            impact_animation=data.get("impact_animation", ""),
+            impact_scale=data.get("impact_scale", 1.0),
+            trail_enabled=data.get("trail_enabled", False),
+            trail_color=data.get("trail_color", "#FFFFFF"),
+            trail_length=data.get("trail_length", 5),
+        )
+
+
+@dataclass
+class BeamData:
+    """Настройки луча для beam-анимаций"""
+    width: int = 8                    # Ширина луча в пикселях
+    segments: int = 10                # Количество сегментов (для волнистости)
+    wave_amplitude: float = 0.0       # Амплитуда волны (0 = прямой луч)
+    wave_frequency: float = 1.0       # Частота волны
+    duration_ms: int = 500            # Длительность отображения
+    fade_in_ms: int = 50              # Время появления
+    fade_out_ms: int = 100            # Время исчезновения
+    color_start: str = "#FFFFFF"      # Цвет у кастера
+    color_end: str = "#FFFFFF"        # Цвет у цели
+    glow_enabled: bool = True         # Эффект свечения
+    glow_radius: int = 4              # Радиус свечения
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "width": self.width,
+            "segments": self.segments,
+            "wave_amplitude": self.wave_amplitude,
+            "wave_frequency": self.wave_frequency,
+            "duration_ms": self.duration_ms,
+            "fade_in_ms": self.fade_in_ms,
+            "fade_out_ms": self.fade_out_ms,
+            "color_start": self.color_start,
+            "color_end": self.color_end,
+            "glow_enabled": self.glow_enabled,
+            "glow_radius": self.glow_radius,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "BeamData":
+        return cls(
+            width=data.get("width", 8),
+            segments=data.get("segments", 10),
+            wave_amplitude=data.get("wave_amplitude", 0.0),
+            wave_frequency=data.get("wave_frequency", 1.0),
+            duration_ms=data.get("duration_ms", 500),
+            fade_in_ms=data.get("fade_in_ms", 50),
+            fade_out_ms=data.get("fade_out_ms", 100),
+            color_start=data.get("color_start", "#FFFFFF"),
+            color_end=data.get("color_end", "#FFFFFF"),
+            glow_enabled=data.get("glow_enabled", True),
+            glow_radius=data.get("glow_radius", 4),
+        )
+
+
+@dataclass
+class AreaEffectData:
+    """Настройки для area-анимаций"""
+    radius_cells: int = 1              # Радиус в клетках поля боя
+    shape: str = "circle"              # circle, square, cone, line
+    fill_alpha: float = 0.3            # Прозрачность заливки
+    border_width: int = 2              # Толщина границы
+    border_color: str = "#FFFFFF"      # Цвет границы
+    fill_color: str = "#FF0000"        # Цвет заливки
+    pulse_enabled: bool = False        # Пульсация
+    pulse_speed: float = 1.0           # Скорость пульсации
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "radius_cells": self.radius_cells,
+            "shape": self.shape,
+            "fill_alpha": self.fill_alpha,
+            "border_width": self.border_width,
+            "border_color": self.border_color,
+            "fill_color": self.fill_color,
+            "pulse_enabled": self.pulse_enabled,
+            "pulse_speed": self.pulse_speed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "AreaEffectData":
+        return cls(
+            radius_cells=data.get("radius_cells", 1),
+            shape=data.get("shape", "circle"),
+            fill_alpha=data.get("fill_alpha", 0.3),
+            border_width=data.get("border_width", 2),
+            border_color=data.get("border_color", "#FFFFFF"),
+            fill_color=data.get("fill_color", "#FF0000"),
+            pulse_enabled=data.get("pulse_enabled", False),
+            pulse_speed=data.get("pulse_speed", 1.0),
+        )
+
+
+@dataclass
+class AnimationTimingData:
+    """Тайминги анимации относительно применения эффекта"""
+    # Когда применяется урон/эффект
+    damage_apply_at: str = "on_hit"    # on_cast, on_hit, on_end
+    damage_delay_ms: int = 0           # Задержка применения урона после события
+    # Для нескольких ударов
+    multi_hit_delay_ms: int = 200      # Задержка между ударами
+    # Синхронизация со звуком
+    sound_delay_ms: int = 0            # Задержка звука относительно анимации
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "damage_apply_at": self.damage_apply_at,
+            "damage_delay_ms": self.damage_delay_ms,
+            "multi_hit_delay_ms": self.multi_hit_delay_ms,
+            "sound_delay_ms": self.sound_delay_ms,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "AnimationTimingData":
+        return cls(
+            damage_apply_at=data.get("damage_apply_at", "on_hit"),
+            damage_delay_ms=data.get("damage_delay_ms", 0),
+            multi_hit_delay_ms=data.get("multi_hit_delay_ms", 200),
+            sound_delay_ms=data.get("sound_delay_ms", 0),
+        )
+
+
 @dataclass
 class AnimationFrameData:
     """Данные кадра анимации"""
@@ -566,8 +787,21 @@ class VisualData:
     animation_loop_mode: str = "once"  # once, loop, ping_pong
     animation_scale: float = 1.0  # Масштаб анимации
 
+    # Настройки отображения анимации на поле боя
+    display_type: str = "on_target"    # Тип отображения (static, projectile, beam, etc.)
+    anchor_point: str = "center"        # Точка привязки (center, top, bottom, weapon, head)
+
+    # Настройки снаряда (для display_type = projectile)
+    projectile: Optional[ProjectileData] = None
+    # Настройки луча (для display_type = beam)
+    beam: Optional[BeamData] = None
+    # Настройки области (для display_type = area)
+    area_effect: Optional[AreaEffectData] = None
+    # Тайминги анимации
+    timing: AnimationTimingData = field(default_factory=AnimationTimingData)
+
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        result = {
             "icon_path": self.icon_path,
             "animation_type": self.animation_type,
             "particle_effect": self.particle_effect,
@@ -579,13 +813,35 @@ class VisualData:
             "animation_fps": self.animation_fps,
             "animation_loop_mode": self.animation_loop_mode,
             "animation_scale": self.animation_scale,
+            "display_type": self.display_type,
+            "anchor_point": self.anchor_point,
+            "timing": self.timing.to_dict(),
         }
+        if self.projectile:
+            result["projectile"] = self.projectile.to_dict()
+        if self.beam:
+            result["beam"] = self.beam.to_dict()
+        if self.area_effect:
+            result["area_effect"] = self.area_effect.to_dict()
+        return result
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "VisualData":
         frames = []
         for f in data.get("animation_frames", []):
             frames.append(AnimationFrameData.from_dict(f))
+
+        projectile = None
+        if "projectile" in data:
+            projectile = ProjectileData.from_dict(data["projectile"])
+
+        beam = None
+        if "beam" in data:
+            beam = BeamData.from_dict(data["beam"])
+
+        area_effect = None
+        if "area_effect" in data:
+            area_effect = AreaEffectData.from_dict(data["area_effect"])
 
         return cls(
             icon_path=data.get("icon_path", ""),
@@ -599,6 +855,12 @@ class VisualData:
             animation_fps=data.get("animation_fps", 10),
             animation_loop_mode=data.get("animation_loop_mode", "once"),
             animation_scale=data.get("animation_scale", 1.0),
+            display_type=data.get("display_type", "on_target"),
+            anchor_point=data.get("anchor_point", "center"),
+            projectile=projectile,
+            beam=beam,
+            area_effect=area_effect,
+            timing=AnimationTimingData.from_dict(data.get("timing", {})),
         )
 
 
