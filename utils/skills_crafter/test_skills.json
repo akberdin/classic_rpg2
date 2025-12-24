@@ -1,0 +1,128 @@
+[
+  {
+    "skill_id": "test_01",
+    "name": "Молния",
+    "description": "Тестирование создание конфигурации с анимацией молния.",
+    "category": "combat",
+    "skill_type": "active",
+    "costs": {
+      "mana_cost": 1,
+      "mana_cost_per_rank": 0,
+      "stamina_cost": 0,
+      "stamina_cost_per_rank": 0,
+      "health_cost": 0,
+      "health_cost_per_rank": 0,
+      "cooldown": 1,
+      "cooldown_reduction_per_rank": 0
+    },
+    "requirements": {
+      "level_required": 1,
+      "required_weapon": "any",
+      "required_skills": [],
+      "required_skill_ranks": {},
+      "min_strength": 0,
+      "min_dexterity": 0,
+      "min_constitution": 0,
+      "min_intelligence": 0,
+      "min_spirit": 0
+    },
+    "targeting": {
+      "target_type": "single_enemy",
+      "area_type": "single",
+      "tactical_range": 6,
+      "min_range": 0,
+      "range_per_rank": 0,
+      "aoe_radius": 0,
+      "aoe_radius_per_rank": 0,
+      "cone_angle": 60,
+      "line_width": 1,
+      "can_target_self": false,
+      "requires_line_of_sight": true,
+      "knockback_chance": 0.0,
+      "knockback_chance_per_rank": 0.0,
+      "knockback_distance": 1
+    },
+    "status_effects": [
+      {
+        "effect_type": "stun",
+        "chance_base": 1.0,
+        "chance_per_rank": 0.0,
+        "duration_base": 3,
+        "duration_per_rank": 0,
+        "value_base": 5.0,
+        "value_per_rank": 2.0,
+        "spread_chance": 0.0,
+        "spread_chance_per_rank": 0.0
+      }
+    ],
+    "rank_progression": {
+      "max_rank": 5,
+      "base_experience": 100,
+      "experience_multiplier": 1.5,
+      "uses_per_rank_multiplier": 20,
+      "level_per_rank_multiplier": 5,
+      "gold_base_cost": 50,
+      "gold_multiplier": 1.0,
+      "descriptions_per_rank": [
+        "Ранг 1: Урон x1.00, Оглушение 5 на 3 ход.",
+        "Ранг 2: Урон x1.20, Оглушение 7 на 3 ход.",
+        "Ранг 3: Урон x1.40, Оглушение 9 на 3 ход.",
+        "Ранг 4: Урон x1.60, Оглушение 11 на 3 ход.",
+        "Ранг 5: Урон x1.80, Оглушение 13 на 3 ход."
+      ]
+    },
+    "visuals": {
+      "icon_path": "skills\\lightning.png",
+      "animation_type": "default",
+      "particle_effect": "",
+      "sound_use": "",
+      "sound_hit": "",
+      "color_primary": "#FFFFFF",
+      "color_secondary": "#888888",
+      "animation_frames": [
+        {
+          "sprite_path": "skills\\anim\\anim_skill_lightning\\lightning_01.png",
+          "duration_ms": 100
+        },
+        {
+          "sprite_path": "skills\\anim\\anim_skill_lightning\\lightning_02.png",
+          "duration_ms": 100
+        },
+        {
+          "sprite_path": "skills\\anim\\anim_skill_lightning\\lightning_03.png",
+          "duration_ms": 100
+        },
+        {
+          "sprite_path": "skills\\anim\\anim_skill_lightning\\lightning_04.png",
+          "duration_ms": 100
+        },
+        {
+          "sprite_path": "skills\\anim\\anim_skill_lightning\\lightning_05.png",
+          "duration_ms": 100
+        },
+        {
+          "sprite_path": "skills\\anim\\anim_skill_lightning\\lightning_06.png",
+          "duration_ms": 100
+        }
+      ],
+      "animation_fps": 10,
+      "animation_loop_mode": "once",
+      "animation_scale": 1.0
+    },
+    "damage": {
+      "base_damage": 10.0,
+      "damage_multiplier": 1.0,
+      "damage_multiplier_per_rank": 0.2,
+      "scaling": [],
+      "ignores_armor": true,
+      "armor_penetration_base": 0.0,
+      "armor_penetration_per_rank": 0.0,
+      "crit_chance_bonus": 0.0,
+      "crit_chance_per_rank": 0.0,
+      "crit_damage_multiplier": 2.0,
+      "hit_count_base": 1,
+      "hit_count_per_rank": 0,
+      "damage_per_hit_multiplier": 1.0
+    }
+  }
+]
