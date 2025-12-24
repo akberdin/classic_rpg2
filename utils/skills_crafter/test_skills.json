@@ -107,7 +107,15 @@
       ],
       "animation_fps": 10,
       "animation_loop_mode": "once",
-      "animation_scale": 1.0
+      "animation_scale": 1.0,
+      "display_type": "impact",
+      "anchor_point": "bottom",
+      "timing": {
+        "damage_apply_at": "on_hit",
+        "damage_delay_ms": 0,
+        "multi_hit_delay_ms": 200,
+        "sound_delay_ms": 0
+      }
     },
     "damage": {
       "base_damage": 10.0,
