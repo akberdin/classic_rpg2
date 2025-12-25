@@ -129,6 +129,9 @@ class TestSkill:
 
     def can_use(self, caster) -> tuple:
         """Проверить, можно ли использовать умение"""
+        if caster is None:
+            return False, "Нет кастера"
+
         if self.current_cooldown > 0:
             return False, f"Умение на перезарядке ({self.current_cooldown} ходов)"
 
@@ -392,7 +395,8 @@ class SkillsCrafterLoader:
         scaling_list = damage_data.get("scaling", [])
         if scaling_list and isinstance(scaling_list, list) and len(scaling_list) > 0:
             scaling_attr = scaling_list[0].get("attribute", "strength")
-            scaling_factor = scaling_list[0].get("factor", 0.0)
+            # Поддержка обоих форматов: multiplier (из models.py) и factor (устаревший)
+            scaling_factor = scaling_list[0].get("multiplier", scaling_list[0].get("factor", 0.0))
         elif damage_data.get("scaling_attribute"):
             scaling_attr = damage_data.get("scaling_attribute")
             scaling_factor = damage_data.get("scaling_factor", 0.0)
@@ -419,9 +423,9 @@ class SkillsCrafterLoader:
             damage_scaling_factor=scaling_factor,
             damage_type=damage_data.get("damage_type", "physical"),
 
-            # Лечение
-            base_healing=healing_data.get("base_healing", 0),
-            healing_per_rank=healing_data.get("healing_per_rank", 0),
+            # Лечение (поддержка обоих форматов: base_heal из models.py и base_healing)
+            base_healing=healing_data.get("base_heal", healing_data.get("base_healing", 0)),
+            healing_per_rank=healing_data.get("heal_per_turn_per_rank", healing_data.get("healing_per_rank", 0)),
 
             # Targeting (поддержка обоих форматов: range/tactical_range)
             target_type=targeting_data.get("target_type", "single_enemy"),
