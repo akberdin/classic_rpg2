@@ -1350,6 +1350,17 @@ class AnimationDisplaySettings(ttk.LabelFrame):
             from_=0.5, to=10, increment=0.5, width=6
         ).pack(side=tk.LEFT, padx=5)
 
+        # Смещение угла спрайта (для sprite_beam)
+        rotation_frame = ttk.Frame(self.beam_frame)
+        rotation_frame.pack(fill=tk.X, pady=2, padx=5)
+        ttk.Label(rotation_frame, text="Смещение угла спрайта (°):").pack(side=tk.LEFT)
+        self.beam_rotation_offset_var = tk.DoubleVar(value=0.0)
+        ttk.Spinbox(
+            rotation_frame, textvariable=self.beam_rotation_offset_var,
+            from_=-180, to=180, increment=15, width=8
+        ).pack(side=tk.LEFT, padx=5)
+        ToolTip(rotation_frame, "Для спрайтов, направленных вниз, установите 90°")
+
         # Цвета
         color_frame = ttk.Frame(self.beam_frame)
         color_frame.pack(fill=tk.X, pady=2, padx=5)
@@ -1584,6 +1595,7 @@ class AnimationDisplaySettings(ttk.LabelFrame):
                 "duration_ms": self.beam_duration_var.get(),
                 "wave_amplitude": self.beam_wave_var.get(),
                 "wave_frequency": self.beam_wave_freq_var.get(),
+                "rotation_offset": self.beam_rotation_offset_var.get(),
                 "color_start": self.beam_color_start_var.get(),
                 "color_end": self.beam_color_end_var.get(),
                 "glow_enabled": self.beam_glow_var.get(),
@@ -1641,6 +1653,7 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         self.beam_duration_var.set(beam.get("duration_ms", 500))
         self.beam_wave_var.set(beam.get("wave_amplitude", 0.0))
         self.beam_wave_freq_var.set(beam.get("wave_frequency", 3.0))
+        self.beam_rotation_offset_var.set(beam.get("rotation_offset", 0.0))
         self.beam_color_start_var.set(beam.get("color_start", "#FFFFFF"))
         self.beam_color_end_var.set(beam.get("color_end", "#FFFFFF"))
         self.beam_glow_var.set(beam.get("glow_enabled", True))
