@@ -155,6 +155,7 @@ class TestArena:
 
         # Спрайты (опционально загружаются)
         self.sprites: Dict[str, pygame.Surface] = {}
+        self.skill_icons: Dict[str, pygame.Surface] = {}  # Иконки умений
         self._load_sprites()
 
     def _load_sprites(self):
@@ -198,6 +199,31 @@ class TestArena:
         except Exception as e:
             print(f"Не удалось загрузить спрайты: {e}")
 
+    def _load_skill_icons(self):
+        """Загрузить иконки умений"""
+        for skill_id, skill in self.available_skills.items():
+            if skill.icon_path:
+                # Нормализуем путь
+                icon_path = skill.icon_path.replace("\\", "/")
+
+                # Пробуем разные базовые пути
+                paths_to_try = [
+                    icon_path,
+                    os.path.join("utils/skills_crafter", icon_path),
+                    os.path.join("game/assets", icon_path),
+                    os.path.join("assets", icon_path),
+                ]
+
+                for path in paths_to_try:
+                    if os.path.exists(path):
+                        try:
+                            icon = pygame.image.load(path).convert_alpha()
+                            icon = pygame.transform.scale(icon, (40, 40))
+                            self.skill_icons[skill_id] = icon
+                            break
+                        except Exception as e:
+                            print(f"Ошибка загрузки иконки {path}: {e}")
+
     def setup_default_arena(self):
         """Настроить арену с дефолтным расположением"""
         # Загружаем умения из test_skills.json
@@ -207,6 +233,9 @@ class TestArena:
         if not self.available_skills:
             print("Конфиг test_skills.json не найден, используем дефолтные умения")
             self.available_skills = self.skill_loader.create_default_skills()
+
+        # Загружаем иконки умений
+        self._load_skill_icons()
 
         # Создаем игрока
         player = TestPlayer("Герой", level=15)
@@ -552,6 +581,9 @@ class TestArena:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
+                # Блокируем действия во время анимации
+                elif self.animation.active:
+                    continue
                 elif event.key == pygame.K_r:
                     self.reset_arena()
                 elif event.key == pygame.K_SPACE:
@@ -566,6 +598,9 @@ class TestArena:
                         self.add_to_log(f"Выбрано умение: {self.selected_skill.name}")
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                # Блокируем клики во время анимации
+                if self.animation.active:
+                    continue
                 if event.button == 1:  # ЛКМ
                     self.handle_click(event.pos)
                 elif event.button == 3:  # ПКМ
@@ -928,6 +963,73 @@ class TestArena:
             # Статичный эффект (ближний бой)
             if self.animation.target:
                 self._render_melee_effect(color, progress)
+
+        elif skill.animation_type == "beam":
+            # Луч от кастера к цели
+            if self.animation.caster and self.animation.target:
+                self._render_beam_effect(color, progress)
+
+    def _render_beam_effect(self, color: Tuple[int, int, int], progress: float):
+        """Отрисовка эффекта луча"""
+        if not self.animation.caster or not self.animation.target:
+            return
+
+        caster_pos = self.get_screen_pos_for_cell(
+            self.animation.caster.x,
+            self.animation.caster.y
+        )
+        target_pos = self.get_screen_pos_for_cell(
+            self.animation.target.x,
+            self.animation.target.y
+        )
+
+        # Фаза появления (0-0.2), удержания (0.2-0.8), затухания (0.8-1.0)
+        if progress < 0.2:
+            # Луч растет от кастера к цели
+            beam_progress = progress / 0.2
+            end_x = caster_pos[0] + (target_pos[0] - caster_pos[0]) * beam_progress
+            end_y = caster_pos[1] + (target_pos[1] - caster_pos[1]) * beam_progress
+            alpha = 255
+            width = int(6 * beam_progress) + 2
+        elif progress < 0.8:
+            # Луч держится
+            end_x, end_y = target_pos[0], target_pos[1]
+            alpha = 255
+            # Пульсация ширины
+            pulse = abs(math.sin((progress - 0.2) * 10 * math.pi))
+            width = int(6 + 4 * pulse)
+        else:
+            # Луч затухает
+            fade_progress = (progress - 0.8) / 0.2
+            end_x, end_y = target_pos[0], target_pos[1]
+            alpha = int(255 * (1 - fade_progress))
+            width = int(8 * (1 - fade_progress)) + 2
+
+        # Рисуем внешнее свечение
+        glow_surface = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+        glow_color = (*color, int(alpha * 0.3))
+        pygame.draw.line(glow_surface, glow_color, caster_pos, (int(end_x), int(end_y)), width + 8)
+        self.screen.blit(glow_surface, (0, 0))
+
+        # Рисуем средний слой
+        mid_color = (*color, int(alpha * 0.6))
+        mid_surface = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+        pygame.draw.line(mid_surface, mid_color, caster_pos, (int(end_x), int(end_y)), width + 4)
+        self.screen.blit(mid_surface, (0, 0))
+
+        # Рисуем яркое ядро луча
+        core_color = (255, 255, 255, alpha)
+        core_surface = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+        pygame.draw.line(core_surface, core_color, caster_pos, (int(end_x), int(end_y)), width)
+        self.screen.blit(core_surface, (0, 0))
+
+        # Эффект на цели (только когда луч достиг)
+        if progress >= 0.2:
+            impact_alpha = alpha
+            impact_radius = int(15 + 10 * abs(math.sin(progress * 8 * math.pi)))
+            impact_surface = pygame.Surface((impact_radius * 2, impact_radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(impact_surface, (*color, int(impact_alpha * 0.5)), (impact_radius, impact_radius), impact_radius)
+            self.screen.blit(impact_surface, (target_pos[0] - impact_radius, target_pos[1] - impact_radius))
 
     def _render_impact_effect(self, color: Tuple[int, int, int], effect_type: str = "explosion"):
         """Отрисовка эффекта попадания"""
@@ -1331,11 +1433,18 @@ class TestArena:
             slot_num = self.font_small.render(str(i + 1), True, self.COLORS["text_dark"])
             self.screen.blit(slot_num, (slot_x + 4, slot_y + 4))
 
-            # Название умения (первая буква)
-            skill_label = self.font.render(skill.name[0], True, self.COLORS["text"])
-            label_x = slot_x + (slot_size - skill_label.get_width()) // 2
-            label_y = slot_y + (slot_size - skill_label.get_height()) // 2
-            self.screen.blit(skill_label, (label_x, label_y))
+            # Иконка умения или первая буква
+            if skill.skill_id in self.skill_icons:
+                icon = self.skill_icons[skill.skill_id]
+                icon_x = slot_x + (slot_size - icon.get_width()) // 2
+                icon_y = slot_y + (slot_size - icon.get_height()) // 2
+                self.screen.blit(icon, (icon_x, icon_y))
+            else:
+                # Fallback - первая буква названия
+                skill_label = self.font.render(skill.name[0], True, self.COLORS["text"])
+                label_x = slot_x + (slot_size - skill_label.get_width()) // 2
+                label_y = slot_y + (slot_size - skill_label.get_height()) // 2
+                self.screen.blit(skill_label, (label_x, label_y))
 
             # Перезарядка
             if skill.current_cooldown > 0:
