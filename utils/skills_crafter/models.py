@@ -532,6 +532,7 @@ class AnimationDisplayType(Enum):
     STATIC = "static"          # Статическая анимация в одном месте
     PROJECTILE = "projectile"  # Снаряд летит от кастера к цели (стрела, фаербол)
     BEAM = "beam"              # Луч/линия от кастера к цели (молния, лазер)
+    SPRITE_BEAM = "sprite_beam"  # Спрайтовый луч от кастера к цели (молния со спрайтами)
     IMPACT = "impact"          # Появляется в точке попадания (взрыв, удар)
     AREA = "area"              # Покрывает область (AoE эффекты)
     ON_CASTER = "on_caster"    # Отображается на кастере (баффы, ауры)
@@ -544,6 +545,7 @@ class AnimationDisplayType(Enum):
             cls.STATIC.value: "Статическая",
             cls.PROJECTILE.value: "Снаряд (летит к цели)",
             cls.BEAM.value: "Луч (линия к цели)",
+            cls.SPRITE_BEAM.value: "Спрайтовый луч (от кастера к цели)",
             cls.IMPACT.value: "Удар (в точке попадания)",
             cls.AREA.value: "Область (AoE)",
             cls.ON_CASTER.value: "На кастере",
