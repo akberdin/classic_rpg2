@@ -1175,7 +1175,9 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         type_frame.pack(fill=tk.X, pady=5, padx=5)
 
         ttk.Label(type_frame, text="Тип анимации:").pack(side=tk.LEFT)
-        self.display_type_var = tk.StringVar(value="on_target")
+        # Используем отображаемое имя, а не ключ
+        default_display_type = self.display_types.get("on_target", "На цели")
+        self.display_type_var = tk.StringVar(value=default_display_type)
         self.display_type_combo = ttk.Combobox(
             type_frame,
             textvariable=self.display_type_var,
@@ -1191,7 +1193,9 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         anchor_frame.pack(fill=tk.X, pady=5, padx=5)
 
         ttk.Label(anchor_frame, text="Точка привязки:").pack(side=tk.LEFT)
-        self.anchor_var = tk.StringVar(value="center")
+        # Используем отображаемое имя, а не ключ
+        default_anchor = self.anchor_points.get("center", "Центр")
+        self.anchor_var = tk.StringVar(value=default_anchor)
         self.anchor_combo = ttk.Combobox(
             anchor_frame,
             textvariable=self.anchor_var,
@@ -1499,7 +1503,7 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         # Показываем нужные настройки
         if type_key == "projectile":
             self.projectile_frame.pack(fill=tk.X, pady=5, padx=5)
-        elif type_key == "beam":
+        elif type_key in ("beam", "sprite_beam"):
             self.beam_frame.pack(fill=tk.X, pady=5, padx=5)
         elif type_key == "area":
             self.area_frame.pack(fill=tk.X, pady=5, padx=5)
@@ -1550,7 +1554,7 @@ class AnimationDisplaySettings(ttk.LabelFrame):
                 "trail_color": self.proj_trail_color_var.get(),
             }
 
-        elif display_type == "beam":
+        elif display_type in ("beam", "sprite_beam"):
             data["beam"] = {
                 "width": self.beam_width_var.get(),
                 "duration_ms": self.beam_duration_var.get(),

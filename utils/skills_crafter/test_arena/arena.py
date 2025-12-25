@@ -390,43 +390,186 @@ class TestArena:
 
         return reachable
 
+    def get_units_in_aoe(self, center_x: int, center_y: int, radius: int,
+                         area_type: str = "circle", caster: Optional[ArenaUnit] = None) -> List[ArenaUnit]:
+        """
+        Получить всех юнитов в области действия AoE
+
+        Args:
+            center_x, center_y: Центр области
+            radius: Радиус области в клетках
+            area_type: Тип области (circle, line, cone, cross)
+            caster: Кастер для определения направления (для line/cone)
+        """
+        targets = []
+
+        for unit in self.all_units:
+            if not unit.character.is_alive:
+                continue
+
+            dx = unit.x - center_x
+            dy = unit.y - center_y
+            distance = math.sqrt(dx * dx + dy * dy)
+
+            if area_type == "circle":
+                # Круговая область
+                if distance <= radius:
+                    targets.append(unit)
+
+            elif area_type == "cross":
+                # Крестообразная область
+                if (abs(dx) <= radius and dy == 0) or (abs(dy) <= radius and dx == 0):
+                    targets.append(unit)
+
+            elif area_type == "line" and caster:
+                # Линия от кастера через центр
+                # Вектор направления
+                dir_x = center_x - caster.x
+                dir_y = center_y - caster.y
+                dir_len = math.sqrt(dir_x * dir_x + dir_y * dir_y)
+                if dir_len > 0:
+                    dir_x /= dir_len
+                    dir_y /= dir_len
+                    # Проверяем, находится ли юнит на линии
+                    to_unit_x = unit.x - caster.x
+                    to_unit_y = unit.y - caster.y
+                    # Проекция на направление
+                    proj = to_unit_x * dir_x + to_unit_y * dir_y
+                    # Перпендикулярное расстояние
+                    perp_x = to_unit_x - proj * dir_x
+                    perp_y = to_unit_y - proj * dir_y
+                    perp_dist = math.sqrt(perp_x * perp_x + perp_y * perp_y)
+                    if proj >= 0 and proj <= radius + dir_len and perp_dist <= 0.5:
+                        targets.append(unit)
+
+            elif area_type == "cone" and caster:
+                # Конус от кастера
+                dir_x = center_x - caster.x
+                dir_y = center_y - caster.y
+                dir_len = math.sqrt(dir_x * dir_x + dir_y * dir_y)
+                if dir_len > 0:
+                    to_unit_x = unit.x - caster.x
+                    to_unit_y = unit.y - caster.y
+                    to_unit_len = math.sqrt(to_unit_x * to_unit_x + to_unit_y * to_unit_y)
+                    if to_unit_len > 0 and to_unit_len <= radius:
+                        # Угол между направлением и юнитом
+                        dot = (dir_x * to_unit_x + dir_y * to_unit_y) / (dir_len * to_unit_len)
+                        angle = math.degrees(math.acos(max(-1, min(1, dot))))
+                        if angle <= 30:  # 60 градусов конус (±30)
+                            targets.append(unit)
+            else:
+                # По умолчанию - круг
+                if distance <= radius:
+                    targets.append(unit)
+
+        return targets
+
     def use_skill_on_target(self, skill: TestSkill, caster: ArenaUnit, target: ArenaUnit):
-        """Использовать умение на цель"""
-        result = skill.use(caster.character, target.character)
+        """Использовать умение на цель (с поддержкой AoE)"""
+        # Проверяем, есть ли AoE
+        is_aoe = skill.area_radius > 0 and skill.area_type != "single"
 
-        if result["success"]:
-            self.add_to_log(result["message"])
+        if is_aoe:
+            # Получаем все цели в области действия
+            aoe_targets = self.get_units_in_aoe(
+                target.x, target.y,
+                skill.area_radius,
+                skill.area_type,
+                caster
+            )
 
-            # Запускаем анимацию
+            # Если нет целей, используем только основную
+            if not aoe_targets:
+                aoe_targets = [target]
+
+            # Запускаем анимацию (для основной цели)
             self.start_animation(skill, caster, target)
 
-            # Создаем всплывающий текст для урона
-            if result.get("damage", 0) > 0:
-                is_crit = result.get("is_crit", False)
-                self.add_floating_text(
-                    target,
-                    str(result["damage"]),
-                    is_heal=False,
-                    is_crit=is_crit
-                )
+            # Применяем урон ко всем целям в AoE
+            total_damage = 0
+            targets_hit = 0
 
-            # Создаем всплывающий текст для лечения
-            if result.get("healing", 0) > 0:
-                heal_target = target if skill.target_type in ["single_ally", "self"] else caster
-                self.add_floating_text(
-                    heal_target,
-                    f"+{result['healing']}",
-                    is_heal=True,
-                    is_crit=False
-                )
+            for aoe_target in aoe_targets:
+                if aoe_target == caster and not skill.target_type == "self":
+                    continue  # Не бьём себя, если не self-умение
 
-            # Удаляем мертвых
-            for unit in self.all_units[:]:
-                if not unit.character.is_alive:
-                    if unit != self.player_unit:
-                        self.add_to_log(f"{unit.character.name} уничтожен!")
+                # Применяем умение (только первый раз тратит ресурсы)
+                if targets_hit == 0:
+                    result = skill.use(caster.character, aoe_target.character)
+                else:
+                    # Для дополнительных целей просто наносим урон
+                    if skill.base_damage > 0:
+                        import random
+                        damage = skill.get_damage(caster.character)
+                        is_crit = random.random() < 0.1
+                        if is_crit:
+                            damage = int(damage * 2.0)
+                        actual_damage = aoe_target.character.take_damage(damage)
+                        result = {
+                            "success": True,
+                            "damage": actual_damage,
+                            "is_crit": is_crit
+                        }
+                    else:
+                        result = {"success": True, "damage": 0, "is_crit": False}
+
+                if result.get("success"):
+                    targets_hit += 1
+                    damage = result.get("damage", 0)
+                    total_damage += damage
+
+                    # Всплывающий текст для каждой цели
+                    if damage > 0:
+                        self.add_floating_text(
+                            aoe_target,
+                            str(damage),
+                            is_heal=False,
+                            is_crit=result.get("is_crit", False)
+                        )
+
+            # Логируем результат AoE
+            if targets_hit > 0:
+                self.add_to_log(
+                    f"{caster.character.name} использует {skill.name} - "
+                    f"поражено {targets_hit} целей, всего урона: {total_damage}"
+                )
         else:
-            self.add_to_log(f"Ошибка: {result['message']}")
+            # Одиночная цель
+            result = skill.use(caster.character, target.character)
+
+            if result["success"]:
+                self.add_to_log(result["message"])
+
+                # Запускаем анимацию
+                self.start_animation(skill, caster, target)
+
+                # Создаем всплывающий текст для урона
+                if result.get("damage", 0) > 0:
+                    is_crit = result.get("is_crit", False)
+                    self.add_floating_text(
+                        target,
+                        str(result["damage"]),
+                        is_heal=False,
+                        is_crit=is_crit
+                    )
+
+                # Создаем всплывающий текст для лечения
+                if result.get("healing", 0) > 0:
+                    heal_target = target if skill.target_type in ["single_ally", "self"] else caster
+                    self.add_floating_text(
+                        heal_target,
+                        f"+{result['healing']}",
+                        is_heal=True,
+                        is_crit=False
+                    )
+            else:
+                self.add_to_log(f"Ошибка: {result['message']}")
+
+        # Удаляем мертвых (для обоих случаев)
+        for unit in self.all_units[:]:
+            if not unit.character.is_alive:
+                if unit != self.player_unit:
+                    self.add_to_log(f"{unit.character.name} уничтожен!")
 
     def add_floating_text(self, unit: ArenaUnit, text: str, is_heal: bool = False, is_crit: bool = False):
         """Добавить всплывающий текст над юнитом"""
@@ -933,6 +1076,109 @@ class TestArena:
                 screen_y = self.arena_y + cell_y * self.CELL_SIZE
 
                 self.screen.blit(range_surface, (screen_x, screen_y))
+
+        # Отображаем область AoE при наведении на клетку
+        self._render_aoe_preview()
+
+    def _render_aoe_preview(self):
+        """Отрисовка превью области AoE при наведении"""
+        if not self.selected_skill or not self.hovered_cell:
+            return
+
+        skill = self.selected_skill
+
+        # Проверяем, есть ли AoE
+        if skill.area_radius <= 0 or skill.area_type == "single":
+            return
+
+        center_x, center_y = self.hovered_cell
+        radius = skill.area_radius
+
+        # Создаем полупрозрачную красную поверхность для AoE
+        aoe_surface = pygame.Surface((self.CELL_SIZE, self.CELL_SIZE), pygame.SRCALPHA)
+        aoe_surface.fill(self.COLORS["skill_area"])
+
+        if skill.area_type == "circle":
+            # Круговая область
+            for dx in range(-radius, radius + 1):
+                for dy in range(-radius, radius + 1):
+                    cell_x = center_x + dx
+                    cell_y = center_y + dy
+
+                    if cell_x < 0 or cell_x >= self.ARENA_WIDTH:
+                        continue
+                    if cell_y < 0 or cell_y >= self.ARENA_HEIGHT:
+                        continue
+
+                    distance = math.sqrt(dx * dx + dy * dy)
+                    if distance <= radius:
+                        screen_x = self.arena_x + cell_x * self.CELL_SIZE
+                        screen_y = self.arena_y + cell_y * self.CELL_SIZE
+                        self.screen.blit(aoe_surface, (screen_x, screen_y))
+
+        elif skill.area_type == "cross":
+            # Крестообразная область
+            for d in range(-radius, radius + 1):
+                # Горизонтальная линия
+                cell_x = center_x + d
+                if 0 <= cell_x < self.ARENA_WIDTH and 0 <= center_y < self.ARENA_HEIGHT:
+                    screen_x = self.arena_x + cell_x * self.CELL_SIZE
+                    screen_y = self.arena_y + center_y * self.CELL_SIZE
+                    self.screen.blit(aoe_surface, (screen_x, screen_y))
+
+                # Вертикальная линия
+                cell_y = center_y + d
+                if 0 <= center_x < self.ARENA_WIDTH and 0 <= cell_y < self.ARENA_HEIGHT:
+                    if d != 0:  # Не рисуем центр дважды
+                        screen_x = self.arena_x + center_x * self.CELL_SIZE
+                        screen_y = self.arena_y + cell_y * self.CELL_SIZE
+                        self.screen.blit(aoe_surface, (screen_x, screen_y))
+
+        elif skill.area_type == "line" and self.player_unit:
+            # Линия от игрока через центр
+            dir_x = center_x - self.player_unit.x
+            dir_y = center_y - self.player_unit.y
+            dir_len = math.sqrt(dir_x * dir_x + dir_y * dir_y)
+            if dir_len > 0:
+                dir_x /= dir_len
+                dir_y /= dir_len
+                for i in range(int(dir_len) + radius + 1):
+                    cell_x = int(self.player_unit.x + dir_x * i)
+                    cell_y = int(self.player_unit.y + dir_y * i)
+                    if 0 <= cell_x < self.ARENA_WIDTH and 0 <= cell_y < self.ARENA_HEIGHT:
+                        screen_x = self.arena_x + cell_x * self.CELL_SIZE
+                        screen_y = self.arena_y + cell_y * self.CELL_SIZE
+                        self.screen.blit(aoe_surface, (screen_x, screen_y))
+
+        elif skill.area_type == "cone" and self.player_unit:
+            # Конус от игрока
+            dir_x = center_x - self.player_unit.x
+            dir_y = center_y - self.player_unit.y
+            dir_len = math.sqrt(dir_x * dir_x + dir_y * dir_y)
+            if dir_len > 0:
+                base_angle = math.atan2(dir_y, dir_x)
+                cone_half_angle = math.radians(30)  # 60 градусов
+
+                for dx in range(-radius, radius + 1):
+                    for dy in range(-radius, radius + 1):
+                        cell_x = self.player_unit.x + dx
+                        cell_y = self.player_unit.y + dy
+
+                        if cell_x < 0 or cell_x >= self.ARENA_WIDTH:
+                            continue
+                        if cell_y < 0 or cell_y >= self.ARENA_HEIGHT:
+                            continue
+
+                        dist = math.sqrt(dx * dx + dy * dy)
+                        if dist > 0 and dist <= radius:
+                            angle_to_cell = math.atan2(dy, dx)
+                            angle_diff = abs(angle_to_cell - base_angle)
+                            if angle_diff > math.pi:
+                                angle_diff = 2 * math.pi - angle_diff
+                            if angle_diff <= cone_half_angle:
+                                screen_x = self.arena_x + cell_x * self.CELL_SIZE
+                                screen_y = self.arena_y + cell_y * self.CELL_SIZE
+                                self.screen.blit(aoe_surface, (screen_x, screen_y))
 
     def _render_units(self):
         """Отрисовка юнитов"""
