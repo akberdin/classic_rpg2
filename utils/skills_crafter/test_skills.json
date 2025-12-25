@@ -7,37 +7,138 @@
     "skill_type": "active",
     "costs": {
       "mana_cost": 15,
+      "mana_cost_per_rank": 0,
       "stamina_cost": 0,
+      "stamina_cost_per_rank": 0,
       "health_cost": 0,
-      "cooldown": 2
+      "health_cost_per_rank": 0,
+      "cooldown": 0,
+      "cooldown_reduction_per_rank": 0
+    },
+    "requirements": {
+      "level_required": 1,
+      "required_weapon": "any",
+      "required_skills": [],
+      "required_skill_ranks": {},
+      "min_strength": 0,
+      "min_dexterity": 0,
+      "min_constitution": 0,
+      "min_intelligence": 0,
+      "min_spirit": 0
     },
     "targeting": {
       "target_type": "single_enemy",
-      "area_type": "single",
-      "tactical_range": 6
+      "area_type": "circle",
+      "tactical_range": 10,
+      "min_range": 0,
+      "range_per_rank": 0,
+      "aoe_radius": 5,
+      "aoe_radius_per_rank": 0,
+      "cone_angle": 60,
+      "line_width": 1,
+      "can_target_self": false,
+      "requires_line_of_sight": true,
+      "knockback_chance": 0.0,
+      "knockback_chance_per_rank": 0.0,
+      "knockback_distance": 1
     },
     "status_effects": [
       {
         "effect_type": "stun",
-        "name": "Оглушение",
         "chance_base": 0.5,
+        "chance_per_rank": 0.0,
         "duration_base": 2,
-        "value_base": 0
+        "duration_per_rank": 0,
+        "value_base": 0.0,
+        "value_per_rank": 2.0,
+        "spread_chance": 0.0,
+        "spread_chance_per_rank": 0.0
       }
     ],
-    "damage": {
-      "base_damage": 20,
-      "damage_multiplier_per_rank": 0.2,
-      "scaling": [{"attribute": "intelligence", "factor": 0.7}]
+    "rank_progression": {
+      "max_rank": 5,
+      "base_experience": 100,
+      "experience_multiplier": 1.5,
+      "uses_per_rank_multiplier": 20,
+      "level_per_rank_multiplier": 5,
+      "gold_base_cost": 50,
+      "gold_multiplier": 1.0,
+      "descriptions_per_rank": [
+        "Ранг 1: Урон x1.00, Оглушение 0 (2 ход.), шанс 50%",
+        "Ранг 2: Урон x1.20, Оглушение 2 (2 ход.), шанс 50%",
+        "Ранг 3: Урон x1.40, Оглушение 4 (2 ход.), шанс 50%",
+        "Ранг 4: Урон x1.60, Оглушение 6 (2 ход.), шанс 50%",
+        "Ранг 5: Урон x1.80, Оглушение 8 (2 ход.), шанс 50%"
+      ]
     },
     "visuals": {
-      "display_type": "impact",
+      "icon_path": "skills\\lightning.png",
+      "animation_type": "default",
+      "particle_effect": "",
+      "sound_use": "",
+      "sound_hit": "",
+      "color_primary": "#FFFFFF",
+      "color_secondary": "#888888",
       "animation_frames": [
-        {"sprite_path": "skills/anim/anim_skill_lightning/lightning_01.png", "duration_ms": 100}
-      ]
+        {
+          "sprite_path": "skills\\anim\\anim_skill_lightning\\lightning_01.png",
+          "duration_ms": 100
+        },
+        {
+          "sprite_path": "skills\\anim\\anim_skill_lightning\\lightning_02.png",
+          "duration_ms": 100
+        },
+        {
+          "sprite_path": "skills\\anim\\anim_skill_lightning\\lightning_03.png",
+          "duration_ms": 100
+        },
+        {
+          "sprite_path": "skills\\anim\\anim_skill_lightning\\lightning_04.png",
+          "duration_ms": 100
+        },
+        {
+          "sprite_path": "skills\\anim\\anim_skill_lightning\\lightning_05.png",
+          "duration_ms": 100
+        },
+        {
+          "sprite_path": "skills\\anim\\anim_skill_lightning\\lightning_06.png",
+          "duration_ms": 100
+        }
+      ],
+      "animation_fps": 10,
+      "animation_loop_mode": "once",
+      "animation_scale": 1.0,
+      "display_type": "impact",
+      "anchor_point": "bottom",
+      "timing": {
+        "damage_apply_at": "on_hit",
+        "damage_delay_ms": 2000,
+        "multi_hit_delay_ms": 2000,
+        "sound_delay_ms": 0
+      }
+    },
+    "damage": {
+      "base_damage": 50.0,
+      "damage_multiplier": 1.0,
+      "damage_multiplier_per_rank": 0.2,
+      "scaling": [
+        {
+          "attribute": "intelligence",
+          "multiplier": 1.0,
+          "multiplier_per_rank": 0.0
+        }
+      ],
+      "ignores_armor": true,
+      "armor_penetration_base": 0.0,
+      "armor_penetration_per_rank": 0.0,
+      "crit_chance_bonus": 5.0,
+      "crit_chance_per_rank": 0.0,
+      "crit_damage_multiplier": 2.0,
+      "hit_count_base": 4,
+      "hit_count_per_rank": 0,
+      "damage_per_hit_multiplier": 1.0
     }
   },
-
   {
     "skill_id": "test_fireball",
     "name": "Огненный шар",
@@ -46,127 +147,125 @@
     "skill_type": "active",
     "costs": {
       "mana_cost": 18,
+      "mana_cost_per_rank": 0,
       "stamina_cost": 0,
+      "stamina_cost_per_rank": 0,
       "health_cost": 0,
-      "cooldown": 2
+      "health_cost_per_rank": 0,
+      "cooldown": 2,
+      "cooldown_reduction_per_rank": 0
+    },
+    "requirements": {
+      "level_required": 1,
+      "required_weapon": "any",
+      "required_skills": [],
+      "required_skill_ranks": {},
+      "min_strength": 0,
+      "min_dexterity": 0,
+      "min_constitution": 0,
+      "min_intelligence": 0,
+      "min_spirit": 0
     },
     "targeting": {
       "target_type": "single_enemy",
       "area_type": "circle",
       "tactical_range": 5,
-      "aoe_radius": 1
+      "min_range": 0,
+      "range_per_rank": 0,
+      "aoe_radius": 1,
+      "aoe_radius_per_rank": 0,
+      "cone_angle": 60,
+      "line_width": 1,
+      "can_target_self": false,
+      "requires_line_of_sight": true,
+      "knockback_chance": 0.0,
+      "knockback_chance_per_rank": 0.0,
+      "knockback_distance": 1
     },
     "status_effects": [
       {
         "effect_type": "burn",
-        "name": "Горение",
         "chance_base": 0.6,
+        "chance_per_rank": 0.0,
         "duration_base": 3,
-        "value_base": 5
+        "duration_per_rank": 0,
+        "value_base": 5.0,
+        "value_per_rank": 2.0,
+        "spread_chance": 0.0,
+        "spread_chance_per_rank": 0.0
       }
     ],
+    "rank_progression": {
+      "max_rank": 5,
+      "base_experience": 100,
+      "experience_multiplier": 1.5,
+      "uses_per_rank_multiplier": 20,
+      "level_per_rank_multiplier": 5,
+      "gold_base_cost": 50,
+      "gold_multiplier": 1.0,
+      "descriptions_per_rank": [
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    "visuals": {
+      "icon_path": "skills\\fire_arrow.png",
+      "animation_type": "default",
+      "particle_effect": "",
+      "sound_use": "",
+      "sound_hit": "",
+      "color_primary": "#FFFFFF",
+      "color_secondary": "#888888",
+      "animation_frames": [],
+      "animation_fps": 10,
+      "animation_loop_mode": "once",
+      "animation_scale": 1.0,
+      "display_type": "projectile",
+      "anchor_point": "center",
+      "timing": {
+        "damage_apply_at": "on_hit",
+        "damage_delay_ms": 0,
+        "multi_hit_delay_ms": 200,
+        "sound_delay_ms": 0
+      },
+      "projectile": {
+        "speed": 300.0,
+        "trajectory": "straight",
+        "arc_height": 50.0,
+        "auto_rotate": true,
+        "rotation_offset": 0.0,
+        "impact_animation": "",
+        "impact_scale": 1.0,
+        "trail_enabled": false,
+        "trail_color": "#FFFFFF",
+        "trail_length": 5
+      }
+    },
     "damage": {
-      "base_damage": 25,
+      "base_damage": 25.0,
+      "damage_multiplier": 1.0,
       "damage_multiplier_per_rank": 0.25,
-      "scaling": [{"attribute": "intelligence", "factor": 0.8}]
-    },
-    "visuals": {
-      "display_type": "projectile",
-      "projectile": {"speed": 300, "trajectory": "straight"}
+      "scaling": [
+        {
+          "attribute": "intelligence",
+          "multiplier": 1.0,
+          "multiplier_per_rank": 0.0
+        }
+      ],
+      "ignores_armor": false,
+      "armor_penetration_base": 0.0,
+      "armor_penetration_per_rank": 0.0,
+      "crit_chance_bonus": 0.0,
+      "crit_chance_per_rank": 0.0,
+      "crit_damage_multiplier": 2.0,
+      "hit_count_base": 1,
+      "hit_count_per_rank": 0,
+      "damage_per_hit_multiplier": 1.0
     }
   },
-
-  {
-    "skill_id": "test_ice_bolt",
-    "name": "Ледяная стрела",
-    "description": "Быстрый ледяной снаряд",
-    "category": "magic",
-    "skill_type": "active",
-    "costs": {
-      "mana_cost": 12,
-      "stamina_cost": 0,
-      "health_cost": 0,
-      "cooldown": 1
-    },
-    "targeting": {
-      "target_type": "single_enemy",
-      "area_type": "single",
-      "tactical_range": 7
-    },
-    "damage": {
-      "base_damage": 18,
-      "damage_multiplier_per_rank": 0.2,
-      "scaling": [{"attribute": "intelligence", "factor": 0.6}]
-    },
-    "visuals": {
-      "display_type": "projectile",
-      "projectile": {"speed": 450, "trajectory": "straight"}
-    }
-  },
-
-  {
-    "skill_id": "test_power_strike",
-    "name": "Мощный удар",
-    "description": "Сильный удар с повышенным уроном",
-    "category": "warrior",
-    "skill_type": "active",
-    "costs": {
-      "mana_cost": 0,
-      "stamina_cost": 20,
-      "health_cost": 0,
-      "cooldown": 2
-    },
-    "targeting": {
-      "target_type": "single_enemy",
-      "area_type": "single",
-      "tactical_range": 1
-    },
-    "damage": {
-      "base_damage": 35,
-      "damage_multiplier_per_rank": 0.3,
-      "scaling": [{"attribute": "strength", "factor": 0.8}]
-    },
-    "visuals": {
-      "display_type": "static"
-    }
-  },
-
-  {
-    "skill_id": "test_poison_strike",
-    "name": "Отравленный удар",
-    "description": "Удар с ядом, наносящий урон со временем",
-    "category": "shadow",
-    "skill_type": "active",
-    "costs": {
-      "mana_cost": 10,
-      "stamina_cost": 10,
-      "health_cost": 0,
-      "cooldown": 3
-    },
-    "targeting": {
-      "target_type": "single_enemy",
-      "area_type": "single",
-      "tactical_range": 1
-    },
-    "status_effects": [
-      {
-        "effect_type": "poison",
-        "name": "Отравление",
-        "chance_base": 0.8,
-        "duration_base": 4,
-        "value_base": 8
-      }
-    ],
-    "damage": {
-      "base_damage": 15,
-      "damage_multiplier_per_rank": 0.15,
-      "scaling": [{"attribute": "dexterity", "factor": 0.5}]
-    },
-    "visuals": {
-      "display_type": "static"
-    }
-  },
-
   {
     "skill_id": "test_arrow_shot",
     "name": "Выстрел",
@@ -175,80 +274,111 @@
     "skill_type": "active",
     "costs": {
       "mana_cost": 0,
+      "mana_cost_per_rank": 0,
       "stamina_cost": 8,
+      "stamina_cost_per_rank": 0,
       "health_cost": 0,
-      "cooldown": 0
+      "health_cost_per_rank": 0,
+      "cooldown": 0,
+      "cooldown_reduction_per_rank": 0
+    },
+    "requirements": {
+      "level_required": 1,
+      "required_weapon": "any",
+      "required_skills": [],
+      "required_skill_ranks": {},
+      "min_strength": 0,
+      "min_dexterity": 0,
+      "min_constitution": 0,
+      "min_intelligence": 0,
+      "min_spirit": 0
     },
     "targeting": {
       "target_type": "single_enemy",
       "area_type": "single",
-      "tactical_range": 8
+      "tactical_range": 8,
+      "min_range": 0,
+      "range_per_rank": 0,
+      "aoe_radius": 0,
+      "aoe_radius_per_rank": 0,
+      "cone_angle": 60,
+      "line_width": 1,
+      "can_target_self": false,
+      "requires_line_of_sight": true,
+      "knockback_chance": 0.0,
+      "knockback_chance_per_rank": 0.0,
+      "knockback_distance": 1
+    },
+    "status_effects": [],
+    "rank_progression": {
+      "max_rank": 5,
+      "base_experience": 100,
+      "experience_multiplier": 1.5,
+      "uses_per_rank_multiplier": 20,
+      "level_per_rank_multiplier": 5,
+      "gold_base_cost": 50,
+      "gold_multiplier": 1.0,
+      "descriptions_per_rank": [
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    "visuals": {
+      "icon_path": "skills\\basic_shot.png",
+      "animation_type": "default",
+      "particle_effect": "",
+      "sound_use": "",
+      "sound_hit": "",
+      "color_primary": "#FFFFFF",
+      "color_secondary": "#888888",
+      "animation_frames": [],
+      "animation_fps": 10,
+      "animation_loop_mode": "once",
+      "animation_scale": 1.0,
+      "display_type": "projectile",
+      "anchor_point": "center",
+      "timing": {
+        "damage_apply_at": "on_hit",
+        "damage_delay_ms": 0,
+        "multi_hit_delay_ms": 200,
+        "sound_delay_ms": 0
+      },
+      "projectile": {
+        "speed": 500.0,
+        "trajectory": "straight",
+        "arc_height": 50.0,
+        "auto_rotate": true,
+        "rotation_offset": 0.0,
+        "impact_animation": "",
+        "impact_scale": 1.0,
+        "trail_enabled": false,
+        "trail_color": "#FFFFFF",
+        "trail_length": 5
+      }
     },
     "damage": {
-      "base_damage": 12,
+      "base_damage": 12.0,
+      "damage_multiplier": 1.0,
       "damage_multiplier_per_rank": 0.2,
-      "scaling": [{"attribute": "dexterity", "factor": 0.6}]
-    },
-    "visuals": {
-      "display_type": "projectile",
-      "projectile": {"speed": 500, "trajectory": "straight"}
-    }
-  },
-
-  {
-    "skill_id": "test_heal",
-    "name": "Лечение",
-    "description": "Восстанавливает здоровье союзника",
-    "category": "magic",
-    "skill_type": "active",
-    "costs": {
-      "mana_cost": 20,
-      "stamina_cost": 0,
-      "health_cost": 0,
-      "cooldown": 3
-    },
-    "targeting": {
-      "target_type": "single_ally",
-      "area_type": "single",
-      "tactical_range": 4
-    },
-    "healing": {
-      "base_healing": 35,
-      "healing_per_rank": 15
-    },
-    "visuals": {
-      "display_type": "on_target"
-    }
-  },
-
-  {
-    "skill_id": "test_regeneration",
-    "name": "Регенерация",
-    "description": "Накладывает эффект восстановления здоровья",
-    "category": "magic",
-    "skill_type": "active",
-    "costs": {
-      "mana_cost": 25,
-      "stamina_cost": 0,
-      "health_cost": 0,
-      "cooldown": 5
-    },
-    "targeting": {
-      "target_type": "self",
-      "area_type": "single",
-      "tactical_range": 0
-    },
-    "status_effects": [
-      {
-        "effect_type": "regeneration",
-        "name": "Регенерация",
-        "chance_base": 1.0,
-        "duration_base": 5,
-        "value_base": 12
-      }
-    ],
-    "visuals": {
-      "display_type": "on_caster"
+      "scaling": [
+        {
+          "attribute": "dexterity",
+          "multiplier": 1.0,
+          "multiplier_per_rank": 0.0
+        }
+      ],
+      "ignores_armor": false,
+      "armor_penetration_base": 0.0,
+      "armor_penetration_per_rank": 0.0,
+      "crit_chance_bonus": 0.0,
+      "crit_chance_per_rank": 0.0,
+      "crit_damage_multiplier": 2.0,
+      "hit_count_base": 1,
+      "hit_count_per_rank": 0,
+      "damage_per_hit_multiplier": 1.0
     }
   }
 ]
