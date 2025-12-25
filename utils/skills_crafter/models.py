@@ -788,6 +788,7 @@ class VisualData:
     animation_fps: int = 10  # Кадров в секунду (по умолчанию)
     animation_loop_mode: str = "once"  # once, loop, ping_pong
     animation_scale: float = 1.0  # Масштаб анимации
+    animation_vertical_offset: float = 0.0  # Вертикальное смещение анимации в пикселях
 
     # Настройки отображения анимации на поле боя
     display_type: str = "on_target"    # Тип отображения (static, projectile, beam, etc.)
@@ -815,6 +816,7 @@ class VisualData:
             "animation_fps": self.animation_fps,
             "animation_loop_mode": self.animation_loop_mode,
             "animation_scale": self.animation_scale,
+            "animation_vertical_offset": self.animation_vertical_offset,
             "display_type": self.display_type,
             "anchor_point": self.anchor_point,
             "timing": self.timing.to_dict(),
@@ -857,6 +859,7 @@ class VisualData:
             animation_fps=data.get("animation_fps", 10),
             animation_loop_mode=data.get("animation_loop_mode", "once"),
             animation_scale=data.get("animation_scale", 1.0),
+            animation_vertical_offset=data.get("animation_vertical_offset", 0.0),
             display_type=data.get("display_type", "on_target"),
             anchor_point=data.get("anchor_point", "center"),
             projectile=projectile,
