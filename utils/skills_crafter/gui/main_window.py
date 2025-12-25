@@ -42,6 +42,7 @@ class SkillsCrafterApp:
         self.project_root = Path(__file__).parent.parent.parent.parent
         self.config_path = self.project_root / "game" / "config"
         self.assets_path = self.project_root / "assets"
+        self.settings_file = Path(__file__).parent.parent / ".skills_crafter_settings.json"
 
         # Настройка стилей
         self._setup_styles()
@@ -53,6 +54,9 @@ class SkillsCrafterApp:
 
         # Привязка событий
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+
+        # Загружаем последний открытый файл
+        self._load_last_config()
 
     def _setup_styles(self):
         """Настройка стилей ttk"""
@@ -1026,6 +1030,71 @@ class SkillsCrafterApp:
         self.modified = False
         self.modified_label.configure(text="")
 
+    def _set_status(self, text: str):
+        """Установить текст статус-бара"""
+        if hasattr(self, 'status_label'):
+            self.status_label.configure(text=text)
+
+    def _load_last_config(self):
+        """Загрузить последний открытый конфиг"""
+        if not self.settings_file.exists():
+            return
+
+        try:
+            with open(self.settings_file, 'r', encoding='utf-8') as f:
+                settings = json.load(f)
+
+            last_file = settings.get('last_file')
+            if last_file and os.path.exists(last_file):
+                self._open_file_path(last_file)
+        except Exception as e:
+            print(f"Ошибка загрузки настроек: {e}")
+
+    def _save_settings(self):
+        """Сохранить настройки"""
+        try:
+            settings = {
+                'last_file': self.current_file
+            }
+            with open(self.settings_file, 'w', encoding='utf-8') as f:
+                json.dump(settings, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"Ошибка сохранения настроек: {e}")
+
+    def _open_file_path(self, filepath: str):
+        """Открыть файл по указанному пути"""
+        if not filepath or not os.path.exists(filepath):
+            return False
+
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            self.skills_list.clear()
+
+            if isinstance(data, list):
+                for item in data:
+                    self.skills_list.append(SkillData.from_dict(item))
+            elif isinstance(data, dict):
+                for skill_id, skill_data in data.items():
+                    if not skill_id.startswith("_"):
+                        skill_data["skill_id"] = skill_id
+                        self.skills_list.append(SkillData.from_dict(skill_data))
+
+            self._update_skills_listbox()
+            if self.skills_list:
+                self._load_skill_to_editor(self.skills_list[0])
+                self.skills_listbox.selection_set(0)
+
+            self.current_file = filepath
+            self._set_status(f"Открыт: {os.path.basename(filepath)}")
+            self._clear_modified()
+            return True
+
+        except Exception as e:
+            print(f"Ошибка открытия файла {filepath}: {e}")
+            return False
+
     def _toggle_damage_frame(self):
         """Показать/скрыть фрейм урона"""
         if self.has_damage.get():
@@ -1176,6 +1245,9 @@ class SkillsCrafterApp:
 
     def _filter_skills_list(self, *args):
         """Фильтрация списка умений"""
+        if not hasattr(self, 'skills_listbox'):
+            return
+
         search = self.search_var.get().lower()
         if search == "поиск...":
             search = ""
@@ -1634,6 +1706,7 @@ class SkillsCrafterApp:
             self.current_file = filepath
             self.status_label.configure(text=f"Открыт: {os.path.basename(filepath)}")
             self._clear_modified()
+            self._save_settings()
 
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось открыть файл:\n{e}")
