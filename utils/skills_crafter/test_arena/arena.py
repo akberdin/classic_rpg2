@@ -751,6 +751,7 @@ class TestArena:
         # Для луча используем beam_rotation_offset, для снаряда - projectile_rotation_offset
         if skill.animation_type in ("beam", "sprite_beam"):
             self.animation.rotation_offset = skill.beam_rotation_offset
+            print(f"[start_animation] sprite_beam: beam_rotation_offset = {skill.beam_rotation_offset}°")
         else:
             self.animation.rotation_offset = skill.projectile_rotation_offset
         self.animation.vertical_offset = skill.animation_vertical_offset
@@ -1515,6 +1516,11 @@ class TestArena:
         # Угол направления луча
         base_angle = math.degrees(math.atan2(-dy, dx))
 
+        # Отладочный вывод (только один раз в начале анимации)
+        if progress < 0.1:
+            print(f"[sprite_beam] base_angle={base_angle:.1f}°, rotation_offset={self.animation.rotation_offset:.1f}°")
+            print(f"[sprite_beam] Если спрайт направлен ВНИЗ, установите rotation_offset=90°")
+
         # Если нет загруженных спрайтов, используем обычный луч
         if not self.animation.loaded_sprites:
             self._render_beam_effect(color, progress)
@@ -1628,7 +1634,13 @@ class TestArena:
                     local_angle = math.degrees(math.atan2(-segment_dy, segment_dx))
 
             # Поворачиваем спрайт в направлении луча (или сегмента)
-            rotated_sprite = pygame.transform.rotate(sprite, local_angle + self.animation.rotation_offset)
+            # Формула предполагает, что исходный спрайт направлен ВПРАВО (0°)
+            # rotation_offset корректирует для спрайтов с другой ориентацией:
+            # - Спрайт направлен ВНИЗ: rotation_offset = 90°
+            # - Спрайт направлен ВЛЕВО: rotation_offset = 180°
+            # - Спрайт направлен ВВЕРХ: rotation_offset = -90°
+            final_angle = local_angle + self.animation.rotation_offset
+            rotated_sprite = pygame.transform.rotate(sprite, final_angle)
 
             # Применяем прозрачность
             if alpha < 255:
