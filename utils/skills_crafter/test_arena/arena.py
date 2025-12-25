@@ -1124,6 +1124,11 @@ class TestArena:
             if self.animation.caster and self.animation.target:
                 self._render_beam_effect(color, progress)
 
+        elif skill.animation_type == "sprite_beam":
+            # Спрайтовый луч от кастера к цели
+            if self.animation.caster and self.animation.target:
+                self._render_sprite_beam_effect(color, progress)
+
     def _render_beam_effect(self, color: Tuple[int, int, int], progress: float):
         """Отрисовка эффекта луча"""
         if not self.animation.caster or not self.animation.target:
@@ -1184,6 +1189,85 @@ class TestArena:
             impact_radius = int(15 + 10 * abs(math.sin(progress * 8 * math.pi)))
             impact_surface = pygame.Surface((impact_radius * 2, impact_radius * 2), pygame.SRCALPHA)
             pygame.draw.circle(impact_surface, (*color, int(impact_alpha * 0.5)), (impact_radius, impact_radius), impact_radius)
+            self.screen.blit(impact_surface, (target_pos[0] - impact_radius, target_pos[1] - impact_radius))
+
+    def _render_sprite_beam_effect(self, color: Tuple[int, int, int], progress: float):
+        """Отрисовка спрайтового луча от кастера к цели"""
+        if not self.animation.caster or not self.animation.target:
+            return
+
+        caster_pos = self.get_screen_pos_for_cell(
+            self.animation.caster.x,
+            self.animation.caster.y
+        )
+        target_pos = self.get_screen_pos_for_cell(
+            self.animation.target.x,
+            self.animation.target.y
+        )
+
+        # Вычисляем направление и расстояние
+        dx = target_pos[0] - caster_pos[0]
+        dy = target_pos[1] - caster_pos[1]
+        distance = math.sqrt(dx * dx + dy * dy)
+        angle = math.degrees(math.atan2(-dy, dx))  # Угол в градусах (pygame Y инвертирован)
+
+        # Если нет загруженных спрайтов, используем обычный луч
+        if not self.animation.loaded_sprites:
+            self._render_beam_effect(color, progress)
+            return
+
+        # Фазы: появление (0-0.2), удержание (0.2-0.8), затухание (0.8-1.0)
+        if progress < 0.2:
+            beam_progress = progress / 0.2
+            alpha = 255
+        elif progress < 0.8:
+            beam_progress = 1.0
+            alpha = 255
+        else:
+            beam_progress = 1.0
+            fade_progress = (progress - 0.8) / 0.2
+            alpha = int(255 * (1 - fade_progress))
+
+        # Длина луча (растет от кастера к цели)
+        current_distance = distance * beam_progress
+
+        # Получаем текущий спрайт анимации
+        if self.animation.current_frame < len(self.animation.loaded_sprites):
+            sprite, _ = self.animation.loaded_sprites[self.animation.current_frame]
+        else:
+            sprite, _ = self.animation.loaded_sprites[-1]
+
+        # Количество спрайтов вдоль луча (тайлинг)
+        sprite_width = sprite.get_width()
+        sprite_height = sprite.get_height()
+
+        # Определяем количество спрайтов для тайлинга
+        num_tiles = max(1, int(current_distance / sprite_width))
+
+        # Рисуем спрайты вдоль луча
+        for i in range(num_tiles):
+            # Позиция спрайта вдоль луча
+            t = (i + 0.5) / num_tiles  # 0.5 для центрирования
+            sprite_x = caster_pos[0] + dx * t * beam_progress
+            sprite_y = caster_pos[1] + dy * t * beam_progress
+
+            # Поворачиваем спрайт в направлении луча
+            rotated_sprite = pygame.transform.rotate(sprite, angle)
+
+            # Применяем прозрачность
+            if alpha < 255:
+                rotated_sprite = rotated_sprite.copy()
+                rotated_sprite.set_alpha(alpha)
+
+            # Рисуем спрайт
+            sprite_rect = rotated_sprite.get_rect(center=(int(sprite_x), int(sprite_y)))
+            self.screen.blit(rotated_sprite, sprite_rect)
+
+        # Эффект на цели (когда луч достиг)
+        if beam_progress >= 1.0:
+            impact_radius = int(20 + 10 * abs(math.sin(progress * 6 * math.pi)))
+            impact_surface = pygame.Surface((impact_radius * 2, impact_radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(impact_surface, (*color, int(alpha * 0.4)), (impact_radius, impact_radius), impact_radius)
             self.screen.blit(impact_surface, (target_pos[0] - impact_radius, target_pos[1] - impact_radius))
 
     def _render_impact_effect(self, color: Tuple[int, int, int], effect_type: str = "explosion"):

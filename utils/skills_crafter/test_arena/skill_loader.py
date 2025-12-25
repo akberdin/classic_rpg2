@@ -55,7 +55,7 @@ class TestSkill:
     status_effects: List[Dict[str, Any]] = field(default_factory=list)
 
     # Визуальные настройки
-    animation_type: str = "static"  # static, projectile, impact, on_target, on_caster, beam
+    animation_type: str = "static"  # static, projectile, impact, on_target, on_caster, beam, sprite_beam
     icon_path: str = ""
     animation_frames: List[AnimationFrame] = field(default_factory=list)
     projectile_speed: float = 300.0
