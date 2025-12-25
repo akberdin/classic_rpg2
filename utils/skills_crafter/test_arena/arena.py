@@ -51,7 +51,16 @@ class AnimationState:
     auto_rotate: bool = True
     rotation_offset: float = 0.0
     vertical_offset: float = 0.0
-    beam_sprite_mode: str = "tile"  # tile / stretch / single
+
+    # Параметры луча
+    beam_width: int = 8
+    beam_sprite_mode: str = "tile"
+    beam_color_start: Tuple[int, int, int] = (255, 255, 255)
+    beam_color_end: Tuple[int, int, int] = (255, 255, 255)
+    beam_glow_enabled: bool = True
+    beam_glow_radius: int = 4
+    beam_wave_amplitude: float = 0.0
+    beam_wave_frequency: float = 3.0
 
     # Загруженные спрайты анимации
     loaded_sprites: List = field(default_factory=list)
@@ -361,6 +370,13 @@ class TestArena:
         screen_x = self.arena_x + cell_x * self.CELL_SIZE + self.CELL_SIZE // 2
         screen_y = self.arena_y + cell_y * self.CELL_SIZE + self.CELL_SIZE // 2
         return (screen_x, screen_y)
+
+    def _hex_to_rgb(self, hex_color: str) -> Tuple[int, int, int]:
+        """Преобразовать HEX цвет в RGB кортеж"""
+        hex_color = hex_color.lstrip('#')
+        if len(hex_color) == 6:
+            return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        return (255, 255, 255)
 
     def can_move_to(self, cell_x: int, cell_y: int) -> bool:
         """Проверить, можно ли переместиться в клетку"""
@@ -749,15 +765,22 @@ class TestArena:
         self.animation.trajectory = skill.projectile_trajectory
         self.animation.speed = skill.projectile_speed
         self.animation.auto_rotate = skill.projectile_auto_rotate
-        # Для луча используем beam_rotation_offset, для снаряда - projectile_rotation_offset
+        self.animation.vertical_offset = skill.animation_vertical_offset
+
+        # Параметры луча
         if skill.animation_type in ("beam", "sprite_beam"):
             self.animation.rotation_offset = skill.beam_rotation_offset
             self.animation.beam_sprite_mode = skill.beam_sprite_mode
-            print(f"[start_animation] sprite_beam: rotation_offset={skill.beam_rotation_offset}°, mode={skill.beam_sprite_mode}")
+            self.animation.beam_width = skill.beam_width
+            self.animation.beam_wave_amplitude = skill.beam_wave_amplitude
+            self.animation.beam_wave_frequency = skill.beam_wave_frequency
+            self.animation.beam_glow_enabled = skill.beam_glow_enabled
+            self.animation.beam_glow_radius = skill.beam_glow_radius
+            # Преобразуем цвета из hex в RGB
+            self.animation.beam_color_start = self._hex_to_rgb(skill.beam_color_start)
+            self.animation.beam_color_end = self._hex_to_rgb(skill.beam_color_end)
         else:
             self.animation.rotation_offset = skill.projectile_rotation_offset
-            self.animation.beam_sprite_mode = "tile"
-        self.animation.vertical_offset = skill.animation_vertical_offset
 
         # Для снарядов
         if skill.animation_type == "projectile":
@@ -774,11 +797,14 @@ class TestArena:
             dx = target_pos[0] - caster_pos[0]
             dy = target_pos[1] - caster_pos[1]
             self.animation.distance = math.sqrt(dx * dx + dy * dy)
-
-            # Длительность = дистанция / скорость (скорость в пикселях/сек)
             self.animation.duration = self.animation.distance / self.animation.speed
+
+        elif skill.animation_type in ("beam", "sprite_beam"):
+            # Для лучей используем beam_duration_ms
+            self.animation.duration = skill.beam_duration_ms / 1000.0
+
         else:
-            # Для других типов: если есть кадры анимации, считаем общую длительность
+            # Для других типов: кадры анимации или animation_duration
             if self.animation.loaded_sprites:
                 total_duration_ms = sum(duration for _, duration in self.animation.loaded_sprites)
                 self.animation.duration = total_duration_ms / 1000.0
@@ -1429,6 +1455,10 @@ class TestArena:
             self.animation.target.y
         )
 
+        # Получаем настройки из animation
+        base_width = self.animation.beam_width
+        glow_radius = self.animation.beam_glow_radius if self.animation.beam_glow_enabled else 0
+
         # Фаза появления (0-0.2), удержания (0.2-0.8), затухания (0.8-1.0)
         if progress < 0.2:
             # Луч растет от кастера к цели
@@ -1436,31 +1466,32 @@ class TestArena:
             end_x = caster_pos[0] + (target_pos[0] - caster_pos[0]) * beam_progress
             end_y = caster_pos[1] + (target_pos[1] - caster_pos[1]) * beam_progress
             alpha = 255
-            width = int(6 * beam_progress) + 2
+            width = max(2, int(base_width * beam_progress))
         elif progress < 0.8:
             # Луч держится
             end_x, end_y = target_pos[0], target_pos[1]
             alpha = 255
             # Пульсация ширины
             pulse = abs(math.sin((progress - 0.2) * 10 * math.pi))
-            width = int(6 + 4 * pulse)
+            width = int(base_width + base_width * 0.5 * pulse)
         else:
             # Луч затухает
             fade_progress = (progress - 0.8) / 0.2
             end_x, end_y = target_pos[0], target_pos[1]
             alpha = int(255 * (1 - fade_progress))
-            width = int(8 * (1 - fade_progress)) + 2
+            width = max(2, int(base_width * (1 - fade_progress)))
 
-        # Рисуем внешнее свечение
-        glow_surface = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
-        glow_color = (*color, int(alpha * 0.3))
-        pygame.draw.line(glow_surface, glow_color, caster_pos, (int(end_x), int(end_y)), width + 8)
-        self.screen.blit(glow_surface, (0, 0))
+        # Рисуем внешнее свечение (если включено)
+        if glow_radius > 0:
+            glow_surface = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+            glow_color = (*color, int(alpha * 0.3))
+            pygame.draw.line(glow_surface, glow_color, caster_pos, (int(end_x), int(end_y)), width + glow_radius * 2)
+            self.screen.blit(glow_surface, (0, 0))
 
         # Рисуем средний слой
         mid_color = (*color, int(alpha * 0.6))
         mid_surface = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
-        pygame.draw.line(mid_surface, mid_color, caster_pos, (int(end_x), int(end_y)), width + 4)
+        pygame.draw.line(mid_surface, mid_color, caster_pos, (int(end_x), int(end_y)), width + glow_radius)
         self.screen.blit(mid_surface, (0, 0))
 
         # Рисуем яркое ядро луча
@@ -1484,13 +1515,11 @@ class TestArena:
         Поддерживает:
         - Волнообразность (wave_amplitude) для эффекта молнии
         - Авто-поворот спрайтов в направлении луча
-        - Тайлинг спрайтов по длине луча
+        - Режимы: тайлинг, растяжение, один в центре
         - Эффект свечения
         """
         if not self.animation.caster or not self.animation.target:
             return
-
-        skill = self.animation.skill
 
         caster_pos = self.get_screen_pos_for_cell(
             self.animation.caster.x,
@@ -1519,31 +1548,18 @@ class TestArena:
         # Угол направления луча
         base_angle = math.degrees(math.atan2(-dy, dx))
 
-        # Отладочный вывод (только один раз в начале анимации)
-        if progress < 0.1:
-            print(f"[sprite_beam] base_angle={base_angle:.1f}°, rotation_offset={self.animation.rotation_offset:.1f}°")
-            print(f"[sprite_beam] Если спрайт направлен ВНИЗ, установите rotation_offset=90°")
-
         # Если нет загруженных спрайтов, используем обычный луч
         if not self.animation.loaded_sprites:
             self._render_beam_effect(color, progress)
             return
 
-        # Получаем настройки луча из скилла
-        wave_amplitude = 0.0
-        wave_frequency = 3.0
-        glow_enabled = True
-        glow_radius = 4
-        beam_width = 8
-
-        if skill and hasattr(skill, 'beam_wave_amplitude'):
-            wave_amplitude = skill.beam_wave_amplitude
-        if skill and hasattr(skill, 'beam_wave_frequency'):
-            wave_frequency = skill.beam_wave_frequency
-        if skill and hasattr(skill, 'beam_glow_enabled'):
-            glow_enabled = skill.beam_glow_enabled
-        if skill and hasattr(skill, 'beam_glow_radius'):
-            glow_radius = skill.beam_glow_radius
+        # Получаем настройки луча из animation (уже установлены в start_animation)
+        wave_amplitude = self.animation.beam_wave_amplitude
+        wave_frequency = self.animation.beam_wave_frequency
+        glow_enabled = self.animation.beam_glow_enabled
+        glow_radius = self.animation.beam_glow_radius
+        beam_width = self.animation.beam_width
+        sprite_mode = self.animation.beam_sprite_mode
 
         # Фазы: появление (0-0.15), удержание (0.15-0.85), затухание (0.85-1.0)
         if progress < 0.15:
@@ -1571,9 +1587,6 @@ class TestArena:
 
         # Время для анимации волны
         current_time = pygame.time.get_ticks() / 1000.0
-
-        # Получаем режим отображения спрайта
-        sprite_mode = self.animation.beam_sprite_mode
 
         # Эффект свечения под спрайтами
         if glow_enabled and alpha > 0:

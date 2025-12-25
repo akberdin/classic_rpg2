@@ -66,10 +66,14 @@ class TestSkill:
     animation_scale: float = 1.0  # Масштаб анимации
     animation_vertical_offset: float = 0.0  # Вертикальное смещение анимации
     # Параметры луча (beam/sprite_beam)
+    beam_width: int = 8  # Ширина луча в пикселях
+    beam_duration_ms: int = 500  # Длительность эффекта луча
     beam_wave_amplitude: float = 0.0  # Амплитуда волны (для молнии)
     beam_wave_frequency: float = 3.0  # Частота волны
     beam_rotation_offset: float = 90.0  # Смещение угла спрайта (90° = спрайт направлен вниз)
     beam_sprite_mode: str = "tile"  # tile / stretch / single
+    beam_color_start: str = "#FFFFFF"  # Цвет начала луча
+    beam_color_end: str = "#FFFFFF"  # Цвет конца луча
     beam_glow_enabled: bool = True  # Эффект свечения
     beam_glow_radius: int = 4  # Радиус свечения
 
@@ -406,22 +410,28 @@ class SkillsCrafterLoader:
             animation_vertical_offset = visual_data.get("animation_vertical_offset", 0.0)
 
         # Параметры луча (для beam и sprite_beam)
+        beam_width = 8
+        beam_duration_ms = 500
         beam_wave_amplitude = 0.0
         beam_wave_frequency = 3.0
-        # По умолчанию 90° - для спрайтов направленных ВНИЗ (молнии, лучи и т.д.)
-        beam_rotation_offset = 90.0
-        beam_sprite_mode = "tile"  # tile / stretch / single
+        beam_rotation_offset = 90.0  # По умолчанию для спрайтов направленных ВНИЗ
+        beam_sprite_mode = "tile"
+        beam_color_start = "#FFFFFF"
+        beam_color_end = "#FFFFFF"
         beam_glow_enabled = True
         beam_glow_radius = 4
 
         if visual_data:
             beam_data = visual_data.get("beam", {})
             if beam_data:
+                beam_width = beam_data.get("width", 8)
+                beam_duration_ms = beam_data.get("duration_ms", 500)
                 beam_wave_amplitude = beam_data.get("wave_amplitude", 0.0)
                 beam_wave_frequency = beam_data.get("wave_frequency", 3.0)
-                # Читаем rotation_offset, но если не указан - используем 90° по умолчанию
                 beam_rotation_offset = beam_data.get("rotation_offset", 90.0)
                 beam_sprite_mode = beam_data.get("sprite_mode", "tile")
+                beam_color_start = beam_data.get("color_start", "#FFFFFF")
+                beam_color_end = beam_data.get("color_end", "#FFFFFF")
                 beam_glow_enabled = beam_data.get("glow_enabled", True)
                 beam_glow_radius = beam_data.get("glow_radius", 4)
 
@@ -491,10 +501,14 @@ class SkillsCrafterLoader:
             animation_scale=animation_scale,
             animation_vertical_offset=animation_vertical_offset,
             # Параметры луча
+            beam_width=beam_width,
+            beam_duration_ms=beam_duration_ms,
             beam_wave_amplitude=beam_wave_amplitude,
             beam_wave_frequency=beam_wave_frequency,
             beam_rotation_offset=beam_rotation_offset,
             beam_sprite_mode=beam_sprite_mode,
+            beam_color_start=beam_color_start,
+            beam_color_end=beam_color_end,
             beam_glow_enabled=beam_glow_enabled,
             beam_glow_radius=beam_glow_radius,
         )
