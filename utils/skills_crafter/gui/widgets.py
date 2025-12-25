@@ -1656,6 +1656,7 @@ class AnimationDisplaySettings(ttk.LabelFrame):
                 "glow_enabled": self.beam_glow_var.get(),
                 "glow_radius": self.beam_glow_radius_var.get(),
             }
+            data["animation_vertical_offset"] = self.proj_vertical_offset_var.get()
 
         elif display_type == "area":
             data["area_effect"] = {
@@ -1667,6 +1668,7 @@ class AnimationDisplaySettings(ttk.LabelFrame):
                 "border_width": self.area_border_width_var.get(),
                 "pulse_enabled": self.area_pulse_var.get(),
             }
+            data["animation_vertical_offset"] = self.proj_vertical_offset_var.get()
 
         return data
 
