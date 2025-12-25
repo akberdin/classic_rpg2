@@ -6,6 +6,7 @@ Test Arena - Тестовая площадка для проверки умен�
 import pygame
 import os
 import sys
+import math
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 
@@ -32,6 +33,7 @@ class AnimationState:
     start_time: float = 0.0
     duration: float = 0.5
     current_frame: int = 0
+    frame_start_time: float = 0.0
 
     # Для снарядов
     projectile_x: float = 0.0
@@ -40,6 +42,17 @@ class AnimationState:
     projectile_start_y: float = 0.0
     projectile_end_x: float = 0.0
     projectile_end_y: float = 0.0
+
+    # Дополнительные параметры
+    trajectory: str = "straight"
+    speed: float = 300.0
+    distance: float = 0.0
+    effect_color: Tuple[int, int, int] = (255, 200, 100)
+
+    # Загруженные спрайты анимации
+    loaded_sprites: List = field(default_factory=list)
+    impact_active: bool = False
+    impact_start_time: float = 0.0
 
 
 class TestArena:
@@ -348,8 +361,28 @@ class TestArena:
         self.animation.caster = caster
         self.animation.target = target
         self.animation.start_time = pygame.time.get_ticks() / 1000.0
-        self.animation.duration = skill.animation_duration
         self.animation.current_frame = 0
+        self.animation.frame_start_time = self.animation.start_time
+        self.animation.impact_active = False
+
+        # Получаем цвет эффекта из скилла
+        self.animation.effect_color = skill.get_effect_color()
+
+        # Загружаем спрайты анимации, если есть
+        self.animation.loaded_sprites = []
+        if skill.animation_frames:
+            for frame in skill.animation_frames:
+                if frame.sprite_path and os.path.exists(frame.sprite_path):
+                    try:
+                        sprite = pygame.image.load(frame.sprite_path).convert_alpha()
+                        sprite = pygame.transform.scale(sprite, (48, 48))
+                        self.animation.loaded_sprites.append((sprite, frame.duration_ms))
+                    except Exception:
+                        pass
+
+        # Параметры траектории
+        self.animation.trajectory = skill.projectile_trajectory
+        self.animation.speed = skill.projectile_speed
 
         # Для снарядов
         if skill.animation_type == "projectile":
@@ -362,6 +395,17 @@ class TestArena:
             self.animation.projectile_x = caster_pos[0]
             self.animation.projectile_y = caster_pos[1]
 
+            # Вычисляем дистанцию и длительность на основе скорости
+            dx = target_pos[0] - caster_pos[0]
+            dy = target_pos[1] - caster_pos[1]
+            self.animation.distance = math.sqrt(dx * dx + dy * dy)
+
+            # Длительность = дистанция / скорость (скорость в пикселях/сек)
+            self.animation.duration = self.animation.distance / self.animation.speed
+        else:
+            # Для других типов используем базовую длительность
+            self.animation.duration = skill.animation_duration if skill.animation_duration > 0 else 0.5
+
     def update_animation(self):
         """Обновить состояние анимации"""
         if not self.animation.active:
@@ -369,22 +413,84 @@ class TestArena:
 
         current_time = pygame.time.get_ticks() / 1000.0
         elapsed = current_time - self.animation.start_time
-        progress = min(1.0, elapsed / self.animation.duration)
+        progress = min(1.0, elapsed / self.animation.duration) if self.animation.duration > 0 else 1.0
 
         skill = self.animation.skill
         if skill and skill.animation_type == "projectile":
-            # Обновляем позицию снаряда
-            self.animation.projectile_x = (
+            # Базовое линейное перемещение
+            base_x = (
                 self.animation.projectile_start_x +
                 (self.animation.projectile_end_x - self.animation.projectile_start_x) * progress
             )
-            self.animation.projectile_y = (
+            base_y = (
                 self.animation.projectile_start_y +
                 (self.animation.projectile_end_y - self.animation.projectile_start_y) * progress
             )
 
+            # Применяем траекторию
+            trajectory = self.animation.trajectory
+
+            if trajectory == "arc":
+                # Дуговая траектория - параболическое смещение по вертикали
+                arc_height = self.animation.distance * 0.3  # Высота дуги - 30% от дистанции
+                arc_offset = -arc_height * 4 * progress * (1 - progress)  # Парабола
+                base_y += arc_offset
+
+            elif trajectory == "wave":
+                # Волнистая траектория - синусоидальное смещение
+                wave_amplitude = 30  # Амплитуда волны
+                wave_frequency = 3  # Частота волн
+                # Направление волны перпендикулярно движению
+                dx = self.animation.projectile_end_x - self.animation.projectile_start_x
+                dy = self.animation.projectile_end_y - self.animation.projectile_start_y
+                dist = math.sqrt(dx * dx + dy * dy) if dx or dy else 1
+                # Перпендикулярный вектор
+                perp_x = -dy / dist
+                perp_y = dx / dist
+                wave_offset = math.sin(progress * wave_frequency * math.pi * 2) * wave_amplitude
+                base_x += perp_x * wave_offset
+                base_y += perp_y * wave_offset
+
+            elif trajectory == "homing":
+                # Самонаводящаяся траектория - движется к текущей позиции цели
+                if self.animation.target:
+                    target_pos = self.get_screen_pos_for_cell(
+                        self.animation.target.x,
+                        self.animation.target.y
+                    )
+                    # Плавное наведение
+                    lerp_factor = min(1.0, progress * 2)
+                    base_x = base_x + (target_pos[0] - base_x) * lerp_factor * 0.5
+                    base_y = base_y + (target_pos[1] - base_y) * lerp_factor * 0.5
+
+            self.animation.projectile_x = base_x
+            self.animation.projectile_y = base_y
+
+            # Проверяем достижение цели
+            if progress >= 1.0:
+                # Запускаем эффект попадания
+                self.animation.impact_active = True
+                self.animation.impact_start_time = current_time
+
+        # Обновляем текущий кадр анимации
+        if self.animation.loaded_sprites:
+            frame_elapsed = (current_time - self.animation.frame_start_time) * 1000  # в мс
+            if self.animation.current_frame < len(self.animation.loaded_sprites):
+                _, frame_duration = self.animation.loaded_sprites[self.animation.current_frame]
+                if frame_elapsed >= frame_duration:
+                    self.animation.current_frame += 1
+                    self.animation.frame_start_time = current_time
+
+        # Проверяем завершение
         if progress >= 1.0:
-            self.animation.active = False
+            if skill and skill.animation_type == "projectile":
+                # Для снарядов даем время на эффект попадания
+                impact_elapsed = current_time - self.animation.impact_start_time
+                if impact_elapsed >= 0.3:  # 300мс на эффект попадания
+                    self.animation.active = False
+                    self.animation.impact_active = False
+            else:
+                self.animation.active = False
 
     def tick_all_effects(self):
         """Обработать все статус-эффекты"""
@@ -704,47 +810,248 @@ class TestArena:
             return
 
         skill = self.animation.skill
+        color = self.animation.effect_color
+        current_time = pygame.time.get_ticks() / 1000.0
+        elapsed = current_time - self.animation.start_time
+        progress = min(1.0, elapsed / self.animation.duration) if self.animation.duration > 0 else 1.0
 
         if skill.animation_type == "projectile":
-            # Рисуем снаряд
-            color = (255, 100, 50) if "fire" in skill.damage_type else (100, 150, 255)
-            pygame.draw.circle(
-                self.screen,
-                color,
-                (int(self.animation.projectile_x), int(self.animation.projectile_y)),
-                12
-            )
-            # Эффект свечения
-            pygame.draw.circle(
-                self.screen,
-                (*color[:3], 100),
-                (int(self.animation.projectile_x), int(self.animation.projectile_y)),
-                18,
-                2
-            )
+            # Рисуем снаряд, если еще не достиг цели
+            if not self.animation.impact_active:
+                proj_x = int(self.animation.projectile_x)
+                proj_y = int(self.animation.projectile_y)
 
-        elif skill.animation_type in ["static", "on_target", "impact"]:
-            # Эффект на цели
+                # Если есть загруженные спрайты, используем их
+                if self.animation.loaded_sprites and self.animation.current_frame < len(self.animation.loaded_sprites):
+                    sprite, _ = self.animation.loaded_sprites[self.animation.current_frame]
+                    sprite_x = proj_x - sprite.get_width() // 2
+                    sprite_y = proj_y - sprite.get_height() // 2
+                    self.screen.blit(sprite, (sprite_x, sprite_y))
+                else:
+                    # Рисуем снаряд с цветом из конфига
+                    pygame.draw.circle(self.screen, color, (proj_x, proj_y), 10)
+
+                    # Эффект свечения
+                    glow_surface = pygame.Surface((40, 40), pygame.SRCALPHA)
+                    pygame.draw.circle(glow_surface, (*color, 100), (20, 20), 18)
+                    pygame.draw.circle(glow_surface, (*color, 50), (20, 20), 24)
+                    self.screen.blit(glow_surface, (proj_x - 20, proj_y - 20))
+
+                    # Хвост снаряда
+                    trail_length = 5
+                    for i in range(trail_length):
+                        trail_progress = max(0, progress - i * 0.02)
+                        if trail_progress > 0:
+                            trail_x = int(
+                                self.animation.projectile_start_x +
+                                (self.animation.projectile_end_x - self.animation.projectile_start_x) * trail_progress
+                            )
+                            trail_y = int(
+                                self.animation.projectile_start_y +
+                                (self.animation.projectile_end_y - self.animation.projectile_start_y) * trail_progress
+                            )
+                            trail_alpha = int(150 * (1 - i / trail_length))
+                            trail_radius = int(8 * (1 - i / trail_length))
+                            trail_surface = pygame.Surface((trail_radius * 2, trail_radius * 2), pygame.SRCALPHA)
+                            pygame.draw.circle(trail_surface, (*color, trail_alpha), (trail_radius, trail_radius), trail_radius)
+                            self.screen.blit(trail_surface, (trail_x - trail_radius, trail_y - trail_radius))
+
+            # Эффект попадания
+            if self.animation.impact_active and self.animation.target:
+                self._render_impact_effect(color)
+
+        elif skill.animation_type == "impact":
+            # Мгновенный эффект на цели (молния и т.п.)
+            if self.animation.target:
+                self._render_impact_effect(color, "burst")
+
+        elif skill.animation_type == "on_target":
+            # Эффект на цели (лечение и т.п.)
             if self.animation.target:
                 target_pos = self.get_screen_pos_for_cell(
                     self.animation.target.x,
                     self.animation.target.y
                 )
+                self._render_healing_effect(target_pos, color, progress)
 
-                current_time = pygame.time.get_ticks() / 1000.0
-                elapsed = current_time - self.animation.start_time
-                progress = min(1.0, elapsed / self.animation.duration)
-
-                # Пульсирующий эффект
-                radius = int(20 + 15 * (1 - abs(progress - 0.5) * 2))
-                alpha = int(200 * (1 - progress))
-
-                effect_surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-                pygame.draw.circle(effect_surface, (255, 200, 100, alpha), (radius, radius), radius)
-                self.screen.blit(
-                    effect_surface,
-                    (target_pos[0] - radius, target_pos[1] - radius)
+        elif skill.animation_type == "on_caster":
+            # Эффект на кастере (баффы, регенерация)
+            if self.animation.caster:
+                caster_pos = self.get_screen_pos_for_cell(
+                    self.animation.caster.x,
+                    self.animation.caster.y
                 )
+                self._render_buff_effect(caster_pos, color, progress)
+
+        elif skill.animation_type == "static":
+            # Статичный эффект (ближний бой)
+            if self.animation.target:
+                self._render_melee_effect(color, progress)
+
+    def _render_impact_effect(self, color: Tuple[int, int, int], effect_type: str = "explosion"):
+        """Отрисовка эффекта попадания"""
+        if not self.animation.target:
+            return
+
+        target_pos = self.get_screen_pos_for_cell(
+            self.animation.target.x,
+            self.animation.target.y
+        )
+
+        current_time = pygame.time.get_ticks() / 1000.0
+        impact_elapsed = current_time - self.animation.impact_start_time if self.animation.impact_active else 0
+        impact_progress = min(1.0, impact_elapsed / 0.3)
+
+        if effect_type == "burst":
+            # Взрыв с лучами (для молнии)
+            current_time = pygame.time.get_ticks() / 1000.0
+            elapsed = current_time - self.animation.start_time
+            progress = min(1.0, elapsed / self.animation.duration) if self.animation.duration > 0 else 1.0
+
+            num_rays = 8
+            max_ray_length = 40
+            ray_length = max_ray_length * (1 - abs(progress - 0.5) * 2)
+
+            for i in range(num_rays):
+                angle = (i / num_rays) * math.pi * 2 + current_time * 5
+                end_x = target_pos[0] + math.cos(angle) * ray_length
+                end_y = target_pos[1] + math.sin(angle) * ray_length
+                pygame.draw.line(self.screen, color, target_pos, (int(end_x), int(end_y)), 3)
+
+            # Центральная вспышка
+            flash_radius = int(25 * (1 - abs(progress - 0.5) * 2))
+            flash_alpha = int(200 * (1 - progress))
+            flash_surface = pygame.Surface((flash_radius * 2, flash_radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(flash_surface, (*color, flash_alpha), (flash_radius, flash_radius), flash_radius)
+            self.screen.blit(flash_surface, (target_pos[0] - flash_radius, target_pos[1] - flash_radius))
+        else:
+            # Расширяющийся взрыв
+            max_radius = 35
+            radius = int(max_radius * impact_progress)
+            alpha = int(200 * (1 - impact_progress))
+
+            explosion_surface = pygame.Surface((max_radius * 2 + 10, max_radius * 2 + 10), pygame.SRCALPHA)
+            center = max_radius + 5
+            pygame.draw.circle(explosion_surface, (*color, alpha), (center, center), radius)
+            pygame.draw.circle(explosion_surface, (*color, int(alpha * 0.5)), (center, center), radius + 5)
+            self.screen.blit(explosion_surface, (target_pos[0] - center, target_pos[1] - center))
+
+            # Частицы
+            num_particles = 8
+            for i in range(num_particles):
+                angle = (i / num_particles) * math.pi * 2
+                particle_dist = radius * 0.8
+                particle_x = target_pos[0] + math.cos(angle) * particle_dist
+                particle_y = target_pos[1] + math.sin(angle) * particle_dist
+                particle_radius = int(4 * (1 - impact_progress))
+                if particle_radius > 0:
+                    pygame.draw.circle(self.screen, color, (int(particle_x), int(particle_y)), particle_radius)
+
+    def _render_healing_effect(self, pos: Tuple[int, int], color: Tuple[int, int, int], progress: float):
+        """Отрисовка эффекта лечения"""
+        # Зеленые частицы поднимающиеся вверх
+        heal_color = (100, 255, 100) if color == (200, 180, 100) else color
+
+        num_particles = 6
+        for i in range(num_particles):
+            angle = (i / num_particles) * math.pi * 2
+            base_x = pos[0] + math.cos(angle) * 20
+            offset_y = -40 * progress
+            particle_y = pos[1] + offset_y + math.sin(progress * math.pi * 2 + i) * 10
+
+            alpha = int(200 * (1 - progress))
+            particle_radius = int(5 * (1 - progress * 0.5))
+
+            if particle_radius > 0:
+                particle_surface = pygame.Surface((particle_radius * 2, particle_radius * 2), pygame.SRCALPHA)
+                pygame.draw.circle(particle_surface, (*heal_color, alpha), (particle_radius, particle_radius), particle_radius)
+                self.screen.blit(particle_surface, (int(base_x) - particle_radius, int(particle_y) - particle_radius))
+
+        # Центральный эффект
+        pulse = abs(math.sin(progress * math.pi * 3))
+        center_radius = int(15 + 10 * pulse)
+        center_alpha = int(150 * (1 - progress))
+        center_surface = pygame.Surface((center_radius * 2, center_radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(center_surface, (*heal_color, center_alpha), (center_radius, center_radius), center_radius)
+        self.screen.blit(center_surface, (pos[0] - center_radius, pos[1] - center_radius))
+
+    def _render_buff_effect(self, pos: Tuple[int, int], color: Tuple[int, int, int], progress: float):
+        """Отрисовка эффекта баффа на кастере"""
+        # Вращающиеся кольца
+        num_rings = 2
+        for ring in range(num_rings):
+            ring_radius = 25 + ring * 15
+            ring_alpha = int(150 * (1 - progress))
+            ring_rotation = progress * math.pi * 4 + ring * math.pi
+
+            # Рисуем сегментированное кольцо
+            num_segments = 8
+            for seg in range(num_segments):
+                if seg % 2 == 0:
+                    start_angle = ring_rotation + (seg / num_segments) * math.pi * 2
+                    end_angle = ring_rotation + ((seg + 1) / num_segments) * math.pi * 2
+
+                    # Рисуем дугу как серию точек
+                    points = []
+                    for t in range(5):
+                        angle = start_angle + (end_angle - start_angle) * (t / 4)
+                        px = pos[0] + math.cos(angle) * ring_radius
+                        py = pos[1] + math.sin(angle) * ring_radius
+                        points.append((int(px), int(py)))
+
+                    if len(points) >= 2:
+                        ring_surface = pygame.Surface((ring_radius * 3, ring_radius * 3), pygame.SRCALPHA)
+                        offset = ring_radius * 1.5
+                        adjusted_points = [(int(p[0] - pos[0] + offset), int(p[1] - pos[1] + offset)) for p in points]
+                        pygame.draw.lines(ring_surface, (*color, ring_alpha), False, adjusted_points, 3)
+                        self.screen.blit(ring_surface, (pos[0] - offset, pos[1] - offset))
+
+        # Центральный свет
+        glow_radius = int(20 + 10 * abs(math.sin(progress * math.pi * 4)))
+        glow_alpha = int(100 * (1 - progress))
+        glow_surface = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(glow_surface, (*color, glow_alpha), (glow_radius, glow_radius), glow_radius)
+        self.screen.blit(glow_surface, (pos[0] - glow_radius, pos[1] - glow_radius))
+
+    def _render_melee_effect(self, color: Tuple[int, int, int], progress: float):
+        """Отрисовка эффекта ближнего боя"""
+        if not self.animation.caster or not self.animation.target:
+            return
+
+        caster_pos = self.get_screen_pos_for_cell(
+            self.animation.caster.x,
+            self.animation.caster.y
+        )
+        target_pos = self.get_screen_pos_for_cell(
+            self.animation.target.x,
+            self.animation.target.y
+        )
+
+        # Линия удара
+        slash_progress = min(1.0, progress * 2)
+        if slash_progress < 1.0:
+            # Удар летит к цели
+            current_x = caster_pos[0] + (target_pos[0] - caster_pos[0]) * slash_progress
+            current_y = caster_pos[1] + (target_pos[1] - caster_pos[1]) * slash_progress
+
+            # Рисуем след удара
+            pygame.draw.line(self.screen, color, caster_pos, (int(current_x), int(current_y)), 4)
+
+            # Свечение на конце
+            glow_radius = 8
+            glow_surface = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow_surface, (*color, 200), (glow_radius, glow_radius), glow_radius)
+            self.screen.blit(glow_surface, (int(current_x) - glow_radius, int(current_y) - glow_radius))
+        else:
+            # Эффект попадания
+            impact_progress = (progress - 0.5) * 2
+            if impact_progress > 0:
+                impact_radius = int(20 * (1 - impact_progress))
+                impact_alpha = int(200 * (1 - impact_progress))
+                if impact_radius > 0:
+                    impact_surface = pygame.Surface((impact_radius * 2, impact_radius * 2), pygame.SRCALPHA)
+                    pygame.draw.circle(impact_surface, (*color, impact_alpha), (impact_radius, impact_radius), impact_radius)
+                    self.screen.blit(impact_surface, (target_pos[0] - impact_radius, target_pos[1] - impact_radius))
 
     def _render_side_panel(self):
         """Отрисовка боковой панели с информацией"""

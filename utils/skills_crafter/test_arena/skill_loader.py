@@ -10,6 +10,13 @@ from dataclasses import dataclass, field
 
 
 @dataclass
+class AnimationFrame:
+    """Кадр анимации умения"""
+    sprite_path: str
+    duration_ms: int = 100
+
+
+@dataclass
 class TestSkill:
     """Умение для тестовой арены"""
     skill_id: str
@@ -48,15 +55,56 @@ class TestSkill:
     status_effects: List[Dict[str, Any]] = field(default_factory=list)
 
     # Визуальные настройки
-    animation_type: str = "static"  # static, projectile, beam, area
+    animation_type: str = "static"  # static, projectile, impact, on_target, on_caster, beam
     icon_path: str = ""
-    animation_frames: List[str] = field(default_factory=list)
-    projectile_speed: float = 200.0
+    animation_frames: List[AnimationFrame] = field(default_factory=list)
+    projectile_speed: float = 300.0
+    projectile_trajectory: str = "straight"  # straight, arc, wave, homing
     animation_duration: float = 0.5
 
     # Ранг
     current_rank: int = 1
     max_rank: int = 5
+
+    def get_effect_color(self) -> tuple:
+        """Получить цвет эффекта на основе категории/типа урона"""
+        # Цвета по типу урона
+        damage_colors = {
+            "fire": (255, 100, 50),
+            "ice": (100, 180, 255),
+            "poison": (100, 200, 80),
+            "lightning": (255, 255, 100),
+            "physical": (200, 200, 200),
+            "magic": (180, 100, 255),
+        }
+        # Цвета по категории
+        category_colors = {
+            "magic": (150, 100, 255),
+            "warrior": (200, 100, 80),
+            "shadow": (100, 80, 120),
+            "hunter": (100, 180, 100),
+        }
+
+        # Сначала проверяем тип урона
+        if self.damage_type in damage_colors:
+            return damage_colors[self.damage_type]
+
+        # По названию умения (для молнии и т.д.)
+        name_lower = self.name.lower()
+        if "молни" in name_lower or "lightning" in name_lower:
+            return damage_colors["lightning"]
+        if "огн" in name_lower or "fire" in name_lower:
+            return damage_colors["fire"]
+        if "лед" in name_lower or "ice" in name_lower:
+            return damage_colors["ice"]
+        if "яд" in name_lower or "отрав" in name_lower or "poison" in name_lower:
+            return damage_colors["poison"]
+
+        # По категории
+        if self.category in category_colors:
+            return category_colors[self.category]
+
+        return (200, 180, 100)  # По умолчанию - золотистый
 
     def get_damage(self, caster) -> int:
         """Вычислить урон умения"""
@@ -285,20 +333,32 @@ class SkillsCrafterLoader:
         # Получаем данные анимации
         animation_frames = []
         animation_type = "static"
-        projectile_speed = 200.0
+        projectile_speed = 300.0
+        projectile_trajectory = "straight"
         animation_duration = 0.5
 
         if visual_data:
             animation_type = visual_data.get("display_type", "static")
             animation_duration = visual_data.get("duration", 0.5)
 
-            frames_data = visual_data.get("frames", [])
+            # Парсим кадры анимации
+            frames_data = visual_data.get("animation_frames", visual_data.get("frames", []))
             if frames_data:
-                animation_frames = [f.get("sprite_path", "") for f in frames_data if f.get("sprite_path")]
+                for frame_data in frames_data:
+                    if isinstance(frame_data, dict):
+                        frame = AnimationFrame(
+                            sprite_path=frame_data.get("sprite_path", ""),
+                            duration_ms=frame_data.get("duration_ms", 100)
+                        )
+                        animation_frames.append(frame)
+                    elif isinstance(frame_data, str):
+                        animation_frames.append(AnimationFrame(sprite_path=frame_data))
 
+            # Парсим данные снаряда
             projectile_data = visual_data.get("projectile", {})
             if projectile_data:
-                projectile_speed = projectile_data.get("speed", 200.0)
+                projectile_speed = projectile_data.get("speed", 300.0)
+                projectile_trajectory = projectile_data.get("trajectory", "straight")
 
         # Извлекаем данные масштабирования
         scaling_attr = "strength"
@@ -350,6 +410,7 @@ class SkillsCrafterLoader:
             animation_type=animation_type,
             animation_frames=animation_frames,
             projectile_speed=projectile_speed,
+            projectile_trajectory=projectile_trajectory,
             animation_duration=animation_duration,
         )
 
