@@ -490,7 +490,7 @@ class TestArena:
             targets_hit = 0
 
             for aoe_target in aoe_targets:
-                if aoe_target == caster and not skill.target_type == "self":
+                if aoe_target == caster and skill.target_type != "self":
                     continue  # Не бьём себя, если не self-умение
 
                 # Применяем умение (только первый раз тратит ресурсы)
@@ -885,7 +885,7 @@ class TestArena:
                     self.tick_all_effects()
                     self.add_to_log("--- Новый ход ---")
                 # Выбор умений клавишами 1-8
-                elif event.key in range(pygame.K_1, pygame.K_9):
+                elif pygame.K_1 <= event.key <= pygame.K_8:
                     skill_index = event.key - pygame.K_1
                     skills = list(self.available_skills.values())
                     if skill_index < len(skills):
@@ -1899,7 +1899,9 @@ class TestArena:
             slot_rect = pygame.Rect(slot_x, slot_y, slot_size, slot_size)
 
             # Определяем цвет фона
-            can_use, _ = skill.can_use(self.player_unit.character) if self.player_unit else (False, "")
+            can_use = False
+            if self.player_unit and self.player_unit.character:
+                can_use, _ = skill.can_use(self.player_unit.character)
 
             if skill == self.selected_skill:
                 bg_color = self.COLORS["button_active"]

@@ -36,19 +36,33 @@ class StatusEffect:
 
     def tick(self, character: "TestCharacter") -> Optional[str]:
         """Применить эффект за ход"""
+        # Не применяем эффекты к мёртвым персонажам
+        if not character.is_alive:
+            return None
+
         self.remaining_duration -= 1
 
         if self.effect_type == "burn":
             damage = int(self.value)
             character.health -= damage
+            # Проверяем смерть от DoT
+            if character.health <= 0:
+                character.health = 0
+                character.is_alive = False
             return f"{character.name} получает {damage} урона от огня"
         elif self.effect_type == "poison":
             damage = int(self.value)
             character.health -= damage
+            if character.health <= 0:
+                character.health = 0
+                character.is_alive = False
             return f"{character.name} получает {damage} урона от яда"
         elif self.effect_type == "bleed":
             damage = int(self.value)
             character.health -= damage
+            if character.health <= 0:
+                character.health = 0
+                character.is_alive = False
             return f"{character.name} получает {damage} урона от кровотечения"
         elif self.effect_type == "regeneration":
             healing = int(self.value)

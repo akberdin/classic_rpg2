@@ -301,8 +301,9 @@ class SkillImporter:
                 armor_penetration_per_rank=data.get("armor_penetration_per_rank", 0),
                 crit_chance_bonus=data.get("base_crit_chance", 0),
                 crit_chance_per_rank=data.get("crit_chance_per_rank", 0),
-                hit_count_base=data.get("base_hits", 1) or data.get("base_shots", 1),
-                hit_count_per_rank=data.get("hits_per_rank", 0) or data.get("shots_per_rank", 0),
+                # Используем base_hits если есть, иначе base_shots, иначе 1 (нельзя использовать or т.к. 0 - валидное значение)
+                hit_count_base=data.get("base_hits") if "base_hits" in data else data.get("base_shots", 1),
+                hit_count_per_rank=data.get("hits_per_rank") if "hits_per_rank" in data else data.get("shots_per_rank", 0),
             )
 
         # Лечение

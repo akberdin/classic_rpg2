@@ -231,7 +231,9 @@ class ScrollableFrame(ttk.Frame):
         elif event.num == 5:
             self.canvas.yview_scroll(1, "units")
         else:
-            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+            # Защита от деления на ноль и нулевого delta
+            if event.delta != 0:
+                self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
 
 class CollapsibleFrame(ttk.Frame):
@@ -290,7 +292,11 @@ class ToolTip:
         widget.bind("<Leave>", self._hide)
 
     def _show(self, event=None):
-        x, y, _, _ = self.widget.bbox("insert") if hasattr(self.widget, 'bbox') else (0, 0, 0, 0)
+        try:
+            bbox = self.widget.bbox("insert") if hasattr(self.widget, 'bbox') else None
+            x, y = (bbox[0], bbox[1]) if bbox else (0, 0)
+        except (tk.TclError, TypeError):
+            x, y = 0, 0
         x += self.widget.winfo_rootx() + 25
         y += self.widget.winfo_rooty() + 25
 
