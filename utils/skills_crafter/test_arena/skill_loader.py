@@ -61,6 +61,7 @@ class TestSkill:
     projectile_speed: float = 300.0
     projectile_trajectory: str = "straight"  # straight, arc, wave, homing
     animation_duration: float = 0.5
+    animation_scale: float = 1.0  # Масштаб анимации
 
     # Ранг
     current_rank: int = 1
@@ -336,6 +337,7 @@ class SkillsCrafterLoader:
         projectile_speed = 300.0
         projectile_trajectory = "straight"
         animation_duration = 0.5
+        animation_scale = 1.0
 
         if visual_data:
             animation_type = visual_data.get("display_type", "static")
@@ -346,19 +348,27 @@ class SkillsCrafterLoader:
             if frames_data:
                 for frame_data in frames_data:
                     if isinstance(frame_data, dict):
+                        # Нормализуем путь (Windows -> Unix)
+                        sprite_path = frame_data.get("sprite_path", "")
+                        sprite_path = sprite_path.replace("\\", "/")
                         frame = AnimationFrame(
-                            sprite_path=frame_data.get("sprite_path", ""),
+                            sprite_path=sprite_path,
                             duration_ms=frame_data.get("duration_ms", 100)
                         )
                         animation_frames.append(frame)
                     elif isinstance(frame_data, str):
-                        animation_frames.append(AnimationFrame(sprite_path=frame_data))
+                        # Нормализуем путь
+                        sprite_path = frame_data.replace("\\", "/")
+                        animation_frames.append(AnimationFrame(sprite_path=sprite_path))
 
             # Парсим данные снаряда
             projectile_data = visual_data.get("projectile", {})
             if projectile_data:
                 projectile_speed = projectile_data.get("speed", 300.0)
                 projectile_trajectory = projectile_data.get("trajectory", "straight")
+
+            # Масштаб анимации
+            animation_scale = visual_data.get("animation_scale", 1.0)
 
         # Извлекаем данные масштабирования
         scaling_attr = "strength"
@@ -412,6 +422,7 @@ class SkillsCrafterLoader:
             projectile_speed=projectile_speed,
             projectile_trajectory=projectile_trajectory,
             animation_duration=animation_duration,
+            animation_scale=animation_scale,
         )
 
         self.loaded_skills[skill.skill_id] = skill
