@@ -372,13 +372,35 @@ class TestArena:
         self.animation.loaded_sprites = []
         if skill.animation_frames:
             for frame in skill.animation_frames:
-                if frame.sprite_path and os.path.exists(frame.sprite_path):
-                    try:
-                        sprite = pygame.image.load(frame.sprite_path).convert_alpha()
-                        sprite = pygame.transform.scale(sprite, (48, 48))
-                        self.animation.loaded_sprites.append((sprite, frame.duration_ms))
-                    except Exception:
-                        pass
+                if frame.sprite_path:
+                    # Нормализуем путь
+                    sprite_path = frame.sprite_path.replace("\\", "/")
+
+                    # Пробуем разные базовые пути
+                    paths_to_try = [
+                        sprite_path,
+                        os.path.join("utils/skills_crafter", sprite_path),
+                        os.path.join("game/assets", sprite_path),
+                        os.path.join("assets", sprite_path),
+                    ]
+
+                    loaded = False
+                    for path in paths_to_try:
+                        if os.path.exists(path):
+                            try:
+                                sprite = pygame.image.load(path).convert_alpha()
+                                # Масштабируем спрайт согласно визуальному размеру
+                                sprite_size = int(64 * skill.animation_scale)
+                                sprite = pygame.transform.scale(sprite, (sprite_size, sprite_size))
+                                self.animation.loaded_sprites.append((sprite, frame.duration_ms))
+                                loaded = True
+                                self.add_to_log(f"Загружен спрайт: {os.path.basename(path)}")
+                                break
+                            except Exception as e:
+                                self.add_to_log(f"Ошибка загрузки спрайта: {e}")
+
+                    if not loaded and frame.sprite_path:
+                        self.add_to_log(f"Спрайт не найден: {frame.sprite_path}")
 
         # Параметры траектории
         self.animation.trajectory = skill.projectile_trajectory
@@ -403,8 +425,14 @@ class TestArena:
             # Длительность = дистанция / скорость (скорость в пикселях/сек)
             self.animation.duration = self.animation.distance / self.animation.speed
         else:
-            # Для других типов используем базовую длительность
-            self.animation.duration = skill.animation_duration if skill.animation_duration > 0 else 0.5
+            # Для других типов: если есть кадры анимации, считаем общую длительность
+            if self.animation.loaded_sprites:
+                total_duration_ms = sum(duration for _, duration in self.animation.loaded_sprites)
+                self.animation.duration = total_duration_ms / 1000.0
+            elif skill.animation_duration > 0:
+                self.animation.duration = skill.animation_duration
+            else:
+                self.animation.duration = 0.5
 
     def update_animation(self):
         """Обновить состояние анимации"""
@@ -863,7 +891,20 @@ class TestArena:
         elif skill.animation_type == "impact":
             # Мгновенный эффект на цели (молния и т.п.)
             if self.animation.target:
-                self._render_impact_effect(color, "burst")
+                target_pos = self.get_screen_pos_for_cell(
+                    self.animation.target.x,
+                    self.animation.target.y
+                )
+
+                # Если есть загруженные спрайты, используем их
+                if self.animation.loaded_sprites and self.animation.current_frame < len(self.animation.loaded_sprites):
+                    sprite, _ = self.animation.loaded_sprites[self.animation.current_frame]
+                    sprite_x = target_pos[0] - sprite.get_width() // 2
+                    sprite_y = target_pos[1] - sprite.get_height() // 2
+                    self.screen.blit(sprite, (sprite_x, sprite_y))
+                else:
+                    # Fallback на burst эффект
+                    self._render_impact_effect(color, "burst")
 
         elif skill.animation_type == "on_target":
             # Эффект на цели (лечение и т.п.)
