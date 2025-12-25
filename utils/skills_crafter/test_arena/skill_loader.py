@@ -168,11 +168,24 @@ class TestSkill:
             "healing": 0,
             "effects_applied": [],
             "killed": False,
+            "is_crit": False,
         }
 
         # Применяем урон
         if self.base_damage > 0 and target:
+            import random
             damage = self.get_damage(caster)
+
+            # Проверяем критический удар
+            crit_chance = getattr(caster, 'crit_chance', 0.1)  # 10% по умолчанию
+            is_crit = random.random() < crit_chance
+
+            if is_crit:
+                # Применяем множитель критического урона
+                crit_multiplier = getattr(self, 'crit_damage_multiplier', 2.0)
+                damage = int(damage * crit_multiplier)
+                result["is_crit"] = True
+
             actual_damage = target.take_damage(damage)
             result["damage"] = actual_damage
 
@@ -208,7 +221,10 @@ class TestSkill:
         # Формируем сообщение
         msg_parts = [f"{caster.name} использует {self.name}"]
         if result["damage"] > 0:
-            msg_parts.append(f"наносит {result['damage']} урона")
+            if result["is_crit"]:
+                msg_parts.append(f"КРИТ! наносит {result['damage']} урона")
+            else:
+                msg_parts.append(f"наносит {result['damage']} урона")
         if result["healing"] > 0:
             msg_parts.append(f"восстанавливает {result['healing']} здоровья")
         if result["effects_applied"]:

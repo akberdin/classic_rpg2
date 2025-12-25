@@ -55,6 +55,28 @@ class AnimationState:
     impact_start_time: float = 0.0
 
 
+@dataclass
+class FloatingText:
+    """Всплывающий текст урона/лечения"""
+    text: str
+    x: float
+    y: float
+    start_time: float
+    duration: float = 1.5  # Длительность показа
+    color: Tuple[int, int, int] = (255, 255, 255)
+    is_crit: bool = False
+    is_heal: bool = False
+
+    def get_progress(self, current_time: float) -> float:
+        """Получить прогресс анимации (0-1)"""
+        elapsed = current_time - self.start_time
+        return min(1.0, elapsed / self.duration)
+
+    def is_expired(self, current_time: float) -> bool:
+        """Проверить, истекло ли время показа"""
+        return current_time - self.start_time >= self.duration
+
+
 class TestArena:
     """
     Тестовая арена для проверки умений из Skills Crafter
@@ -134,6 +156,9 @@ class TestArena:
 
         # Анимация
         self.animation = AnimationState()
+
+        # Всплывающий текст урона/лечения
+        self.floating_texts: List[FloatingText] = []
 
         # Лог событий
         self.combat_log: List[str] = []
@@ -375,6 +400,26 @@ class TestArena:
             # Запускаем анимацию
             self.start_animation(skill, caster, target)
 
+            # Создаем всплывающий текст для урона
+            if result.get("damage", 0) > 0:
+                is_crit = result.get("is_crit", False)
+                self.add_floating_text(
+                    target,
+                    str(result["damage"]),
+                    is_heal=False,
+                    is_crit=is_crit
+                )
+
+            # Создаем всплывающий текст для лечения
+            if result.get("healing", 0) > 0:
+                heal_target = target if skill.target_type in ["single_ally", "self"] else caster
+                self.add_floating_text(
+                    heal_target,
+                    f"+{result['healing']}",
+                    is_heal=True,
+                    is_crit=False
+                )
+
             # Удаляем мертвых
             for unit in self.all_units[:]:
                 if not unit.character.is_alive:
@@ -382,6 +427,113 @@ class TestArena:
                         self.add_to_log(f"{unit.character.name} уничтожен!")
         else:
             self.add_to_log(f"Ошибка: {result['message']}")
+
+    def add_floating_text(self, unit: ArenaUnit, text: str, is_heal: bool = False, is_crit: bool = False):
+        """Добавить всплывающий текст над юнитом"""
+        # Получаем экранные координаты юнита
+        screen_pos = self.get_screen_pos_for_cell(unit.x, unit.y)
+
+        # Определяем цвет
+        if is_heal:
+            color = (100, 255, 100)  # Зеленый для лечения
+        elif is_crit:
+            color = (255, 80, 80)  # Красный для крита
+        else:
+            color = (255, 255, 255)  # Белый для обычного урона
+
+        # Создаем всплывающий текст
+        floating = FloatingText(
+            text=text,
+            x=screen_pos[0],
+            y=screen_pos[1] - 20,  # Начинаем чуть выше центра
+            start_time=pygame.time.get_ticks() / 1000.0,
+            duration=1.5,
+            color=color,
+            is_crit=is_crit,
+            is_heal=is_heal
+        )
+        self.floating_texts.append(floating)
+
+    def update_floating_texts(self):
+        """Обновить всплывающие тексты"""
+        current_time = pygame.time.get_ticks() / 1000.0
+
+        # Удаляем истекшие тексты
+        self.floating_texts = [
+            ft for ft in self.floating_texts
+            if not ft.is_expired(current_time)
+        ]
+
+    def _render_floating_texts(self):
+        """Отрисовка всплывающего текста урона/лечения"""
+        if not self.floating_texts:
+            return
+
+        current_time = pygame.time.get_ticks() / 1000.0
+
+        for ft in self.floating_texts:
+            progress = ft.get_progress(current_time)
+
+            # Вычисляем позицию (поднимается вверх)
+            rise_distance = 60 * progress
+            current_y = ft.y - rise_distance
+
+            # Вычисляем размер шрифта (увеличивается от 24 до 36)
+            if ft.is_crit:
+                # Для крита: начинаем с 28 и увеличиваем до 42
+                base_size = 28
+                max_size = 42
+            else:
+                base_size = 22
+                max_size = 32
+
+            # Размер увеличивается в первые 30% анимации, потом держится
+            if progress < 0.3:
+                size_progress = progress / 0.3
+                font_size = int(base_size + (max_size - base_size) * size_progress)
+            else:
+                font_size = max_size
+
+            # Вычисляем прозрачность (начинает исчезать после 70%)
+            if progress > 0.7:
+                fade_progress = (progress - 0.7) / 0.3
+                alpha = int(255 * (1 - fade_progress))
+            else:
+                alpha = 255
+
+            # Создаем шрифт нужного размера
+            font = pygame.font.Font(None, font_size)
+
+            # Рендерим текст
+            text_surface = font.render(ft.text, True, ft.color)
+
+            # Создаем поверхность с прозрачностью
+            text_with_alpha = pygame.Surface(text_surface.get_size(), pygame.SRCALPHA)
+            text_with_alpha.fill((0, 0, 0, 0))
+
+            # Рисуем тень для лучшей читаемости
+            shadow_surface = font.render(ft.text, True, (0, 0, 0))
+            shadow_alpha = pygame.Surface(shadow_surface.get_size(), pygame.SRCALPHA)
+            shadow_alpha.blit(shadow_surface, (0, 0))
+            shadow_alpha.set_alpha(int(alpha * 0.7))
+            self.screen.blit(shadow_alpha, (ft.x - text_surface.get_width() // 2 + 2, int(current_y) + 2))
+
+            # Рисуем основной текст
+            text_with_alpha.blit(text_surface, (0, 0))
+            text_with_alpha.set_alpha(alpha)
+            self.screen.blit(text_with_alpha, (ft.x - text_surface.get_width() // 2, int(current_y)))
+
+            # Дополнительный эффект для крита
+            if ft.is_crit and progress < 0.5:
+                # Пульсирующее свечение
+                pulse = abs(math.sin(progress * 6 * math.pi))
+                glow_radius = int(font_size * 0.8 + 10 * pulse)
+                glow_surface = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
+                glow_alpha = int(80 * (1 - progress * 2))
+                pygame.draw.circle(glow_surface, (*ft.color, glow_alpha), (glow_radius, glow_radius), glow_radius)
+                glow_x = ft.x - glow_radius
+                glow_y = int(current_y) - glow_radius + font_size // 2
+                self.screen.blit(glow_surface, (glow_x, glow_y))
 
     def start_animation(self, skill: TestSkill, caster: ArenaUnit, target: ArenaUnit):
         """Запустить анимацию умения"""
@@ -669,6 +821,9 @@ class TestArena:
         # Анимация
         if self.animation.active:
             self._render_animation()
+
+        # Всплывающий текст урона/лечения
+        self._render_floating_texts()
 
         # Боковая панель
         self._render_side_panel()
@@ -1502,6 +1657,7 @@ class TestArena:
         while self.running:
             self.handle_events()
             self.update_animation()
+            self.update_floating_texts()
             self.render()
             clock.tick(60)
 
