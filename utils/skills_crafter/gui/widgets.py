@@ -1225,6 +1225,55 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         # Показываем нужный фрейм
         self._update_visible_settings()
 
+        # Привязываем уведомления об изменениях
+        self._bind_change_notifications()
+
+    def _bind_change_notifications(self):
+        """Привязать все переменные к уведомлению об изменении"""
+        # Вспомогательная функция для trace
+        def on_var_change(*args):
+            self._notify_change()
+
+        # Переменные снаряда
+        self.proj_speed_var.trace_add("write", on_var_change)
+        self.proj_trajectory_var.trace_add("write", on_var_change)
+        self.proj_arc_height_var.trace_add("write", on_var_change)
+        self.proj_auto_rotate_var.trace_add("write", on_var_change)
+        self.proj_rotation_offset_var.trace_add("write", on_var_change)
+        self.proj_vertical_offset_var.trace_add("write", on_var_change)
+        self.proj_trail_var.trace_add("write", on_var_change)
+        self.proj_trail_color_var.trace_add("write", on_var_change)
+
+        # Переменные луча
+        self.beam_width_var.trace_add("write", on_var_change)
+        self.beam_duration_var.trace_add("write", on_var_change)
+        self.beam_wave_var.trace_add("write", on_var_change)
+        self.beam_wave_freq_var.trace_add("write", on_var_change)
+        self.beam_sprite_orientation_var.trace_add("write", on_var_change)
+        self.beam_sprite_mode_var.trace_add("write", on_var_change)
+        self.beam_color_start_var.trace_add("write", on_var_change)
+        self.beam_color_end_var.trace_add("write", on_var_change)
+        self.beam_glow_var.trace_add("write", on_var_change)
+        self.beam_glow_radius_var.trace_add("write", on_var_change)
+
+        # Переменные области
+        self.area_radius_var.trace_add("write", on_var_change)
+        self.area_shape_var.trace_add("write", on_var_change)
+        self.area_fill_color_var.trace_add("write", on_var_change)
+        self.area_alpha_var.trace_add("write", on_var_change)
+        self.area_border_color_var.trace_add("write", on_var_change)
+        self.area_border_width_var.trace_add("write", on_var_change)
+        self.area_pulse_var.trace_add("write", on_var_change)
+
+        # Переменные таймингов
+        self.timing_apply_var.trace_add("write", on_var_change)
+        self.timing_delay_var.trace_add("write", on_var_change)
+        self.timing_multi_delay_var.trace_add("write", on_var_change)
+        self.timing_sound_delay_var.trace_add("write", on_var_change)
+
+        # Переменные типа отображения
+        self.display_type_var.trace_add("write", on_var_change)
+
     def _create_projectile_settings(self):
         """Настройки снаряда"""
         self.projectile_frame = ttk.LabelFrame(
