@@ -51,6 +51,7 @@ class AnimationState:
     auto_rotate: bool = True
     rotation_offset: float = 0.0
     vertical_offset: float = 0.0
+    beam_sprite_mode: str = "tile"  # tile / stretch / single
 
     # Загруженные спрайты анимации
     loaded_sprites: List = field(default_factory=list)
@@ -751,9 +752,11 @@ class TestArena:
         # Для луча используем beam_rotation_offset, для снаряда - projectile_rotation_offset
         if skill.animation_type in ("beam", "sprite_beam"):
             self.animation.rotation_offset = skill.beam_rotation_offset
-            print(f"[start_animation] sprite_beam: beam_rotation_offset = {skill.beam_rotation_offset}°")
+            self.animation.beam_sprite_mode = skill.beam_sprite_mode
+            print(f"[start_animation] sprite_beam: rotation_offset={skill.beam_rotation_offset}°, mode={skill.beam_sprite_mode}")
         else:
             self.animation.rotation_offset = skill.projectile_rotation_offset
+            self.animation.beam_sprite_mode = "tile"
         self.animation.vertical_offset = skill.animation_vertical_offset
 
         # Для снарядов
@@ -1566,20 +1569,20 @@ class TestArena:
         sprite_width = sprite.get_width()
         sprite_height = sprite.get_height()
 
-        # Определяем шаг между спрайтами (с небольшим перекрытием для непрерывности)
-        step = max(1, sprite_width * 0.7)  # 70% ширины для перекрытия
-        num_segments = max(1, int(current_distance / step))
-
         # Время для анимации волны
         current_time = pygame.time.get_ticks() / 1000.0
+
+        # Получаем режим отображения спрайта
+        sprite_mode = self.animation.beam_sprite_mode
 
         # Эффект свечения под спрайтами
         if glow_enabled and alpha > 0:
             glow_surface = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
             glow_points = []
 
-            for i in range(num_segments + 1):
-                t = i / max(1, num_segments)
+            num_glow_points = max(2, int(current_distance / 10))
+            for i in range(num_glow_points + 1):
+                t = i / max(1, num_glow_points)
                 point_dist = t * current_distance
 
                 # Базовая позиция вдоль луча
@@ -1600,56 +1603,103 @@ class TestArena:
                 pygame.draw.lines(glow_surface, glow_color, False, glow_points, beam_width + glow_radius * 2)
                 self.screen.blit(glow_surface, (0, 0))
 
-        # Рисуем спрайты вдоль луча
-        for i in range(num_segments):
-            t = (i + 0.5) / num_segments
-            point_dist = t * current_distance
+        # Отрисовка в зависимости от режима
+        if sprite_mode == "stretch":
+            # Режим растяжения: один спрайт на всю длину
+            center_x = caster_pos[0] + dir_x * (current_distance / 2)
+            center_y = caster_pos[1] + dir_y * (current_distance / 2)
 
-            # Базовая позиция вдоль луча
-            sprite_x = caster_pos[0] + dir_x * point_dist
-            sprite_y = caster_pos[1] + dir_y * point_dist
-
-            # Волновое смещение (для молнии)
-            wave_offset = 0
-            local_angle = base_angle
-            if wave_amplitude > 0:
-                # Смещение и локальный угол для зигзага
-                wave_phase = (t * wave_frequency + current_time * 5) * math.pi * 2
-                wave_offset = math.sin(wave_phase) * wave_amplitude
-                sprite_x += perp_x * wave_offset
-                sprite_y += perp_y * wave_offset
-
-                # Вычисляем локальный угол на основе направления сегмента
-                if i < num_segments - 1:
-                    next_t = (i + 1.5) / num_segments
-                    next_dist = next_t * current_distance
-                    next_x = caster_pos[0] + dir_x * next_dist
-                    next_y = caster_pos[1] + dir_y * next_dist
-                    next_wave = math.sin((next_t * wave_frequency + current_time * 5) * math.pi * 2) * wave_amplitude
-                    next_x += perp_x * next_wave
-                    next_y += perp_y * next_wave
-
-                    segment_dx = next_x - sprite_x
-                    segment_dy = next_y - sprite_y
-                    local_angle = math.degrees(math.atan2(-segment_dy, segment_dx))
-
-            # Поворачиваем спрайт в направлении луча (или сегмента)
-            # Формула предполагает, что исходный спрайт направлен ВПРАВО (0°)
-            # rotation_offset корректирует для спрайтов с другой ориентацией:
-            # - Спрайт направлен ВНИЗ: rotation_offset = 90°
-            # - Спрайт направлен ВЛЕВО: rotation_offset = 180°
-            # - Спрайт направлен ВВЕРХ: rotation_offset = -90°
-            final_angle = local_angle + self.animation.rotation_offset
+            # Поворачиваем спрайт в направлении луча
+            final_angle = base_angle + self.animation.rotation_offset
             rotated_sprite = pygame.transform.rotate(sprite, final_angle)
 
-            # Применяем прозрачность
+            # Масштабируем спрайт по длине луча
+            if current_distance > 0:
+                # Определяем направление масштабирования (вдоль луча)
+                scale_x = current_distance / max(1, sprite_width)
+                # Высота остается пропорциональной или фиксированной
+                new_width = int(current_distance)
+                new_height = int(sprite_height * max(0.5, min(2.0, scale_x * 0.3)))
+                if new_width > 0 and new_height > 0:
+                    stretched_sprite = pygame.transform.scale(rotated_sprite, (new_width, new_height))
+
+                    if alpha < 255:
+                        stretched_sprite = stretched_sprite.copy()
+                        stretched_sprite.set_alpha(alpha)
+
+                    sprite_rect = stretched_sprite.get_rect(center=(int(center_x), int(center_y)))
+                    self.screen.blit(stretched_sprite, sprite_rect)
+
+        elif sprite_mode == "single":
+            # Режим одного спрайта: в центре луча
+            center_x = caster_pos[0] + dir_x * (current_distance / 2)
+            center_y = caster_pos[1] + dir_y * (current_distance / 2)
+
+            # Волновое смещение для центра
+            if wave_amplitude > 0:
+                wave_offset = math.sin((0.5 * wave_frequency + current_time * 5) * math.pi * 2) * wave_amplitude
+                center_x += perp_x * wave_offset
+                center_y += perp_y * wave_offset
+
+            # Поворачиваем спрайт
+            final_angle = base_angle + self.animation.rotation_offset
+            rotated_sprite = pygame.transform.rotate(sprite, final_angle)
+
             if alpha < 255:
                 rotated_sprite = rotated_sprite.copy()
                 rotated_sprite.set_alpha(alpha)
 
-            # Рисуем спрайт
-            sprite_rect = rotated_sprite.get_rect(center=(int(sprite_x), int(sprite_y)))
+            sprite_rect = rotated_sprite.get_rect(center=(int(center_x), int(center_y)))
             self.screen.blit(rotated_sprite, sprite_rect)
+
+        else:
+            # Режим тайлинга (по умолчанию): повторяем спрайты вдоль луча
+            step = max(1, sprite_width * 0.7)  # 70% ширины для перекрытия
+            num_segments = max(1, int(current_distance / step))
+
+            for i in range(num_segments):
+                t = (i + 0.5) / num_segments
+                point_dist = t * current_distance
+
+                # Базовая позиция вдоль луча
+                sprite_x = caster_pos[0] + dir_x * point_dist
+                sprite_y = caster_pos[1] + dir_y * point_dist
+
+                # Волновое смещение (для молнии)
+                local_angle = base_angle
+                if wave_amplitude > 0:
+                    # Смещение и локальный угол для зигзага
+                    wave_phase = (t * wave_frequency + current_time * 5) * math.pi * 2
+                    wave_offset = math.sin(wave_phase) * wave_amplitude
+                    sprite_x += perp_x * wave_offset
+                    sprite_y += perp_y * wave_offset
+
+                    # Вычисляем локальный угол на основе направления сегмента
+                    if i < num_segments - 1:
+                        next_t = (i + 1.5) / num_segments
+                        next_dist = next_t * current_distance
+                        next_x = caster_pos[0] + dir_x * next_dist
+                        next_y = caster_pos[1] + dir_y * next_dist
+                        next_wave = math.sin((next_t * wave_frequency + current_time * 5) * math.pi * 2) * wave_amplitude
+                        next_x += perp_x * next_wave
+                        next_y += perp_y * next_wave
+
+                        segment_dx = next_x - sprite_x
+                        segment_dy = next_y - sprite_y
+                        local_angle = math.degrees(math.atan2(-segment_dy, segment_dx))
+
+                # Поворачиваем спрайт в направлении луча
+                final_angle = local_angle + self.animation.rotation_offset
+                rotated_sprite = pygame.transform.rotate(sprite, final_angle)
+
+                # Применяем прозрачность
+                if alpha < 255:
+                    rotated_sprite = rotated_sprite.copy()
+                    rotated_sprite.set_alpha(alpha)
+
+                # Рисуем спрайт
+                sprite_rect = rotated_sprite.get_rect(center=(int(sprite_x), int(sprite_y)))
+                self.screen.blit(rotated_sprite, sprite_rect)
 
         # Эффект на цели (когда луч достиг)
         if beam_progress >= 1.0:

@@ -69,6 +69,7 @@ class TestSkill:
     beam_wave_amplitude: float = 0.0  # Амплитуда волны (для молнии)
     beam_wave_frequency: float = 3.0  # Частота волны
     beam_rotation_offset: float = 90.0  # Смещение угла спрайта (90° = спрайт направлен вниз)
+    beam_sprite_mode: str = "tile"  # tile / stretch / single
     beam_glow_enabled: bool = True  # Эффект свечения
     beam_glow_radius: int = 4  # Радиус свечения
 
@@ -408,8 +409,8 @@ class SkillsCrafterLoader:
         beam_wave_amplitude = 0.0
         beam_wave_frequency = 3.0
         # По умолчанию 90° - для спрайтов направленных ВНИЗ (молнии, лучи и т.д.)
-        # Если спрайт направлен ВПРАВО, установите 0°
         beam_rotation_offset = 90.0
+        beam_sprite_mode = "tile"  # tile / stretch / single
         beam_glow_enabled = True
         beam_glow_radius = 4
 
@@ -420,6 +421,7 @@ class SkillsCrafterLoader:
                 beam_wave_frequency = beam_data.get("wave_frequency", 3.0)
                 # Читаем rotation_offset, но если не указан - используем 90° по умолчанию
                 beam_rotation_offset = beam_data.get("rotation_offset", 90.0)
+                beam_sprite_mode = beam_data.get("sprite_mode", "tile")
                 beam_glow_enabled = beam_data.get("glow_enabled", True)
                 beam_glow_radius = beam_data.get("glow_radius", 4)
 
@@ -492,6 +494,7 @@ class SkillsCrafterLoader:
             beam_wave_amplitude=beam_wave_amplitude,
             beam_wave_frequency=beam_wave_frequency,
             beam_rotation_offset=beam_rotation_offset,
+            beam_sprite_mode=beam_sprite_mode,
             beam_glow_enabled=beam_glow_enabled,
             beam_glow_radius=beam_glow_radius,
         )
