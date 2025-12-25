@@ -1353,13 +1353,48 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         # Смещение угла спрайта (для sprite_beam)
         rotation_frame = ttk.Frame(self.beam_frame)
         rotation_frame.pack(fill=tk.X, pady=2, padx=5)
-        ttk.Label(rotation_frame, text="Смещение угла спрайта (°):").pack(side=tk.LEFT)
-        self.beam_rotation_offset_var = tk.DoubleVar(value=0.0)
-        ttk.Spinbox(
-            rotation_frame, textvariable=self.beam_rotation_offset_var,
-            from_=-180, to=180, increment=15, width=8
+        ttk.Label(rotation_frame, text="Ориентация спрайта:").pack(side=tk.LEFT)
+
+        # Словарь ориентаций: ключ -> (отображаемое имя, угол)
+        self.sprite_orientations = {
+            "down": ("Вниз ↓", 90.0),
+            "right": ("Вправо →", 0.0),
+            "up": ("Вверх ↑", -90.0),
+            "left": ("Влево ←", 180.0),
+        }
+        orientation_names = [v[0] for v in self.sprite_orientations.values()]
+        self.beam_sprite_orientation_var = tk.StringVar(value="Вниз ↓")
+        ttk.Combobox(
+            rotation_frame,
+            textvariable=self.beam_sprite_orientation_var,
+            values=orientation_names,
+            state="readonly",
+            width=12
         ).pack(side=tk.LEFT, padx=5)
-        ToolTip(rotation_frame, "Для спрайтов, направленных вниз, установите 90°")
+        ToolTip(rotation_frame, "Как расположен спрайт в исходном изображении")
+
+        # Скрытая переменная для хранения угла (для совместимости)
+        self.beam_rotation_offset_var = tk.DoubleVar(value=90.0)
+
+        # Режим отображения спрайта
+        display_frame = ttk.Frame(self.beam_frame)
+        display_frame.pack(fill=tk.X, pady=2, padx=5)
+        ttk.Label(display_frame, text="Режим спрайта:").pack(side=tk.LEFT)
+
+        self.beam_sprite_modes = {
+            "tile": "Тайлинг (повтор)",
+            "stretch": "Растяжение",
+            "single": "Один в центре",
+        }
+        self.beam_sprite_mode_var = tk.StringVar(value="Тайлинг (повтор)")
+        ttk.Combobox(
+            display_frame,
+            textvariable=self.beam_sprite_mode_var,
+            values=list(self.beam_sprite_modes.values()),
+            state="readonly",
+            width=16
+        ).pack(side=tk.LEFT, padx=5)
+        ToolTip(display_frame, "Тайлинг - повторяет спрайт; Растяжение - растягивает один спрайт на всю длину")
 
         # Цвета
         color_frame = ttk.Frame(self.beam_frame)
@@ -1590,12 +1625,32 @@ class AnimationDisplaySettings(ttk.LabelFrame):
             data["animation_vertical_offset"] = self.proj_vertical_offset_var.get()
 
         elif display_type in ("beam", "sprite_beam"):
+            # Преобразуем ориентацию в угол
+            orientation_display = self.beam_sprite_orientation_var.get()
+            rotation_offset = 90.0  # По умолчанию - вниз
+            sprite_orientation = "down"
+            for key, (display_name, angle) in self.sprite_orientations.items():
+                if display_name == orientation_display:
+                    rotation_offset = angle
+                    sprite_orientation = key
+                    break
+
+            # Преобразуем режим спрайта
+            sprite_mode_display = self.beam_sprite_mode_var.get()
+            sprite_mode = "tile"
+            for key, display_name in self.beam_sprite_modes.items():
+                if display_name == sprite_mode_display:
+                    sprite_mode = key
+                    break
+
             data["beam"] = {
                 "width": self.beam_width_var.get(),
                 "duration_ms": self.beam_duration_var.get(),
                 "wave_amplitude": self.beam_wave_var.get(),
                 "wave_frequency": self.beam_wave_freq_var.get(),
-                "rotation_offset": self.beam_rotation_offset_var.get(),
+                "sprite_orientation": sprite_orientation,
+                "rotation_offset": rotation_offset,
+                "sprite_mode": sprite_mode,
                 "color_start": self.beam_color_start_var.get(),
                 "color_end": self.beam_color_end_var.get(),
                 "glow_enabled": self.beam_glow_var.get(),
@@ -1653,7 +1708,34 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         self.beam_duration_var.set(beam.get("duration_ms", 500))
         self.beam_wave_var.set(beam.get("wave_amplitude", 0.0))
         self.beam_wave_freq_var.set(beam.get("wave_frequency", 3.0))
-        self.beam_rotation_offset_var.set(beam.get("rotation_offset", 0.0))
+
+        # Загружаем ориентацию спрайта
+        sprite_orientation = beam.get("sprite_orientation", "down")
+        if sprite_orientation in self.sprite_orientations:
+            display_name, angle = self.sprite_orientations[sprite_orientation]
+            self.beam_sprite_orientation_var.set(display_name)
+            self.beam_rotation_offset_var.set(angle)
+        else:
+            # Совместимость со старыми файлами - используем rotation_offset напрямую
+            rotation_offset = beam.get("rotation_offset", 90.0)
+            self.beam_rotation_offset_var.set(rotation_offset)
+            # Определяем ориентацию по углу
+            if abs(rotation_offset - 90.0) < 1:
+                self.beam_sprite_orientation_var.set("Вниз ↓")
+            elif abs(rotation_offset) < 1:
+                self.beam_sprite_orientation_var.set("Вправо →")
+            elif abs(rotation_offset + 90.0) < 1:
+                self.beam_sprite_orientation_var.set("Вверх ↑")
+            else:
+                self.beam_sprite_orientation_var.set("Влево ←")
+
+        # Загружаем режим спрайта
+        sprite_mode = beam.get("sprite_mode", "tile")
+        if sprite_mode in self.beam_sprite_modes:
+            self.beam_sprite_mode_var.set(self.beam_sprite_modes[sprite_mode])
+        else:
+            self.beam_sprite_mode_var.set("Тайлинг (повтор)")
+
         self.beam_color_start_var.set(beam.get("color_start", "#FFFFFF"))
         self.beam_color_end_var.set(beam.get("color_end", "#FFFFFF"))
         self.beam_glow_var.set(beam.get("glow_enabled", True))
