@@ -748,7 +748,11 @@ class TestArena:
         self.animation.trajectory = skill.projectile_trajectory
         self.animation.speed = skill.projectile_speed
         self.animation.auto_rotate = skill.projectile_auto_rotate
-        self.animation.rotation_offset = skill.projectile_rotation_offset
+        # Для луча используем beam_rotation_offset, для снаряда - projectile_rotation_offset
+        if skill.animation_type in ("beam", "sprite_beam"):
+            self.animation.rotation_offset = skill.beam_rotation_offset
+        else:
+            self.animation.rotation_offset = skill.projectile_rotation_offset
         self.animation.vertical_offset = skill.animation_vertical_offset
 
         # Для снарядов

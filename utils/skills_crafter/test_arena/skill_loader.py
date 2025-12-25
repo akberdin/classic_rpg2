@@ -68,6 +68,7 @@ class TestSkill:
     # Параметры луча (beam/sprite_beam)
     beam_wave_amplitude: float = 0.0  # Амплитуда волны (для молнии)
     beam_wave_frequency: float = 3.0  # Частота волны
+    beam_rotation_offset: float = 0.0  # Смещение угла спрайта (для sprite_beam)
     beam_glow_enabled: bool = True  # Эффект свечения
     beam_glow_radius: int = 4  # Радиус свечения
 
@@ -406,6 +407,7 @@ class SkillsCrafterLoader:
         # Параметры луча (для beam и sprite_beam)
         beam_wave_amplitude = 0.0
         beam_wave_frequency = 3.0
+        beam_rotation_offset = 0.0
         beam_glow_enabled = True
         beam_glow_radius = 4
 
@@ -414,6 +416,7 @@ class SkillsCrafterLoader:
             if beam_data:
                 beam_wave_amplitude = beam_data.get("wave_amplitude", 0.0)
                 beam_wave_frequency = beam_data.get("wave_frequency", 3.0)
+                beam_rotation_offset = beam_data.get("rotation_offset", 0.0)
                 beam_glow_enabled = beam_data.get("glow_enabled", True)
                 beam_glow_radius = beam_data.get("glow_radius", 4)
 
@@ -485,6 +488,7 @@ class SkillsCrafterLoader:
             # Параметры луча
             beam_wave_amplitude=beam_wave_amplitude,
             beam_wave_frequency=beam_wave_frequency,
+            beam_rotation_offset=beam_rotation_offset,
             beam_glow_enabled=beam_glow_enabled,
             beam_glow_radius=beam_glow_radius,
         )
