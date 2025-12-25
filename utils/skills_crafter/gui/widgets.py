@@ -1282,6 +1282,16 @@ class AnimationDisplaySettings(ttk.LabelFrame):
             from_=-180, to=180, increment=15, width=8
         ).pack(side=tk.LEFT, padx=5)
 
+        # Вертикальное смещение
+        voffset_frame = ttk.Frame(self.projectile_frame)
+        voffset_frame.pack(fill=tk.X, pady=2, padx=5)
+        ttk.Label(voffset_frame, text="Верт. смещение (пикс):").pack(side=tk.LEFT)
+        self.proj_vertical_offset_var = tk.DoubleVar(value=0.0)
+        ttk.Spinbox(
+            voffset_frame, textvariable=self.proj_vertical_offset_var,
+            from_=-100, to=100, increment=5, width=8
+        ).pack(side=tk.LEFT, padx=5)
+
         # След
         trail_frame = ttk.Frame(self.projectile_frame)
         trail_frame.pack(fill=tk.X, pady=2, padx=5)
@@ -1331,6 +1341,13 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         ttk.Spinbox(
             wave_frame, textvariable=self.beam_wave_var,
             from_=0, to=50, increment=5, width=6
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Label(wave_frame, text="Частота:").pack(side=tk.LEFT, padx=(10, 0))
+        self.beam_wave_freq_var = tk.DoubleVar(value=3.0)
+        ttk.Spinbox(
+            wave_frame, textvariable=self.beam_wave_freq_var,
+            from_=0.5, to=10, increment=0.5, width=6
         ).pack(side=tk.LEFT, padx=5)
 
         # Цвета
@@ -1559,12 +1576,14 @@ class AnimationDisplaySettings(ttk.LabelFrame):
                 "trail_enabled": self.proj_trail_var.get(),
                 "trail_color": self.proj_trail_color_var.get(),
             }
+            data["animation_vertical_offset"] = self.proj_vertical_offset_var.get()
 
         elif display_type in ("beam", "sprite_beam"):
             data["beam"] = {
                 "width": self.beam_width_var.get(),
                 "duration_ms": self.beam_duration_var.get(),
                 "wave_amplitude": self.beam_wave_var.get(),
+                "wave_frequency": self.beam_wave_freq_var.get(),
                 "color_start": self.beam_color_start_var.get(),
                 "color_end": self.beam_color_end_var.get(),
                 "glow_enabled": self.beam_glow_var.get(),
@@ -1612,6 +1631,7 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         self.proj_arc_height_var.set(projectile.get("arc_height", 50.0))
         self.proj_auto_rotate_var.set(projectile.get("auto_rotate", True))
         self.proj_rotation_offset_var.set(projectile.get("rotation_offset", 0.0))
+        self.proj_vertical_offset_var.set(data.get("animation_vertical_offset", 0.0))
         self.proj_trail_var.set(projectile.get("trail_enabled", False))
         self.proj_trail_color_var.set(projectile.get("trail_color", "#FFFFFF"))
 
@@ -1620,6 +1640,7 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         self.beam_width_var.set(beam.get("width", 8))
         self.beam_duration_var.set(beam.get("duration_ms", 500))
         self.beam_wave_var.set(beam.get("wave_amplitude", 0.0))
+        self.beam_wave_freq_var.set(beam.get("wave_frequency", 3.0))
         self.beam_color_start_var.set(beam.get("color_start", "#FFFFFF"))
         self.beam_color_end_var.set(beam.get("color_end", "#FFFFFF"))
         self.beam_glow_var.set(beam.get("glow_enabled", True))

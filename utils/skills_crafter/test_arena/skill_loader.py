@@ -60,8 +60,16 @@ class TestSkill:
     animation_frames: List[AnimationFrame] = field(default_factory=list)
     projectile_speed: float = 300.0
     projectile_trajectory: str = "straight"  # straight, arc, wave, homing
+    projectile_auto_rotate: bool = True  # Авто-поворот к цели
+    projectile_rotation_offset: float = 0.0  # Смещение угла в градусах
     animation_duration: float = 0.5
     animation_scale: float = 1.0  # Масштаб анимации
+    animation_vertical_offset: float = 0.0  # Вертикальное смещение анимации
+    # Параметры луча (beam/sprite_beam)
+    beam_wave_amplitude: float = 0.0  # Амплитуда волны (для молнии)
+    beam_wave_frequency: float = 3.0  # Частота волны
+    beam_glow_enabled: bool = True  # Эффект свечения
+    beam_glow_radius: int = 4  # Радиус свечения
 
     # Ранг
     current_rank: int = 1
@@ -355,8 +363,11 @@ class SkillsCrafterLoader:
         animation_type = "static"
         projectile_speed = 300.0
         projectile_trajectory = "straight"
+        projectile_auto_rotate = True
+        projectile_rotation_offset = 0.0
         animation_duration = 0.5
         animation_scale = 1.0
+        animation_vertical_offset = 0.0
 
         if visual_data:
             animation_type = visual_data.get("display_type", "static")
@@ -385,9 +396,33 @@ class SkillsCrafterLoader:
             if projectile_data:
                 projectile_speed = projectile_data.get("speed", 300.0)
                 projectile_trajectory = projectile_data.get("trajectory", "straight")
+                projectile_auto_rotate = projectile_data.get("auto_rotate", True)
+                projectile_rotation_offset = projectile_data.get("rotation_offset", 0.0)
 
-            # Масштаб анимации
+            # Масштаб анимации и вертикальное смещение
             animation_scale = visual_data.get("animation_scale", 1.0)
+            animation_vertical_offset = visual_data.get("animation_vertical_offset", 0.0)
+
+        # Параметры луча (для beam и sprite_beam)
+        beam_wave_amplitude = 0.0
+        beam_wave_frequency = 3.0
+        beam_glow_enabled = True
+        beam_glow_radius = 4
+
+        if visual_data:
+            beam_data = visual_data.get("beam", {})
+            if beam_data:
+                beam_wave_amplitude = beam_data.get("wave_amplitude", 0.0)
+                beam_wave_frequency = beam_data.get("wave_frequency", 3.0)
+                beam_glow_enabled = beam_data.get("glow_enabled", True)
+                beam_glow_radius = beam_data.get("glow_radius", 4)
+
+        # Извлекаем путь к иконке
+        icon_path = ""
+        if visual_data:
+            icon_path = visual_data.get("icon_path", "")
+            if icon_path:
+                icon_path = icon_path.replace("\\", "/")
 
         # Извлекаем данные масштабирования
         scaling_attr = "strength"
@@ -437,12 +472,21 @@ class SkillsCrafterLoader:
             status_effects=status_effects,
 
             # Визуальные
+            icon_path=icon_path,
             animation_type=animation_type,
             animation_frames=animation_frames,
             projectile_speed=projectile_speed,
             projectile_trajectory=projectile_trajectory,
+            projectile_auto_rotate=projectile_auto_rotate,
+            projectile_rotation_offset=projectile_rotation_offset,
             animation_duration=animation_duration,
             animation_scale=animation_scale,
+            animation_vertical_offset=animation_vertical_offset,
+            # Параметры луча
+            beam_wave_amplitude=beam_wave_amplitude,
+            beam_wave_frequency=beam_wave_frequency,
+            beam_glow_enabled=beam_glow_enabled,
+            beam_glow_radius=beam_glow_radius,
         )
 
         self.loaded_skills[skill.skill_id] = skill

@@ -48,6 +48,9 @@ class AnimationState:
     speed: float = 300.0
     distance: float = 0.0
     effect_color: Tuple[int, int, int] = (255, 200, 100)
+    auto_rotate: bool = True
+    rotation_offset: float = 0.0
+    vertical_offset: float = 0.0
 
     # Загруженные спрайты анимации
     loaded_sprites: List = field(default_factory=list)
@@ -226,18 +229,33 @@ class TestArena:
 
     def _load_skill_icons(self):
         """Загрузить иконки умений"""
+        # Определяем возможные базовые директории
+        base_dirs = [
+            "",  # Текущая директория
+            "utils/skills_crafter",
+            "game/assets",
+            "assets",
+            os.path.dirname(os.path.dirname(__file__)),  # Папка skills_crafter
+        ]
+
         for skill_id, skill in self.available_skills.items():
             if skill.icon_path:
                 # Нормализуем путь
                 icon_path = skill.icon_path.replace("\\", "/")
 
                 # Пробуем разные базовые пути
-                paths_to_try = [
-                    icon_path,
-                    os.path.join("utils/skills_crafter", icon_path),
-                    os.path.join("game/assets", icon_path),
-                    os.path.join("assets", icon_path),
-                ]
+                paths_to_try = []
+
+                # Абсолютный путь
+                if os.path.isabs(icon_path):
+                    paths_to_try.append(icon_path)
+                else:
+                    # Относительные пути от разных базовых директорий
+                    for base in base_dirs:
+                        if base:
+                            paths_to_try.append(os.path.join(base, icon_path))
+                        else:
+                            paths_to_try.append(icon_path)
 
                 for path in paths_to_try:
                     if os.path.exists(path):
@@ -726,9 +744,12 @@ class TestArena:
                     if not loaded and frame.sprite_path:
                         self.add_to_log(f"Спрайт не найден: {frame.sprite_path}")
 
-        # Параметры траектории
+        # Параметры траектории и поворота
         self.animation.trajectory = skill.projectile_trajectory
         self.animation.speed = skill.projectile_speed
+        self.animation.auto_rotate = skill.projectile_auto_rotate
+        self.animation.rotation_offset = skill.projectile_rotation_offset
+        self.animation.vertical_offset = skill.animation_vertical_offset
 
         # Для снарядов
         if skill.animation_type == "projectile":
@@ -1283,14 +1304,25 @@ class TestArena:
             # Рисуем снаряд, если еще не достиг цели
             if not self.animation.impact_active:
                 proj_x = int(self.animation.projectile_x)
-                proj_y = int(self.animation.projectile_y)
+                proj_y = int(self.animation.projectile_y + self.animation.vertical_offset)
 
                 # Если есть загруженные спрайты, используем их
                 if self.animation.loaded_sprites and self.animation.current_frame < len(self.animation.loaded_sprites):
                     sprite, _ = self.animation.loaded_sprites[self.animation.current_frame]
-                    sprite_x = proj_x - sprite.get_width() // 2
-                    sprite_y = proj_y - sprite.get_height() // 2
-                    self.screen.blit(sprite, (sprite_x, sprite_y))
+
+                    # Поворачиваем спрайт в направлении движения
+                    if self.animation.auto_rotate:
+                        dx = self.animation.projectile_end_x - self.animation.projectile_start_x
+                        dy = self.animation.projectile_end_y - self.animation.projectile_start_y
+                        # Угол в градусах (pygame Y инвертирован, поэтому -dy)
+                        angle = math.degrees(math.atan2(-dy, dx)) + self.animation.rotation_offset
+                        rotated_sprite = pygame.transform.rotate(sprite, angle)
+                    else:
+                        rotated_sprite = sprite
+
+                    sprite_x = proj_x - rotated_sprite.get_width() // 2
+                    sprite_y = proj_y - rotated_sprite.get_height() // 2
+                    self.screen.blit(rotated_sprite, (sprite_x, sprite_y))
                 else:
                     # Рисуем снаряд с цветом из конфига
                     pygame.draw.circle(self.screen, color, (proj_x, proj_y), 10)
@@ -1438,9 +1470,19 @@ class TestArena:
             self.screen.blit(impact_surface, (target_pos[0] - impact_radius, target_pos[1] - impact_radius))
 
     def _render_sprite_beam_effect(self, color: Tuple[int, int, int], progress: float):
-        """Отрисовка спрайтового луча от кастера к цели"""
+        """
+        Отрисовка спрайтового луча от кастера к цели.
+
+        Поддерживает:
+        - Волнообразность (wave_amplitude) для эффекта молнии
+        - Авто-поворот спрайтов в направлении луча
+        - Тайлинг спрайтов по длине луча
+        - Эффект свечения
+        """
         if not self.animation.caster or not self.animation.target:
             return
+
+        skill = self.animation.skill
 
         caster_pos = self.get_screen_pos_for_cell(
             self.animation.caster.x,
@@ -1455,23 +1497,51 @@ class TestArena:
         dx = target_pos[0] - caster_pos[0]
         dy = target_pos[1] - caster_pos[1]
         distance = math.sqrt(dx * dx + dy * dy)
-        angle = math.degrees(math.atan2(-dy, dx))  # Угол в градусах (pygame Y инвертирован)
+        if distance == 0:
+            return
+
+        # Нормализованное направление
+        dir_x = dx / distance
+        dir_y = dy / distance
+
+        # Перпендикулярный вектор для смещения волны
+        perp_x = -dir_y
+        perp_y = dir_x
+
+        # Угол направления луча
+        base_angle = math.degrees(math.atan2(-dy, dx))
 
         # Если нет загруженных спрайтов, используем обычный луч
         if not self.animation.loaded_sprites:
             self._render_beam_effect(color, progress)
             return
 
-        # Фазы: появление (0-0.2), удержание (0.2-0.8), затухание (0.8-1.0)
-        if progress < 0.2:
-            beam_progress = progress / 0.2
+        # Получаем настройки луча из скилла
+        wave_amplitude = 0.0
+        wave_frequency = 3.0
+        glow_enabled = True
+        glow_radius = 4
+        beam_width = 8
+
+        if skill and hasattr(skill, 'beam_wave_amplitude'):
+            wave_amplitude = skill.beam_wave_amplitude
+        if skill and hasattr(skill, 'beam_wave_frequency'):
+            wave_frequency = skill.beam_wave_frequency
+        if skill and hasattr(skill, 'beam_glow_enabled'):
+            glow_enabled = skill.beam_glow_enabled
+        if skill and hasattr(skill, 'beam_glow_radius'):
+            glow_radius = skill.beam_glow_radius
+
+        # Фазы: появление (0-0.15), удержание (0.15-0.85), затухание (0.85-1.0)
+        if progress < 0.15:
+            beam_progress = progress / 0.15
             alpha = 255
-        elif progress < 0.8:
+        elif progress < 0.85:
             beam_progress = 1.0
             alpha = 255
         else:
             beam_progress = 1.0
-            fade_progress = (progress - 0.8) / 0.2
+            fade_progress = (progress - 0.85) / 0.15
             alpha = int(255 * (1 - fade_progress))
 
         # Длина луча (растет от кастера к цели)
@@ -1483,22 +1553,78 @@ class TestArena:
         else:
             sprite, _ = self.animation.loaded_sprites[-1]
 
-        # Количество спрайтов вдоль луча (тайлинг)
         sprite_width = sprite.get_width()
         sprite_height = sprite.get_height()
 
-        # Определяем количество спрайтов для тайлинга
-        num_tiles = max(1, int(current_distance / sprite_width))
+        # Определяем шаг между спрайтами (с небольшим перекрытием для непрерывности)
+        step = max(1, sprite_width * 0.7)  # 70% ширины для перекрытия
+        num_segments = max(1, int(current_distance / step))
+
+        # Время для анимации волны
+        current_time = pygame.time.get_ticks() / 1000.0
+
+        # Эффект свечения под спрайтами
+        if glow_enabled and alpha > 0:
+            glow_surface = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+            glow_points = []
+
+            for i in range(num_segments + 1):
+                t = i / max(1, num_segments)
+                point_dist = t * current_distance
+
+                # Базовая позиция вдоль луча
+                base_x = caster_pos[0] + dir_x * point_dist
+                base_y = caster_pos[1] + dir_y * point_dist
+
+                # Волновое смещение
+                if wave_amplitude > 0:
+                    wave_offset = math.sin((t * wave_frequency + current_time * 5) * math.pi * 2) * wave_amplitude
+                    base_x += perp_x * wave_offset
+                    base_y += perp_y * wave_offset
+
+                glow_points.append((int(base_x), int(base_y)))
+
+            # Рисуем свечение как толстую линию
+            if len(glow_points) >= 2:
+                glow_color = (*color, int(alpha * 0.3))
+                pygame.draw.lines(glow_surface, glow_color, False, glow_points, beam_width + glow_radius * 2)
+                self.screen.blit(glow_surface, (0, 0))
 
         # Рисуем спрайты вдоль луча
-        for i in range(num_tiles):
-            # Позиция спрайта вдоль луча
-            t = (i + 0.5) / num_tiles  # 0.5 для центрирования
-            sprite_x = caster_pos[0] + dx * t * beam_progress
-            sprite_y = caster_pos[1] + dy * t * beam_progress
+        for i in range(num_segments):
+            t = (i + 0.5) / num_segments
+            point_dist = t * current_distance
 
-            # Поворачиваем спрайт в направлении луча
-            rotated_sprite = pygame.transform.rotate(sprite, angle)
+            # Базовая позиция вдоль луча
+            sprite_x = caster_pos[0] + dir_x * point_dist
+            sprite_y = caster_pos[1] + dir_y * point_dist
+
+            # Волновое смещение (для молнии)
+            wave_offset = 0
+            local_angle = base_angle
+            if wave_amplitude > 0:
+                # Смещение и локальный угол для зигзага
+                wave_phase = (t * wave_frequency + current_time * 5) * math.pi * 2
+                wave_offset = math.sin(wave_phase) * wave_amplitude
+                sprite_x += perp_x * wave_offset
+                sprite_y += perp_y * wave_offset
+
+                # Вычисляем локальный угол на основе направления сегмента
+                if i < num_segments - 1:
+                    next_t = (i + 1.5) / num_segments
+                    next_dist = next_t * current_distance
+                    next_x = caster_pos[0] + dir_x * next_dist
+                    next_y = caster_pos[1] + dir_y * next_dist
+                    next_wave = math.sin((next_t * wave_frequency + current_time * 5) * math.pi * 2) * wave_amplitude
+                    next_x += perp_x * next_wave
+                    next_y += perp_y * next_wave
+
+                    segment_dx = next_x - sprite_x
+                    segment_dy = next_y - sprite_y
+                    local_angle = math.degrees(math.atan2(-segment_dy, segment_dx))
+
+            # Поворачиваем спрайт в направлении луча (или сегмента)
+            rotated_sprite = pygame.transform.rotate(sprite, local_angle + self.animation.rotation_offset)
 
             # Применяем прозрачность
             if alpha < 255:
@@ -1511,9 +1637,15 @@ class TestArena:
 
         # Эффект на цели (когда луч достиг)
         if beam_progress >= 1.0:
-            impact_radius = int(20 + 10 * abs(math.sin(progress * 6 * math.pi)))
+            impact_pulse = abs(math.sin(progress * 8 * math.pi))
+            impact_radius = int(15 + 15 * impact_pulse)
             impact_surface = pygame.Surface((impact_radius * 2, impact_radius * 2), pygame.SRCALPHA)
-            pygame.draw.circle(impact_surface, (*color, int(alpha * 0.4)), (impact_radius, impact_radius), impact_radius)
+
+            # Двойное кольцо для эффекта
+            pygame.draw.circle(impact_surface, (*color, int(alpha * 0.5)), (impact_radius, impact_radius), impact_radius)
+            inner_radius = int(impact_radius * 0.6)
+            pygame.draw.circle(impact_surface, (255, 255, 255, int(alpha * 0.7)), (impact_radius, impact_radius), inner_radius)
+
             self.screen.blit(impact_surface, (target_pos[0] - impact_radius, target_pos[1] - impact_radius))
 
     def _render_impact_effect(self, color: Tuple[int, int, int], effect_type: str = "explosion"):
