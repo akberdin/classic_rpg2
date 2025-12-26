@@ -957,36 +957,36 @@ class TestArena:
             self.animation.projectile_y = base_y
 
             # Проверяем достижение цели
-            if progress >= 1.0:
-                # Запускаем эффект попадания
+            if progress >= 1.0 and not self.animation.impact_active:
+                # Запускаем эффект попадания (только один раз!)
                 self.animation.impact_active = True
                 self.animation.impact_start_time = current_time
 
         # Обновляем текущий кадр анимации
         if self.animation.loaded_sprites:
             frame_elapsed = (current_time - self.animation.frame_start_time) * 1000  # в мс
+            num_sprites = len(self.animation.loaded_sprites)
 
-            # Получаем индекс текущего кадра (с учётом случайного порядка)
-            logical_frame = self.animation.current_frame
+            # Получаем индекс текущего кадра (с учётом случайного порядка и зацикливания)
+            logical_frame = self.animation.current_frame % num_sprites
             if self.animation.random_frame_order and self.animation.frame_order:
-                actual_frame = self.animation.frame_order[logical_frame % len(self.animation.frame_order)]
+                actual_frame = self.animation.frame_order[logical_frame]
             else:
                 actual_frame = logical_frame
 
-            if actual_frame < len(self.animation.loaded_sprites):
-                _, frame_duration = self.animation.loaded_sprites[actual_frame]
-                if frame_elapsed >= frame_duration:
-                    self.animation.current_frame += 1
-                    self.animation.frame_start_time = current_time
+            _, frame_duration = self.animation.loaded_sprites[actual_frame]
+            if frame_elapsed >= frame_duration:
+                self.animation.current_frame += 1
+                self.animation.frame_start_time = current_time
 
-                    # Проверяем, начался ли новый цикл
-                    if self.animation.random_frame_order and self.animation.frame_order:
-                        new_cycle = self.animation.current_frame // len(self.animation.loaded_sprites)
-                        if new_cycle > self.animation.current_cycle:
-                            # Новый цикл - перемешиваем порядок заново
-                            import random
-                            random.shuffle(self.animation.frame_order)
-                            self.animation.current_cycle = new_cycle
+                # Проверяем, начался ли новый цикл (для случайного порядка)
+                if self.animation.random_frame_order and self.animation.frame_order:
+                    new_cycle = self.animation.current_frame // num_sprites
+                    if new_cycle > self.animation.current_cycle:
+                        # Новый цикл - перемешиваем порядок заново
+                        import random
+                        random.shuffle(self.animation.frame_order)
+                        self.animation.current_cycle = new_cycle
 
         # Проверяем завершение
         if progress >= 1.0:
