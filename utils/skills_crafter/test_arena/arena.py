@@ -1562,8 +1562,8 @@ class TestArena:
                         # Проверяем что есть реальное расстояние
                         if abs(dx) > 1 or abs(dy) > 1:
                             # Угол в градусах (pygame Y инвертирован, поэтому -dy)
-                            # Добавляем rotation_offset для корректировки ориентации спрайта
-                            angle = math.degrees(math.atan2(-dy, dx)) + self.animation.rotation_offset
+                            # Вычитаем rotation_offset (направление спрайта) для корректного поворота к цели
+                            angle = math.degrees(math.atan2(-dy, dx)) - self.animation.rotation_offset
                             rotated_sprite = pygame.transform.rotate(sprite, angle)
                         else:
                             rotated_sprite = sprite
