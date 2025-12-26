@@ -790,6 +790,9 @@ class TestArena:
         else:
             self.animation.frame_order = []
 
+        # Поворот в сторону противника (для on_caster)
+        self.animation.face_target = skill.face_target
+
         # Параметры траектории и поворота
         self.animation.trajectory = skill.projectile_trajectory
         self.animation.speed = skill.projectile_speed
@@ -1542,10 +1545,27 @@ class TestArena:
                 if self.animation.loaded_sprites:
                     actual_frame = self._get_actual_frame_index()
                     sprite, _ = self.animation.loaded_sprites[actual_frame]
-                    # Применяем вертикальное смещение
-                    sprite_x = caster_pos[0] - sprite.get_width() // 2
-                    sprite_y = caster_pos[1] - sprite.get_height() // 2 + int(self.animation.vertical_offset)
-                    self.screen.blit(sprite, (sprite_x, sprite_y))
+
+                    # Поворачиваем спрайт в сторону цели если включен face_target
+                    if self.animation.face_target and self.animation.target:
+                        target_pos = self.get_screen_pos_for_cell(
+                            self.animation.target.x,
+                            self.animation.target.y
+                        )
+                        # Вычисляем угол к цели
+                        dx = target_pos[0] - caster_pos[0]
+                        dy = target_pos[1] - caster_pos[1]
+                        # Угол в градусах (pygame Y инвертирован)
+                        angle = math.degrees(math.atan2(-dy, dx))
+                        rotated_sprite = pygame.transform.rotate(sprite, angle)
+                        sprite_x = caster_pos[0] - rotated_sprite.get_width() // 2
+                        sprite_y = caster_pos[1] - rotated_sprite.get_height() // 2 + int(self.animation.vertical_offset)
+                        self.screen.blit(rotated_sprite, (sprite_x, sprite_y))
+                    else:
+                        # Без поворота
+                        sprite_x = caster_pos[0] - sprite.get_width() // 2
+                        sprite_y = caster_pos[1] - sprite.get_height() // 2 + int(self.animation.vertical_offset)
+                        self.screen.blit(sprite, (sprite_x, sprite_y))
                 else:
                     # Fallback на программную отрисовку
                     self._render_buff_effect(caster_pos, color, progress)
