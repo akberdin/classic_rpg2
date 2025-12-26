@@ -1253,6 +1253,18 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         ).pack(side=tk.LEFT)
         ToolTip(self.random_frame, "Каждый цикл анимации кадры воспроизводятся в новом случайном порядке")
 
+        # Поворот в сторону противника (для ударов ближнего боя)
+        self.face_target_frame = ttk.Frame(self.sprite_settings_frame)
+        # НЕ паковать сразу - будет управляться в _update_visible_settings
+
+        self.face_target_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            self.face_target_frame,
+            text="В сторону противника",
+            variable=self.face_target_var
+        ).pack(side=tk.LEFT)
+        ToolTip(self.face_target_frame, "Поворачивать спрайт в сторону цели (для рубящих/колющих ударов ближнего боя)")
+
         # Контейнер для специфичных настроек
         self.settings_container = ttk.Frame(self)
         self.settings_container.pack(fill=tk.BOTH, expand=True, pady=5)
@@ -1315,6 +1327,7 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         # Переменные типа отображения и общие настройки
         self.display_type_var.trace_add("write", on_var_change)
         self.random_frame_order_var.trace_add("write", on_var_change)
+        self.face_target_var.trace_add("write", on_var_change)
 
     def _create_projectile_settings(self):
         """Настройки снаряда"""
@@ -1675,6 +1688,11 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         if uses_sprites:
             # Показываем настройки спрайтов
             self.sprite_settings_frame.pack(fill=tk.X, pady=5, padx=5, before=self.settings_container)
+
+            # Показываем "В сторону противника" только для on_caster
+            self.face_target_frame.pack_forget()
+            if type_key == "on_caster":
+                self.face_target_frame.pack(fill=tk.X, pady=2, padx=5)
         else:
             # Показываем предупреждение о том, что спрайты не используются
             self.sprite_warning_frame.pack(fill=tk.X, pady=5, padx=5, before=self.settings_container)
@@ -1714,6 +1732,7 @@ class AnimationDisplaySettings(ttk.LabelFrame):
             "display_type": display_type,
             "anchor_point": anchor,
             "random_frame_order": self.random_frame_order_var.get(),
+            "face_target": self.face_target_var.get(),
             "timing": {
                 "damage_apply_at": self.timing_apply_var.get(),
                 "damage_delay_ms": self.timing_delay_var.get(),
@@ -1797,6 +1816,9 @@ class AnimationDisplaySettings(ttk.LabelFrame):
 
         # Случайный порядок кадров
         self.random_frame_order_var.set(data.get("random_frame_order", False))
+
+        # Поворот в сторону противника
+        self.face_target_var.set(data.get("face_target", False))
 
         # Тайминги
         timing = data.get("timing", {})

@@ -66,6 +66,7 @@ class TestSkill:
     animation_scale: float = 1.0  # Масштаб анимации
     animation_vertical_offset: float = 0.0  # Вертикальное смещение анимации
     random_frame_order: bool = False  # Случайный порядок кадров каждый цикл
+    face_target: bool = False  # Поворачивать спрайт в сторону цели (для on_caster)
     # Параметры луча (beam/sprite_beam)
     beam_width: int = 8  # Ширина луча в пикселях
     beam_duration_ms: int = 500  # Длительность эффекта луча
@@ -376,6 +377,7 @@ class SkillsCrafterLoader:
         animation_scale = 1.0
         animation_vertical_offset = 0.0
         random_frame_order = False
+        face_target = False
 
         if visual_data:
             animation_type = visual_data.get("display_type", "static")
@@ -412,6 +414,8 @@ class SkillsCrafterLoader:
             animation_vertical_offset = visual_data.get("animation_vertical_offset", 0.0)
             # Случайный порядок кадров
             random_frame_order = visual_data.get("random_frame_order", False)
+            # Поворот в сторону противника
+            face_target = visual_data.get("face_target", False)
 
         # Параметры луча (для beam и sprite_beam)
         beam_width = 8
@@ -505,6 +509,7 @@ class SkillsCrafterLoader:
             animation_scale=animation_scale,
             animation_vertical_offset=animation_vertical_offset,
             random_frame_order=random_frame_order,
+            face_target=face_target,
             # Параметры луча
             beam_width=beam_width,
             beam_duration_ms=beam_duration_ms,

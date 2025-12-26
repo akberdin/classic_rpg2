@@ -841,6 +841,7 @@ class VisualData:
     # Настройки отображения анимации на поле боя
     display_type: str = "on_target"    # Тип отображения (static, projectile, beam, etc.)
     anchor_point: str = "center"        # Точка привязки (center, top, bottom, weapon, head)
+    face_target: bool = False           # Поворачивать спрайт в сторону цели (для on_caster)
 
     # Настройки снаряда (для display_type = projectile)
     projectile: Optional[ProjectileData] = None
@@ -867,6 +868,7 @@ class VisualData:
             "animation_vertical_offset": self.animation_vertical_offset,
             "display_type": self.display_type,
             "anchor_point": self.anchor_point,
+            "face_target": self.face_target,
             "timing": self.timing.to_dict(),
         }
         if self.projectile:
@@ -910,6 +912,7 @@ class VisualData:
             animation_vertical_offset=data.get("animation_vertical_offset", 0.0),
             display_type=data.get("display_type", "on_target"),
             anchor_point=data.get("anchor_point", "center"),
+            face_target=data.get("face_target", False),
             projectile=projectile,
             beam=beam,
             area_effect=area_effect,
