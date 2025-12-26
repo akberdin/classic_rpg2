@@ -811,6 +811,9 @@ class TestArena:
             # Преобразуем цвета из hex в RGB
             self.animation.beam_color_start = self._hex_to_rgb(skill.beam_color_start)
             self.animation.beam_color_end = self._hex_to_rgb(skill.beam_color_end)
+        elif skill.animation_type == "on_caster":
+            # Для on_caster используем sprite_rotation_offset (для face_target)
+            self.animation.rotation_offset = skill.sprite_rotation_offset
         else:
             self.animation.rotation_offset = skill.projectile_rotation_offset
 
@@ -1555,9 +1558,16 @@ class TestArena:
                         # Вычисляем угол к цели
                         dx = target_pos[0] - caster_pos[0]
                         dy = target_pos[1] - caster_pos[1]
-                        # Угол в градусах (pygame Y инвертирован)
-                        angle = math.degrees(math.atan2(-dy, dx))
-                        rotated_sprite = pygame.transform.rotate(sprite, angle)
+
+                        # Проверяем что есть реальное расстояние
+                        if abs(dx) > 1 or abs(dy) > 1:
+                            # Угол в градусах (pygame Y инвертирован, поэтому -dy)
+                            # Добавляем rotation_offset для корректировки ориентации спрайта
+                            angle = math.degrees(math.atan2(-dy, dx)) + self.animation.rotation_offset
+                            rotated_sprite = pygame.transform.rotate(sprite, angle)
+                        else:
+                            rotated_sprite = sprite
+
                         sprite_x = caster_pos[0] - rotated_sprite.get_width() // 2
                         sprite_y = caster_pos[1] - rotated_sprite.get_height() // 2 + int(self.animation.vertical_offset)
                         self.screen.blit(rotated_sprite, (sprite_x, sprite_y))

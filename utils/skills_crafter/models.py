@@ -842,6 +842,7 @@ class VisualData:
     display_type: str = "on_target"    # Тип отображения (static, projectile, beam, etc.)
     anchor_point: str = "center"        # Точка привязки (center, top, bottom, weapon, head)
     face_target: bool = False           # Поворачивать спрайт в сторону цели (для on_caster)
+    sprite_rotation_offset: float = 0.0  # Смещение угла спрайта (для on_caster с face_target)
 
     # Настройки снаряда (для display_type = projectile)
     projectile: Optional[ProjectileData] = None
@@ -869,6 +870,7 @@ class VisualData:
             "display_type": self.display_type,
             "anchor_point": self.anchor_point,
             "face_target": self.face_target,
+            "sprite_rotation_offset": self.sprite_rotation_offset,
             "timing": self.timing.to_dict(),
         }
         if self.projectile:
@@ -913,6 +915,7 @@ class VisualData:
             display_type=data.get("display_type", "on_target"),
             anchor_point=data.get("anchor_point", "center"),
             face_target=data.get("face_target", False),
+            sprite_rotation_offset=data.get("sprite_rotation_offset", 0.0),
             projectile=projectile,
             beam=beam,
             area_effect=area_effect,

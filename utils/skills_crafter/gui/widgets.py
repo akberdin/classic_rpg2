@@ -1265,6 +1265,28 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         ).pack(side=tk.LEFT)
         ToolTip(self.face_target_frame, "Поворачивать спрайт в сторону цели (для рубящих/колющих ударов ближнего боя)")
 
+        # Ориентация спрайта (для on_caster с face_target)
+        self.sprite_orientation_frame = ttk.Frame(self.sprite_settings_frame)
+        # НЕ паковать сразу - будет управляться в _update_visible_settings
+
+        ttk.Label(self.sprite_orientation_frame, text="Ориентация спрайта:").pack(side=tk.LEFT)
+        # Ориентации спрайта: куда "смотрит" исходный спрайт
+        self.caster_sprite_orientations = {
+            "right": ("Вправо → (0°)", 0.0),
+            "down": ("Вниз ↓ (-90°)", -90.0),
+            "left": ("Влево ← (180°)", 180.0),
+            "up": ("Вверх ↑ (90°)", 90.0),
+        }
+        self.caster_sprite_orientation_var = tk.StringVar(value="Вправо → (0°)")
+        ttk.Combobox(
+            self.sprite_orientation_frame,
+            textvariable=self.caster_sprite_orientation_var,
+            values=[v[0] for v in self.caster_sprite_orientations.values()],
+            state="readonly",
+            width=18
+        ).pack(side=tk.LEFT, padx=5)
+        ToolTip(self.sprite_orientation_frame, "Направление в котором 'смотрит' исходный спрайт (до поворота)")
+
         # Контейнер для специфичных настроек
         self.settings_container = ttk.Frame(self)
         self.settings_container.pack(fill=tk.BOTH, expand=True, pady=5)
@@ -1286,6 +1308,13 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         # Вспомогательная функция для trace
         def on_var_change(*args):
             self._notify_change()
+
+        # Специальный обработчик для face_target - обновляет видимость ориентации
+        def on_face_target_change(*args):
+            self._update_visible_settings()
+            self._notify_change()
+
+        self.face_target_var.trace_add("write", on_face_target_change)
 
         # Переменные снаряда
         self.proj_speed_var.trace_add("write", on_var_change)
@@ -1327,7 +1356,8 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         # Переменные типа отображения и общие настройки
         self.display_type_var.trace_add("write", on_var_change)
         self.random_frame_order_var.trace_add("write", on_var_change)
-        self.face_target_var.trace_add("write", on_var_change)
+        # face_target_var уже привязан выше с on_face_target_change
+        self.caster_sprite_orientation_var.trace_add("write", on_var_change)
 
     def _create_projectile_settings(self):
         """Настройки снаряда"""
@@ -1689,10 +1719,14 @@ class AnimationDisplaySettings(ttk.LabelFrame):
             # Показываем настройки спрайтов
             self.sprite_settings_frame.pack(fill=tk.X, pady=5, padx=5, before=self.settings_container)
 
-            # Показываем "В сторону противника" только для on_caster
+            # Показываем "В сторону противника" и ориентацию только для on_caster
             self.face_target_frame.pack_forget()
+            self.sprite_orientation_frame.pack_forget()
             if type_key == "on_caster":
                 self.face_target_frame.pack(fill=tk.X, pady=2, padx=5)
+                # Показываем ориентацию спрайта если включен face_target
+                if self.face_target_var.get():
+                    self.sprite_orientation_frame.pack(fill=tk.X, pady=2, padx=5)
         else:
             # Показываем предупреждение о том, что спрайты не используются
             self.sprite_warning_frame.pack(fill=tk.X, pady=5, padx=5, before=self.settings_container)
@@ -1728,11 +1762,20 @@ class AnimationDisplaySettings(ttk.LabelFrame):
             self.trajectories, self.proj_trajectory_var.get()
         )
 
+        # Получаем ориентацию спрайта для on_caster
+        sprite_rotation_offset = 0.0
+        orientation_display = self.caster_sprite_orientation_var.get()
+        for key, (display_name, angle) in self.caster_sprite_orientations.items():
+            if display_name == orientation_display:
+                sprite_rotation_offset = angle
+                break
+
         data = {
             "display_type": display_type,
             "anchor_point": anchor,
             "random_frame_order": self.random_frame_order_var.get(),
             "face_target": self.face_target_var.get(),
+            "sprite_rotation_offset": sprite_rotation_offset,
             "timing": {
                 "damage_apply_at": self.timing_apply_var.get(),
                 "damage_delay_ms": self.timing_delay_var.get(),
@@ -1819,6 +1862,18 @@ class AnimationDisplaySettings(ttk.LabelFrame):
 
         # Поворот в сторону противника
         self.face_target_var.set(data.get("face_target", False))
+
+        # Ориентация спрайта для on_caster
+        sprite_rotation_offset = data.get("sprite_rotation_offset", 0.0)
+        # Находим соответствующую ориентацию
+        orientation_found = False
+        for key, (display_name, angle) in self.caster_sprite_orientations.items():
+            if abs(sprite_rotation_offset - angle) < 1:
+                self.caster_sprite_orientation_var.set(display_name)
+                orientation_found = True
+                break
+        if not orientation_found:
+            self.caster_sprite_orientation_var.set("Вправо → (0°)")
 
         # Тайминги
         timing = data.get("timing", {})
