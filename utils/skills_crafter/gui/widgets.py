@@ -1776,6 +1776,7 @@ class AnimationDisplaySettings(ttk.LabelFrame):
             "random_frame_order": self.random_frame_order_var.get(),
             "face_target": self.face_target_var.get(),
             "sprite_rotation_offset": sprite_rotation_offset,
+            "animation_vertical_offset": self.proj_vertical_offset_var.get(),
             "timing": {
                 "damage_apply_at": self.timing_apply_var.get(),
                 "damage_delay_ms": self.timing_delay_var.get(),
@@ -1795,7 +1796,6 @@ class AnimationDisplaySettings(ttk.LabelFrame):
                 "trail_enabled": self.proj_trail_var.get(),
                 "trail_color": self.proj_trail_color_var.get(),
             }
-            data["animation_vertical_offset"] = self.proj_vertical_offset_var.get()
 
         elif display_type in ("beam", "sprite_beam"):
             # Преобразуем ориентацию в угол
@@ -1829,7 +1829,6 @@ class AnimationDisplaySettings(ttk.LabelFrame):
                 "glow_enabled": self.beam_glow_var.get(),
                 "glow_radius": self.beam_glow_radius_var.get(),
             }
-            data["animation_vertical_offset"] = self.proj_vertical_offset_var.get()
 
         elif display_type == "area":
             data["area_effect"] = {
@@ -1841,7 +1840,6 @@ class AnimationDisplaySettings(ttk.LabelFrame):
                 "border_width": self.area_border_width_var.get(),
                 "pulse_enabled": self.area_pulse_var.get(),
             }
-            data["animation_vertical_offset"] = self.proj_vertical_offset_var.get()
 
         return data
 
