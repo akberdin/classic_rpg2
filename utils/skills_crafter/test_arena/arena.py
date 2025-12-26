@@ -67,6 +67,11 @@ class AnimationState:
     impact_active: bool = False
     impact_start_time: float = 0.0
 
+    # Случайный порядок кадров
+    random_frame_order: bool = False
+    frame_order: List[int] = field(default_factory=list)  # Перемешанный порядок кадров
+    current_cycle: int = 0  # Текущий цикл анимации
+
 
 @dataclass
 class FloatingText:
@@ -377,6 +382,17 @@ class TestArena:
         if len(hex_color) == 6:
             return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
         return (255, 255, 255)
+
+    def _get_actual_frame_index(self) -> int:
+        """Получить актуальный индекс кадра с учётом случайного порядка"""
+        if not self.animation.loaded_sprites:
+            return 0
+
+        logical_frame = self.animation.current_frame % len(self.animation.loaded_sprites)
+
+        if self.animation.random_frame_order and self.animation.frame_order:
+            return self.animation.frame_order[logical_frame]
+        return logical_frame
 
     def can_move_to(self, cell_x: int, cell_y: int) -> bool:
         """Проверить, можно ли переместиться в клетку"""
@@ -761,6 +777,17 @@ class TestArena:
                     if not loaded and frame.sprite_path:
                         self.add_to_log(f"Спрайт не найден: {frame.sprite_path}")
 
+        # Случайный порядок кадров
+        self.animation.random_frame_order = skill.random_frame_order
+        self.animation.current_cycle = 0
+        if skill.random_frame_order and self.animation.loaded_sprites:
+            # Инициализируем случайный порядок для первого цикла
+            import random
+            self.animation.frame_order = list(range(len(self.animation.loaded_sprites)))
+            random.shuffle(self.animation.frame_order)
+        else:
+            self.animation.frame_order = []
+
         # Параметры траектории и поворота
         self.animation.trajectory = skill.projectile_trajectory
         self.animation.speed = skill.projectile_speed
@@ -882,11 +909,28 @@ class TestArena:
         # Обновляем текущий кадр анимации
         if self.animation.loaded_sprites:
             frame_elapsed = (current_time - self.animation.frame_start_time) * 1000  # в мс
-            if self.animation.current_frame < len(self.animation.loaded_sprites):
-                _, frame_duration = self.animation.loaded_sprites[self.animation.current_frame]
+
+            # Получаем индекс текущего кадра (с учётом случайного порядка)
+            logical_frame = self.animation.current_frame
+            if self.animation.random_frame_order and self.animation.frame_order:
+                actual_frame = self.animation.frame_order[logical_frame % len(self.animation.frame_order)]
+            else:
+                actual_frame = logical_frame
+
+            if actual_frame < len(self.animation.loaded_sprites):
+                _, frame_duration = self.animation.loaded_sprites[actual_frame]
                 if frame_elapsed >= frame_duration:
                     self.animation.current_frame += 1
                     self.animation.frame_start_time = current_time
+
+                    # Проверяем, начался ли новый цикл
+                    if self.animation.random_frame_order and self.animation.frame_order:
+                        new_cycle = self.animation.current_frame // len(self.animation.loaded_sprites)
+                        if new_cycle > self.animation.current_cycle:
+                            # Новый цикл - перемешиваем порядок заново
+                            import random
+                            random.shuffle(self.animation.frame_order)
+                            self.animation.current_cycle = new_cycle
 
         # Проверяем завершение
         if progress >= 1.0:
@@ -1341,8 +1385,9 @@ class TestArena:
                 proj_y = int(self.animation.projectile_y + self.animation.vertical_offset)
 
                 # Если есть загруженные спрайты, используем их
-                if self.animation.loaded_sprites and self.animation.current_frame < len(self.animation.loaded_sprites):
-                    sprite, _ = self.animation.loaded_sprites[self.animation.current_frame]
+                if self.animation.loaded_sprites:
+                    actual_frame = self._get_actual_frame_index()
+                    sprite, _ = self.animation.loaded_sprites[actual_frame]
 
                     # Поворачиваем спрайт в направлении движения
                     if self.animation.auto_rotate:
@@ -1399,8 +1444,9 @@ class TestArena:
                 )
 
                 # Если есть загруженные спрайты, используем их
-                if self.animation.loaded_sprites and self.animation.current_frame < len(self.animation.loaded_sprites):
-                    sprite, _ = self.animation.loaded_sprites[self.animation.current_frame]
+                if self.animation.loaded_sprites:
+                    actual_frame = self._get_actual_frame_index()
+                    sprite, _ = self.animation.loaded_sprites[actual_frame]
                     sprite_x = target_pos[0] - sprite.get_width() // 2
                     sprite_y = target_pos[1] - sprite.get_height() // 2
                     self.screen.blit(sprite, (sprite_x, sprite_y))
@@ -1577,10 +1623,8 @@ class TestArena:
         current_distance = distance * beam_progress
 
         # Получаем текущий спрайт анимации
-        if self.animation.current_frame < len(self.animation.loaded_sprites):
-            sprite, _ = self.animation.loaded_sprites[self.animation.current_frame]
-        else:
-            sprite, _ = self.animation.loaded_sprites[-1]
+        actual_frame = self._get_actual_frame_index()
+        sprite, _ = self.animation.loaded_sprites[actual_frame]
 
         sprite_width = sprite.get_width()
         sprite_height = sprite.get_height()

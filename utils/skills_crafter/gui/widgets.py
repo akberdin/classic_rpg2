@@ -1212,6 +1212,18 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         self.anchor_combo.pack(side=tk.LEFT, padx=5)
         self.anchor_combo.bind("<<ComboboxSelected>>", self._notify_change)
 
+        # Случайный порядок кадров
+        random_frame = ttk.Frame(self)
+        random_frame.pack(fill=tk.X, pady=5, padx=5)
+
+        self.random_frame_order_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            random_frame,
+            text="Случайный порядок кадров",
+            variable=self.random_frame_order_var
+        ).pack(side=tk.LEFT)
+        ToolTip(random_frame, "Каждый цикл анимации кадры воспроизводятся в новом случайном порядке")
+
         # Контейнер для специфичных настроек
         self.settings_container = ttk.Frame(self)
         self.settings_container.pack(fill=tk.BOTH, expand=True, pady=5)
@@ -1271,8 +1283,9 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         self.timing_multi_delay_var.trace_add("write", on_var_change)
         self.timing_sound_delay_var.trace_add("write", on_var_change)
 
-        # Переменные типа отображения
+        # Переменные типа отображения и общие настройки
         self.display_type_var.trace_add("write", on_var_change)
+        self.random_frame_order_var.trace_add("write", on_var_change)
 
     def _create_projectile_settings(self):
         """Настройки снаряда"""
@@ -1652,6 +1665,7 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         data = {
             "display_type": display_type,
             "anchor_point": anchor,
+            "random_frame_order": self.random_frame_order_var.get(),
             "timing": {
                 "damage_apply_at": self.timing_apply_var.get(),
                 "damage_delay_ms": self.timing_delay_var.get(),
@@ -1732,6 +1746,9 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         anchor = data.get("anchor_point", "center")
         anchor_name = self.anchor_points.get(anchor, "Центр")
         self.anchor_var.set(anchor_name)
+
+        # Случайный порядок кадров
+        self.random_frame_order_var.set(data.get("random_frame_order", False))
 
         # Тайминги
         timing = data.get("timing", {})
