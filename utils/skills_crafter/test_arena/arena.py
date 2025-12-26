@@ -27,6 +27,7 @@ class ArenaUnit:
 class AnimationState:
     """Состояние анимации умения"""
     active: bool = False
+    is_blocking: bool = True  # Блокирует ли анимация действия игрока
     skill: Optional[TestSkill] = None
     caster: Optional[ArenaUnit] = None
     target: Optional[ArenaUnit] = None
@@ -732,6 +733,7 @@ class TestArena:
     def start_animation(self, skill: TestSkill, caster: ArenaUnit, target: ArenaUnit):
         """Запустить анимацию умения"""
         self.animation.active = True
+        self.animation.is_blocking = True  # Анимации умений блокируют действия
         self.animation.skill = skill
         self.animation.caster = caster
         self.animation.target = target
@@ -839,6 +841,60 @@ class TestArena:
                 self.animation.duration = skill.animation_duration
             else:
                 self.animation.duration = 0.5
+
+    def start_effect_animation(self, skill: TestSkill, target: ArenaUnit, blocking: bool = False):
+        """
+        Запустить анимацию эффекта (горение, яд и пр.)
+
+        В отличие от start_animation, эффекты по умолчанию НЕ блокируют действия игрока.
+
+        Args:
+            skill: Умение с настройками анимации
+            target: Цель эффекта
+            blocking: Блокировать ли действия игрока (по умолчанию False)
+        """
+        self.animation.active = True
+        self.animation.is_blocking = blocking  # Эффекты по умолчанию не блокируют
+        self.animation.skill = skill
+        self.animation.caster = target  # Эффект проигрывается на цели
+        self.animation.target = target
+        self.animation.start_time = pygame.time.get_ticks() / 1000.0
+        self.animation.current_frame = 0
+        self.animation.frame_start_time = self.animation.start_time
+        self.animation.impact_active = False
+        self.animation.effect_color = skill.get_effect_color()
+
+        # Для эффектов не нужны спрайты снарядов - используем on_target логику
+        self.animation.loaded_sprites = []
+        if skill.animation_frames:
+            for frame in skill.animation_frames:
+                if frame.sprite_path:
+                    sprite_path = frame.sprite_path.replace("\\", "/")
+                    paths_to_try = [
+                        sprite_path,
+                        os.path.join("utils/skills_crafter", sprite_path),
+                        os.path.join("game/assets", sprite_path),
+                        os.path.join("assets", sprite_path),
+                    ]
+                    for path in paths_to_try:
+                        if os.path.exists(path):
+                            try:
+                                sprite = pygame.image.load(path).convert_alpha()
+                                sprite_size = int(64 * skill.animation_scale)
+                                sprite = pygame.transform.scale(sprite, (sprite_size, sprite_size))
+                                self.animation.loaded_sprites.append((sprite, frame.duration_ms))
+                                break
+                            except Exception:
+                                pass
+
+        # Длительность из кадров или из настроек
+        if self.animation.loaded_sprites:
+            total_duration_ms = sum(duration for _, duration in self.animation.loaded_sprites)
+            self.animation.duration = total_duration_ms / 1000.0
+        elif skill.animation_duration > 0:
+            self.animation.duration = skill.animation_duration
+        else:
+            self.animation.duration = 0.5
 
     def update_animation(self):
         """Обновить состояние анимации"""
@@ -975,8 +1031,8 @@ class TestArena:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
-                # Блокируем действия во время анимации
-                elif self.animation.active:
+                # Блокируем действия во время блокирующей анимации
+                elif self.animation.active and self.animation.is_blocking:
                     continue
                 elif event.key == pygame.K_r:
                     self.reset_arena()
@@ -992,8 +1048,8 @@ class TestArena:
                         self.add_to_log(f"Выбрано умение: {self.selected_skill.name}")
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                # Блокируем клики во время анимации
-                if self.animation.active:
+                # Блокируем клики во время блокирующей анимации
+                if self.animation.active and self.animation.is_blocking:
                     continue
                 if event.button == 1:  # ЛКМ
                     self.handle_click(event.pos)
