@@ -1169,6 +1169,7 @@ class AnimationDisplaySettings(ttk.LabelFrame):
             ProjectileTrajectory,
         )
 
+        self.AnimationDisplayType = AnimationDisplayType
         self.display_types = AnimationDisplayType.get_display_names()
         self.anchor_points = AnimationAnchor.get_display_names()
         self.trajectories = ProjectileTrajectory.get_display_names()
@@ -1176,34 +1177,62 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         self._create_widgets()
 
     def _create_widgets(self):
-        # Тип отображения
+        # === Тип отображения ===
         type_frame = ttk.Frame(self)
         type_frame.pack(fill=tk.X, pady=5, padx=5)
 
-        ttk.Label(type_frame, text="Тип анимации:").pack(side=tk.LEFT)
+        ttk.Label(type_frame, text="Тип отображения:").pack(side=tk.LEFT)
         # Используем отображаемое имя, а не ключ
-        default_display_type = self.display_types.get("on_target", "На цели")
+        default_display_type = self.display_types.get("on_target", "🎭 На цели (спрайт)")
         self.display_type_var = tk.StringVar(value=default_display_type)
         self.display_type_combo = ttk.Combobox(
             type_frame,
             textvariable=self.display_type_var,
             values=list(self.display_types.values()),
             state="readonly",
-            width=25
+            width=35
         )
         self.display_type_combo.pack(side=tk.LEFT, padx=5)
         self.display_type_combo.bind("<<ComboboxSelected>>", self._on_type_changed)
 
-        # Точка привязки
-        anchor_frame = ttk.Frame(self)
-        anchor_frame.pack(fill=tk.X, pady=5, padx=5)
+        # === Описание выбранного типа ===
+        self.type_description_frame = ttk.Frame(self)
+        self.type_description_frame.pack(fill=tk.X, pady=2, padx=5)
 
-        ttk.Label(anchor_frame, text="Точка привязки:").pack(side=tk.LEFT)
+        self.type_description_var = tk.StringVar(value="")
+        self.type_description_label = ttk.Label(
+            self.type_description_frame,
+            textvariable=self.type_description_var,
+            wraplength=400,
+            foreground="gray"
+        )
+        self.type_description_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # === Предупреждение о спрайтах ===
+        self.sprite_warning_frame = ttk.Frame(self)
+        # НЕ паковать сразу - будет управляться в _update_visible_settings
+
+        self.sprite_warning_label = ttk.Label(
+            self.sprite_warning_frame,
+            text="⚠️ Этот тип НЕ использует спрайты - анимация рисуется программно",
+            foreground="orange"
+        )
+        self.sprite_warning_label.pack(side=tk.LEFT, padx=5)
+
+        # === Настройки спрайтов (только для спрайтовых типов) ===
+        self.sprite_settings_frame = ttk.LabelFrame(self, text="Настройки спрайтов")
+        # НЕ паковать сразу - будет управляться в _update_visible_settings
+
+        # Точка привязки
+        self.anchor_frame = ttk.Frame(self.sprite_settings_frame)
+        self.anchor_frame.pack(fill=tk.X, pady=2, padx=5)
+
+        ttk.Label(self.anchor_frame, text="Точка привязки:").pack(side=tk.LEFT)
         # Используем отображаемое имя, а не ключ
         default_anchor = self.anchor_points.get("center", "Центр")
         self.anchor_var = tk.StringVar(value=default_anchor)
         self.anchor_combo = ttk.Combobox(
-            anchor_frame,
+            self.anchor_frame,
             textvariable=self.anchor_var,
             values=list(self.anchor_points.values()),
             state="readonly",
@@ -1213,16 +1242,16 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         self.anchor_combo.bind("<<ComboboxSelected>>", self._notify_change)
 
         # Случайный порядок кадров
-        random_frame = ttk.Frame(self)
-        random_frame.pack(fill=tk.X, pady=5, padx=5)
+        self.random_frame = ttk.Frame(self.sprite_settings_frame)
+        self.random_frame.pack(fill=tk.X, pady=2, padx=5)
 
         self.random_frame_order_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
-            random_frame,
+            self.random_frame,
             text="Случайный порядок кадров",
             variable=self.random_frame_order_var
         ).pack(side=tk.LEFT)
-        ToolTip(random_frame, "Каждый цикл анимации кадры воспроизводятся в новом случайном порядке")
+        ToolTip(self.random_frame, "Каждый цикл анимации кадры воспроизводятся в новом случайном порядке")
 
         # Контейнер для специфичных настроек
         self.settings_container = ttk.Frame(self)
@@ -1612,16 +1641,18 @@ class AnimationDisplaySettings(ttk.LabelFrame):
         self.timing_frame.pack(fill=tk.X, pady=5, padx=5)
 
     def _on_type_changed(self, event=None):
-        """Обработка изменения типа анимации"""
+        """Обработка изменения типа отображения"""
         self._update_visible_settings()
         self._notify_change()
 
     def _update_visible_settings(self):
-        """Обновление видимости настроек"""
+        """Обновление видимости настроек в зависимости от типа отображения"""
         # Скрываем все специфичные настройки
         self.projectile_frame.pack_forget()
         self.beam_frame.pack_forget()
         self.area_frame.pack_forget()
+        self.sprite_warning_frame.pack_forget()
+        self.sprite_settings_frame.pack_forget()
 
         # Получаем выбранный тип
         display_name = self.display_type_var.get()
@@ -1631,7 +1662,24 @@ class AnimationDisplaySettings(ttk.LabelFrame):
                 type_key = key
                 break
 
-        # Показываем нужные настройки
+        if type_key is None:
+            type_key = "on_target"
+
+        # Обновляем описание типа
+        description = self.AnimationDisplayType.get_type_description(type_key)
+        self.type_description_var.set(description)
+
+        # Проверяем, использует ли тип спрайты
+        uses_sprites = self.AnimationDisplayType.uses_sprites(type_key)
+
+        if uses_sprites:
+            # Показываем настройки спрайтов
+            self.sprite_settings_frame.pack(fill=tk.X, pady=5, padx=5, before=self.settings_container)
+        else:
+            # Показываем предупреждение о том, что спрайты не используются
+            self.sprite_warning_frame.pack(fill=tk.X, pady=5, padx=5, before=self.settings_container)
+
+        # Показываем специфичные настройки для типа
         if type_key == "projectile":
             self.projectile_frame.pack(fill=tk.X, pady=5, padx=5)
         elif type_key in ("beam", "sprite_beam"):

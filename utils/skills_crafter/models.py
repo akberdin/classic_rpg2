@@ -529,29 +529,77 @@ class AnimationLoopMode(Enum):
 
 class AnimationDisplayType(Enum):
     """Тип отображения анимации на поле боя"""
+    # === Типы, использующие спрайты ===
     STATIC = "static"          # Статическая анимация в одном месте
     PROJECTILE = "projectile"  # Снаряд летит от кастера к цели (стрела, фаербол)
-    BEAM = "beam"              # Луч/линия от кастера к цели (молния, лазер)
     SPRITE_BEAM = "sprite_beam"  # Спрайтовый луч от кастера к цели (молния со спрайтами)
     IMPACT = "impact"          # Появляется в точке попадания (взрыв, удар)
-    AREA = "area"              # Покрывает область (AoE эффекты)
     ON_CASTER = "on_caster"    # Отображается на кастере (баффы, ауры)
-    ON_TARGET = "on_target"    # Отображается на цели (дебаффы)
+    ON_TARGET = "on_target"    # Отображается на цели (дебаффы, рубящие удары)
     CHAIN = "chain"            # Цепная анимация между несколькими целями
+
+    # === Типы, НЕ использующие спрайты (рисуются программно) ===
+    BEAM = "beam"              # Луч/линия от кастера к цели (программная отрисовка)
+    AREA = "area"              # Покрывает область (AoE - программная отрисовка)
 
     @classmethod
     def get_display_names(cls) -> Dict[str, str]:
+        """Получить отображаемые имена для типов"""
         return {
-            cls.STATIC.value: "Статическая",
-            cls.PROJECTILE.value: "Снаряд (летит к цели)",
-            cls.BEAM.value: "Луч (линия к цели)",
-            cls.SPRITE_BEAM.value: "Спрайтовый луч (от кастера к цели)",
-            cls.IMPACT.value: "Удар (в точке попадания)",
-            cls.AREA.value: "Область (AoE)",
-            cls.ON_CASTER.value: "На кастере",
-            cls.ON_TARGET.value: "На цели",
-            cls.CHAIN.value: "Цепная (между целями)",
+            # Спрайтовые типы
+            cls.STATIC.value: "📷 Статическая (спрайт)",
+            cls.PROJECTILE.value: "🎯 Снаряд (спрайт летит к цели)",
+            cls.SPRITE_BEAM.value: "⚡ Спрайтовый луч",
+            cls.IMPACT.value: "💥 Удар (спрайт в точке попадания)",
+            cls.ON_CASTER.value: "🧙 На кастере (спрайт)",
+            cls.ON_TARGET.value: "🎭 На цели (спрайт)",
+            cls.CHAIN.value: "🔗 Цепная (спрайт между целями)",
+            # Программные типы (без спрайтов)
+            cls.BEAM.value: "━━ Программный луч (без спрайтов)",
+            cls.AREA.value: "⭕ Программная область (без спрайтов)",
         }
+
+    @classmethod
+    def get_sprite_types(cls) -> set:
+        """Типы, которые используют спрайты анимации"""
+        return {
+            cls.STATIC.value,
+            cls.PROJECTILE.value,
+            cls.SPRITE_BEAM.value,
+            cls.IMPACT.value,
+            cls.ON_CASTER.value,
+            cls.ON_TARGET.value,
+            cls.CHAIN.value,
+        }
+
+    @classmethod
+    def get_programmatic_types(cls) -> set:
+        """Типы, которые рисуются программно (без спрайтов)"""
+        return {
+            cls.BEAM.value,
+            cls.AREA.value,
+        }
+
+    @classmethod
+    def uses_sprites(cls, type_key: str) -> bool:
+        """Проверить, использует ли тип спрайты"""
+        return type_key in cls.get_sprite_types()
+
+    @classmethod
+    def get_type_description(cls, type_key: str) -> str:
+        """Получить подробное описание типа"""
+        descriptions = {
+            cls.STATIC.value: "Спрайт отображается в фиксированной позиции. Подходит для эффектов без движения.",
+            cls.PROJECTILE.value: "Спрайт летит от кастера к цели. Идеально для стрел, фаерболов, снарядов.",
+            cls.SPRITE_BEAM.value: "Спрайт растягивается/повторяется от кастера к цели. Для молний, лазеров со спрайтами.",
+            cls.IMPACT.value: "Спрайт появляется в точке удара. Для взрывов, ударов, эффектов попадания.",
+            cls.ON_CASTER.value: "Спрайт отображается на персонаже-кастере. Для баффов, аур, зарядки.",
+            cls.ON_TARGET.value: "Спрайт отображается на цели. Для дебаффов, ударов ближнего боя, проклятий.",
+            cls.CHAIN.value: "Спрайт перескакивает между несколькими целями. Для цепных молний.",
+            cls.BEAM.value: "Линия рисуется программно с цветами и свечением. Спрайты НЕ используются.",
+            cls.AREA.value: "Область (круг/квадрат) рисуется программно. Спрайты НЕ используются.",
+        }
+        return descriptions.get(type_key, "")
 
 
 class ProjectileTrajectory(Enum):

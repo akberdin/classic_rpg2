@@ -1511,13 +1511,24 @@ class TestArena:
                     self._render_impact_effect(color, "burst")
 
         elif skill.animation_type == "on_target":
-            # Эффект на цели (лечение и т.п.)
+            # Эффект на цели (рубящий удар, дебафф и т.п.)
             if self.animation.target:
                 target_pos = self.get_screen_pos_for_cell(
                     self.animation.target.x,
                     self.animation.target.y
                 )
-                self._render_healing_effect(target_pos, color, progress)
+
+                # Если есть загруженные спрайты, используем их
+                if self.animation.loaded_sprites:
+                    actual_frame = self._get_actual_frame_index()
+                    sprite, _ = self.animation.loaded_sprites[actual_frame]
+                    # Применяем вертикальное смещение
+                    sprite_x = target_pos[0] - sprite.get_width() // 2
+                    sprite_y = target_pos[1] - sprite.get_height() // 2 + int(self.animation.vertical_offset)
+                    self.screen.blit(sprite, (sprite_x, sprite_y))
+                else:
+                    # Fallback на программную отрисовку
+                    self._render_healing_effect(target_pos, color, progress)
 
         elif skill.animation_type == "on_caster":
             # Эффект на кастере (баффы, регенерация)
@@ -1526,12 +1537,38 @@ class TestArena:
                     self.animation.caster.x,
                     self.animation.caster.y
                 )
-                self._render_buff_effect(caster_pos, color, progress)
+
+                # Если есть загруженные спрайты, используем их
+                if self.animation.loaded_sprites:
+                    actual_frame = self._get_actual_frame_index()
+                    sprite, _ = self.animation.loaded_sprites[actual_frame]
+                    # Применяем вертикальное смещение
+                    sprite_x = caster_pos[0] - sprite.get_width() // 2
+                    sprite_y = caster_pos[1] - sprite.get_height() // 2 + int(self.animation.vertical_offset)
+                    self.screen.blit(sprite, (sprite_x, sprite_y))
+                else:
+                    # Fallback на программную отрисовку
+                    self._render_buff_effect(caster_pos, color, progress)
 
         elif skill.animation_type == "static":
             # Статичный эффект (ближний бой)
             if self.animation.target:
-                self._render_melee_effect(color, progress)
+                target_pos = self.get_screen_pos_for_cell(
+                    self.animation.target.x,
+                    self.animation.target.y
+                )
+
+                # Если есть загруженные спрайты, используем их
+                if self.animation.loaded_sprites:
+                    actual_frame = self._get_actual_frame_index()
+                    sprite, _ = self.animation.loaded_sprites[actual_frame]
+                    # Применяем вертикальное смещение
+                    sprite_x = target_pos[0] - sprite.get_width() // 2
+                    sprite_y = target_pos[1] - sprite.get_height() // 2 + int(self.animation.vertical_offset)
+                    self.screen.blit(sprite, (sprite_x, sprite_y))
+                else:
+                    # Fallback на программную отрисовку
+                    self._render_melee_effect(color, progress)
 
         elif skill.animation_type == "beam":
             # Луч от кастера к цели

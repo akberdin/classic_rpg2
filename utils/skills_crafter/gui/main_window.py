@@ -939,12 +939,12 @@ class SkillsCrafterApp:
         )
         self.animation_editor.pack(fill=tk.BOTH, expand=True)
 
-        # Тип анимации и эффекты
-        fx_frame = CollapsibleFrame(content, "Тип анимации и эффекты")
+        # Стиль и эффекты
+        fx_frame = CollapsibleFrame(content, "Стиль и эффекты")
         fx_frame.pack(fill=tk.X, pady=5, padx=5)
 
         self.animation_type = LabeledCombobox(
-            fx_frame.content, "Тип анимации:",
+            fx_frame.content, "Стиль анимации:",
             values=["default", "slash", "stab", "projectile", "explosion", "heal", "buff"],
             display_names={
                 "default": "По умолчанию",
@@ -955,7 +955,8 @@ class SkillsCrafterApp:
                 "heal": "Лечение",
                 "buff": "Усиление",
             },
-            default="default"
+            default="default",
+            tooltip="Семантический стиль для категоризации (не влияет на отображение)"
         )
         self.animation_type.pack(fill=tk.X, pady=2)
         self.animation_type.bind_change(self._mark_modified)
