@@ -47,11 +47,16 @@ class AnimationState:
     # Дополнительные параметры
     trajectory: str = "straight"
     speed: float = 300.0
+    arc_height: float = 50.0  # Высота дуги для arc траектории
     distance: float = 0.0
     effect_color: Tuple[int, int, int] = (255, 200, 100)
     auto_rotate: bool = True
     rotation_offset: float = 0.0
     vertical_offset: float = 0.0
+
+    # Для расчёта мгновенного направления при дуге
+    prev_projectile_x: float = 0.0
+    prev_projectile_y: float = 0.0
 
     # Параметры луча
     beam_width: int = 8
@@ -72,6 +77,14 @@ class AnimationState:
     random_frame_order: bool = False
     frame_order: List[int] = field(default_factory=list)  # Перемешанный порядок кадров
     current_cycle: int = 0  # Текущий цикл анимации
+
+    # Отложенный урон (для on_hit)
+    pending_damage: bool = False  # Есть ли отложенный урон
+    pending_damage_applied: bool = False  # Был ли урон уже применён
+    pending_damage_amount: int = 0  # Сумма отложенного урона
+    pending_damage_is_crit: bool = False  # Крит ли отложенный урон
+    damage_apply_at: str = "on_cast"  # on_cast, on_hit, on_end
+    damage_delay_ms: int = 0  # Дополнительная задержка после события
 
 
 @dataclass
@@ -587,25 +600,42 @@ class TestArena:
                 )
         else:
             # Одиночная цель
-            result = skill.use(caster.character, target.character)
+            # Определяем, нужно ли откладывать урон
+            # Для снарядов с on_hit откладываем урон до попадания
+            should_delay_damage = (
+                skill.animation_type == "projectile" and
+                skill.damage_apply_at == "on_hit" and
+                skill.base_damage > 0
+            )
+
+            result = skill.use(caster.character, target.character, skip_damage=should_delay_damage)
 
             if result["success"]:
-                self.add_to_log(result["message"])
-
                 # Запускаем анимацию
                 self.start_animation(skill, caster, target)
 
-                # Создаем всплывающий текст для урона
-                if result.get("damage", 0) > 0:
-                    is_crit = result.get("is_crit", False)
-                    self.add_floating_text(
-                        target,
-                        str(result["damage"]),
-                        is_heal=False,
-                        is_crit=is_crit
-                    )
+                if should_delay_damage and result.get("damage_pending"):
+                    # Урон отложен - сохраняем информацию в анимацию
+                    self.animation.pending_damage = True
+                    self.animation.pending_damage_amount = result.get("damage", 0)
+                    self.animation.pending_damage_is_crit = result.get("is_crit", False)
+                    # Логируем без урона
+                    self.add_to_log(f"{caster.character.name} использует {skill.name}")
+                else:
+                    # Урон нанесён сразу
+                    self.add_to_log(result["message"])
 
-                # Создаем всплывающий текст для лечения
+                    # Создаем всплывающий текст для урона
+                    if result.get("damage", 0) > 0:
+                        is_crit = result.get("is_crit", False)
+                        self.add_floating_text(
+                            target,
+                            str(result["damage"]),
+                            is_heal=False,
+                            is_crit=is_crit
+                        )
+
+                # Создаем всплывающий текст для лечения (не откладываем)
                 if result.get("healing", 0) > 0:
                     heal_target = target if skill.target_type in ["single_ally", "self"] else caster
                     self.add_floating_text(
@@ -742,6 +772,14 @@ class TestArena:
         self.animation.frame_start_time = self.animation.start_time
         self.animation.impact_active = False
 
+        # Инициализируем поля для отложенного урона
+        self.animation.pending_damage = False
+        self.animation.pending_damage_applied = False
+        self.animation.pending_damage_amount = 0
+        self.animation.pending_damage_is_crit = False
+        self.animation.damage_apply_at = skill.damage_apply_at
+        self.animation.damage_delay_ms = skill.damage_delay_ms
+
         # Получаем цвет эффекта из скилла
         self.animation.effect_color = skill.get_effect_color()
 
@@ -796,6 +834,7 @@ class TestArena:
         # Параметры траектории и поворота
         self.animation.trajectory = skill.projectile_trajectory
         self.animation.speed = skill.projectile_speed
+        self.animation.arc_height = skill.projectile_arc_height
         self.animation.auto_rotate = skill.projectile_auto_rotate
         self.animation.vertical_offset = skill.animation_vertical_offset
 
@@ -827,6 +866,9 @@ class TestArena:
             self.animation.projectile_end_y = target_pos[1]
             self.animation.projectile_x = caster_pos[0]
             self.animation.projectile_y = caster_pos[1]
+            # Инициализируем предыдущую позицию для расчёта мгновенного направления
+            self.animation.prev_projectile_x = caster_pos[0]
+            self.animation.prev_projectile_y = caster_pos[1]
 
             # Вычисляем дистанцию и длительность на основе скорости
             dx = target_pos[0] - caster_pos[0]
@@ -913,6 +955,10 @@ class TestArena:
 
         skill = self.animation.skill
         if skill and skill.animation_type == "projectile":
+            # Сохраняем предыдущую позицию для расчёта направления движения
+            self.animation.prev_projectile_x = self.animation.projectile_x
+            self.animation.prev_projectile_y = self.animation.projectile_y
+
             # Базовое линейное перемещение
             base_x = (
                 self.animation.projectile_start_x +
@@ -928,7 +974,8 @@ class TestArena:
 
             if trajectory == "arc":
                 # Дуговая траектория - параболическое смещение по вертикали
-                arc_height = self.animation.distance * 0.3  # Высота дуги - 30% от дистанции
+                # Используем arc_height из настроек умения
+                arc_height = self.animation.arc_height
                 arc_offset = -arc_height * 4 * progress * (1 - progress)  # Парабола
                 base_y += arc_offset
 
@@ -967,6 +1014,31 @@ class TestArena:
                 # Запускаем эффект попадания (только один раз!)
                 self.animation.impact_active = True
                 self.animation.impact_start_time = current_time
+
+                # Применяем отложенный урон при попадании
+                if self.animation.pending_damage and not self.animation.pending_damage_applied:
+                    self.animation.pending_damage_applied = True
+                    target = self.animation.target
+                    if target and target.character.is_alive:
+                        damage = self.animation.pending_damage_amount
+                        actual_damage = target.character.take_damage(damage)
+                        is_crit = self.animation.pending_damage_is_crit
+
+                        # Показываем всплывающий текст урона
+                        self.add_floating_text(
+                            target,
+                            str(actual_damage),
+                            is_heal=False,
+                            is_crit=is_crit
+                        )
+
+                        # Логируем урон
+                        crit_text = " КРИТ!" if is_crit else ""
+                        self.add_to_log(f"Снаряд попадает! {actual_damage} урона{crit_text}")
+
+                        # Проверяем смерть
+                        if not target.character.is_alive:
+                            self.add_to_log(f"{target.character.name} повержен!")
 
         # Обновляем текущий кадр анимации
         if self.animation.loaded_sprites:
@@ -1453,8 +1525,16 @@ class TestArena:
 
                     # Поворачиваем спрайт в направлении движения
                     if self.animation.auto_rotate:
-                        dx = self.animation.projectile_end_x - self.animation.projectile_start_x
-                        dy = self.animation.projectile_end_y - self.animation.projectile_start_y
+                        # Для дуги и других траекторий используем мгновенное направление
+                        # (разницу между текущей и предыдущей позицией)
+                        dx = self.animation.projectile_x - self.animation.prev_projectile_x
+                        dy = self.animation.projectile_y - self.animation.prev_projectile_y
+
+                        # Если движение незначительное, используем направление к цели
+                        if abs(dx) < 0.1 and abs(dy) < 0.1:
+                            dx = self.animation.projectile_end_x - self.animation.projectile_start_x
+                            dy = self.animation.projectile_end_y - self.animation.projectile_start_y
+
                         # Угол в градусах (pygame Y инвертирован, поэтому -dy)
                         angle = math.degrees(math.atan2(-dy, dx)) + self.animation.rotation_offset
                         rotated_sprite = pygame.transform.rotate(sprite, angle)

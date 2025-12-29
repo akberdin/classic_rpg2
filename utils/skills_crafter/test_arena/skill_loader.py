@@ -62,6 +62,7 @@ class TestSkill:
     projectile_trajectory: str = "straight"  # straight, arc, wave, homing
     projectile_auto_rotate: bool = True  # Авто-поворот к цели
     projectile_rotation_offset: float = 0.0  # Смещение угла в градусах
+    projectile_arc_height: float = 50.0  # Высота дуги для arc траектории
     animation_duration: float = 0.5
     animation_scale: float = 1.0  # Масштаб анимации
     animation_vertical_offset: float = 0.0  # Вертикальное смещение анимации
@@ -79,6 +80,10 @@ class TestSkill:
     beam_color_end: str = "#FFFFFF"  # Цвет конца луча
     beam_glow_enabled: bool = True  # Эффект свечения
     beam_glow_radius: int = 4  # Радиус свечения
+
+    # Тайминги
+    damage_apply_at: str = "on_hit"  # on_cast, on_hit, on_end (по умолчанию on_hit для снарядов)
+    damage_delay_ms: int = 0  # Задержка применения урона после события
 
     # Ранг
     current_rank: int = 1
@@ -163,8 +168,15 @@ class TestSkill:
 
         return True, ""
 
-    def use(self, caster, target) -> Dict[str, Any]:
-        """Использовать умение"""
+    def use(self, caster, target, skip_damage: bool = False) -> Dict[str, Any]:
+        """
+        Использовать умение
+
+        Args:
+            caster: Кастер умения
+            target: Цель умения
+            skip_damage: Если True, урон НЕ наносится (для отложенного нанесения)
+        """
         can, reason = self.can_use(caster)
         if not can:
             return {"success": False, "message": reason}
@@ -191,7 +203,7 @@ class TestSkill:
             "is_crit": False,
         }
 
-        # Применяем урон
+        # Применяем урон (если не отложен)
         if self.base_damage > 0 and target:
             import random
             damage = self.get_damage(caster)
@@ -206,11 +218,16 @@ class TestSkill:
                 damage = int(damage * crit_multiplier)
                 result["is_crit"] = True
 
-            actual_damage = target.take_damage(damage)
-            result["damage"] = actual_damage
+            if skip_damage:
+                # Сохраняем урон но не наносим - для отложенного применения
+                result["damage"] = damage
+                result["damage_pending"] = True
+            else:
+                actual_damage = target.take_damage(damage)
+                result["damage"] = actual_damage
 
-            if not target.is_alive:
-                result["killed"] = True
+                if not target.is_alive:
+                    result["killed"] = True
 
         # Применяем лечение
         if self.base_healing > 0:
@@ -374,12 +391,16 @@ class SkillsCrafterLoader:
         projectile_trajectory = "straight"
         projectile_auto_rotate = True
         projectile_rotation_offset = 0.0
+        projectile_arc_height = 50.0
         animation_duration = 0.5
         animation_scale = 1.0
         animation_vertical_offset = 0.0
         random_frame_order = False
         face_target = False
         sprite_rotation_offset = 0.0
+        # Тайминги
+        damage_apply_at = "on_hit"  # По умолчанию on_hit для снарядов
+        damage_delay_ms = 0
 
         if visual_data:
             animation_type = visual_data.get("display_type", "static")
@@ -410,6 +431,7 @@ class SkillsCrafterLoader:
                 projectile_trajectory = projectile_data.get("trajectory", "straight")
                 projectile_auto_rotate = projectile_data.get("auto_rotate", True)
                 projectile_rotation_offset = projectile_data.get("rotation_offset", 0.0)
+                projectile_arc_height = projectile_data.get("arc_height", 50.0)
 
             # Масштаб анимации и вертикальное смещение
             animation_scale = visual_data.get("animation_scale", 1.0)
@@ -446,6 +468,12 @@ class SkillsCrafterLoader:
                 beam_color_end = beam_data.get("color_end", "#FFFFFF")
                 beam_glow_enabled = beam_data.get("glow_enabled", True)
                 beam_glow_radius = beam_data.get("glow_radius", 4)
+
+            # Парсим тайминги
+            timing_data = visual_data.get("timing", {})
+            if timing_data:
+                damage_apply_at = timing_data.get("damage_apply_at", "on_cast")
+                damage_delay_ms = timing_data.get("damage_delay_ms", 0)
 
         # Извлекаем путь к иконке
         icon_path = ""
@@ -509,6 +537,7 @@ class SkillsCrafterLoader:
             projectile_trajectory=projectile_trajectory,
             projectile_auto_rotate=projectile_auto_rotate,
             projectile_rotation_offset=projectile_rotation_offset,
+            projectile_arc_height=projectile_arc_height,
             animation_duration=animation_duration,
             animation_scale=animation_scale,
             animation_vertical_offset=animation_vertical_offset,
@@ -526,6 +555,9 @@ class SkillsCrafterLoader:
             beam_color_end=beam_color_end,
             beam_glow_enabled=beam_glow_enabled,
             beam_glow_radius=beam_glow_radius,
+            # Тайминги
+            damage_apply_at=damage_apply_at,
+            damage_delay_ms=damage_delay_ms,
         )
 
         self.loaded_skills[skill.skill_id] = skill
