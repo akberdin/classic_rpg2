@@ -195,101 +195,49 @@ class Character:
         # Грузоподъемность = 30 + сила * 10
         return 30 + base_strength * 10
 
-    def get_effective_strength(self):
+    def _get_effective_stat(self, stat_name):
         """
-        Получить эффективную силу с учетом бонусов от экипировки
+        Универсальный метод получения эффективного значения характеристики
+        с учетом бонусов от экипировки
+
+        Args:
+            stat_name: Название характеристики (strength, dexterity, constitution, spirit, intelligence, luck)
 
         Returns:
-            int: Эффективная сила
+            int: Эффективное значение характеристики
         """
-        base_strength = self.strength
+        base_value = getattr(self, stat_name, 0)
 
         # Добавляем бонусы от экипировки
         if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
             equipment_bonus = self.inventory.get_total_stats_bonus()
-            base_strength += equipment_bonus.get('strength', 0)
+            base_value += equipment_bonus.get(stat_name, 0)
 
-        return base_strength
+        return base_value
+
+    def get_effective_strength(self):
+        """Получить эффективную силу с учетом бонусов от экипировки"""
+        return self._get_effective_stat('strength')
 
     def get_effective_intelligence(self):
-        """
-        Получить эффективный интеллект с учетом бонусов от экипировки
-
-        Returns:
-            int: Эффективный интеллект
-        """
-        base_intelligence = self.intelligence
-
-        # Добавляем бонусы от экипировки
-        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
-            equipment_bonus = self.inventory.get_total_stats_bonus()
-            base_intelligence += equipment_bonus.get('intelligence', 0)
-
-        return base_intelligence
+        """Получить эффективный интеллект с учетом бонусов от экипировки"""
+        return self._get_effective_stat('intelligence')
 
     def get_effective_spirit(self):
-        """
-        Получить эффективный дух с учетом бонусов от экипировки
-
-        Returns:
-            int: Эффективный дух
-        """
-        base_spirit = self.spirit
-
-        # Добавляем бонусы от экипировки
-        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
-            equipment_bonus = self.inventory.get_total_stats_bonus()
-            base_spirit += equipment_bonus.get('spirit', 0)
-
-        return base_spirit
+        """Получить эффективный дух с учетом бонусов от экипировки"""
+        return self._get_effective_stat('spirit')
 
     def get_effective_dexterity(self):
-        """
-        Получить эффективную ловкость с учетом бонусов от экипировки
-
-        Returns:
-            int: Эффективная ловкость
-        """
-        base_dexterity = self.dexterity
-
-        # Добавляем бонусы от экипировки
-        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
-            equipment_bonus = self.inventory.get_total_stats_bonus()
-            base_dexterity += equipment_bonus.get('dexterity', 0)
-
-        return base_dexterity
+        """Получить эффективную ловкость с учетом бонусов от экипировки"""
+        return self._get_effective_stat('dexterity')
 
     def get_effective_constitution(self):
-        """
-        Получить эффективное телосложение с учетом бонусов от экипировки
-
-        Returns:
-            int: Эффективное телосложение
-        """
-        base_constitution = self.constitution
-
-        # Добавляем бонусы от экипировки
-        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
-            equipment_bonus = self.inventory.get_total_stats_bonus()
-            base_constitution += equipment_bonus.get('constitution', 0)
-
-        return base_constitution
+        """Получить эффективное телосложение с учетом бонусов от экипировки"""
+        return self._get_effective_stat('constitution')
 
     def get_effective_luck(self):
-        """
-        Получить эффективную удачу с учетом бонусов от экипировки
-
-        Returns:
-            int: Эффективная удача
-        """
-        base_luck = self.luck
-
-        # Добавляем бонусы от экипировки
-        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
-            equipment_bonus = self.inventory.get_total_stats_bonus()
-            base_luck += equipment_bonus.get('luck', 0)
-
-        return base_luck
+        """Получить эффективную удачу с учетом бонусов от экипировки"""
+        return self._get_effective_stat('luck')
 
     def consume_stamina(self, amount=STAMINA_COST_PER_MOVE):
         """
@@ -419,109 +367,74 @@ class Character:
         distance = max(abs(self.x - target.x), abs(self.y - target.y))
         return distance <= COMBAT_RANGE
 
+    def _calculate_chance_with_diminishing_returns(self, stat_name, base_per_point, effect_bonus_attr):
+        """
+        Универсальный метод расчета шанса с diminishing returns
+
+        Args:
+            stat_name: Название характеристики (dexterity, luck)
+            base_per_point: Базовый процент за единицу характеристики
+            effect_bonus_attr: Название атрибута бонуса от эффектов (dodge_bonus, crit_bonus)
+
+        Returns:
+            float: Рассчитанный шанс (0-75)
+        """
+        # Получаем эффективное значение характеристики
+        stat_value = self._get_effective_stat(stat_name)
+
+        # Система diminishing returns:
+        # Первые 10 единиц: 100% эффективности
+        # 11-20 единиц: 50% эффективности
+        # 21-30 единиц: 30% эффективности
+        # 31+ единиц: 15% эффективности
+        if stat_value <= 10:
+            chance = stat_value * base_per_point
+        elif stat_value <= 20:
+            chance = 10 * base_per_point + (stat_value - 10) * base_per_point * 0.5
+        elif stat_value <= 30:
+            chance = (10 * base_per_point +
+                      10 * base_per_point * 0.5 +
+                      (stat_value - 20) * base_per_point * 0.3)
+        else:
+            chance = (10 * base_per_point +
+                      10 * base_per_point * 0.5 +
+                      10 * base_per_point * 0.3 +
+                      (stat_value - 30) * base_per_point * 0.15)
+
+        # Добавляем бонусы от активных эффектов
+        effects_list = []
+        if hasattr(self, 'skill_manager') and hasattr(self.skill_manager, 'status_effects'):
+            effects_list.extend(self.skill_manager.status_effects)
+        if hasattr(self, 'status_effects'):
+            effects_list.extend(self.status_effects)
+
+        for effect in effects_list:
+            if hasattr(effect, effect_bonus_attr):
+                chance += getattr(effect, effect_bonus_attr)
+
+        return min(75.0, chance)  # Максимум 75%
+
     def calculate_dodge_chance(self):
         """
         Рассчитать шанс уворота на основе ловкости с учетом экипировки и эффектов
-        Использует систему diminishing returns для баланса
-        Максимум 75% (с эффектами)
 
         Returns:
             float: Шанс уворота (0-75)
         """
-        # Базовая ловкость
-        dex = self.dexterity
-
-        # Учитываем бонусы от экипировки
-        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
-            equipment_bonus = self.inventory.get_total_stats_bonus()
-            dex += equipment_bonus.get('dexterity', 0)
-
-        # Система diminishing returns:
-        # Первые 10 единиц: 100% эффективности (2% за единицу)
-        # 11-20 единиц: 50% эффективности (1% за единицу)
-        # 21-30 единиц: 30% эффективности (0.6% за единицу)
-        # 31+ единиц: 15% эффективности (0.3% за единицу)
-        base_per_point = DODGE_BASE_CHANCE  # 2.0 из конфига
-
-        if dex <= 10:
-            dodge_chance = dex * base_per_point
-        elif dex <= 20:
-            dodge_chance = 10 * base_per_point + (dex - 10) * base_per_point * 0.5
-        elif dex <= 30:
-            dodge_chance = (10 * base_per_point +
-                          10 * base_per_point * 0.5 +
-                          (dex - 20) * base_per_point * 0.3)
-        else:
-            dodge_chance = (10 * base_per_point +
-                          10 * base_per_point * 0.5 +
-                          10 * base_per_point * 0.3 +
-                          (dex - 30) * base_per_point * 0.15)
-
-        # Добавляем бонусы от активных эффектов (например, Шаг тени)
-        # Проверяем эффекты в skill_manager (для игрока) и в status_effects (для NPC)
-        effects_list = []
-        if hasattr(self, 'skill_manager') and hasattr(self.skill_manager, 'status_effects'):
-            effects_list.extend(self.skill_manager.status_effects)
-        if hasattr(self, 'status_effects'):
-            effects_list.extend(self.status_effects)
-
-        for effect in effects_list:
-            if hasattr(effect, 'dodge_bonus'):
-                dodge_chance += effect.dodge_bonus
-
-        return min(75.0, dodge_chance)  # Максимум 75% (с учетом бонусов от эффектов)
+        return self._calculate_chance_with_diminishing_returns(
+            'dexterity', DODGE_BASE_CHANCE, 'dodge_bonus'
+        )
 
     def calculate_crit_chance(self):
         """
         Рассчитать шанс критического удара на основе удачи с учетом экипировки и эффектов
-        Использует систему diminishing returns для баланса
-        Максимум 75% (с эффектами)
 
         Returns:
             float: Шанс крита (0-75)
         """
-        # Базовая удача
-        luck = self.luck
-
-        # Учитываем бонусы от экипировки
-        if hasattr(self, 'inventory') and hasattr(self.inventory, 'get_total_stats_bonus'):
-            equipment_bonus = self.inventory.get_total_stats_bonus()
-            luck += equipment_bonus.get('luck', 0)
-
-        # Система diminishing returns:
-        # Первые 10 единиц: 100% эффективности (2% за единицу)
-        # 11-20 единиц: 50% эффективности (1% за единицу)
-        # 21-30 единиц: 30% эффективности (0.6% за единицу)
-        # 31+ единиц: 15% эффективности (0.3% за единицу)
-        base_per_point = CRIT_BASE_CHANCE  # 2.0 из конфига
-
-        if luck <= 10:
-            crit_chance = luck * base_per_point
-        elif luck <= 20:
-            crit_chance = 10 * base_per_point + (luck - 10) * base_per_point * 0.5
-        elif luck <= 30:
-            crit_chance = (10 * base_per_point +
-                         10 * base_per_point * 0.5 +
-                         (luck - 20) * base_per_point * 0.3)
-        else:
-            crit_chance = (10 * base_per_point +
-                         10 * base_per_point * 0.5 +
-                         10 * base_per_point * 0.3 +
-                         (luck - 30) * base_per_point * 0.15)
-
-        # Добавляем бонусы от активных эффектов
-        # Проверяем эффекты в skill_manager (для игрока) и в status_effects (для NPC)
-        effects_list = []
-        if hasattr(self, 'skill_manager') and hasattr(self.skill_manager, 'status_effects'):
-            effects_list.extend(self.skill_manager.status_effects)
-        if hasattr(self, 'status_effects'):
-            effects_list.extend(self.status_effects)
-
-        for effect in effects_list:
-            if hasattr(effect, 'crit_bonus'):
-                crit_chance += effect.crit_bonus
-
-        return min(75.0, crit_chance)  # Максимум 75% (с учетом бонусов от эффектов)
+        return self._calculate_chance_with_diminishing_returns(
+            'luck', CRIT_BASE_CHANCE, 'crit_bonus'
+        )
 
     def attack(self, target, skip_range_check=False):
         """

@@ -131,30 +131,6 @@ class Bandit(NPC):
         elif self.state == "rest":
             self._rest()
 
-    def _is_near_settlement(self, game_map, x, y, safe_distance=2):
-        """
-        Проверить, находится ли позиция рядом с городом или деревней
-
-        Args:
-            game_map: Карта игры
-            x: Координата X
-            y: Координата Y
-            safe_distance: Безопасное расстояние от поселения
-
-        Returns:
-            bool: True если позиция слишком близко к поселению
-        """
-        from game.constants import LOCATION_CITY, LOCATION_VILLAGE
-        if not hasattr(game_map, 'locations'):
-            return False
-
-        for location in game_map.locations:
-            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
-                distance = abs(x - location.x) + abs(y - location.y)
-                if distance <= safe_distance:
-                    return True
-        return False
-
     def _check_for_enemies(self, all_npcs, player=None):
         """
         Проверить наличие врагов поблизости (включая игрока)
@@ -408,30 +384,6 @@ class Undead(NPC):
 
         # Состояние по умолчанию для расписания
         self.default_state = "patrol"
-
-    def _is_near_settlement(self, game_map, x, y, safe_distance=2):
-        """
-        Проверить, находится ли позиция рядом с городом или деревней
-
-        Args:
-            game_map: Карта игры
-            x: Координата X
-            y: Координата Y
-            safe_distance: Безопасное расстояние от поселения
-
-        Returns:
-            bool: True если позиция слишком близко к поселению
-        """
-        from game.constants import LOCATION_CITY, LOCATION_VILLAGE
-        if not hasattr(game_map, 'locations'):
-            return False
-
-        for location in game_map.locations:
-            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
-                distance = abs(x - location.x) + abs(y - location.y)
-                if distance <= safe_distance:
-                    return True
-        return False
 
     def update_ai(self, context_or_map, all_npcs=None, player=None, current_hour=12):
         """
@@ -776,19 +728,6 @@ class ShadowAdept(NPC):
 
         # Обновляем производные статы
         self.update_derived_stats()
-
-    def _is_near_settlement(self, game_map, x, y, safe_distance=2):
-        """Проверить, находится ли позиция рядом с городом или деревней"""
-        from game.constants import LOCATION_CITY, LOCATION_VILLAGE
-        if not hasattr(game_map, 'locations'):
-            return False
-
-        for location in game_map.locations:
-            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
-                distance = abs(x - location.x) + abs(y - location.y)
-                if distance <= safe_distance:
-                    return True
-        return False
 
     def update_ai(self, context_or_map, all_npcs=None, player=None, current_hour=12):
         """Обновление AI адепта тени за 1 час игрового времени"""
