@@ -26,21 +26,9 @@ from game.systems.skills import (
     Skill,
     SkillCategory,
     SkillManager,
-    # Боевые умения
+    # Боевые умения (общие)
     BasicAttack,
-    PowerStrike,
-    PoisonStrike,
-    StunStrike,
     BattleCry,
-    # Магические умения
-    Heal,
-    Regeneration,
-    StaminaRecovery,
-    Fireball,
-    IceBolt,
-    Lightning,
-    MagicMissile,
-    MageShield,
     # Ремесленные умения
     Mining,
     Lumberjacking,
@@ -48,20 +36,9 @@ from game.systems.skills import (
     Alchemy,
     Enchanting,
     Herbalism,
-    # Оружейные умения
+    # Оружейные умения (базовые)
     WeaponSkill,
-    PreciseShot,
-    RapidFire,
-    PiercingArrow,
-    Backstab,
-    BleedingCut,
-    ShadowStep,
-    WhirlwindStrike,
-    ShieldBreaker,
-    BladeDance,
-    LungeStrike,
-    SpearSweep,
-    ArmorBreach,
+    BasicShot,
     # Словарь умений
     AVAILABLE_SKILLS,
 )
@@ -72,17 +49,12 @@ __all__ = [
     'StaminaRecoveryEffect', 'StrengthBoostEffect', 'ShieldEffect', 'SlowEffect', 'ArmorBreakEffect',
     # Базовые
     'Skill', 'SkillCategory', 'SkillManager',
-    # Боевые
-    'BasicAttack', 'PowerStrike', 'PoisonStrike', 'StunStrike', 'BattleCry',
-    # Магические
-    'Heal', 'Regeneration', 'StaminaRecovery', 'Fireball', 'IceBolt',
-    'Lightning', 'MagicMissile', 'MageShield',
+    # Боевые (общие)
+    'BasicAttack', 'BattleCry',
     # Ремесленные
     'Mining', 'Lumberjacking', 'Craftsmanship', 'Alchemy', 'Enchanting', 'Herbalism',
-    # Оружейные
-    'WeaponSkill', 'PreciseShot', 'RapidFire', 'PiercingArrow', 'Backstab',
-    'BleedingCut', 'ShadowStep', 'WhirlwindStrike', 'ShieldBreaker', 'BladeDance',
-    'LungeStrike', 'SpearSweep', 'ArmorBreach',
+    # Оружейные (базовые)
+    'WeaponSkill', 'BasicShot',
     # Словарь
     'AVAILABLE_SKILLS',
 ]
