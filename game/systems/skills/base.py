@@ -25,10 +25,8 @@ def get_available_skills():
 
 class SkillCategory(Enum):
     """Категории умений"""
-    COMBAT = "combat"  # Боевые умения (устарело, оставлено для совместимости)
+    GENERAL = "general"  # Общие умения
     CRAFTING = "crafting"  # Ремесленные умения
-    MAGIC = "magic"  # Магические умения (устарело, оставлено для совместимости)
-    GENERAL = "general"  # Общие умения (базовые, не магические, не ремесленные)
 
 
 class Skill:

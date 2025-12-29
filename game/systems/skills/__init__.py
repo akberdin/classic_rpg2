@@ -4,8 +4,9 @@ Skills модуль - система умений.
 Содержит:
 - effects - статус-эффекты (StatusEffect, PoisonEffect и др.)
 - base - базовые классы (Skill, SkillCategory, SkillManager)
-- combat - боевые умения
+- combat - боевые умения (BasicAttack, BattleCry)
 - crafting - ремесленные умения
+- weapon - оружейные умения (BasicShot)
 """
 
 # Эффекты
@@ -28,12 +29,9 @@ from game.systems.skills.base import (
     SkillManager,
 )
 
-# Боевые умения
+# Боевые умения (общие)
 from game.systems.skills.combat import (
     BasicAttack,
-    PowerStrike,
-    PoisonStrike,
-    StunStrike,
     BattleCry,
 )
 
@@ -47,7 +45,7 @@ from game.systems.skills.crafting import (
     Herbalism,
 )
 
-# Оружейные умения (только базовые)
+# Оружейные умения (базовые)
 from game.systems.skills.weapon import (
     WeaponSkill,
     BasicShot,
@@ -59,8 +57,8 @@ __all__ = [
     'StaminaRecoveryEffect', 'StrengthBoostEffect', 'ShieldEffect', 'SlowEffect', 'ArmorBreakEffect',
     # Базовые
     'Skill', 'SkillCategory', 'SkillManager',
-    # Боевые
-    'BasicAttack', 'PowerStrike', 'PoisonStrike', 'StunStrike', 'BattleCry',
+    # Боевые (общие)
+    'BasicAttack', 'BattleCry',
     # Ремесленные
     'Mining', 'Lumberjacking', 'Craftsmanship', 'Alchemy', 'Enchanting', 'Herbalism',
     # Оружейные (базовые)
@@ -74,9 +72,6 @@ __all__ = [
 AVAILABLE_SKILLS = {
     # Боевые (общие)
     'basic_attack': BasicAttack,
-    'power_strike': PowerStrike,
-    'poison_strike': PoisonStrike,
-    'stun_strike': StunStrike,
     'battle_cry': BattleCry,
     # Общие умения
     'basic_shot': BasicShot,
