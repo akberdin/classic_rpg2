@@ -338,8 +338,7 @@
       "damage": 25,
       "quality": "EPIC",
       "stats_bonus": {"dexterity": 5, "luck": 3},
-      "param_bonus": {"stamina": 5},
-      "skill_bonus": {"precise_shot": 2}
+      "param_bonus": {"stamina": 5}
     },
     "alchemists_staff": {
       "name": "Посох Алхимика",
@@ -347,8 +346,7 @@
       "damage": 20,
       "quality": "EPIC",
       "stats_bonus": {"intelligence": 6, "spirit": 4},
-      "param_bonus": {"mana": 5},
-      "skill_bonus": {"heal": 1, "regeneration": 1}
+      "param_bonus": {"mana": 5}
     },
     "shadow_blade": {
       "name": "Клинок Теней",
@@ -356,8 +354,7 @@
       "damage": 30,
       "quality": "LEGENDARY",
       "stats_bonus": {"strength": 5, "dexterity": 4, "luck": 3},
-      "param_bonus": {"health": 8, "stamina": 5},
-      "skill_bonus": {"blade_dance": 2, "shadow_step": 1}
+      "param_bonus": {"health": 8, "stamina": 5}
     },
     "assassins_dagger": {
       "name": "Кинжал Убийцы",
@@ -365,8 +362,7 @@
       "damage": 22,
       "quality": "EPIC",
       "stats_bonus": {"dexterity": 6, "luck": 4},
-      "param_bonus": {"stamina": 3},
-      "skill_bonus": {"backstab": 2, "bleeding_cut": 1}
+      "param_bonus": {"stamina": 3}
     },
     "windrunners_bow": {
       "name": "Лук Бегущего по Ветру",
@@ -374,8 +370,7 @@
       "damage": 28,
       "quality": "LEGENDARY",
       "stats_bonus": {"dexterity": 7, "luck": 5},
-      "param_bonus": {"stamina": 8},
-      "skill_bonus": {"rapid_fire": 2, "piercing_arrow": 2}
+      "param_bonus": {"stamina": 8}
     },
 
     "axe": {
