@@ -958,9 +958,7 @@ class TacticalCombatSystem:
         used_skill = False
         if hasattr(enemy_unit.character, 'skill_manager') and enemy_unit.character.skill_manager:
             # Получаем список боевых умений
-            combat_categories = [SkillCategory.COMBAT, SkillCategory.MAGIC,
-                               SkillCategory.SHADOW, SkillCategory.WARRIOR,
-                               SkillCategory.HUNTER, SkillCategory.MAGE]
+            combat_categories = [SkillCategory.GENERAL]
 
             usable_skills = []
             for skill in enemy_unit.character.skill_manager.learned_skills.values():
@@ -1162,10 +1160,7 @@ class TacticalCombatSystem:
             return "continue"  # Нет живых врагов
 
         # Получаем боевые категории
-        combat_categories = [SkillCategory.COMBAT, SkillCategory.MAGIC,
-                           SkillCategory.SHADOW, SkillCategory.WARRIOR,
-                           SkillCategory.HUNTER, SkillCategory.MAGE,
-                           SkillCategory.GENERAL]
+        combat_categories = [SkillCategory.GENERAL]
 
         # Пытаемся использовать умения
         used_skill = False

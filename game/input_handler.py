@@ -708,20 +708,20 @@ class InputHandler:
 
         # Переключение между вкладками (TAB)
         if key == pygame.K_TAB:
-            self.ctx.skill_book_window.selected_tab = (self.ctx.skill_book_window.selected_tab + 1) % 3
+            self.ctx.skill_book_window.selected_tab = (self.ctx.skill_book_window.selected_tab + 1) % 2
             self.ctx.skill_book_window.selected_skill_index = 0
             return
 
         # Навигация по умениям (W/S)
         if key == pygame.K_UP or key == pygame.K_w:
-            categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+            categories = [SkillCategory.GENERAL, SkillCategory.CRAFTING]
             current_category = categories[self.ctx.skill_book_window.selected_tab]
             skills_dict = self.ctx.player.skill_manager.get_all_skills()
             skills = [skill for skill in skills_dict.values() if skill.category == current_category]
             if skills:
                 self.ctx.skill_book_window.selected_skill_index = max(0, self.ctx.skill_book_window.selected_skill_index - 1)
         elif key == pygame.K_DOWN or key == pygame.K_s:
-            categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+            categories = [SkillCategory.GENERAL, SkillCategory.CRAFTING]
             current_category = categories[self.ctx.skill_book_window.selected_tab]
             skills_dict = self.ctx.player.skill_manager.get_all_skills()
             skills = [skill for skill in skills_dict.values() if skill.category == current_category]
@@ -736,7 +736,7 @@ class InputHandler:
 
         # Назначить умение в слот (Enter)
         elif key == pygame.K_RETURN:
-            categories = [SkillCategory.COMBAT, SkillCategory.MAGIC, SkillCategory.CRAFTING]
+            categories = [SkillCategory.GENERAL, SkillCategory.CRAFTING]
             current_category = categories[self.ctx.skill_book_window.selected_tab]
             skills_dict = self.ctx.player.skill_manager.get_all_skills()
             skills = [skill for skill in skills_dict.values() if skill.category == current_category]
@@ -1238,7 +1238,7 @@ class InputHandler:
         Args:
             key: Нажатая клавиша
         """
-        if key == pygame.K_ESCAPE:
+        if key == pygame.K_ESCAPE or key == pygame.K_q:
             self.ctx.quest_window_open = False
             return
 
