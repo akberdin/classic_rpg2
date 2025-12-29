@@ -901,36 +901,3 @@ class DungeonRenderer:
             stat_text = f"Взломано: {lockpicked}"
             stat_surface = font.render(stat_text, True, (180, 200, 180))
             self.screen.blit(stat_surface, (padding_x, current_y))
-            current_y += 18
-
-        # Информация о выбранном объекте
-        if dungeon_manager.selected_object:
-            obj_info = dungeon_manager.get_object_info()
-            if obj_info:
-                current_y += 5
-                # Разделитель
-                pygame.draw.line(self.screen, (180, 140, 60),
-                               (panel_x + 5, current_y),
-                               (panel_x + panel_width - 5, current_y), 1)
-                current_y += 5
-
-                # Тип объекта
-                obj_name = obj_info.get('name', 'Объект')
-                obj_level = obj_info.get('level_name', '')
-                obj_text = f"{obj_name}"
-                obj_surface = font.render(obj_text, True, (255, 215, 100))
-                self.screen.blit(obj_surface, (padding_x, current_y))
-                current_y += 18
-
-                # Уровень
-                level_text = f"Ур: {obj_level}"
-                level_surface = font.render(level_text, True, (200, 200, 180))
-                self.screen.blit(level_surface, (padding_x, current_y))
-                current_y += 18
-
-                # DC для обезвреживания/взлома
-                dc = obj_info.get('dc', 0)
-                if dc > 0:
-                    dc_text = f"DC: {dc}"
-                    dc_surface = font.render(dc_text, True, (220, 180, 180))
-                    self.screen.blit(dc_surface, (padding_x, current_y))
