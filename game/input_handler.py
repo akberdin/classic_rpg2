@@ -702,7 +702,7 @@ class InputHandler:
         """
         from game.skills import SkillCategory
 
-        if key == pygame.K_ESCAPE or key == pygame.K_k:
+        if key == pygame.K_ESCAPE or key == pygame.K_b:
             self.ctx.skill_book_menu_open = False
             return
 
@@ -909,18 +909,6 @@ class InputHandler:
             if self.ctx.dungeon_manager.is_in_dungeon:
                 dungeon = self.ctx.dungeon_manager.current_dungeon
 
-                # Если выбран объект (ловушка или тайник), открываем контекстное меню
-                if self.ctx.dungeon_manager.selected_object:
-                    obj_info = self.ctx.dungeon_manager.get_object_info()
-                    if obj_info:
-                        self.game.object_interaction_window.set_object(
-                            self.ctx.dungeon_manager.selected_object_type,
-                            obj_info,
-                            self.ctx.player
-                        )
-                        self.game.object_interaction_open = True
-                    return
-
                 # Проверяем останки под игроком (прямое взаимодействие)
                 remains = dungeon.get_remains_at(self.ctx.player.x, self.ctx.player.y)
                 if remains and not remains.get('looted', False):
@@ -932,28 +920,12 @@ class InputHandler:
                         self.game.dungeon_loot_window_open = True
                     return
 
-                # Проверяем тайник под игроком (прямое взаимодействие)
-                stash = dungeon.stash_manager.get_stash_at(self.ctx.player.x, self.ctx.player.y)
-                if stash and stash.is_detected and not stash.is_looted:
-                    result = self.ctx.dungeon_manager.interact_with_tile(self.ctx.player)
-                    if result:
-                        if result.get('success'):
-                            # Открываем окно лута подземелий для тайника
-                            stash_name = f"{stash.name} ({stash.level_name})"
-                            self.game.dungeon_loot_window.set_loot_from_stash(result, stash_name)
-                            self.game.dungeon_loot_window_open = True
-                        else:
-                            print(result.get('message', 'Не удалось обыскать тайник'))
-                    return
-
                 # Проверяем, на выходе ли игрок
                 if dungeon.is_exit_tile(self.ctx.player.x, self.ctx.player.y):
                     self.game.dungeon_exit_window.set_dungeon_name(dungeon.name)
                     self.game.dungeon_exit_open = True
                     return
 
-                # Подсказка для выбора объектов на расстоянии
-                print("Для взаимодействия с объектами на расстоянии используйте ПКМ (выбор) + E (меню)")
                 return
 
             # Проверяем возможность входа в подземелье/шахту
@@ -984,7 +956,7 @@ class InputHandler:
             # Быстрая загрузка (не реализована в этой версии - требует рестарта)
             print("Для загрузки используйте параметр при запуске игры")
             return
-        elif key == pygame.K_k:
+        elif key == pygame.K_b:
             # Открыть/закрыть книгу умений
             self.ctx.skill_book_menu_open = not self.ctx.skill_book_menu_open
             return
@@ -1089,7 +1061,7 @@ class InputHandler:
             # Открыть/закрыть окно спутников
             self.ctx.companion_window_open = not self.ctx.companion_window_open
             return
-        elif key == pygame.K_v:
+        elif key == pygame.K_k:
             # Открыть/закрыть окно крафта (только в городах и деревнях)
             if not self.ctx.crafting_window_open:
                 # Проверяем, находится ли игрок в городе или деревне
@@ -1107,6 +1079,11 @@ class InputHandler:
                 self.ctx.crafting_window_open = False
             return
         elif key == pygame.K_q:
+            # Открыть/закрыть окно квестов
+            if self.ctx.quest_window_open:
+                # Закрываем если уже открыто
+                self.ctx.quest_window_open = False
+                return
             # Открыть окно квестов (можно просматривать активные из любого места)
             tile = self.ctx.game_map.get_tile(self.ctx.player.x, self.ctx.player.y)
             if tile and tile.has_location():

@@ -53,10 +53,6 @@ class DungeonManager:
         self.skill_targeting_mode = False
         self.pending_skill = None  # Умение, ожидающее выбора цели
 
-        # Smart Target система для объектов подземелья
-        self.selected_object = None  # Выбранный объект (ловушка или тайник)
-        self.selected_object_type = None  # Тип объекта: 'trap' или 'stash'
-
     def can_enter_dungeon(self, player) -> Tuple[bool, str, str]:
         """
         Проверить, может ли игрок войти в подземелье
@@ -399,29 +395,6 @@ class DungeonManager:
         if not self.is_in_dungeon or not self.current_dungeon:
             return
 
-        dungeon = self.current_dungeon
-
-        # Проверяем ловушки
-        trap_result = dungeon.trap_manager.check_player_position(player)
-        if trap_result:
-            # Обновляем тип клетки
-            dungeon.set_tile_type(player.x, player.y, DungeonTileType.TRAP_TRIGGERED)
-            print(trap_result["message"])
-            # Проверяем смерть от ловушки
-            if trap_result.get("player_dead"):
-                return {"player_dead": True}
-
-        # Пытаемся обнаружить ловушки и тайники поблизости
-        detected_traps = dungeon.trap_manager.try_detect_nearby(player, radius=2)
-        for trap in detected_traps:
-            print(f"Вы заметили {trap.name}!")
-            dungeon.set_tile_type(trap.x, trap.y, DungeonTileType.TRAP)
-
-        detected_stashes = dungeon.stash_manager.try_detect_nearby(player, radius=2)
-        for stash in detected_stashes:
-            print(f"Вы заметили {stash.name}!")
-            dungeon.set_tile_type(stash.x, stash.y, DungeonTileType.STASH)
-
         # Примечание: НЕ обновляем AI NPC здесь, так как enemy_turn() вызывается
         # отдельно после каждого действия игрока (одно действие за ход)
 
@@ -465,59 +438,12 @@ class DungeonManager:
                     "message": "\n".join(messages)
                 }
 
-        # Проверяем тайник
-        stash = dungeon.stash_manager.get_stash_at(player.x, player.y)
-        if stash and stash.is_detected and not stash.is_looted:
-            result = stash.loot(player)
-            if result["success"]:
-                dungeon.set_tile_type(player.x, player.y, DungeonTileType.STASH_LOOTED)
-
-                # Добавляем предметы в инвентарь
-                for item_name, item_id, quantity in result["items"]:
-                    try:
-                        from game.item_registry import get_item
-                        item = get_item(item_id)
-                        if item:
-                            player.inventory.add_item(item, quantity)
-                    except Exception:
-                        pass  # Предмет не найден в реестре
-
-            return result
-
         # Проверяем выход
         if dungeon.is_exit_tile(player.x, player.y):
             return {
                 "type": "exit",
                 "message": "Нажмите E чтобы покинуть подземелье"
             }
-
-        return None
-
-    def try_disarm_trap(self, player, direction: Tuple[int, int] = (0, 0)) -> Optional[dict]:
-        """
-        Попытка обезвредить ловушку
-
-        Args:
-            player: Объект игрока
-            direction: Направление (dx, dy) или (0, 0) для текущей клетки
-
-        Returns:
-            dict или None: Результат
-        """
-        if not self.is_in_dungeon or not self.current_dungeon:
-            return None
-
-        dungeon = self.current_dungeon
-        target_x = player.x + direction[0]
-        target_y = player.y + direction[1]
-
-        trap = dungeon.trap_manager.get_trap_at(target_x, target_y)
-        if trap and trap.is_detected and not trap.is_triggered and not trap.is_disarmed:
-            success, message = trap.try_disarm(player)
-            if success:
-                # Меняем тип клетки на сработавшую (обезвреженная = деактивированная)
-                dungeon.set_tile_type(target_x, target_y, DungeonTileType.TRAP_TRIGGERED)
-            return {"success": success, "message": message}
 
         return None
 
@@ -592,33 +518,11 @@ class DungeonManager:
 
         result = {"success": True, "message": ""}
 
-        # Проверяем ловушки
-        trap = dungeon.trap_manager.get_trap_at(new_x, new_y)
-        if trap and not trap.is_triggered and not trap.is_disarmed:
-            # Если ловушка не обнаружена - срабатывает автоматически
-            if not trap.is_detected:
-                trap_result = trap.trigger(player)
-                dungeon.set_tile_type(new_x, new_y, DungeonTileType.TRAP_TRIGGERED)
-                result["trap"] = trap_result
-                result["message"] = trap_result.get("message", "Ловушка!")
-            else:
-                # Обнаруженная ловушка - игрок может пройти мимо, но видит предупреждение
-                # Чтобы обезвредить, нужно стоять рядом и нажать R
-                result["message"] = "Осторожно! Ловушка! Обезвредьте её с соседней клетки (подойдите и нажмите R)."
-
-        # Проверяем тайники (автообнаружение)
-        stash = dungeon.stash_manager.get_stash_at(new_x, new_y)
-        if stash and not stash.is_detected:
-            stash.is_detected = True  # Помечаем тайник как обнаруженный
-            result["stash_found"] = True
-            result["message"] = "Вы обнаружили тайник! Нажмите E чтобы обыскать."
-
         # Проверяем останки
         remains = dungeon.get_remains_at(new_x, new_y)
         if remains and not remains.get('looted', False):
             result["remains_found"] = True
-            if not result["message"]:
-                result["message"] = f"Останки {remains['enemy_name']}. Нажмите E чтобы обыскать."
+            result["message"] = f"Останки {remains['enemy_name']}. Нажмите E чтобы обыскать."
 
         return result
 
@@ -1030,8 +934,6 @@ class DungeonManager:
             if other_npc is None or not other_npc.is_alive:
                 npc.x = new_x
                 npc.y = new_y
-                # Проверяем ловушки после движения
-                self._check_npc_trap(npc, dungeon)
                 return
 
         # Если диагональный путь заблокирован, пробуем по одной оси
@@ -1042,8 +944,6 @@ class DungeonManager:
                     other = dungeon.get_npc_at(npc.x + dx, npc.y)
                     if other is None or not other.is_alive:
                         npc.x += dx
-                        # Проверяем ловушки после движения
-                        self._check_npc_trap(npc, dungeon)
                         return
             # Пробуем только по Y
             if player.y != npc.y + dy:  # Не на клетку игрока
@@ -1051,43 +951,6 @@ class DungeonManager:
                     other = dungeon.get_npc_at(npc.x, npc.y + dy)
                     if other is None or not other.is_alive:
                         npc.y += dy
-                        # Проверяем ловушки после движения
-                        self._check_npc_trap(npc, dungeon)
-
-    def _check_npc_trap(self, npc, dungeon):
-        """
-        Проверить, наступил ли NPC на ловушку
-
-        Args:
-            npc: NPC
-            dungeon: Подземелье
-        """
-        trap = dungeon.trap_manager.get_trap_at(npc.x, npc.y)
-        if trap and not trap.is_triggered and not trap.is_disarmed:
-            # NPC наступает на ловушку
-            trap_result = trap.trigger(npc)
-            if trap_result.get("success"):
-                # Обновляем тип клетки
-                dungeon.set_tile_type(npc.x, npc.y, DungeonTileType.TRAP_TRIGGERED)
-                # Выводим сообщение о срабатывании ловушки
-                print(trap_result.get("message", ""))
-
-                # Если NPC убит ловушкой, создаем останки
-                if trap_result.get("target_dead") and not npc.is_alive:
-                    # Используем полноценную систему лута
-                    from game.loot_system import LootSystem
-
-                    # Получаем игрока из game для генерации лута
-                    player = self.game.player if hasattr(self, 'game') and hasattr(self.game, 'player') else None
-
-                    if player:
-                        loot_system = LootSystem(player)
-                        loot_items, gold_reward = loot_system.generate_loot(npc)
-                    else:
-                        loot_items, gold_reward = [], 0
-
-                    # Добавляем останки
-                    dungeon.add_remains(npc.x, npc.y, npc.name, gold_reward, loot_items)
 
     def get_target_info(self) -> Optional[dict]:
         """
@@ -1126,179 +989,3 @@ class DungeonManager:
             "y": target.y
         }
 
-    # ====================
-    # Smart Target система для объектов подземелья
-    # ====================
-
-    def get_nearest_interactive_object(self, player_x: int, player_y: int, max_distance: int = 5) -> Optional[Tuple[any, str]]:
-        """
-        Найти ближайший интерактивный объект (ловушку или тайник)
-
-        Args:
-            player_x: Координата X игрока
-            player_y: Координата Y игрока
-            max_distance: Максимальное расстояние поиска
-
-        Returns:
-            Tuple[object, str] или None: (объект, тип) где тип 'trap' или 'stash'
-        """
-        if not self.current_dungeon:
-            return None
-
-        nearest_obj = None
-        nearest_type = None
-        min_distance = float('inf')
-
-        # Ищем ближайшую обнаруженную ловушку
-        for trap in self.current_dungeon.trap_manager.traps:
-            if trap.is_detected and not trap.is_triggered:
-                # Проверяем видимость
-                tile = self.current_dungeon.get_tile(trap.x, trap.y)
-                if tile and tile.visible:
-                    distance = abs(trap.x - player_x) + abs(trap.y - player_y)
-                    if distance <= max_distance and distance < min_distance:
-                        min_distance = distance
-                        nearest_obj = trap
-                        nearest_type = 'trap'
-
-        # Ищем ближайший обнаруженный тайник
-        for stash in self.current_dungeon.stash_manager.stashes:
-            if stash.is_detected and not stash.is_looted:
-                # Проверяем видимость
-                tile = self.current_dungeon.get_tile(stash.x, stash.y)
-                if tile and tile.visible:
-                    distance = abs(stash.x - player_x) + abs(stash.y - player_y)
-                    if distance <= max_distance and distance < min_distance:
-                        min_distance = distance
-                        nearest_obj = stash
-                        nearest_type = 'stash'
-
-        if nearest_obj:
-            return (nearest_obj, nearest_type)
-        return None
-
-    def select_object(self, obj, obj_type: str):
-        """
-        Выбрать объект подземелья
-
-        Args:
-            obj: Объект (ловушка или тайник)
-            obj_type: Тип объекта ('trap' или 'stash')
-        """
-        self.selected_object = obj
-        self.selected_object_type = obj_type
-        # Снимаем выделение с NPC при выборе объекта
-        if self.selected_target:
-            self.selected_target = None
-
-    def deselect_object(self):
-        """Снять выделение с объекта"""
-        self.selected_object = None
-        self.selected_object_type = None
-
-    def get_object_at_screen_pos(self, player, screen_x: int, screen_y: int, tile_size: int) -> Optional[Tuple[any, str]]:
-        """
-        Получить объект подземелья по позиции на экране
-
-        Args:
-            player: Объект игрока
-            screen_x: Экранная координата X (пиксели)
-            screen_y: Экранная координата Y (пиксели)
-            tile_size: Размер тайла в пикселях
-
-        Returns:
-            Tuple[object, str] или None: (объект, тип) где тип 'trap' или 'stash'
-        """
-        if not self.current_dungeon:
-            return None
-
-        # Вычисляем количество видимых тайлов
-        tiles_x = (screen_x // tile_size) + 2
-        tiles_y = (screen_y // tile_size) + 2
-
-        # Начальная позиция отрисовки (центрируем на игроке)
-        start_x = player.x - tiles_x // 2
-        start_y = player.y - tiles_y // 2
-
-        # Вычисляем координаты клетки по позиции мыши
-        tile_screen_x = screen_x // tile_size
-        tile_screen_y = screen_y // tile_size
-
-        map_x = start_x + tile_screen_x
-        map_y = start_y + tile_screen_y
-
-        # Проверяем видимость клетки
-        tile = self.current_dungeon.get_tile(map_x, map_y)
-        if not tile or not tile.visible:
-            return None
-
-        # Ищем ловушку на этой позиции
-        for trap in self.current_dungeon.trap_manager.traps:
-            if trap.x == map_x and trap.y == map_y:
-                # Можно выбрать только обнаруженную, не сработавшую и не обезвреженную ловушку
-                if trap.is_detected and not trap.is_triggered and not trap.is_disarmed:
-                    return (trap, 'trap')
-
-        # Ищем тайник на этой позиции
-        for stash in self.current_dungeon.stash_manager.stashes:
-            if stash.x == map_x and stash.y == map_y:
-                if stash.is_detected and not stash.is_looted:
-                    return (stash, 'stash')
-
-        return None
-
-    def get_object_info(self) -> Optional[dict]:
-        """
-        Получить информацию о выбранном объекте
-
-        Returns:
-            dict или None: Информация об объекте
-        """
-        if not self.selected_object or not self.selected_object_type:
-            return None
-
-        obj = self.selected_object
-
-        # Проверяем видимость объекта
-        if self.current_dungeon:
-            tile = self.current_dungeon.get_tile(obj.x, obj.y)
-            if not tile or not tile.visible:
-                # Объект не виден - снимаем выделение
-                self.deselect_object()
-                return None
-
-        if self.selected_object_type == 'trap':
-            # Проверяем, не сработала ли ловушка
-            if obj.is_triggered:
-                self.deselect_object()
-                return None
-
-            return {
-                "type": "trap",
-                "name": obj.trap_type.value.replace('_', ' ').title(),
-                "level": obj.trap_level.value,
-                "level_name": obj.trap_level.name,
-                "detected": obj.is_detected,
-                "dc": obj.disarm_dc,  # DC для обезвреживания
-                "x": obj.x,
-                "y": obj.y
-            }
-        elif self.selected_object_type == 'stash':
-            # Проверяем, не разграблен ли тайник
-            if obj.is_looted:
-                self.deselect_object()
-                return None
-
-            return {
-                "type": "stash",
-                "name": "Тайник",
-                "level": obj.stash_level.value,
-                "level_name": obj.stash_level.name,
-                "detected": obj.is_detected,
-                "dc": obj.detection_dc,  # DC для обнаружения
-                "has_trap": obj.trap is not None,
-                "x": obj.x,
-                "y": obj.y
-            }
-
-        return None
