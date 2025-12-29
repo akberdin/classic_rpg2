@@ -23,7 +23,7 @@ class WolfBite(Skill):
         super().__init__(
             name="Укус",
             description="Волк кусает врага. Урон зависит от ранга спутника",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.GENERAL,
             stamina_cost=5,
             cooldown=0,
             tactical_range=1  # Радиус 1 клетка (8 соседних клеток)
@@ -208,7 +208,7 @@ class WolfDevour(Skill):
         super().__init__(
             name="Пожирание",
             description="Волк яростно вгрызается во врага, нанося огромный урон и восстанавливая здоровье. Доступно с 3 ранга",
-            category=SkillCategory.COMBAT,
+            category=SkillCategory.GENERAL,
             stamina_cost=15,
             cooldown=3,
             tactical_range=1  # Радиус 1 клетка (ближний бой)

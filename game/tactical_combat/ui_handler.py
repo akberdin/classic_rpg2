@@ -272,11 +272,7 @@ class TacticalCombatUIHandler:
         active_char = active_unit.character
 
         # Проверяем, является ли умение боевым (все кроме ремесленных)
-        combat_categories = [
-            SkillCategory.COMBAT, SkillCategory.MAGIC,
-            SkillCategory.SHADOW, SkillCategory.WARRIOR,
-            SkillCategory.HUNTER, SkillCategory.MAGE, SkillCategory.GENERAL
-        ]
+        combat_categories = [SkillCategory.GENERAL]
         if skill.category not in combat_categories:
             self.combat.add_to_log(f"{skill.name} нельзя использовать в бою!")
             return "continue"

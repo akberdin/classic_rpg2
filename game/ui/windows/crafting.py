@@ -551,7 +551,7 @@ class CraftingWindow:
             recipes = all_recipes
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
+            if event.key == pygame.K_ESCAPE or event.key == pygame.K_k:
                 # Закрыть окно
                 return False, None
 

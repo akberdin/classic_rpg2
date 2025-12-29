@@ -16,8 +16,8 @@ class HUDRenderer:
     MENU_BUTTONS = [
         {'key': 'C', 'name': 'Характеристики', 'action': 'character'},
         {'key': 'I', 'name': 'Инвентарь', 'action': 'inventory'},
-        {'key': 'K', 'name': 'Умения', 'action': 'skills'},
-        {'key': 'V', 'name': 'Крафт', 'action': 'crafting'},
+        {'key': 'B', 'name': 'Умения', 'action': 'skills'},
+        {'key': 'K', 'name': 'Крафт', 'action': 'crafting'},
         {'key': 'Q', 'name': 'Квесты', 'action': 'quests'},
         {'key': 'P', 'name': 'Спутники', 'action': 'companions'},
         {'key': 'F1', 'name': 'Справка', 'action': 'help'},

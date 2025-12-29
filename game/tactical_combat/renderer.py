@@ -72,11 +72,7 @@ class TacticalCombatRenderer:
         # Проверяем, можно ли использовать умение
         from game.skills import SkillCategory
         can_use, _ = skill.can_use(active_char)
-        combat_categories = [
-            SkillCategory.COMBAT, SkillCategory.MAGIC,
-            SkillCategory.SHADOW, SkillCategory.WARRIOR,
-            SkillCategory.HUNTER, SkillCategory.MAGE, SkillCategory.GENERAL
-        ]
+        combat_categories = [SkillCategory.GENERAL]
 
         if not can_use or skill.category not in combat_categories:
             return None, 0, False
@@ -301,11 +297,7 @@ class TacticalCombatRenderer:
                 if skill:
                     from game.skills import SkillCategory
                     can_use, _ = skill.can_use(active_char)
-                    combat_categories = [
-                        SkillCategory.COMBAT, SkillCategory.MAGIC,
-                        SkillCategory.SHADOW, SkillCategory.WARRIOR,
-                        SkillCategory.HUNTER, SkillCategory.MAGE, SkillCategory.GENERAL
-                    ]
+                    combat_categories = [SkillCategory.GENERAL]
                     if can_use and skill.category in combat_categories:
                         self.hovered_skill_slot = i
                 break
@@ -1278,23 +1270,13 @@ class TacticalCombatRenderer:
             if skill:
                 from game.skills import SkillCategory
                 can_use, reason = skill.can_use(active_char)
-                combat_categories = [
-                    SkillCategory.COMBAT, SkillCategory.MAGIC,
-                    SkillCategory.SHADOW, SkillCategory.WARRIOR,
-                    SkillCategory.HUNTER, SkillCategory.MAGE, SkillCategory.GENERAL
-                ]
+                combat_categories = [SkillCategory.GENERAL]
                 is_usable = can_use and skill.category in combat_categories
 
             # Фон слота
             if skill:
                 if is_usable:
-                    # Яркие цвета для доступных умений
-                    if skill.category.value == 'combat':
-                        bg_color = (80, 50, 50)
-                    elif skill.category.value == 'magic':
-                        bg_color = (50, 50, 80)
-                    else:
-                        bg_color = (40, 40, 40)
+                    bg_color = (40, 40, 40)
                 else:
                     # Темные цвета для недоступных умений
                     bg_color = (30, 30, 30)

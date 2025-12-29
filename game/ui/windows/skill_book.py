@@ -452,13 +452,9 @@ class SkillBookWindow:
             if i == self.selected_slot_index:
                 bg_color = (80, 80, 100)
             elif slot_skill:
-                if slot_skill.category == SkillCategory.COMBAT:
-                    bg_color = (60, 40, 40)
-                elif slot_skill.category == SkillCategory.MAGIC:
-                    bg_color = (40, 40, 60)
-                elif slot_skill.category == SkillCategory.CRAFTING:
+                if slot_skill.category == SkillCategory.CRAFTING:
                     bg_color = (50, 50, 40)
-                else:
+                else:  # GENERAL
                     bg_color = (40, 40, 40)
             else:
                 bg_color = (30, 30, 30)
