@@ -96,6 +96,15 @@ class MagePatrol(NPC):
         return points
 
     def update_ai(self, context_or_map, all_npcs=None, player=None, current_hour=12):
+        """
+        Обновление AI мага за 1 час игрового времени
+
+        Args:
+            context_or_map: AIContext или объект карты игры
+            all_npcs: Список всех NPC для поиска врагов
+            player: Объект игрока
+            current_hour: Текущий час суток (0-23)
+        """
         # Поддержка AIContext и старого способа вызова
         from game.core.ai_context import AIContext
         if isinstance(context_or_map, AIContext):
@@ -104,16 +113,9 @@ class MagePatrol(NPC):
             all_npcs = context.all_npcs
             current_hour = context.current_hour
         else:
+            context = None
             game_map = context_or_map
-        """
-        Обновление AI мага за 1 час игрового времени
 
-        Args:
-            game_map: Объект карты игры
-            all_npcs: Список всех NPC для поиска врагов
-            player: Объект игрока
-            current_hour: Текущий час суток (0-23)
-        """
         if not self.is_alive:
             return
 

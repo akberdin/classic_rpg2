@@ -368,6 +368,30 @@ class NPC(Character):
 
         return False
 
+    def _is_near_settlement(self, game_map, x, y, safe_distance=2):
+        """
+        Проверить, находится ли позиция рядом с городом или деревней
+
+        Args:
+            game_map: Карта игры
+            x: Координата X
+            y: Координата Y
+            safe_distance: Безопасное расстояние от поселения
+
+        Returns:
+            bool: True если позиция слишком близко к поселению
+        """
+        from game.constants import LOCATION_CITY, LOCATION_VILLAGE
+        if not hasattr(game_map, 'locations'):
+            return False
+
+        for location in game_map.locations:
+            if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
+                distance = abs(x - location.x) + abs(y - location.y)
+                if distance <= safe_distance:
+                    return True
+        return False
+
     def _simplified_npc_combat(self, enemy, context=None):
         """
         Упрощенный бой между NPC - моментальный расчет победителя
