@@ -85,6 +85,7 @@ class Bandit(NPC):
             player = context.player
             current_hour = context.current_hour
         else:
+            context = None
             game_map = context_or_map
 
         if not self.is_alive:
@@ -405,6 +406,7 @@ class Undead(NPC):
             player = context.player
             current_hour = context.current_hour
         else:
+            context = None
             game_map = context_or_map
 
         if not self.is_alive:
@@ -739,6 +741,7 @@ class ShadowAdept(NPC):
             player = context.player
             current_hour = context.current_hour
         else:
+            context = None
             game_map = context_or_map
 
         if not self.is_alive:
