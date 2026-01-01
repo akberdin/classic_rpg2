@@ -2,9 +2,13 @@
 Класс карты подземелья
 """
 import random
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 
-from game.dungeon.tiles import DungeonTile, DungeonTileType, PASSABLE_DUNGEON_TILES
+from game.dungeon.tiles import (
+    DungeonTile, DungeonTileType, PASSABLE_DUNGEON_TILES,
+    DungeonDepthType, MineDepthType,
+    get_dungeon_depth_type, get_mine_depth_type
+)
 from game.dungeon.traps import TrapManager
 from game.dungeon.stashes import StashManager
 
@@ -13,7 +17,8 @@ class DungeonMap:
     """Класс карты подземелья"""
 
     def __init__(self, width: int, height: int, dungeon_type: str = "dungeon",
-                 dungeon_level: int = 1, name: str = "Подземелье"):
+                 dungeon_level: int = 1, name: str = "Подземелье",
+                 current_depth: int = 1):
         """
         Инициализация карты подземелья
 
@@ -23,12 +28,21 @@ class DungeonMap:
             dungeon_type: Тип ("dungeon" или "mine")
             dungeon_level: Уровень подземелья (влияет на сложность)
             name: Название подземелья
+            current_depth: Текущая глубина (1-based), влияет на визуальный тип
         """
         self.width = width
         self.height = height
         self.dungeon_type = dungeon_type
         self.dungeon_level = dungeon_level
         self.name = name
+        self.current_depth = current_depth
+
+        # Определяем тип глубины на основе текущей глубины и типа подземелья
+        self.depth_type: Union[DungeonDepthType, MineDepthType]
+        if dungeon_type == "mine":
+            self.depth_type = get_mine_depth_type(current_depth)
+        else:
+            self.depth_type = get_dungeon_depth_type(current_depth)
 
         # Создаем карту, заполненную стенами
         self.tiles: List[List[DungeonTile]] = []

@@ -30,6 +30,34 @@ LOCATION_MAGIC_SCHOOL = 'magic_school'
 LOCATION_WARRIOR_ACADEMY = 'warrior_academy'
 LOCATION_SECRET_CAMP = 'secret_camp'
 
+# Типы глубины подземелий (руины)
+DUNGEON_DEPTH_NORMAL = 'dungeon'           # Подземелье (уровни 1-2)
+DUNGEON_DEPTH_DARK = 'dark_dungeon'        # Темное подземелье (уровни 3-4)
+DUNGEON_DEPTH_GLOOMY = 'gloomy_dungeon'    # Мрачное подземелье (уровни 5-6)
+DUNGEON_DEPTH_INFERNO = 'inferno_dungeon'  # Преисподня (уровни 7+)
+
+# Типы глубины шахт
+MINE_DEPTH_NORMAL = 'mine'           # Шахта (уровни 1-2)
+MINE_DEPTH_DARK = 'dark_mine'        # Темная шахта (уровни 3-4)
+MINE_DEPTH_GLOOMY = 'gloomy_mine'    # Мрачная шахта (уровни 5-6)
+MINE_DEPTH_INFERNO = 'inferno_mine'  # Преисподня (уровни 7+)
+
+# Маппинг глубины на тип подземелья
+DUNGEON_DEPTH_TYPES = {
+    (1, 2): DUNGEON_DEPTH_NORMAL,
+    (3, 4): DUNGEON_DEPTH_DARK,
+    (5, 6): DUNGEON_DEPTH_GLOOMY,
+    (7, float('inf')): DUNGEON_DEPTH_INFERNO,
+}
+
+# Маппинг глубины на тип шахты
+MINE_DEPTH_TYPES = {
+    (1, 2): MINE_DEPTH_NORMAL,
+    (3, 4): MINE_DEPTH_DARK,
+    (5, 6): MINE_DEPTH_GLOOMY,
+    (7, float('inf')): MINE_DEPTH_INFERNO,
+}
+
 # Проходимые биомы (горы и болото проходимы, но с высокой стоимостью)
 PASSABLE_BIOMES = [BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST, BIOME_MOUNTAIN, BIOME_SWAMP]
 

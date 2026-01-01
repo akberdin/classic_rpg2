@@ -148,25 +148,77 @@ class SpriteManager:
                 # Простая структура: строка с путем
                 self.load_sprite(companion_type, companion_data, 'companion')
 
-        # Загружаем спрайты тайлов подземелья из отдельного конфига
-        for tile_type, sprite_path in self.dungeon_config.get('tiles', {}).items():
-            if not tile_type.startswith('_'):  # Пропускаем служебные поля
-                self.load_sprite(tile_type, sprite_path, 'dungeon_tile')
+        # Загружаем спрайты тайлов подземелья из отдельного конфига (новая структура с типами глубины)
+        self._load_depth_typed_sprites(self.dungeon_config, 'dungeon')
 
-        # Загружаем спрайты объектов подземелья из отдельного конфига
-        for object_type, sprite_path in self.dungeon_config.get('objects', {}).items():
-            if not object_type.startswith('_'):  # Пропускаем служебные поля
-                self.load_sprite(object_type, sprite_path, 'dungeon_object')
+        # Загружаем спрайты тайлов шахт из отдельного конфига (новая структура с типами глубины)
+        self._load_depth_typed_sprites(self.mine_config, 'mine')
 
-        # Загружаем спрайты тайлов шахт из отдельного конфига
-        for tile_type, sprite_path in self.mine_config.get('tiles', {}).items():
-            if not tile_type.startswith('_'):  # Пропускаем служебные поля
-                self.load_sprite(tile_type, sprite_path, 'mine_tile')
+        # Fallback - загружаем резервные тайлы
+        self._load_fallback_sprites(self.dungeon_config, 'dungeon')
+        self._load_fallback_sprites(self.mine_config, 'mine')
 
-        # Загружаем спрайты объектов шахт из отдельного конфига
-        for object_type, sprite_path in self.mine_config.get('objects', {}).items():
-            if not object_type.startswith('_'):  # Пропускаем служебные поля
-                self.load_sprite(object_type, sprite_path, 'mine_object')
+    def _load_depth_typed_sprites(self, config, base_type):
+        """
+        Загрузка спрайтов для всех типов глубины
+
+        Args:
+            config: Конфигурация (dungeon_config или mine_config)
+            base_type: Базовый тип ('dungeon' или 'mine')
+        """
+        depth_types = config.get('depth_types', {})
+
+        for depth_type, depth_config in depth_types.items():
+            if depth_type.startswith('_'):
+                continue
+
+            # Загружаем тайлы для этого типа глубины
+            tiles = depth_config.get('tiles', {})
+            for tile_type, tile_data in tiles.items():
+                if tile_type.startswith('_'):
+                    continue
+
+                # Проверяем, это структура с вариантами пола или простой путь
+                if isinstance(tile_data, dict) and 'main' in tile_data:
+                    # Структура с вариантами пола
+                    main_path = tile_data.get('main')
+                    if main_path:
+                        self.load_sprite(tile_type, main_path, f'{depth_type}_tile')
+
+                    # Загружаем варианты пола
+                    variants = tile_data.get('variants', [])
+                    for i, variant_path in enumerate(variants):
+                        self.load_sprite(f'{tile_type}_var{i+1}', variant_path, f'{depth_type}_tile')
+                else:
+                    # Простой путь к файлу
+                    self.load_sprite(tile_type, tile_data, f'{depth_type}_tile')
+
+            # Загружаем объекты для этого типа глубины
+            objects = depth_config.get('objects', {})
+            for obj_type, obj_path in objects.items():
+                if obj_type.startswith('_'):
+                    continue
+                self.load_sprite(obj_type, obj_path, f'{depth_type}_object')
+
+    def _load_fallback_sprites(self, config, base_type):
+        """
+        Загрузка резервных спрайтов
+
+        Args:
+            config: Конфигурация (dungeon_config или mine_config)
+            base_type: Базовый тип ('dungeon' или 'mine')
+        """
+        fallback = config.get('fallback', {})
+
+        # Загружаем резервные тайлы
+        for tile_type, tile_path in fallback.get('tiles', {}).items():
+            if not tile_type.startswith('_'):
+                self.load_sprite(tile_type, tile_path, f'{base_type}_tile')
+
+        # Загружаем резервные объекты
+        for obj_type, obj_path in fallback.get('objects', {}).items():
+            if not obj_type.startswith('_'):
+                self.load_sprite(obj_type, obj_path, f'{base_type}_object')
 
         print(f"Загружено спрайтов: {len(self.sprites)}")
 
@@ -211,17 +263,32 @@ class SpriteManager:
         key = f"{category}_{sprite_type}"
         return self.sprites.get(key)
 
-    def get_dungeon_tile_sprite(self, tile_type, dungeon_type="dungeon"):
+    def get_dungeon_tile_sprite(self, tile_type, dungeon_type="dungeon", depth_type=None):
         """
         Получить спрайт тайла подземелья или шахты
 
         Args:
             tile_type: Тип тайла (floor, wall, stairs_down и т.д.)
             dungeon_type: Тип подземелья ("dungeon" или "mine")
+            depth_type: Тип глубины (DungeonDepthType или MineDepthType или строка)
 
         Returns:
             pygame.Surface или None если спрайт не найден
         """
+        # Если указан тип глубины, пробуем получить спрайт для него
+        if depth_type is not None:
+            # Преобразуем enum в строку если нужно
+            if hasattr(depth_type, 'value'):
+                depth_type_str = depth_type.value
+            else:
+                depth_type_str = str(depth_type)
+
+            key = f"{depth_type_str}_tile_{tile_type}"
+            sprite = self.sprites.get(key)
+            if sprite:
+                return sprite
+
+        # Fallback к старой логике (резервные тайлы)
         if dungeon_type == "mine":
             key = f"mine_tile_{tile_type}"
             sprite = self.sprites.get(key)
@@ -234,17 +301,77 @@ class SpriteManager:
             key = f"dungeon_tile_{tile_type}"
             return self.sprites.get(key)
 
-    def get_dungeon_object_sprite(self, object_type, dungeon_type="dungeon"):
+    def get_floor_variant_sprite(self, depth_type, variant_index=None):
+        """
+        Получить спрайт варианта пола с учетом весов
+
+        Args:
+            depth_type: Тип глубины (DungeonDepthType или MineDepthType или строка)
+            variant_index: Конкретный индекс варианта (0=main, 1-3=variants) или None для случайного
+
+        Returns:
+            pygame.Surface или None если спрайт не найден
+        """
+        import random
+
+        # Преобразуем enum в строку если нужно
+        if hasattr(depth_type, 'value'):
+            depth_type_str = depth_type.value
+        else:
+            depth_type_str = str(depth_type)
+
+        if variant_index is None:
+            # Случайный выбор с учетом весов (70% основной, 10% каждый вариант)
+            roll = random.randint(1, 100)
+            if roll <= 70:
+                variant_index = 0  # Основной тайл
+            elif roll <= 80:
+                variant_index = 1
+            elif roll <= 90:
+                variant_index = 2
+            else:
+                variant_index = 3
+
+        if variant_index == 0:
+            # Основной тайл пола
+            key = f"{depth_type_str}_tile_floor"
+        else:
+            # Вариант пола
+            key = f"{depth_type_str}_tile_floor_var{variant_index}"
+
+        sprite = self.sprites.get(key)
+        if sprite:
+            return sprite
+
+        # Fallback к основному тайлу пола
+        return self.sprites.get(f"{depth_type_str}_tile_floor")
+
+    def get_dungeon_object_sprite(self, object_type, dungeon_type="dungeon", depth_type=None):
         """
         Получить спрайт объекта подземелья или шахты
 
         Args:
             object_type: Тип объекта (trap, stash, remains и т.д.)
             dungeon_type: Тип подземелья ("dungeon" или "mine")
+            depth_type: Тип глубины (DungeonDepthType или MineDepthType или строка)
 
         Returns:
             pygame.Surface или None если спрайт не найден
         """
+        # Если указан тип глубины, пробуем получить спрайт для него
+        if depth_type is not None:
+            # Преобразуем enum в строку если нужно
+            if hasattr(depth_type, 'value'):
+                depth_type_str = depth_type.value
+            else:
+                depth_type_str = str(depth_type)
+
+            key = f"{depth_type_str}_object_{object_type}"
+            sprite = self.sprites.get(key)
+            if sprite:
+                return sprite
+
+        # Fallback к старой логике (резервные тайлы)
         if dungeon_type == "mine":
             key = f"mine_object_{object_type}"
             sprite = self.sprites.get(key)

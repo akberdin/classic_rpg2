@@ -64,8 +64,8 @@ class DungeonGenerator:
         if name is None:
             name = self._generate_name(dungeon_type, dungeon_level)
 
-        # Создаем карту
-        dungeon = DungeonMap(width, height, dungeon_type, dungeon_level, name)
+        # Создаем карту с учетом текущей глубины
+        dungeon = DungeonMap(width, height, dungeon_type, dungeon_level, name, current_depth)
 
         # Генерируем комнаты
         num_rooms = random.randint(params["min_rooms"], params["max_rooms"])
