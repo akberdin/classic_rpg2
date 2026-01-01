@@ -25,6 +25,7 @@ from game.ui.windows import (
     NPCSelectionWindow,
     DungeonEntryWindow,
     DungeonExitWindow,
+    StairsMenuWindow,
 )
 from game.ui.windows.object_interaction import ObjectInteractionWindow
 from game.ui.windows.companion import CompanionWindow
@@ -175,9 +176,11 @@ class Game:
         # Окна подземелий
         self.dungeon_entry_window = DungeonEntryWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.dungeon_exit_window = DungeonExitWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.stairs_menu_window = StairsMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.object_interaction_window = ObjectInteractionWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.dungeon_entry_open = False
         self.dungeon_exit_open = False
+        self.stairs_menu_open = False
         self.object_interaction_open = False
 
         # Окна города/деревни
@@ -399,6 +402,31 @@ class Game:
                     self.dungeon_exit_open = False
                 elif result == "stay":
                     self.dungeon_exit_open = False
+                continue
+
+            # Если открыто меню лестницы, обрабатываем его
+            if self.stairs_menu_open:
+                result = self.stairs_menu_window.handle_input(event)
+                if result == "go":
+                    # Переходим по лестнице
+                    stairs_type = self.stairs_menu_window.stairs_type
+                    if stairs_type == "down":
+                        move_result = self.dungeon_manager.go_down_stairs(self.player)
+                    else:
+                        move_result = self.dungeon_manager.go_up_stairs(self.player)
+
+                    if move_result.get("success"):
+                        print(move_result.get("message", ""))
+                        # Ход врагов после перехода
+                        enemy_results = self.dungeon_manager.enemy_turn(self.player)
+                        for er in enemy_results:
+                            if er.get('damage', 0) > 0:
+                                print(f"{er['attacker']} наносит {er['damage']} урона!")
+                    else:
+                        print(move_result.get("message", ""))
+                    self.stairs_menu_open = False
+                elif result == "stay":
+                    self.stairs_menu_open = False
                 continue
 
             # Если открыто окно взаимодействия с объектом, обрабатываем его
@@ -1004,6 +1032,10 @@ class Game:
             # Отрисовка окна выхода из подземелья
             if self.dungeon_exit_open:
                 self.dungeon_exit_window.render()
+
+            # Отрисовка меню лестницы
+            if self.stairs_menu_open:
+                self.stairs_menu_window.render()
 
             # Отрисовка окна взаимодействия с объектом
             if self.object_interaction_open:

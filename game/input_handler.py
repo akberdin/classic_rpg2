@@ -923,6 +923,29 @@ class InputHandler:
                     self.game.dungeon_exit_open = True
                     return
 
+                # Проверяем, на лестнице ли игрок
+                tile = dungeon.get_tile(self.ctx.player.x, self.ctx.player.y)
+                if tile:
+                    from game.dungeon.tiles import DungeonTileType
+                    if tile.tile_type == DungeonTileType.STAIRS_DOWN:
+                        # Открываем меню лестницы вниз
+                        self.game.stairs_menu_window.set_stairs_info(
+                            "down",
+                            self.ctx.dungeon_manager.current_depth,
+                            self.ctx.dungeon_manager.max_depth
+                        )
+                        self.game.stairs_menu_open = True
+                        return
+                    elif tile.tile_type == DungeonTileType.STAIRS_UP:
+                        # Открываем меню лестницы вверх
+                        self.game.stairs_menu_window.set_stairs_info(
+                            "up",
+                            self.ctx.dungeon_manager.current_depth,
+                            self.ctx.dungeon_manager.max_depth
+                        )
+                        self.game.stairs_menu_open = True
+                        return
+
                 return
 
             # Проверяем возможность входа в подземелье/шахту

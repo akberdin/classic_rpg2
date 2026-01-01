@@ -201,6 +201,136 @@ class DungeonEntryWindow(BaseWindow):
             return (255, 100, 100)  # Красный - опасно
 
 
+class StairsMenuWindow(BaseWindow):
+    """Окно меню лестницы в подземелье"""
+
+    def __init__(self, screen, font, info_font, ui_scaler):
+        """Инициализация окна"""
+        super().__init__(screen, font, info_font, ui_scaler)
+
+        self.window_width = 350
+        self.window_height = 180
+
+        self.stairs_type = "down"  # "down" или "up"
+        self.current_depth = 1
+        self.max_depth = 5
+        self.selected_option = 0
+        self.options = []
+
+    def set_stairs_info(self, stairs_type: str, current_depth: int, max_depth: int):
+        """
+        Установить информацию о лестнице
+
+        Args:
+            stairs_type: Тип лестницы ("down" или "up")
+            current_depth: Текущая глубина
+            max_depth: Максимальная глубина
+        """
+        self.stairs_type = stairs_type
+        self.current_depth = current_depth
+        self.max_depth = max_depth
+        self.selected_option = 0
+
+        # Формируем опции меню
+        if stairs_type == "down":
+            target_level = current_depth + 1
+            self.options = [
+                (f"1. Спуститься на уровень {target_level}", "go"),
+                ("2. Отойти", "stay"),
+            ]
+        else:  # up
+            target_level = current_depth - 1
+            if target_level == 0:
+                self.options = [
+                    ("1. Подняться на поверхность", "go"),
+                    ("2. Отойти", "stay"),
+                ]
+            else:
+                self.options = [
+                    (f"1. Подняться на уровень {target_level}", "go"),
+                    ("2. Отойти", "stay"),
+                ]
+
+    def handle_input(self, event) -> str:
+        """
+        Обработка ввода
+
+        Returns:
+            str: "go", "stay", или ""
+        """
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_1 or event.key == pygame.K_RETURN:
+                return "go"
+            elif event.key == pygame.K_2 or event.key == pygame.K_ESCAPE:
+                return "stay"
+            elif event.key == pygame.K_UP or event.key == pygame.K_w:
+                self.selected_option = max(0, self.selected_option - 1)
+            elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
+                self.selected_option = min(len(self.options) - 1, self.selected_option + 1)
+
+        return ""
+
+    def render(self):
+        """Отрисовка окна"""
+        self.draw_overlay()
+
+        win_w = self.scaler.scale_width(self.window_width)
+        win_h = self.scaler.scale_height(self.window_height)
+        win_x = (self.screen.get_width() - win_w) // 2
+        win_y = (self.screen.get_height() - win_h) // 2
+
+        # Фон
+        pygame.draw.rect(self.screen, (40, 40, 50), (win_x, win_y, win_w, win_h))
+        pygame.draw.rect(self.screen, (100, 100, 120), (win_x, win_y, win_w, win_h), 2)
+
+        # Заголовок
+        title_height = self.scaler.scale_height(35)
+        pygame.draw.rect(self.screen, (60, 60, 80), (win_x, win_y, win_w, title_height))
+
+        if self.stairs_type == "down":
+            title_text = "Лестница вниз"
+            title_color = (200, 150, 100)  # Оранжевый
+        else:
+            title_text = "Лестница вверх"
+            title_color = (150, 200, 150)  # Зелёный
+
+        title_surface = self.font.render(title_text, True, title_color)
+        title_x = win_x + (win_w - title_surface.get_width()) // 2
+        title_y = win_y + (title_height - title_surface.get_height()) // 2
+        self.screen.blit(title_surface, (title_x, title_y))
+
+        # Информация о текущем уровне
+        content_y = win_y + title_height + self.scaler.scale_height(15)
+        line_height = self.scaler.scale_height(25)
+        padding_x = self.scaler.scale_width(20)
+
+        level_text = f"Текущий уровень: {self.current_depth} / {self.max_depth}"
+        level_surface = self.info_font.render(level_text, True, (180, 180, 180))
+        level_x = win_x + (win_w - level_surface.get_width()) // 2
+        self.screen.blit(level_surface, (level_x, content_y))
+        content_y += line_height + self.scaler.scale_height(10)
+
+        # Опции
+        for i, (option_text, _) in enumerate(self.options):
+            if i == self.selected_option:
+                # Подсветка выбранного пункта
+                highlight_rect = pygame.Rect(
+                    win_x + padding_x - 5,
+                    content_y - 2,
+                    win_w - 2 * padding_x + 10,
+                    line_height
+                )
+                pygame.draw.rect(self.screen, (60, 80, 100), highlight_rect)
+                text_color = (255, 255, 100)
+            else:
+                text_color = (200, 200, 200)
+
+            option_surface = self.font.render(option_text, True, text_color)
+            opt_x = win_x + (win_w - option_surface.get_width()) // 2
+            self.screen.blit(option_surface, (opt_x, content_y))
+            content_y += line_height
+
+
 class DungeonExitWindow(BaseWindow):
     """Окно подтверждения выхода из подземелья"""
 
