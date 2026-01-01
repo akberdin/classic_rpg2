@@ -7,7 +7,7 @@ from typing import List, Tuple, Optional, Union
 from game.dungeon.tiles import (
     DungeonTile, DungeonTileType, PASSABLE_DUNGEON_TILES,
     DungeonDepthType, MineDepthType,
-    get_dungeon_depth_type, get_mine_depth_type
+    get_dungeon_depth_type, get_mine_depth_type, get_depth_type_from_string
 )
 from game.dungeon.traps import TrapManager
 from game.dungeon.stashes import StashManager
@@ -18,7 +18,7 @@ class DungeonMap:
 
     def __init__(self, width: int, height: int, dungeon_type: str = "dungeon",
                  dungeon_level: int = 1, name: str = "Подземелье",
-                 current_depth: int = 1):
+                 current_depth: int = 1, floor_type: str = None):
         """
         Инициализация карты подземелья
 
@@ -28,7 +28,8 @@ class DungeonMap:
             dungeon_type: Тип ("dungeon" или "mine")
             dungeon_level: Уровень подземелья (влияет на сложность)
             name: Название подземелья
-            current_depth: Текущая глубина (1-based), влияет на визуальный тип
+            current_depth: Текущая глубина (1-based)
+            floor_type: Тип этажа из конфига (basement, dark_basement, mine, и т.д.)
         """
         self.width = width
         self.height = height
@@ -36,13 +37,21 @@ class DungeonMap:
         self.dungeon_level = dungeon_level
         self.name = name
         self.current_depth = current_depth
+        self.floor_type_str = floor_type  # Сохраняем строковое значение
 
-        # Определяем тип глубины на основе текущей глубины и типа подземелья
+        # Определяем тип глубины
         self.depth_type: Union[DungeonDepthType, MineDepthType]
-        if dungeon_type == "mine":
-            self.depth_type = get_mine_depth_type(current_depth)
+        is_mine = dungeon_type == "mine"
+
+        if floor_type:
+            # Используем тип из конфига локации
+            self.depth_type = get_depth_type_from_string(floor_type, is_mine)
         else:
-            self.depth_type = get_dungeon_depth_type(current_depth)
+            # Fallback: определяем автоматически по глубине
+            if is_mine:
+                self.depth_type = get_mine_depth_type(current_depth)
+            else:
+                self.depth_type = get_dungeon_depth_type(current_depth)
 
         # Создаем карту, заполненную стенами
         self.tiles: List[List[DungeonTile]] = []

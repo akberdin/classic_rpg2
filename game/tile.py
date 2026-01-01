@@ -102,6 +102,10 @@ class Location:
         self.animal_count = 0  # Количество животных для спавна (0 = не спавнить)
         self.id = None  # Уникальный идентификатор локации
 
+        # Конфигурация этажей для подземелий и шахт
+        # Формат: [{"floor_number": 1, "floor_type": "basement", "size": 2, "npc": ""}, ...]
+        self.floors = []
+
     def _generate_default_name(self):
         """Генерация названия по умолчанию"""
         names = {

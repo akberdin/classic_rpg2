@@ -6,23 +6,23 @@ from enum import Enum
 
 class DungeonDepthType(Enum):
     """Типы глубины подземелий (руины)"""
-    NORMAL = "dungeon"           # Подземелье (уровни 1-2)
-    DARK = "dark_dungeon"        # Темное подземелье (уровни 3-4)
-    GLOOMY = "gloomy_dungeon"    # Мрачное подземелье (уровни 5-6)
-    INFERNO = "inferno_dungeon"  # Преисподня (уровни 7+)
+    BASEMENT = "basement"              # Подвал
+    DARK_BASEMENT = "dark_basement"    # Темный подвал
+    GLOOMY_BASEMENT = "gloomy_basement"  # Мрачный подвал
+    ABYSS = "abyss"                    # Преисподня
 
 
 class MineDepthType(Enum):
     """Типы глубины шахт"""
-    NORMAL = "mine"           # Шахта (уровни 1-2)
-    DARK = "dark_mine"        # Темная шахта (уровни 3-4)
-    GLOOMY = "gloomy_mine"    # Мрачная шахта (уровни 5-6)
-    INFERNO = "inferno_mine"  # Преисподня (уровни 7+)
+    MINE = "mine"                # Шахта
+    DARK_MINE = "dark_mine"      # Темная шахта
+    GLOOMY_MINE = "gloomy_mine"  # Мрачная шахта
+    ABYSS = "abyss"              # Преисподня
 
 
 def get_dungeon_depth_type(depth: int) -> DungeonDepthType:
     """
-    Определить тип подземелья по глубине
+    Определить тип подземелья по глубине (fallback если нет конфига)
 
     Args:
         depth: Текущая глубина (1-based)
@@ -31,18 +31,18 @@ def get_dungeon_depth_type(depth: int) -> DungeonDepthType:
         DungeonDepthType: Тип подземелья
     """
     if depth <= 2:
-        return DungeonDepthType.NORMAL
+        return DungeonDepthType.BASEMENT
     elif depth <= 4:
-        return DungeonDepthType.DARK
+        return DungeonDepthType.DARK_BASEMENT
     elif depth <= 6:
-        return DungeonDepthType.GLOOMY
+        return DungeonDepthType.GLOOMY_BASEMENT
     else:
-        return DungeonDepthType.INFERNO
+        return DungeonDepthType.ABYSS
 
 
 def get_mine_depth_type(depth: int) -> MineDepthType:
     """
-    Определить тип шахты по глубине
+    Определить тип шахты по глубине (fallback если нет конфига)
 
     Args:
         depth: Текущая глубина (1-based)
@@ -51,28 +51,57 @@ def get_mine_depth_type(depth: int) -> MineDepthType:
         MineDepthType: Тип шахты
     """
     if depth <= 2:
-        return MineDepthType.NORMAL
+        return MineDepthType.MINE
     elif depth <= 4:
-        return MineDepthType.DARK
+        return MineDepthType.DARK_MINE
     elif depth <= 6:
-        return MineDepthType.GLOOMY
+        return MineDepthType.GLOOMY_MINE
     else:
-        return MineDepthType.INFERNO
+        return MineDepthType.ABYSS
+
+
+def get_depth_type_from_string(floor_type: str, is_mine: bool = False):
+    """
+    Получить тип глубины из строки конфига
+
+    Args:
+        floor_type: Строка типа этажа из конфига (basement, dark_basement и т.д.)
+        is_mine: True если это шахта
+
+    Returns:
+        DungeonDepthType или MineDepthType
+    """
+    if is_mine:
+        mapping = {
+            "mine": MineDepthType.MINE,
+            "dark_mine": MineDepthType.DARK_MINE,
+            "gloomy_mine": MineDepthType.GLOOMY_MINE,
+            "abyss": MineDepthType.ABYSS,
+        }
+        return mapping.get(floor_type, MineDepthType.MINE)
+    else:
+        mapping = {
+            "basement": DungeonDepthType.BASEMENT,
+            "dark_basement": DungeonDepthType.DARK_BASEMENT,
+            "gloomy_basement": DungeonDepthType.GLOOMY_BASEMENT,
+            "abyss": DungeonDepthType.ABYSS,
+        }
+        return mapping.get(floor_type, DungeonDepthType.BASEMENT)
 
 
 # Названия типов глубины для отображения
 DUNGEON_DEPTH_NAMES = {
-    DungeonDepthType.NORMAL: "Подземелье",
-    DungeonDepthType.DARK: "Темное подземелье",
-    DungeonDepthType.GLOOMY: "Мрачное подземелье",
-    DungeonDepthType.INFERNO: "Преисподня",
+    DungeonDepthType.BASEMENT: "Подвал",
+    DungeonDepthType.DARK_BASEMENT: "Темный подвал",
+    DungeonDepthType.GLOOMY_BASEMENT: "Мрачный подвал",
+    DungeonDepthType.ABYSS: "Преисподня",
 }
 
 MINE_DEPTH_NAMES = {
-    MineDepthType.NORMAL: "Шахта",
-    MineDepthType.DARK: "Темная шахта",
-    MineDepthType.GLOOMY: "Мрачная шахта",
-    MineDepthType.INFERNO: "Преисподня",
+    MineDepthType.MINE: "Шахта",
+    MineDepthType.DARK_MINE: "Темная шахта",
+    MineDepthType.GLOOMY_MINE: "Мрачная шахта",
+    MineDepthType.ABYSS: "Преисподня",
 }
 
 
@@ -87,7 +116,7 @@ def get_depth_type_name(depth_type) -> str:
         str: Локализованное название
     """
     if isinstance(depth_type, DungeonDepthType):
-        return DUNGEON_DEPTH_NAMES.get(depth_type, "Подземелье")
+        return DUNGEON_DEPTH_NAMES.get(depth_type, "Подвал")
     elif isinstance(depth_type, MineDepthType):
         return MINE_DEPTH_NAMES.get(depth_type, "Шахта")
     return "Неизвестно"

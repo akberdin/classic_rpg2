@@ -5,10 +5,10 @@
   "sprite_size": 64,
 
   "depth_types": {
-    "_description": "Типы шахт по глубине, каждый тип имеет свой набор тайлов",
+    "_description": "Типы этажей шахт, каждый тип имеет свой набор тайлов",
 
     "mine": {
-      "_description": "Шахта (уровни 1-2)",
+      "_description": "Шахта",
       "name": "Шахта",
       "tiles": {
         "_folder": "assets/mine/tiles/mine/",
@@ -50,7 +50,7 @@
     },
 
     "dark_mine": {
-      "_description": "Темная шахта (уровни 3-4)",
+      "_description": "Темная шахта",
       "name": "Темная шахта",
       "tiles": {
         "_folder": "assets/mine/tiles/dark_mine/",
@@ -92,7 +92,7 @@
     },
 
     "gloomy_mine": {
-      "_description": "Мрачная шахта (уровни 5-6)",
+      "_description": "Мрачная шахта",
       "name": "Мрачная шахта",
       "tiles": {
         "_folder": "assets/mine/tiles/gloomy_mine/",
@@ -133,45 +133,45 @@
       }
     },
 
-    "inferno_mine": {
-      "_description": "Преисподня (уровни 7+)",
+    "abyss": {
+      "_description": "Преисподня",
       "name": "Преисподня",
       "tiles": {
-        "_folder": "assets/mine/tiles/inferno_mine/",
+        "_folder": "assets/mine/tiles/abyss/",
         "floor": {
           "_description": "Варианты пола: основной (70%) и вспомогательные (по 10%)",
-          "main": "assets/mine/tiles/inferno_mine/floor.png",
+          "main": "assets/mine/tiles/abyss/floor.png",
           "variants": [
-            "assets/mine/tiles/inferno_mine/floor_var1.png",
-            "assets/mine/tiles/inferno_mine/floor_var2.png",
-            "assets/mine/tiles/inferno_mine/floor_var3.png"
+            "assets/mine/tiles/abyss/floor_var1.png",
+            "assets/mine/tiles/abyss/floor_var2.png",
+            "assets/mine/tiles/abyss/floor_var3.png"
           ],
           "main_weight": 70,
           "variant_weight": 10
         },
-        "wall": "assets/mine/tiles/inferno_mine/wall.png",
-        "corridor": "assets/mine/tiles/inferno_mine/floor.png",
-        "entrance": "assets/mine/tiles/inferno_mine/entrance.png",
-        "exit": "assets/mine/tiles/inferno_mine/exit.png",
-        "stairs_down": "assets/mine/tiles/inferno_mine/stairs_down.png",
-        "stairs_up": "assets/mine/tiles/inferno_mine/stairs_up.png",
-        "ore_vein": "assets/mine/tiles/inferno_mine/ore_vein.png",
-        "minecart": "assets/mine/tiles/inferno_mine/minecart.png",
-        "support": "assets/mine/tiles/inferno_mine/support.png",
-        "rubble": "assets/mine/tiles/inferno_mine/rubble.png",
-        "water": "assets/mine/tiles/inferno_mine/water.png"
+        "wall": "assets/mine/tiles/abyss/wall.png",
+        "corridor": "assets/mine/tiles/abyss/floor.png",
+        "entrance": "assets/mine/tiles/abyss/entrance.png",
+        "exit": "assets/mine/tiles/abyss/exit.png",
+        "stairs_down": "assets/mine/tiles/abyss/stairs_down.png",
+        "stairs_up": "assets/mine/tiles/abyss/stairs_up.png",
+        "ore_vein": "assets/mine/tiles/abyss/ore_vein.png",
+        "minecart": "assets/mine/tiles/abyss/minecart.png",
+        "support": "assets/mine/tiles/abyss/support.png",
+        "rubble": "assets/mine/tiles/abyss/rubble.png",
+        "water": "assets/mine/tiles/abyss/water.png"
       },
       "objects": {
-        "_folder": "assets/mine/objects/inferno_mine/",
-        "trap": "assets/mine/objects/inferno_mine/trap.png",
-        "trap_triggered": "assets/mine/objects/inferno_mine/trap_triggered.png",
-        "stash": "assets/mine/objects/inferno_mine/stash.png",
-        "stash_looted": "assets/mine/objects/inferno_mine/stash_looted.png",
-        "remains": "assets/mine/objects/inferno_mine/remains.png",
-        "remains_looted": "assets/mine/objects/inferno_mine/remains_looted.png",
-        "chest": "assets/mine/objects/inferno_mine/chest.png",
-        "chest_open": "assets/mine/objects/inferno_mine/chest_open.png",
-        "torch": "assets/mine/objects/inferno_mine/torch.png"
+        "_folder": "assets/mine/objects/abyss/",
+        "trap": "assets/mine/objects/abyss/trap.png",
+        "trap_triggered": "assets/mine/objects/abyss/trap_triggered.png",
+        "stash": "assets/mine/objects/abyss/stash.png",
+        "stash_looted": "assets/mine/objects/abyss/stash_looted.png",
+        "remains": "assets/mine/objects/abyss/remains.png",
+        "remains_looted": "assets/mine/objects/abyss/remains_looted.png",
+        "chest": "assets/mine/objects/abyss/chest.png",
+        "chest_open": "assets/mine/objects/abyss/chest_open.png",
+        "torch": "assets/mine/objects/abyss/torch.png"
       }
     }
   },
