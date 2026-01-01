@@ -1921,7 +1921,49 @@ class FloorEditDialog(Dialog):
             local_x = event.pos[0] - self.x
             local_y = event.pos[1] - self.y
 
-            # Check floor type dropdowns
+            # FIRST: Check dropdown options if any is active (must be checked before triggers)
+            if hasattr(self, '_active_dropdown') and self._active_dropdown:
+                if self._active_dropdown.startswith('dropdown_floor_'):
+                    floor_num = int(self._active_dropdown.split('_')[-1])
+                    floor_idx = floor_num - 1
+                    row_y = 75 + floor_idx * 40
+                    option_y = row_y + 28
+
+                    # Check if click is within options area
+                    options_height = len(FLOOR_TYPES) * 28
+                    options_rect = pygame.Rect(70, option_y, 180, options_height)
+                    if options_rect.collidepoint(local_x, local_y):
+                        for i, (key, value) in enumerate(FLOOR_TYPES.items()):
+                            option_rect = pygame.Rect(70, option_y + i * 28, 180, 28)
+                            if option_rect.collidepoint(local_x, local_y):
+                                self.floors_copy[floor_idx].floor_type = key
+                                self.data[f'floor_{floor_num}_type'] = key
+                                self._active_dropdown = None
+                                return True
+
+                elif self._active_dropdown.startswith('dropdown_size_'):
+                    floor_num = int(self._active_dropdown.split('_')[-1])
+                    floor_idx = floor_num - 1
+                    row_y = 75 + floor_idx * 40
+                    option_y = row_y + 28
+
+                    # Check if click is within options area
+                    options_height = len(self.SIZE_OPTIONS) * 28
+                    options_rect = pygame.Rect(260, option_y, 80, options_height)
+                    if options_rect.collidepoint(local_x, local_y):
+                        for i, (key, value) in enumerate(self.SIZE_OPTIONS.items()):
+                            option_rect = pygame.Rect(260, option_y + i * 28, 80, 28)
+                            if option_rect.collidepoint(local_x, local_y):
+                                self.floors_copy[floor_idx].size = int(key)
+                                self.data[f'floor_{floor_num}_size'] = key
+                                self._active_dropdown = None
+                                return True
+
+                # Close dropdown if clicked outside options
+                self._active_dropdown = None
+                return True
+
+            # SECOND: Check floor type dropdown triggers
             for i, floor in enumerate(self.floors_copy):
                 row_y = 75 + i * 40
 
@@ -1945,39 +1987,6 @@ class FloorEditDialog(Dialog):
                     else:
                         self._active_dropdown = floor_key
                     return True
-
-            # Check dropdown options if any is active
-            if hasattr(self, '_active_dropdown') and self._active_dropdown:
-                if self._active_dropdown.startswith('dropdown_floor_'):
-                    floor_num = int(self._active_dropdown.split('_')[-1])
-                    floor_idx = floor_num - 1
-                    row_y = 75 + floor_idx * 40
-                    option_y = row_y + 28
-
-                    for i, (key, value) in enumerate(FLOOR_TYPES.items()):
-                        option_rect = pygame.Rect(70, option_y + i * 28, 180, 28)
-                        if option_rect.collidepoint(local_x, local_y):
-                            self.floors_copy[floor_idx].floor_type = key
-                            self.data[f'floor_{floor_num}_type'] = key
-                            self._active_dropdown = None
-                            return True
-
-                elif self._active_dropdown.startswith('dropdown_size_'):
-                    floor_num = int(self._active_dropdown.split('_')[-1])
-                    floor_idx = floor_num - 1
-                    row_y = 75 + floor_idx * 40
-                    option_y = row_y + 28
-
-                    for i, (key, value) in enumerate(self.SIZE_OPTIONS.items()):
-                        option_rect = pygame.Rect(260, option_y + i * 28, 80, 28)
-                        if option_rect.collidepoint(local_x, local_y):
-                            self.floors_copy[floor_idx].size = int(key)
-                            self.data[f'floor_{floor_num}_size'] = key
-                            self._active_dropdown = None
-                            return True
-
-                # Close dropdown if clicked elsewhere
-                self._active_dropdown = None
 
         return super().handle_event(event)
 
