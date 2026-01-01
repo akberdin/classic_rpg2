@@ -120,6 +120,8 @@ class GameMap:
                 location.id = loc_data["id"]
             if "guards" in loc_data:
                 location.guards = loc_data["guards"]
+            if "floors" in loc_data:
+                location.floors = loc_data["floors"]
 
             self.locations.append(location)
             self.tiles[loc_data["y"]][loc_data["x"]].set_location(location)

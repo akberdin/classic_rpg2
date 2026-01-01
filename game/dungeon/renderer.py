@@ -77,12 +77,14 @@ class DungeonRenderer:
             DungeonTileType.REMAINS_LOOTED: "remains_looted",
         }
 
-    def get_tile_sprite(self, tile_type):
+    def get_tile_sprite(self, tile_type, dungeon_type="dungeon", depth_type=None):
         """
         Получить спрайт для тайла подземелья
 
         Args:
             tile_type: Тип тайла (DungeonTileType)
+            dungeon_type: Тип подземелья ("dungeon" или "mine")
+            depth_type: Тип глубины (DungeonDepthType или MineDepthType)
 
         Returns:
             pygame.Surface или None
@@ -94,7 +96,37 @@ class DungeonRenderer:
         if not sprite_name:
             return None
 
-        return self.sprite_manager.get_sprite(sprite_name, 'dungeon_tile')
+        return self.sprite_manager.get_dungeon_tile_sprite(sprite_name, dungeon_type, depth_type)
+
+    def get_floor_variant_sprite(self, depth_type, tile_x, tile_y):
+        """
+        Получить вариант спрайта пола на основе координат (для стабильности)
+
+        Args:
+            depth_type: Тип глубины
+            tile_x: X координата тайла
+            tile_y: Y координата тайла
+
+        Returns:
+            pygame.Surface или None
+        """
+        if not self.sprite_manager:
+            return None
+
+        # Используем координаты для стабильного выбора варианта
+        # Это обеспечит одинаковый вариант для одного и того же тайла
+        seed = (tile_x * 31 + tile_y * 17) % 100
+
+        if seed < 70:
+            variant_index = 0  # Основной (70%)
+        elif seed < 80:
+            variant_index = 1  # Вариант 1 (10%)
+        elif seed < 90:
+            variant_index = 2  # Вариант 2 (10%)
+        else:
+            variant_index = 3  # Вариант 3 (10%)
+
+        return self.sprite_manager.get_floor_variant_sprite(depth_type, variant_index)
 
     def render_dungeon(self, dungeon: DungeonMap, player, camera_x: int, camera_y: int,
                        viewport_width: int, viewport_height: int, selected_target=None,
@@ -172,8 +204,14 @@ class DungeonRenderer:
                     else:
                         light_factor = 1.0
 
-                # Пробуем получить спрайт для тайла
-                sprite = self.get_tile_sprite(tile.tile_type)
+                # Пробуем получить спрайт для тайла с учетом типа глубины
+                # Для пола и коридора используем варианты для разнообразия
+                if tile.tile_type in (DungeonTileType.FLOOR, DungeonTileType.CORRIDOR):
+                    sprite = self.get_floor_variant_sprite(dungeon.depth_type, map_x, map_y)
+                    if not sprite:
+                        sprite = self.get_tile_sprite(tile.tile_type, dungeon.dungeon_type, dungeon.depth_type)
+                else:
+                    sprite = self.get_tile_sprite(tile.tile_type, dungeon.dungeon_type, dungeon.depth_type)
 
                 if sprite:
                     # Масштабируем спрайт под размер тайла если нужно

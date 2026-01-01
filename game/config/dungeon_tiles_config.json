@@ -1,42 +1,224 @@
 {
   "_description": "Конфигурация тайлов подземелий (руины, катакомбы, склепы)",
-  "_version": "1.0.0",
+  "_version": "2.0.0",
 
   "sprite_size": 64,
 
-  "tiles": {
-    "_description": "Спрайты тайлов подземелья (64x64 пикселя)",
-    "_folder": "assets/dungeon/tiles/",
-    "_comment": "Тайлы пола, стен и окружения",
-    "floor": "assets/dungeon/tiles/floor.png",
-    "wall": "assets/dungeon/tiles/wall.png",
-    "corridor": "assets/dungeon/tiles/floor.png",
-    "entrance": "assets/dungeon/tiles/entrance.png",
-    "exit": "assets/dungeon/tiles/exit.png",
-    "stairs_down": "assets/dungeon/tiles/stairs_down.png",
-    "stairs_up": "assets/dungeon/tiles/stairs_up.png",
-    "rubble": "assets/dungeon/tiles/rubble.png",
-    "water": "assets/dungeon/tiles/water.png",
-    "bones": "assets/dungeon/tiles/bones.png",
-    "altar": "assets/dungeon/tiles/altar.png"
+  "depth_types": {
+    "_description": "Типы этажей подземелий, каждый тип имеет свой набор тайлов",
+
+    "basement": {
+      "_description": "Подвал",
+      "name": "Подвал",
+      "tiles": {
+        "_folder": "assets/dungeon/tiles/basement/",
+        "floor": {
+          "_description": "Варианты пола: основной (70%) и вспомогательные (по 10%)",
+          "main": "assets/dungeon/tiles/basement/floor.png",
+          "variants": [
+            "assets/dungeon/tiles/basement/floor_var1.png",
+            "assets/dungeon/tiles/basement/floor_var2.png",
+            "assets/dungeon/tiles/basement/floor_var3.png"
+          ],
+          "main_weight": 70,
+          "variant_weight": 10
+        },
+        "wall": "assets/dungeon/tiles/basement/wall.png",
+        "corridor": "assets/dungeon/tiles/basement/floor.png",
+        "entrance": "assets/dungeon/tiles/basement/entrance.png",
+        "exit": "assets/dungeon/tiles/basement/exit.png",
+        "stairs_down": "assets/dungeon/tiles/basement/stairs_down.png",
+        "stairs_up": "assets/dungeon/tiles/basement/stairs_up.png",
+        "rubble": "assets/dungeon/tiles/basement/rubble.png",
+        "water": "assets/dungeon/tiles/basement/water.png",
+        "bones": "assets/dungeon/tiles/basement/bones.png",
+        "altar": "assets/dungeon/tiles/basement/altar.png"
+      },
+      "objects": {
+        "_folder": "assets/dungeon/objects/basement/",
+        "trap": "assets/dungeon/objects/basement/trap.png",
+        "trap_triggered": "assets/dungeon/objects/basement/trap_triggered.png",
+        "stash": "assets/dungeon/objects/basement/stash.png",
+        "stash_looted": "assets/dungeon/objects/basement/stash_looted.png",
+        "remains": "assets/dungeon/objects/basement/remains.png",
+        "remains_looted": "assets/dungeon/objects/basement/remains_looted.png",
+        "chest": "assets/dungeon/objects/basement/chest.png",
+        "chest_open": "assets/dungeon/objects/basement/chest_open.png",
+        "lever": "assets/dungeon/objects/basement/lever.png",
+        "lever_active": "assets/dungeon/objects/basement/lever_active.png",
+        "torch": "assets/dungeon/objects/basement/torch.png",
+        "door": "assets/dungeon/objects/basement/door.png",
+        "door_open": "assets/dungeon/objects/basement/door_open.png"
+      }
+    },
+
+    "dark_basement": {
+      "_description": "Темный подвал",
+      "name": "Темный подвал",
+      "tiles": {
+        "_folder": "assets/dungeon/tiles/dark_basement/",
+        "floor": {
+          "_description": "Варианты пола: основной (70%) и вспомогательные (по 10%)",
+          "main": "assets/dungeon/tiles/dark_basement/floor.png",
+          "variants": [
+            "assets/dungeon/tiles/dark_basement/floor_var1.png",
+            "assets/dungeon/tiles/dark_basement/floor_var2.png",
+            "assets/dungeon/tiles/dark_basement/floor_var3.png"
+          ],
+          "main_weight": 70,
+          "variant_weight": 10
+        },
+        "wall": "assets/dungeon/tiles/dark_basement/wall.png",
+        "corridor": "assets/dungeon/tiles/dark_basement/floor.png",
+        "entrance": "assets/dungeon/tiles/dark_basement/entrance.png",
+        "exit": "assets/dungeon/tiles/dark_basement/exit.png",
+        "stairs_down": "assets/dungeon/tiles/dark_basement/stairs_down.png",
+        "stairs_up": "assets/dungeon/tiles/dark_basement/stairs_up.png",
+        "rubble": "assets/dungeon/tiles/dark_basement/rubble.png",
+        "water": "assets/dungeon/tiles/dark_basement/water.png",
+        "bones": "assets/dungeon/tiles/dark_basement/bones.png",
+        "altar": "assets/dungeon/tiles/dark_basement/altar.png"
+      },
+      "objects": {
+        "_folder": "assets/dungeon/objects/dark_basement/",
+        "trap": "assets/dungeon/objects/dark_basement/trap.png",
+        "trap_triggered": "assets/dungeon/objects/dark_basement/trap_triggered.png",
+        "stash": "assets/dungeon/objects/dark_basement/stash.png",
+        "stash_looted": "assets/dungeon/objects/dark_basement/stash_looted.png",
+        "remains": "assets/dungeon/objects/dark_basement/remains.png",
+        "remains_looted": "assets/dungeon/objects/dark_basement/remains_looted.png",
+        "chest": "assets/dungeon/objects/dark_basement/chest.png",
+        "chest_open": "assets/dungeon/objects/dark_basement/chest_open.png",
+        "lever": "assets/dungeon/objects/dark_basement/lever.png",
+        "lever_active": "assets/dungeon/objects/dark_basement/lever_active.png",
+        "torch": "assets/dungeon/objects/dark_basement/torch.png",
+        "door": "assets/dungeon/objects/dark_basement/door.png",
+        "door_open": "assets/dungeon/objects/dark_basement/door_open.png"
+      }
+    },
+
+    "gloomy_basement": {
+      "_description": "Мрачный подвал",
+      "name": "Мрачный подвал",
+      "tiles": {
+        "_folder": "assets/dungeon/tiles/gloomy_basement/",
+        "floor": {
+          "_description": "Варианты пола: основной (70%) и вспомогательные (по 10%)",
+          "main": "assets/dungeon/tiles/gloomy_basement/floor.png",
+          "variants": [
+            "assets/dungeon/tiles/gloomy_basement/floor_var1.png",
+            "assets/dungeon/tiles/gloomy_basement/floor_var2.png",
+            "assets/dungeon/tiles/gloomy_basement/floor_var3.png"
+          ],
+          "main_weight": 70,
+          "variant_weight": 10
+        },
+        "wall": "assets/dungeon/tiles/gloomy_basement/wall.png",
+        "corridor": "assets/dungeon/tiles/gloomy_basement/floor.png",
+        "entrance": "assets/dungeon/tiles/gloomy_basement/entrance.png",
+        "exit": "assets/dungeon/tiles/gloomy_basement/exit.png",
+        "stairs_down": "assets/dungeon/tiles/gloomy_basement/stairs_down.png",
+        "stairs_up": "assets/dungeon/tiles/gloomy_basement/stairs_up.png",
+        "rubble": "assets/dungeon/tiles/gloomy_basement/rubble.png",
+        "water": "assets/dungeon/tiles/gloomy_basement/water.png",
+        "bones": "assets/dungeon/tiles/gloomy_basement/bones.png",
+        "altar": "assets/dungeon/tiles/gloomy_basement/altar.png"
+      },
+      "objects": {
+        "_folder": "assets/dungeon/objects/gloomy_basement/",
+        "trap": "assets/dungeon/objects/gloomy_basement/trap.png",
+        "trap_triggered": "assets/dungeon/objects/gloomy_basement/trap_triggered.png",
+        "stash": "assets/dungeon/objects/gloomy_basement/stash.png",
+        "stash_looted": "assets/dungeon/objects/gloomy_basement/stash_looted.png",
+        "remains": "assets/dungeon/objects/gloomy_basement/remains.png",
+        "remains_looted": "assets/dungeon/objects/gloomy_basement/remains_looted.png",
+        "chest": "assets/dungeon/objects/gloomy_basement/chest.png",
+        "chest_open": "assets/dungeon/objects/gloomy_basement/chest_open.png",
+        "lever": "assets/dungeon/objects/gloomy_basement/lever.png",
+        "lever_active": "assets/dungeon/objects/gloomy_basement/lever_active.png",
+        "torch": "assets/dungeon/objects/gloomy_basement/torch.png",
+        "door": "assets/dungeon/objects/gloomy_basement/door.png",
+        "door_open": "assets/dungeon/objects/gloomy_basement/door_open.png"
+      }
+    },
+
+    "abyss": {
+      "_description": "Преисподня",
+      "name": "Преисподня",
+      "tiles": {
+        "_folder": "assets/dungeon/tiles/abyss/",
+        "floor": {
+          "_description": "Варианты пола: основной (70%) и вспомогательные (по 10%)",
+          "main": "assets/dungeon/tiles/abyss/floor.png",
+          "variants": [
+            "assets/dungeon/tiles/abyss/floor_var1.png",
+            "assets/dungeon/tiles/abyss/floor_var2.png",
+            "assets/dungeon/tiles/abyss/floor_var3.png"
+          ],
+          "main_weight": 70,
+          "variant_weight": 10
+        },
+        "wall": "assets/dungeon/tiles/abyss/wall.png",
+        "corridor": "assets/dungeon/tiles/abyss/floor.png",
+        "entrance": "assets/dungeon/tiles/abyss/entrance.png",
+        "exit": "assets/dungeon/tiles/abyss/exit.png",
+        "stairs_down": "assets/dungeon/tiles/abyss/stairs_down.png",
+        "stairs_up": "assets/dungeon/tiles/abyss/stairs_up.png",
+        "rubble": "assets/dungeon/tiles/abyss/rubble.png",
+        "water": "assets/dungeon/tiles/abyss/water.png",
+        "bones": "assets/dungeon/tiles/abyss/bones.png",
+        "altar": "assets/dungeon/tiles/abyss/altar.png"
+      },
+      "objects": {
+        "_folder": "assets/dungeon/objects/abyss/",
+        "trap": "assets/dungeon/objects/abyss/trap.png",
+        "trap_triggered": "assets/dungeon/objects/abyss/trap_triggered.png",
+        "stash": "assets/dungeon/objects/abyss/stash.png",
+        "stash_looted": "assets/dungeon/objects/abyss/stash_looted.png",
+        "remains": "assets/dungeon/objects/abyss/remains.png",
+        "remains_looted": "assets/dungeon/objects/abyss/remains_looted.png",
+        "chest": "assets/dungeon/objects/abyss/chest.png",
+        "chest_open": "assets/dungeon/objects/abyss/chest_open.png",
+        "lever": "assets/dungeon/objects/abyss/lever.png",
+        "lever_active": "assets/dungeon/objects/abyss/lever_active.png",
+        "torch": "assets/dungeon/objects/abyss/torch.png",
+        "door": "assets/dungeon/objects/abyss/door.png",
+        "door_open": "assets/dungeon/objects/abyss/door_open.png"
+      }
+    }
   },
 
-  "objects": {
-    "_description": "Спрайты интерактивных объектов подземелья (64x64 пикселя)",
-    "_folder": "assets/dungeon/objects/",
-    "_comment": "Ловушки, тайники, сундуки, останки врагов",
-    "trap": "assets/dungeon/objects/trap.png",
-    "trap_triggered": "assets/dungeon/objects/trap_triggered.png",
-    "stash": "assets/dungeon/objects/stash.png",
-    "stash_looted": "assets/dungeon/objects/stash_looted.png",
-    "remains": "assets/dungeon/objects/remains.png",
-    "remains_looted": "assets/dungeon/objects/remains_looted.png",
-    "chest": "assets/dungeon/objects/chest.png",
-    "chest_open": "assets/dungeon/objects/chest_open.png",
-    "lever": "assets/dungeon/objects/lever.png",
-    "lever_active": "assets/dungeon/objects/lever_active.png",
-    "torch": "assets/dungeon/objects/torch.png",
-    "door": "assets/dungeon/objects/door.png",
-    "door_open": "assets/dungeon/objects/door_open.png"
+  "fallback": {
+    "_description": "Резервные тайлы (если специфичные не найдены)",
+    "tiles": {
+      "_folder": "assets/dungeon/tiles/",
+      "floor": "assets/dungeon/tiles/floor.png",
+      "wall": "assets/dungeon/tiles/wall.png",
+      "corridor": "assets/dungeon/tiles/floor.png",
+      "entrance": "assets/dungeon/tiles/entrance.png",
+      "exit": "assets/dungeon/tiles/exit.png",
+      "stairs_down": "assets/dungeon/tiles/stairs_down.png",
+      "stairs_up": "assets/dungeon/tiles/stairs_up.png",
+      "rubble": "assets/dungeon/tiles/rubble.png",
+      "water": "assets/dungeon/tiles/water.png",
+      "bones": "assets/dungeon/tiles/bones.png",
+      "altar": "assets/dungeon/tiles/altar.png"
+    },
+    "objects": {
+      "_folder": "assets/dungeon/objects/",
+      "trap": "assets/dungeon/objects/trap.png",
+      "trap_triggered": "assets/dungeon/objects/trap_triggered.png",
+      "stash": "assets/dungeon/objects/stash.png",
+      "stash_looted": "assets/dungeon/objects/stash_looted.png",
+      "remains": "assets/dungeon/objects/remains.png",
+      "remains_looted": "assets/dungeon/objects/remains_looted.png",
+      "chest": "assets/dungeon/objects/chest.png",
+      "chest_open": "assets/dungeon/objects/chest_open.png",
+      "lever": "assets/dungeon/objects/lever.png",
+      "lever_active": "assets/dungeon/objects/lever_active.png",
+      "torch": "assets/dungeon/objects/torch.png",
+      "door": "assets/dungeon/objects/door.png",
+      "door_open": "assets/dungeon/objects/door_open.png"
+    }
   }
 }

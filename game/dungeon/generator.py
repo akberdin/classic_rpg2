@@ -41,7 +41,8 @@ class DungeonGenerator:
 
     def generate(self, dungeon_type: str = "dungeon", dungeon_level: int = 1,
                  width: int = 50, height: int = 40, name: str = None,
-                 current_depth: int = 1, max_depth: int = 5) -> DungeonMap:
+                 current_depth: int = 1, max_depth: int = 5,
+                 floor_type: str = None) -> DungeonMap:
         """
         Генерация подземелья
 
@@ -53,6 +54,7 @@ class DungeonGenerator:
             name: Название (если None - генерируется)
             current_depth: Текущая глубина (уровень подземелья, 1-based)
             max_depth: Максимальная глубина подземелья
+            floor_type: Тип этажа из конфига (basement, dark_basement, etc.)
 
         Returns:
             DungeonMap: Сгенерированная карта
@@ -64,8 +66,9 @@ class DungeonGenerator:
         if name is None:
             name = self._generate_name(dungeon_type, dungeon_level)
 
-        # Создаем карту
-        dungeon = DungeonMap(width, height, dungeon_type, dungeon_level, name)
+        # Создаем карту с учетом текущей глубины и типа этажа
+        dungeon = DungeonMap(width, height, dungeon_type, dungeon_level, name,
+                             current_depth, floor_type)
 
         # Генерируем комнаты
         num_rooms = random.randint(params["min_rooms"], params["max_rooms"])
@@ -569,7 +572,8 @@ class DungeonGenerator:
 
     def generate_dungeon_for_location(self, location_type: str, location_name: str,
                                        location_x: int, location_y: int,
-                                       current_depth: int = 1, max_depth: int = 5) -> DungeonMap:
+                                       current_depth: int = 1, max_depth: int = 5,
+                                       floor_type: str = None, floor_size: int = None) -> DungeonMap:
         """
         Генерация подземелья для конкретной локации
 
@@ -580,6 +584,8 @@ class DungeonGenerator:
             location_y: Y координата локации на основной карте
             current_depth: Текущая глубина (уровень подземелья)
             max_depth: Максимальная глубина подземелья
+            floor_type: Тип этажа из конфига (basement, dark_basement, mine, etc.)
+            floor_size: Размер этажа из конфига (1-10, влияет на размер карты)
 
         Returns:
             DungeonMap: Сгенерированная карта
@@ -590,21 +596,37 @@ class DungeonGenerator:
             # Уровень шахты зависит от расстояния от центра карты
             distance = abs(location_x - 100) + abs(location_y - 100)
             dungeon_level = max(1, min(10, 1 + distance // 30))
-            # Размер зависит от уровня: базовый размер + бонус за уровень
-            base_width, base_height = 50, 40
-            level_bonus = dungeon_level * 5
-            width = base_width + level_bonus + random.randint(0, 20)
-            height = base_height + level_bonus + random.randint(0, 15)
+            # Размер зависит от floor_size из конфига или от уровня
+            if floor_size is not None:
+                # floor_size от 1 до 10, где 1 = маленький, 10 = огромный
+                base_width, base_height = 40, 35
+                size_bonus = floor_size * 8
+                width = base_width + size_bonus + random.randint(0, 15)
+                height = base_height + size_bonus + random.randint(0, 10)
+            else:
+                # Fallback: размер зависит от уровня
+                base_width, base_height = 50, 40
+                level_bonus = dungeon_level * 5
+                width = base_width + level_bonus + random.randint(0, 20)
+                height = base_height + level_bonus + random.randint(0, 15)
         else:  # ruins / dungeon
             dungeon_type = "dungeon"
             # Уровень подземелья зависит от расстояния от центра
             distance = abs(location_x - 100) + abs(location_y - 100)
             dungeon_level = max(1, min(10, 1 + distance // 25))
-            # Размер зависит от уровня: базовый размер + бонус за уровень
-            base_width, base_height = 55, 45
-            level_bonus = dungeon_level * 6
-            width = base_width + level_bonus + random.randint(0, 25)
-            height = base_height + level_bonus + random.randint(0, 20)
+            # Размер зависит от floor_size из конфига или от уровня
+            if floor_size is not None:
+                # floor_size от 1 до 10, где 1 = маленький, 10 = огромный
+                base_width, base_height = 45, 40
+                size_bonus = floor_size * 10
+                width = base_width + size_bonus + random.randint(0, 20)
+                height = base_height + size_bonus + random.randint(0, 15)
+            else:
+                # Fallback: размер зависит от уровня
+                base_width, base_height = 55, 45
+                level_bonus = dungeon_level * 6
+                width = base_width + level_bonus + random.randint(0, 25)
+                height = base_height + level_bonus + random.randint(0, 20)
 
         # Генерируем название с указанием глубины
         if current_depth > 1:
@@ -614,8 +636,9 @@ class DungeonGenerator:
 
         name = f"Подземелье под {location_name}{depth_suffix}" if dungeon_type == "dungeon" else f"Шахта {location_name}{depth_suffix}"
 
-        # Генерируем подземелье с учётом глубины
-        dungeon = self.generate(dungeon_type, dungeon_level, width, height, name, current_depth, max_depth)
+        # Генерируем подземелье с учётом глубины и типа этажа
+        dungeon = self.generate(dungeon_type, dungeon_level, width, height, name,
+                                current_depth, max_depth, floor_type)
 
         # Сохраняем координаты возврата
         dungeon.return_x = location_x

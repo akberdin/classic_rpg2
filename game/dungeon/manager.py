@@ -41,6 +41,7 @@ class DungeonManager:
         self.max_depth: int = 5      # Максимальная глубина подземелья
         self.dungeon_levels: dict = {}  # Кэш уровней текущего подземелья {depth: DungeonMap}
         self.current_dungeon_key: Optional[str] = None  # Ключ текущего подземелья
+        self.current_floors_config: List[dict] = []  # Конфиг этажей текущего подземелья
 
         # NPC для подземелий
         self.dungeon_npcs: List = []
@@ -52,6 +53,37 @@ class DungeonManager:
         # Режим выбора цели для умения
         self.skill_targeting_mode = False
         self.pending_skill = None  # Умение, ожидающее выбора цели
+
+    def _get_floor_config(self, depth: int) -> Optional[dict]:
+        """
+        Получить конфигурацию этажа по глубине
+
+        Args:
+            depth: Номер этажа (1-based)
+
+        Returns:
+            dict или None: Конфигурация этажа {floor_number, floor_type, size, npc}
+        """
+        for floor_config in self.current_floors_config:
+            if floor_config.get('floor_number') == depth:
+                return floor_config
+        return None
+
+    def _load_floors_config(self, location) -> List[dict]:
+        """
+        Загрузить конфигурацию этажей из локации
+
+        Args:
+            location: Объект локации
+
+        Returns:
+            List[dict]: Список конфигураций этажей
+        """
+        floors = getattr(location, 'floors', None)
+        if floors:
+            return floors
+        # Fallback: пустой список (будет использоваться авто-расчёт)
+        return []
 
     def can_enter_dungeon(self, player) -> Tuple[bool, str, str]:
         """
@@ -108,6 +140,16 @@ class DungeonManager:
         self.current_depth = 1
         self.current_dungeon_key = f"{self.saved_world_x}_{self.saved_world_y}"
 
+        # Загружаем конфигурацию этажей из локации
+        tile = self.game.game_map.get_tile(player.x, player.y)
+        if tile and tile.has_location():
+            self.current_floors_config = self._load_floors_config(tile.location)
+            # Если есть конфиг этажей, используем его для определения max_depth
+            if self.current_floors_config:
+                self.max_depth = len(self.current_floors_config)
+        else:
+            self.current_floors_config = []
+
         # Проверяем кэш уровней
         if self.current_dungeon_key not in self.dungeon_levels:
             self.dungeon_levels[self.current_dungeon_key] = {}
@@ -120,12 +162,17 @@ class DungeonManager:
             self.dungeon_npcs = self.current_dungeon.npcs.copy()
         else:
             # Генерируем новое подземелье (первый уровень)
-            tile = self.game.game_map.get_tile(player.x, player.y)
             location_type = "mine" if dungeon_type == "mine" else "ruins"
+
+            # Получаем параметры первого этажа из конфига
+            floor_config = self._get_floor_config(1)
+            floor_type = floor_config.get('floor_type') if floor_config else None
+            floor_size = floor_config.get('size') if floor_config else None
 
             self.current_dungeon = self.generator.generate_dungeon_for_location(
                 location_type, location_name, player.x, player.y,
-                current_depth=1, max_depth=self.max_depth
+                current_depth=1, max_depth=self.max_depth,
+                floor_type=floor_type, floor_size=floor_size
             )
 
             # Генерируем NPC для подземелья
@@ -239,9 +286,15 @@ class DungeonManager:
             location_type = "mine" if self.current_dungeon.dungeon_type == "mine" else "ruins"
             location_name = self.current_dungeon.name.split(" (")[0].replace("Подземелье под ", "").replace("Шахта ", "")
 
+            # Получаем параметры этажа из конфига
+            floor_config = self._get_floor_config(self.current_depth)
+            floor_type = floor_config.get('floor_type') if floor_config else None
+            floor_size = floor_config.get('size') if floor_config else None
+
             self.current_dungeon = self.generator.generate_dungeon_for_location(
                 location_type, location_name, self.saved_world_x, self.saved_world_y,
-                current_depth=self.current_depth, max_depth=self.max_depth
+                current_depth=self.current_depth, max_depth=self.max_depth,
+                floor_type=floor_type, floor_size=floor_size
             )
 
             # Генерируем NPC для нового уровня

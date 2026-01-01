@@ -1,39 +1,209 @@
 {
   "_description": "Конфигурация тайлов шахт",
-  "_version": "1.0.0",
+  "_version": "2.0.0",
 
   "sprite_size": 64,
 
-  "tiles": {
-    "_description": "Спрайты тайлов шахты (64x64 пикселя)",
-    "_folder": "assets/mine/tiles/",
-    "_comment": "Тайлы пола, стен, шахтных конструкций",
-    "floor": "assets/mine/tiles/floor.png",
-    "wall": "assets/mine/tiles/wall.png",
-    "corridor": "assets/mine/tiles/floor.png",
-    "entrance": "assets/mine/tiles/entrance.png",
-    "exit": "assets/mine/tiles/exit.png",
-    "stairs_down": "assets/mine/tiles/stairs_down.png",
-    "stairs_up": "assets/mine/tiles/stairs_up.png",
-    "ore_vein": "assets/mine/tiles/ore_vein.png",
-    "minecart": "assets/mine/tiles/minecart.png",
-    "support": "assets/mine/tiles/support.png",
-    "rubble": "assets/mine/tiles/rubble.png",
-    "water": "assets/mine/tiles/water.png"
+  "depth_types": {
+    "_description": "Типы этажей шахт, каждый тип имеет свой набор тайлов",
+
+    "mine": {
+      "_description": "Шахта",
+      "name": "Шахта",
+      "tiles": {
+        "_folder": "assets/mine/tiles/mine/",
+        "floor": {
+          "_description": "Варианты пола: основной (70%) и вспомогательные (по 10%)",
+          "main": "assets/mine/tiles/mine/floor.png",
+          "variants": [
+            "assets/mine/tiles/mine/floor_var1.png",
+            "assets/mine/tiles/mine/floor_var2.png",
+            "assets/mine/tiles/mine/floor_var3.png"
+          ],
+          "main_weight": 70,
+          "variant_weight": 10
+        },
+        "wall": "assets/mine/tiles/mine/wall.png",
+        "corridor": "assets/mine/tiles/mine/floor.png",
+        "entrance": "assets/mine/tiles/mine/entrance.png",
+        "exit": "assets/mine/tiles/mine/exit.png",
+        "stairs_down": "assets/mine/tiles/mine/stairs_down.png",
+        "stairs_up": "assets/mine/tiles/mine/stairs_up.png",
+        "ore_vein": "assets/mine/tiles/mine/ore_vein.png",
+        "minecart": "assets/mine/tiles/mine/minecart.png",
+        "support": "assets/mine/tiles/mine/support.png",
+        "rubble": "assets/mine/tiles/mine/rubble.png",
+        "water": "assets/mine/tiles/mine/water.png"
+      },
+      "objects": {
+        "_folder": "assets/mine/objects/mine/",
+        "trap": "assets/mine/objects/mine/trap.png",
+        "trap_triggered": "assets/mine/objects/mine/trap_triggered.png",
+        "stash": "assets/mine/objects/mine/stash.png",
+        "stash_looted": "assets/mine/objects/mine/stash_looted.png",
+        "remains": "assets/mine/objects/mine/remains.png",
+        "remains_looted": "assets/mine/objects/mine/remains_looted.png",
+        "chest": "assets/mine/objects/mine/chest.png",
+        "chest_open": "assets/mine/objects/mine/chest_open.png",
+        "torch": "assets/mine/objects/mine/torch.png"
+      }
+    },
+
+    "dark_mine": {
+      "_description": "Темная шахта",
+      "name": "Темная шахта",
+      "tiles": {
+        "_folder": "assets/mine/tiles/dark_mine/",
+        "floor": {
+          "_description": "Варианты пола: основной (70%) и вспомогательные (по 10%)",
+          "main": "assets/mine/tiles/dark_mine/floor.png",
+          "variants": [
+            "assets/mine/tiles/dark_mine/floor_var1.png",
+            "assets/mine/tiles/dark_mine/floor_var2.png",
+            "assets/mine/tiles/dark_mine/floor_var3.png"
+          ],
+          "main_weight": 70,
+          "variant_weight": 10
+        },
+        "wall": "assets/mine/tiles/dark_mine/wall.png",
+        "corridor": "assets/mine/tiles/dark_mine/floor.png",
+        "entrance": "assets/mine/tiles/dark_mine/entrance.png",
+        "exit": "assets/mine/tiles/dark_mine/exit.png",
+        "stairs_down": "assets/mine/tiles/dark_mine/stairs_down.png",
+        "stairs_up": "assets/mine/tiles/dark_mine/stairs_up.png",
+        "ore_vein": "assets/mine/tiles/dark_mine/ore_vein.png",
+        "minecart": "assets/mine/tiles/dark_mine/minecart.png",
+        "support": "assets/mine/tiles/dark_mine/support.png",
+        "rubble": "assets/mine/tiles/dark_mine/rubble.png",
+        "water": "assets/mine/tiles/dark_mine/water.png"
+      },
+      "objects": {
+        "_folder": "assets/mine/objects/dark_mine/",
+        "trap": "assets/mine/objects/dark_mine/trap.png",
+        "trap_triggered": "assets/mine/objects/dark_mine/trap_triggered.png",
+        "stash": "assets/mine/objects/dark_mine/stash.png",
+        "stash_looted": "assets/mine/objects/dark_mine/stash_looted.png",
+        "remains": "assets/mine/objects/dark_mine/remains.png",
+        "remains_looted": "assets/mine/objects/dark_mine/remains_looted.png",
+        "chest": "assets/mine/objects/dark_mine/chest.png",
+        "chest_open": "assets/mine/objects/dark_mine/chest_open.png",
+        "torch": "assets/mine/objects/dark_mine/torch.png"
+      }
+    },
+
+    "gloomy_mine": {
+      "_description": "Мрачная шахта",
+      "name": "Мрачная шахта",
+      "tiles": {
+        "_folder": "assets/mine/tiles/gloomy_mine/",
+        "floor": {
+          "_description": "Варианты пола: основной (70%) и вспомогательные (по 10%)",
+          "main": "assets/mine/tiles/gloomy_mine/floor.png",
+          "variants": [
+            "assets/mine/tiles/gloomy_mine/floor_var1.png",
+            "assets/mine/tiles/gloomy_mine/floor_var2.png",
+            "assets/mine/tiles/gloomy_mine/floor_var3.png"
+          ],
+          "main_weight": 70,
+          "variant_weight": 10
+        },
+        "wall": "assets/mine/tiles/gloomy_mine/wall.png",
+        "corridor": "assets/mine/tiles/gloomy_mine/floor.png",
+        "entrance": "assets/mine/tiles/gloomy_mine/entrance.png",
+        "exit": "assets/mine/tiles/gloomy_mine/exit.png",
+        "stairs_down": "assets/mine/tiles/gloomy_mine/stairs_down.png",
+        "stairs_up": "assets/mine/tiles/gloomy_mine/stairs_up.png",
+        "ore_vein": "assets/mine/tiles/gloomy_mine/ore_vein.png",
+        "minecart": "assets/mine/tiles/gloomy_mine/minecart.png",
+        "support": "assets/mine/tiles/gloomy_mine/support.png",
+        "rubble": "assets/mine/tiles/gloomy_mine/rubble.png",
+        "water": "assets/mine/tiles/gloomy_mine/water.png"
+      },
+      "objects": {
+        "_folder": "assets/mine/objects/gloomy_mine/",
+        "trap": "assets/mine/objects/gloomy_mine/trap.png",
+        "trap_triggered": "assets/mine/objects/gloomy_mine/trap_triggered.png",
+        "stash": "assets/mine/objects/gloomy_mine/stash.png",
+        "stash_looted": "assets/mine/objects/gloomy_mine/stash_looted.png",
+        "remains": "assets/mine/objects/gloomy_mine/remains.png",
+        "remains_looted": "assets/mine/objects/gloomy_mine/remains_looted.png",
+        "chest": "assets/mine/objects/gloomy_mine/chest.png",
+        "chest_open": "assets/mine/objects/gloomy_mine/chest_open.png",
+        "torch": "assets/mine/objects/gloomy_mine/torch.png"
+      }
+    },
+
+    "abyss": {
+      "_description": "Преисподня",
+      "name": "Преисподня",
+      "tiles": {
+        "_folder": "assets/mine/tiles/abyss/",
+        "floor": {
+          "_description": "Варианты пола: основной (70%) и вспомогательные (по 10%)",
+          "main": "assets/mine/tiles/abyss/floor.png",
+          "variants": [
+            "assets/mine/tiles/abyss/floor_var1.png",
+            "assets/mine/tiles/abyss/floor_var2.png",
+            "assets/mine/tiles/abyss/floor_var3.png"
+          ],
+          "main_weight": 70,
+          "variant_weight": 10
+        },
+        "wall": "assets/mine/tiles/abyss/wall.png",
+        "corridor": "assets/mine/tiles/abyss/floor.png",
+        "entrance": "assets/mine/tiles/abyss/entrance.png",
+        "exit": "assets/mine/tiles/abyss/exit.png",
+        "stairs_down": "assets/mine/tiles/abyss/stairs_down.png",
+        "stairs_up": "assets/mine/tiles/abyss/stairs_up.png",
+        "ore_vein": "assets/mine/tiles/abyss/ore_vein.png",
+        "minecart": "assets/mine/tiles/abyss/minecart.png",
+        "support": "assets/mine/tiles/abyss/support.png",
+        "rubble": "assets/mine/tiles/abyss/rubble.png",
+        "water": "assets/mine/tiles/abyss/water.png"
+      },
+      "objects": {
+        "_folder": "assets/mine/objects/abyss/",
+        "trap": "assets/mine/objects/abyss/trap.png",
+        "trap_triggered": "assets/mine/objects/abyss/trap_triggered.png",
+        "stash": "assets/mine/objects/abyss/stash.png",
+        "stash_looted": "assets/mine/objects/abyss/stash_looted.png",
+        "remains": "assets/mine/objects/abyss/remains.png",
+        "remains_looted": "assets/mine/objects/abyss/remains_looted.png",
+        "chest": "assets/mine/objects/abyss/chest.png",
+        "chest_open": "assets/mine/objects/abyss/chest_open.png",
+        "torch": "assets/mine/objects/abyss/torch.png"
+      }
+    }
   },
 
-  "objects": {
-    "_description": "Спрайты интерактивных объектов шахты (64x64 пикселя)",
-    "_folder": "assets/mine/objects/",
-    "_comment": "Ловушки, тайники, руда",
-    "trap": "assets/mine/objects/trap.png",
-    "trap_triggered": "assets/mine/objects/trap_triggered.png",
-    "stash": "assets/mine/objects/stash.png",
-    "stash_looted": "assets/mine/objects/stash_looted.png",
-    "remains": "assets/mine/objects/remains.png",
-    "remains_looted": "assets/mine/objects/remains_looted.png",
-    "chest": "assets/mine/objects/chest.png",
-    "chest_open": "assets/mine/objects/chest_open.png",
-    "torch": "assets/mine/objects/torch.png"
+  "fallback": {
+    "_description": "Резервные тайлы (если специфичные не найдены)",
+    "tiles": {
+      "_folder": "assets/mine/tiles/",
+      "floor": "assets/mine/tiles/floor.png",
+      "wall": "assets/mine/tiles/wall.png",
+      "corridor": "assets/mine/tiles/floor.png",
+      "entrance": "assets/mine/tiles/entrance.png",
+      "exit": "assets/mine/tiles/exit.png",
+      "stairs_down": "assets/mine/tiles/stairs_down.png",
+      "stairs_up": "assets/mine/tiles/stairs_up.png",
+      "ore_vein": "assets/mine/tiles/ore_vein.png",
+      "minecart": "assets/mine/tiles/minecart.png",
+      "support": "assets/mine/tiles/support.png",
+      "rubble": "assets/mine/tiles/rubble.png",
+      "water": "assets/mine/tiles/water.png"
+    },
+    "objects": {
+      "_folder": "assets/mine/objects/",
+      "trap": "assets/mine/objects/trap.png",
+      "trap_triggered": "assets/mine/objects/trap_triggered.png",
+      "stash": "assets/mine/objects/stash.png",
+      "stash_looted": "assets/mine/objects/stash_looted.png",
+      "remains": "assets/mine/objects/remains.png",
+      "remains_looted": "assets/mine/objects/remains_looted.png",
+      "chest": "assets/mine/objects/chest.png",
+      "chest_open": "assets/mine/objects/chest_open.png",
+      "torch": "assets/mine/objects/torch.png"
+    }
   }
 }

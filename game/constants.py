@@ -30,6 +30,18 @@ LOCATION_MAGIC_SCHOOL = 'magic_school'
 LOCATION_WARRIOR_ACADEMY = 'warrior_academy'
 LOCATION_SECRET_CAMP = 'secret_camp'
 
+# Типы этажей подземелий (руины)
+DUNGEON_FLOOR_BASEMENT = 'basement'              # Подвал
+DUNGEON_FLOOR_DARK_BASEMENT = 'dark_basement'    # Темный подвал
+DUNGEON_FLOOR_GLOOMY_BASEMENT = 'gloomy_basement'  # Мрачный подвал
+DUNGEON_FLOOR_ABYSS = 'abyss'                    # Преисподня
+
+# Типы этажей шахт
+MINE_FLOOR_MINE = 'mine'              # Шахта
+MINE_FLOOR_DARK_MINE = 'dark_mine'    # Темная шахта
+MINE_FLOOR_GLOOMY_MINE = 'gloomy_mine'  # Мрачная шахта
+MINE_FLOOR_ABYSS = 'abyss'            # Преисподня
+
 # Проходимые биомы (горы и болото проходимы, но с высокой стоимостью)
 PASSABLE_BIOMES = [BIOME_SAND, BIOME_PLAINS, BIOME_HILLS, BIOME_FOREST, BIOME_MOUNTAIN, BIOME_SWAMP]
 
