@@ -1126,32 +1126,6 @@ class InputHandler:
             # Открыть/закрыть чит-меню
             self.ctx.cheat_menu_open = not self.ctx.cheat_menu_open
             return
-        elif key == pygame.K_PERIOD:
-            # Клавиша '>' (Shift+.) - спуститься по лестнице в подземелье
-            if self.ctx.dungeon_manager.is_in_dungeon:
-                mods = pygame.key.get_mods()
-                if mods & pygame.KMOD_SHIFT:
-                    result = self.ctx.dungeon_manager.go_down_stairs(self.ctx.player)
-                    print(result.get('message', ''))
-                    if result.get('success'):
-                        # Ход врагов после перехода
-                        enemy_results = self.ctx.dungeon_manager.enemy_turn(self.ctx.player)
-                        for er in enemy_results:
-                            print(f"{er['attacker']} атакует вас на {er['damage']} урона!")
-            return
-        elif key == pygame.K_COMMA:
-            # Клавиша '<' (Shift+,) - подняться по лестнице в подземелье
-            if self.ctx.dungeon_manager.is_in_dungeon:
-                mods = pygame.key.get_mods()
-                if mods & pygame.KMOD_SHIFT:
-                    result = self.ctx.dungeon_manager.go_up_stairs(self.ctx.player)
-                    print(result.get('message', ''))
-                    if result.get('success'):
-                        # Ход врагов после перехода
-                        enemy_results = self.ctx.dungeon_manager.enemy_turn(self.ctx.player)
-                        for er in enemy_results:
-                            print(f"{er['attacker']} атакует вас на {er['damage']} урона!")
-            return
 
         # Попытка переместить игрока
         if moved:
