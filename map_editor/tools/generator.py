@@ -159,6 +159,64 @@ RESOURCE_TYPES = {
     RESOURCE_MITHRIL: "Мифрил"
 }
 
+# Floor type constants for mines and ruins
+FLOOR_MINE = "mine"
+FLOOR_DARK_MINE = "dark_mine"
+FLOOR_GLOOMY_MINE = "gloomy_mine"
+FLOOR_BASEMENT = "basement"
+FLOOR_DARK_BASEMENT = "dark_basement"
+FLOOR_GLOOMY_BASEMENT = "gloomy_basement"
+FLOOR_ABYSS = "abyss"
+FLOOR_NONE = ""  # Empty floor slot
+
+FLOOR_TYPES = {
+    FLOOR_NONE: "Нет",
+    FLOOR_MINE: "Шахта",
+    FLOOR_DARK_MINE: "Темная шахта",
+    FLOOR_GLOOMY_MINE: "Мрачная шахта",
+    FLOOR_BASEMENT: "Подвал",
+    FLOOR_DARK_BASEMENT: "Темный подвал",
+    FLOOR_GLOOMY_BASEMENT: "Мрачный подвал",
+    FLOOR_ABYSS: "Преисподня"
+}
+
+
+@dataclass
+class Floor:
+    """Represents a floor in a mine or ruins."""
+    floor_number: int = 1  # Floor number (1-10)
+    floor_type: str = FLOOR_NONE  # Type of floor (mine, dark_mine, etc.)
+    size: int = 1  # Size of floor (1-10)
+    npc: str = ""  # NPC on this floor (empty for now)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for saving."""
+        return {
+            'floor_number': self.floor_number,
+            'floor_type': self.floor_type,
+            'size': self.size,
+            'npc': self.npc
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Floor':
+        """Create from dictionary."""
+        return cls(
+            floor_number=data.get('floor_number', 1),
+            floor_type=data.get('floor_type', FLOOR_NONE),
+            size=data.get('size', 1),
+            npc=data.get('npc', '')
+        )
+
+    def is_empty(self) -> bool:
+        """Check if floor slot is empty."""
+        return self.floor_type == FLOOR_NONE
+
+
+def _create_empty_floors() -> List['Floor']:
+    """Create 10 empty floor slots."""
+    return [Floor(floor_number=i+1) for i in range(10)]
+
 
 @dataclass
 class Guard:
@@ -385,6 +443,7 @@ class MapLocation:
     animal_count: int = 1  # Number of animals for spawn points (1-10)
     guards: List[Guard] = field(default_factory=_create_empty_guards)  # Guard slots (max 5)
     connections: List[Tuple[int, int]] = field(default_factory=list)  # Connections: [(target_x, target_y), ...]
+    floors: List[Floor] = field(default_factory=_create_empty_floors)  # Floor slots for mines/ruins (max 10)
 
     def get_id(self) -> str:
         """Get unique identifier for this location (based on coordinates)."""
@@ -447,6 +506,11 @@ class MapLocation:
         # Save connections if any
         if self.connections:
             data['connections'] = [[x, y] for x, y in self.connections]
+        # Save floors for mines and ruins
+        if self.location_type in [LOCATION_MINE, LOCATION_RUINS]:
+            floors_data = [floor.to_dict() for floor in self.floors if not floor.is_empty()]
+            if floors_data:
+                data['floors'] = floors_data
         return data
 
     @classmethod
@@ -469,6 +533,18 @@ class MapLocation:
         while len(guards) < 5:
             guards.append(Guard())
 
+        # Load floors data (for mines and ruins)
+        floors = []
+        if 'floors' in data:
+            floors = [Floor.from_dict(floor_data) for floor_data in data['floors']]
+        # Fill remaining slots with empty floors to maintain 10 total slots
+        existing_floor_nums = {f.floor_number for f in floors}
+        for i in range(1, 11):
+            if i not in existing_floor_nums:
+                floors.append(Floor(floor_number=i))
+        # Sort floors by floor number
+        floors.sort(key=lambda f: f.floor_number)
+
         return cls(
             x=data['x'],
             y=data['y'],
@@ -484,7 +560,8 @@ class MapLocation:
             spawn_radius=data.get('spawn_radius', 5),
             animal_count=data.get('animal_count', 1),
             guards=guards,
-            connections=connections
+            connections=connections,
+            floors=floors
         )
 
 

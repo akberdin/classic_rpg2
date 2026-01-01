@@ -18,7 +18,7 @@ from .ui.toolbar import Toolbar, ToolType
 from .ui.sidebar import Sidebar
 from .ui.dialogs import (
     Dialog, GeneratorDialog, LocationEditDialog, SaveDialog, LoadDialog, ConfirmDialog,
-    MerchantEditDialog, RouteEditDialog
+    MerchantEditDialog, RouteEditDialog, FloorEditDialog
 )
 
 
@@ -162,6 +162,7 @@ class MapEditor:
 
         # Location editing state
         self._editing_location = None
+        self._floor_edit_dialog = None
 
     def _on_tool_change(self, tool: ToolType) -> None:
         """Handle tool change."""
@@ -434,6 +435,16 @@ class MapEditor:
             info['is_starting'] = (self._editing_location == self.current_map.starting_village)
             self.sidebar.set_location_info(info)
 
+        elif action == "edit_floors":
+            # Open floor edit dialog for mines and ruins
+            if self._editing_location and self._editing_location.location_type in ['mine', 'ruins']:
+                dialog = FloorEditDialog(self._editing_location.floors)
+                dialog.on_close = self._on_floor_edit_dialog_close
+                self._floor_edit_dialog = dialog  # Save reference for later
+                self.active_dialog = dialog
+                dialog.show(self.width, self.height)
+                return  # Don't reset _editing_location yet
+
         elif action == "delete":
             # Delete the location
             loc_name = self._editing_location.name
@@ -446,6 +457,33 @@ class MapEditor:
             self._set_status(f"Локация удалена: {loc_name}")
 
         self._editing_location = None
+
+    def _on_floor_edit_dialog_close(self, action: str, data: Dict[str, Any]) -> None:
+        """Handle floor edit dialog close."""
+        if not self._editing_location:
+            self.active_dialog = None
+            return
+
+        if action == "ok":
+            # Get floors from saved dialog reference
+            if hasattr(self, '_floor_edit_dialog') and self._floor_edit_dialog:
+                new_floors = self._floor_edit_dialog.get_floors()
+                self._editing_location.floors = new_floors
+                self.has_unsaved_changes = True
+                self._set_status("Этажи обновлены")
+
+        # Clean up floor dialog reference
+        self._floor_edit_dialog = None
+        self.active_dialog = None
+
+        # Reopen location edit dialog
+        info = self.object_placer.get_location_info(self._editing_location)
+        if info:
+            info['is_starting'] = (self._editing_location == self.current_map.starting_village)
+            dialog = LocationEditDialog(info)
+            dialog.on_close = self._on_location_edit_dialog_close
+            self.active_dialog = dialog
+            dialog.show(self.width, self.height)
 
     def _on_generator_dialog_close(self, action: str, data: Dict[str, Any]) -> None:
         """Handle generator dialog close."""
@@ -1064,19 +1102,18 @@ class MapEditor:
                 connection = self._find_connection_near_click(tile_x, tile_y)
                 if connection:
                     source_loc, target_loc = connection
-                    # Remove bidirectional connection
+                    # Remove unidirectional connection (master -> subordinate)
                     source_loc.remove_connection(target_loc.x, target_loc.y)
-                    target_loc.remove_connection(source_loc.x, source_loc.y)
                     self.has_unsaved_changes = True
-                    self._set_status(f"Удалена связь: {source_loc.name} <-> {target_loc.name}")
+                    self._set_status(f"Удалена связь: {source_loc.name} → {target_loc.name}")
                 else:
                     self._set_status("Выберите объект для связи или кликните на линию для удаления")
                 return
 
             if not self.connection_source:
-                # First click - select source object (A)
+                # First click - select master object (A)
                 self.connection_source = location
-                self._set_status(f"Выбран источник: {location.name}. Выберите целевой объект")
+                self._set_status(f"Выбран главный: {location.name}. Выберите подчиненный объект")
             else:
                 # Second click - select target object (B) and create connection
                 if location == self.connection_source:
@@ -1089,11 +1126,10 @@ class MapEditor:
                     self.connection_source = None
                     return
 
-                # Create bidirectional connection: A <-> B
+                # Create unidirectional connection: A -> B (A is master, B is subordinate)
                 self.connection_source.add_connection(location.x, location.y)
-                location.add_connection(self.connection_source.x, self.connection_source.y)
                 self.has_unsaved_changes = True
-                self._set_status(f"Создана связь: {self.connection_source.name} <-> {location.name}")
+                self._set_status(f"Создана связь: {self.connection_source.name} → {location.name} (главный → подчиненный)")
 
                 # Reset for next connection
                 self.connection_source = None
@@ -1299,7 +1335,7 @@ class MapEditor:
                 self.screen.blit(name_surface, (screen_x + 2, screen_y - 15))
 
     def _render_connections(self) -> None:
-        """Render arrows between connected locations."""
+        """Render arrows between connected locations (master -> subordinate)."""
         if not self.current_map:
             return
 
@@ -1325,30 +1361,56 @@ class MapEditor:
                     target_screen[1] + self.tile_size // 2
                 )
 
-                # Draw arrow line
-                arrow_color = (100, 200, 255)  # Light blue
-                pygame.draw.line(self.screen, arrow_color, source_center, target_center, 2)
-
-                # Draw arrowhead at target
+                # Calculate direction
                 dx = target_center[0] - source_center[0]
                 dy = target_center[1] - source_center[1]
-                angle = math.atan2(dy, dx)
+                line_length = math.sqrt(dx * dx + dy * dy)
+                if line_length == 0:
+                    continue
 
-                arrow_size = 8
+                # Normalize direction
+                ndx = dx / line_length
+                ndy = dy / line_length
+
+                # Shorten line to not overlap with location markers
+                marker_radius = max(6, self.tile_size) // 2 + 4
+                start_point = (
+                    source_center[0] + ndx * marker_radius,
+                    source_center[1] + ndy * marker_radius
+                )
+                end_point = (
+                    target_center[0] - ndx * marker_radius,
+                    target_center[1] - ndy * marker_radius
+                )
+
+                # Draw line with gradient (green at master, blue at subordinate)
+                # Main line - use gradient effect
+                master_color = (50, 200, 50)  # Green - master
+                subordinate_color = (100, 150, 255)  # Blue - subordinate
+
+                # Draw the line
+                pygame.draw.line(self.screen, subordinate_color, start_point, end_point, 2)
+
+                # Draw small circle at master end (green)
+                pygame.draw.circle(self.screen, master_color,
+                                   (int(start_point[0]), int(start_point[1])), 4)
+
+                # Draw arrowhead at subordinate end (blue)
+                angle = math.atan2(dy, dx)
+                arrow_size = 10
                 arrow_angle = math.pi / 6  # 30 degrees
 
-                # Calculate arrowhead points
-                p1 = target_center
+                p1 = end_point
                 p2 = (
-                    target_center[0] - arrow_size * math.cos(angle - arrow_angle),
-                    target_center[1] - arrow_size * math.sin(angle - arrow_angle)
+                    end_point[0] - arrow_size * math.cos(angle - arrow_angle),
+                    end_point[1] - arrow_size * math.sin(angle - arrow_angle)
                 )
                 p3 = (
-                    target_center[0] - arrow_size * math.cos(angle + arrow_angle),
-                    target_center[1] - arrow_size * math.sin(angle + arrow_angle)
+                    end_point[0] - arrow_size * math.cos(angle + arrow_angle),
+                    end_point[1] - arrow_size * math.sin(angle + arrow_angle)
                 )
 
-                pygame.draw.polygon(self.screen, arrow_color, [p1, p2, p3])
+                pygame.draw.polygon(self.screen, subordinate_color, [p1, p2, p3])
 
         # Highlight source location when in connection mode
         if self.current_tool == ToolType.CONNECTION and self.connection_source:
