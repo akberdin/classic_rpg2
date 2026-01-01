@@ -13,6 +13,7 @@ from ..tools.generator import (
     LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER,
     Guard, GUARD_TYPES, GUARD_NONE,
     RESOURCE_TYPES,
+    Floor, FLOOR_TYPES, FLOOR_NONE,
     Merchant, MerchantWaypoint, MERCHANT_RANKS, MERCHANT_SPECIALIZATIONS
 )
 
@@ -725,6 +726,7 @@ class LocationEditDialog(Dialog):
         height = 450  # Base height increased for spawn_radius slider
         if loc_type in [LOCATION_MINE, LOCATION_RUINS]:
             height += 50  # Space for rank slider
+            height += 45  # Space for "Edit floors" button
         if loc_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
             height += 50  # Space for shop_rank slider
         if loc_type == LOCATION_MINE:
@@ -736,7 +738,10 @@ class LocationEditDialog(Dialog):
         if loc_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
                         LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, 'secret_camp']:
             height += 305  # Space for 5 guard slots (headers + 5*45 + spacing)
-        super().__init__("Редактирование локации", 720, height)  # Increased width to 720 for guards with respawn_time
+        # Include location type in dialog title
+        type_display = self.location_info.get('type_display', '')
+        title = f"Редактирование локации ({type_display})" if type_display else "Редактирование локации"
+        super().__init__(title, 720, height)  # Increased width to 720 for guards with respawn_time
         # Guard headers (will be set in _setup_controls if location has guards)
         self._guard_headers_y = None
         self._guard_headers = None
@@ -769,6 +774,14 @@ class LocationEditDialog(Dialog):
             ))
             self.data['rank'] = self.location_info.get('rank', 1)
             y += 50
+
+            # Button to edit floors
+            self.buttons.append(DialogButton(
+                rect=pygame.Rect(20, y, 200, 30),
+                text="Редактировать этажи",
+                action="edit_floors"
+            ))
+            y += 45
 
         # Shop rank slider for settlements
         if loc_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
@@ -1019,18 +1032,8 @@ class LocationEditDialog(Dialog):
         if not self.visible:
             return
 
-        # Draw location type info (coordinates moved to bottom)
-        y = self.y + 140
-        info_lines = [
-            f"Тип: {self.location_info.get('type_display', '')}"
-        ]
-
-        for line in info_lines:
-            text_surface = self.font.render(line, True, (180, 180, 180))
-            surface.blit(text_surface, (self.x + 20, y))
-            y += 20
-
         # Draw coordinates at bottom, above "Delete" button
+        # (Location type is now shown in the dialog title)
         btn_height = 30
         btn_y = self.height - btn_height - 15
         coords_y = self.y + btn_y - 30  # 30px above the buttons
@@ -1854,3 +1857,240 @@ class RouteEditDialog(Dialog):
         """Add a waypoint from map click."""
         self.waypoints_copy.append(MerchantWaypoint(x=x, y=y, duration=duration))
         self._update_waypoints_data()
+
+
+class FloorEditDialog(Dialog):
+    """Dialog for editing floors in mines and ruins."""
+
+    # Size options (1-10)
+    SIZE_OPTIONS = {str(i): str(i) for i in range(1, 11)}
+
+    def __init__(self, floors: List[Floor] = None):
+        """Initialize floor edit dialog."""
+        self.floors_copy = [Floor(floor_number=f.floor_number, floor_type=f.floor_type,
+                                   size=f.size, npc=f.npc) for f in (floors or [])]
+        # Ensure we have 10 floors
+        existing_nums = {f.floor_number for f in self.floors_copy}
+        for i in range(1, 11):
+            if i not in existing_nums:
+                self.floors_copy.append(Floor(floor_number=i))
+        self.floors_copy.sort(key=lambda f: f.floor_number)
+
+        # Dialog size (10 floors * 40 + headers + buttons + padding)
+        height = 540
+        width = 550
+        super().__init__("Редактирование этажей", width, height)
+
+        self._scroll_offset = 0
+        self._visible_count = 10  # All floors visible
+
+        self._setup_controls()
+
+    def _setup_controls(self) -> None:
+        """Setup dialog controls."""
+        # Store floors data
+        for floor in self.floors_copy:
+            self.data[f'floor_{floor.floor_number}_type'] = floor.floor_type
+            self.data[f'floor_{floor.floor_number}_size'] = str(floor.size)
+            self.data[f'floor_{floor.floor_number}_npc'] = floor.npc
+
+        # Buttons at the bottom
+        btn_width = 100
+        btn_height = 30
+        btn_y = self.height - btn_height - 15
+
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(self.width - btn_width - 120, btn_y, btn_width, btn_height),
+            text="Отмена",
+            action="cancel"
+        ))
+
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(self.width - btn_width - 10, btn_y, btn_width, btn_height),
+            text="Сохранить",
+            action="ok",
+            primary=True
+        ))
+
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """Handle pygame event with custom floor handling."""
+        if not self.visible:
+            return False
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            local_x = event.pos[0] - self.x
+            local_y = event.pos[1] - self.y
+
+            # Check floor type dropdowns
+            for i, floor in enumerate(self.floors_copy):
+                row_y = 75 + i * 40
+
+                # Type dropdown area
+                type_rect = pygame.Rect(70, row_y, 180, 28)
+                if type_rect.collidepoint(local_x, local_y):
+                    # Toggle dropdown for this floor
+                    floor_key = f'dropdown_floor_{floor.floor_number}'
+                    if hasattr(self, '_active_dropdown') and self._active_dropdown == floor_key:
+                        self._active_dropdown = None
+                    else:
+                        self._active_dropdown = floor_key
+                    return True
+
+                # Size dropdown area
+                size_rect = pygame.Rect(260, row_y, 80, 28)
+                if size_rect.collidepoint(local_x, local_y):
+                    floor_key = f'dropdown_size_{floor.floor_number}'
+                    if hasattr(self, '_active_dropdown') and self._active_dropdown == floor_key:
+                        self._active_dropdown = None
+                    else:
+                        self._active_dropdown = floor_key
+                    return True
+
+            # Check dropdown options if any is active
+            if hasattr(self, '_active_dropdown') and self._active_dropdown:
+                if self._active_dropdown.startswith('dropdown_floor_'):
+                    floor_num = int(self._active_dropdown.split('_')[-1])
+                    floor_idx = floor_num - 1
+                    row_y = 75 + floor_idx * 40
+                    option_y = row_y + 28
+
+                    for i, (key, value) in enumerate(FLOOR_TYPES.items()):
+                        option_rect = pygame.Rect(70, option_y + i * 28, 180, 28)
+                        if option_rect.collidepoint(local_x, local_y):
+                            self.floors_copy[floor_idx].floor_type = key
+                            self.data[f'floor_{floor_num}_type'] = key
+                            self._active_dropdown = None
+                            return True
+
+                elif self._active_dropdown.startswith('dropdown_size_'):
+                    floor_num = int(self._active_dropdown.split('_')[-1])
+                    floor_idx = floor_num - 1
+                    row_y = 75 + floor_idx * 40
+                    option_y = row_y + 28
+
+                    for i, (key, value) in enumerate(self.SIZE_OPTIONS.items()):
+                        option_rect = pygame.Rect(260, option_y + i * 28, 80, 28)
+                        if option_rect.collidepoint(local_x, local_y):
+                            self.floors_copy[floor_idx].size = int(key)
+                            self.data[f'floor_{floor_num}_size'] = key
+                            self._active_dropdown = None
+                            return True
+
+                # Close dropdown if clicked elsewhere
+                self._active_dropdown = None
+
+        return super().handle_event(event)
+
+    def draw(self, surface: pygame.Surface) -> None:
+        """Draw the dialog with floors table."""
+        super().draw(surface)
+
+        if not self.visible:
+            return
+
+        # Initialize active dropdown if not exists
+        if not hasattr(self, '_active_dropdown'):
+            self._active_dropdown = None
+
+        # Draw table header
+        y = self.y + 50
+        headers = [("Этаж", 20, 45), ("Тип этажа", 70, 180), ("Размер", 260, 80), ("NPC", 350, 150)]
+        for label, col_x, col_width in headers:
+            header_text = self.font.render(label, True, (200, 200, 200))
+            surface.blit(header_text, (self.x + col_x, y))
+            # Draw underline
+            pygame.draw.line(surface, (100, 100, 105),
+                           (self.x + col_x, y + 18),
+                           (self.x + col_x + col_width - 5, y + 18), 1)
+
+        # Draw floor rows
+        y = self.y + 75
+        for floor in self.floors_copy:
+            row_y = y + (floor.floor_number - 1) * 40
+
+            # Floor number (read-only)
+            num_text = self.font.render(str(floor.floor_number), True, self.text_color)
+            surface.blit(num_text, (self.x + 20, row_y + 6))
+
+            # Floor type dropdown
+            type_rect = pygame.Rect(self.x + 70, row_y, 180, 28)
+            is_type_active = self._active_dropdown == f'dropdown_floor_{floor.floor_number}'
+            bg_color = (60, 60, 65) if is_type_active else (45, 45, 50)
+            pygame.draw.rect(surface, bg_color, type_rect, border_radius=3)
+            pygame.draw.rect(surface, (80, 80, 85), type_rect, width=1, border_radius=3)
+
+            type_display = FLOOR_TYPES.get(floor.floor_type, "Нет")
+            type_text = self.font.render(type_display, True, self.text_color)
+            surface.blit(type_text, (type_rect.x + 6, type_rect.y + 6))
+
+            # Arrow
+            arrow = "▼" if not is_type_active else "▲"
+            arrow_text = self.font.render(arrow, True, self.text_color)
+            surface.blit(arrow_text, (type_rect.right - 18, type_rect.y + 6))
+
+            # Size dropdown
+            size_rect = pygame.Rect(self.x + 260, row_y, 80, 28)
+            is_size_active = self._active_dropdown == f'dropdown_size_{floor.floor_number}'
+            bg_color = (60, 60, 65) if is_size_active else (45, 45, 50)
+            pygame.draw.rect(surface, bg_color, size_rect, border_radius=3)
+            pygame.draw.rect(surface, (80, 80, 85), size_rect, width=1, border_radius=3)
+
+            size_text = self.font.render(str(floor.size), True, self.text_color)
+            surface.blit(size_text, (size_rect.x + 6, size_rect.y + 6))
+
+            # Arrow
+            arrow = "▼" if not is_size_active else "▲"
+            arrow_text = self.font.render(arrow, True, self.text_color)
+            surface.blit(arrow_text, (size_rect.right - 18, size_rect.y + 6))
+
+            # NPC (read-only placeholder)
+            npc_rect = pygame.Rect(self.x + 350, row_y, 150, 28)
+            pygame.draw.rect(surface, (35, 35, 40), npc_rect, border_radius=3)
+            pygame.draw.rect(surface, (60, 60, 65), npc_rect, width=1, border_radius=3)
+
+            npc_text = self.font.render(floor.npc if floor.npc else "-", True, (120, 120, 120))
+            surface.blit(npc_text, (npc_rect.x + 6, npc_rect.y + 6))
+
+        # Draw dropdown options if active (must be drawn last to be on top)
+        if self._active_dropdown:
+            if self._active_dropdown.startswith('dropdown_floor_'):
+                floor_num = int(self._active_dropdown.split('_')[-1])
+                floor_idx = floor_num - 1
+                row_y = self.y + 75 + floor_idx * 40
+                option_y = row_y + 28
+
+                # Draw options background
+                options_height = len(FLOOR_TYPES) * 28
+                options_rect = pygame.Rect(self.x + 70, option_y, 180, options_height)
+                pygame.draw.rect(surface, (50, 50, 55), options_rect)
+                pygame.draw.rect(surface, (80, 80, 85), options_rect, width=1)
+
+                for i, (key, value) in enumerate(FLOOR_TYPES.items()):
+                    opt_rect = pygame.Rect(self.x + 70, option_y + i * 28, 180, 28)
+                    if key == self.floors_copy[floor_idx].floor_type:
+                        pygame.draw.rect(surface, (70, 70, 80), opt_rect)
+                    opt_text = self.font.render(value, True, self.text_color)
+                    surface.blit(opt_text, (opt_rect.x + 6, opt_rect.y + 6))
+
+            elif self._active_dropdown.startswith('dropdown_size_'):
+                floor_num = int(self._active_dropdown.split('_')[-1])
+                floor_idx = floor_num - 1
+                row_y = self.y + 75 + floor_idx * 40
+                option_y = row_y + 28
+
+                # Draw options background
+                options_height = len(self.SIZE_OPTIONS) * 28
+                options_rect = pygame.Rect(self.x + 260, option_y, 80, options_height)
+                pygame.draw.rect(surface, (50, 50, 55), options_rect)
+                pygame.draw.rect(surface, (80, 80, 85), options_rect, width=1)
+
+                for i, (key, value) in enumerate(self.SIZE_OPTIONS.items()):
+                    opt_rect = pygame.Rect(self.x + 260, option_y + i * 28, 80, 28)
+                    if int(key) == self.floors_copy[floor_idx].size:
+                        pygame.draw.rect(surface, (70, 70, 80), opt_rect)
+                    opt_text = self.font.render(value, True, self.text_color)
+                    surface.blit(opt_text, (opt_rect.x + 6, opt_rect.y + 6))
+
+    def get_floors(self) -> List[Floor]:
+        """Get the edited floors list."""
+        return self.floors_copy
