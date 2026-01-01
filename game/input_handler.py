@@ -923,6 +923,29 @@ class InputHandler:
                     self.game.dungeon_exit_open = True
                     return
 
+                # Проверяем, на лестнице ли игрок
+                tile = dungeon.get_tile(self.ctx.player.x, self.ctx.player.y)
+                if tile:
+                    from game.dungeon.tiles import DungeonTileType
+                    if tile.tile_type == DungeonTileType.STAIRS_DOWN:
+                        # Открываем меню лестницы вниз
+                        self.game.stairs_menu_window.set_stairs_info(
+                            "down",
+                            self.ctx.dungeon_manager.current_depth,
+                            self.ctx.dungeon_manager.max_depth
+                        )
+                        self.game.stairs_menu_open = True
+                        return
+                    elif tile.tile_type == DungeonTileType.STAIRS_UP:
+                        # Открываем меню лестницы вверх
+                        self.game.stairs_menu_window.set_stairs_info(
+                            "up",
+                            self.ctx.dungeon_manager.current_depth,
+                            self.ctx.dungeon_manager.max_depth
+                        )
+                        self.game.stairs_menu_open = True
+                        return
+
                 return
 
             # Проверяем возможность входа в подземелье/шахту
@@ -1102,32 +1125,6 @@ class InputHandler:
         elif key == pygame.K_F2:
             # Открыть/закрыть чит-меню
             self.ctx.cheat_menu_open = not self.ctx.cheat_menu_open
-            return
-        elif key == pygame.K_PERIOD:
-            # Клавиша '>' (Shift+.) - спуститься по лестнице в подземелье
-            if self.ctx.dungeon_manager.is_in_dungeon:
-                mods = pygame.key.get_mods()
-                if mods & pygame.KMOD_SHIFT:
-                    result = self.ctx.dungeon_manager.go_down_stairs(self.ctx.player)
-                    print(result.get('message', ''))
-                    if result.get('success'):
-                        # Ход врагов после перехода
-                        enemy_results = self.ctx.dungeon_manager.enemy_turn(self.ctx.player)
-                        for er in enemy_results:
-                            print(f"{er['attacker']} атакует вас на {er['damage']} урона!")
-            return
-        elif key == pygame.K_COMMA:
-            # Клавиша '<' (Shift+,) - подняться по лестнице в подземелье
-            if self.ctx.dungeon_manager.is_in_dungeon:
-                mods = pygame.key.get_mods()
-                if mods & pygame.KMOD_SHIFT:
-                    result = self.ctx.dungeon_manager.go_up_stairs(self.ctx.player)
-                    print(result.get('message', ''))
-                    if result.get('success'):
-                        # Ход врагов после перехода
-                        enemy_results = self.ctx.dungeon_manager.enemy_turn(self.ctx.player)
-                        for er in enemy_results:
-                            print(f"{er['attacker']} атакует вас на {er['damage']} урона!")
             return
 
         # Попытка переместить игрока
