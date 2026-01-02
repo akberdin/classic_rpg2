@@ -117,20 +117,28 @@ class SpriteManager:
                         continue  # Пропускаем комментарии
 
                     if rank == 'default':
-                        # default всегда строка
-                        self.load_sprite(npc_type, sprite_paths, 'npc')
+                        # default - загружаем как строку (или первый элемент если массив)
+                        if isinstance(sprite_paths, list):
+                            if sprite_paths:
+                                self.load_sprite(npc_type, sprite_paths[0], 'npc')
+                        else:
+                            self.load_sprite(npc_type, sprite_paths, 'npc')
                     elif isinstance(sprite_paths, list):
                         # Массив вариантов спрайтов для ранга
                         variant_key = f"{npc_type}_{rank}"
                         self.npc_variants[variant_key] = len(sprite_paths)
 
                         for i, sprite_path in enumerate(sprite_paths):
+                            # Проверяем что элемент - строка, а не вложенный список
+                            if not isinstance(sprite_path, str):
+                                print(f"Предупреждение: пропущен некорректный путь спрайта для {npc_type}_{rank}[{i}]")
+                                continue
                             if i == 0:
                                 # Первый вариант - основной спрайт ранга
                                 self.load_sprite(f"{npc_type}_{rank}", sprite_path, 'npc')
                             # Все варианты (включая первый) загружаем с индексом
                             self.load_sprite(f"{npc_type}_{rank}_v{i}", sprite_path, 'npc')
-                    else:
+                    elif isinstance(sprite_paths, str):
                         # Старый формат: строка
                         self.load_sprite(f"{npc_type}_{rank}", sprite_paths, 'npc')
                         self.npc_variants[f"{npc_type}_{rank}"] = 1
