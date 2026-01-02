@@ -10,7 +10,7 @@ from game.npc.mage import MagePatrol
 from game.npc.hostile import Bandit, Undead, ShadowAdept
 from game.npc.worker import Miner
 from game.npc.unique import Alchemist, Hunter, Necromancer
-from game.npc.animal import Wolf, Bear, Deer
+from game.npc.animal import Wolf, Bear, Deer, Rat
 
 __all__ = [
     'NPC',
@@ -29,5 +29,6 @@ __all__ = [
     'Necromancer',
     'Wolf',
     'Bear',
-    'Deer'
+    'Deer',
+    'Rat'
 ]
