@@ -17,7 +17,8 @@
     "shadow_adept": "shadow_adept",
     "wolf": "wolf",
     "bear": "bear",
-    "deer": "deer"
+    "deer": "deer",
+    "mine_rat": "mine_rat"
   },
 
   "stat_generation": {
@@ -127,6 +128,17 @@
       "aggressive": false,
       "flee_on_low_health": true,
       "_note": "Олени пугливы и убегают при опасности"
+    },
+    "mine_rat": {
+      "detection_range": 8,
+      "rest_duration_min": 1,
+      "rest_duration_max": 2,
+      "patrol_radius": 10,
+      "max_distance_from_mine": 15,
+      "aggressive": true,
+      "flee_on_low_health": true,
+      "max_pursuit_steps": 8,
+      "_note": "Шахтные крысы - агрессивные монстры, обитающие в шахтах. Атакуют шахтёров и игрока."
     }
   },
 
@@ -202,6 +214,11 @@
       "active_hours_start": 0,
       "active_hours_end": 24,
       "_note": "Олени активны круглосуточно"
+    },
+    "mine_rat": {
+      "active_hours_start": 0,
+      "active_hours_end": 24,
+      "_note": "Шахтные крысы активны круглосуточно в подземельях"
     }
   },
 
@@ -236,7 +253,8 @@
         "mage": "friendly",
         "alchemist": "friendly",
         "hunter": "friendly",
-        "necromancer": "hostile"
+        "necromancer": "hostile",
+        "mine_rat": "hostile"
       },
       "merchant": {
         "bandit": "unfriendly",
@@ -272,7 +290,8 @@
         "mage": "friendly",
         "alchemist": "friendly",
         "hunter": "friendly",
-        "necromancer": "unfriendly"
+        "necromancer": "unfriendly",
+        "mine_rat": "hostile"
       },
       "undead": {
         "bandit": "hostile",
@@ -323,7 +342,8 @@
         "necromancer": "hostile",
         "wolf": "hostile",
         "bear": "hostile",
-        "deer": "hostile"
+        "deer": "hostile",
+        "mine_rat": "hostile"
       },
       "necromancer": {
         "bandit": "neutral",
@@ -397,7 +417,26 @@
         "necromancer": "neutral",
         "wolf": "neutral",
         "bear": "neutral",
-        "deer": "neutral"
+        "deer": "neutral",
+        "mine_rat": "neutral"
+      },
+      "mine_rat": {
+        "bandit": "neutral",
+        "guard": "hostile",
+        "merchant": "hostile",
+        "neutral": "hostile",
+        "miner": "hostile",
+        "undead": "neutral",
+        "mage": "hostile",
+        "alchemist": "hostile",
+        "hunter": "hostile",
+        "necromancer": "neutral",
+        "shadow_adept": "neutral",
+        "wolf": "neutral",
+        "bear": "neutral",
+        "deer": "neutral",
+        "mine_rat": "friendly",
+        "_note": "Шахтные крысы агрессивны к людям, особенно шахтёрам"
       }
     }
   },
@@ -409,6 +448,7 @@
     "merchants_per_village": 2,
     "bandits_per_camp": {"min": 3, "max": 6},
     "miners_per_mine": {"min": 2, "max": 4},
+    "mine_rats_per_mine": {"min": 3, "max": 6},
     "undead_per_ruins": {"min": 3, "max": 6},
     "mages_per_school": 8,
     "alchemists_per_city": 1,
