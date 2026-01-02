@@ -58,6 +58,9 @@ class DungeonManager:
         self.selected_object = None
         self.selected_object_type = None  # 'trap' или 'stash'
 
+        # Отношение локации к игроку (для определения агрессии NPC)
+        self.current_player_attitude: int = 0
+
     def _get_floor_config(self, depth: int) -> Optional[dict]:
         """
         Получить конфигурацию этажа по глубине
@@ -151,8 +154,11 @@ class DungeonManager:
             # Если есть конфиг этажей, используем его для определения max_depth
             if self.current_floors_config:
                 self.max_depth = len(self.current_floors_config)
+            # Сохраняем player_attitude локации для определения агрессии NPC
+            self.current_player_attitude = getattr(tile.location, 'player_attitude', 0)
         else:
             self.current_floors_config = []
+            self.current_player_attitude = 0
 
         # Проверяем кэш уровней
         if self.current_dungeon_key not in self.dungeon_levels:
@@ -455,13 +461,13 @@ class DungeonManager:
                 # Определяем уровень NPC в диапазоне ранга
                 level = random.randint(level_min, level_max)
 
-                # Создаем NPC нужного типа
-                npc = self._create_dungeon_npc(npc_type, x, y, level)
+                # Создаем NPC нужного типа с учётом player_attitude локации
+                npc = self._create_dungeon_npc(npc_type, x, y, level, self.current_player_attitude)
                 if npc:
                     self.dungeon_npcs.append(npc)
                     dungeon.add_npc(npc)
 
-    def _create_dungeon_npc(self, npc_type: str, x: int, y: int, level: int):
+    def _create_dungeon_npc(self, npc_type: str, x: int, y: int, level: int, player_attitude: int = 0):
         """
         Создать NPC заданного типа для подземелья.
 
@@ -469,10 +475,13 @@ class DungeonManager:
             npc_type: Тип NPC (любой тип из game/npc)
             x, y: Координаты спавна
             level: Уровень NPC
+            player_attitude: Отношение локации к игроку (влияет на агрессию)
 
         Returns:
             NPC объект или None
         """
+        from game.constants import RELATIONSHIP_HOSTILE, RELATIONSHIP_NEUTRAL
+
         # Импортируем все классы NPC
         from game.npc import (
             Guard, Merchant, MagicMerchant, WarriorMerchant, ShadowMerchant,
@@ -481,11 +490,14 @@ class DungeonManager:
         )
 
         # Маппинг типов NPC на классы и имена
+        # 'hostile': True означает, что NPC всегда агрессивен
+        # 'hostile': False означает, что агрессия зависит от player_attitude
         npc_configs = {
             'rat': {
                 'class': Rat,
                 'names': ["Крыса", "Гигантская крыса", "Пещерная крыса", "Тварь"],
-                'args': lambda: {'spawn_x': x, 'spawn_y': y}
+                'args': lambda: {'spawn_x': x, 'spawn_y': y},
+                'hostile': True  # Всегда агрессивны
             },
             'miner': {
                 'class': Miner,
@@ -494,7 +506,8 @@ class DungeonManager:
                     'mine_x': x, 'mine_y': y, 'mine_name': "Подземелье",
                     'rest_x': x, 'rest_y': y, 'rest_location_name': None,
                     'spawn_radius': 10
-                }
+                },
+                'hostile': False  # Зависит от player_attitude
             },
             'warrior': {
                 'class': Guard,
@@ -504,7 +517,8 @@ class DungeonManager:
                     (x + 2, y), (x + 2, y + 2), (x, y + 2),
                     (x - 2, y + 2), (x - 2, y), (x - 2, y - 2),
                     (x, y - 2), (x + 2, y - 2)
-                ])
+                ]),
+                'hostile': False
             },
             'guard': {
                 'class': Guard,
@@ -514,78 +528,93 @@ class DungeonManager:
                     (x + 2, y), (x + 2, y + 2), (x, y + 2),
                     (x - 2, y + 2), (x - 2, y), (x - 2, y - 2),
                     (x, y - 2), (x + 2, y - 2)
-                ])
+                ]),
+                'hostile': False
             },
             'undead': {
                 'class': Undead,
                 'names': ["Скелет", "Зомби", "Призрак", "Вурдалак", "Умертвие",
                           "Костяной воин", "Гуль", "Дух тьмы", "Тень", "Мертвец"],
-                'args': lambda: {'ruins_x': x, 'ruins_y': y}
+                'args': lambda: {'ruins_x': x, 'ruins_y': y},
+                'hostile': True  # Всегда агрессивны
             },
             'bandit': {
                 'class': Bandit,
                 'names': ["Бандит", "Разбойник", "Головорез", "Грабитель"],
-                'args': lambda: {'camp_x': x, 'camp_y': y}
+                'args': lambda: {'camp_x': x, 'camp_y': y},
+                'hostile': True  # Всегда агрессивны
             },
             'mage': {
                 'class': MagePatrol,
                 'names': ["Маг", "Чародей", "Волшебник", "Адепт"],
-                'args': lambda: {'academy_x': x, 'academy_y': y}
+                'args': lambda: {'academy_x': x, 'academy_y': y},
+                'hostile': False
             },
             'shadow_adept': {
                 'class': ShadowAdept,
                 'names': ["Адепт Тени", "Теневой Страж", "Ночной Дозор"],
-                'args': lambda: {'camp_x': x, 'camp_y': y}
+                'args': lambda: {'camp_x': x, 'camp_y': y},
+                'hostile': False
             },
             'hunter': {
                 'class': Hunter,
                 'names': ["Охотник", "Следопыт", "Рейнджер", "Ловчий"],
-                'args': lambda: {'home_x': x, 'home_y': y}
+                'args': lambda: {'home_x': x, 'home_y': y},
+                'hostile': False
             },
             'alchemist': {
                 'class': Alchemist,
                 'names': ["Алхимик", "Зельевар", "Знахарь"],
-                'args': lambda: {}
+                'args': lambda: {},
+                'hostile': False
             },
             'necromancer': {
                 'class': Necromancer,
                 'names': ["Некромант", "Темный Маг", "Владыка Нежити", "Чернокнижник"],
-                'args': lambda: {'ruins_x': x, 'ruins_y': y}
+                'args': lambda: {'ruins_x': x, 'ruins_y': y},
+                'hostile': True  # Всегда агрессивны
             },
             'wolf': {
                 'class': Wolf,
                 'names': ["Волк", "Серый волк", "Матёрый волк"],
-                'args': lambda: {'spawn_x': x, 'spawn_y': y}
+                'args': lambda: {'spawn_x': x, 'spawn_y': y},
+                'hostile': True  # Хищник - всегда агрессивен
             },
             'bear': {
                 'class': Bear,
                 'names': ["Медведь", "Бурый медведь", "Пещерный медведь"],
-                'args': lambda: {'spawn_x': x, 'spawn_y': y}
+                'args': lambda: {'spawn_x': x, 'spawn_y': y},
+                'hostile': True  # Хищник - всегда агрессивен
             },
             'deer': {
                 'class': Deer,
                 'names': ["Олень", "Лань", "Косуля"],
-                'args': lambda: {'spawn_x': x, 'spawn_y': y}
+                'args': lambda: {'spawn_x': x, 'spawn_y': y},
+                'hostile': False  # Травоядное - не агрессивно
             },
             'merchant': {
                 'class': Merchant,
                 'names': ["Торговец", "Купец", "Барышник"],
-                'args': lambda: {}
+                'args': lambda: {},
+                'hostile': False
             },
             'magic_merchant': {
                 'class': MagicMerchant,
                 'names': ["Магический торговец", "Продавец артефактов"],
-                'args': lambda: {}
+                'args': lambda: {},
+                'hostile': False
             },
             'warrior_merchant': {
                 'class': WarriorMerchant,
                 'names': ["Военный торговец", "Оружейник"],
-                'args': lambda: {}
+                'args': lambda: {},
+                'hostile': False
             },
             'shadow_merchant': {
                 'class': ShadowMerchant,
                 'names': ["Теневой торговец", "Скупщик"],
-                'args': lambda: {}
+                'args': lambda: {},
+                'hostile': False
             }
         }
 
@@ -596,6 +625,7 @@ class DungeonManager:
             # Неизвестный тип - создаём нежить по умолчанию
             print(f"Предупреждение: Неизвестный тип NPC '{npc_type}', создаём нежить")
             config = npc_configs['undead']
+            npc_type = 'undead'
 
         # Генерируем имя
         name = f"{random.choice(config['names'])} (Ур. {level})"
@@ -625,6 +655,27 @@ class DungeonManager:
             npc.max_distance_from_spawn = 15
         if hasattr(npc, 'max_distance_from_ruins'):
             npc.max_distance_from_ruins = 15
+
+        # Устанавливаем агрессию NPC на основе типа и player_attitude
+        is_hostile_type = config.get('hostile', False)
+
+        if is_hostile_type:
+            # Враждебный тип - всегда агрессивен
+            npc.relationship = RELATIONSHIP_HOSTILE
+            npc.dungeon_hostile = True
+        elif player_attitude < -5:
+            # Нейтральный/дружественный тип, но player_attitude < -5
+            # Становится враждебным
+            npc.relationship = RELATIONSHIP_HOSTILE
+            npc.dungeon_hostile = True
+        else:
+            # Нейтральный/дружественный тип, player_attitude >= -5
+            # Остаётся нейтральным
+            npc.relationship = RELATIONSHIP_NEUTRAL
+            npc.dungeon_hostile = False
+
+        # Сохраняем player_attitude для возможного использования в AI
+        npc.dungeon_player_attitude = player_attitude
 
         return npc
 
