@@ -47,6 +47,14 @@
           29,
           11
         ]
+      ],
+      "floors": [
+        {
+          "floor_number": 1,
+          "floor_type": "mine",
+          "size": 2,
+          "npc": ""
+        }
       ]
     },
     {
@@ -71,25 +79,25 @@
         {
           "floor_number": 1,
           "floor_type": "mine",
-          "size": 3,
+          "size": 1,
           "npc": ""
         },
         {
           "floor_number": 2,
           "floor_type": "dark_mine",
-          "size": 4,
+          "size": 2,
           "npc": ""
         },
         {
           "floor_number": 3,
           "floor_type": "gloomy_mine",
-          "size": 5,
+          "size": 1,
           "npc": ""
         },
         {
           "floor_number": 4,
           "floor_type": "abyss",
-          "size": 5,
+          "size": 2,
           "npc": ""
         }
       ]
@@ -153,30 +161,30 @@
       "id": "b9f3e62d-21e2-451e-9667-daa2c53de032",
       "player_attitude": 0,
       "spawn_radius": 5,
-      "rank": 1,
+      "rank": 2,
       "floors": [
         {
           "floor_number": 1,
           "floor_type": "basement",
-          "size": 4,
+          "size": 1,
           "npc": ""
         },
         {
           "floor_number": 2,
           "floor_type": "dark_basement",
-          "size": 5,
+          "size": 2,
           "npc": ""
         },
         {
           "floor_number": 3,
           "floor_type": "gloomy_basement",
-          "size": 6,
+          "size": 3,
           "npc": ""
         },
         {
           "floor_number": 4,
           "floor_type": "abyss",
-          "size": 7,
+          "size": 1,
           "npc": ""
         }
       ]

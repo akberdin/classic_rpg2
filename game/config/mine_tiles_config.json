@@ -20,8 +20,8 @@
             "assets/mine/tiles/mine/floor_var2.png",
             "assets/mine/tiles/mine/floor_var3.png"
           ],
-          "main_weight": 70,
-          "variant_weight": 10
+          "main_weight": 50,
+          "variant_weight": 40
         },
         "wall": "assets/mine/tiles/mine/wall.png",
         "corridor": "assets/mine/tiles/mine/floor.png",
