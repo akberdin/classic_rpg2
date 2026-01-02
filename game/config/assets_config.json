@@ -37,10 +37,14 @@
     },
     "undead": {
       "default": "assets/actors/skeletons/skeleton1.png",
-      "novice": ["assets/actors/skeletons/skeleton1.png", "assets/actors/skeletons/skeleton1_1.png", "assets/actors/skeletons/skeleton1_2.png"],
-      "regular": ["assets/actors/skeletons/skeleton2.png", "assets/actors/skeletons/skeleton2_1.png"],
-      "veteran": ["assets/actors/skeletons/skeleton3.png"],
-      "expert": ["assets/actors/skeletons/skeleton4.png"]
+      "novice": "assets/actors/skeletons/skeleton1.png",
+      "novice": "assets/actors/skeletons/skeleton1_1.png",
+      "novice": "assets/actors/skeletons/skeleton1_2.png",
+      "novice": "assets/actors/skeletons/skeleton1_3.png",
+      "novice": "assets/actors/skeletons/skeleton1_4.png",
+      "regular": "assets/actors/skeletons/skeleton2.png",
+      "veteran": "assets/actors/skeletons/skeleton3.png",
+      "expert": "assets/actors/skeletons/skeleton4.png"
     },
     "mage": {
       "default": "assets/actors/mage/mage1.png",

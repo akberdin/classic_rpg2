@@ -125,6 +125,11 @@
               "type": "rat",
               "rank": 2,
               "count": 5
+            },
+            {
+              "type": "undead",
+              "rank": 1,
+              "count": 5
             }
           ]
         },
