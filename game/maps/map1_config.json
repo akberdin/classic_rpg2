@@ -52,8 +52,7 @@
         {
           "floor_number": 1,
           "floor_type": "mine",
-          "size": 2,
-          "npc": ""
+          "size": 2
         }
       ]
     },
@@ -80,25 +79,60 @@
           "floor_number": 1,
           "floor_type": "mine",
           "size": 1,
-          "npc": ""
+          "npcs": [
+            {
+              "type": "miner",
+              "rank": 2,
+              "count": 4
+            },
+            {
+              "type": "miner",
+              "rank": 1,
+              "count": 4
+            },
+            {
+              "type": "warrior",
+              "rank": 2,
+              "count": 4
+            }
+          ]
         },
         {
           "floor_number": 2,
           "floor_type": "dark_mine",
           "size": 2,
-          "npc": ""
+          "npcs": [
+            {
+              "type": "rat",
+              "rank": 1,
+              "count": 10
+            },
+            {
+              "type": "rat",
+              "rank": 2,
+              "count": 5
+            },
+            {
+              "type": "rat",
+              "rank": 3,
+              "count": 2
+            },
+            {
+              "type": "rat",
+              "rank": 4,
+              "count": 1
+            }
+          ]
         },
         {
           "floor_number": 3,
           "floor_type": "gloomy_mine",
-          "size": 1,
-          "npc": ""
+          "size": 1
         },
         {
           "floor_number": 4,
           "floor_type": "abyss",
-          "size": 2,
-          "npc": ""
+          "size": 2
         }
       ]
     },
@@ -166,26 +200,22 @@
         {
           "floor_number": 1,
           "floor_type": "basement",
-          "size": 1,
-          "npc": ""
+          "size": 1
         },
         {
           "floor_number": 2,
           "floor_type": "dark_basement",
-          "size": 2,
-          "npc": ""
+          "size": 2
         },
         {
           "floor_number": 3,
           "floor_type": "gloomy_basement",
-          "size": 3,
-          "npc": ""
+          "size": 3
         },
         {
           "floor_number": 4,
           "floor_type": "abyss",
-          "size": 1,
-          "npc": ""
+          "size": 1
         }
       ]
     }
