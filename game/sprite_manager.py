@@ -4,6 +4,7 @@
 import pygame
 import json
 import os
+import random
 
 
 class SpriteManager:
@@ -100,15 +101,39 @@ class SpriteManager:
         if not self.config:
             return
 
-        # Загружаем спрайты NPC (с поддержкой вложенной структуры)
+        # Словарь для хранения информации о вариантах спрайтов NPC
+        # Формат: {npc_type_rank: [variant_count]}
+        self.npc_variants = {}
+
+        # Загружаем спрайты NPC (с поддержкой вложенной структуры и массивов вариантов)
         for npc_type, sprite_data in self.config.get('npcs', {}).items():
+            if npc_type.startswith('_'):
+                continue  # Пропускаем комментарии
+
             if isinstance(sprite_data, dict):
-                # Новая вложенная структура: {default: ..., novice: ..., regular: ...}
-                for rank, sprite_path in sprite_data.items():
+                # Новая вложенная структура: {default: ..., novice: [...], regular: [...], ...}
+                for rank, sprite_paths in sprite_data.items():
+                    if rank.startswith('_'):
+                        continue  # Пропускаем комментарии
+
                     if rank == 'default':
-                        self.load_sprite(npc_type, sprite_path, 'npc')
+                        # default всегда строка
+                        self.load_sprite(npc_type, sprite_paths, 'npc')
+                    elif isinstance(sprite_paths, list):
+                        # Массив вариантов спрайтов для ранга
+                        variant_key = f"{npc_type}_{rank}"
+                        self.npc_variants[variant_key] = len(sprite_paths)
+
+                        for i, sprite_path in enumerate(sprite_paths):
+                            if i == 0:
+                                # Первый вариант - основной спрайт ранга
+                                self.load_sprite(f"{npc_type}_{rank}", sprite_path, 'npc')
+                            # Все варианты (включая первый) загружаем с индексом
+                            self.load_sprite(f"{npc_type}_{rank}_v{i}", sprite_path, 'npc')
                     else:
-                        self.load_sprite(f"{npc_type}_{rank}", sprite_path, 'npc')
+                        # Старый формат: строка
+                        self.load_sprite(f"{npc_type}_{rank}", sprite_paths, 'npc')
+                        self.npc_variants[f"{npc_type}_{rank}"] = 1
             else:
                 # Старая плоская структура: строка с путем
                 self.load_sprite(npc_type, sprite_data, 'npc')
@@ -425,6 +450,85 @@ class SpriteManager:
         base_key = f"npc_{npc_type}"
         return self.sprites.get(base_key)
 
+    def get_npc_sprite_variant(self, npc_type, level, variant_index=None):
+        """
+        Получить спрайт NPC с учетом ранга и варианта внешности
+
+        Args:
+            npc_type: Тип NPC (guard, bandit, etc.)
+            level: Уровень NPC
+            variant_index: Индекс варианта (0, 1, 2, ...) или None для случайного выбора
+
+        Returns:
+            pygame.Surface или None если спрайт не найден
+        """
+        rank_suffix = self.get_rank_suffix(level)
+        rank_name = rank_suffix[1:]  # Убираем ведущий подчерк: "_novice" -> "novice"
+        variant_key = f"{npc_type}_{rank_name}"
+
+        # Получаем количество вариантов
+        variant_count = self.npc_variants.get(variant_key, 1)
+
+        if variant_count <= 1:
+            # Только один вариант - возвращаем обычный спрайт
+            return self.get_npc_sprite_with_rank(npc_type, level)
+
+        # Выбираем вариант
+        if variant_index is None:
+            variant_index = random.randint(0, variant_count - 1)
+        else:
+            variant_index = min(variant_index, variant_count - 1)
+
+        # Пробуем получить спрайт с вариантом
+        variant_sprite_key = f"npc_{npc_type}_{rank_name}_v{variant_index}"
+
+        if variant_sprite_key in self.sprites:
+            return self.sprites[variant_sprite_key]
+
+        # Fallback к обычному спрайту с рангом
+        return self.get_npc_sprite_with_rank(npc_type, level)
+
+    def get_random_variant_index(self, npc_type, level):
+        """
+        Получить случайный индекс варианта для NPC
+
+        Используется при создании NPC для назначения постоянного варианта внешности
+
+        Args:
+            npc_type: Тип NPC (guard, bandit, etc.)
+            level: Уровень NPC
+
+        Returns:
+            int: Индекс варианта (0, 1, 2, ...)
+        """
+        rank_suffix = self.get_rank_suffix(level)
+        rank_name = rank_suffix[1:]  # "_novice" -> "novice"
+        variant_key = f"{npc_type}_{rank_name}"
+
+        variant_count = self.npc_variants.get(variant_key, 1)
+
+        if variant_count <= 1:
+            return 0
+
+        return random.randint(0, variant_count - 1)
+
+    def get_variant_count(self, npc_type, level):
+        """
+        Получить количество вариантов спрайтов для NPC данного типа и ранга
+
+        Args:
+            npc_type: Тип NPC (guard, bandit, etc.)
+            level: Уровень NPC
+
+        Returns:
+            int: Количество вариантов (минимум 1)
+        """
+        rank_suffix = self.get_rank_suffix(level)
+        rank_name = rank_suffix[1:]  # "_novice" -> "novice"
+        variant_key = f"{npc_type}_{rank_name}"
+
+        return self.npc_variants.get(variant_key, 1)
+
     def get_companion_sprite(self, companion_type, rank, target_size=None):
         """
         Получить спрайт спутника по типу и рангу
@@ -493,7 +597,7 @@ class SpriteManager:
         key = f"{category}_{sprite_type}"
         return key in self.sprites
 
-    def render_npc(self, screen, npc_type, x, y, default_renderer, level=None):
+    def render_npc(self, screen, npc_type, x, y, default_renderer, level=None, npc=None):
         """
         Отрисовка NPC (спрайт или геометрическая фигура)
 
@@ -504,12 +608,20 @@ class SpriteManager:
             y: Y координата на экране
             default_renderer: Функция для отрисовки по умолчанию
             level: Уровень NPC для выбора спрайта по рангу (опционально)
+            npc: Объект NPC для получения варианта внешности (опционально)
         """
         sprite = None
 
         # Если указан уровень, пробуем получить спрайт с рангом
         if level is not None:
-            sprite = self.get_npc_sprite_with_rank(npc_type, level)
+            # Проверяем, есть ли у NPC назначенный вариант внешности
+            if npc is not None and hasattr(npc, 'sprite_variant'):
+                # Назначаем случайный вариант если еще не назначен
+                if npc.sprite_variant is None:
+                    npc.sprite_variant = self.get_random_variant_index(npc_type, level)
+                sprite = self.get_npc_sprite_variant(npc_type, level, npc.sprite_variant)
+            else:
+                sprite = self.get_npc_sprite_with_rank(npc_type, level)
         else:
             sprite = self.get_sprite(npc_type, 'npc')
 

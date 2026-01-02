@@ -517,11 +517,20 @@ class TacticalCombatRenderer:
                     sprite_y = cell_y + (self.combat.cell_size - sprite.get_height()) // 2
                     self.screen.blit(sprite, (sprite_x, sprite_y))
                     sprite_displayed = True
-            # Для NPC используем их npc_type
+            # Для NPC используем их npc_type с поддержкой вариантов внешности
             elif hasattr(character, 'npc_type'):
-                sprite = self.combat.sprite_manager.get_npc_sprite_with_rank(
+                # Назначаем случайный вариант внешности если еще не назначен
+                if not hasattr(character, 'sprite_variant') or character.sprite_variant is None:
+                    character.sprite_variant = self.combat.sprite_manager.get_random_variant_index(
+                        character.npc_type,
+                        character.level
+                    )
+
+                # Получаем спрайт с учетом варианта
+                sprite = self.combat.sprite_manager.get_npc_sprite_variant(
                     character.npc_type,
-                    character.level
+                    character.level,
+                    character.sprite_variant
                 )
                 if sprite:
                     sprite_x = cell_x + (self.combat.cell_size - sprite.get_width()) // 2
@@ -782,11 +791,19 @@ class TacticalCombatRenderer:
         sprite_x = x + 5
         sprite_y = y + 5
 
-        # Отрисовываем спрайт
+        # Отрисовываем спрайт с поддержкой вариантов внешности
         if self.combat.sprite_manager and hasattr(character, 'npc_type'):
-            sprite = self.combat.sprite_manager.get_npc_sprite_with_rank(
+            # Назначаем случайный вариант внешности если еще не назначен
+            if not hasattr(character, 'sprite_variant') or character.sprite_variant is None:
+                character.sprite_variant = self.combat.sprite_manager.get_random_variant_index(
+                    character.npc_type,
+                    character.level
+                )
+
+            sprite = self.combat.sprite_manager.get_npc_sprite_variant(
                 character.npc_type,
-                character.level
+                character.level,
+                character.sprite_variant
             )
             if sprite:
                 scaled_sprite = pygame.transform.scale(sprite, (sprite_size, sprite_size))

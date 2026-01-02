@@ -63,6 +63,10 @@ class NPC(Character):
         # Механизм дискомфорта от совместного нахождения с другими NPC
         self.collision_tracker = {}  # {npc_id: turns_count}
 
+        # Вариант внешности для тактического боя и подземелий
+        # None означает, что вариант еще не был назначен
+        self.sprite_variant = None
+
     def _init_schedule(self):
         """Инициализация расписания для NPC"""
         schedule_module = get_schedule_module()
