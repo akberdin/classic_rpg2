@@ -1,10 +1,10 @@
 """
-Животные NPC: Wolf, Bear, Deer
+Животные NPC: Wolf, Bear, Deer, Rat
 """
 import random
 from game.npc.base import NPC
 from game.constants import (
-    NPC_TYPE_WOLF, NPC_TYPE_BEAR, NPC_TYPE_DEER,
+    NPC_TYPE_WOLF, NPC_TYPE_BEAR, NPC_TYPE_DEER, NPC_TYPE_RAT,
     NPC_TYPE_HUNTER, NPC_RELATIONSHIPS,
     RELATIONSHIP_NEUTRAL, RELATIONSHIP_HOSTILE, RELATIONSHIP_UNFRIENDLY
 )
@@ -519,3 +519,49 @@ class Deer(Animal):
         elif self.state == "flee":
             self.state = self.behavior_mode
             self.target_enemy = None
+
+
+class Rat(Animal):
+    """
+    Класс Крысы - враждебное подземельное существо.
+    Крысы обитают в шахтах и подземельях, агрессивны к игроку.
+    """
+
+    def __init__(self, name, x=0, y=0, level=1, spawn_x=None, spawn_y=None):
+        super().__init__(name, x, y, npc_type=NPC_TYPE_RAT, level=level,
+                         spawn_x=spawn_x, spawn_y=spawn_y, behavior_mode="patrol")
+        self._adjust_rat_stats()
+        self.detection_range = 6  # Крысы видят близко
+        self.max_pursuit_steps = 8
+        self.patrol_radius = 10
+        self.max_distance_from_spawn = 15
+        self.flee_on_low_health = False
+        self.relationship = RELATIONSHIP_HOSTILE  # Враждебны к игроку
+
+    def _adjust_rat_stats(self):
+        """Модификация статов для крысы - быстрая, но слабая"""
+        self.dexterity = int(self.dexterity * 1.1)  # Повышенная ловкость
+        self.strength = int(self.strength * 0.6)   # Низкая сила
+        self.constitution = int(self.constitution * 0.5)  # Низкая живучесть
+        self.spirit = max(1, int(self.spirit * 0.3))
+        self.intelligence = max(1, int(self.intelligence * 0.3))
+        self.update_derived_stats()
+
+    def _check_for_threats(self, all_npcs, player=None):
+        """
+        Крысы агрессивны к игроку и атакуют его при обнаружении.
+        """
+        # Проверяем игрока - крысы всегда атакуют при обнаружении
+        if player and player.is_alive:
+            distance = abs(self.x - player.x) + abs(self.y - player.y)
+            if distance <= self.detection_range:
+                self.state = "combat"
+                self.target_enemy = player
+                self.pursuit_counter = 0
+                return
+
+        # Если игрок далеко или мертв, возвращаемся к патрулированию
+        if self.state in ["combat", "flee"]:
+            self.state = self.behavior_mode
+            self.target_enemy = None
+            self.pursuit_counter = 0

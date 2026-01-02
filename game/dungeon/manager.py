@@ -387,60 +387,246 @@ class DungeonManager:
         }
 
     def _spawn_dungeon_npcs(self):
-        """Генерация NPC для текущего подземелья"""
+        """
+        Генерация NPC для текущего подземелья на основе конфигурации этажа.
+
+        Конфигурация берется из floors[].npcs в map_config.json.
+        Если npcs не указано для этажа - NPC не спавнятся.
+
+        Формат конфига npcs:
+        [
+            {"type": "rat", "rank": 1, "count": 10},
+            {"type": "miner", "rank": 2, "count": 4},
+            {"type": "warrior", "rank": 2, "count": 4}
+        ]
+        """
         if not self.current_dungeon:
             return
 
         self.dungeon_npcs.clear()
         dungeon = self.current_dungeon
 
-        # Количество NPC зависит от уровня подземелья
-        base_count = 3 + dungeon.dungeon_level
-        num_npcs = random.randint(base_count, base_count + 5)
+        # Получаем конфигурацию текущего этажа
+        floor_config = self._get_floor_config(self.current_depth)
+        if not floor_config:
+            return  # Нет конфига - нет NPC
 
-        # Импортируем класс нежити
+        # Получаем список NPC для спавна
+        npcs_config = floor_config.get('npcs', [])
+        if not npcs_config:
+            return  # npcs не указаны - не спавним NPC
+
+        # Импортируем классы NPC
         from game.npc.hostile import Undead
+        from game.npc.worker import Miner
+        from game.npc.guard import Guard
+        from game.npc.animal import Rat
 
-        for _ in range(num_npcs):
-            # Находим случайную свободную клетку
-            pos = dungeon.get_random_floor_tile(exclude_special=True)
-            if pos is None:
-                continue
+        # Спавним NPC по конфигурации
+        for npc_entry in npcs_config:
+            npc_type = npc_entry.get('type', 'undead')
+            npc_rank = npc_entry.get('rank', 1)
+            npc_count = npc_entry.get('count', 1)
 
-            x, y = pos
+            # Определяем диапазон уровней по рангу
+            # Ранг 1: 1-10, Ранг 2: 11-20, Ранг 3: 21-30, Ранг 4: 31-40
+            level_min = (npc_rank - 1) * 10 + 1
+            level_max = npc_rank * 10
 
-            # Проверяем, нет ли там уже NPC
-            if dungeon.get_npc_at(x, y) is not None:
-                continue
+            for _ in range(npc_count):
+                # Находим случайную свободную клетку
+                pos = dungeon.get_random_floor_tile(exclude_special=True)
+                if pos is None:
+                    continue
 
-            # Проверяем безопасную зону вокруг входа (радиус 5 клеток)
-            if dungeon.entrance:
-                entrance_x, entrance_y = dungeon.entrance
-                distance_to_entrance = abs(x - entrance_x) + abs(y - entrance_y)
-                if distance_to_entrance < 5:
-                    continue  # Слишком близко к входу, пропускаем
+                x, y = pos
 
-            # Создаем нежить
-            level = random.randint(
-                max(1, dungeon.dungeon_level - 1),
-                dungeon.dungeon_level + 3
-            )
+                # Проверяем, нет ли там уже NPC
+                if dungeon.get_npc_at(x, y) is not None:
+                    continue
 
-            npc_names = [
-                "Скелет", "Зомби", "Призрак", "Вурдалак", "Умертвие",
-                "Костяной воин", "Гуль", "Дух тьмы", "Тень", "Мертвец"
-            ]
-            name = f"{random.choice(npc_names)} (Ур. {level})"
+                # Проверяем безопасную зону вокруг входа (радиус 5 клеток)
+                if dungeon.entrance:
+                    entrance_x, entrance_y = dungeon.entrance
+                    distance_to_entrance = abs(x - entrance_x) + abs(y - entrance_y)
+                    if distance_to_entrance < 5:
+                        continue  # Слишком близко к входу, пропускаем
 
-            # Нежить привязана к своей начальной позиции спавна (не к входу)
-            undead = Undead(name, x, y, level, x, y)
+                # Определяем уровень NPC в диапазоне ранга
+                level = random.randint(level_min, level_max)
 
-            # Уменьшаем радиус патрулирования для подземелий
-            undead.patrol_radius = 10
-            undead.max_distance_from_ruins = 15
+                # Создаем NPC нужного типа
+                npc = self._create_dungeon_npc(npc_type, x, y, level)
+                if npc:
+                    self.dungeon_npcs.append(npc)
+                    dungeon.add_npc(npc)
 
-            self.dungeon_npcs.append(undead)
-            dungeon.add_npc(undead)
+    def _create_dungeon_npc(self, npc_type: str, x: int, y: int, level: int):
+        """
+        Создать NPC заданного типа для подземелья.
+
+        Args:
+            npc_type: Тип NPC (любой тип из game/npc)
+            x, y: Координаты спавна
+            level: Уровень NPC
+
+        Returns:
+            NPC объект или None
+        """
+        # Импортируем все классы NPC
+        from game.npc import (
+            Guard, Merchant, MagicMerchant, WarriorMerchant, ShadowMerchant,
+            MagePatrol, Bandit, Undead, ShadowAdept, Miner,
+            Alchemist, Hunter, Necromancer, Wolf, Bear, Deer, Rat
+        )
+
+        # Маппинг типов NPC на классы и имена
+        npc_configs = {
+            'rat': {
+                'class': Rat,
+                'names': ["Крыса", "Гигантская крыса", "Пещерная крыса", "Тварь"],
+                'args': lambda: {'spawn_x': x, 'spawn_y': y}
+            },
+            'miner': {
+                'class': Miner,
+                'names': ["Шахтёр", "Рудокоп", "Горняк", "Копатель"],
+                'args': lambda: {
+                    'mine_x': x, 'mine_y': y, 'mine_name': "Подземелье",
+                    'rest_x': x, 'rest_y': y, 'rest_location_name': None,
+                    'spawn_radius': 10
+                }
+            },
+            'warrior': {
+                'class': Guard,
+                'names': ["Стражник", "Воин", "Защитник", "Страж"],
+                'args': lambda: {},
+                'post_init': lambda npc: npc.set_patrol_route([
+                    (x + 2, y), (x + 2, y + 2), (x, y + 2),
+                    (x - 2, y + 2), (x - 2, y), (x - 2, y - 2),
+                    (x, y - 2), (x + 2, y - 2)
+                ])
+            },
+            'guard': {
+                'class': Guard,
+                'names': ["Стражник", "Охранник", "Дозорный"],
+                'args': lambda: {},
+                'post_init': lambda npc: npc.set_patrol_route([
+                    (x + 2, y), (x + 2, y + 2), (x, y + 2),
+                    (x - 2, y + 2), (x - 2, y), (x - 2, y - 2),
+                    (x, y - 2), (x + 2, y - 2)
+                ])
+            },
+            'undead': {
+                'class': Undead,
+                'names': ["Скелет", "Зомби", "Призрак", "Вурдалак", "Умертвие",
+                          "Костяной воин", "Гуль", "Дух тьмы", "Тень", "Мертвец"],
+                'args': lambda: {'ruins_x': x, 'ruins_y': y}
+            },
+            'bandit': {
+                'class': Bandit,
+                'names': ["Бандит", "Разбойник", "Головорез", "Грабитель"],
+                'args': lambda: {'camp_x': x, 'camp_y': y}
+            },
+            'mage': {
+                'class': MagePatrol,
+                'names': ["Маг", "Чародей", "Волшебник", "Адепт"],
+                'args': lambda: {'academy_x': x, 'academy_y': y}
+            },
+            'shadow_adept': {
+                'class': ShadowAdept,
+                'names': ["Адепт Тени", "Теневой Страж", "Ночной Дозор"],
+                'args': lambda: {'camp_x': x, 'camp_y': y}
+            },
+            'hunter': {
+                'class': Hunter,
+                'names': ["Охотник", "Следопыт", "Рейнджер", "Ловчий"],
+                'args': lambda: {'home_x': x, 'home_y': y}
+            },
+            'alchemist': {
+                'class': Alchemist,
+                'names': ["Алхимик", "Зельевар", "Знахарь"],
+                'args': lambda: {}
+            },
+            'necromancer': {
+                'class': Necromancer,
+                'names': ["Некромант", "Темный Маг", "Владыка Нежити", "Чернокнижник"],
+                'args': lambda: {'ruins_x': x, 'ruins_y': y}
+            },
+            'wolf': {
+                'class': Wolf,
+                'names': ["Волк", "Серый волк", "Матёрый волк"],
+                'args': lambda: {'spawn_x': x, 'spawn_y': y}
+            },
+            'bear': {
+                'class': Bear,
+                'names': ["Медведь", "Бурый медведь", "Пещерный медведь"],
+                'args': lambda: {'spawn_x': x, 'spawn_y': y}
+            },
+            'deer': {
+                'class': Deer,
+                'names': ["Олень", "Лань", "Косуля"],
+                'args': lambda: {'spawn_x': x, 'spawn_y': y}
+            },
+            'merchant': {
+                'class': Merchant,
+                'names': ["Торговец", "Купец", "Барышник"],
+                'args': lambda: {}
+            },
+            'magic_merchant': {
+                'class': MagicMerchant,
+                'names': ["Магический торговец", "Продавец артефактов"],
+                'args': lambda: {}
+            },
+            'warrior_merchant': {
+                'class': WarriorMerchant,
+                'names': ["Военный торговец", "Оружейник"],
+                'args': lambda: {}
+            },
+            'shadow_merchant': {
+                'class': ShadowMerchant,
+                'names': ["Теневой торговец", "Скупщик"],
+                'args': lambda: {}
+            }
+        }
+
+        # Получаем конфигурацию для типа NPC
+        config = npc_configs.get(npc_type)
+
+        if not config:
+            # Неизвестный тип - создаём нежить по умолчанию
+            print(f"Предупреждение: Неизвестный тип NPC '{npc_type}', создаём нежить")
+            config = npc_configs['undead']
+
+        # Генерируем имя
+        name = f"{random.choice(config['names'])} (Ур. {level})"
+
+        # Создаём NPC
+        npc_class = config['class']
+        extra_args = config['args']()
+
+        try:
+            npc = npc_class(name=name, x=x, y=y, level=level, **extra_args)
+        except TypeError:
+            # Некоторые классы могут иметь другую сигнатуру
+            try:
+                npc = npc_class(name, x, y, level, **extra_args)
+            except TypeError as e:
+                print(f"Ошибка создания NPC типа '{npc_type}': {e}")
+                return None
+
+        # Выполняем пост-инициализацию если есть
+        if 'post_init' in config:
+            config['post_init'](npc)
+
+        # Устанавливаем общие параметры для подземелий
+        if hasattr(npc, 'patrol_radius'):
+            npc.patrol_radius = 10
+        if hasattr(npc, 'max_distance_from_spawn'):
+            npc.max_distance_from_spawn = 15
+        if hasattr(npc, 'max_distance_from_ruins'):
+            npc.max_distance_from_ruins = 15
+
+        return npc
 
     def update_dungeon(self, player):
         """
