@@ -336,14 +336,14 @@ class DungeonRenderer:
                 pygame.draw.circle(self.screen, npc_color, (center_x, center_y), radius)
                 pygame.draw.circle(self.screen, (200, 200, 220), (center_x, center_y), radius, 2)
 
-            # Используем спрайт если доступен
+            # Используем спрайт если доступен (с поддержкой вариантов внешности)
             npc_type = getattr(npc, 'npc_type', 'undead')
             npc_level = getattr(npc, 'level', 1)
 
             if self.sprite_manager:
                 self.sprite_manager.render_npc(
                     self.screen, npc_type, pixel_x, pixel_y,
-                    draw_npc_default, npc_level
+                    draw_npc_default, npc_level, npc=npc
                 )
             else:
                 draw_npc_default()

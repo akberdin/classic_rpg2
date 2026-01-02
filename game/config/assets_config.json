@@ -1,37 +1,39 @@
 {
   "_description": "Единая конфигурация ассетов - спрайты NPC, локаций, биомов, навыков, предметов",
-  "_version": "2.0.0",
+  "_version": "2.1.0",
+  "_note_variants": "Для рангов можно указать массив спрайтов вместо одного пути - будет выбран случайный вариант при создании NPC",
 
   "sprite_size": 64,
 
   "npcs": {
     "guard": {
       "default": "assets/actors/soldier/soldier1.png",
-      "novice": "assets/actors/soldier/soldier1.png",
-      "regular": "assets/actors/soldier/soldier2.png",
-      "veteran": "assets/actors/soldier/soldier3.png",
-      "expert": "assets/actors/soldier/soldier4.png"
+      "novice": ["assets/actors/soldier/soldier1.png"],
+      "regular": ["assets/actors/soldier/soldier2.png"],
+      "veteran": ["assets/actors/soldier/soldier3.png"],
+      "expert": ["assets/actors/soldier/soldier4.png"]
     },
     "merchant": {
       "default": "assets/actors/trader/trader1.png",
-      "novice": "assets/actors/trader/trader1.png",
-      "regular": "assets/actors/trader/trader2.png",
-      "veteran": "assets/actors/trader/trader3.png",
-      "expert": "assets/actors/trader/trader4.png"
+      "novice": ["assets/actors/trader/trader1.png"],
+      "regular": ["assets/actors/trader/trader2.png"],
+      "veteran": ["assets/actors/trader/trader3.png"],
+      "expert": ["assets/actors/trader/trader4.png"]
     },
     "bandit": {
+      "_comment": "Бандиты имеют варианты внешности для разнообразия в тактическом бою и подземельях",
       "default": "assets/actors/bandits/bandit1.png",
-      "novice": "assets/actors/bandits/bandit1.png",
-      "regular": "assets/actors/bandits/bandit2.png",
-      "veteran": "assets/actors/bandits/bandit3.png",
-      "expert": "assets/actors/bandits/bandit4.png"
+      "novice": ["assets/actors/bandits/bandit1.png", "assets/actors/bandits/bandit1_1.png", "assets/actors/bandits/bandit1_2.png"],
+      "regular": ["assets/actors/bandits/bandit2.png", "assets/actors/bandits/bandit2_1.png", "assets/actors/bandits/bandit2_2.png"],
+      "veteran": ["assets/actors/bandits/bandit3.png", "assets/actors/bandits/bandit3_1.png"],
+      "expert": ["assets/actors/bandits/bandit4.png"]
     },
     "miner": {
       "default": "assets/actors/miners/miner1.png",
-      "novice": "assets/actors/miners/miner1.png",
-      "regular": "assets/actors/miners/miner2.png",
-      "veteran": "assets/actors/miners/miner3.png",
-      "expert": "assets/actors/miners/miner4.png"
+      "novice": ["assets/actors/miners/miner1.png", "assets/actors/miners/miner1_1.png"],
+      "regular": ["assets/actors/miners/miner2.png"],
+      "veteran": ["assets/actors/miners/miner3.png"],
+      "expert": ["assets/actors/miners/miner4.png"]
     },
     "undead": {
       "default": "assets/actors/skeletons/skeleton1.png",
@@ -46,80 +48,80 @@
     },
     "mage": {
       "default": "assets/actors/mage/mage1.png",
-      "novice": "assets/actors/mage/mage1.png",
-      "regular": "assets/actors/mage/mage2.png",
-      "veteran": "assets/actors/mage/mage3.png",
-      "expert": "assets/actors/mage/mage4.png"
+      "novice": ["assets/actors/mage/mage1.png"],
+      "regular": ["assets/actors/mage/mage2.png"],
+      "veteran": ["assets/actors/mage/mage3.png"],
+      "expert": ["assets/actors/mage/mage4.png"]
     },
     "player": {
       "default": "assets/actors/player/player1.png",
-      "novice": "assets/actors/player/player1.png",
-      "regular": "assets/actors/player/player2.png",
-      "veteran": "assets/actors/player/player3.png",
-      "expert": "assets/actors/player/player4.png"
+      "novice": ["assets/actors/player/player1.png"],
+      "regular": ["assets/actors/player/player2.png"],
+      "veteran": ["assets/actors/player/player3.png"],
+      "expert": ["assets/actors/player/player4.png"]
     },
     "alchemist": {
       "default": "assets/actors/alchemist/alchemist1.png",
-      "novice": "assets/actors/alchemist/alchemist1.png",
-      "regular": "assets/actors/alchemist/alchemist2.png",
-      "veteran": "assets/actors/alchemist/alchemist3.png",
-      "expert": "assets/actors/alchemist/alchemist4.png"
+      "novice": ["assets/actors/alchemist/alchemist1.png"],
+      "regular": ["assets/actors/alchemist/alchemist2.png"],
+      "veteran": ["assets/actors/alchemist/alchemist3.png"],
+      "expert": ["assets/actors/alchemist/alchemist4.png"]
     },
     "hunter": {
       "default": "assets/actors/hunter/hunter1.png",
-      "novice": "assets/actors/hunter/hunter1.png",
-      "regular": "assets/actors/hunter/hunter2.png",
-      "veteran": "assets/actors/hunter/hunter3.png",
-      "expert": "assets/actors/hunter/hunter4.png"
+      "novice": ["assets/actors/hunter/hunter1.png"],
+      "regular": ["assets/actors/hunter/hunter2.png"],
+      "veteran": ["assets/actors/hunter/hunter3.png"],
+      "expert": ["assets/actors/hunter/hunter4.png"]
     },
     "necromancer": {
       "default": "assets/actors/necro/necro1.png",
-      "novice": "assets/actors/necro/necro1.png",
-      "regular": "assets/actors/necro/necro2.png",
-      "veteran": "assets/actors/necro/necro3.png",
-      "expert": "assets/actors/necro/necro4.png"
+      "novice": ["assets/actors/necro/necro1.png"],
+      "regular": ["assets/actors/necro/necro2.png"],
+      "veteran": ["assets/actors/necro/necro3.png"],
+      "expert": ["assets/actors/necro/necro4.png"]
     },
     "shadow_adept": {
       "default": "assets/actors/shadow_adept/shadow_adept1.png",
-      "novice": "assets/actors/shadow_adept/shadow_adept1.png",
-      "regular": "assets/actors/shadow_adept/shadow_adept2.png",
-      "veteran": "assets/actors/shadow_adept/shadow_adept3.png",
-      "expert": "assets/actors/shadow_adept/shadow_adept4.png"
+      "novice": ["assets/actors/shadow_adept/shadow_adept1.png"],
+      "regular": ["assets/actors/shadow_adept/shadow_adept2.png"],
+      "veteran": ["assets/actors/shadow_adept/shadow_adept3.png"],
+      "expert": ["assets/actors/shadow_adept/shadow_adept4.png"]
     },
     "wolf": {
       "default": "assets/actors/wolf/wolf1.png",
-      "novice": "assets/actors/wolf/wolf1.png",
-      "regular": "assets/actors/wolf/wolf2.png",
-      "veteran": "assets/actors/wolf/wolf3.png",
-      "expert": "assets/actors/wolf/wolf4.png"
+      "novice": ["assets/actors/wolf/wolf1.png"],
+      "regular": ["assets/actors/wolf/wolf2.png"],
+      "veteran": ["assets/actors/wolf/wolf3.png"],
+      "expert": ["assets/actors/wolf/wolf4.png"]
     },
     "bear": {
       "default": "assets/actors/bear/bear1.png",
-      "novice": "assets/actors/bear/bear1.png",
-      "regular": "assets/actors/bear/bear2.png",
-      "veteran": "assets/actors/bear/bear3.png",
-      "expert": "assets/actors/bear/bear4.png"
+      "novice": ["assets/actors/bear/bear1.png"],
+      "regular": ["assets/actors/bear/bear2.png"],
+      "veteran": ["assets/actors/bear/bear3.png"],
+      "expert": ["assets/actors/bear/bear4.png"]
     },
     "deer": {
       "default": "assets/actors/deer/deer1.png",
-      "novice": "assets/actors/deer/deer1.png",
-      "regular": "assets/actors/deer/deer2.png",
-      "veteran": "assets/actors/deer/deer3.png",
-      "expert": "assets/actors/deer/deer4.png"
+      "novice": ["assets/actors/deer/deer1.png"],
+      "regular": ["assets/actors/deer/deer2.png"],
+      "veteran": ["assets/actors/deer/deer3.png"],
+      "expert": ["assets/actors/deer/deer4.png"]
     },
     "mine_rat": {
       "default": "assets/actors/mine_rat/mine_rat1.png",
-      "novice": "assets/actors/mine_rat/mine_rat1.png",
-      "regular": "assets/actors/mine_rat/mine_rat2.png",
-      "veteran": "assets/actors/mine_rat/mine_rat3.png",
-      "expert": "assets/actors/mine_rat/mine_rat4.png"
+      "novice": ["assets/actors/mine_rat/mine_rat1.png"],
+      "regular": ["assets/actors/mine_rat/mine_rat2.png"],
+      "veteran": ["assets/actors/mine_rat/mine_rat3.png"],
+      "expert": ["assets/actors/mine_rat/mine_rat4.png"]
     },
     "rat": {
       "default": "assets/actors/mine_rat/mine_rat1.png",
-      "novice": "assets/actors/mine_rat/mine_rat1.png",
-      "regular": "assets/actors/mine_rat/mine_rat2.png",
-      "veteran": "assets/actors/mine_rat/mine_rat3.png",
-      "expert": "assets/actors/mine_rat/mine_rat4.png"
+      "novice": ["assets/actors/mine_rat/mine_rat1.png"],
+      "regular": ["assets/actors/mine_rat/mine_rat2.png"],
+      "veteran": ["assets/actors/mine_rat/mine_rat3.png"],
+      "expert": ["assets/actors/mine_rat/mine_rat4.png"]
     }
   },
 
