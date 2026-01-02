@@ -492,7 +492,9 @@ class DungeonManager:
                 return {
                     "type": "remains",
                     "success": True,
-                    "message": "\n".join(messages)
+                    "message": "\n".join(messages),
+                    "gold": loot_result['gold'],
+                    "items": loot_result['items']
                 }
 
         # Проверяем выход
