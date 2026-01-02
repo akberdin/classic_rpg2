@@ -18,7 +18,7 @@ from .ui.toolbar import Toolbar, ToolType
 from .ui.sidebar import Sidebar
 from .ui.dialogs import (
     Dialog, GeneratorDialog, LocationEditDialog, SaveDialog, LoadDialog, ConfirmDialog,
-    MerchantEditDialog, RouteEditDialog, FloorEditDialog
+    MerchantEditDialog, RouteEditDialog, FloorEditDialog, FloorNPCEditDialog
 )
 
 
@@ -440,6 +440,7 @@ class MapEditor:
             if self._editing_location and self._editing_location.location_type in ['mine', 'ruins']:
                 dialog = FloorEditDialog(self._editing_location.floors)
                 dialog.on_close = self._on_floor_edit_dialog_close
+                dialog.on_edit_npc = self._on_open_floor_npc_dialog
                 self._floor_edit_dialog = dialog  # Save reference for later
                 self.active_dialog = dialog
                 dialog.show(self.width, self.height)
@@ -484,6 +485,43 @@ class MapEditor:
             dialog.on_close = self._on_location_edit_dialog_close
             self.active_dialog = dialog
             dialog.show(self.width, self.height)
+
+    def _on_open_floor_npc_dialog(self, floor, floor_number: int) -> None:
+        """Handle request to open NPC edit dialog for a floor."""
+        if not self._floor_edit_dialog:
+            return
+
+        # Store reference to editing floor number
+        self._editing_floor_number = floor_number
+
+        # Create NPC edit dialog for the floor
+        dialog = FloorNPCEditDialog(floor, floor_number)
+        dialog.on_close = self._on_floor_npc_dialog_close
+        self._floor_npc_dialog = dialog
+        self.active_dialog = dialog
+        dialog.show(self.width, self.height)
+
+    def _on_floor_npc_dialog_close(self, action: str, data: Dict[str, Any]) -> None:
+        """Handle floor NPC edit dialog close."""
+        if action == "ok" and hasattr(self, '_floor_npc_dialog') and self._floor_npc_dialog:
+            # Get the edited NPCs
+            new_npcs = self._floor_npc_dialog.get_npcs()
+
+            # Update the floor in FloorEditDialog
+            if hasattr(self, '_floor_edit_dialog') and self._floor_edit_dialog:
+                self._floor_edit_dialog.update_floor_npcs(
+                    self._editing_floor_number,
+                    new_npcs
+                )
+                self._set_status(f"NPC этажа {self._editing_floor_number} обновлены")
+
+        # Clean up
+        self._floor_npc_dialog = None
+        self._editing_floor_number = None
+
+        # Restore FloorEditDialog as active
+        if hasattr(self, '_floor_edit_dialog') and self._floor_edit_dialog:
+            self.active_dialog = self._floor_edit_dialog
 
     def _on_generator_dialog_close(self, action: str, data: Dict[str, Any]) -> None:
         """Handle generator dialog close."""
