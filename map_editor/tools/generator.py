@@ -180,6 +180,92 @@ FLOOR_TYPES = {
     FLOOR_ABYSS: "Преисподня"
 }
 
+# Floor NPC type constants
+FLOOR_NPC_MINER = "miner"
+FLOOR_NPC_WARRIOR = "warrior"
+FLOOR_NPC_MAGE = "mage"
+FLOOR_NPC_HUNTER = "hunter"
+FLOOR_NPC_BANDIT = "bandit"
+FLOOR_NPC_UNDEAD = "undead"
+FLOOR_NPC_NECROMANCER = "necromancer"
+FLOOR_NPC_SHADOW_ADEPT = "shadow_adept"
+FLOOR_NPC_RAT = "rat"
+FLOOR_NPC_ZOMBIE = "zombie"
+FLOOR_NPC_SKELETON = "skeleton"
+FLOOR_NPC_GHOST = "ghost"
+FLOOR_NPC_SPIDER = "spider"
+FLOOR_NPC_GOLEM = "golem"
+FLOOR_NPC_DEMON = "demon"
+FLOOR_NPC_NONE = ""
+
+FLOOR_NPC_TYPES = {
+    FLOOR_NPC_NONE: "Нет",
+    FLOOR_NPC_MINER: "Шахтер",
+    FLOOR_NPC_WARRIOR: "Воин",
+    FLOOR_NPC_MAGE: "Маг",
+    FLOOR_NPC_HUNTER: "Охотник",
+    FLOOR_NPC_BANDIT: "Бандит",
+    FLOOR_NPC_UNDEAD: "Нежить",
+    FLOOR_NPC_NECROMANCER: "Некромант",
+    FLOOR_NPC_SHADOW_ADEPT: "Адепт тени",
+    FLOOR_NPC_RAT: "Крыса",
+    FLOOR_NPC_ZOMBIE: "Зомби",
+    FLOOR_NPC_SKELETON: "Скелет",
+    FLOOR_NPC_GHOST: "Призрак",
+    FLOOR_NPC_SPIDER: "Паук",
+    FLOOR_NPC_GOLEM: "Голем",
+    FLOOR_NPC_DEMON: "Демон"
+}
+
+# NPC rank constants (1-4)
+FLOOR_NPC_RANKS = {
+    1: "Ранг 1 (Новичок)",
+    2: "Ранг 2 (Обычный)",
+    3: "Ранг 3 (Опытный)",
+    4: "Ранг 4 (Эксперт)"
+}
+
+
+@dataclass
+class FloorNPC:
+    """Represents an NPC configuration on a floor."""
+    npc_type: str = FLOOR_NPC_NONE  # Type of NPC
+    rank: int = 1  # NPC rank (1-4)
+    count: int = 0  # Number of NPCs of this type
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for saving."""
+        return {
+            'type': self.npc_type,
+            'rank': self.rank,
+            'count': self.count
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'FloorNPC':
+        """Create from dictionary."""
+        return cls(
+            npc_type=data.get('type', FLOOR_NPC_NONE),
+            rank=data.get('rank', 1),
+            count=data.get('count', 0)
+        )
+
+    def is_empty(self) -> bool:
+        """Check if NPC slot is empty."""
+        return self.npc_type == FLOOR_NPC_NONE or self.count == 0
+
+    def get_display_name(self) -> str:
+        """Get display name for this NPC configuration."""
+        if self.is_empty():
+            return ""
+        npc_name = FLOOR_NPC_TYPES.get(self.npc_type, self.npc_type)
+        return f"{self.count}x {npc_name} (Р{self.rank})"
+
+
+def _create_empty_floor_npcs() -> List['FloorNPC']:
+    """Create empty NPC list for floor."""
+    return []
+
 
 @dataclass
 class Floor:
@@ -187,30 +273,76 @@ class Floor:
     floor_number: int = 1  # Floor number (1-10)
     floor_type: str = FLOOR_NONE  # Type of floor (mine, dark_mine, etc.)
     size: int = 1  # Size of floor (1-10)
-    npc: str = ""  # NPC on this floor (empty for now)
+    npcs: List[FloorNPC] = field(default_factory=_create_empty_floor_npcs)  # List of NPC configurations
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for saving."""
-        return {
+        data = {
             'floor_number': self.floor_number,
             'floor_type': self.floor_type,
-            'size': self.size,
-            'npc': self.npc
+            'size': self.size
         }
+        # Only save non-empty NPCs
+        npcs_data = [npc.to_dict() for npc in self.npcs if not npc.is_empty()]
+        if npcs_data:
+            data['npcs'] = npcs_data
+        return data
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Floor':
         """Create from dictionary."""
+        # Load NPCs list
+        npcs = []
+        if 'npcs' in data:
+            npcs = [FloorNPC.from_dict(npc_data) for npc_data in data['npcs']]
+        # Backward compatibility: handle old 'npc' string field
+        elif 'npc' in data and data['npc']:
+            # Old format stored NPC as string, skip it
+            pass
+
         return cls(
             floor_number=data.get('floor_number', 1),
             floor_type=data.get('floor_type', FLOOR_NONE),
             size=data.get('size', 1),
-            npc=data.get('npc', '')
+            npcs=npcs
         )
 
     def is_empty(self) -> bool:
         """Check if floor slot is empty."""
         return self.floor_type == FLOOR_NONE
+
+    def get_total_npc_count(self) -> int:
+        """Get total count of all NPCs on this floor."""
+        return sum(npc.count for npc in self.npcs if not npc.is_empty())
+
+    def get_npc_summary(self) -> str:
+        """Get a short summary of NPCs on this floor."""
+        active_npcs = [npc for npc in self.npcs if not npc.is_empty()]
+        if not active_npcs:
+            return "-"
+        total = sum(npc.count for npc in active_npcs)
+        return f"{total} NPC ({len(active_npcs)} тип.)"
+
+    def add_npc(self, npc_type: str, rank: int, count: int) -> None:
+        """Add or update NPC configuration."""
+        # Check if this type+rank already exists
+        for existing in self.npcs:
+            if existing.npc_type == npc_type and existing.rank == rank:
+                existing.count += count
+                return
+        # Add new NPC
+        self.npcs.append(FloorNPC(npc_type=npc_type, rank=rank, count=count))
+
+    def remove_npc(self, index: int) -> bool:
+        """Remove NPC at index. Returns True if removed."""
+        if 0 <= index < len(self.npcs):
+            self.npcs.pop(index)
+            return True
+        return False
+
+    def clear_npcs(self) -> None:
+        """Remove all NPCs from this floor."""
+        self.npcs = []
 
 
 def _create_empty_floors() -> List['Floor']:
