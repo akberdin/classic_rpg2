@@ -102,6 +102,13 @@
       "regular": "assets/actors/deer/deer2.png",
       "veteran": "assets/actors/deer/deer3.png",
       "expert": "assets/actors/deer/deer4.png"
+    },
+    "mine_rat": {
+      "default": "assets/actors/mine_rat/mine_rat1.png",
+      "novice": "assets/actors/mine_rat/mine_rat1.png",
+      "regular": "assets/actors/mine_rat/mine_rat2.png",
+      "veteran": "assets/actors/mine_rat/mine_rat3.png",
+      "expert": "assets/actors/mine_rat/mine_rat4.png"
     }
   },
 
