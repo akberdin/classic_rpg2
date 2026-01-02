@@ -1137,6 +1137,15 @@ class DungeonManager:
             if not npc.is_alive:
                 continue
 
+            # Проверяем, является ли NPC враждебным
+            # NPC враждебен если: dungeon_hostile=True ИЛИ был спровоцирован игроком
+            is_hostile = getattr(npc, 'dungeon_hostile', True)  # По умолчанию True для обратной совместимости
+            is_provoked = hasattr(npc, '_aggro_target') and npc._aggro_target == player
+
+            # Нейтральные NPC не атакуют и не преследуют (если не спровоцированы)
+            if not is_hostile and not is_provoked:
+                continue
+
             # Расстояние до игрока (чебышевская метрика для 8 направлений)
             dist = max(abs(npc.x - player.x), abs(npc.y - player.y))
 
@@ -1180,11 +1189,11 @@ class DungeonManager:
                 detection_range = getattr(npc, 'detection_range_player', 5)
 
                 # Если NPC агрессивен (был атакован или атаковал), преследует игрока (но только если видит)
-                if hasattr(npc, '_aggro_target') and npc._aggro_target == player:
+                if is_provoked:
                     if has_los:
                         self._move_enemy_towards_player(npc, player)
-                elif dist <= detection_range and has_los:
-                    # Обычное поведение - движение к игроку если в радиусе обнаружения И видит игрока
+                elif is_hostile and dist <= detection_range and has_los:
+                    # Враждебный NPC - движется к игроку если в радиусе обнаружения И видит игрока
                     self._move_enemy_towards_player(npc, player)
                     # Помечаем NPC как агрессивного при первом обнаружении
                     npc._aggro_target = player
