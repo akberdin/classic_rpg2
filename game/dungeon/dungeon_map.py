@@ -430,12 +430,25 @@ class DungeonMap:
         """
         tile = self.get_tile(x, y)
         if tile:
-            tile.tile_type = DungeonTileType.REMAINS
+            # Сохраняем оригинальный тип тайла (для восстановления после лутинга)
+            original_tile_type = tile.tile_type
+
+            # Не меняем тип тайла если это важный объект (лестница, выход, вход)
+            important_tiles = [
+                DungeonTileType.STAIRS_DOWN,
+                DungeonTileType.STAIRS_UP,
+                DungeonTileType.EXIT,
+                DungeonTileType.ENTRANCE
+            ]
+            if tile.tile_type not in important_tiles:
+                tile.tile_type = DungeonTileType.REMAINS
+
             tile.remains_data = {
                 'enemy_name': enemy_name,
                 'gold': gold,
                 'loot_items': loot_items,
-                'looted': False
+                'looted': False,
+                'original_tile_type': original_tile_type
             }
 
     def get_remains_at(self, x: int, y: int) -> Optional[dict]:
@@ -450,7 +463,8 @@ class DungeonMap:
             dict с данными останков или None
         """
         tile = self.get_tile(x, y)
-        if tile and tile.tile_type == DungeonTileType.REMAINS and tile.remains_data:
+        # Проверяем remains_data независимо от tile_type (останки могут быть на лестнице)
+        if tile and tile.remains_data:
             return tile.remains_data
         return None
 
@@ -467,7 +481,8 @@ class DungeonMap:
             dict с результатом обыска или None
         """
         tile = self.get_tile(x, y)
-        if not tile or tile.tile_type != DungeonTileType.REMAINS or not tile.remains_data:
+        # Проверяем remains_data независимо от tile_type (останки могут быть на лестнице)
+        if not tile or not tile.remains_data:
             return None
 
         if tile.remains_data.get('looted', False):
@@ -493,7 +508,16 @@ class DungeonMap:
 
         # Помечаем как обысканные
         tile.remains_data['looted'] = True
-        tile.tile_type = DungeonTileType.REMAINS_LOOTED
+
+        # Восстанавливаем оригинальный тип тайла (если сохранен) или ставим REMAINS_LOOTED
+        original_type = remains.get('original_tile_type')
+        if original_type and original_type != DungeonTileType.FLOOR:
+            # Восстанавливаем лестницу/выход/вход
+            tile.tile_type = original_type
+            # Очищаем данные останков после лутинга на важных тайлах
+            tile.remains_data = None
+        else:
+            tile.tile_type = DungeonTileType.REMAINS_LOOTED
 
         return result
 
