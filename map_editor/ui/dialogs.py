@@ -14,6 +14,7 @@ from ..tools.generator import (
     Guard, GUARD_TYPES, GUARD_NONE,
     RESOURCE_TYPES,
     Floor, FLOOR_TYPES, FLOOR_NONE,
+    FloorNPC, FLOOR_NPC_TYPES, FLOOR_NPC_RANKS, FLOOR_NPC_NONE,
     Merchant, MerchantWaypoint, MERCHANT_RANKS, MERCHANT_SPECIALIZATIONS
 )
 
@@ -1867,8 +1868,18 @@ class FloorEditDialog(Dialog):
 
     def __init__(self, floors: List[Floor] = None):
         """Initialize floor edit dialog."""
-        self.floors_copy = [Floor(floor_number=f.floor_number, floor_type=f.floor_type,
-                                   size=f.size, npc=f.npc) for f in (floors or [])]
+        # Deep copy floors with their NPCs
+        self.floors_copy = []
+        for f in (floors or []):
+            floor_copy = Floor(
+                floor_number=f.floor_number,
+                floor_type=f.floor_type,
+                size=f.size,
+                npcs=[FloorNPC(npc_type=npc.npc_type, rank=npc.rank, count=npc.count)
+                      for npc in f.npcs]
+            )
+            self.floors_copy.append(floor_copy)
+
         # Ensure we have 10 floors
         existing_nums = {f.floor_number for f in self.floors_copy}
         for i in range(1, 11):
@@ -1878,11 +1889,20 @@ class FloorEditDialog(Dialog):
 
         # Dialog size (10 floors * 40 + headers + buttons + padding)
         height = 540
-        width = 550
+        width = 620  # Wider for NPC column with button
         super().__init__("Редактирование этажей", width, height)
 
         self._scroll_offset = 0
         self._visible_count = 10  # All floors visible
+
+        # NPC edit button rectangles for click detection
+        self._npc_edit_rects: List[Tuple[pygame.Rect, int]] = []
+
+        # Callback for opening NPC edit dialog
+        self.on_edit_npc: Optional[Callable[[Floor, int], None]] = None
+
+        # Currently editing floor (for NPC dialog)
+        self._editing_floor_idx: Optional[int] = None
 
         self._setup_controls()
 
@@ -1892,7 +1912,6 @@ class FloorEditDialog(Dialog):
         for floor in self.floors_copy:
             self.data[f'floor_{floor.floor_number}_type'] = floor.floor_type
             self.data[f'floor_{floor.floor_number}_size'] = str(floor.size)
-            self.data[f'floor_{floor.floor_number}_npc'] = floor.npc
 
         # Buttons at the bottom
         btn_width = 100
@@ -1988,7 +2007,24 @@ class FloorEditDialog(Dialog):
                         self._active_dropdown = floor_key
                     return True
 
+                # NPC edit button area
+                npc_rect = pygame.Rect(350, row_y, 120, 28)
+                if npc_rect.collidepoint(local_x, local_y):
+                    # Store the floor index for NPC editing
+                    self._editing_floor_idx = i
+                    # Call callback if set
+                    if self.on_edit_npc:
+                        self.on_edit_npc(floor, floor.floor_number)
+                    return True
+
         return super().handle_event(event)
+
+    def update_floor_npcs(self, floor_number: int, npcs: List[FloorNPC]) -> None:
+        """Update NPCs for a specific floor."""
+        for floor in self.floors_copy:
+            if floor.floor_number == floor_number:
+                floor.npcs = npcs
+                break
 
     def draw(self, surface: pygame.Surface) -> None:
         """Draw the dialog with floors table."""
@@ -2003,7 +2039,7 @@ class FloorEditDialog(Dialog):
 
         # Draw table header
         y = self.y + 50
-        headers = [("Этаж", 20, 45), ("Тип этажа", 70, 180), ("Размер", 260, 80), ("NPC", 350, 150)]
+        headers = [("Этаж", 20, 45), ("Тип этажа", 70, 180), ("Размер", 260, 80), ("NPC", 350, 120)]
         for label, col_x, col_width in headers:
             header_text = self.font.render(label, True, (200, 200, 200))
             surface.blit(header_text, (self.x + col_x, y))
@@ -2052,12 +2088,32 @@ class FloorEditDialog(Dialog):
             arrow_text = self.font.render(arrow, True, self.text_color)
             surface.blit(arrow_text, (size_rect.right - 18, size_rect.y + 6))
 
-            # NPC (read-only placeholder)
-            npc_rect = pygame.Rect(self.x + 350, row_y, 150, 28)
-            pygame.draw.rect(surface, (35, 35, 40), npc_rect, border_radius=3)
-            pygame.draw.rect(surface, (60, 60, 65), npc_rect, width=1, border_radius=3)
+            # NPC edit button (clickable)
+            npc_rect = pygame.Rect(self.x + 350, row_y, 120, 28)
+            # Check if floor is empty (no type set)
+            if floor.is_empty():
+                # Disabled style for empty floors
+                pygame.draw.rect(surface, (35, 35, 40), npc_rect, border_radius=3)
+                pygame.draw.rect(surface, (50, 50, 55), npc_rect, width=1, border_radius=3)
+                npc_text = self.font.render("-", True, (80, 80, 80))
+            else:
+                # Enabled style - button-like appearance
+                has_npcs = len(floor.npcs) > 0 and floor.get_total_npc_count() > 0
+                if has_npcs:
+                    # Green-ish background if NPCs are configured
+                    pygame.draw.rect(surface, (40, 60, 45), npc_rect, border_radius=3)
+                    pygame.draw.rect(surface, (70, 100, 75), npc_rect, width=1, border_radius=3)
+                else:
+                    # Normal button style
+                    pygame.draw.rect(surface, (50, 50, 55), npc_rect, border_radius=3)
+                    pygame.draw.rect(surface, (80, 80, 85), npc_rect, width=1, border_radius=3)
 
-            npc_text = self.font.render(floor.npc if floor.npc else "-", True, (120, 120, 120))
+                # Show NPC summary or "Добавить"
+                npc_summary = floor.get_npc_summary()
+                if npc_summary == "-":
+                    npc_text = self.font.render("+ Добавить", True, (150, 150, 150))
+                else:
+                    npc_text = self.font.render(npc_summary, True, self.text_color)
             surface.blit(npc_text, (npc_rect.x + 6, npc_rect.y + 6))
 
         # Draw dropdown options if active (must be drawn last to be on top)
@@ -2103,3 +2159,359 @@ class FloorEditDialog(Dialog):
     def get_floors(self) -> List[Floor]:
         """Get the edited floors list."""
         return self.floors_copy
+
+
+class FloorNPCEditDialog(Dialog):
+    """Dialog for editing NPCs on a specific floor."""
+
+    # NPC type dropdown options (filtered from FLOOR_NPC_TYPES, excluding empty)
+    NPC_TYPE_OPTIONS = {k: v for k, v in FLOOR_NPC_TYPES.items() if k != FLOOR_NPC_NONE}
+
+    # Rank dropdown options
+    RANK_OPTIONS = {str(k): v for k, v in FLOOR_NPC_RANKS.items()}
+
+    def __init__(self, floor: Floor, floor_number: int):
+        """Initialize NPC edit dialog for a floor."""
+        self.floor = floor
+        self.floor_number = floor_number
+        # Create a copy of NPCs for editing
+        self.npcs_copy = [FloorNPC(npc_type=npc.npc_type, rank=npc.rank, count=npc.count)
+                         for npc in floor.npcs]
+
+        # Dialog size
+        height = 520
+        width = 600
+        super().__init__(f"NPC на этаже {floor_number}", width, height)
+
+        self._scroll_offset = 0
+        self._visible_count = 8  # Max visible NPCs
+        self._npc_delete_rects: List[Tuple[pygame.Rect, int]] = []
+        self._add_npc_rect: Optional[pygame.Rect] = None
+
+        # Active dropdown tracking
+        self._active_dropdown_type: Optional[int] = None  # Index of NPC with active type dropdown
+        self._active_dropdown_rank: Optional[int] = None  # Index of NPC with active rank dropdown
+
+        self._setup_controls()
+
+    def _setup_controls(self) -> None:
+        """Setup dialog controls."""
+        # Buttons at the bottom
+        btn_width = 100
+        btn_height = 30
+        btn_y = self.height - btn_height - 15
+
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(20, btn_y, 120, btn_height),
+            text="Очистить всё",
+            action="clear"
+        ))
+
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(self.width - btn_width - 120, btn_y, btn_width, btn_height),
+            text="Отмена",
+            action="cancel"
+        ))
+
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(self.width - btn_width - 10, btn_y, btn_width, btn_height),
+            text="Сохранить",
+            action="ok",
+            primary=True
+        ))
+
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """Handle pygame event with custom NPC handling."""
+        if not self.visible:
+            return False
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            local_x = event.pos[0] - self.x
+            local_y = event.pos[1] - self.y
+
+            # First check if clicking on expanded dropdown options
+            if self._active_dropdown_type is not None:
+                idx = self._active_dropdown_type
+                row_y = 95 + (idx - self._scroll_offset) * 36
+                option_y = row_y + 28
+                options_rect = pygame.Rect(20, option_y, 200, len(self.NPC_TYPE_OPTIONS) * 28)
+                if options_rect.collidepoint(local_x, local_y):
+                    for i, (key, value) in enumerate(self.NPC_TYPE_OPTIONS.items()):
+                        opt_rect = pygame.Rect(20, option_y + i * 28, 200, 28)
+                        if opt_rect.collidepoint(local_x, local_y):
+                            self.npcs_copy[idx].npc_type = key
+                            self._active_dropdown_type = None
+                            return True
+                self._active_dropdown_type = None
+                return True
+
+            if self._active_dropdown_rank is not None:
+                idx = self._active_dropdown_rank
+                row_y = 95 + (idx - self._scroll_offset) * 36
+                option_y = row_y + 28
+                options_rect = pygame.Rect(230, option_y, 80, len(self.RANK_OPTIONS) * 28)
+                if options_rect.collidepoint(local_x, local_y):
+                    for i, (key, value) in enumerate(self.RANK_OPTIONS.items()):
+                        opt_rect = pygame.Rect(230, option_y + i * 28, 80, 28)
+                        if opt_rect.collidepoint(local_x, local_y):
+                            self.npcs_copy[idx].rank = int(key)
+                            self._active_dropdown_rank = None
+                            return True
+                self._active_dropdown_rank = None
+                return True
+
+            # Check NPC row interactions
+            for display_idx in range(min(self._visible_count, len(self.npcs_copy) - self._scroll_offset)):
+                actual_idx = display_idx + self._scroll_offset
+                row_y = 95 + display_idx * 36
+
+                # Type dropdown (column 1)
+                type_rect = pygame.Rect(20, row_y, 200, 28)
+                if type_rect.collidepoint(local_x, local_y):
+                    self._active_dropdown_type = actual_idx
+                    self._active_dropdown_rank = None
+                    return True
+
+                # Rank dropdown (column 2)
+                rank_rect = pygame.Rect(230, row_y, 80, 28)
+                if rank_rect.collidepoint(local_x, local_y):
+                    self._active_dropdown_rank = actual_idx
+                    self._active_dropdown_type = None
+                    return True
+
+                # Count +/- buttons (column 3)
+                # - button
+                minus_rect = pygame.Rect(322, row_y + 2, 20, 24)
+                if minus_rect.collidepoint(local_x, local_y):
+                    if self.npcs_copy[actual_idx].count > 1:
+                        self.npcs_copy[actual_idx].count -= 1
+                    return True
+
+                # + button
+                plus_rect = pygame.Rect(378, row_y + 2, 20, 24)
+                if plus_rect.collidepoint(local_x, local_y):
+                    if self.npcs_copy[actual_idx].count < 99:
+                        self.npcs_copy[actual_idx].count += 1
+                    return True
+
+            # Check delete buttons
+            for rect, idx in self._npc_delete_rects:
+                if rect.collidepoint(local_x, local_y):
+                    if 0 <= idx < len(self.npcs_copy):
+                        self.npcs_copy.pop(idx)
+                        # Adjust scroll if needed
+                        max_scroll = max(0, len(self.npcs_copy) - self._visible_count)
+                        if self._scroll_offset > max_scroll:
+                            self._scroll_offset = max_scroll
+                    return True
+
+            # Check add NPC button
+            if self._add_npc_rect and self._add_npc_rect.collidepoint(local_x, local_y):
+                # Add new empty NPC slot
+                self.npcs_copy.append(FloorNPC(npc_type="miner", rank=1, count=1))
+                return True
+
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button in (4, 5):
+            local_x = event.pos[0] - self.x
+            local_y = event.pos[1] - self.y
+
+            # Scroll NPC list
+            if 20 <= local_x <= self.width - 20 and 70 <= local_y <= 400:
+                max_scroll = max(0, len(self.npcs_copy) - self._visible_count)
+                if event.button == 4:  # Scroll up
+                    self._scroll_offset = max(0, self._scroll_offset - 1)
+                else:  # Scroll down
+                    self._scroll_offset = min(max_scroll, self._scroll_offset + 1)
+                return True
+
+        elif event.type == pygame.KEYDOWN:
+            # Handle keyboard input for count editing
+            pass
+
+        # Handle button clear action
+        result = super().handle_event(event)
+        if self.result == "clear":
+            self.npcs_copy = []
+            self.result = None
+            self.visible = True
+            return True
+
+        return result
+
+    def draw(self, surface: pygame.Surface) -> None:
+        """Draw the dialog with NPC list."""
+        super().draw(surface)
+
+        if not self.visible:
+            return
+
+        # Draw header
+        y = self.y + 50
+        header_text = self.font.render(f"Всего NPC: {sum(npc.count for npc in self.npcs_copy if not npc.is_empty())}",
+                                       True, self.text_color)
+        surface.blit(header_text, (self.x + 20, y))
+
+        # Draw table header
+        y = self.y + 75
+        headers = [("Тип NPC", 20, 200), ("Ранг", 230, 80), ("Кол-во", 320, 80), ("", 410, 30)]
+        for label, col_x, col_width in headers:
+            header_text = self.font.render(label, True, (200, 200, 200))
+            surface.blit(header_text, (self.x + col_x, y))
+            pygame.draw.line(surface, (100, 100, 105),
+                           (self.x + col_x, y + 18),
+                           (self.x + col_x + col_width - 5, y + 18), 1)
+
+        # Draw NPC rows
+        self._npc_delete_rects = []
+        y = self.y + 95
+
+        if not self.npcs_copy:
+            no_npc_text = self.font.render("Нет NPC. Нажмите '+ Добавить' для добавления.", True, (150, 150, 150))
+            surface.blit(no_npc_text, (self.x + 20, y))
+        else:
+            visible_npcs = self.npcs_copy[self._scroll_offset:self._scroll_offset + self._visible_count]
+
+            for display_idx, npc in enumerate(visible_npcs):
+                actual_idx = display_idx + self._scroll_offset
+                row_y = y + display_idx * 36
+
+                # Type dropdown
+                type_rect = pygame.Rect(self.x + 20, row_y, 200, 28)
+                is_type_active = self._active_dropdown_type == actual_idx
+                bg_color = (60, 60, 65) if is_type_active else (45, 45, 50)
+                pygame.draw.rect(surface, bg_color, type_rect, border_radius=3)
+                pygame.draw.rect(surface, (80, 80, 85), type_rect, width=1, border_radius=3)
+
+                type_display = FLOOR_NPC_TYPES.get(npc.npc_type, npc.npc_type)
+                type_text = self.font.render(type_display, True, self.text_color)
+                surface.blit(type_text, (type_rect.x + 6, type_rect.y + 6))
+
+                arrow = "▼" if not is_type_active else "▲"
+                arrow_text = self.font.render(arrow, True, self.text_color)
+                surface.blit(arrow_text, (type_rect.right - 18, type_rect.y + 6))
+
+                # Rank dropdown
+                rank_rect = pygame.Rect(self.x + 230, row_y, 80, 28)
+                is_rank_active = self._active_dropdown_rank == actual_idx
+                bg_color = (60, 60, 65) if is_rank_active else (45, 45, 50)
+                pygame.draw.rect(surface, bg_color, rank_rect, border_radius=3)
+                pygame.draw.rect(surface, (80, 80, 85), rank_rect, width=1, border_radius=3)
+
+                rank_text = self.font.render(str(npc.rank), True, self.text_color)
+                surface.blit(rank_text, (rank_rect.x + 6, rank_rect.y + 6))
+
+                arrow = "▼" if not is_rank_active else "▲"
+                arrow_text = self.font.render(arrow, True, self.text_color)
+                surface.blit(arrow_text, (rank_rect.right - 18, rank_rect.y + 6))
+
+                # Count input (editable with +/- buttons)
+                count_rect = pygame.Rect(self.x + 320, row_y, 80, 28)
+                pygame.draw.rect(surface, (45, 45, 50), count_rect, border_radius=3)
+                pygame.draw.rect(surface, (80, 80, 85), count_rect, width=1, border_radius=3)
+
+                # - button
+                minus_rect = pygame.Rect(self.x + 322, row_y + 2, 20, 24)
+                pygame.draw.rect(surface, (80, 50, 50), minus_rect, border_radius=2)
+                minus_text = self.font.render("-", True, (255, 255, 255))
+                minus_text_rect = minus_text.get_rect(center=minus_rect.center)
+                surface.blit(minus_text, minus_text_rect)
+
+                # Count value
+                count_text = self.font.render(str(npc.count), True, self.text_color)
+                count_text_rect = count_text.get_rect(center=(count_rect.centerx, count_rect.centery))
+                surface.blit(count_text, count_text_rect)
+
+                # + button
+                plus_rect = pygame.Rect(self.x + 378, row_y + 2, 20, 24)
+                pygame.draw.rect(surface, (50, 80, 50), plus_rect, border_radius=2)
+                plus_text = self.font.render("+", True, (255, 255, 255))
+                plus_text_rect = plus_text.get_rect(center=plus_rect.center)
+                surface.blit(plus_text, plus_text_rect)
+
+                # Delete button
+                del_rect = pygame.Rect(self.x + 410, row_y + 2, 24, 24)
+                self._npc_delete_rects.append((pygame.Rect(410, row_y + 2 - self.y, 24, 24), actual_idx))
+                pygame.draw.rect(surface, (140, 45, 45), del_rect, border_radius=3)
+                del_text = self.font.render("X", True, (255, 255, 255))
+                del_text_rect = del_text.get_rect(center=del_rect.center)
+                surface.blit(del_text, del_text_rect)
+
+            # Draw scroll indicator if needed
+            if len(self.npcs_copy) > self._visible_count:
+                scroll_text = f"({self._scroll_offset + 1}-{min(self._scroll_offset + self._visible_count, len(self.npcs_copy))} из {len(self.npcs_copy)})"
+                scroll_surface = self.font.render(scroll_text, True, (150, 150, 150))
+                surface.blit(scroll_surface, (self.x + self.width - 150, self.y + 50))
+
+        # Draw add NPC button
+        add_btn_y = self.y + 95 + min(len(self.npcs_copy), self._visible_count) * 36 + 10
+        add_btn_rect = pygame.Rect(self.x + 20, add_btn_y, 150, 28)
+        self._add_npc_rect = pygame.Rect(20, add_btn_y - self.y, 150, 28)
+        pygame.draw.rect(surface, (45, 100, 45), add_btn_rect, border_radius=3)
+        add_text = self.font.render("+ Добавить NPC", True, (255, 255, 255))
+        add_text_rect = add_text.get_rect(center=add_btn_rect.center)
+        surface.blit(add_text, add_text_rect)
+
+        # Draw dropdown options if active (must be drawn last to be on top)
+        if self._active_dropdown_type is not None:
+            idx = self._active_dropdown_type
+            if self._scroll_offset <= idx < self._scroll_offset + self._visible_count:
+                display_idx = idx - self._scroll_offset
+                row_y = self.y + 95 + display_idx * 36
+                option_y = row_y + 28
+
+                options_height = len(self.NPC_TYPE_OPTIONS) * 28
+                options_rect = pygame.Rect(self.x + 20, option_y, 200, options_height)
+                pygame.draw.rect(surface, (50, 50, 55), options_rect)
+                pygame.draw.rect(surface, (80, 80, 85), options_rect, width=1)
+
+                for i, (key, value) in enumerate(self.NPC_TYPE_OPTIONS.items()):
+                    opt_rect = pygame.Rect(self.x + 20, option_y + i * 28, 200, 28)
+                    if key == self.npcs_copy[idx].npc_type:
+                        pygame.draw.rect(surface, (70, 70, 80), opt_rect)
+                    opt_text = self.font.render(value, True, self.text_color)
+                    surface.blit(opt_text, (opt_rect.x + 6, opt_rect.y + 6))
+
+        if self._active_dropdown_rank is not None:
+            idx = self._active_dropdown_rank
+            if self._scroll_offset <= idx < self._scroll_offset + self._visible_count:
+                display_idx = idx - self._scroll_offset
+                row_y = self.y + 95 + display_idx * 36
+                option_y = row_y + 28
+
+                options_height = len(self.RANK_OPTIONS) * 28
+                options_rect = pygame.Rect(self.x + 230, option_y, 80, options_height)
+                pygame.draw.rect(surface, (50, 50, 55), options_rect)
+                pygame.draw.rect(surface, (80, 80, 85), options_rect, width=1)
+
+                for i, (key, value) in enumerate(self.RANK_OPTIONS.items()):
+                    opt_rect = pygame.Rect(self.x + 230, option_y + i * 28, 80, 28)
+                    if int(key) == self.npcs_copy[idx].rank:
+                        pygame.draw.rect(surface, (70, 70, 80), opt_rect)
+                    opt_text = self.font.render(key, True, self.text_color)
+                    surface.blit(opt_text, (opt_rect.x + 6, opt_rect.y + 6))
+
+    def _handle_count_click(self, local_x: int, local_y: int) -> bool:
+        """Handle click on count +/- buttons."""
+        for display_idx in range(min(self._visible_count, len(self.npcs_copy) - self._scroll_offset)):
+            actual_idx = display_idx + self._scroll_offset
+            row_y = 95 + display_idx * 36
+
+            # - button area
+            minus_rect = pygame.Rect(322, row_y + 2, 20, 24)
+            if minus_rect.collidepoint(local_x, local_y):
+                if self.npcs_copy[actual_idx].count > 1:
+                    self.npcs_copy[actual_idx].count -= 1
+                return True
+
+            # + button area
+            plus_rect = pygame.Rect(378, row_y + 2, 20, 24)
+            if plus_rect.collidepoint(local_x, local_y):
+                if self.npcs_copy[actual_idx].count < 99:
+                    self.npcs_copy[actual_idx].count += 1
+                return True
+
+        return False
+
+    def get_npcs(self) -> List[FloorNPC]:
+        """Get the edited NPCs list (only non-empty)."""
+        return [npc for npc in self.npcs_copy if not npc.is_empty()]
