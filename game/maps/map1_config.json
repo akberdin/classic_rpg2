@@ -110,43 +110,9 @@
           "size": 2,
           "npcs": [
             {
-              "type": "rat",
-              "rank": 1,
-              "count": 5
-            }
-          ]
-        },
-        {
-          "floor_number": 3,
-          "floor_type": "gloomy_mine",
-          "size": 3,
-          "npcs": [
-            {
-              "type": "rat",
-              "rank": 2,
-              "count": 5
-            },
-            {
               "type": "undead",
               "rank": 1,
-              "count": 5
-            }
-          ]
-        },
-        {
-          "floor_number": 4,
-          "floor_type": "abyss",
-          "size": 3,
-          "npcs": [
-            {
-              "type": "undead",
-              "rank": 3,
-              "count": 3
-            },
-            {
-              "type": "undead",
-              "rank": 4,
-              "count": 1
+              "count": 10
             }
           ]
         }
