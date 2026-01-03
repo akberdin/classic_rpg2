@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """
-Items Crafter Launcher
+Items Crafter Launcher v2.0
 Точка входа для утилиты создания и редактирования предметов
+
+Запускает новую версию v2.0 с:
+- Новой системой предметов и рецептов
+- Связью предмет-рецепт
+- Шаблонами экипировки
+- Системой нейминга через словари
+- Буфером обмена
 """
 
 import sys
 import os
+import argparse
 
 # Добавляем корень проекта в путь
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -26,8 +34,36 @@ def check_dependencies():
     return missing
 
 
+def run_v1():
+    """Запуск старой версии v1.0"""
+    from utils.items_crafter.gui.main_window import ItemsCrafterApp
+    root = tk.Tk()
+    app = ItemsCrafterApp(root)
+    root.mainloop()
+
+
+def run_v2():
+    """Запуск новой версии v2.0"""
+    from utils.items_crafter.gui_v2.main_window import ItemsCrafterAppV2
+    root = tk.Tk()
+    app = ItemsCrafterAppV2(root)
+    root.mainloop()
+
+
 def main():
     """Главная функция"""
+    # Парсинг аргументов
+    parser = argparse.ArgumentParser(description="Items Crafter - редактор предметов и рецептов")
+    parser.add_argument("--legacy", "-l", action="store_true",
+                       help="Запустить старую версию v1.0")
+    parser.add_argument("--version", "-v", action="store_true",
+                       help="Показать версию")
+    args = parser.parse_args()
+
+    if args.version:
+        print("Items Crafter v2.0")
+        return 0
+
     # Проверка зависимостей
     missing = check_dependencies()
     if missing:
@@ -40,26 +76,14 @@ def main():
         )
         return 1
 
-    # Импорт и запуск
+    # Запуск
     try:
-        from utils.items_crafter.gui.main_window import ItemsCrafterApp
-
-        root = tk.Tk()
-
         # Настройка иконки (если есть)
-        try:
-            icon_path = os.path.join(
-                os.path.dirname(__file__),
-                "..", "..", "assets", "icons", "items_crafter.png"
-            )
-            if os.path.exists(icon_path):
-                icon = tk.PhotoImage(file=icon_path)
-                root.iconphoto(True, icon)
-        except Exception:
-            pass
+        if args.legacy:
+            run_v1()
+        else:
+            run_v2()
 
-        app = ItemsCrafterApp(root)
-        root.mainloop()
         return 0
 
     except Exception as e:
