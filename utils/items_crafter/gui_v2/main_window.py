@@ -150,6 +150,9 @@ class ItemsCrafterAppV2:
 
     def _update_stats(self):
         """Обновить статистику"""
+        # Проверяем что statusbar уже создан
+        if not hasattr(self, 'stats_label'):
+            return
         project = self.config_manager.project
         stats = (
             f"Ресурсов: {len(project.resources)} | "
