@@ -157,19 +157,17 @@ class ResourcesTab(BaseEditorTab):
         self.max_stack_spin.pack(fill=tk.X, pady=2)
         self.max_stack_spin.bind_change(self._mark_modified)
 
-        # Связанный рецепт
+        # Связанный рецепт (управляется во вкладке Рецепты)
         recipe_frame = ttk.LabelFrame(self.editor_frame, text="Связанный рецепт", padding=10)
         recipe_frame.pack(fill=tk.X, padx=5, pady=5)
 
         self.recipe_label = ttk.Label(recipe_frame, text="Рецепт: (не задан)")
         self.recipe_label.pack(fill=tk.X, pady=2)
 
-        btn_frame = ttk.Frame(recipe_frame)
-        btn_frame.pack(fill=tk.X, pady=2)
+        ttk.Label(recipe_frame, text="(Связь создаётся во вкладке Рецепты)",
+                 foreground="gray").pack(anchor="w")
 
-        ttk.Button(btn_frame, text="Выбрать рецепт", command=self._select_recipe).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Создать рецепт", command=self._create_recipe).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Очистить", command=self._clear_recipe).pack(side=tk.LEFT, padx=2)
+        ttk.Button(recipe_frame, text="Очистить связь", command=self._clear_recipe).pack(anchor="w", pady=2)
 
         # Визуал
         visual_frame = ttk.LabelFrame(self.editor_frame, text="Визуал", padding=10)
@@ -187,22 +185,11 @@ class ResourcesTab(BaseEditorTab):
         """Автозаполнение ID и display_name при изменении имени"""
         name = self.name_entry.get()
         if name and not self.id_entry.get():
-            # Генерируем ID из имени
             item_id = name.lower().replace(" ", "_")
             self.id_entry.set(item_id)
         if name and not self.display_name_entry.get():
             self.display_name_entry.set(name)
         self._mark_modified()
-
-    def _select_recipe(self):
-        """Выбрать связанный рецепт"""
-        # TODO: Диалог выбора рецепта
-        pass
-
-    def _create_recipe(self):
-        """Создать новый рецепт для этого ресурса"""
-        # TODO: Создание рецепта
-        pass
 
     def _clear_recipe(self):
         """Очистить связь с рецептом"""

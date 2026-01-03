@@ -258,10 +258,18 @@ class BaseEditorTab(ttk.Frame, ABC):
                 self.list_panel.select_item(new_id)
 
     def _is_our_focus(self) -> bool:
-        """Проверить что фокус на нашей вкладке"""
+        """Проверить что фокус на нашей вкладке и не в текстовом поле"""
         try:
             focused = self.focus_get()
-            return focused and (focused == self or str(focused).startswith(str(self)))
+            if not focused:
+                return False
+            # Не перехватываем если фокус на текстовом виджете
+            if isinstance(focused, (tk.Entry, tk.Text, ttk.Entry, ttk.Spinbox, ttk.Combobox)):
+                return False
+            widget_class = focused.winfo_class()
+            if widget_class in ('Entry', 'Text', 'TEntry', 'TSpinbox', 'TCombobox'):
+                return False
+            return focused == self or str(focused).startswith(str(self))
         except:
             return False
 

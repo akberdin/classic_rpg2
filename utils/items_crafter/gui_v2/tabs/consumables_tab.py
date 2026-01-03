@@ -321,12 +321,15 @@ class ConsumablesTab(BaseEditorTab):
         self.max_stack_spin.pack(fill=tk.X, pady=2)
         self.max_stack_spin.bind_change(self._mark_modified)
 
-        # Связанный рецепт
+        # Связанный рецепт (управляется во вкладке Рецепты)
         recipe_frame = ttk.LabelFrame(self.editor_frame, text="Связанный рецепт", padding=10)
         recipe_frame.pack(fill=tk.X, padx=5, pady=5)
 
         self.recipe_label = ttk.Label(recipe_frame, text="Рецепт: (не задан)")
         self.recipe_label.pack(fill=tk.X, pady=2)
+
+        ttk.Label(recipe_frame, text="(Связь создаётся во вкладке Рецепты)",
+                 foreground="gray").pack(anchor="w")
 
         # Визуал
         visual_frame = ttk.LabelFrame(self.editor_frame, text="Визуал", padding=10)
