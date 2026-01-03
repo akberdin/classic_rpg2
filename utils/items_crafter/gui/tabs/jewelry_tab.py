@@ -9,9 +9,9 @@ from typing import Optional, List, Any
 from .base_tab import BaseEditorTab
 from ..widgets import (
     LabeledEntry, LabeledSpinbox, LabeledFloatSpinbox, LabeledCombobox,
-    QualityParametersEditor
+    QualityParametersEditor, SpriteSelector
 )
-from ...models import JewelryItemData, JewelryType, ItemQuality
+from ...models import JewelryItemData, JewelryType
 
 
 class JewelryTab(BaseEditorTab):
@@ -67,26 +67,6 @@ class JewelryTab(BaseEditorTab):
         self.jewelry_type_combo.pack(side=tk.LEFT, padx=(0, 20))
         self.jewelry_type_combo.bind_change(self._on_jewelry_type_change)
 
-        qualities = list(ItemQuality.get_display_names().values())
-        self.quality_combo = LabeledCombobox(type_frame, "Качество:", qualities)
-        self.quality_combo.pack(side=tk.LEFT)
-
-        # Материал и камень
-        material_frame = ttk.Frame(main_frame)
-        material_frame.pack(fill=tk.X, padx=5, pady=2)
-
-        materials = ["copper", "silver", "gold", "mithril"]
-        material_names = ["Медь", "Серебро", "Золото", "Мифрил"]
-        self.material_combo = LabeledCombobox(material_frame, "Материал:", material_names)
-        self.material_combo.pack(side=tk.LEFT, padx=(0, 20))
-        self._materials = dict(zip(material_names, materials))
-
-        gems = ["", "amethyst", "ruby", "sapphire", "emerald", "topaz", "diamond"]
-        gem_names = ["Без камня", "Аметист", "Рубин", "Сапфир", "Изумруд", "Топаз", "Алмаз"]
-        self.gem_combo = LabeledCombobox(material_frame, "Камень:", gem_names)
-        self.gem_combo.pack(side=tk.LEFT)
-        self._gems = dict(zip(gem_names, gems))
-
         # Параметры
         params_frame = ttk.LabelFrame(scroll_frame, text="Параметры")
         params_frame.pack(fill=tk.X, pady=5, padx=5)
@@ -104,7 +84,7 @@ class JewelryTab(BaseEditorTab):
         sprite_frame = ttk.LabelFrame(scroll_frame, text="Графика")
         sprite_frame.pack(fill=tk.X, pady=5, padx=5)
 
-        self.sprite_entry = LabeledEntry(sprite_frame, "Спрайт:")
+        self.sprite_entry = SpriteSelector(sprite_frame)
         self.sprite_entry.pack(fill=tk.X, padx=5, pady=2)
 
         # Параметры по качеству
@@ -120,10 +100,6 @@ class JewelryTab(BaseEditorTab):
 
         for widget in [self.price_spin, self.weight_spin]:
             widget.bind_change(self._mark_modified)
-
-        self.quality_combo.bind_change(self._mark_modified)
-        self.material_combo.bind_change(self._mark_modified)
-        self.gem_combo.bind_change(self._mark_modified)
 
     def _on_name_change(self):
         """При изменении названия генерируем ID"""
@@ -165,8 +141,6 @@ class JewelryTab(BaseEditorTab):
             description="Описание украшения",
             jewelry_type="ring",
             slot="ring_1",
-            material="copper",
-            quality="common",
             base_price=80,
             weight=0.1,
         )
@@ -189,24 +163,6 @@ class JewelryTab(BaseEditorTab):
         type_names = list(JewelryType.get_display_names().values())
         if item.jewelry_type in type_keys:
             self.jewelry_type_combo.set(type_names[type_keys.index(item.jewelry_type)])
-
-        # Качество
-        qualities = list(ItemQuality.get_display_names().keys())
-        qual_names = list(ItemQuality.get_display_names().values())
-        if item.quality in qualities:
-            self.quality_combo.set(qual_names[qualities.index(item.quality)])
-
-        # Материал
-        materials_rev = {v: k for k, v in self._materials.items()}
-        if item.material in materials_rev:
-            self.material_combo.set(materials_rev[item.material])
-
-        # Камень
-        gems_rev = {v: k for k, v in self._gems.items()}
-        if item.gem in gems_rev:
-            self.gem_combo.set(gems_rev[item.gem])
-        else:
-            self.gem_combo.set("Без камня")
 
         self.price_spin.set(item.base_price)
         self.weight_spin.set(item.weight)
@@ -241,23 +197,6 @@ class JewelryTab(BaseEditorTab):
         # Слот (автоматически из типа)
         slot_map = {"ring": "ring_1", "amulet": "amulet", "bracelet": "bracelet_1"}
         item.slot = slot_map.get(item.jewelry_type, "ring_1")
-
-        # Качество
-        qual_names = list(ItemQuality.get_display_names().values())
-        qualities = list(ItemQuality.get_display_names().keys())
-        qual_name = self.quality_combo.get()
-        if qual_name in qual_names:
-            item.quality = qualities[qual_names.index(qual_name)]
-
-        # Материал
-        material_name = self.material_combo.get()
-        if material_name in self._materials:
-            item.material = self._materials[material_name]
-
-        # Камень
-        gem_name = self.gem_combo.get()
-        if gem_name in self._gems:
-            item.gem = self._gems[gem_name] or None
 
         item.base_price = self.price_spin.get()
         item.weight = self.weight_spin.get()

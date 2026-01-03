@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Optional, List, Any
 
 from .base_tab import BaseEditorTab
-from ..widgets import LabeledEntry, LabeledSpinbox, LabeledCombobox, IngredientEditor
+from ..widgets import LabeledEntry, LabeledSpinbox, LabeledCombobox, IngredientEditor, SpriteSelector
 from ...models import RecipeData, RecipeIngredient, CraftingStation, RecipeCategory, SkillType, ItemQuality
 
 
@@ -117,7 +117,7 @@ class RecipesTab(BaseEditorTab):
         self.price_spin = LabeledSpinbox(price_frame, "Базовая цена:", from_=1, to=99999)
         self.price_spin.pack(side=tk.LEFT, padx=(0, 20))
 
-        self.sprite_entry = LabeledEntry(price_frame, "Спрайт:", width=25)
+        self.sprite_entry = SpriteSelector(price_frame, width=25)
         self.sprite_entry.pack(side=tk.LEFT)
 
         # Ингредиенты
