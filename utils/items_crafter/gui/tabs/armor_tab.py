@@ -9,9 +9,9 @@ from typing import Optional, List, Any
 from .base_tab import BaseEditorTab
 from ..widgets import (
     LabeledEntry, LabeledSpinbox, LabeledFloatSpinbox, LabeledCombobox,
-    QualityParametersEditor
+    QualityParametersEditor, SpriteSelector
 )
-from ...models import ArmorItemData, ArmorType, EquipmentSlot, ItemQuality
+from ...models import ArmorItemData, ArmorType, EquipmentSlot
 
 
 class ArmorTab(BaseEditorTab):
@@ -77,12 +77,8 @@ class ArmorTab(BaseEditorTab):
         }
         slot_names = list(armor_slots.values())
         self.slot_combo = LabeledCombobox(type_frame, "Слот:", slot_names)
-        self.slot_combo.pack(side=tk.LEFT, padx=(0, 20))
+        self.slot_combo.pack(side=tk.LEFT)
         self._armor_slots = armor_slots
-
-        qualities = list(ItemQuality.get_display_names().values())
-        self.quality_combo = LabeledCombobox(type_frame, "Качество:", qualities)
-        self.quality_combo.pack(side=tk.LEFT)
 
         # Параметры брони
         params_frame = ttk.LabelFrame(scroll_frame, text="Параметры брони")
@@ -101,7 +97,7 @@ class ArmorTab(BaseEditorTab):
         sprite_frame = ttk.LabelFrame(scroll_frame, text="Графика")
         sprite_frame.pack(fill=tk.X, pady=5, padx=5)
 
-        self.sprite_entry = LabeledEntry(sprite_frame, "Спрайт:")
+        self.sprite_entry = SpriteSelector(sprite_frame)
         self.sprite_entry.pack(fill=tk.X, padx=5, pady=2)
 
         # Параметры по качеству
@@ -120,7 +116,6 @@ class ArmorTab(BaseEditorTab):
 
         self.armor_type_combo.bind_change(self._mark_modified)
         self.slot_combo.bind_change(self._mark_modified)
-        self.quality_combo.bind_change(self._mark_modified)
 
     def _on_name_change(self):
         """При изменении названия генерируем ID"""
@@ -158,7 +153,6 @@ class ArmorTab(BaseEditorTab):
             description="Описание брони",
             armor_type="light",
             slot="chest",
-            quality="common",
             base_price=60,
             weight=3.0,
         )
@@ -187,12 +181,6 @@ class ArmorTab(BaseEditorTab):
         slot_names = list(self._armor_slots.values())
         if item.slot in slot_keys:
             self.slot_combo.set(slot_names[slot_keys.index(item.slot)])
-
-        # Качество
-        qualities = list(ItemQuality.get_display_names().keys())
-        qual_names = list(ItemQuality.get_display_names().values())
-        if item.quality in qualities:
-            self.quality_combo.set(qual_names[qualities.index(item.quality)])
 
         self.price_spin.set(item.base_price)
         self.weight_spin.set(item.weight)
@@ -230,13 +218,6 @@ class ArmorTab(BaseEditorTab):
         slot_name = self.slot_combo.get()
         if slot_name in slot_names:
             item.slot = slot_keys[slot_names.index(slot_name)]
-
-        # Качество
-        qual_names = list(ItemQuality.get_display_names().values())
-        qualities = list(ItemQuality.get_display_names().keys())
-        qual_name = self.quality_combo.get()
-        if qual_name in qual_names:
-            item.quality = qualities[qual_names.index(qual_name)]
 
         item.base_price = self.price_spin.get()
         item.weight = self.weight_spin.get()

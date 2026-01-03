@@ -452,16 +452,23 @@ class BaseItemData:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "BaseItemData":
+        # Качество может быть в UPPER_CASE (игровой формат) или lower_case
+        quality = data.get("quality", "common")
+        if isinstance(quality, str):
+            quality = quality.lower()
+        # Цена может быть в поле "value" (игровой формат) или "base_price"
+        base_price = data.get("base_price", data.get("value", 1))
+
         return cls(
             item_id=data.get("id", ""),
             name=data.get("name", ""),
-            display_name=data.get("display_name", ""),
+            display_name=data.get("display_name", data.get("name", "")),
             description=data.get("description", ""),
             item_type=data.get("type", "resource"),
-            quality=data.get("quality", "common"),
+            quality=quality,
             stackable=data.get("stackable", True),
             max_stack=data.get("max_stack", 99),
-            base_price=data.get("base_price", 1),
+            base_price=base_price,
             weight=data.get("weight", 0.1),
             sprite=data.get("sprite", ""),
         )

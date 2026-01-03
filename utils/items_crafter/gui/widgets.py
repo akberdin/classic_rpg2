@@ -115,6 +115,68 @@ class LabeledCombobox(ttk.Frame):
         self.combobox.bind("<<ComboboxSelected>>", lambda e: callback())
 
 
+class SpriteSelector(ttk.Frame):
+    """Поле выбора спрайта с кнопкой открытия файла"""
+
+    def __init__(self, parent, label: str = "Спрайт:", width: int = 30,
+                 initial_dir: str = None, **kwargs):
+        super().__init__(parent)
+        self.initial_dir = initial_dir
+
+        self.label = ttk.Label(self, text=label, width=15, anchor="e")
+        self.label.pack(side=tk.LEFT, padx=(0, 5))
+
+        self.var = tk.StringVar()
+        self.entry = ttk.Entry(self, textvariable=self.var, width=width)
+        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        self.browse_btn = ttk.Button(self, text="...", width=3, command=self._browse)
+        self.browse_btn.pack(side=tk.LEFT, padx=(5, 0))
+
+    def _browse(self):
+        """Открыть диалог выбора файла"""
+        import os
+        filetypes = [
+            ("Изображения", "*.png *.jpg *.jpeg *.gif *.bmp"),
+            ("PNG", "*.png"),
+            ("Все файлы", "*.*"),
+        ]
+        # Определяем начальную директорию
+        initial = self.initial_dir
+        if not initial:
+            # По умолчанию ищем assets/sprites
+            initial = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+                "assets", "sprites"
+            )
+            if not os.path.exists(initial):
+                initial = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
+        filepath = filedialog.askopenfilename(
+            title="Выберите спрайт",
+            initialdir=initial,
+            filetypes=filetypes
+        )
+        if filepath:
+            # Сохраняем относительный путь от assets
+            assets_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+                "assets"
+            )
+            if filepath.startswith(assets_dir):
+                filepath = os.path.relpath(filepath, assets_dir)
+            self.var.set(filepath)
+
+    def get(self) -> str:
+        return self.var.get()
+
+    def set(self, value: str):
+        self.var.set(value)
+
+    def bind_change(self, callback: Callable):
+        self.var.trace_add("write", lambda *args: callback())
+
+
 class LabeledCheckbox(ttk.Frame):
     """Флажок с меткой"""
 

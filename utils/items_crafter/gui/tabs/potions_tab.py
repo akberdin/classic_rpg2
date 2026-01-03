@@ -7,7 +7,7 @@ from tkinter import ttk
 from typing import Optional, List, Any
 
 from .base_tab import BaseEditorTab
-from ..widgets import LabeledEntry, LabeledSpinbox, LabeledFloatSpinbox, LabeledCombobox, LabeledCheckbox
+from ..widgets import LabeledEntry, LabeledSpinbox, LabeledFloatSpinbox, LabeledCombobox, LabeledCheckbox, SpriteSelector
 from ...models import PotionItemData, PotionEffect, ItemQuality
 
 
@@ -73,7 +73,7 @@ class PotionsTab(BaseEditorTab):
         sprite_frame = ttk.LabelFrame(self.editor_frame, text="Графика")
         sprite_frame.pack(fill=tk.X, pady=5)
 
-        self.sprite_entry = LabeledEntry(sprite_frame, "Спрайт:")
+        self.sprite_entry = SpriteSelector(sprite_frame)
         self.sprite_entry.pack(fill=tk.X, padx=5, pady=2)
 
         # Эффекты

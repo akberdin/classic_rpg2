@@ -9,9 +9,9 @@ from typing import Optional, List, Any
 from .base_tab import BaseEditorTab
 from ..widgets import (
     LabeledEntry, LabeledSpinbox, LabeledFloatSpinbox, LabeledCombobox,
-    LabeledCheckbox, QualityParametersEditor
+    LabeledCheckbox, QualityParametersEditor, SpriteSelector
 )
-from ...models import WeaponItemData, WeaponType, ItemQuality
+from ...models import WeaponItemData, WeaponType
 
 
 class WeaponsTab(BaseEditorTab):
@@ -64,11 +64,7 @@ class WeaponsTab(BaseEditorTab):
 
         weapon_types = list(WeaponType.get_display_names().values())
         self.weapon_type_combo = LabeledCombobox(type_frame, "Тип оружия:", weapon_types)
-        self.weapon_type_combo.pack(side=tk.LEFT, padx=(0, 20))
-
-        qualities = list(ItemQuality.get_display_names().values())
-        self.quality_combo = LabeledCombobox(type_frame, "Качество:", qualities)
-        self.quality_combo.pack(side=tk.LEFT)
+        self.weapon_type_combo.pack(side=tk.LEFT)
 
         # Параметры оружия
         params_frame = ttk.LabelFrame(scroll_frame, text="Параметры оружия")
@@ -96,7 +92,7 @@ class WeaponsTab(BaseEditorTab):
         sprite_frame = ttk.LabelFrame(scroll_frame, text="Графика")
         sprite_frame.pack(fill=tk.X, pady=5, padx=5)
 
-        self.sprite_entry = LabeledEntry(sprite_frame, "Спрайт:")
+        self.sprite_entry = SpriteSelector(sprite_frame)
         self.sprite_entry.pack(fill=tk.X, padx=5, pady=2)
 
         # Параметры по качеству
@@ -114,7 +110,6 @@ class WeaponsTab(BaseEditorTab):
             widget.bind_change(self._mark_modified)
 
         self.weapon_type_combo.bind_change(self._on_weapon_type_change)
-        self.quality_combo.bind_change(self._mark_modified)
         self.two_handed_check.bind_change(self._mark_modified)
 
     def _on_name_change(self):
@@ -169,7 +164,6 @@ class WeaponsTab(BaseEditorTab):
             display_name="Новое оружие",
             description="Описание оружия",
             weapon_type="sword",
-            quality="common",
             tactical_range=1,
             base_price=50,
             weight=2.0,
@@ -194,12 +188,6 @@ class WeaponsTab(BaseEditorTab):
         type_names = list(WeaponType.get_display_names().values())
         if item.weapon_type in type_keys:
             self.weapon_type_combo.set(type_names[type_keys.index(item.weapon_type)])
-
-        # Качество
-        qualities = list(ItemQuality.get_display_names().keys())
-        qual_names = list(ItemQuality.get_display_names().values())
-        if item.quality in qualities:
-            self.quality_combo.set(qual_names[qualities.index(item.quality)])
 
         self.tactical_range_spin.set(item.tactical_range)
         self.price_spin.set(item.base_price)
@@ -232,13 +220,6 @@ class WeaponsTab(BaseEditorTab):
         type_name = self.weapon_type_combo.get()
         if type_name in type_names:
             item.weapon_type = type_keys[type_names.index(type_name)]
-
-        # Качество
-        qual_names = list(ItemQuality.get_display_names().values())
-        qualities = list(ItemQuality.get_display_names().keys())
-        qual_name = self.quality_combo.get()
-        if qual_name in qual_names:
-            item.quality = qualities[qual_names.index(qual_name)]
 
         item.tactical_range = self.tactical_range_spin.get()
         item.base_price = self.price_spin.get()

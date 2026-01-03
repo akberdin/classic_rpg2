@@ -279,21 +279,49 @@ class ItemsImporter:
     """Импортер предметов и рецептов из игровых конфигов"""
 
     @staticmethod
+    def _parse_dict_items(items_dict: Dict[str, Any], item_class, id_field: str = "item_id") -> List:
+        """Парсит словарь предметов в список объектов"""
+        result = []
+        for item_id, item_data in items_dict.items():
+            # Пропускаем служебные поля
+            if item_id.startswith("_"):
+                continue
+            # Если item_data - строка или не словарь, пропускаем
+            if not isinstance(item_data, dict):
+                continue
+            # Добавляем ID в данные
+            item_data_copy = item_data.copy()
+            item_data_copy["id"] = item_id
+            try:
+                result.append(item_class.from_dict(item_data_copy))
+            except Exception as e:
+                print(f"Ошибка парсинга предмета {item_id}: {e}")
+        return result
+
+    @staticmethod
     def import_items_data(filepath: str) -> Optional[Dict[str, List]]:
         """Импорт items_data.json"""
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
+            resources_data = data.get("resources", {})
+            weapons_data = data.get("weapons", {})
+            armor_data = data.get("armor", {})
+            jewelry_data = data.get("jewelry", {})
+            potions_data = data.get("potions", {})
+
             return {
-                "resources": [ResourceItemData.from_dict(r) for r in data.get("resources", [])],
-                "weapons": [WeaponItemData.from_dict(w) for w in data.get("weapons", [])],
-                "armors": [ArmorItemData.from_dict(a) for a in data.get("armor", [])],
-                "jewelry": [JewelryItemData.from_dict(j) for j in data.get("jewelry", [])],
-                "potions": [PotionItemData.from_dict(p) for p in data.get("potions", [])],
+                "resources": ItemsImporter._parse_dict_items(resources_data, ResourceItemData),
+                "weapons": ItemsImporter._parse_dict_items(weapons_data, WeaponItemData),
+                "armors": ItemsImporter._parse_dict_items(armor_data, ArmorItemData),
+                "jewelry": ItemsImporter._parse_dict_items(jewelry_data, JewelryItemData),
+                "potions": ItemsImporter._parse_dict_items(potions_data, PotionItemData),
             }
         except Exception as e:
             print(f"Ошибка импорта items_data.json: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
     @staticmethod
