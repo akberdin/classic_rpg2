@@ -1,8 +1,18 @@
 """
-Система боя с пошаговым управлением
+Система боя с пошаговым управлением.
+
+Отвечает только за боевую логику:
+- Обработка ввода игрока
+- Выполнение атак и умений
+- Управление ходами
+- Обработка статус-эффектов
+
+Рендеринг вынесен в combat_renderer.py (CombatRenderer).
 """
 import pygame
 import random
+
+from game.combat_renderer import CombatRenderer
 
 
 def calculate_combat_exp(player_level, enemy_level, base_exp_per_level=20):
@@ -20,26 +30,23 @@ def calculate_combat_exp(player_level, enemy_level, base_exp_per_level=20):
     base_exp = enemy_level * base_exp_per_level
     level_diff = enemy_level - player_level
 
-    # Бонус/штраф за разницу уровней
     if level_diff > 0:
-        # Враг сильнее - бонус до 100% (10% за каждый уровень разницы)
         bonus = min(1.0, level_diff * 0.1)
         exp = int(base_exp * (1 + bonus))
     elif level_diff < 0:
-        # Враг слабее - штраф до 90% (5% за каждый уровень разницы)
         penalty = min(0.9, abs(level_diff) * 0.05)
         exp = int(base_exp * (1 - penalty))
     else:
         exp = base_exp
 
-    # Минимум 10% от базового опыта
     return max(int(base_exp * 0.1), exp)
 
 
 class CombatSystem:
     """Класс управления боевой системой"""
 
-    def __init__(self, player, enemy, screen, font, scaler=None, game_map=None, respawn_manager=None, sprite_manager=None, game=None):
+    def __init__(self, player, enemy, screen, font, scaler=None, game_map=None,
+                 respawn_manager=None, sprite_manager=None, game=None):
         """
         Инициализация боевой системы
 
@@ -48,11 +55,11 @@ class CombatSystem:
             enemy: Враг
             screen: Pygame экран
             font: Шрифт для отображения текста
-            scaler: UIScaler для адаптивного масштабирования (опционально)
+            scaler: UIScaler для адаптивного масштабирования
             game_map: Карта игры (для размещения лута)
             respawn_manager: Менеджер респавна NPC
-            sprite_manager: Менеджер спрайтов для иконок умений (опционально)
-            game: Объект игры (для удаления мертвых NPC из списков)
+            sprite_manager: Менеджер спрайтов для иконок умений
+            game: Объект игры (для удаления мертвых NPC)
         """
         self.player = player
         self.enemy = enemy
@@ -64,83 +71,55 @@ class CombatSystem:
         self.sprite_manager = sprite_manager
         self.game = game
 
-        info_font_size = scaler.scale_font_size(20) if scaler else 20
-        self.info_font = pygame.font.Font(None, info_font_size)
-
-        # Текстовые метки для элементов интерфейса
-        self.labels = {
-            'health': 'HP:',
-            'mana': 'Мана:',
-            'stamina': 'Выносливость:',
-            'damage': 'Урон:',
-            'defense': 'Защита:',
-            'magic_defense': 'Маг. защ.:',
-            'dodge': 'Уворот:',
-            'crit': 'Крит:',
-        }
+        # Создаём рендерер для UI
+        self.renderer = CombatRenderer(screen, font, scaler, sprite_manager)
 
         # Состояние боя
         self.active = True
-        self.turn = "player"  # player или enemy
-        self.combat_log = []  # Лог боевых событий
-        self.max_log_entries = 15  # Увеличено для отображения детальной информации о бое
+        self.turn = "player"
+        self.combat_log = []
+        self.max_log_entries = 15
 
-        # Варианты действий игрока
+        # Действия игрока
         self.actions = [
             {"name": "Атака", "key": "1", "action": "attack"},
             {"name": "Убежать", "key": "2", "action": "flee"}
         ]
         self.selected_action = None
-        self.hovered_action = None  # Действие под курсором мыши
-        self.action_buttons = []  # Список прямоугольников кнопок для обработки мыши
+        self.hovered_action = None
 
-        # Добавляем начальные сообщения в лог с информацией о бое
+        # Начальные сообщения в лог
+        self._init_combat_log()
+
+    def _init_combat_log(self):
+        """Инициализация лога боя с информацией о противниках"""
         self.add_to_log(f"═══ БОЙ НАЧАЛСЯ! ═══")
-        self.add_to_log(f"Противник: {enemy.name} (Уровень {enemy.level})")
+        self.add_to_log(f"Противник: {self.enemy.name} (Уровень {self.enemy.level})")
 
-        # Информация о статах противника
-        enemy_dodge = enemy.calculate_dodge_chance()
-        enemy_crit = enemy.calculate_crit_chance()
-        enemy_dmg = enemy.get_total_damage()
-        enemy_def = enemy.get_total_defense()
-        enemy_mag_def = enemy.get_magic_defense()
+        enemy_dodge = self.enemy.calculate_dodge_chance()
+        enemy_crit = self.enemy.calculate_crit_chance()
+        enemy_dmg = self.enemy.get_total_damage()
+        enemy_def = self.enemy.get_total_defense()
+        enemy_mag_def = self.enemy.get_magic_defense()
         self.add_to_log(f"  [Урон: {enemy_dmg}, Защита: {enemy_def}, Маг. защита: {enemy_mag_def}]")
         self.add_to_log(f"  [Уворот: {enemy_dodge:.1f}%, Крит: {enemy_crit:.1f}%]")
 
-        # Информация о статах игрока
-        player_dodge = player.calculate_dodge_chance()
-        player_crit = player.calculate_crit_chance()
-        player_dmg = player.get_total_damage()
-        player_def = player.get_total_defense()
+        player_dodge = self.player.calculate_dodge_chance()
+        player_crit = self.player.calculate_crit_chance()
+        player_dmg = self.player.get_total_damage()
+        player_def = self.player.get_total_defense()
         self.add_to_log(f"Ваши статы: Урон {player_dmg}, Защита {player_def}")
         self.add_to_log(f"  [Уворот: {player_dodge:.1f}%, Крит: {player_crit:.1f}%]")
 
-    def get_label(self, label_name):
-        """
-        Получить текстовую метку
-
-        Args:
-            label_name: Название метки из словаря self.labels
-
-        Returns:
-            str: Текстовая метка
-        """
-        return self.labels.get(label_name, label_name)
-
     def add_to_log(self, message):
-        """
-        Добавить сообщение в лог боя
-
-        Args:
-            message: Текст сообщения
-        """
+        """Добавить сообщение в лог боя"""
         self.combat_log.append(message)
         if len(self.combat_log) > self.max_log_entries:
             self.combat_log.pop(0)
 
     def handle_input(self, event):
         """
-        Обработка ввода игрока (клавиатура и мышь)
+        Обработка ввода игрока
 
         Args:
             event: Pygame событие
@@ -153,29 +132,24 @@ class CombatSystem:
 
         # Проверяем оглушение игрока
         if hasattr(self.player, 'stunned') and self.player.stunned:
-            # Игрок оглушен и автоматически пропускает ход при любом нажатии
             if event.type == pygame.KEYDOWN:
                 self.add_to_log(f"Вы оглушены и пропускаете ход!")
-                self.player.stunned = False  # Снимаем оглушение после пропуска хода
-                # Переход хода к врагу
+                self.player.stunned = False
                 self.turn = "enemy"
                 return self.execute_enemy_turn()
             return "continue"
 
         # Обработка клавиатуры
         if event.type == pygame.KEYDOWN:
-            # ESC - попытка сбежать из боя
             if event.key == pygame.K_ESCAPE:
                 return self.execute_player_action("flee")
 
-            # Обработка использования умений (клавиши 1-8)
             if event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4,
                             pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8]:
-                slot_index = event.key - pygame.K_1  # 0-7
+                slot_index = event.key - pygame.K_1
                 skill = self.player.skill_manager.get_slot_skill(slot_index)
 
                 if skill:
-                    # Проверяем, является ли умение боевым (все кроме ремесленных)
                     from game.skills import SkillCategory
                     combat_categories = [SkillCategory.GENERAL]
                     if skill.category in combat_categories:
@@ -187,29 +161,28 @@ class CombatSystem:
 
                 return "continue"
 
-        # Обработка мыши
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            mouse_x, mouse_y = event.pos
+        # Обработка мыши (ПКМ для зелий)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            return self._handle_potion_click(event.pos)
 
-            # ПКМ - использование зелья
-            if event.button == 3:
-                if hasattr(self, 'potion_buttons'):
-                    for slot_rect, slot, potion in self.potion_buttons:
-                        if slot_rect.collidepoint(mouse_x, mouse_y):
-                            if potion:
-                                # Используем зелье
-                                result = potion.use(self.player)
-                                self.add_to_log(result)
-                                # Удаляем зелье из инвентаря
-                                self.player.inventory.remove_item(potion, 1)
-                                # Снимаем зелье из слота если его больше нет
-                                if self.player.inventory.get_item_count(potion) == 0:
-                                    self.player.inventory.unequip_item(slot)
-                                # Зелье использовано - ход продолжается (не заканчиваем ход)
-                                return "continue"
-                            else:
-                                self.add_to_log("Слот зелья пуст")
-                                return "continue"
+        return "continue"
+
+    def _handle_potion_click(self, mouse_pos):
+        """Обработка клика по зелью"""
+        mouse_x, mouse_y = mouse_pos
+
+        for slot_rect, slot, potion in self.renderer.potion_buttons:
+            if slot_rect.collidepoint(mouse_x, mouse_y):
+                if potion:
+                    result = potion.use(self.player)
+                    self.add_to_log(result)
+                    self.player.inventory.remove_item(potion, 1)
+                    if self.player.inventory.get_item_count(potion) == 0:
+                        self.player.inventory.unequip_item(slot)
+                    return "continue"
+                else:
+                    self.add_to_log("Слот зелья пуст")
+                    return "continue"
 
         return "continue"
 
@@ -224,747 +197,191 @@ class CombatSystem:
             str: Результат боя
         """
         if action_type == "attack":
-            # Атака
             attack_result = self.player.attack(self.enemy)
+            self._log_attack_result(attack_result, is_player=True)
 
-            if attack_result['dodged']:
-                # Разнообразные сообщения об увороте
-                dodge_msgs = [
-                    f"{self.enemy.name} ловко увернулся от вашего удара!",
-                    f"Ваш удар прошел мимо - {self.enemy.name} уклонился!",
-                    f"{self.enemy.name} предвидел атаку и ушел в сторону!",
-                    f"Промах! {self.enemy.name} отскочил в последний момент!"
-                ]
-                self.add_to_log(random.choice(dodge_msgs))
-                dodge_chance = self.enemy.calculate_dodge_chance()
-                self.add_to_log(f"  [Шанс уворота противника: {dodge_chance:.1f}%]")
-            elif attack_result['hit']:
-                # Разнообразные сообщения об атаке
-                if attack_result['critical']:
-                    crit_msgs = [
-                        f"КРИТИЧЕСКИЙ УДАР! Вы наносите сокрушительный удар {self.enemy.name}!",
-                        f"Точное попадание в уязвимое место! КРИТ по {self.enemy.name}!",
-                        f"Мощнейший удар! Критическое попадание!"
-                    ]
-                    self.add_to_log(random.choice(crit_msgs))
-                    crit_chance = self.player.calculate_crit_chance()
-                    self.add_to_log(f"  [Урон: {attack_result['damage']}, ваш шанс крита: {crit_chance:.1f}%]")
-                else:
-                    attack_msgs = [
-                        f"Вы наносите удар по {self.enemy.name}!",
-                        f"Ваша атака достигает цели!",
-                        f"Удар попадает в {self.enemy.name}!"
-                    ]
-                    self.add_to_log(random.choice(attack_msgs))
-                    self.add_to_log(f"  [Урон: {attack_result['damage']}]")
+            if not self.enemy.is_alive:
+                return self._handle_enemy_death()
 
-                # Информация о броне
-                if attack_result.get('blocked_by_armor', 0) > 0:
-                    armor_blocked = attack_result['blocked_by_armor']
-                    enemy_def = self.enemy.get_total_defense()
-                    self.add_to_log(f"  [Броня противника ({enemy_def}) заблокировала {armor_blocked} урона]")
-
-                if not self.enemy.is_alive:
-                    self.add_to_log(f"Вы победили {self.enemy.name}!")
-
-                    # Увеличиваем счетчик убитых врагов
-                    if hasattr(self.player, 'enemies_killed'):
-                        self.player.enemies_killed += 1
-
-                    # Регистрируем смерть NPC для респавна
-                    if self.respawn_manager:
-                        self.respawn_manager.register_death(self.enemy, self.game)
-
-                    # Оставляем лут на тайле (если есть карта и у врага есть предметы)
-                    if self.game_map and hasattr(self.enemy, 'inventory'):
-                        if len(self.enemy.inventory.items) > 0 or self.enemy.inventory.gold > 0:
-                            tile = self.game_map.get_tile(self.enemy.x, self.enemy.y)
-                            if tile:
-                                tile.set_loot(self.enemy.inventory)
-                                self.add_to_log(f"На земле остался лут!")
-
-                    # Даем опыт за победу (с учётом разницы уровней)
-                    exp_gained = calculate_combat_exp(self.player.level, self.enemy.level)
-                    self.player.add_experience(exp_gained)
-                    self.add_to_log(f"Получено {exp_gained} опыта!")
-                    return "victory"
-
-            # Переход хода к врагу
             self.turn = "enemy"
             return self.execute_enemy_turn()
 
         elif action_type == "flee":
-            # Попытка побега (50% шанс)
             if random.random() < 0.5:
                 self.add_to_log("Вы успешно сбежали из боя!")
                 return "fled"
             else:
                 self.add_to_log("Не удалось сбежать!")
-                # Переход хода к врагу
                 self.turn = "enemy"
                 return self.execute_enemy_turn()
 
         return "continue"
 
+    def _log_attack_result(self, attack_result, is_player=True):
+        """Логирование результата атаки"""
+        attacker = self.player if is_player else self.enemy
+        defender = self.enemy if is_player else self.player
+        attacker_name = "Вы" if is_player else self.enemy.name
+
+        if attack_result['dodged']:
+            if is_player:
+                dodge_msgs = [
+                    f"{defender.name} ловко увернулся от вашего удара!",
+                    f"Ваш удар прошел мимо - {defender.name} уклонился!",
+                ]
+            else:
+                dodge_msgs = [
+                    f"Вы ловко уворачиваетесь от атаки {attacker.name}!",
+                    f"Атака {attacker.name} проходит мимо - вы уклонились!",
+                ]
+            self.add_to_log(random.choice(dodge_msgs))
+            dodge_chance = defender.calculate_dodge_chance()
+            self.add_to_log(f"  [Шанс уворота: {dodge_chance:.1f}%]")
+
+        elif attack_result['hit']:
+            if attack_result.get('godmode', False):
+                self.add_to_log(f"{attacker.name} атакует вас, но ЧИТ-МОД блокирует весь урон!")
+                return
+
+            if attack_result['critical']:
+                if is_player:
+                    self.add_to_log(f"КРИТИЧЕСКИЙ УДАР! Вы наносите сокрушительный удар!")
+                else:
+                    self.add_to_log(f"КРИТИЧЕСКИЙ УДАР! {attacker.name} наносит мощнейший удар!")
+                crit_chance = attacker.calculate_crit_chance()
+                self.add_to_log(f"  [Урон: {attack_result['damage']}, шанс крита: {crit_chance:.1f}%]")
+            else:
+                if is_player:
+                    self.add_to_log(f"Вы наносите удар по {defender.name}!")
+                else:
+                    self.add_to_log(f"{attacker.name} атакует вас!")
+                self.add_to_log(f"  [Урон: {attack_result['damage']}]")
+
+            if attack_result.get('armor_penetration_percent', 0) > 0:
+                armor_pen = attack_result['armor_penetration_percent']
+                self.add_to_log(f"  [Магическая атака игнорирует {armor_pen}% брони!]")
+
+            if attack_result.get('blocked_by_armor', 0) > 0:
+                armor_blocked = attack_result['blocked_by_armor']
+                defender_def = defender.get_total_defense()
+                self.add_to_log(f"  [Броня ({defender_def}) заблокировала {armor_blocked} урона]")
+
+            if attack_result.get('stunned', False):
+                if is_player:
+                    self.add_to_log(f"  [{defender.name} ОГЛУШЁН!]")
+                else:
+                    self.add_to_log(f"  [ВЫ ОГЛУШЕНЫ! Пропускаете следующий ход!]")
+
+    def _handle_enemy_death(self):
+        """Обработка смерти противника"""
+        self.add_to_log(f"Вы победили {self.enemy.name}!")
+
+        if hasattr(self.player, 'enemies_killed'):
+            self.player.enemies_killed += 1
+
+        if self.respawn_manager:
+            self.respawn_manager.register_death(self.enemy, self.game)
+
+        if self.game_map and hasattr(self.enemy, 'inventory'):
+            if len(self.enemy.inventory.items) > 0 or self.enemy.inventory.gold > 0:
+                tile = self.game_map.get_tile(self.enemy.x, self.enemy.y)
+                if tile:
+                    tile.set_loot(self.enemy.inventory)
+                    self.add_to_log(f"На земле остался лут!")
+
+        exp_gained = calculate_combat_exp(self.player.level, self.enemy.level)
+        self.player.add_experience(exp_gained)
+        self.add_to_log(f"Получено {exp_gained} опыта!")
+
+        return "victory"
+
     def execute_skill_action(self, skill):
-        """
-        Выполнить использование умения
-
-        Args:
-            skill: Объект умения для использования
-
-        Returns:
-            str: Результат боя
-        """
-        # Используем умение
+        """Выполнить использование умения"""
         result = self.player.skill_manager.use_skill(skill, self.enemy)
 
         if result['success']:
             self.add_to_log(result['message'])
 
-            # Обрабатываем результаты в зависимости от типа умения
-            if 'damage' in result:
-                # Боевое умение с уроном
-                if result.get('killed'):
-                    self.add_to_log(f"Вы победили {self.enemy.name}!")
+            if 'damage' in result and result.get('killed'):
+                return self._handle_enemy_death()
 
-                    # Увеличиваем счетчик убитых врагов
-                    if hasattr(self.player, 'enemies_killed'):
-                        self.player.enemies_killed += 1
-
-                    # Регистрируем смерть NPC для респавна
-                    if self.respawn_manager:
-                        self.respawn_manager.register_death(self.enemy, self.game)
-
-                    # Даем опыт за победу (с учётом разницы уровней)
-                    exp_gained = calculate_combat_exp(self.player.level, self.enemy.level)
-                    self.player.add_experience(exp_gained)
-                    self.add_to_log(f"Получено {exp_gained} опыта!")
-                    return "victory"
-
-            if 'heal' in result:
-                # Лечение
-                pass  # Сообщение уже добавлено
-
-            if 'poison_applied' in result:
-                # Яд наложен
-                pass  # Сообщение уже добавлено
-
-            if 'stunned' in result and result['stunned']:
-                # Оглушение
-                pass  # Сообщение уже добавлено
-
-            # Переход хода к врагу
             self.turn = "enemy"
             return self.execute_enemy_turn()
         else:
-            # Умение не удалось использовать
             self.add_to_log(result['message'])
             return "continue"
 
     def execute_enemy_turn(self):
-        """
-        Выполнить ход врага
-
-        Returns:
-            str: Результат боя
-        """
-        # Проверяем оглушение врага ПЕРЕД обработкой эффектов
+        """Выполнить ход врага"""
+        # Проверяем оглушение врага
         if hasattr(self.enemy, 'stunned') and self.enemy.stunned:
             self.add_to_log(f"{self.enemy.name} оглушен/заморожен и пропускает ход!")
-
-            # Обрабатываем tick() эффектов (для уменьшения duration)
-            # Эффект StunEffect сам снимет флаг stunned через remove() когда истечет
-            if hasattr(self.enemy, 'status_effects'):
-                for effect in self.enemy.status_effects[:]:
-                    message = effect.tick(self.enemy)
-                    if message:
-                        self.add_to_log(message)
-                    if effect.is_expired():
-                        remove_msg = effect.remove(self.enemy)
-                        if remove_msg:
-                            self.add_to_log(remove_msg)
-                        self.enemy.status_effects.remove(effect)
-
-            # Уменьшаем перезарядку умений игрока
-            self.player.skill_manager.tick_cooldowns()
-
-            # Обрабатываем статус-эффекты игрока
-            if hasattr(self.player, 'skill_manager'):
-                effect_messages = self.player.skill_manager.tick_status_effects()
-                for msg in effect_messages:
-                    self.add_to_log(msg)
-
-            self.turn = "player"
+            self._process_status_effects(self.enemy)
+            self._end_enemy_turn()
             return "continue"
 
-        # Обрабатываем статус-эффекты врага (яд и т.д.)
-        if hasattr(self.enemy, 'status_effects'):
-            for effect in self.enemy.status_effects[:]:
-                message = effect.tick(self.enemy)
+        # Обрабатываем статус-эффекты врага
+        self._process_status_effects(self.enemy)
+
+        if not self.enemy.is_alive:
+            self.add_to_log(f"{self.enemy.name} погиб от эффектов!")
+            return self._handle_enemy_death_from_effects()
+
+        # Враг атакует
+        attack_result = self.enemy.attack(self.player)
+        self._log_attack_result(attack_result, is_player=False)
+
+        if not self.player.is_alive:
+            self.add_to_log("Вы погибли в бою...")
+            return "defeat"
+
+        self._end_enemy_turn()
+        return "continue"
+
+    def _process_status_effects(self, character):
+        """Обработка статус-эффектов персонажа"""
+        if hasattr(character, 'status_effects'):
+            for effect in character.status_effects[:]:
+                message = effect.tick(character)
                 if message:
                     self.add_to_log(message)
                 if effect.is_expired():
-                    remove_msg = effect.remove(self.enemy)
+                    remove_msg = effect.remove(character)
                     if remove_msg:
                         self.add_to_log(remove_msg)
-                    self.enemy.status_effects.remove(effect)
+                    character.status_effects.remove(effect)
 
-            # Проверяем, не умер ли враг от яда
-            if not self.enemy.is_alive:
-                self.add_to_log(f"{self.enemy.name} погиб от эффектов!")
+    def _handle_enemy_death_from_effects(self):
+        """Обработка смерти врага от статус-эффектов"""
+        if hasattr(self.player, 'enemies_killed'):
+            self.player.enemies_killed += 1
 
-                # Увеличиваем счетчик убитых врагов
-                if hasattr(self.player, 'enemies_killed'):
-                    self.player.enemies_killed += 1
+        if self.respawn_manager:
+            self.respawn_manager.register_death(self.enemy, self.game)
 
-                # Регистрируем смерть NPC для респавна
-                if self.respawn_manager:
-                    self.respawn_manager.register_death(self.enemy, self.game)
+        exp_gained = calculate_combat_exp(self.player.level, self.enemy.level)
+        self.player.add_experience(exp_gained)
+        self.add_to_log(f"Получено {exp_gained} опыта!")
 
-                # Даем опыт за победу (с учётом разницы уровней)
-                exp_gained = calculate_combat_exp(self.player.level, self.enemy.level)
-                self.player.add_experience(exp_gained)
-                self.add_to_log(f"Получено {exp_gained} опыта!")
-                return "victory"
+        return "victory"
 
-        # Враг всегда атакует
-        attack_result = self.enemy.attack(self.player)
-
-        if attack_result['dodged']:
-            # Разнообразные сообщения об увороте игрока
-            dodge_msgs = [
-                f"Вы ловко уворачиваетесь от атаки {self.enemy.name}!",
-                f"Атака {self.enemy.name} проходит мимо - вы уклонились!",
-                f"Вы предвидели удар и ушли в сторону!",
-                f"Отличный уворот! {self.enemy.name} промахнулся!"
-            ]
-            self.add_to_log(random.choice(dodge_msgs))
-            player_dodge = self.player.calculate_dodge_chance()
-            self.add_to_log(f"  [Ваш шанс уворота: {player_dodge:.1f}%]")
-        elif attack_result['hit']:
-            # Проверяем режим бессмертия
-            if attack_result.get('godmode', False):
-                self.add_to_log(f"{self.enemy.name} атакует вас, но ЧИТ-МОД блокирует весь урон!")
-            else:
-                # Разнообразные сообщения об атаке врага
-                if attack_result['critical']:
-                    crit_msgs = [
-                        f"КРИТИЧЕСКИЙ УДАР! {self.enemy.name} наносит вам мощнейший удар!",
-                        f"{self.enemy.name} находит брешь в защите! КРИТ!",
-                        f"Сокрушительный удар от {self.enemy.name}! Критическое попадание!"
-                    ]
-                    self.add_to_log(random.choice(crit_msgs))
-                    enemy_crit = self.enemy.calculate_crit_chance()
-                    self.add_to_log(f"  [Получено урона: {attack_result['damage']}, шанс крита противника: {enemy_crit:.1f}%]")
-                else:
-                    attack_msgs = [
-                        f"{self.enemy.name} атакует вас!",
-                        f"Удар {self.enemy.name} достигает цели!",
-                        f"{self.enemy.name} наносит вам урон!"
-                    ]
-                    self.add_to_log(random.choice(attack_msgs))
-                    self.add_to_log(f"  [Получено урона: {attack_result['damage']}]")
-
-                # Информация об игнорировании брони
-                if attack_result.get('armor_penetration_percent', 0) > 0:
-                    armor_pen = attack_result['armor_penetration_percent']
-                    self.add_to_log(f"  [Магическая атака игнорирует {armor_pen}% вашей брони!]")
-
-                # Информация о броне игрока
-                if attack_result.get('blocked_by_armor', 0) > 0:
-                    armor_blocked = attack_result['blocked_by_armor']
-                    player_def = self.player.get_total_defense()
-                    self.add_to_log(f"  [Ваша броня ({player_def}) заблокировала {armor_blocked} урона]")
-
-                # Проверка оглушения
-                if attack_result.get('stunned', False):
-                    self.add_to_log(f"  [ВЫ ОГЛУШЕНЫ! Пропускаете следующий ход!]")
-
-                if not self.player.is_alive:
-                    self.add_to_log("Вы погибли в бою...")
-                    return "defeat"
-
-        # Уменьшаем перезарядку умений игрока после полного хода
+    def _end_enemy_turn(self):
+        """Завершение хода врага"""
         self.player.skill_manager.tick_cooldowns()
 
-        # Обрабатываем статус-эффекты игрока (регенерация и т.д.)
         if hasattr(self.player, 'skill_manager'):
             effect_messages = self.player.skill_manager.tick_status_effects()
             for msg in effect_messages:
                 self.add_to_log(msg)
 
-        # Возвращаем ход игроку
         self.turn = "player"
-        return "continue"
 
     def render(self):
-        """Отрисовка улучшенного окна боя с отдельным блоком лога"""
-        # Получаем размеры экрана
-        screen_width = self.screen.get_width()
-        screen_height = self.screen.get_height()
-
-        # Затемняем фон
-        overlay = pygame.Surface((screen_width, screen_height))
-        overlay.set_alpha(200)
-        overlay.fill((0, 0, 0))
-        self.screen.blit(overlay, (0, 0))
-
-        # Размеры окна боя (увеличены для лога и прогресс-баров маны/выносливости)
-        if self.scaler:
-            combat_width = self.scaler.scale_width(1100)
-            combat_height = self.scaler.scale_height(850)
-        else:
-            combat_width = min(1100, int(screen_width * 0.85))
-            combat_height = min(850, int(screen_height * 0.9))
-
-        combat_x = (screen_width - combat_width) // 2
-        combat_y = (screen_height - combat_height) // 2
-
-        # Фон окна боя с градиентом
-        from game.ui import UIHelper
-        UIHelper.draw_gradient_rect(
-            self.screen, combat_x, combat_y, combat_width, combat_height,
-            (35, 35, 45), (55, 55, 70)
-        )
-
-        # Рамка окна боя
-        pygame.draw.rect(
-            self.screen,
-            (150, 150, 200),
-            (combat_x, combat_y, combat_width, combat_height),
-            4
-        )
-
-        # Заголовок
-        title_text = self.font.render("БОЙ", True, (255, 215, 0))
-        title_rect = title_text.get_rect()
-        title_rect.centerx = combat_x + combat_width // 2
-        title_rect.y = combat_y + 15
-        self.screen.blit(title_text, title_rect)
-
-        # Разделительная линия после заголовка
-        pygame.draw.line(
-            self.screen,
-            (100, 100, 150),
-            (combat_x + 10, combat_y + 50),
-            (combat_x + combat_width - 10, combat_y + 50),
-            2
-        )
-
-        # Отрисовка статистики игрока (слева, компактнее)
-        self._render_character_stats(
+        """Отрисовка окна боя через рендерер"""
+        self.renderer.render(
             self.player,
-            combat_x + 30,
-            combat_y + 65,
-            "Игрок",
-            True
-        )
-
-        # Отрисовка статистики врага (справа, компактнее)
-        self._render_character_stats(
             self.enemy,
-            combat_x + combat_width - 350,
-            combat_y + 65,
-            "Противник",
-            False
+            self.combat_log,
+            self.turn,
+            self.player.skill_manager
         )
-
-        # ОТДЕЛЬНЫЙ БЛОК ЛОГА БОЯ (ниже статистики персонажей)
-        log_block_x = combat_x + 30
-        log_block_y = combat_y + 360  # Опустили еще ниже (65 + 280 + отступ)
-        log_block_width = combat_width - 60
-        log_block_height = 240  # Уменьшена высота под новую позицию
-
-        # Фон блока лога
-        pygame.draw.rect(
-            self.screen,
-            (25, 25, 35),
-            (log_block_x, log_block_y, log_block_width, log_block_height)
-        )
-
-        # Рамка блока лога
-        pygame.draw.rect(
-            self.screen,
-            (100, 150, 200),
-            (log_block_x, log_block_y, log_block_width, log_block_height),
-            2
-        )
-
-        # Заголовок лога
-        log_title = self.info_font.render("Журнал боевых действий", True, (150, 200, 255))
-        self.screen.blit(log_title, (log_block_x + 15, log_block_y + 10))
-
-        # Линия под заголовком лога
-        pygame.draw.line(
-            self.screen,
-            (80, 80, 120),
-            (log_block_x + 10, log_block_y + 38),
-            (log_block_x + log_block_width - 10, log_block_y + 38),
-            1
-        )
-
-        # Отрисовка логов с прокруткой
-        log_line_height = 24
-        max_visible_logs = 7  # Подстроено под новую высоту блока
-        log_start_y = log_block_y + 48
-
-        # Показываем последние записи
-        visible_logs = self.combat_log[-max_visible_logs:] if len(self.combat_log) > max_visible_logs else self.combat_log
-
-        for i, log_entry in enumerate(visible_logs):
-            # Цвет в зависимости от содержания
-            if "Вы атакуете" in log_entry or "Вы победили" in log_entry:
-                log_color = (150, 255, 150)  # Зеленый для успешных действий
-            elif "атакует вас" in log_entry or "Вы погибли" in log_entry:
-                log_color = (255, 150, 150)  # Красный для урона
-            elif "КРИТИЧЕСКИЙ УДАР" in log_entry:
-                log_color = (255, 215, 0)  # Золотой для критов
-            elif "увернулся" in log_entry or "сбежали" in log_entry:
-                log_color = (150, 200, 255)  # Синий для уворотов
-            else:
-                log_color = (200, 200, 200)  # Серый для остального
-
-            log_text = self.info_font.render(log_entry, True, log_color)
-            self.screen.blit(log_text, (log_block_x + 15, log_start_y + i * log_line_height))
-
-        # Действия игрока - отображение слотов умений
-        actions_y = combat_y + combat_height - 110
-        if self.turn == "player":
-            actions_title = self.font.render("Ваш ход! Используйте умения (клавиши 1-8):", True, (100, 255, 100))
-        else:
-            actions_title = self.font.render("Ход противника...", True, (255, 150, 150))
-
-        self.screen.blit(actions_title, (combat_x + 30, actions_y))
-
-        # Отрисовка слотов умений с подсветкой
-        slot_size = 48
-        slot_spacing = 8
-        slots_start_x = combat_x + (combat_width - (slot_size + slot_spacing) * 8) // 2
-        slots_y = actions_y + 35
-
-        for i in range(8):
-            slot_x = slots_start_x + i * (slot_size + slot_spacing)
-            skill = self.player.skill_manager.get_slot_skill(i)
-
-            # Проверяем, доступно ли умение для использования в бою
-            is_usable = False
-            if skill:
-                from game.skills import SkillCategory
-                can_use, reason = skill.can_use(self.player)
-                combat_categories = [SkillCategory.GENERAL]
-                is_usable = can_use and skill.category in combat_categories
-
-            # Фон слота
-            if skill:
-                if is_usable:
-                    bg_color = (40, 40, 40)
-                else:
-                    # Темные цвета для недоступных умений
-                    bg_color = (30, 30, 30)
-            else:
-                bg_color = (30, 30, 30)
-
-            pygame.draw.rect(self.screen, bg_color, (slot_x, slots_y, slot_size, slot_size))
-
-            # Рамка слота
-            if skill and is_usable:
-                border_color = (200, 200, 100)  # Яркая желтая рамка для доступных
-            elif skill:
-                border_color = (80, 80, 80)  # Темная рамка для недоступных
-            else:
-                border_color = (100, 100, 100)
-
-            pygame.draw.rect(self.screen, border_color, (slot_x, slots_y, slot_size, slot_size), 2)
-
-            # Номер слота
-            key_text = self.info_font.render(str(i + 1), True, (200, 200, 200))
-            self.screen.blit(key_text, (slot_x + 4, slots_y + 4))
-
-            # Если есть умение, показываем его
-            if skill:
-                # Иконка умения (спрайт или первая буква названия как fallback)
-                skill_id = self.player.skill_manager.get_slot_skill_id(i)
-                icon_size = slot_size - 8  # Немного меньше слота для отступов
-                icon_x = slot_x + 4
-                icon_y = slots_y + 4
-
-                # Пробуем отрисовать спрайт умения
-                if skill_id and self.sprite_manager:
-                    self.sprite_manager.render_skill_icon(
-                        self.screen,
-                        skill_id,
-                        icon_x,
-                        icon_y,
-                        icon_size,
-                        fallback_text=skill.name[0]
-                    )
-                else:
-                    # Fallback: первая буква названия
-                    icon_font = pygame.font.Font(None, 32)
-                    icon_text = icon_font.render(skill.name[0], True, (255, 255, 255))
-                    icon_rect = icon_text.get_rect()
-                    icon_rect.center = (slot_x + slot_size // 2, slots_y + slot_size // 2 + 4)
-                    self.screen.blit(icon_text, icon_rect)
-
-                # Перезарядка (если есть)
-                if skill.current_cooldown > 0:
-                    cooldown_text = self.info_font.render(str(skill.current_cooldown), True, (255, 100, 100))
-                    cooldown_rect = cooldown_text.get_rect()
-                    cooldown_rect.center = (slot_x + slot_size // 2, slots_y + slot_size // 2)
-                    self.screen.blit(cooldown_text, cooldown_rect)
-
-        # Отрисовка панели зелий (справа от умений)
-        self._render_potion_panel(slots_start_x + (slot_size + slot_spacing) * 8 + 20, slots_y, slot_size, slot_spacing)
-
-        # Подсказка внизу
-        hint_y = combat_y + combat_height - 35
-        hint_text = self.info_font.render(
-            "Клавиши 1-8 - использовать умение | ПКМ на зелье - использовать | ESC - сбежать",
-            True,
-            (180, 180, 200)
-        )
-        hint_rect = hint_text.get_rect()
-        hint_rect.centerx = combat_x + combat_width // 2
-        hint_rect.y = hint_y
-        self.screen.blit(hint_text, hint_rect)
-
-    def _render_potion_panel(self, x, y, slot_size, slot_spacing):
-        """Отрисовка панели быстрых зелий в бою"""
-        from game.inventory import EquipmentSlot
-
-        # Получаем пояс игрока
-        belt = self.player.inventory.get_equipped_item(EquipmentSlot.BELT)
-        if not belt or not hasattr(belt, 'potion_slots') or belt.potion_slots == 0:
-            return  # Нет пояса или нет слотов для зелий
-
-        # Очищаем список кнопок перед отрисовкой
-        if not hasattr(self, 'potion_buttons'):
-            self.potion_buttons = []
-        else:
-            self.potion_buttons.clear()
-
-        # Слоты зелий
-        potion_slots = [
-            EquipmentSlot.BELT_POTION_1,
-            EquipmentSlot.BELT_POTION_2,
-            EquipmentSlot.BELT_POTION_3,
-            EquipmentSlot.BELT_POTION_4
-        ][:belt.potion_slots]
-
-        for i, slot in enumerate(potion_slots):
-            slot_x = x + i * (slot_size + slot_spacing)
-            slot_y = y
-
-            potion = self.player.inventory.get_equipped_item(slot)
-
-            # Фон слота
-            bg_color = (60, 40, 60) if potion else (30, 30, 30)
-            border_color = (150, 100, 150) if potion else (100, 100, 100)
-
-            # Создаем rect для кнопки
-            slot_rect = pygame.Rect(slot_x, slot_y, slot_size, slot_size)
-            self.potion_buttons.append((slot_rect, slot, potion))
-
-            pygame.draw.rect(self.screen, bg_color, slot_rect)
-            pygame.draw.rect(self.screen, border_color, slot_rect, 2)
-
-            # Метка "ПКМ"
-            label_text = self.info_font.render("ПКМ", True, (180, 180, 180))
-            self.screen.blit(label_text, (slot_x + 4, slot_y + 4))
-
-            # Если есть зелье, отображаем информацию
-            if potion:
-                # Иконка зелья (спрайт или первая буква названия как fallback)
-                icon_size = slot_size - 8  # Немного меньше слота для отступов
-                icon_x = slot_x + 4
-                icon_y = slot_y + 4
-
-                potion_name = potion.get_full_name() if hasattr(potion, 'get_full_name') else potion.name
-                potion_id = potion.item_id if hasattr(potion, 'item_id') else None
-
-                # Пробуем отрисовать спрайт зелья
-                if potion_id and self.sprite_manager:
-                    self.sprite_manager.render_potion_icon(
-                        self.screen,
-                        potion_id,
-                        icon_x,
-                        icon_y,
-                        icon_size,
-                        fallback_text=potion_name[0]
-                    )
-                else:
-                    # Fallback: первая буква названия
-                    icon_font = pygame.font.Font(None, 32)
-                    icon_text = icon_font.render(potion_name[0], True, (200, 100, 200))
-                    icon_rect = icon_text.get_rect()
-                    icon_rect.center = (slot_x + slot_size // 2, slot_y + slot_size // 2 + 4)
-                    self.screen.blit(icon_text, icon_rect)
-
-                # Количество зелий в инвентаре
-                potion_count = self.player.inventory.get_item_count(potion)
-                if potion_count > 1:
-                    count_text = self.info_font.render(f"x{potion_count}", True, (255, 215, 0))
-                    self.screen.blit(count_text, (slot_x + slot_size - 24, slot_y + slot_size - 18))
-
-    def _render_character_stats(self, character, x, y, label, is_player):
-        """
-        Отрисовка компактной статистики персонажа
-
-        Args:
-            character: Персонаж
-            x: Позиция X
-            y: Позиция Y
-            label: Название (Игрок/Противник)
-            is_player: True если это игрок
-        """
-        # Фон панели статистики (увеличен для всех элементов)
-        panel_width = 320
-        panel_height = 280  # Увеличено чтобы все параметры помещались
-        pygame.draw.rect(
-            self.screen,
-            (45, 45, 60),
-            (x - 10, y - 10, panel_width, panel_height)
-        )
-
-        # Рамка панели
-        border_color = (100, 200, 100) if is_player else (200, 100, 100)
-        pygame.draw.rect(
-            self.screen,
-            border_color,
-            (x - 10, y - 10, panel_width, panel_height),
-            3
-        )
-
-        # Имя персонажа
-        name_text = self.info_font.render(f"{label}: {character.name}", True, (255, 255, 255))
-        self.screen.blit(name_text, (x, y))
-
-        # Уровень и ранг
-        rank = character.get_rank() if hasattr(character, 'get_rank') else ""
-        level_text = self.info_font.render(
-            f"Ур. {character.level} ({rank})",
-            True,
-            (255, 215, 0)
-        )
-        self.screen.blit(level_text, (x, y + 24))
-
-        # Здоровье с процентами (используем эффективное максимальное здоровье с учетом экипировки)
-        effective_max_health = character.get_effective_max_health() if hasattr(character, 'get_effective_max_health') else character.max_health
-        health_percent = (character.health / effective_max_health) * 100 if effective_max_health > 0 else 0
-        health_color = (255, 100, 100) if health_percent < 30 else (255, 165, 0) if health_percent < 60 else (100, 255, 100)
-
-        # Здоровье
-        health_label = self.get_label('health')
-        health_text = self.info_font.render(
-            f"{health_label} {character.health}/{effective_max_health} ({health_percent:.0f}%)",
-            True,
-            health_color
-        )
-        self.screen.blit(health_text, (x, y + 48))
-
-        # Улучшенная полоса здоровья с градиентом (компактнее)
-        bar_width = 280
-        bar_height = 18  # Уменьшено с 20 до 18
-        bar_x = x
-        bar_y = y + 72
-
-        # Фон полосы
-        pygame.draw.rect(
-            self.screen,
-            (60, 60, 60),
-            (bar_x, bar_y, bar_width, bar_height)
-        )
-
-        # Заполнение полосы здоровья (с ограничением чтобы не выходило за пределы)
-        health_ratio = min(1.0, character.health / effective_max_health) if effective_max_health > 0 else 0
-        fill_width = int(bar_width * health_ratio)
-        if fill_width > 0:
-            pygame.draw.rect(
-                self.screen,
-                health_color,
-                (bar_x, bar_y, fill_width, bar_height)
-            )
-
-        # Рамка полосы
-        pygame.draw.rect(
-            self.screen,
-            (200, 200, 200),
-            (bar_x, bar_y, bar_width, bar_height),
-            2
-        )
-
-        # Прогресс-бар маны (только для персонажей с маной, но не для животных)
-        # Животные не используют магию, поэтому не показываем полосу маны
-        from game.constants import NPC_TYPE_WOLF, NPC_TYPE_BEAR, NPC_TYPE_DEER
-        is_animal = hasattr(character, 'npc_type') and character.npc_type in [NPC_TYPE_WOLF, NPC_TYPE_BEAR, NPC_TYPE_DEER]
-
-        if hasattr(character, 'mana') and hasattr(character, 'max_mana') and not is_animal:
-            # Получаем эффективную макс. ману с учетом экипировки
-            effective_max_mana = character.get_effective_max_mana() if hasattr(character, 'get_effective_max_mana') else character.max_mana
-            mana_percent = (character.mana / effective_max_mana) * 100 if effective_max_mana > 0 else 0
-
-            # Текст маны
-            mana_label = self.get_label('mana')
-            mana_text = self.info_font.render(
-                f"{mana_label} {character.mana}/{effective_max_mana}",
-                True,
-                (100, 150, 255)
-            )
-            self.screen.blit(mana_text, (x, y + 95))
-
-            # Полоса маны
-            mana_bar_y = y + 115
-            pygame.draw.rect(self.screen, (30, 30, 50), (bar_x, mana_bar_y, bar_width, bar_height))
-
-            mana_fill_width = int(bar_width * min(1.0, character.mana / effective_max_mana)) if effective_max_mana > 0 else 0
-            if mana_fill_width > 0:
-                pygame.draw.rect(self.screen, (100, 150, 255), (bar_x, mana_bar_y, mana_fill_width, bar_height))
-
-            pygame.draw.rect(self.screen, (150, 150, 200), (bar_x, mana_bar_y, bar_width, bar_height), 2)
-
-        # Прогресс-бар выносливости
-        if hasattr(character, 'stamina') and hasattr(character, 'max_stamina'):
-            # Получаем эффективную макс. выносливость с учетом экипировки
-            effective_max_stamina = character.get_effective_max_stamina() if hasattr(character, 'get_effective_max_stamina') else character.max_stamina
-            stamina_percent = (character.stamina / effective_max_stamina) * 100 if effective_max_stamina > 0 else 0
-
-            # Текст выносливости
-            stamina_label = self.get_label('stamina')
-            stamina_text = self.info_font.render(
-                f"{stamina_label} {character.stamina}/{effective_max_stamina}",
-                True,
-                (255, 220, 100)
-            )
-            self.screen.blit(stamina_text, (x, y + 138))
-
-            # Полоса выносливости
-            stamina_bar_y = y + 158
-            pygame.draw.rect(self.screen, (50, 40, 20), (bar_x, stamina_bar_y, bar_width, bar_height))
-
-            stamina_fill_width = int(bar_width * min(1.0, character.stamina / effective_max_stamina)) if effective_max_stamina > 0 else 0
-            if stamina_fill_width > 0:
-                pygame.draw.rect(self.screen, (255, 220, 100), (bar_x, stamina_bar_y, stamina_fill_width, bar_height))
-
-            pygame.draw.rect(self.screen, (200, 180, 100), (bar_x, stamina_bar_y, bar_width, bar_height), 2)
-
-        # Компактные характеристики
-        stats_y = y + 185
-        stats = [
-            f"{self.get_label('damage')} {character.get_total_damage()}",
-            f"{self.get_label('defense')} {character.get_total_defense()}",
-            f"{self.get_label('magic_defense')} {character.get_magic_defense()}",
-            f"{self.get_label('dodge')} {character.calculate_dodge_chance():.1f}%",
-            f"{self.get_label('crit')} {character.calculate_crit_chance():.1f}%"
-        ]
-
-        for i, stat in enumerate(stats):
-            stat_text = self.info_font.render(stat, True, (200, 200, 220))
-            # Размещаем в два столбца (урон, защита, маг.защ) и (уворот, крит)
-            if i < 3:
-                stat_x = x
-                stat_y_offset = stats_y + i * 22
-            else:
-                stat_x = x + 140
-                stat_y_offset = stats_y + (i - 3) * 22
-            self.screen.blit(stat_text, (stat_x, stat_y_offset))

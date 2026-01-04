@@ -1,29 +1,15 @@
 {
-  "_description": "Конфигурация экономики - золото, торговля, работа",
-  "_version": "1.0.0",
+  "_description": "Конфигурация экономики - золото и торговля",
+  "_version": "2.0.0",
+  "_note": "Секции work и services удалены как неиспользуемые. Параметры лута определяются в loot_config.json",
 
   "loot": {
-    "_comment": "Золото с врагов: random(min, max) * enemy_level",
     "gold_per_enemy_level_min": 5,
     "gold_per_enemy_level_max": 10
   },
 
-  "work": {
-    "_comment": "Заработок от работы: base + (gold_per_level * player_level)",
-    "base_gold": 5,
-    "gold_per_level": 1
-  },
-
   "trade": {
-    "_comment": "Множители цен в магазинах",
     "buy_multiplier": 4.5,
     "sell_multiplier": 0.5
-  },
-
-  "services": {
-    "_comment": "Стоимость услуг (лечение, обучение и т.д.)",
-    "healing_cost_per_hp": 1,
-    "training_cost_base": 100,
-    "training_cost_per_level": 50
   }
 }
