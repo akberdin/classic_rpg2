@@ -1,133 +1,86 @@
 {
-  "_description": "Конфигурация NPC - типы, AI поведение, отношения, спавн",
-  "_version": "1.0.0",
-
-  "types": {
-    "_comment": "Идентификаторы типов NPC",
-    "guard": "guard",
-    "merchant": "merchant",
-    "bandit": "bandit",
-    "neutral": "neutral",
-    "miner": "miner",
-    "undead": "undead",
-    "mage": "mage",
-    "alchemist": "alchemist",
-    "hunter": "hunter",
-    "necromancer": "necromancer",
-    "shadow_adept": "shadow_adept",
-    "wolf": "wolf",
-    "bear": "bear",
-    "deer": "deer",
-    "mine_rat": "mine_rat"
-  },
-
-  "stat_generation": {
-    "_comment": "Генерация характеристик NPC по уровням",
-    "level_1_5": {"base": 2, "per_level": 0.8},
-    "level_6_15": {"base": 6, "per_level": 0.7},
-    "level_16_30": {"base": 10, "per_level": 0.7},
-    "level_31_40": {"base": 14, "per_level": 0.75},
-    "stat_variation_percent": 15
-  },
+  "_description": "Конфигурация NPC - AI поведение и спавн",
+  "_version": "2.0.0",
+  "_note": "Секции types, stat_generation, schedules и relationships.matrix удалены как неиспользуемые. Отношения NPC определяются в constants.py (NPC_RELATIONSHIPS)",
 
   "ai_behavior": {
     "guard": {
       "detection_range": 10,
       "rest_duration_min": 3,
       "rest_duration_max": 3,
-      "patrol_radius": 15,
-      "aggressive": true
+      "patrol_radius": 15
     },
     "merchant": {
       "detection_range": 8,
       "rest_duration_min": 5,
       "rest_duration_max": 8,
-      "travel_between_cities": true,
-      "aggressive": false
+      "travel_between_cities": true
     },
     "bandit": {
       "detection_range": 10,
       "rest_duration_min": 2,
       "rest_duration_max": 4,
-      "camp_radius": 40,
-      "aggressive": true
+      "camp_radius": 40
     },
     "miner": {
       "detection_range": 8,
       "rest_duration_min": 3,
       "rest_duration_max": 5,
-      "max_distance_from_mine": 20,
-      "aggressive": false
+      "max_distance_from_mine": 20
     },
     "undead": {
       "detection_range": 15,
       "rest_duration_min": 2,
       "rest_duration_max": 3,
-      "max_distance_from_ruins": 15,
-      "aggressive": true
+      "max_distance_from_ruins": 15
     },
     "mage": {
       "detection_range": 12,
       "rest_duration_min": 3,
       "rest_duration_max": 5,
-      "max_distance_from_school": 25,
-      "aggressive": true
+      "max_distance_from_school": 25
     },
     "alchemist": {
       "detection_range": 10,
       "rest_duration_min": 4,
       "rest_duration_max": 6,
-      "max_distance_from_home": 15,
-      "aggressive": false
+      "max_distance_from_home": 15
     },
     "hunter": {
       "detection_range": 15,
       "rest_duration_min": 2,
       "rest_duration_max": 4,
-      "patrol_radius": 30,
-      "aggressive": false
+      "patrol_radius": 30
     },
     "necromancer": {
       "detection_range": 12,
       "rest_duration_min": 3,
       "rest_duration_max": 5,
-      "max_distance_from_ruins": 20,
-      "aggressive": true
+      "max_distance_from_ruins": 20
     },
     "shadow_adept": {
       "detection_range": 14,
       "rest_duration_min": 2,
       "rest_duration_max": 4,
-      "max_distance_from_camp": 25,
-      "aggressive": true,
-      "_note": "Адепты тени - наемные убийцы и шпионы. Агрессивны к магам, нежити, бандитам и некромантам."
+      "max_distance_from_camp": 25
     },
     "wolf": {
       "detection_range": 12,
       "rest_duration_min": 2,
       "rest_duration_max": 4,
-      "patrol_radius": 25,
-      "aggressive": false,
-      "flee_on_low_health": false,
-      "_note": "Волки патрулируют территорию, могут атаковать при провокации"
+      "patrol_radius": 25
     },
     "bear": {
       "detection_range": 8,
       "rest_duration_min": 4,
       "rest_duration_max": 6,
-      "patrol_radius": 15,
-      "aggressive": false,
-      "flee_on_low_health": false,
-      "_note": "Медведи территориальны, атакуют если подойти слишком близко"
+      "patrol_radius": 15
     },
     "deer": {
       "detection_range": 10,
       "rest_duration_min": 2,
       "rest_duration_max": 3,
-      "patrol_radius": 20,
-      "aggressive": false,
-      "flee_on_low_health": true,
-      "_note": "Олени пугливы и убегают при опасности"
+      "patrol_radius": 20
     },
     "mine_rat": {
       "detection_range": 8,
@@ -135,312 +88,10 @@
       "rest_duration_max": 2,
       "patrol_radius": 10,
       "max_distance_from_mine": 15,
-      "aggressive": true,
-      "flee_on_low_health": true,
       "max_pursuit_steps": 8,
       "stat_modifiers": {
         "agility": 1.3,
         "luck": 1.25
-      },
-      "_note": "Шахтные крысы - агрессивные монстры, обитающие в шахтах и подземельях. Высокая ловкость и удача."
-    }
-  },
-
-  "schedules": {
-    "_comment": "Расписания активности NPC (часы в сутках 0-23)",
-    "guard": {
-      "active_hours_start": 0,
-      "active_hours_end": 12,
-      "_note": "Стражники работают в смены по 12 часов"
-    },
-    "merchant": {
-      "active_hours_start": 7,
-      "active_hours_end": 21,
-      "_note": "Торговцы активны днем"
-    },
-    "bandit": {
-      "active_hours_start": 18,
-      "active_hours_end": 6,
-      "_note": "Бандиты активны ночью и вечером"
-    },
-    "miner": {
-      "active_hours_start": 6,
-      "active_hours_end": 20,
-      "visit_mine_chance": 0.15,
-      "visit_town_chance": 0.05,
-      "mine_visit_duration_min": 2,
-      "mine_visit_duration_max": 4,
-      "town_visit_duration_min": 1,
-      "town_visit_duration_max": 3,
-      "_note": "Шахтеры работают с утра до вечера, посещают шахты и города"
-    },
-    "undead": {
-      "active_hours_start": 20,
-      "active_hours_end": 6,
-      "_note": "Нежить активна только ночью"
-    },
-    "mage": {
-      "active_hours_start": 8,
-      "active_hours_end": 22,
-      "_note": "Маги работают днем"
-    },
-    "alchemist": {
-      "active_hours_start": 6,
-      "active_hours_end": 23,
-      "_note": "Алхимики работают с утра до поздней ночи"
-    },
-    "hunter": {
-      "active_hours_start": 5,
-      "active_hours_end": 21,
-      "_note": "Охотники активны с раннего утра до вечера"
-    },
-    "necromancer": {
-      "active_hours_start": 20,
-      "active_hours_end": 6,
-      "_note": "Некроманты активны ночью"
-    },
-    "shadow_adept": {
-      "active_hours_start": 0,
-      "active_hours_end": 24,
-      "_note": "Адепты тени активны круглосуточно"
-    },
-    "wolf": {
-      "active_hours_start": 0,
-      "active_hours_end": 24,
-      "_note": "Волки активны круглосуточно"
-    },
-    "bear": {
-      "active_hours_start": 0,
-      "active_hours_end": 24,
-      "_note": "Медведи активны круглосуточно"
-    },
-    "deer": {
-      "active_hours_start": 0,
-      "active_hours_end": 24,
-      "_note": "Олени активны круглосуточно"
-    },
-    "mine_rat": {
-      "active_hours_start": 0,
-      "active_hours_end": 24,
-      "_note": "Шахтные крысы активны круглосуточно в подземельях"
-    }
-  },
-
-  "relationships": {
-    "_comment": "Матрица отношений: hostile, unfriendly, neutral, friendly, allied",
-    "hostile": "hostile",
-    "unfriendly": "unfriendly",
-    "neutral": "neutral",
-    "friendly": "friendly",
-    "allied": "allied",
-
-    "matrix": {
-      "bandit": {
-        "guard": "hostile",
-        "merchant": "hostile",
-        "neutral": "hostile",
-        "bandit": "friendly",
-        "miner": "hostile",
-        "undead": "hostile",
-        "mage": "hostile",
-        "alchemist": "hostile",
-        "hunter": "unfriendly",
-        "necromancer": "neutral"
-      },
-      "guard": {
-        "bandit": "hostile",
-        "guard": "friendly",
-        "merchant": "friendly",
-        "neutral": "neutral",
-        "miner": "friendly",
-        "undead": "hostile",
-        "mage": "friendly",
-        "alchemist": "friendly",
-        "hunter": "friendly",
-        "necromancer": "hostile",
-        "mine_rat": "hostile"
-      },
-      "merchant": {
-        "bandit": "unfriendly",
-        "guard": "friendly",
-        "merchant": "friendly",
-        "neutral": "neutral",
-        "miner": "friendly",
-        "undead": "unfriendly",
-        "mage": "friendly",
-        "alchemist": "friendly",
-        "hunter": "friendly",
-        "necromancer": "unfriendly"
-      },
-      "neutral": {
-        "bandit": "unfriendly",
-        "guard": "neutral",
-        "merchant": "neutral",
-        "neutral": "neutral",
-        "miner": "neutral",
-        "undead": "unfriendly",
-        "mage": "neutral",
-        "alchemist": "neutral",
-        "hunter": "neutral",
-        "necromancer": "unfriendly"
-      },
-      "miner": {
-        "bandit": "unfriendly",
-        "guard": "friendly",
-        "merchant": "friendly",
-        "neutral": "neutral",
-        "miner": "friendly",
-        "undead": "unfriendly",
-        "mage": "friendly",
-        "alchemist": "friendly",
-        "hunter": "friendly",
-        "necromancer": "unfriendly",
-        "mine_rat": "hostile"
-      },
-      "undead": {
-        "bandit": "hostile",
-        "guard": "hostile",
-        "merchant": "hostile",
-        "neutral": "hostile",
-        "miner": "hostile",
-        "undead": "friendly",
-        "mage": "hostile",
-        "alchemist": "hostile",
-        "hunter": "hostile",
-        "necromancer": "allied"
-      },
-      "mage": {
-        "bandit": "hostile",
-        "guard": "friendly",
-        "merchant": "friendly",
-        "neutral": "neutral",
-        "miner": "friendly",
-        "undead": "hostile",
-        "mage": "friendly",
-        "alchemist": "friendly",
-        "hunter": "friendly",
-        "necromancer": "hostile"
-      },
-      "alchemist": {
-        "bandit": "unfriendly",
-        "guard": "friendly",
-        "merchant": "friendly",
-        "neutral": "neutral",
-        "miner": "friendly",
-        "undead": "unfriendly",
-        "mage": "friendly",
-        "alchemist": "friendly",
-        "hunter": "friendly",
-        "necromancer": "unfriendly"
-      },
-      "hunter": {
-        "bandit": "unfriendly",
-        "guard": "friendly",
-        "merchant": "friendly",
-        "neutral": "neutral",
-        "miner": "friendly",
-        "undead": "hostile",
-        "mage": "friendly",
-        "alchemist": "friendly",
-        "hunter": "friendly",
-        "necromancer": "hostile",
-        "wolf": "hostile",
-        "bear": "hostile",
-        "deer": "hostile",
-        "mine_rat": "hostile"
-      },
-      "necromancer": {
-        "bandit": "neutral",
-        "guard": "hostile",
-        "merchant": "unfriendly",
-        "neutral": "unfriendly",
-        "miner": "unfriendly",
-        "undead": "allied",
-        "mage": "hostile",
-        "alchemist": "unfriendly",
-        "hunter": "hostile",
-        "necromancer": "friendly",
-        "shadow_adept": "hostile"
-      },
-      "shadow_adept": {
-        "bandit": "hostile",
-        "guard": "neutral",
-        "merchant": "neutral",
-        "neutral": "neutral",
-        "miner": "neutral",
-        "undead": "hostile",
-        "mage": "hostile",
-        "alchemist": "neutral",
-        "hunter": "neutral",
-        "necromancer": "hostile",
-        "shadow_adept": "friendly",
-        "wolf": "neutral",
-        "bear": "neutral",
-        "deer": "neutral"
-      },
-      "wolf": {
-        "bandit": "neutral",
-        "guard": "neutral",
-        "merchant": "neutral",
-        "neutral": "neutral",
-        "miner": "neutral",
-        "undead": "neutral",
-        "mage": "neutral",
-        "alchemist": "neutral",
-        "hunter": "unfriendly",
-        "necromancer": "neutral",
-        "wolf": "neutral",
-        "bear": "neutral",
-        "deer": "neutral"
-      },
-      "bear": {
-        "bandit": "neutral",
-        "guard": "neutral",
-        "merchant": "neutral",
-        "neutral": "neutral",
-        "miner": "neutral",
-        "undead": "neutral",
-        "mage": "neutral",
-        "alchemist": "neutral",
-        "hunter": "unfriendly",
-        "necromancer": "neutral",
-        "wolf": "neutral",
-        "bear": "neutral",
-        "deer": "neutral"
-      },
-      "deer": {
-        "bandit": "neutral",
-        "guard": "neutral",
-        "merchant": "neutral",
-        "neutral": "neutral",
-        "miner": "neutral",
-        "undead": "neutral",
-        "mage": "neutral",
-        "alchemist": "neutral",
-        "hunter": "unfriendly",
-        "necromancer": "neutral",
-        "wolf": "neutral",
-        "bear": "neutral",
-        "deer": "neutral",
-        "mine_rat": "neutral"
-      },
-      "mine_rat": {
-        "bandit": "hostile",
-        "guard": "hostile",
-        "merchant": "hostile",
-        "neutral": "hostile",
-        "miner": "hostile",
-        "undead": "neutral",
-        "mage": "hostile",
-        "alchemist": "hostile",
-        "hunter": "hostile",
-        "necromancer": "hostile",
-        "shadow_adept": "hostile",
-        "wolf": "neutral",
-        "bear": "neutral",
-        "deer": "neutral",
-        "mine_rat": "friendly",
-        "_note": "Шахтные крысы враждебны ко всем кроме нежити и животных. Высокая ловкость и удача."
       }
     }
   },
@@ -454,13 +105,7 @@
     "miners_per_mine": {"min": 2, "max": 4},
     "undead_per_ruins": {"min": 3, "max": 6},
     "mages_per_school": 8,
-    "alchemists_per_city": 1,
-    "alchemists_per_village": 1,
-    "hunters_per_forest": {"min": 1, "max": 3},
-    "necromancers_per_ruins": {"min": 1, "max": 2},
-    "shadow_adepts_per_camp": {"min": 3, "max": 5},
     "animals_in_forests": {
-      "_comment": "Животные спавнятся в биоме forest",
       "wolves_per_spawn_area": {"min": 2, "max": 4},
       "bears_per_spawn_area": {"min": 1, "max": 2},
       "deer_per_spawn_area": {"min": 3, "max": 5},
@@ -472,7 +117,6 @@
   },
 
   "respawn": {
-    "_comment": "Параметры респавна NPC",
     "min_hours": 10,
     "max_hours": 20,
     "check_interval_seconds": 60

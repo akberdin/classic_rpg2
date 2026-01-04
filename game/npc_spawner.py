@@ -1,14 +1,18 @@
 """
-Модуль для создания и размещения NPC на карте
+Модуль для создания и размещения NPC на карте.
+
+Отвечает только за спавн NPC. Инициализация игрока вынесена в player_init.py.
 """
 import random
 from game.npc import Guard, Merchant, MagicMerchant, WarriorMerchant, ShadowMerchant, MagePatrol, Bandit, Miner, Undead, ShadowAdept, Alchemist, Hunter, Necromancer, Wolf, Bear, Deer
 from game.inventory import ItemGenerator, ItemQuality
-from game.item_registry import get_item
 from game.constants import (
     LOCATION_CITY, LOCATION_VILLAGE, LOCATION_BANDIT_CAMP,
     LOCATION_MINE, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, LOCATION_SECRET_CAMP, BIOME_FOREST
 )
+
+# Реэкспорт для обратной совместимости
+from game.player_init import give_starting_items
 
 
 class NPCSpawner:
@@ -1016,68 +1020,3 @@ class NPCSpawner:
         print(f"  - Патрулирование: {patrol_animals}, Путешествие: {wander_animals}")
 
         return animals
-
-
-def give_starting_items(player):
-    """
-    Дать игроку стартовые предметы
-
-    Args:
-        player: Игрок
-    """
-    from game.inventory import ArmorType, EquipmentSlot, WeaponType, WeaponItem
-
-    # Начальное золото
-    player.inventory.add_gold(50)
-
-    # Стартовые зелья
-    player.inventory.add_item(get_item("minor_health_potion"), 2)
-    player.inventory.add_item(get_item("minor_stamina_potion"), 1)
-
-    # Стартовое оружие - только топор плохого качества
-    # Генерируем бонусы из конфига для топора плохого качества
-    stats_bonus, param_bonus, skill_bonus, base_damage = ItemGenerator.generate_bonuses_from_config(
-        "weapon", ItemQuality.POOR, WeaponType.AXE
-    )
-
-    # Генерируем название для топора
-    weapon_name = ItemGenerator.generate_item_name(
-        WeaponType.AXE.rus_name, WeaponType.AXE.rus_name, ItemQuality.POOR
-    )
-
-    # Рассчитываем стоимость
-    weapon_value = ItemGenerator.calculate_item_value(
-        "weapon", ItemQuality.POOR, base_damage, stats_bonus, param_bonus, skill_bonus
-    )
-
-    # Создаем топор напрямую
-    starter_weapon = WeaponItem(
-        weapon_name, WeaponType.AXE, base_damage, weapon_value,
-        ItemQuality.POOR, stats_bonus, param_bonus, skill_bonus
-    )
-
-    player.inventory.add_item(starter_weapon, 1)
-    player.inventory.equip_item(starter_weapon)
-
-    # Легкая плохая нагрудная броня
-    starter_chest = ItemGenerator.generate_armor(
-        level=1,
-        slot=EquipmentSlot.CHEST,
-        armor_type=ArmorType.LIGHT,
-        quality=ItemQuality.POOR
-    )
-    player.inventory.add_item(starter_chest, 1)
-    player.inventory.equip_item(starter_chest)
-
-    # Легкая плохая обувь
-    starter_feet = ItemGenerator.generate_armor(
-        level=1,
-        slot=EquipmentSlot.FEET,
-        armor_type=ArmorType.LIGHT,
-        quality=ItemQuality.POOR
-    )
-    player.inventory.add_item(starter_feet, 1)
-    player.inventory.equip_item(starter_feet)
-
-    # Обновляем производные характеристики после экипировки
-    player.update_derived_stats()
