@@ -347,7 +347,7 @@ class CharacterWindow(BaseWindow):
         )
 
         # Грузоподъёмность
-        current_weight = player.inventory.get_total_weight()
+        current_weight = player.inventory.current_weight
         self._render_resource_bar(
             "Вес", current_weight, eff_max_weight,
             (120, 100, 80), f"30 + СИЛ × 10",
