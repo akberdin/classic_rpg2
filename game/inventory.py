@@ -575,8 +575,8 @@ class ArtifactItem(EquipmentItem):
 class BeltItem(EquipmentItem):
     """Класс пояса - предмет с слотами для зелий и талисманов"""
 
-    # Конфигурация слотов в зависимости от качества
-    SLOTS_CONFIG = {
+    # Fallback конфигурация слотов (используется если конфиг не загружен)
+    _SLOTS_FALLBACK = {
         ItemQuality.POOR: (1, 0),       # зелья, талисманы
         ItemQuality.COMMON: (2, 0),
         ItemQuality.UNCOMMON: (2, 1),
@@ -585,6 +585,37 @@ class BeltItem(EquipmentItem):
         ItemQuality.LEGENDARY: (3, 3),
         ItemQuality.ARTIFACT: (4, 4)
     }
+
+    _config_cache = None
+
+    @classmethod
+    def _load_config(cls):
+        """Загрузить конфигурацию слотов из JSON файла"""
+        if cls._config_cache is None:
+            import json
+            import os
+            config_path = os.path.join(os.path.dirname(__file__), 'config', 'items_config.json')
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    cls._config_cache = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                cls._config_cache = {}
+        return cls._config_cache
+
+    @classmethod
+    def get_slots_for_quality(cls, quality):
+        """Получить количество слотов для данного качества из конфига"""
+        config = cls._load_config()
+        belt_slots = config.get('belt_slots', {})
+
+        quality_name = quality.name.lower()
+        slots = belt_slots.get(quality_name)
+
+        if slots and isinstance(slots, list) and len(slots) == 2:
+            return tuple(slots)
+
+        # Fallback
+        return cls._SLOTS_FALLBACK.get(quality, (1, 0))
 
     def __init__(self, name, value=100, quality=ItemQuality.COMMON, param_bonus=None):
         """
@@ -602,8 +633,8 @@ class BeltItem(EquipmentItem):
         if quality in [ItemQuality.POOR, ItemQuality.COMMON]:
             param_bonus = None
 
-        # Получаем количество слотов для данного качества
-        potion_slots, talisman_slots = self.SLOTS_CONFIG.get(quality, (1, 0))
+        # Получаем количество слотов для данного качества из конфига
+        potion_slots, talisman_slots = self.get_slots_for_quality(quality)
 
         description = f"Пояс. Слотов для зелий: {potion_slots}, Слотов для талисманов: {talisman_slots}"
         if param_bonus:
@@ -672,8 +703,8 @@ class TalismanItem(EquipmentItem):
 class BackpackItem(EquipmentItem):
     """Класс рюкзака - увеличивает размер инвентаря"""
 
-    # Конфигурация дополнительных слотов в зависимости от качества
-    SLOTS_CONFIG = {
+    # Fallback конфигурация слотов (используется если конфиг не загружен)
+    _SLOTS_FALLBACK = {
         ItemQuality.POOR: 5,
         ItemQuality.COMMON: 10,
         ItemQuality.UNCOMMON: 15,
@@ -682,6 +713,37 @@ class BackpackItem(EquipmentItem):
         ItemQuality.LEGENDARY: 30,
         ItemQuality.ARTIFACT: 35
     }
+
+    _config_cache = None
+
+    @classmethod
+    def _load_config(cls):
+        """Загрузить конфигурацию слотов из JSON файла"""
+        if cls._config_cache is None:
+            import json
+            import os
+            config_path = os.path.join(os.path.dirname(__file__), 'config', 'items_config.json')
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    cls._config_cache = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                cls._config_cache = {}
+        return cls._config_cache
+
+    @classmethod
+    def get_slots_for_quality(cls, quality):
+        """Получить количество дополнительных слотов для данного качества из конфига"""
+        config = cls._load_config()
+        backpack_slots = config.get('backpack_slots', {})
+
+        quality_name = quality.name.lower()
+        slots = backpack_slots.get(quality_name)
+
+        if slots is not None:
+            return slots
+
+        # Fallback
+        return cls._SLOTS_FALLBACK.get(quality, 10)
 
     def __init__(self, name, value=200, quality=ItemQuality.COMMON):
         """
@@ -694,8 +756,8 @@ class BackpackItem(EquipmentItem):
         """
         weight = 3.0
 
-        # Получаем количество дополнительных слотов для данного качества
-        bonus_slots = self.SLOTS_CONFIG.get(quality, 10)
+        # Получаем количество дополнительных слотов для данного качества из конфига
+        bonus_slots = self.get_slots_for_quality(quality)
 
         description = f"Рюкзак. Добавляет {bonus_slots} слотов к инвентарю"
 
@@ -1392,10 +1454,11 @@ class ItemGenerator:
             return "bracelet"
         return "ring"
 
-    @staticmethod
-    def _filter_weapon_stats(weapon_type, stat_list):
+    @classmethod
+    def _filter_weapon_stats(cls, weapon_type, stat_list):
         """
-        Фильтрация характеристик для оружия в зависимости от его типа
+        Фильтрация характеристик для оружия в зависимости от его типа.
+        Правила фильтрации берутся из конфига weapon_filters.
 
         Args:
             weapon_type: Тип оружия (WeaponType)
@@ -1404,25 +1467,29 @@ class ItemGenerator:
         Returns:
             list: Отфильтрованный список характеристик
         """
-        # Посохи и жезлы - только интеллект и дух
-        if weapon_type in [WeaponType.STAFF, WeaponType.WAND]:
-            return [s for s in stat_list if s in ['intelligence', 'spirit']]
+        config = cls.load_config()
+        weapon_filters = config.get('weapon_filters', {}).get('stat_filters', {})
 
-        # Мечи, дубины, кирки, топоры - не могут иметь интеллект, дух и ловкость
-        elif weapon_type in [WeaponType.SWORD, WeaponType.CLUB, WeaponType.PICKAXE, WeaponType.AXE]:
-            return [s for s in stat_list if s not in ['intelligence', 'spirit', 'dexterity']]
+        # Получаем имя типа оружия в нижнем регистре
+        weapon_name = weapon_type.name.lower()
+        filter_config = weapon_filters.get(weapon_name, {})
 
-        # Ножи, луки, копья - не могут иметь дух, силу и телосложение
-        elif weapon_type in [WeaponType.KNIFE, WeaponType.BOW, WeaponType.SPEAR]:
-            return [s for s in stat_list if s not in ['spirit', 'strength', 'constitution']]
+        if not filter_config:
+            return stat_list
 
-        # Для остальных типов - без изменений
+        # Применяем фильтр allowed (разрешённые) или excluded (запрещённые)
+        if 'allowed' in filter_config:
+            return [s for s in stat_list if s in filter_config['allowed']]
+        elif 'excluded' in filter_config:
+            return [s for s in stat_list if s not in filter_config['excluded']]
+
         return stat_list
 
-    @staticmethod
-    def _filter_weapon_params(weapon_type, param_list):
+    @classmethod
+    def _filter_weapon_params(cls, weapon_type, param_list):
         """
-        Фильтрация параметров для оружия в зависимости от его типа
+        Фильтрация параметров для оружия в зависимости от его типа.
+        Правила фильтрации берутся из конфига weapon_filters.
 
         Args:
             weapon_type: Тип оружия (WeaponType)
@@ -1431,11 +1498,22 @@ class ItemGenerator:
         Returns:
             list: Отфильтрованный список параметров
         """
-        # Посохи и жезлы - только здоровье и мана
-        if weapon_type in [WeaponType.STAFF, WeaponType.WAND]:
-            return [p for p in param_list if p in ['health', 'mana']]
+        config = cls.load_config()
+        weapon_filters = config.get('weapon_filters', {}).get('param_filters', {})
 
-        # Для остальных типов оружия - без изменений
+        # Получаем имя типа оружия в нижнем регистре
+        weapon_name = weapon_type.name.lower()
+        filter_config = weapon_filters.get(weapon_name, {})
+
+        if not filter_config:
+            return param_list
+
+        # Применяем фильтр allowed (разрешённые) или excluded (запрещённые)
+        if 'allowed' in filter_config:
+            return [p for p in param_list if p in filter_config['allowed']]
+        elif 'excluded' in filter_config:
+            return [p for p in param_list if p not in filter_config['excluded']]
+
         return param_list
 
     @classmethod
@@ -1504,28 +1582,40 @@ class ItemGenerator:
                     bonus = random.randint(param_bonus_range[0], param_bonus_range[1])
                     param_bonus[param] = param_bonus.get(param, 0) + bonus
 
-        # Генерация бонусов к навыкам
+        # Генерация бонусов к навыкам из конфига
         skill_bonus = {}
+        skills_count_range = params.get('skills_count_range', [0, 0])
+        skills_count = random.randint(skills_count_range[0], skills_count_range[1])
 
-        # НОВАЯ ЛОГИКА: Оружие и броня больше НЕ дают бонусы к умениям
-        if item_type in ["weapon", "armor", "light_armor", "medium_armor", "heavy_armor"]:
-            # Оружие и броня больше не добавляют умения
-            pass
-        elif item_type in ["ring", "amulet", "bracelet", "jewelry"]:
-            # Ювелирные изделия: только одно умение, максимум 1 пункт (легендарное) или 2 пункта (артефакт)
-            if quality in [ItemQuality.LEGENDARY, ItemQuality.ARTIFACT]:
-                # Определяем максимальный бонус
-                max_bonus = 1 if quality == ItemQuality.LEGENDARY else 2
+        if skills_count > 0:
+            skill_bonus_range = params.get('skill_bonus_range')
+            skill_bonus_list = params.get('skill_bonus_list', [])
 
-                # Список доступных умений (магические и поддерживающие)
-                magic_skills = ['heal', 'regeneration', 'stamina_recovery', 'mage_shield', 'fireball', 'ice_bolt', 'lightning', 'magic_missile']
-                combat_skills = ['basic_attack', 'power_strike', 'poison_strike', 'stun_strike', 'battle_cry']
-                available_skills = magic_skills + combat_skills
+            # Если в item_parameters нет списка навыков, берём из skill_bonus_config
+            if not skill_bonus_list:
+                skill_config = config.get('skill_bonus_config', {})
+                available_skills = skill_config.get('available_skills', {})
+                skill_bonus_list = available_skills.get('magic', []) + available_skills.get('combat', [])
 
-                # Выбираем одно случайное умение
-                if available_skills:
-                    skill_id = random.choice(available_skills)
-                    # Бонус всегда равен максимуму для данного качества
+            if skill_bonus_list and skill_bonus_range:
+                for _ in range(skills_count):
+                    skill_id = random.choice(skill_bonus_list)
+                    bonus = random.randint(skill_bonus_range[0], skill_bonus_range[1])
+                    skill_bonus[skill_id] = skill_bonus.get(skill_id, 0) + bonus
+
+        # Дополнительная логика для украшений (из skill_bonus_config)
+        if item_type in ["ring", "amulet", "bracelet", "jewelry"] and not skill_bonus:
+            skill_config = config.get('skill_bonus_config', {})
+            jewelry_qualities = skill_config.get('jewelry_only_qualities', ['legendary', 'artifact'])
+            max_bonus_by_quality = skill_config.get('max_bonus_by_quality', {})
+
+            if quality_name in jewelry_qualities:
+                max_bonus = max_bonus_by_quality.get(quality_name, 1)
+                available_skills = skill_config.get('available_skills', {})
+                all_skills = available_skills.get('magic', []) + available_skills.get('combat', [])
+
+                if all_skills:
+                    skill_id = random.choice(all_skills)
                     skill_bonus[skill_id] = max_bonus
 
         return stats_bonus, param_bonus, skill_bonus, damage_or_defense
@@ -1591,39 +1681,74 @@ class ItemGenerator:
 
         return item_type_name
 
-    @staticmethod
-    def generate_quality(base_quality_weights=None):
+    @classmethod
+    def _get_quality_weights_from_config(cls, weight_type='default'):
+        """
+        Получить веса качества из конфига.
+
+        Args:
+            weight_type: Тип весов ('default' или 'jewelry')
+
+        Returns:
+            dict: Словарь {ItemQuality: weight}
+        """
+        config = cls.load_config()
+        quality_weights_config = config.get('quality_weights', {}).get(weight_type, {})
+
+        # Преобразуем строковые ключи в ItemQuality
+        quality_map = {
+            'poor': ItemQuality.POOR,
+            'common': ItemQuality.COMMON,
+            'uncommon': ItemQuality.UNCOMMON,
+            'rare': ItemQuality.RARE,
+            'epic': ItemQuality.EPIC,
+            'legendary': ItemQuality.LEGENDARY,
+            'artifact': ItemQuality.ARTIFACT
+        }
+
+        weights = {}
+        for quality_str, weight in quality_weights_config.items():
+            if quality_str in quality_map:
+                weights[quality_map[quality_str]] = weight
+
+        return weights if weights else None
+
+    @classmethod
+    def generate_quality(cls, base_quality_weights=None):
         """
         Генерация качества предмета
 
         Args:
-            base_quality_weights: Словарь весов для каждого качества
+            base_quality_weights: Словарь весов для каждого качества (если None - из конфига)
 
         Returns:
             ItemQuality
         """
         if base_quality_weights is None:
-            # Стандартные веса
-            base_quality_weights = {
-                ItemQuality.POOR: 0.05,
-                ItemQuality.COMMON: 0.50,
-                ItemQuality.UNCOMMON: 0.25,
-                ItemQuality.RARE: 0.12,
-                ItemQuality.EPIC: 0.06,
-                ItemQuality.LEGENDARY: 0.02,
-                ItemQuality.ARTIFACT: 0.001
-            }
+            # Получаем веса из конфига
+            base_quality_weights = cls._get_quality_weights_from_config('default')
+
+            # Fallback если конфиг не загружен
+            if not base_quality_weights:
+                base_quality_weights = {
+                    ItemQuality.POOR: 0.05,
+                    ItemQuality.COMMON: 0.50,
+                    ItemQuality.UNCOMMON: 0.25,
+                    ItemQuality.RARE: 0.12,
+                    ItemQuality.EPIC: 0.06,
+                    ItemQuality.LEGENDARY: 0.02,
+                    ItemQuality.ARTIFACT: 0.001
+                }
 
         qualities = list(base_quality_weights.keys())
         weights = list(base_quality_weights.values())
 
         return random.choices(qualities, weights=weights)[0]
 
-    @staticmethod
-    def generate_quality_with_luck(luck=1, base_quality_weights=None):
+    @classmethod
+    def generate_quality_with_luck(cls, luck=1, base_quality_weights=None):
         """
         Генерация качества предмета с учётом удачи игрока.
-        1 очко удачи добавляет 1% к шансу получения лучшего качества.
 
         Args:
             luck: Значение удачи игрока
@@ -1632,51 +1757,73 @@ class ItemGenerator:
         Returns:
             ItemQuality
         """
+        config = cls.load_config()
+        luck_config = config.get('luck_modifiers', {})
+        redistribution = luck_config.get('quality_redistribution', {})
+
         if base_quality_weights is None:
-            # Стандартные веса
-            base_quality_weights = {
-                ItemQuality.POOR: 0.05,
-                ItemQuality.COMMON: 0.50,
-                ItemQuality.UNCOMMON: 0.25,
-                ItemQuality.RARE: 0.12,
-                ItemQuality.EPIC: 0.06,
-                ItemQuality.LEGENDARY: 0.02,
-                ItemQuality.ARTIFACT: 0.001
-            }
+            base_quality_weights = cls._get_quality_weights_from_config('default')
+
+            if not base_quality_weights:
+                base_quality_weights = {
+                    ItemQuality.POOR: 0.05,
+                    ItemQuality.COMMON: 0.50,
+                    ItemQuality.UNCOMMON: 0.25,
+                    ItemQuality.RARE: 0.12,
+                    ItemQuality.EPIC: 0.06,
+                    ItemQuality.LEGENDARY: 0.02,
+                    ItemQuality.ARTIFACT: 0.001
+                }
 
         # Копируем веса для модификации
         modified_weights = base_quality_weights.copy()
 
-        # Бонус от удачи: каждое очко удачи добавляет 1% к шансу лучшего качества
-        luck_bonus = min(luck * 0.01, 0.50)  # Максимум 50% бонуса
+        # Параметры из конфига
+        bonus_per_point = luck_config.get('bonus_per_point', 0.01)
+        max_bonus = luck_config.get('max_bonus', 0.50)
+
+        # Бонус от удачи
+        luck_bonus = min(luck * bonus_per_point, max_bonus)
 
         # Перераспределяем веса: уменьшаем POOR и COMMON, увеличиваем остальные
         if luck_bonus > 0:
-            # Уменьшаем веса низкого качества
-            poor_reduction = min(modified_weights[ItemQuality.POOR], luck_bonus * 0.1)
-            common_reduction = min(modified_weights[ItemQuality.COMMON], luck_bonus * 0.5)
+            poor_reduction_factor = redistribution.get('poor_reduction_factor', 0.1)
+            common_reduction_factor = redistribution.get('common_reduction_factor', 0.5)
+            poor_min = redistribution.get('poor_min_weight', 0.01)
+            common_min = redistribution.get('common_min_weight', 0.20)
 
-            modified_weights[ItemQuality.POOR] = max(0.01, modified_weights[ItemQuality.POOR] - poor_reduction)
-            modified_weights[ItemQuality.COMMON] = max(0.20, modified_weights[ItemQuality.COMMON] - common_reduction)
+            # Уменьшаем веса низкого качества
+            poor_reduction = min(modified_weights.get(ItemQuality.POOR, 0), luck_bonus * poor_reduction_factor)
+            common_reduction = min(modified_weights.get(ItemQuality.COMMON, 0), luck_bonus * common_reduction_factor)
+
+            if ItemQuality.POOR in modified_weights:
+                modified_weights[ItemQuality.POOR] = max(poor_min, modified_weights[ItemQuality.POOR] - poor_reduction)
+            if ItemQuality.COMMON in modified_weights:
+                modified_weights[ItemQuality.COMMON] = max(common_min, modified_weights[ItemQuality.COMMON] - common_reduction)
 
             # Добавляем освободившиеся веса к более высокому качеству
             bonus_to_distribute = poor_reduction + common_reduction
-            modified_weights[ItemQuality.UNCOMMON] += bonus_to_distribute * 0.35
-            modified_weights[ItemQuality.RARE] += bonus_to_distribute * 0.30
-            modified_weights[ItemQuality.EPIC] += bonus_to_distribute * 0.20
-            modified_weights[ItemQuality.LEGENDARY] += bonus_to_distribute * 0.10
-            modified_weights[ItemQuality.ARTIFACT] += bonus_to_distribute * 0.05
+
+            if ItemQuality.UNCOMMON in modified_weights:
+                modified_weights[ItemQuality.UNCOMMON] += bonus_to_distribute * redistribution.get('uncommon_share', 0.35)
+            if ItemQuality.RARE in modified_weights:
+                modified_weights[ItemQuality.RARE] += bonus_to_distribute * redistribution.get('rare_share', 0.30)
+            if ItemQuality.EPIC in modified_weights:
+                modified_weights[ItemQuality.EPIC] += bonus_to_distribute * redistribution.get('epic_share', 0.20)
+            if ItemQuality.LEGENDARY in modified_weights:
+                modified_weights[ItemQuality.LEGENDARY] += bonus_to_distribute * redistribution.get('legendary_share', 0.10)
+            if ItemQuality.ARTIFACT in modified_weights:
+                modified_weights[ItemQuality.ARTIFACT] += bonus_to_distribute * redistribution.get('artifact_share', 0.05)
 
         qualities = list(modified_weights.keys())
         weights = list(modified_weights.values())
 
         return random.choices(qualities, weights=weights)[0]
 
-    @staticmethod
-    def check_extra_item_drop(luck=1):
+    @classmethod
+    def check_extra_item_drop(cls, luck=1):
         """
         Проверить, получит ли игрок дополнительный предмет.
-        1 очко удачи добавляет 1% к шансу.
 
         Args:
             luck: Значение удачи игрока
@@ -1684,7 +1831,13 @@ class ItemGenerator:
         Returns:
             bool: True если дополнительный предмет должен выпасть
         """
-        extra_chance = min(luck * 1, 30)  # Максимум 30% шанс
+        config = cls.load_config()
+        extra_drop = config.get('luck_modifiers', {}).get('extra_drop', {})
+
+        chance_per_point = extra_drop.get('chance_per_point', 1)
+        max_chance = extra_drop.get('max_chance', 30)
+
+        extra_chance = min(luck * chance_per_point, max_chance)
         return random.randint(1, 100) <= extra_chance
 
     @staticmethod
@@ -1819,15 +1972,18 @@ class ItemGenerator:
             JewelryItem
         """
         if quality is None:
-            # Украшения обычно лучшего качества
-            quality_weights = {
-                ItemQuality.UNCOMMON: 0.50,
-                ItemQuality.RARE: 0.30,
-                ItemQuality.EPIC: 0.15,
-                ItemQuality.LEGENDARY: 0.04,
-                ItemQuality.ARTIFACT: 0.01
-            }
-            quality = cls.generate_quality(quality_weights)
+            # Украшения обычно лучшего качества - берём веса из конфига
+            jewelry_weights = cls._get_quality_weights_from_config('jewelry')
+            if not jewelry_weights:
+                # Fallback
+                jewelry_weights = {
+                    ItemQuality.UNCOMMON: 0.50,
+                    ItemQuality.RARE: 0.30,
+                    ItemQuality.EPIC: 0.15,
+                    ItemQuality.LEGENDARY: 0.04,
+                    ItemQuality.ARTIFACT: 0.01
+                }
+            quality = cls.generate_quality(jewelry_weights)
 
         if slot is None:
             jewelry_slots = [
@@ -1884,29 +2040,21 @@ class ItemGenerator:
                 if current_index > max_index:
                     quality = max_quality
 
-        # Генерируем процентные бонусы к параметрам (только для необычного и выше)
+        config = cls.load_config()
+        belt_params = config.get('belt_parameters', {})
+        quality_name = quality.name.lower()
+
+        # Генерируем процентные бонусы к параметрам из конфига
         param_bonus = None
-        if quality not in [ItemQuality.POOR, ItemQuality.COMMON]:
+        bonus_count_config = belt_params.get('bonus_count', {})
+        bonus_range_config = belt_params.get('bonus_range', {})
+        available_params = belt_params.get('available_params', ['health', 'mana', 'stamina'])
+
+        bonus_count = bonus_count_config.get(quality_name, 0)
+
+        if bonus_count > 0:
             param_bonus = {}
-            # Количество бонусов зависит от качества
-            bonus_count = {
-                ItemQuality.UNCOMMON: 1,
-                ItemQuality.RARE: 1,
-                ItemQuality.EPIC: 2,
-                ItemQuality.LEGENDARY: 2,
-                ItemQuality.ARTIFACT: 3
-            }.get(quality, 1)
-
-            # Диапазон бонусов зависит от качества
-            bonus_range = {
-                ItemQuality.UNCOMMON: (2, 4),
-                ItemQuality.RARE: (4, 6),
-                ItemQuality.EPIC: (6, 8),
-                ItemQuality.LEGENDARY: (8, 10),
-                ItemQuality.ARTIFACT: (10, 15)
-            }.get(quality, (2, 4))
-
-            available_params = ['health', 'mana', 'stamina']
+            bonus_range = bonus_range_config.get(quality_name, [2, 4])
             selected_params = random.sample(available_params, min(bonus_count, len(available_params)))
             for param in selected_params:
                 param_bonus[param] = random.randint(bonus_range[0], bonus_range[1])
@@ -1915,7 +2063,7 @@ class ItemGenerator:
         name = cls.generate_item_name("Пояс", "Пояс", quality)
 
         # Рассчитываем стоимость
-        base_value = 100
+        base_value = config.get('base_prices', {}).get('belt', 100)
         value = int(base_value * quality.multiplier)
         if param_bonus:
             value += sum(param_bonus.values()) * 10
@@ -1951,8 +2099,9 @@ class ItemGenerator:
         name = cls.generate_item_name("Рюкзак", "Рюкзак", quality)
 
         # Рассчитываем стоимость (базово + за слоты)
-        base_value = 200
-        bonus_slots = BackpackItem.SLOTS_CONFIG.get(quality, 10)
+        config = cls.load_config()
+        base_value = config.get('base_prices', {}).get('backpack', 200)
+        bonus_slots = BackpackItem.get_slots_for_quality(quality)
         value = int(base_value * quality.multiplier + bonus_slots * 5)
 
         return BackpackItem(name, value, quality)
@@ -1982,34 +2131,23 @@ class ItemGenerator:
                 if current_index > max_index:
                     quality = max_quality
 
-        # Генерируем бонусы к характеристикам
+        config = cls.load_config()
+        talisman_params = config.get('talisman_parameters', {})
+        quality_name = quality.name.lower()
+
+        # Генерируем бонусы к характеристикам из конфига
         stats_bonus = {}
         param_bonus = {}
 
-        # Количество бонусов зависит от качества
-        bonus_count = {
-            ItemQuality.POOR: 0,
-            ItemQuality.COMMON: 1,
-            ItemQuality.UNCOMMON: 1,
-            ItemQuality.RARE: 2,
-            ItemQuality.EPIC: 2,
-            ItemQuality.LEGENDARY: 3,
-            ItemQuality.ARTIFACT: 3
-        }.get(quality, 1)
+        bonus_count_config = talisman_params.get('bonus_count', {})
+        bonus_range_config = talisman_params.get('bonus_range', {})
+        available_stats = talisman_params.get('available_stats',
+            ['strength', 'dexterity', 'constitution', 'spirit', 'intelligence', 'luck'])
 
-        # Диапазон бонусов зависит от качества
-        bonus_range = {
-            ItemQuality.POOR: (1, 2),
-            ItemQuality.COMMON: (1, 2),
-            ItemQuality.UNCOMMON: (2, 3),
-            ItemQuality.RARE: (3, 5),
-            ItemQuality.EPIC: (5, 7),
-            ItemQuality.LEGENDARY: (7, 10),
-            ItemQuality.ARTIFACT: (10, 15)
-        }.get(quality, (1, 2))
+        bonus_count = bonus_count_config.get(quality_name, 1)
+        bonus_range = bonus_range_config.get(quality_name, [1, 2])
 
         if bonus_count > 0:
-            available_stats = ['strength', 'dexterity', 'constitution', 'spirit', 'intelligence', 'luck']
             selected_stats = random.sample(available_stats, min(bonus_count, len(available_stats)))
             for stat in selected_stats:
                 stats_bonus[stat] = random.randint(bonus_range[0], bonus_range[1])
@@ -2018,7 +2156,7 @@ class ItemGenerator:
         name = cls.generate_item_name("Талисман", "Талисман", quality)
 
         # Рассчитываем стоимость
-        base_value = 50
+        base_value = config.get('base_prices', {}).get('talisman', 50)
         value = int(base_value * quality.multiplier)
         if stats_bonus:
             value += sum(stats_bonus.values()) * 5

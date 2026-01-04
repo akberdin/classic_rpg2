@@ -900,6 +900,154 @@
     "heavy_armor": 80,
     "amulet": 100,
     "ring": 80,
-    "bracelet": 80
+    "bracelet": 80,
+    "belt": 100,
+    "backpack": 200,
+    "talisman": 50
+  },
+
+  "quality_weights": {
+    "_comment": "Веса для генерации качества предметов (сумма не обязательно 1.0)",
+    "default": {
+      "poor": 0.05,
+      "common": 0.50,
+      "uncommon": 0.25,
+      "rare": 0.12,
+      "epic": 0.06,
+      "legendary": 0.02,
+      "artifact": 0.001
+    },
+    "jewelry": {
+      "_comment": "Украшения генерируются с более высоким качеством",
+      "uncommon": 0.50,
+      "rare": 0.30,
+      "epic": 0.15,
+      "legendary": 0.04,
+      "artifact": 0.01
+    }
+  },
+
+  "luck_modifiers": {
+    "_comment": "Настройки влияния удачи на генерацию предметов",
+    "bonus_per_point": 0.01,
+    "max_bonus": 0.50,
+    "quality_redistribution": {
+      "_comment": "Как распределяется бонус от удачи между качествами",
+      "poor_reduction_factor": 0.1,
+      "common_reduction_factor": 0.5,
+      "common_min_weight": 0.20,
+      "poor_min_weight": 0.01,
+      "uncommon_share": 0.35,
+      "rare_share": 0.30,
+      "epic_share": 0.20,
+      "legendary_share": 0.10,
+      "artifact_share": 0.05
+    },
+    "extra_drop": {
+      "_comment": "Шанс дополнительного предмета от удачи",
+      "chance_per_point": 1,
+      "max_chance": 30
+    }
+  },
+
+  "belt_slots": {
+    "_comment": "Количество слотов для зелий и талисманов в поясе по качеству [зелья, талисманы]",
+    "poor": [1, 0],
+    "common": [2, 0],
+    "uncommon": [2, 1],
+    "rare": [2, 2],
+    "epic": [3, 2],
+    "legendary": [3, 3],
+    "artifact": [4, 4]
+  },
+
+  "backpack_slots": {
+    "_comment": "Дополнительные слоты инвентаря от рюкзака по качеству",
+    "poor": 5,
+    "common": 10,
+    "uncommon": 15,
+    "rare": 20,
+    "epic": 25,
+    "legendary": 30,
+    "artifact": 35
+  },
+
+  "belt_parameters": {
+    "_comment": "Параметры генерации поясов по качеству",
+    "bonus_count": {
+      "poor": 0,
+      "common": 0,
+      "uncommon": 1,
+      "rare": 1,
+      "epic": 2,
+      "legendary": 2,
+      "artifact": 3
+    },
+    "bonus_range": {
+      "poor": [0, 0],
+      "common": [0, 0],
+      "uncommon": [2, 4],
+      "rare": [4, 6],
+      "epic": [6, 8],
+      "legendary": [8, 10],
+      "artifact": [10, 15]
+    },
+    "available_params": ["health", "mana", "stamina"]
+  },
+
+  "talisman_parameters": {
+    "_comment": "Параметры генерации талисманов по качеству",
+    "bonus_count": {
+      "poor": 0,
+      "common": 1,
+      "uncommon": 1,
+      "rare": 2,
+      "epic": 2,
+      "legendary": 3,
+      "artifact": 3
+    },
+    "bonus_range": {
+      "poor": [1, 2],
+      "common": [1, 2],
+      "uncommon": [2, 3],
+      "rare": [3, 5],
+      "epic": [5, 7],
+      "legendary": [7, 10],
+      "artifact": [10, 15]
+    },
+    "available_stats": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"]
+  },
+
+  "weapon_filters": {
+    "_comment": "Фильтрация характеристик и параметров по типам оружия",
+    "stat_filters": {
+      "_comment": "allowed - разрешённые характеристики, excluded - запрещённые",
+      "staff": {"allowed": ["intelligence", "spirit"]},
+      "wand": {"allowed": ["intelligence", "spirit"]},
+      "sword": {"excluded": ["intelligence", "spirit", "dexterity"]},
+      "club": {"excluded": ["intelligence", "spirit", "dexterity"]},
+      "pickaxe": {"excluded": ["intelligence", "spirit", "dexterity"]},
+      "axe": {"excluded": ["intelligence", "spirit", "dexterity"]},
+      "knife": {"excluded": ["spirit", "strength", "constitution"]},
+      "bow": {"excluded": ["spirit", "strength", "constitution"]},
+      "spear": {"excluded": ["spirit", "strength", "constitution"]}
+    },
+    "param_filters": {
+      "staff": {"allowed": ["health", "mana"]},
+      "wand": {"allowed": ["health", "mana"]}
+    }
+  },
+
+  "skill_bonus_config": {
+    "_comment": "Настройки бонусов к умениям от экипировки",
+    "jewelry_only_qualities": ["legendary", "artifact"],
+    "max_bonus_by_quality": {
+      "legendary": 1,
+      "artifact": 2
+    },
+    "available_skills": {
+      "magic": ["heal", "regeneration", "stamina_recovery", "mage_shield", "fireball", "ice_bolt", "lightning", "magic_missile"],
+      "combat": ["basic_attack", "power_strike", "poison_strike", "stun_strike", "battle_cry"]
+    }
   }
 }
