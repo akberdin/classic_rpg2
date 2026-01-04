@@ -689,9 +689,25 @@ class InputHandler:
         elif key == pygame.K_RETURN:
             # Добавить очко к выбранной характеристике
             if self.ctx.player.stat_points > 0:
-                stat_key, stat_name = self.ctx.character_window.stats_list[self.ctx.character_window.selected_stat_index]
+                stat_key, stat_name, _ = self.ctx.character_window.stats_list[self.ctx.character_window.selected_stat_index]
                 if self.ctx.player.add_stat_point(stat_key):
                     print(f"{stat_name} увеличена! Осталось очков: {self.ctx.player.stat_points}")
+
+    def handle_character_mouse_click(self, pos):
+        """
+        Обработка клика мыши в окне характеристик
+
+        Args:
+            pos: Позиция клика (x, y)
+        """
+        mouse_x, mouse_y = pos
+
+        # Пытаемся добавить очко к характеристике через кнопку [+]
+        success, message = self.ctx.character_window.handle_mouse_click(
+            mouse_x, mouse_y, self.ctx.player
+        )
+        if success and message:
+            print(message)
 
     def handle_skill_book_input(self, key):
         """
@@ -1326,6 +1342,9 @@ class InputHandler:
         if self.ctx.character_menu_open:
             if event.type == pygame.KEYDOWN:
                 self.handle_character_input(event.key)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # ЛКМ
+                    self.handle_character_mouse_click(event.pos)
             return True
 
         # Окно спутников
