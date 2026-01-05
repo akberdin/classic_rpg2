@@ -19,11 +19,13 @@ from utils.items_config.gui.widgets import (
 class CraftingConfigTab(ttk.Frame):
     """Вкладка редактирования конфигурации крафта"""
 
-    def __init__(self, parent, manager: CraftingConfigManager, items_data_manager=None, on_change: Callable = None):
+    def __init__(self, parent, manager: CraftingConfigManager, items_data_manager=None,
+                 on_change: Callable = None, on_create_item: Callable = None):
         super().__init__(parent)
         self.manager = manager
         self.items_data_manager = items_data_manager
         self.on_change = on_change
+        self.on_create_item = on_create_item
         self.current_recipe_id = None
         self.sort_column = None
         self.sort_reverse = False
@@ -241,6 +243,28 @@ class CraftingConfigTab(ttk.Frame):
 
         self.recipe_result_item = LabeledEntry(self.editor_frame, "ID предмета:", width=20)
         self.recipe_result_item.pack(fill="x", pady=2)
+        # Привязываем проверку на изменение
+        self.recipe_result_item.entry.bind("<KeyRelease>", self._check_result_item)
+        self.recipe_result_item.entry.bind("<FocusOut>", self._check_result_item)
+
+        # Фрейм для статуса предмета
+        self.item_status_frame = ttk.Frame(self.editor_frame)
+        self.item_status_frame.pack(fill="x", pady=2)
+
+        self.item_status_label = ttk.Label(
+            self.item_status_frame,
+            text="",
+            foreground="gray"
+        )
+        self.item_status_label.pack(side="left")
+
+        self.create_item_btn = ttk.Button(
+            self.item_status_frame,
+            text="Создать предмет",
+            command=self._create_new_item,
+            state="disabled"
+        )
+        self.create_item_btn.pack(side="right")
 
         self.recipe_result_qty = LabeledSpinbox(
             self.editor_frame, "Количество:", from_=1, to=100, increment=1, value=1
@@ -398,6 +422,9 @@ class CraftingConfigTab(ttk.Frame):
         for ing in recipe.ingredients:
             self.ingredients_tree.insert("", tk.END, values=(ing.get("item"), ing.get("quantity")))
 
+        # Проверяем существование предмета-результата
+        self._check_result_item()
+
     def _clear_editor(self):
         """Очистить редактор"""
         self.current_recipe_id = None
@@ -415,6 +442,9 @@ class CraftingConfigTab(ttk.Frame):
         self.recipe_req_rank.set(1)
         self.recipe_price.set(0)
         self.ingredients_tree.delete(*self.ingredients_tree.get_children())
+        # Сбрасываем статус предмета
+        self.item_status_label.config(text="", foreground="gray")
+        self.create_item_btn.config(state="disabled")
 
     def _add_ingredient(self):
         """Добавить ингредиент"""
@@ -549,3 +579,104 @@ class CraftingConfigTab(ttk.Frame):
             self._clear_editor()
             if self.on_change:
                 self.on_change()
+
+    def select_recipe_by_id(self, recipe_id: str):
+        """Выбрать рецепт по ID (публичный метод для навигации)"""
+        # Переключаемся на вкладку рецептов
+        self.notebook.select(1)
+
+        # Очищаем фильтры чтобы рецепт был виден
+        self.station_filter.set("Все станции")
+        self.category_filter.set("Все категории")
+        self.recipe_search_var.set("")
+        self._load_recipes()
+
+        # Выбираем рецепт
+        if recipe_id in self.recipes_tree.get_children():
+            self.recipes_tree.selection_set(recipe_id)
+            self.recipes_tree.see(recipe_id)
+            self.current_recipe_id = recipe_id
+            self._load_recipe_to_editor(recipe_id)
+
+    def _check_result_item(self, event=None):
+        """Проверить существование предмета по ID"""
+        item_id = self.recipe_result_item.get().strip()
+
+        if not item_id:
+            self.item_status_label.config(text="", foreground="gray")
+            self.create_item_btn.config(state="disabled")
+            return
+
+        if not self.items_data_manager:
+            self.item_status_label.config(text="(нет доступа к реестру)", foreground="gray")
+            self.create_item_btn.config(state="disabled")
+            return
+
+        # Ищем предмет во всех категориях
+        found = False
+        found_category = None
+        for cat_id in ["resources", "weapons", "armor", "jewelry", "potions"]:
+            item = self.items_data_manager.get_item(cat_id, item_id)
+            if item:
+                found = True
+                found_category = cat_id
+                break
+
+        if found:
+            cat_names = {
+                "resources": "Ресурсы",
+                "weapons": "Оружие",
+                "armor": "Броня",
+                "jewelry": "Украшения",
+                "potions": "Зелья"
+            }
+            self.item_status_label.config(
+                text=f"Предмет найден ({cat_names.get(found_category, found_category)})",
+                foreground="green"
+            )
+            self.create_item_btn.config(state="disabled")
+        else:
+            self.item_status_label.config(
+                text="Предмет не найден в реестре",
+                foreground="red"
+            )
+            # Включаем кнопку создания только если есть callback
+            if self.on_create_item:
+                self.create_item_btn.config(state="normal")
+            else:
+                self.create_item_btn.config(state="disabled")
+
+    def _create_new_item(self):
+        """Создать новый предмет через callback"""
+        item_id = self.recipe_result_item.get().strip()
+        if not item_id:
+            return
+
+        if self.on_create_item:
+            # Получаем данные из рецепта для предзаполнения
+            recipe_name = self.recipe_name.get().strip()
+            recipe_quality = self.recipe_quality_combo.get()
+            category = self.recipe_category_combo.get()
+
+            # Определяем категорию предмета по категории рецепта
+            category_mapping = {
+                "smelting": "resources",
+                "tool": "resources",
+                "weapon": "weapons",
+                "armor": "armor",
+                "jewelry": "jewelry",
+                "potion": "potions",
+                "food": "resources"
+            }
+            item_category = category_mapping.get(category, "resources")
+
+            # Вызываем callback с данными для создания предмета
+            self.on_create_item(
+                item_id=item_id,
+                category=item_category,
+                name=recipe_name,
+                quality=recipe_quality
+            )
+
+            # Перепроверяем статус после создания
+            self.after(100, self._check_result_item)

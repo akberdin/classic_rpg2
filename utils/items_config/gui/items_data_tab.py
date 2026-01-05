@@ -21,10 +21,14 @@ from utils.items_config.gui.widgets import (
 class ItemsDataTab(ttk.Frame):
     """Вкладка редактирования данных предметов"""
 
-    def __init__(self, parent, manager: ItemsDataManager, on_change: Callable = None):
+    def __init__(self, parent, manager: ItemsDataManager,
+                 crafting_manager=None, on_change: Callable = None,
+                 on_navigate_to_recipe: Callable = None):
         super().__init__(parent)
         self.manager = manager
+        self.crafting_manager = crafting_manager
         self.on_change = on_change
+        self.on_navigate_to_recipe = on_navigate_to_recipe
         self.current_category = None
         self.current_item_id = None
         self.sort_column = None
@@ -214,6 +218,40 @@ class ItemsDataTab(ttk.Frame):
         )
         self.params_editor.pack(fill="x")
 
+        # === Секция рецепта ===
+        self.recipe_frame = ttk.LabelFrame(self.editor_frame, text="Рецепт крафта", padding=5)
+
+        self.recipe_info_frame = ttk.Frame(self.recipe_frame)
+        self.recipe_info_frame.pack(fill="x")
+
+        self.recipe_status_label = ttk.Label(
+            self.recipe_info_frame,
+            text="Нет рецепта",
+            foreground="gray"
+        )
+        self.recipe_status_label.pack(side="left", fill="x", expand=True)
+
+        self.recipe_btn = ttk.Button(
+            self.recipe_info_frame,
+            text="Перейти к рецепту",
+            command=self._navigate_to_recipe,
+            state="disabled"
+        )
+        self.recipe_btn.pack(side="right")
+
+        # Информация о рецепте
+        self.recipe_details_frame = ttk.Frame(self.recipe_frame)
+        self.recipe_details_frame.pack(fill="x", pady=(5, 0))
+
+        self.recipe_name_label = ttk.Label(self.recipe_details_frame, text="")
+        self.recipe_name_label.pack(anchor="w")
+
+        self.recipe_station_label = ttk.Label(self.recipe_details_frame, text="")
+        self.recipe_station_label.pack(anchor="w")
+
+        self.recipe_ingredients_label = ttk.Label(self.recipe_details_frame, text="")
+        self.recipe_ingredients_label.pack(anchor="w")
+
         # Кнопка сохранения
         self.save_btn = ttk.Button(
             self.editor_frame, text="Сохранить изменения",
@@ -231,6 +269,7 @@ class ItemsDataTab(ttk.Frame):
         self.potion_frame.pack_forget()
         self.stats_frame.pack_forget()
         self.params_frame.pack_forget()
+        self.recipe_frame.pack_forget()
 
     def _show_sections_for_category(self, category: str):
         """Показать секции для категории"""
@@ -250,6 +289,9 @@ class ItemsDataTab(ttk.Frame):
             self.params_frame.pack(fill="x", pady=5, before=self.save_btn)
         elif category == "potions":
             self.potion_frame.pack(fill="x", pady=5, before=self.save_btn)
+
+        # Секция рецепта показывается всегда (для всех категорий)
+        self.recipe_frame.pack(fill="x", pady=5, before=self.save_btn)
 
     def _load_categories(self):
         """Загрузить категории"""
@@ -369,6 +411,9 @@ class ItemsDataTab(ttk.Frame):
         self.stats_editor.set(item.stats_bonus)
         self.params_editor.set(item.param_bonus)
 
+        # Информация о рецепте
+        self._update_recipe_info(item_id)
+
     def _clear_editor(self):
         """Очистить редактор"""
         self.current_item_id = None
@@ -386,6 +431,7 @@ class ItemsDataTab(ttk.Frame):
         self.effect_value_spinbox.set(0)
         self.stats_editor.set({})
         self.params_editor.set({})
+        self._clear_recipe_info()
 
     def _save_current_item(self):
         """Сохранить текущий предмет"""
@@ -532,3 +578,78 @@ class ItemsDataTab(ttk.Frame):
             self._clear_editor()
             if self.on_change:
                 self.on_change()
+
+    def _find_recipe_for_item(self, item_id: str):
+        """Найти рецепт для предмета"""
+        if not self.crafting_manager:
+            return None
+        recipes = self.crafting_manager.get_recipes()
+        for recipe in recipes:
+            if recipe.get("result_item") == item_id:
+                return recipe
+        return None
+
+    def _update_recipe_info(self, item_id: str):
+        """Обновить информацию о рецепте"""
+        self.current_recipe = self._find_recipe_for_item(item_id)
+
+        if self.current_recipe:
+            self.recipe_status_label.config(
+                text="Рецепт найден",
+                foreground="green"
+            )
+            self.recipe_btn.config(state="normal")
+
+            # Показываем детали
+            self.recipe_name_label.config(
+                text=f"Название: {self.current_recipe.get('name', 'N/A')}"
+            )
+            station = self.current_recipe.get('station', 'N/A')
+            station_name = {
+                'workbench': 'Мастерская',
+                'forge': 'Кузница',
+                'alchemy_table': 'Алхимический стол',
+                'enchanting_table': 'Стол зачарования'
+            }.get(station, station)
+            self.recipe_station_label.config(text=f"Станция: {station_name}")
+
+            # Ингредиенты
+            ingredients = self.current_recipe.get('ingredients', [])
+            if ingredients:
+                ing_text = "Ингредиенты: " + ", ".join(
+                    f"{ing.get('item', '?')} x{ing.get('quantity', 1)}"
+                    for ing in ingredients
+                )
+            else:
+                ing_text = "Ингредиенты: нет"
+            self.recipe_ingredients_label.config(text=ing_text)
+
+            self.recipe_details_frame.pack(fill="x", pady=(5, 0))
+        else:
+            self.recipe_status_label.config(
+                text="Нет рецепта для этого предмета",
+                foreground="gray"
+            )
+            self.recipe_btn.config(state="disabled")
+            self.recipe_name_label.config(text="")
+            self.recipe_station_label.config(text="")
+            self.recipe_ingredients_label.config(text="")
+            self.recipe_details_frame.pack_forget()
+
+    def _clear_recipe_info(self):
+        """Очистить информацию о рецепте"""
+        self.current_recipe = None
+        self.recipe_status_label.config(
+            text="Нет рецепта",
+            foreground="gray"
+        )
+        self.recipe_btn.config(state="disabled")
+        self.recipe_name_label.config(text="")
+        self.recipe_station_label.config(text="")
+        self.recipe_ingredients_label.config(text="")
+        self.recipe_details_frame.pack_forget()
+
+    def _navigate_to_recipe(self):
+        """Перейти к рецепту"""
+        if self.current_recipe and self.on_navigate_to_recipe:
+            self.on_navigate_to_recipe(self.current_recipe.get('id'))
