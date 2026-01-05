@@ -6,27 +6,27 @@
     "copper_ore": {
       "name": "Медная руда",
       "value": 4,
-      "weight": 0.5
+      "weight": 1.0
     },
     "iron_ore": {
       "name": "Железная руда",
       "value": 8,
-      "weight": 0.5
+      "weight": 1.0
     },
     "silver_ore": {
       "name": "Серебряная руда",
       "value": 20,
-      "weight": 0.5
+      "weight": 1.0
     },
     "gold_ore": {
       "name": "Золотая руда",
       "value": 40,
-      "weight": 0.5
+      "weight": 1.0
     },
     "mithril_ore": {
       "name": "Мифриловая руда",
       "value": 80,
-      "weight": 0.5
+      "weight": 1.0
     },
     "copper_ingot": {
       "name": "Медный слиток",
@@ -60,13 +60,13 @@
     },
     "wood": {
       "name": "Древесина",
-      "value": 3,
-      "weight": 1.0
+      "value": 5,
+      "weight": 5.0
     },
     "charcoal": {
       "name": "Древесный уголь",
       "value": 10,
-      "weight": 0.3
+      "weight": 0.5
     },
     "long_wooden_handle": {
       "name": "Длинная деревянная рукоять",

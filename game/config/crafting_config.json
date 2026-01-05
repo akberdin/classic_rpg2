@@ -224,14 +224,14 @@
       "description": "Производство древесного угля из древесины. Требуется 5 кусков древесины",
       "station": "forge",
       "result_item": "charcoal",
-      "result_quantity": 1,
+      "result_quantity": 5,
       "required_level": 1,
       "required_skill": "craftsmanship",
       "required_skill_rank": 1,
       "ingredients": [
         {
           "item": "wood",
-          "quantity": 5
+          "quantity": 1
         }
       ],
       "category": "smelting",
@@ -2570,8 +2570,8 @@
       "required_skill_rank": 1,
       "ingredients": [
         {
-          "item": "copper_ingot",
-          "quantity": 2
+          "item": "copper_wire",
+          "quantity": 1
         }
       ],
       "category": "jewelry",
