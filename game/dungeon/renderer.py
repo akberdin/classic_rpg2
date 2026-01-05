@@ -49,6 +49,7 @@ class DungeonRenderer:
             DungeonTileType.ALTAR: "A",
             DungeonTileType.BONES: "b",
             DungeonTileType.ORE_VEIN: "o",
+            DungeonTileType.ORE: "O",  # Выход руды (непроходимый)
             DungeonTileType.REMAINS: "R",
             DungeonTileType.REMAINS_LOOTED: "r",
         }
@@ -73,6 +74,7 @@ class DungeonRenderer:
             DungeonTileType.MINECART: "minecart",
             DungeonTileType.SUPPORT: "support",
             DungeonTileType.ORE_VEIN: "ore_vein",
+            DungeonTileType.ORE: "ore",  # Будет заменено на ore_{resource_type}
             DungeonTileType.REMAINS: "remains",
             DungeonTileType.REMAINS_LOOTED: "remains_looted",
         }
@@ -127,6 +129,35 @@ class DungeonRenderer:
             variant_index = 3  # Вариант 3 (10%)
 
         return self.sprite_manager.get_floor_variant_sprite(depth_type, variant_index)
+
+    def get_ore_sprite(self, tile, dungeon_type="mine", depth_type=None):
+        """
+        Получить спрайт руды с учётом типа ресурса
+
+        Args:
+            tile: Тайл с рудой (содержит ore_data с resource_type)
+            dungeon_type: Тип подземелья
+            depth_type: Тип глубины
+
+        Returns:
+            pygame.Surface или None
+        """
+        if not self.sprite_manager:
+            return None
+
+        # Получаем тип ресурса из ore_data тайла
+        resource_type = None
+        if tile.ore_data and isinstance(tile.ore_data, dict):
+            resource_type = tile.ore_data.get("resource_type")
+
+        # Если тип ресурса не указан, используем базовый спрайт ore_vein
+        if not resource_type:
+            return self.get_tile_sprite(DungeonTileType.ORE_VEIN, dungeon_type, depth_type)
+
+        # Формируем имя спрайта: ore_copper, ore_iron, ore_silver, ore_gold, ore_mithril
+        sprite_name = f"ore_{resource_type}"
+
+        return self.sprite_manager.get_dungeon_tile_sprite(sprite_name, dungeon_type, depth_type)
 
     def render_dungeon(self, dungeon: DungeonMap, player, camera_x: int, camera_y: int,
                        viewport_width: int, viewport_height: int, selected_target=None,
@@ -210,6 +241,9 @@ class DungeonRenderer:
                     sprite = self.get_floor_variant_sprite(dungeon.depth_type, map_x, map_y)
                     if not sprite:
                         sprite = self.get_tile_sprite(tile.tile_type, dungeon.dungeon_type, dungeon.depth_type)
+                elif tile.tile_type == DungeonTileType.ORE:
+                    # Для руды используем спрайт с учётом типа ресурса
+                    sprite = self.get_ore_sprite(tile, dungeon.dungeon_type, dungeon.depth_type)
                 else:
                     sprite = self.get_tile_sprite(tile.tile_type, dungeon.dungeon_type, dungeon.depth_type)
 
@@ -286,6 +320,7 @@ class DungeonRenderer:
             DungeonTileType.ALTAR: (200, 100, 255),       # Фиолетовый
             DungeonTileType.BONES: (220, 220, 200),
             DungeonTileType.ORE_VEIN: (200, 150, 100),
+            DungeonTileType.ORE: (180, 140, 80),          # Рудный оттенок
             DungeonTileType.REMAINS: (255, 150, 150),     # Красноватый
             DungeonTileType.REMAINS_LOOTED: (150, 100, 100),  # Тёмно-красный
         }

@@ -151,6 +151,7 @@ class DungeonTileType(Enum):
     ORE_VEIN = "ore_vein"      # Рудная жила (проходима, можно добывать)
     MINECART = "minecart"      # Вагонетка (непроходима)
     SUPPORT = "support"        # Опора (непроходима)
+    ORE = "ore"                # Выход руды (непроходим)
 
     # Останки врагов
     REMAINS = "remains"        # Останки врага (проходимы, можно обыскать)
@@ -186,6 +187,7 @@ DUNGEON_TILE_COLORS = {
     DungeonTileType.ORE_VEIN: (100, 80, 60),       # Коричневатый
     DungeonTileType.MINECART: (50, 50, 50),        # Темный
     DungeonTileType.SUPPORT: (60, 45, 30),         # Деревянный
+    DungeonTileType.ORE: (120, 100, 80),           # Рудный (непроходим)
 
     # Останки врагов
     DungeonTileType.REMAINS: (120, 80, 80),        # Красноватый (кровь)

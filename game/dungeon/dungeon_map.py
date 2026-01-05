@@ -18,7 +18,8 @@ class DungeonMap:
 
     def __init__(self, width: int, height: int, dungeon_type: str = "dungeon",
                  dungeon_level: int = 1, name: str = "Подземелье",
-                 current_depth: int = 1, floor_type: str = None):
+                 current_depth: int = 1, floor_type: str = None,
+                 resource_type: str = None):
         """
         Инициализация карты подземелья
 
@@ -30,6 +31,7 @@ class DungeonMap:
             name: Название подземелья
             current_depth: Текущая глубина (1-based)
             floor_type: Тип этажа из конфига (basement, dark_basement, mine, и т.д.)
+            resource_type: Тип ресурса шахты (copper, iron, silver, gold, mithril)
         """
         self.width = width
         self.height = height
@@ -38,6 +40,7 @@ class DungeonMap:
         self.name = name
         self.current_depth = current_depth
         self.floor_type_str = floor_type  # Сохраняем строковое значение
+        self.resource_type = resource_type  # Тип ресурса шахты для генерации руды
 
         # Определяем тип глубины
         self.depth_type: Union[DungeonDepthType, MineDepthType]
@@ -540,6 +543,7 @@ class DungeonMap:
             DungeonTileType.ORE_VEIN: 'o',
             DungeonTileType.MINECART: 'M',
             DungeonTileType.SUPPORT: '|',
+            DungeonTileType.ORE: 'O',
             DungeonTileType.REMAINS: 'R',
             DungeonTileType.REMAINS_LOOTED: 'r',
         }
