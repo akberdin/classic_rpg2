@@ -129,7 +129,9 @@ class ItemsConfigApp:
         self.items_data_tab = ItemsDataTab(
             self.notebook,
             self.items_data_manager,
-            on_change=self._on_data_change
+            crafting_manager=self.crafting_config_manager,
+            on_change=self._on_data_change,
+            on_navigate_to_recipe=self._navigate_to_recipe
         )
         self.notebook.add(self.items_data_tab, text="Реестр предметов (items_data)")
 
@@ -146,7 +148,8 @@ class ItemsConfigApp:
             self.notebook,
             self.crafting_config_manager,
             self.items_data_manager,
-            on_change=self._on_data_change
+            on_change=self._on_data_change,
+            on_create_item=self._create_item_from_recipe
         )
         self.notebook.add(self.crafting_config_tab, text="Крафт (crafting_config)")
 
@@ -191,6 +194,33 @@ class ItemsConfigApp:
     def _update_status(self, text: str):
         """Обновить статусную строку"""
         self.status_label.config(text=text)
+
+    def _navigate_to_recipe(self, recipe_id: str):
+        """Перейти к рецепту по ID"""
+        # Переключаемся на вкладку крафта (индекс 2)
+        self.notebook.select(2)
+        # Выбираем рецепт в списке
+        self.crafting_config_tab.select_recipe_by_id(recipe_id)
+
+    def _create_item_from_recipe(self, item_id: str, category: str, name: str, quality: str):
+        """Создать новый предмет из рецепта"""
+        # Создаём базовые данные для предмета
+        item_data = {
+            "name": name if name else item_id
+        }
+        if quality:
+            item_data["quality"] = quality
+
+        # Добавляем предмет
+        if self.items_data_manager.add_item(category, item_id, item_data):
+            self._on_data_change()
+            messagebox.showinfo(
+                "Предмет создан",
+                f"Предмет '{item_id}' добавлен в категорию '{category}'.\n\n"
+                "Вы можете отредактировать его параметры во вкладке 'Реестр предметов'."
+            )
+        else:
+            messagebox.showerror("Ошибка", f"Не удалось создать предмет '{item_id}'")
 
     def _save_all(self):
         """Сохранить все изменения"""
