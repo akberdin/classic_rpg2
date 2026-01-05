@@ -72,6 +72,7 @@ class ItemData:
     value: int = 0
     weight: float = 0.0
     quality: Optional[str] = None
+    sprite: Optional[str] = None  # Путь к спрайту
     # Для оружия
     weapon_type: Optional[str] = None
     damage: Optional[int] = None
@@ -96,6 +97,8 @@ class ItemData:
             result["weight"] = self.weight
         if self.quality:
             result["quality"] = self.quality
+        if self.sprite:
+            result["sprite"] = self.sprite
 
         # Оружие
         if self.weapon_type:
@@ -135,6 +138,7 @@ class ItemData:
             value=data.get("value", 0),
             weight=data.get("weight", 0.0),
             quality=data.get("quality"),
+            sprite=data.get("sprite"),
             weapon_type=data.get("weapon_type"),
             damage=data.get("damage"),
             slot=data.get("slot"),
