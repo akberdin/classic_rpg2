@@ -19,9 +19,10 @@ from utils.items_config.gui.widgets import (
 class CraftingConfigTab(ttk.Frame):
     """Вкладка редактирования конфигурации крафта"""
 
-    def __init__(self, parent, manager: CraftingConfigManager, on_change: Callable = None):
+    def __init__(self, parent, manager: CraftingConfigManager, items_data_manager=None, on_change: Callable = None):
         super().__init__(parent)
         self.manager = manager
+        self.items_data_manager = items_data_manager
         self.on_change = on_change
         self.current_recipe_id = None
         self.sort_column = None
