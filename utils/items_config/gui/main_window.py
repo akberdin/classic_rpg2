@@ -7,10 +7,11 @@ from tkinter import ttk, messagebox
 import os
 
 from utils.items_config.models import (
-    ItemsDataManager, ItemsConfigManager, get_config_paths
+    ItemsDataManager, ItemsConfigManager, CraftingConfigManager, get_config_paths
 )
 from utils.items_config.gui.items_data_tab import ItemsDataTab
 from utils.items_config.gui.items_config_tab import ItemsConfigTab
+from utils.items_config.gui.crafting_config_tab import CraftingConfigTab
 
 
 class ItemsConfigApp:
@@ -23,11 +24,12 @@ class ItemsConfigApp:
         self.root.minsize(900, 500)
 
         # Пути к файлам
-        self.items_data_path, self.items_config_path = get_config_paths()
+        self.items_data_path, self.items_config_path, self.crafting_config_path = get_config_paths()
 
         # Менеджеры данных
         self.items_data_manager = ItemsDataManager(self.items_data_path)
         self.items_config_manager = ItemsConfigManager(self.items_config_path)
+        self.crafting_config_manager = CraftingConfigManager(self.crafting_config_path)
 
         # Загрузка данных
         if not self._load_data():
@@ -64,12 +66,23 @@ class ItemsConfigApp:
             )
             return False
 
+        if not os.path.exists(self.crafting_config_path):
+            messagebox.showerror(
+                "Ошибка",
+                f"Файл не найден:\n{self.crafting_config_path}"
+            )
+            return False
+
         if not self.items_data_manager.load():
             messagebox.showerror("Ошибка", "Не удалось загрузить items_data.json")
             return False
 
         if not self.items_config_manager.load():
             messagebox.showerror("Ошибка", "Не удалось загрузить items_config.json")
+            return False
+
+        if not self.crafting_config_manager.load():
+            messagebox.showerror("Ошибка", "Не удалось загрузить crafting_config.json")
             return False
 
         return True
@@ -128,6 +141,15 @@ class ItemsConfigApp:
         )
         self.notebook.add(self.items_config_tab, text="Конфигурация (items_config)")
 
+        # Вкладка крафта
+        self.crafting_config_tab = CraftingConfigTab(
+            self.notebook,
+            self.crafting_config_manager,
+            self.items_data_manager,
+            on_change=self._on_data_change
+        )
+        self.notebook.add(self.crafting_config_tab, text="Крафт (crafting_config)")
+
         # Статусная строка
         self.status_frame = ttk.Frame(main_frame)
         self.status_frame.pack(fill="x", side="bottom")
@@ -179,6 +201,9 @@ class ItemsConfigApp:
 
         if not self.items_config_manager.save():
             errors.append("items_config.json")
+
+        if not self.crafting_config_manager.save():
+            errors.append("crafting_config.json")
 
         if errors:
             messagebox.showerror(
@@ -232,7 +257,8 @@ class ItemsConfigApp:
             "системы предметов игры.\n\n"
             "Файлы:\n"
             f"- {os.path.basename(self.items_data_path)}\n"
-            f"- {os.path.basename(self.items_config_path)}\n\n"
+            f"- {os.path.basename(self.items_config_path)}\n"
+            f"- {os.path.basename(self.crafting_config_path)}\n\n"
             "Горячие клавиши:\n"
             "Ctrl+S - Сохранить всё\n"
             "Ctrl+R - Перезагрузить"

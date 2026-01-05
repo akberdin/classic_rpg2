@@ -15,7 +15,8 @@ def get_config_paths() -> tuple:
     base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     items_data_path = os.path.join(base_path, "game", "config", "items_data.json")
     items_config_path = os.path.join(base_path, "game", "config", "items_config.json")
-    return items_data_path, items_config_path
+    crafting_config_path = os.path.join(base_path, "game", "config", "crafting_config.json")
+    return items_data_path, items_config_path, crafting_config_path
 
 
 # Категории предметов в items_data.json
@@ -398,3 +399,185 @@ class ItemsConfigManager:
         """Обновить конфигурацию бонусов умений"""
         self.data["skill_bonus_config"] = config
         return True
+
+
+# Станции крафта
+CRAFTING_STATIONS = ["workbench", "forge", "alchemy_table", "enchanting_table"]
+
+# Категории рецептов
+RECIPE_CATEGORIES = [
+    "smelting", "tool", "weapon", "armor", "jewelry", "potion", "food"
+]
+
+# Навыки крафта
+CRAFTING_SKILLS = ["craftsmanship", "alchemy", "enchanting"]
+
+
+@dataclass
+class Recipe:
+    """Рецепт крафта"""
+    id: str
+    name: str
+    display_name: str = ""
+    quality: str = "common"
+    description: str = ""
+    station: str = "workbench"
+    result_item: str = ""
+    result_quantity: int = 1
+    required_level: int = 1
+    required_skill: str = "craftsmanship"
+    required_skill_rank: int = 1
+    ingredients: List[Dict[str, Any]] = field(default_factory=list)
+    category: str = "tool"
+    base_price: int = 0
+    sprite: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Преобразовать в словарь для JSON"""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "display_name": self.display_name,
+            "quality": self.quality,
+            "description": self.description,
+            "station": self.station,
+            "result_item": self.result_item,
+            "result_quantity": self.result_quantity,
+            "required_level": self.required_level,
+            "required_skill": self.required_skill,
+            "required_skill_rank": self.required_skill_rank,
+            "ingredients": self.ingredients,
+            "category": self.category,
+            "base_price": self.base_price,
+            "sprite": self.sprite
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Recipe":
+        """Создать из словаря"""
+        return cls(
+            id=data.get("id", ""),
+            name=data.get("name", ""),
+            display_name=data.get("display_name", ""),
+            quality=data.get("quality", "common"),
+            description=data.get("description", ""),
+            station=data.get("station", "workbench"),
+            result_item=data.get("result_item", ""),
+            result_quantity=data.get("result_quantity", 1),
+            required_level=data.get("required_level", 1),
+            required_skill=data.get("required_skill", "craftsmanship"),
+            required_skill_rank=data.get("required_skill_rank", 1),
+            ingredients=data.get("ingredients", []),
+            category=data.get("category", "tool"),
+            base_price=data.get("base_price", 0),
+            sprite=data.get("sprite")
+        )
+
+
+class CraftingConfigManager:
+    """Менеджер конфигурации крафта (crafting_config.json)"""
+
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+        self.data: Dict[str, Any] = {}
+        self._original_data: Dict[str, Any] = {}
+
+    def load(self) -> bool:
+        """Загрузить данные из файла"""
+        try:
+            with open(self.file_path, 'r', encoding='utf-8') as f:
+                self.data = json.load(f)
+                self._original_data = json.loads(json.dumps(self.data))
+            return True
+        except Exception as e:
+            print(f"Ошибка загрузки {self.file_path}: {e}")
+            return False
+
+    def save(self) -> bool:
+        """Сохранить данные в файл"""
+        try:
+            with open(self.file_path, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, ensure_ascii=False, indent=2)
+            self._original_data = json.loads(json.dumps(self.data))
+            return True
+        except Exception as e:
+            print(f"Ошибка сохранения {self.file_path}: {e}")
+            return False
+
+    def has_changes(self) -> bool:
+        """Проверить наличие несохранённых изменений"""
+        return self.data != self._original_data
+
+    # Станции крафта
+    def get_stations(self) -> Dict[str, Any]:
+        """Получить станции крафта"""
+        return self.data.get("crafting_stations", {})
+
+    def update_station(self, station_id: str, data: Dict[str, Any]) -> bool:
+        """Обновить станцию крафта"""
+        if "crafting_stations" not in self.data:
+            self.data["crafting_stations"] = {}
+        self.data["crafting_stations"][station_id] = data
+        return True
+
+    # Рецепты
+    def get_recipes(self) -> List[Dict[str, Any]]:
+        """Получить все рецепты"""
+        return self.data.get("recipes", [])
+
+    def get_recipes_by_station(self, station: str) -> List[Recipe]:
+        """Получить рецепты по станции"""
+        recipes = []
+        for r in self.data.get("recipes", []):
+            if r.get("station") == station:
+                recipes.append(Recipe.from_dict(r))
+        return recipes
+
+    def get_recipes_by_category(self, category: str) -> List[Recipe]:
+        """Получить рецепты по категории"""
+        recipes = []
+        for r in self.data.get("recipes", []):
+            if r.get("category") == category:
+                recipes.append(Recipe.from_dict(r))
+        return recipes
+
+    def get_recipe_by_id(self, recipe_id: str) -> Optional[Recipe]:
+        """Получить рецепт по ID"""
+        for r in self.data.get("recipes", []):
+            if r.get("id") == recipe_id:
+                return Recipe.from_dict(r)
+        return None
+
+    def add_recipe(self, recipe: Recipe) -> bool:
+        """Добавить рецепт"""
+        if "recipes" not in self.data:
+            self.data["recipes"] = []
+
+        # Проверяем, что ID уникален
+        for r in self.data["recipes"]:
+            if r.get("id") == recipe.id:
+                return False
+
+        self.data["recipes"].append(recipe.to_dict())
+        return True
+
+    def update_recipe(self, recipe_id: str, recipe_data: Dict[str, Any]) -> bool:
+        """Обновить рецепт"""
+        for i, r in enumerate(self.data.get("recipes", [])):
+            if r.get("id") == recipe_id:
+                self.data["recipes"][i] = recipe_data
+                return True
+        return False
+
+    def delete_recipe(self, recipe_id: str) -> bool:
+        """Удалить рецепт"""
+        recipes = self.data.get("recipes", [])
+        for i, r in enumerate(recipes):
+            if r.get("id") == recipe_id:
+                del recipes[i]
+                return True
+        return False
+
+    def get_all_recipe_ids(self) -> List[str]:
+        """Получить все ID рецептов"""
+        return [r.get("id", "") for r in self.data.get("recipes", [])]

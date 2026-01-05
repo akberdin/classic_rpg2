@@ -32,14 +32,12 @@ class ItemsConfigTab(ttk.Frame):
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill="both", expand=True, padx=5, pady=5)
 
-        # Вкладки
+        # Вкладки (объединённые)
         self._create_quality_levels_tab()
-        self._create_item_parameters_tab()
+        self._create_item_parameters_tab()  # Включает фильтры оружия
         self._create_base_prices_tab()
-        self._create_quality_weights_tab()
+        self._create_generation_tab()  # Объединяет веса качества и удачу
         self._create_slots_tab()
-        self._create_luck_modifiers_tab()
-        self._create_weapon_filters_tab()
 
     def _create_quality_levels_tab(self):
         """Вкладка уровней качества"""
@@ -135,7 +133,7 @@ class ItemsConfigTab(ttk.Frame):
         messagebox.showinfo("Успех", "Данные качества сохранены")
 
     def _create_item_parameters_tab(self):
-        """Вкладка параметров предметов"""
+        """Вкладка параметров предметов (включает фильтры оружия)"""
         frame = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(frame, text="Параметры предметов")
 
@@ -161,13 +159,25 @@ class ItemsConfigTab(ttk.Frame):
         self.param_quality_combo.pack(side="left", padx=5)
         self.param_quality_combo.bind("<<ComboboxSelected>>", self._on_param_quality_select)
 
-        # Scroll frame для редактора
-        scroll = ScrollableFrame(frame)
+        # PanedWindow для параметров и фильтров
+        paned = ttk.PanedWindow(frame, orient="horizontal")
+        paned.pack(fill="both", expand=True)
+
+        # Левая часть - параметры генерации
+        left_frame = ttk.LabelFrame(paned, text="Параметры генерации", padding=5)
+        paned.add(left_frame, weight=2)
+
+        scroll = ScrollableFrame(left_frame)
         scroll.pack(fill="both", expand=True)
         self.params_editor_frame = scroll.scrollable_frame
 
-        # Редактор параметров
         self._create_params_editor()
+
+        # Правая часть - фильтры (только для weapon)
+        self.filters_frame = ttk.LabelFrame(paned, text="Фильтры характеристик", padding=5)
+        paned.add(self.filters_frame, weight=1)
+
+        self._create_filters_editor()
 
     def _create_params_editor(self):
         """Создание редактора параметров"""
@@ -260,13 +270,131 @@ class ItemsConfigTab(ttk.Frame):
             command=self._save_item_parameters
         ).pack(pady=10)
 
+    def _create_filters_editor(self):
+        """Создание редактора фильтров для оружия"""
+        # Пояснение
+        info_label = ttk.Label(
+            self.filters_frame,
+            text="Фильтры определяют, какие\nхарактеристики и параметры\nмогут появиться на оружии\nданного типа при генерации.",
+            justify="left",
+            foreground="gray"
+        )
+        info_label.pack(anchor="w", pady=(0, 10))
+
+        # Фильтр характеристик
+        stats_frame = ttk.LabelFrame(self.filters_frame, text="Характеристики", padding=5)
+        stats_frame.pack(fill="x", pady=5)
+
+        self.filter_stat_mode_var = tk.StringVar(value="all")
+        ttk.Radiobutton(
+            stats_frame, text="Все доступны",
+            variable=self.filter_stat_mode_var, value="all"
+        ).pack(anchor="w")
+        ttk.Radiobutton(
+            stats_frame, text="Только указанные",
+            variable=self.filter_stat_mode_var, value="allowed"
+        ).pack(anchor="w")
+        ttk.Radiobutton(
+            stats_frame, text="Все кроме указанных",
+            variable=self.filter_stat_mode_var, value="excluded"
+        ).pack(anchor="w")
+
+        ttk.Label(stats_frame, text="Список (через запятую):").pack(anchor="w", pady=(5, 0))
+        self.filter_stats_var = tk.StringVar()
+        self.filter_stats_entry = ttk.Entry(stats_frame, textvariable=self.filter_stats_var)
+        self.filter_stats_entry.pack(fill="x")
+
+        ttk.Label(stats_frame, text="(strength, dexterity, constitution,\nspirit, intelligence, luck)",
+                  font=("TkDefaultFont", 8), foreground="gray").pack(anchor="w")
+
+        # Фильтр параметров
+        params_frame = ttk.LabelFrame(self.filters_frame, text="Параметры", padding=5)
+        params_frame.pack(fill="x", pady=5)
+
+        self.filter_param_mode_var = tk.StringVar(value="all")
+        ttk.Radiobutton(
+            params_frame, text="Все доступны",
+            variable=self.filter_param_mode_var, value="all"
+        ).pack(anchor="w")
+        ttk.Radiobutton(
+            params_frame, text="Только указанные",
+            variable=self.filter_param_mode_var, value="allowed"
+        ).pack(anchor="w")
+
+        ttk.Label(params_frame, text="Список (через запятую):").pack(anchor="w", pady=(5, 0))
+        self.filter_params_var = tk.StringVar()
+        self.filter_params_entry = ttk.Entry(params_frame, textvariable=self.filter_params_var)
+        self.filter_params_entry.pack(fill="x")
+
+        ttk.Label(params_frame, text="(health, mana, stamina)",
+                  font=("TkDefaultFont", 8), foreground="gray").pack(anchor="w")
+
+        # Кнопка сохранения фильтров
+        ttk.Button(
+            self.filters_frame, text="Сохранить фильтры",
+            command=self._save_weapon_filters
+        ).pack(pady=10)
+
+        # Метка - только для оружия
+        self.filters_note = ttk.Label(
+            self.filters_frame,
+            text="Фильтры применяются\nтолько к оружию",
+            font=("TkDefaultFont", 9, "italic"),
+            foreground="blue"
+        )
+        self.filters_note.pack(pady=5)
+
     def _on_item_type_select(self, event):
         """Выбор типа предмета"""
+        item_type = self.item_type_var.get()
+
+        # Показываем/скрываем фильтры в зависимости от типа
+        if item_type == "weapon":
+            self._load_weapon_filters()
+            for child in self.filters_frame.winfo_children():
+                child.configure(state="normal") if hasattr(child, 'configure') else None
+        else:
+            # Очищаем и блокируем фильтры для не-оружия
+            self.filter_stat_mode_var.set("all")
+            self.filter_stats_var.set("")
+            self.filter_param_mode_var.set("all")
+            self.filter_params_var.set("")
+
         self._load_item_parameters()
 
     def _on_param_quality_select(self, event):
         """Выбор качества для параметров"""
         self._load_item_parameters()
+
+    def _load_weapon_filters(self):
+        """Загрузить фильтры оружия для текущего типа"""
+        # Получаем тип оружия из выбранного item_type
+        # Для weapon используем общие фильтры, можно расширить
+        filters = self.manager.get_weapon_filters()
+        stat_filters = filters.get("stat_filters", {})
+        param_filters = filters.get("param_filters", {})
+
+        # По умолчанию показываем sword
+        weapon_type = "sword"
+
+        stat_data = stat_filters.get(weapon_type, {})
+        if "allowed" in stat_data:
+            self.filter_stat_mode_var.set("allowed")
+            self.filter_stats_var.set(", ".join(stat_data["allowed"]))
+        elif "excluded" in stat_data:
+            self.filter_stat_mode_var.set("excluded")
+            self.filter_stats_var.set(", ".join(stat_data["excluded"]))
+        else:
+            self.filter_stat_mode_var.set("all")
+            self.filter_stats_var.set("")
+
+        param_data = param_filters.get(weapon_type, {})
+        if "allowed" in param_data:
+            self.filter_param_mode_var.set("allowed")
+            self.filter_params_var.set(", ".join(param_data["allowed"]))
+        else:
+            self.filter_param_mode_var.set("all")
+            self.filter_params_var.set("")
 
     def _load_item_parameters(self):
         """Загрузить параметры предмета"""
@@ -280,7 +408,6 @@ class ItemsConfigTab(ttk.Frame):
         data = params.get(quality, {})
 
         # Заполняем редактор
-        # Диапазон урона/защиты
         damage_key = "damage_range" if "weapon" in item_type else "defense_range"
         self.damage_range.set(data.get(damage_key, [0, 0]))
 
@@ -342,6 +469,48 @@ class ItemsConfigTab(ttk.Frame):
             self.on_change()
         messagebox.showinfo("Успех", "Параметры сохранены")
 
+    def _save_weapon_filters(self):
+        """Сохранить фильтры оружия"""
+        if self.item_type_var.get() != "weapon":
+            messagebox.showinfo("Информация", "Фильтры применяются только к оружию")
+            return
+
+        # Получаем текущие фильтры
+        filters = self.manager.get_weapon_filters()
+        stat_filters = filters.get("stat_filters", {})
+        param_filters = filters.get("param_filters", {})
+
+        # Применяем ко всем типам оружия одинаково (упрощённый вариант)
+        weapon_types = ["sword", "axe", "knife", "spear", "bow", "staff", "wand", "club", "pickaxe"]
+
+        stat_mode = self.filter_stat_mode_var.get()
+        stats = [s.strip() for s in self.filter_stats_var.get().split(",") if s.strip()]
+
+        param_mode = self.filter_param_mode_var.get()
+        params = [p.strip() for p in self.filter_params_var.get().split(",") if p.strip()]
+
+        for wtype in weapon_types:
+            if stat_mode == "allowed" and stats:
+                stat_filters[wtype] = {"allowed": stats}
+            elif stat_mode == "excluded" and stats:
+                stat_filters[wtype] = {"excluded": stats}
+            elif wtype in stat_filters:
+                del stat_filters[wtype]
+
+            if param_mode == "allowed" and params:
+                param_filters[wtype] = {"allowed": params}
+            elif wtype in param_filters:
+                del param_filters[wtype]
+
+        self.manager.update_weapon_filters({
+            "stat_filters": stat_filters,
+            "param_filters": param_filters
+        })
+
+        if self.on_change:
+            self.on_change()
+        messagebox.showinfo("Успех", "Фильтры оружия сохранены")
+
     def _create_base_prices_tab(self):
         """Вкладка базовых цен"""
         frame = ttk.Frame(self.notebook, padding=10)
@@ -375,46 +544,168 @@ class ItemsConfigTab(ttk.Frame):
             self.on_change()
         messagebox.showinfo("Успех", "Базовые цены сохранены")
 
-    def _create_quality_weights_tab(self):
-        """Вкладка весов качества"""
+    def _create_generation_tab(self):
+        """Объединённая вкладка генерации предметов (веса качества + удача)"""
         frame = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(frame, text="Веса качества")
+        self.notebook.add(frame, text="Генерация предметов")
+
+        # PanedWindow для двух секций
+        paned = ttk.PanedWindow(frame, orient="horizontal")
+        paned.pack(fill="both", expand=True)
+
+        # Левая часть - Веса качества
+        left_frame = ttk.LabelFrame(paned, text="Вероятности качества при генерации", padding=10)
+        paned.add(left_frame, weight=1)
 
         ttk.Label(
-            frame, text="Веса для генерации качества предметов",
-            font=("TkDefaultFont", 10, "bold")
+            left_frame,
+            text="Веса определяют вероятность выпадения\nпредмета каждого качества при генерации.\nБольший вес = выше вероятность.",
+            foreground="gray",
+            justify="left"
         ).pack(anchor="w", pady=(0, 10))
 
         # Выбор категории
-        select_frame = ttk.Frame(frame)
-        select_frame.pack(fill="x", pady=5)
+        cat_frame = ttk.Frame(left_frame)
+        cat_frame.pack(fill="x", pady=5)
 
-        ttk.Label(select_frame, text="Категория:").pack(side="left")
+        ttk.Label(cat_frame, text="Категория:").pack(side="left")
         self.weights_category_var = tk.StringVar(value="default")
         self.weights_category_combo = ttk.Combobox(
-            select_frame, textvariable=self.weights_category_var,
+            cat_frame, textvariable=self.weights_category_var,
             values=["default", "jewelry"], state="readonly", width=15
         )
         self.weights_category_combo.pack(side="left", padx=5)
         self.weights_category_combo.bind("<<ComboboxSelected>>", self._on_weights_category_select)
 
-        # Редактор весов
-        self.weights_editor = DictEditor(
-            frame, "",
-            key_label="Качество",
-            value_label="Вес",
-            available_keys=[q.lower() for q in QUALITY_LEVELS],
-            value_type="float"
-        )
-        self.weights_editor.pack(fill="both", expand=True, pady=10)
+        ttk.Label(
+            left_frame,
+            text="default - обычные предметы\njewelry - украшения (выше качество)",
+            font=("TkDefaultFont", 8),
+            foreground="gray"
+        ).pack(anchor="w")
+
+        # Слайдеры для весов
+        self.weight_vars = {}
+        self.weight_labels = {}
+
+        weights_container = ttk.Frame(left_frame)
+        weights_container.pack(fill="both", expand=True, pady=10)
+
+        for quality in [q.lower() for q in QUALITY_LEVELS]:
+            row = ttk.Frame(weights_container)
+            row.pack(fill="x", pady=3)
+
+            ttk.Label(row, text=f"{quality}:", width=12).pack(side="left")
+
+            var = tk.DoubleVar(value=0)
+            scale = ttk.Scale(row, from_=0, to=1, variable=var, orient="horizontal", length=150)
+            scale.pack(side="left", padx=5)
+
+            label = ttk.Label(row, text="0.00", width=6)
+            label.pack(side="left")
+
+            self.weight_vars[quality] = var
+            self.weight_labels[quality] = label
+
+            # Обновление метки при изменении
+            var.trace_add("write", lambda *args, q=quality: self._update_weight_label(q))
 
         ttk.Button(
-            frame, text="Сохранить веса",
+            left_frame, text="Сохранить веса",
             command=self._save_quality_weights
         ).pack(pady=10)
 
         # Загружаем default
         self._load_quality_weights("default")
+
+        # Правая часть - Модификаторы удачи
+        right_frame = ttk.LabelFrame(paned, text="Влияние удачи на генерацию", padding=10)
+        paned.add(right_frame, weight=1)
+
+        scroll = ScrollableFrame(right_frame)
+        scroll.pack(fill="both", expand=True)
+        luck_content = scroll.scrollable_frame
+
+        ttk.Label(
+            luck_content,
+            text="Удача персонажа влияет на качество\nгенерируемых предметов и шанс\nдополнительного дропа.",
+            foreground="gray",
+            justify="left"
+        ).pack(anchor="w", pady=(0, 10))
+
+        luck = self.manager.get_luck_modifiers()
+
+        # Основные параметры
+        ttk.Label(luck_content, text="Основные параметры:", font=("TkDefaultFont", 9, "bold")).pack(anchor="w")
+
+        self.luck_bonus_per_point = LabeledSpinbox(
+            luck_content, "Бонус за 1 удачу:", from_=0, to=0.1, increment=0.005,
+            value=luck.get("bonus_per_point", 0.01)
+        )
+        self.luck_bonus_per_point.pack(fill="x", pady=2)
+
+        self.luck_max_bonus = LabeledSpinbox(
+            luck_content, "Макс. бонус:", from_=0, to=1, increment=0.05,
+            value=luck.get("max_bonus", 0.5)
+        )
+        self.luck_max_bonus.pack(fill="x", pady=2)
+
+        ttk.Separator(luck_content).pack(fill="x", pady=10)
+
+        # Дополнительный дроп
+        ttk.Label(luck_content, text="Шанс доп. предмета:", font=("TkDefaultFont", 9, "bold")).pack(anchor="w")
+
+        extra = luck.get("extra_drop", {})
+
+        self.luck_extra_chance = LabeledSpinbox(
+            luck_content, "% за 1 удачу:", from_=0, to=10, increment=0.5,
+            value=extra.get("chance_per_point", 1)
+        )
+        self.luck_extra_chance.pack(fill="x", pady=2)
+
+        self.luck_extra_max = LabeledSpinbox(
+            luck_content, "Макс. шанс %:", from_=0, to=100, increment=5,
+            value=extra.get("max_chance", 30)
+        )
+        self.luck_extra_max.pack(fill="x", pady=2)
+
+        ttk.Separator(luck_content).pack(fill="x", pady=10)
+
+        # Перераспределение качества
+        ttk.Label(luck_content, text="Перераспределение весов:", font=("TkDefaultFont", 9, "bold")).pack(anchor="w")
+        ttk.Label(
+            luck_content,
+            text="Как удача снижает вес низких\nкачеств и повышает высоких",
+            font=("TkDefaultFont", 8),
+            foreground="gray"
+        ).pack(anchor="w")
+
+        redistr = luck.get("quality_redistribution", {})
+
+        self.luck_poor_reduction = LabeledSpinbox(
+            luck_content, "Снижение poor:", from_=0, to=1, increment=0.1,
+            value=redistr.get("poor_reduction_factor", 0.1)
+        )
+        self.luck_poor_reduction.pack(fill="x", pady=2)
+
+        self.luck_common_reduction = LabeledSpinbox(
+            luck_content, "Снижение common:", from_=0, to=1, increment=0.1,
+            value=redistr.get("common_reduction_factor", 0.5)
+        )
+        self.luck_common_reduction.pack(fill="x", pady=2)
+
+        ttk.Button(
+            luck_content, text="Сохранить настройки удачи",
+            command=self._save_luck_modifiers
+        ).pack(pady=10)
+
+    def _update_weight_label(self, quality: str):
+        """Обновить метку веса"""
+        try:
+            value = self.weight_vars[quality].get()
+            self.weight_labels[quality].config(text=f"{value:.2f}")
+        except:
+            pass
 
     def _on_weights_category_select(self, event):
         """Выбор категории весов"""
@@ -425,23 +716,58 @@ class ItemsConfigTab(ttk.Frame):
         """Загрузить веса качества"""
         weights = self.manager.get_quality_weights()
         data = weights.get(category, {})
-        # Исключаем комментарии
-        clean_data = {k: v for k, v in data.items() if not k.startswith("_")}
-        self.weights_editor.set(clean_data)
+
+        for quality in [q.lower() for q in QUALITY_LEVELS]:
+            value = data.get(quality, 0)
+            if quality in self.weight_vars:
+                self.weight_vars[quality].set(value)
 
     def _save_quality_weights(self):
         """Сохранить веса качества"""
         category = self.weights_category_var.get()
-        weights = self.weights_editor.get()
+        weights = {}
+
+        for quality, var in self.weight_vars.items():
+            value = var.get()
+            if value > 0:
+                weights[quality] = round(value, 3)
+
         self.manager.update_quality_weights(category, weights)
         if self.on_change:
             self.on_change()
         messagebox.showinfo("Успех", "Веса качества сохранены")
 
+    def _save_luck_modifiers(self):
+        """Сохранить модификаторы удачи"""
+        modifiers = {
+            "bonus_per_point": self.luck_bonus_per_point.get(),
+            "max_bonus": self.luck_max_bonus.get(),
+            "quality_redistribution": {
+                "poor_reduction_factor": self.luck_poor_reduction.get(),
+                "common_reduction_factor": self.luck_common_reduction.get(),
+                "common_min_weight": 0.20,
+                "poor_min_weight": 0.01,
+                "uncommon_share": 0.35,
+                "rare_share": 0.30,
+                "epic_share": 0.20,
+                "legendary_share": 0.10,
+                "artifact_share": 0.05
+            },
+            "extra_drop": {
+                "chance_per_point": self.luck_extra_chance.get(),
+                "max_chance": self.luck_extra_max.get()
+            }
+        }
+
+        self.manager.update_luck_modifiers(modifiers)
+        if self.on_change:
+            self.on_change()
+        messagebox.showinfo("Успех", "Настройки удачи сохранены")
+
     def _create_slots_tab(self):
         """Вкладка слотов поясов и рюкзаков"""
         frame = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(frame, text="Слоты")
+        self.notebook.add(frame, text="Слоты экипировки")
 
         # Пояса
         belt_frame = ttk.LabelFrame(frame, text="Слоты поясов [зелья, талисманы]", padding=10)
@@ -468,7 +794,7 @@ class ItemsConfigTab(ttk.Frame):
             self.belt_slots_editors[quality] = (potions_var, talismans_var)
 
         # Рюкзаки
-        backpack_frame = ttk.LabelFrame(frame, text="Слоты рюкзаков", padding=10)
+        backpack_frame = ttk.LabelFrame(frame, text="Доп. слоты инвентаря от рюкзака", padding=10)
         backpack_frame.pack(fill="x", pady=5)
 
         self.backpack_slots_editors = {}
@@ -504,249 +830,3 @@ class ItemsConfigTab(ttk.Frame):
         if self.on_change:
             self.on_change()
         messagebox.showinfo("Успех", "Слоты сохранены")
-
-    def _create_luck_modifiers_tab(self):
-        """Вкладка модификаторов удачи"""
-        frame = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(frame, text="Удача")
-
-        scroll = ScrollableFrame(frame)
-        scroll.pack(fill="both", expand=True)
-        content = scroll.scrollable_frame
-
-        luck = self.manager.get_luck_modifiers()
-
-        ttk.Label(
-            content, text="Влияние удачи на генерацию предметов",
-            font=("TkDefaultFont", 10, "bold")
-        ).pack(anchor="w", pady=(0, 10))
-
-        # Основные параметры
-        self.luck_bonus_per_point = LabeledSpinbox(
-            content, "Бонус за очко:", from_=0, to=1, increment=0.01,
-            value=luck.get("bonus_per_point", 0.01)
-        )
-        self.luck_bonus_per_point.pack(fill="x", pady=2)
-
-        self.luck_max_bonus = LabeledSpinbox(
-            content, "Макс. бонус:", from_=0, to=1, increment=0.05,
-            value=luck.get("max_bonus", 0.5)
-        )
-        self.luck_max_bonus.pack(fill="x", pady=2)
-
-        ttk.Separator(content).pack(fill="x", pady=10)
-
-        # Перераспределение качества
-        ttk.Label(content, text="Перераспределение качества:").pack(anchor="w")
-
-        redistr = luck.get("quality_redistribution", {})
-
-        self.luck_poor_reduction = LabeledSpinbox(
-            content, "Снижение poor:", from_=0, to=1, increment=0.1,
-            value=redistr.get("poor_reduction_factor", 0.1)
-        )
-        self.luck_poor_reduction.pack(fill="x", pady=2)
-
-        self.luck_common_reduction = LabeledSpinbox(
-            content, "Снижение common:", from_=0, to=1, increment=0.1,
-            value=redistr.get("common_reduction_factor", 0.5)
-        )
-        self.luck_common_reduction.pack(fill="x", pady=2)
-
-        self.luck_common_min = LabeledSpinbox(
-            content, "Мин. вес common:", from_=0, to=1, increment=0.05,
-            value=redistr.get("common_min_weight", 0.2)
-        )
-        self.luck_common_min.pack(fill="x", pady=2)
-
-        self.luck_poor_min = LabeledSpinbox(
-            content, "Мин. вес poor:", from_=0, to=1, increment=0.01,
-            value=redistr.get("poor_min_weight", 0.01)
-        )
-        self.luck_poor_min.pack(fill="x", pady=2)
-
-        ttk.Separator(content).pack(fill="x", pady=10)
-
-        # Доли распределения
-        ttk.Label(content, text="Доли распределения бонуса:").pack(anchor="w")
-
-        shares_frame = ttk.Frame(content)
-        shares_frame.pack(fill="x", pady=5)
-
-        self.luck_shares = {}
-        for quality in ["uncommon", "rare", "epic", "legendary", "artifact"]:
-            row = ttk.Frame(shares_frame)
-            row.pack(fill="x", pady=1)
-
-            ttk.Label(row, text=f"{quality}:", width=12).pack(side="left")
-            var = tk.DoubleVar(value=redistr.get(f"{quality}_share", 0))
-            spin = ttk.Spinbox(row, from_=0, to=1, increment=0.05, textvariable=var, width=8)
-            spin.pack(side="left")
-            self.luck_shares[quality] = var
-
-        ttk.Separator(content).pack(fill="x", pady=10)
-
-        # Дополнительный дроп
-        ttk.Label(content, text="Шанс дополнительного предмета:").pack(anchor="w")
-
-        extra = luck.get("extra_drop", {})
-
-        self.luck_extra_chance = LabeledSpinbox(
-            content, "Шанс за очко:", from_=0, to=10, increment=0.5,
-            value=extra.get("chance_per_point", 1)
-        )
-        self.luck_extra_chance.pack(fill="x", pady=2)
-
-        self.luck_extra_max = LabeledSpinbox(
-            content, "Макс. шанс:", from_=0, to=100, increment=5,
-            value=extra.get("max_chance", 30)
-        )
-        self.luck_extra_max.pack(fill="x", pady=2)
-
-        ttk.Button(
-            content, text="Сохранить настройки удачи",
-            command=self._save_luck_modifiers
-        ).pack(pady=10)
-
-    def _save_luck_modifiers(self):
-        """Сохранить модификаторы удачи"""
-        modifiers = {
-            "bonus_per_point": self.luck_bonus_per_point.get(),
-            "max_bonus": self.luck_max_bonus.get(),
-            "quality_redistribution": {
-                "poor_reduction_factor": self.luck_poor_reduction.get(),
-                "common_reduction_factor": self.luck_common_reduction.get(),
-                "common_min_weight": self.luck_common_min.get(),
-                "poor_min_weight": self.luck_poor_min.get(),
-            },
-            "extra_drop": {
-                "chance_per_point": self.luck_extra_chance.get(),
-                "max_chance": self.luck_extra_max.get()
-            }
-        }
-
-        # Добавляем доли
-        for quality, var in self.luck_shares.items():
-            modifiers["quality_redistribution"][f"{quality}_share"] = var.get()
-
-        self.manager.update_luck_modifiers(modifiers)
-        if self.on_change:
-            self.on_change()
-        messagebox.showinfo("Успех", "Настройки удачи сохранены")
-
-    def _create_weapon_filters_tab(self):
-        """Вкладка фильтров оружия"""
-        frame = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(frame, text="Фильтры оружия")
-
-        ttk.Label(
-            frame, text="Фильтры характеристик и параметров для оружия",
-            font=("TkDefaultFont", 10, "bold")
-        ).pack(anchor="w", pady=(0, 10))
-
-        scroll = ScrollableFrame(frame)
-        scroll.pack(fill="both", expand=True)
-        content = scroll.scrollable_frame
-
-        filters = self.manager.get_weapon_filters()
-        stat_filters = filters.get("stat_filters", {})
-        param_filters = filters.get("param_filters", {})
-
-        weapon_types = ["sword", "axe", "knife", "spear", "bow", "staff", "wand", "club", "pickaxe"]
-
-        self.weapon_stat_filters = {}
-        self.weapon_param_filters = {}
-
-        for wtype in weapon_types:
-            wframe = ttk.LabelFrame(content, text=wtype.upper(), padding=5)
-            wframe.pack(fill="x", pady=5)
-
-            # Фильтр характеристик
-            stat_frame = ttk.Frame(wframe)
-            stat_frame.pack(fill="x")
-
-            stat_data = stat_filters.get(wtype, {})
-            allowed_stats = stat_data.get("allowed", [])
-            excluded_stats = stat_data.get("excluded", [])
-
-            ttk.Label(stat_frame, text="Характеристики:").pack(side="left")
-
-            mode_var = tk.StringVar(
-                value="allowed" if allowed_stats else ("excluded" if excluded_stats else "all")
-            )
-            mode_combo = ttk.Combobox(
-                stat_frame, textvariable=mode_var,
-                values=["all", "allowed", "excluded"], state="readonly", width=10
-            )
-            mode_combo.pack(side="left", padx=5)
-
-            stats_var = tk.StringVar(
-                value=", ".join(allowed_stats if allowed_stats else excluded_stats)
-            )
-            stats_entry = ttk.Entry(stat_frame, textvariable=stats_var, width=40)
-            stats_entry.pack(side="left", padx=5)
-
-            self.weapon_stat_filters[wtype] = (mode_var, stats_var)
-
-            # Фильтр параметров
-            param_frame = ttk.Frame(wframe)
-            param_frame.pack(fill="x", pady=2)
-
-            param_data = param_filters.get(wtype, {})
-            allowed_params = param_data.get("allowed", [])
-
-            ttk.Label(param_frame, text="Параметры:").pack(side="left")
-
-            pmode_var = tk.StringVar(value="allowed" if allowed_params else "all")
-            pmode_combo = ttk.Combobox(
-                param_frame, textvariable=pmode_var,
-                values=["all", "allowed"], state="readonly", width=10
-            )
-            pmode_combo.pack(side="left", padx=5)
-
-            params_var = tk.StringVar(value=", ".join(allowed_params))
-            params_entry = ttk.Entry(param_frame, textvariable=params_var, width=40)
-            params_entry.pack(side="left", padx=5)
-
-            self.weapon_param_filters[wtype] = (pmode_var, params_var)
-
-        ttk.Label(
-            content, text="Подсказка: характеристики/параметры через запятую",
-            font=("TkDefaultFont", 8)
-        ).pack(anchor="w", pady=5)
-
-        ttk.Button(
-            content, text="Сохранить фильтры",
-            command=self._save_weapon_filters
-        ).pack(pady=10)
-
-    def _save_weapon_filters(self):
-        """Сохранить фильтры оружия"""
-        stat_filters = {}
-        param_filters = {}
-
-        for wtype, (mode_var, stats_var) in self.weapon_stat_filters.items():
-            mode = mode_var.get()
-            stats = [s.strip() for s in stats_var.get().split(",") if s.strip()]
-
-            if mode == "allowed" and stats:
-                stat_filters[wtype] = {"allowed": stats}
-            elif mode == "excluded" and stats:
-                stat_filters[wtype] = {"excluded": stats}
-
-        for wtype, (mode_var, params_var) in self.weapon_param_filters.items():
-            mode = mode_var.get()
-            params = [p.strip() for p in params_var.get().split(",") if p.strip()]
-
-            if mode == "allowed" and params:
-                param_filters[wtype] = {"allowed": params}
-
-        filters = {
-            "stat_filters": stat_filters,
-            "param_filters": param_filters
-        }
-
-        self.manager.update_weapon_filters(filters)
-        if self.on_change:
-            self.on_change()
-        messagebox.showinfo("Успех", "Фильтры оружия сохранены")
