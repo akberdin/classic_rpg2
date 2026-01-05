@@ -1,149 +1,564 @@
 {
   "_description": "Единый реестр всех предметов игры",
   "_version": "1.0.0",
-
   "resources": {
     "_comment": "Ресурсы: руды, слитки, древесина, травы, материалы",
-
-    "copper_ore": {"name": "Медная руда", "value": 4, "weight": 0.5},
-    "iron_ore": {"name": "Железная руда", "value": 8, "weight": 0.5},
-    "silver_ore": {"name": "Серебряная руда", "value": 20, "weight": 0.5},
-    "gold_ore": {"name": "Золотая руда", "value": 40, "weight": 0.5},
-    "mithril_ore": {"name": "Мифриловая руда", "value": 80, "weight": 0.5},
-
-    "copper_ingot": {"name": "Медный слиток", "value": 30, "weight": 0.5},
-    "iron_ingot": {"name": "Железный слиток", "value": 60, "weight": 0.5},
-    "silver_ingot": {"name": "Серебряный слиток", "value": 150, "weight": 0.5},
-    "gold_ingot": {"name": "Золотой слиток", "value": 300, "weight": 0.5},
-    "mithril_ingot": {"name": "Мифриловый слиток", "value": 600, "weight": 0.5},
-    "steel_ingot": {"name": "Стальной слиток", "value": 120, "weight": 0.5},
-
-    "wood": {"name": "Древесина", "value": 3, "weight": 1.0},
-    "charcoal": {"name": "Древесный уголь", "value": 10, "weight": 0.3},
-
-    "long_wooden_handle": {"name": "Длинная деревянная рукоять", "value": 15, "weight": 0.8},
-    "short_wooden_handle": {"name": "Короткая деревянная рукоять", "value": 10, "weight": 0.5},
-    "wooden_shaft": {"name": "Древко", "value": 20, "weight": 1.0},
-
-    "copper_wire": {"name": "Медная проволока", "value": 40, "weight": 0.5},
-    "iron_wire": {"name": "Железная проволока", "value": 70, "weight": 0.5},
-    "steel_wire": {"name": "Стальная проволока", "value": 140, "weight": 0.5},
-    "silver_wire": {"name": "Серебряная проволока", "value": 180, "weight": 0.5},
-    "gold_wire": {"name": "Золотая проволока", "value": 350, "weight": 0.5},
-    "mithril_wire": {"name": "Мифриловая проволока", "value": 700, "weight": 0.5},
-
-    "copper_axe_blade": {"name": "Медное лезвие топора", "value": 35, "weight": 0.5},
-    "iron_axe_blade": {"name": "Железное лезвие топора", "value": 65, "weight": 0.5},
-    "steel_axe_blade": {"name": "Стальное лезвие топора", "value": 110, "weight": 0.5},
-
-    "copper_hammer_head": {"name": "Медный боёк", "value": 30, "weight": 0.5},
-    "iron_hammer_head": {"name": "Железный боёк", "value": 55, "weight": 0.5},
-    "steel_hammer_head": {"name": "Стальной боёк", "value": 95, "weight": 0.5},
-
-    "copper_strips": {"name": "Медные полоски", "value": 8, "weight": 0.1},
-    "iron_strips": {"name": "Железные полоски", "value": 14, "weight": 0.1},
-    "steel_strips": {"name": "Стальные полоски", "value": 24, "weight": 0.1},
-    "silver_strips": {"name": "Серебряные полоски", "value": 36, "weight": 0.1},
-
-    "copper_short_blade": {"name": "Медное короткое лезвие", "value": 28, "weight": 0.5},
-    "iron_short_blade": {"name": "Железное короткое лезвие", "value": 52, "weight": 0.5},
-    "steel_short_blade": {"name": "Стальное короткое лезвие", "value": 90, "weight": 0.5},
-
-    "copper_long_blade": {"name": "Медное длинное лезвие", "value": 42, "weight": 0.5},
-    "iron_long_blade": {"name": "Железное длинное лезвие", "value": 78, "weight": 0.5},
-    "steel_long_blade": {"name": "Стальное длинное лезвие", "value": 135, "weight": 0.5},
-
-    "copper_spearhead": {"name": "Медный наконечник", "value": 35, "weight": 0.3},
-    "iron_spearhead": {"name": "Железный наконечник", "value": 65, "weight": 0.3},
-    "steel_spearhead": {"name": "Стальной наконечник", "value": 110, "weight": 0.3},
-
-    "chamomile": {"name": "Ромашка", "value": 8, "weight": 0.1},
-    "mint": {"name": "Мята", "value": 15, "weight": 0.1},
-    "sage": {"name": "Шалфей", "value": 30, "weight": 0.15},
-    "ginseng": {"name": "Женьшень", "value": 60, "weight": 0.2},
-    "mandrake": {"name": "Мандрагора", "value": 120, "weight": 0.25},
-
-    "wolf_fang": {"name": "Клык волка", "value": 25, "weight": 0.3},
-    "wolf_hide": {"name": "Шкура волка", "value": 35, "weight": 0.5},
-    "bear_fang": {"name": "Клык медведя", "value": 40, "weight": 0.3},
-    "bear_hide": {"name": "Шкура медведя", "value": 60, "weight": 0.6},
-    "bear_meat": {"name": "Медвежатина", "value": 30, "weight": 0.4},
-    "deer_hide": {"name": "Шкура оленя", "value": 45, "weight": 0.5},
-    "deer_meat": {"name": "Оленина", "value": 25, "weight": 0.4},
-    "animal_sinew": {"name": "Звериные жилы", "value": 20, "weight": 0.2},
-    "deer_antlers": {"name": "Рога оленя", "value": 50, "weight": 0.8},
-
-    "leather": {"name": "Кожа", "value": 40, "weight": 0.4},
-    "leather_strips": {"name": "Полоски кожи", "value": 10, "weight": 0.1},
-
-    "poor_fabric": {"name": "Плохая ткань", "value": 15, "weight": 0.3, "quality": "POOR"},
-    "fabric": {"name": "Ткань", "value": 30, "weight": 0.3, "quality": "COMMON"},
-    "fine_fabric": {"name": "Отличная ткань", "value": 60, "weight": 0.3, "quality": "UNCOMMON"},
-
-    "bowstring": {"name": "Тетива", "value": 25, "weight": 0.2},
-    "short_horn_handle": {"name": "Короткая роговая рукоять", "value": 70, "weight": 0.6},
-
-    "wooden_bow_limb": {"name": "Деревянные плечи лука", "value": 35, "weight": 0.8},
-    "reinforced_bow_limb": {"name": "Укрепленные плечи лука", "value": 70, "weight": 0.9},
-    "composite_bow_limb": {"name": "Композитные плечи лука", "value": 120, "weight": 0.7},
-
-    "wooden_staff_core": {"name": "Деревянный стержень посоха", "value": 25, "weight": 1.2},
-    "iron_staff_core": {"name": "Железный стержень посоха", "value": 50, "weight": 1.5},
-    "steel_staff_core": {"name": "Стальной стержень посоха", "value": 90, "weight": 1.4},
-
-    "staff_focus": {"name": "Навершие посоха", "value": 40, "weight": 0.3},
-    "magic_staff_focus": {"name": "Магическое навершие", "value": 100, "weight": 0.4},
-
-    "ancient_coin": {"name": "Древняя монета", "value": 30, "weight": 0.5},
-    "artifact_fragment": {"name": "Фрагмент артефакта", "value": 80, "weight": 0.5},
-    "magic_crystal": {"name": "Магический кристалл", "value": 150, "weight": 0.5},
-    "old_scroll": {"name": "Старый свиток", "value": 40, "weight": 0.5},
-
-    "beast_fang": {"name": "Клык Зверя", "value": 150, "weight": 0.2},
-    "shadow_essence": {"name": "Эссенция Тени", "value": 300, "weight": 0.1},
-    "hunter_medal": {"name": "Медаль Охотника", "value": 500, "weight": 0.1},
-
-    "dark_crystal": {"name": "Темный Кристалл", "value": 400, "weight": 0.3},
-    "soul_gem": {"name": "Камень Душ", "value": 800, "weight": 0.2},
-    "necronomicon_page": {"name": "Страница Некрономикона", "value": 1500, "weight": 0.1},
-    "philosophers_stone_fragment": {"name": "Осколок Философского Камня", "value": 1000, "weight": 0.1},
-
+    "copper_ore": {
+      "name": "Медная руда",
+      "value": 4,
+      "weight": 0.5
+    },
+    "iron_ore": {
+      "name": "Железная руда",
+      "value": 8,
+      "weight": 0.5
+    },
+    "silver_ore": {
+      "name": "Серебряная руда",
+      "value": 20,
+      "weight": 0.5
+    },
+    "gold_ore": {
+      "name": "Золотая руда",
+      "value": 40,
+      "weight": 0.5
+    },
+    "mithril_ore": {
+      "name": "Мифриловая руда",
+      "value": 80,
+      "weight": 0.5
+    },
+    "copper_ingot": {
+      "name": "Медный слиток",
+      "value": 30,
+      "weight": 0.5
+    },
+    "iron_ingot": {
+      "name": "Железный слиток",
+      "value": 60,
+      "weight": 0.5
+    },
+    "silver_ingot": {
+      "name": "Серебряный слиток",
+      "value": 150,
+      "weight": 0.5
+    },
+    "gold_ingot": {
+      "name": "Золотой слиток",
+      "value": 300,
+      "weight": 0.5
+    },
+    "mithril_ingot": {
+      "name": "Мифриловый слиток",
+      "value": 600,
+      "weight": 0.5
+    },
+    "steel_ingot": {
+      "name": "Стальной слиток",
+      "value": 120,
+      "weight": 0.5
+    },
+    "wood": {
+      "name": "Древесина",
+      "value": 3,
+      "weight": 1.0
+    },
+    "charcoal": {
+      "name": "Древесный уголь",
+      "value": 10,
+      "weight": 0.3
+    },
+    "long_wooden_handle": {
+      "name": "Длинная деревянная рукоять",
+      "value": 15,
+      "weight": 0.8
+    },
+    "short_wooden_handle": {
+      "name": "Короткая деревянная рукоять",
+      "value": 10,
+      "weight": 0.5
+    },
+    "wooden_shaft": {
+      "name": "Древко",
+      "value": 20,
+      "weight": 1.0
+    },
+    "copper_wire": {
+      "name": "Медная проволока",
+      "value": 40,
+      "weight": 0.5
+    },
+    "iron_wire": {
+      "name": "Железная проволока",
+      "value": 70,
+      "weight": 0.5
+    },
+    "steel_wire": {
+      "name": "Стальная проволока",
+      "value": 140,
+      "weight": 0.5
+    },
+    "silver_wire": {
+      "name": "Серебряная проволока",
+      "value": 180,
+      "weight": 0.5
+    },
+    "gold_wire": {
+      "name": "Золотая проволока",
+      "value": 350,
+      "weight": 0.5
+    },
+    "mithril_wire": {
+      "name": "Мифриловая проволока",
+      "value": 700,
+      "weight": 0.5
+    },
+    "copper_axe_blade": {
+      "name": "Медное лезвие топора",
+      "value": 35,
+      "weight": 0.5
+    },
+    "iron_axe_blade": {
+      "name": "Железное лезвие топора",
+      "value": 65,
+      "weight": 0.5
+    },
+    "steel_axe_blade": {
+      "name": "Стальное лезвие топора",
+      "value": 110,
+      "weight": 0.5
+    },
+    "copper_hammer_head": {
+      "name": "Медный боёк",
+      "value": 30,
+      "weight": 0.5
+    },
+    "iron_hammer_head": {
+      "name": "Железный боёк",
+      "value": 55,
+      "weight": 0.5
+    },
+    "steel_hammer_head": {
+      "name": "Стальной боёк",
+      "value": 95,
+      "weight": 0.5
+    },
+    "copper_strips": {
+      "name": "Медные полоски",
+      "value": 8,
+      "weight": 0.1
+    },
+    "iron_strips": {
+      "name": "Железные полоски",
+      "value": 14,
+      "weight": 0.1
+    },
+    "steel_strips": {
+      "name": "Стальные полоски",
+      "value": 24,
+      "weight": 0.1
+    },
+    "silver_strips": {
+      "name": "Серебряные полоски",
+      "value": 36,
+      "weight": 0.1
+    },
+    "copper_short_blade": {
+      "name": "Медное короткое лезвие",
+      "value": 28,
+      "weight": 0.5
+    },
+    "iron_short_blade": {
+      "name": "Железное короткое лезвие",
+      "value": 52,
+      "weight": 0.5
+    },
+    "steel_short_blade": {
+      "name": "Стальное короткое лезвие",
+      "value": 90,
+      "weight": 0.5
+    },
+    "copper_long_blade": {
+      "name": "Медное длинное лезвие",
+      "value": 42,
+      "weight": 0.5
+    },
+    "iron_long_blade": {
+      "name": "Железное длинное лезвие",
+      "value": 78,
+      "weight": 0.5
+    },
+    "steel_long_blade": {
+      "name": "Стальное длинное лезвие",
+      "value": 135,
+      "weight": 0.5
+    },
+    "copper_spearhead": {
+      "name": "Медный наконечник",
+      "value": 35,
+      "weight": 0.3
+    },
+    "iron_spearhead": {
+      "name": "Железный наконечник",
+      "value": 65,
+      "weight": 0.3
+    },
+    "steel_spearhead": {
+      "name": "Стальной наконечник",
+      "value": 110,
+      "weight": 0.3
+    },
+    "chamomile": {
+      "name": "Ромашка",
+      "value": 8,
+      "weight": 0.1
+    },
+    "mint": {
+      "name": "Мята",
+      "value": 15,
+      "weight": 0.1
+    },
+    "sage": {
+      "name": "Шалфей",
+      "value": 30,
+      "weight": 0.15
+    },
+    "ginseng": {
+      "name": "Женьшень",
+      "value": 60,
+      "weight": 0.2
+    },
+    "mandrake": {
+      "name": "Мандрагора",
+      "value": 120,
+      "weight": 0.25
+    },
+    "wolf_fang": {
+      "name": "Клык волка",
+      "value": 25,
+      "weight": 0.3
+    },
+    "wolf_hide": {
+      "name": "Шкура волка",
+      "value": 35,
+      "weight": 0.5
+    },
+    "bear_fang": {
+      "name": "Клык медведя",
+      "value": 40,
+      "weight": 0.3
+    },
+    "bear_hide": {
+      "name": "Шкура медведя",
+      "value": 60,
+      "weight": 0.6
+    },
+    "bear_meat": {
+      "name": "Медвежатина",
+      "value": 30,
+      "weight": 0.4
+    },
+    "deer_hide": {
+      "name": "Шкура оленя",
+      "value": 45,
+      "weight": 0.5
+    },
+    "deer_meat": {
+      "name": "Оленина",
+      "value": 25,
+      "weight": 0.4
+    },
+    "animal_sinew": {
+      "name": "Звериные жилы",
+      "value": 20,
+      "weight": 0.2
+    },
+    "deer_antlers": {
+      "name": "Рога оленя",
+      "value": 50,
+      "weight": 0.8
+    },
+    "leather": {
+      "name": "Кожа",
+      "value": 40,
+      "weight": 0.4
+    },
+    "leather_strips": {
+      "name": "Полоски кожи",
+      "value": 10,
+      "weight": 0.1
+    },
+    "poor_fabric": {
+      "name": "Плохая ткань",
+      "value": 15,
+      "weight": 0.3,
+      "quality": "POOR"
+    },
+    "fabric": {
+      "name": "Ткань",
+      "value": 30,
+      "weight": 0.3,
+      "quality": "COMMON"
+    },
+    "fine_fabric": {
+      "name": "Отличная ткань",
+      "value": 60,
+      "weight": 0.3,
+      "quality": "UNCOMMON"
+    },
+    "bowstring": {
+      "name": "Тетива",
+      "value": 25,
+      "weight": 0.2
+    },
+    "short_horn_handle": {
+      "name": "Короткая роговая рукоять",
+      "value": 70,
+      "weight": 0.6
+    },
+    "wooden_bow_limb": {
+      "name": "Деревянные плечи лука",
+      "value": 35,
+      "weight": 0.8
+    },
+    "reinforced_bow_limb": {
+      "name": "Укрепленные плечи лука",
+      "value": 70,
+      "weight": 0.9
+    },
+    "composite_bow_limb": {
+      "name": "Композитные плечи лука",
+      "value": 120,
+      "weight": 0.7
+    },
+    "wooden_staff_core": {
+      "name": "Деревянный стержень посоха",
+      "value": 25,
+      "weight": 1.2
+    },
+    "iron_staff_core": {
+      "name": "Железный стержень посоха",
+      "value": 50,
+      "weight": 1.5
+    },
+    "steel_staff_core": {
+      "name": "Стальной стержень посоха",
+      "value": 90,
+      "weight": 1.4
+    },
+    "staff_focus": {
+      "name": "Навершие посоха",
+      "value": 40,
+      "weight": 0.3
+    },
+    "magic_staff_focus": {
+      "name": "Магическое навершие",
+      "value": 100,
+      "weight": 0.4
+    },
+    "ancient_coin": {
+      "name": "Древняя монета",
+      "value": 30,
+      "weight": 0.5
+    },
+    "artifact_fragment": {
+      "name": "Фрагмент артефакта",
+      "value": 80,
+      "weight": 0.5
+    },
+    "magic_crystal": {
+      "name": "Магический кристалл",
+      "value": 150,
+      "weight": 0.5
+    },
+    "old_scroll": {
+      "name": "Старый свиток",
+      "value": 40,
+      "weight": 0.5
+    },
+    "beast_fang": {
+      "name": "Клык Зверя",
+      "value": 150,
+      "weight": 0.2
+    },
+    "shadow_essence": {
+      "name": "Эссенция Тени",
+      "value": 300,
+      "weight": 0.1
+    },
+    "hunter_medal": {
+      "name": "Медаль Охотника",
+      "value": 500,
+      "weight": 0.1
+    },
+    "dark_crystal": {
+      "name": "Темный Кристалл",
+      "value": 400,
+      "weight": 0.3
+    },
+    "soul_gem": {
+      "name": "Камень Душ",
+      "value": 800,
+      "weight": 0.2
+    },
+    "necronomicon_page": {
+      "name": "Страница Некрономикона",
+      "value": 1500,
+      "weight": 0.1
+    },
+    "philosophers_stone_fragment": {
+      "name": "Осколок Философского Камня",
+      "value": 1000,
+      "weight": 0.1
+    },
     "_comment_gems": "Драгоценные камни различного качества для крафта украшений",
-
-    "amethyst_shard": {"name": "Осколок аметиста", "value": 15, "weight": 0.05, "quality": "POOR"},
-    "raw_amethyst": {"name": "Необработанный аметист", "value": 40, "weight": 0.1, "quality": "COMMON"},
-    "cut_amethyst": {"name": "Огранённый аметист", "value": 100, "weight": 0.1, "quality": "UNCOMMON"},
-    "perfect_amethyst": {"name": "Совершенный аметист", "value": 250, "weight": 0.1, "quality": "RARE"},
-
-    "ruby_shard": {"name": "Осколок рубина", "value": 20, "weight": 0.05, "quality": "POOR"},
-    "raw_ruby": {"name": "Необработанный рубин", "value": 50, "weight": 0.1, "quality": "COMMON"},
-    "cut_ruby": {"name": "Огранённый рубин", "value": 120, "weight": 0.1, "quality": "UNCOMMON"},
-    "perfect_ruby": {"name": "Совершенный рубин", "value": 300, "weight": 0.1, "quality": "RARE"},
-
-    "sapphire_shard": {"name": "Осколок сапфира", "value": 20, "weight": 0.05, "quality": "POOR"},
-    "raw_sapphire": {"name": "Необработанный сапфир", "value": 50, "weight": 0.1, "quality": "COMMON"},
-    "cut_sapphire": {"name": "Огранённый сапфир", "value": 120, "weight": 0.1, "quality": "UNCOMMON"},
-    "perfect_sapphire": {"name": "Совершенный сапфир", "value": 300, "weight": 0.1, "quality": "RARE"},
-
-    "emerald_shard": {"name": "Осколок изумруда", "value": 25, "weight": 0.05, "quality": "POOR"},
-    "raw_emerald": {"name": "Необработанный изумруд", "value": 60, "weight": 0.1, "quality": "COMMON"},
-    "cut_emerald": {"name": "Огранённый изумруд", "value": 150, "weight": 0.1, "quality": "UNCOMMON"},
-    "perfect_emerald": {"name": "Совершенный изумруд", "value": 350, "weight": 0.1, "quality": "RARE"},
-
-    "topaz_shard": {"name": "Осколок топаза", "value": 18, "weight": 0.05, "quality": "POOR"},
-    "raw_topaz": {"name": "Необработанный топаз", "value": 45, "weight": 0.1, "quality": "COMMON"},
-    "cut_topaz": {"name": "Огранённый топаз", "value": 110, "weight": 0.1, "quality": "UNCOMMON"},
-    "perfect_topaz": {"name": "Совершенный топаз", "value": 280, "weight": 0.1, "quality": "RARE"},
-
-    "diamond_shard": {"name": "Осколок алмаза", "value": 50, "weight": 0.05, "quality": "UNCOMMON"},
-    "raw_diamond": {"name": "Необработанный алмаз", "value": 150, "weight": 0.1, "quality": "RARE"},
-    "cut_diamond": {"name": "Огранённый алмаз", "value": 400, "weight": 0.1, "quality": "EPIC"},
-    "perfect_diamond": {"name": "Совершенный алмаз", "value": 1000, "weight": 0.1, "quality": "LEGENDARY"}
+    "amethyst_shard": {
+      "name": "Осколок аметиста",
+      "value": 15,
+      "weight": 0.05,
+      "quality": "POOR"
+    },
+    "raw_amethyst": {
+      "name": "Необработанный аметист",
+      "value": 40,
+      "weight": 0.1,
+      "quality": "COMMON"
+    },
+    "cut_amethyst": {
+      "name": "Огранённый аметист",
+      "value": 100,
+      "weight": 0.1,
+      "quality": "UNCOMMON"
+    },
+    "perfect_amethyst": {
+      "name": "Совершенный аметист",
+      "value": 250,
+      "weight": 0.1,
+      "quality": "RARE"
+    },
+    "ruby_shard": {
+      "name": "Осколок рубина",
+      "value": 20,
+      "weight": 0.05,
+      "quality": "POOR"
+    },
+    "raw_ruby": {
+      "name": "Необработанный рубин",
+      "value": 50,
+      "weight": 0.1,
+      "quality": "COMMON"
+    },
+    "cut_ruby": {
+      "name": "Огранённый рубин",
+      "value": 120,
+      "weight": 0.1,
+      "quality": "UNCOMMON"
+    },
+    "perfect_ruby": {
+      "name": "Совершенный рубин",
+      "value": 300,
+      "weight": 0.1,
+      "quality": "RARE"
+    },
+    "sapphire_shard": {
+      "name": "Осколок сапфира",
+      "value": 20,
+      "weight": 0.05,
+      "quality": "POOR"
+    },
+    "raw_sapphire": {
+      "name": "Необработанный сапфир",
+      "value": 50,
+      "weight": 0.1,
+      "quality": "COMMON"
+    },
+    "cut_sapphire": {
+      "name": "Огранённый сапфир",
+      "value": 120,
+      "weight": 0.1,
+      "quality": "UNCOMMON"
+    },
+    "perfect_sapphire": {
+      "name": "Совершенный сапфир",
+      "value": 300,
+      "weight": 0.1,
+      "quality": "RARE"
+    },
+    "emerald_shard": {
+      "name": "Осколок изумруда",
+      "value": 25,
+      "weight": 0.05,
+      "quality": "POOR"
+    },
+    "raw_emerald": {
+      "name": "Необработанный изумруд",
+      "value": 60,
+      "weight": 0.1,
+      "quality": "COMMON"
+    },
+    "cut_emerald": {
+      "name": "Огранённый изумруд",
+      "value": 150,
+      "weight": 0.1,
+      "quality": "UNCOMMON"
+    },
+    "perfect_emerald": {
+      "name": "Совершенный изумруд",
+      "value": 350,
+      "weight": 0.1,
+      "quality": "RARE"
+    },
+    "topaz_shard": {
+      "name": "Осколок топаза",
+      "value": 18,
+      "weight": 0.05,
+      "quality": "POOR"
+    },
+    "raw_topaz": {
+      "name": "Необработанный топаз",
+      "value": 45,
+      "weight": 0.1,
+      "quality": "COMMON"
+    },
+    "cut_topaz": {
+      "name": "Огранённый топаз",
+      "value": 110,
+      "weight": 0.1,
+      "quality": "UNCOMMON"
+    },
+    "perfect_topaz": {
+      "name": "Совершенный топаз",
+      "value": 280,
+      "weight": 0.1,
+      "quality": "RARE"
+    },
+    "diamond_shard": {
+      "name": "Осколок алмаза",
+      "value": 50,
+      "weight": 0.05,
+      "quality": "UNCOMMON"
+    },
+    "raw_diamond": {
+      "name": "Необработанный алмаз",
+      "value": 150,
+      "weight": 0.1,
+      "quality": "RARE"
+    },
+    "cut_diamond": {
+      "name": "Огранённый алмаз",
+      "value": 400,
+      "weight": 0.1,
+      "quality": "EPIC"
+    },
+    "perfect_diamond": {
+      "name": "Совершенный алмаз",
+      "value": 1000,
+      "weight": 0.1,
+      "quality": "LEGENDARY"
+    }
   },
-
   "potions": {
     "_comment": "Зелья: здоровье, мана, выносливость",
-
     "minor_health_potion": {
       "name": "Малое зелье здоровья",
       "effect_type": "health",
@@ -224,10 +639,8 @@
       "quality": "EPIC"
     }
   },
-
   "weapons": {
     "_comment": "Оружие: мечи, ножи, копья, кирки, топоры, луки, посохи",
-
     "steel_sword": {
       "name": "Стальной меч",
       "weapon_type": "SWORD",
@@ -248,7 +661,6 @@
       "value": 60,
       "quality": "POOR"
     },
-
     "poor_pickaxe": {
       "name": "Кирка",
       "weapon_type": "PICKAXE",
@@ -270,7 +682,6 @@
       "value": 140,
       "quality": "UNCOMMON"
     },
-
     "poor_knife": {
       "name": "Нож",
       "weapon_type": "KNIFE",
@@ -298,9 +709,10 @@
       "damage": 17,
       "value": 200,
       "quality": "RARE",
-      "stats_bonus": {"dexterity": 2}
+      "stats_bonus": {
+        "dexterity": 2
+      }
     },
-
     "poor_sword": {
       "name": "Меч",
       "weapon_type": "SWORD",
@@ -321,7 +733,9 @@
       "damage": 18,
       "value": 165,
       "quality": "UNCOMMON",
-      "stats_bonus": {"strength": 1}
+      "stats_bonus": {
+        "strength": 1
+      }
     },
     "rare_sword": {
       "name": "Меч",
@@ -329,50 +743,78 @@
       "damage": 25,
       "value": 290,
       "quality": "RARE",
-      "stats_bonus": {"strength": 3, "dexterity": 1}
+      "stats_bonus": {
+        "strength": 3,
+        "dexterity": 1
+      }
     },
-
     "hunters_bow": {
       "name": "Лук Следопыта",
       "weapon_type": "BOW",
       "damage": 25,
       "quality": "EPIC",
-      "stats_bonus": {"dexterity": 5, "luck": 3},
-      "param_bonus": {"stamina": 5}
+      "stats_bonus": {
+        "dexterity": 5,
+        "luck": 3
+      },
+      "param_bonus": {
+        "stamina": 5
+      }
     },
     "alchemists_staff": {
       "name": "Посох Алхимика",
       "weapon_type": "STAFF",
       "damage": 20,
       "quality": "EPIC",
-      "stats_bonus": {"intelligence": 6, "spirit": 4},
-      "param_bonus": {"mana": 5}
+      "stats_bonus": {
+        "intelligence": 6,
+        "spirit": 4
+      },
+      "param_bonus": {
+        "mana": 5
+      }
     },
     "shadow_blade": {
       "name": "Клинок Теней",
       "weapon_type": "SWORD",
       "damage": 30,
       "quality": "LEGENDARY",
-      "stats_bonus": {"strength": 5, "dexterity": 4, "luck": 3},
-      "param_bonus": {"health": 8, "stamina": 5}
+      "stats_bonus": {
+        "strength": 5,
+        "dexterity": 4,
+        "luck": 3
+      },
+      "param_bonus": {
+        "health": 8,
+        "stamina": 5
+      }
     },
     "assassins_dagger": {
       "name": "Кинжал Убийцы",
       "weapon_type": "KNIFE",
       "damage": 22,
       "quality": "EPIC",
-      "stats_bonus": {"dexterity": 6, "luck": 4},
-      "param_bonus": {"stamina": 3}
+      "stats_bonus": {
+        "dexterity": 6,
+        "luck": 4
+      },
+      "param_bonus": {
+        "stamina": 3
+      }
     },
     "windrunners_bow": {
       "name": "Лук Бегущего по Ветру",
       "weapon_type": "BOW",
       "damage": 28,
       "quality": "LEGENDARY",
-      "stats_bonus": {"dexterity": 7, "luck": 5},
-      "param_bonus": {"stamina": 8}
+      "stats_bonus": {
+        "dexterity": 7,
+        "luck": 5
+      },
+      "param_bonus": {
+        "stamina": 8
+      }
     },
-
     "axe": {
       "name": "Топор",
       "weapon_type": "AXE",
@@ -386,7 +828,9 @@
       "damage": 20,
       "value": 160,
       "quality": "UNCOMMON",
-      "stats_bonus": {"strength": 1}
+      "stats_bonus": {
+        "strength": 1
+      }
     },
     "rare_axe": {
       "name": "Топор",
@@ -394,9 +838,11 @@
       "damage": 27,
       "value": 280,
       "quality": "RARE",
-      "stats_bonus": {"strength": 3, "constitution": 1}
+      "stats_bonus": {
+        "strength": 3,
+        "constitution": 1
+      }
     },
-
     "spear": {
       "name": "Копье",
       "weapon_type": "SPEAR",
@@ -410,7 +856,9 @@
       "damage": 20,
       "value": 180,
       "quality": "UNCOMMON",
-      "stats_bonus": {"dexterity": 1}
+      "stats_bonus": {
+        "dexterity": 1
+      }
     },
     "rare_spear": {
       "name": "Копье",
@@ -418,9 +866,11 @@
       "damage": 27,
       "value": 310,
       "quality": "RARE",
-      "stats_bonus": {"dexterity": 2, "strength": 2}
+      "stats_bonus": {
+        "dexterity": 2,
+        "strength": 2
+      }
     },
-
     "poor_bow": {
       "name": "Лук",
       "weapon_type": "BOW",
@@ -441,7 +891,9 @@
       "damage": 16,
       "value": 150,
       "quality": "UNCOMMON",
-      "stats_bonus": {"dexterity": 1}
+      "stats_bonus": {
+        "dexterity": 1
+      }
     },
     "rare_bow": {
       "name": "Лук",
@@ -449,9 +901,11 @@
       "damage": 23,
       "value": 260,
       "quality": "RARE",
-      "stats_bonus": {"dexterity": 3, "luck": 1}
+      "stats_bonus": {
+        "dexterity": 3,
+        "luck": 1
+      }
     },
-
     "poor_staff": {
       "name": "Посох",
       "weapon_type": "STAFF",
@@ -472,7 +926,9 @@
       "damage": 14,
       "value": 140,
       "quality": "UNCOMMON",
-      "stats_bonus": {"intelligence": 1}
+      "stats_bonus": {
+        "intelligence": 1
+      }
     },
     "rare_staff": {
       "name": "Посох",
@@ -480,13 +936,14 @@
       "damage": 20,
       "value": 250,
       "quality": "RARE",
-      "stats_bonus": {"intelligence": 2, "spirit": 2}
+      "stats_bonus": {
+        "intelligence": 2,
+        "spirit": 2
+      }
     }
   },
-
   "armor": {
     "_comment": "Броня: шлемы, перчатки, обувь, ремни, рюкзаки",
-
     "poor_light_gloves": {
       "name": "Легкие перчатки",
       "slot": "HANDS",
@@ -510,9 +967,10 @@
       "defense": 5,
       "value": 95,
       "quality": "UNCOMMON",
-      "stats_bonus": {"dexterity": 1}
+      "stats_bonus": {
+        "dexterity": 1
+      }
     },
-
     "poor_light_boots": {
       "name": "Легкая обувь",
       "slot": "FEET",
@@ -536,9 +994,10 @@
       "defense": 6,
       "value": 120,
       "quality": "UNCOMMON",
-      "stats_bonus": {"dexterity": 1}
+      "stats_bonus": {
+        "dexterity": 1
+      }
     },
-
     "poor_light_helmet": {
       "name": "Легкий шлем",
       "slot": "HEAD",
@@ -562,9 +1021,10 @@
       "defense": 5,
       "value": 110,
       "quality": "UNCOMMON",
-      "stats_bonus": {"spirit": 1}
+      "stats_bonus": {
+        "spirit": 1
+      }
     },
-
     "poor_belt": {
       "name": "Ремень",
       "slot": "BELT",
@@ -588,7 +1048,9 @@
       "defense": 3,
       "value": 90,
       "quality": "UNCOMMON",
-      "stats_bonus": {"constitution": 1}
+      "stats_bonus": {
+        "constitution": 1
+      }
     },
     "rare_belt": {
       "name": "Ремень",
@@ -597,9 +1059,11 @@
       "defense": 5,
       "value": 160,
       "quality": "RARE",
-      "stats_bonus": {"constitution": 2, "strength": 1}
+      "stats_bonus": {
+        "constitution": 2,
+        "strength": 1
+      }
     },
-
     "poor_backpack": {
       "name": "Рюкзак",
       "slot": "BACKPACK",
@@ -623,7 +1087,9 @@
       "defense": 3,
       "value": 110,
       "quality": "UNCOMMON",
-      "stats_bonus": {"strength": 1}
+      "stats_bonus": {
+        "strength": 1
+      }
     },
     "rare_backpack": {
       "name": "Рюкзак",
@@ -632,13 +1098,14 @@
       "defense": 5,
       "value": 190,
       "quality": "RARE",
-      "stats_bonus": {"strength": 2, "constitution": 1}
+      "stats_bonus": {
+        "strength": 2,
+        "constitution": 1
+      }
     }
   },
-
   "jewelry": {
     "_comment": "Украшения: кольца и амулеты. Базовые версии без бонусов, бонусы добавляются зачарованием",
-
     "copper_ring": {
       "name": "Медное кольцо",
       "slot": "RING_1",
@@ -657,7 +1124,6 @@
       "value": 400,
       "quality": "UNCOMMON"
     },
-
     "copper_ring_amethyst": {
       "name": "Медное кольцо с аметистом",
       "slot": "RING_1",
@@ -694,7 +1160,6 @@
       "value": 250,
       "quality": "UNCOMMON"
     },
-
     "silver_ring_amethyst": {
       "name": "Серебряное кольцо с аметистом",
       "slot": "RING_1",
@@ -731,7 +1196,6 @@
       "value": 580,
       "quality": "RARE"
     },
-
     "gold_ring_amethyst": {
       "name": "Золотое кольцо с аметистом",
       "slot": "RING_1",
@@ -768,7 +1232,6 @@
       "value": 1000,
       "quality": "EPIC"
     },
-
     "copper_amulet": {
       "name": "Медный амулет",
       "slot": "AMULET",
@@ -787,7 +1250,6 @@
       "value": 550,
       "quality": "UNCOMMON"
     },
-
     "copper_amulet_amethyst": {
       "name": "Медный амулет с аметистом",
       "slot": "AMULET",
@@ -824,7 +1286,6 @@
       "value": 320,
       "quality": "UNCOMMON"
     },
-
     "silver_amulet_amethyst": {
       "name": "Серебряный амулет с аметистом",
       "slot": "AMULET",
@@ -861,7 +1322,6 @@
       "value": 700,
       "quality": "RARE"
     },
-
     "gold_amulet_amethyst": {
       "name": "Золотой амулет с аметистом",
       "slot": "AMULET",
