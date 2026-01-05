@@ -4,8 +4,9 @@
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import ttk, messagebox, simpledialog, filedialog
 from typing import Optional, Callable
+import os
 
 from utils.items_config.models import (
     ItemsDataManager, ItemData, ITEM_CATEGORIES,
@@ -167,6 +168,19 @@ class ItemsDataTab(ttk.Frame):
             values=[""] + QUALITY_LEVELS
         )
         self.quality_combo.pack(fill="x", pady=2)
+
+        # Спрайт
+        sprite_frame = ttk.Frame(self.editor_frame)
+        sprite_frame.pack(fill="x", pady=2)
+
+        ttk.Label(sprite_frame, text="Спрайт:", width=15, anchor="e").pack(side="left", padx=(0, 5))
+        self.sprite_var = tk.StringVar()
+        self.sprite_entry = ttk.Entry(sprite_frame, textvariable=self.sprite_var)
+        self.sprite_entry.pack(side="left", fill="x", expand=True)
+        ttk.Button(
+            sprite_frame, text="...", width=3,
+            command=self._browse_sprite
+        ).pack(side="left", padx=(2, 0))
 
         # Разделитель
         ttk.Separator(self.editor_frame, orient="horizontal").pack(fill="x", pady=10)
@@ -417,6 +431,7 @@ class ItemsDataTab(ttk.Frame):
         self.value_spinbox.set(item.value)
         self.weight_spinbox.set(item.weight)
         self.quality_combo.set(item.quality or "")
+        self.sprite_var.set(item.sprite or "")
 
         # Оружие
         self.weapon_type_combo.set(item.weapon_type or "")
@@ -446,6 +461,7 @@ class ItemsDataTab(ttk.Frame):
         self.value_spinbox.set(0)
         self.weight_spinbox.set(0)
         self.quality_combo.set("")
+        self.sprite_var.set("")
         self.weapon_type_combo.set("")
         self.damage_spinbox.set(0)
         self.slot_combo.set("")
@@ -487,6 +503,10 @@ class ItemsDataTab(ttk.Frame):
         quality = self.quality_combo.get()
         if quality:
             item_data["quality"] = quality
+
+        sprite = self.sprite_var.get().strip()
+        if sprite:
+            item_data["sprite"] = sprite
 
         # Оружие
         if self.current_category == "weapons":
@@ -602,6 +622,42 @@ class ItemsDataTab(ttk.Frame):
             self._clear_editor()
             if self.on_change:
                 self.on_change()
+
+    def _browse_sprite(self):
+        """Выбрать файл спрайта"""
+        # Определяем начальную директорию (assets/sprites если существует)
+        initial_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__)
+        ))))
+        sprites_dir = os.path.join(initial_dir, "assets", "sprites")
+        if not os.path.exists(sprites_dir):
+            sprites_dir = os.path.join(initial_dir, "assets")
+        if not os.path.exists(sprites_dir):
+            sprites_dir = initial_dir
+
+        filepath = filedialog.askopenfilename(
+            title="Выберите спрайт",
+            initialdir=sprites_dir,
+            filetypes=[
+                ("Изображения", "*.png *.jpg *.jpeg *.gif *.bmp"),
+                ("PNG", "*.png"),
+                ("Все файлы", "*.*")
+            ]
+        )
+
+        if filepath:
+            # Преобразуем в относительный путь от корня проекта
+            try:
+                project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+                    os.path.abspath(__file__)
+                ))))
+                rel_path = os.path.relpath(filepath, project_root)
+                # Используем прямые слэши для совместимости
+                rel_path = rel_path.replace("\\", "/")
+                self.sprite_var.set(rel_path)
+            except ValueError:
+                # Если не удалось сделать относительный путь, используем абсолютный
+                self.sprite_var.set(filepath)
 
     def _find_recipe_for_item(self, item_id: str):
         """Найти рецепт для предмета (использует кэш)"""
