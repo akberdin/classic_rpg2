@@ -33,7 +33,12 @@
         "minecart": "assets/mine/tiles/mine/minecart.png",
         "support": "assets/mine/tiles/mine/support.png",
         "rubble": "assets/mine/tiles/mine/rubble.png",
-        "water": "assets/mine/tiles/mine/water.png"
+        "water": "assets/mine/tiles/mine/water.png",
+        "ore_copper": "assets/mine/tiles/mine/ore_copper.png",
+        "ore_iron": "assets/mine/tiles/mine/ore_iron.png",
+        "ore_silver": "assets/mine/tiles/mine/ore_silver.png",
+        "ore_gold": "assets/mine/tiles/mine/ore_gold.png",
+        "ore_mithril": "assets/mine/tiles/mine/ore_mithril.png"
       },
       "objects": {
         "_folder": "assets/mine/objects/mine/",
@@ -75,7 +80,12 @@
         "minecart": "assets/mine/tiles/dark_mine/minecart.png",
         "support": "assets/mine/tiles/dark_mine/support.png",
         "rubble": "assets/mine/tiles/dark_mine/rubble.png",
-        "water": "assets/mine/tiles/dark_mine/water.png"
+        "water": "assets/mine/tiles/dark_mine/water.png",
+        "ore_copper": "assets/mine/tiles/dark_mine/ore_copper.png",
+        "ore_iron": "assets/mine/tiles/dark_mine/ore_iron.png",
+        "ore_silver": "assets/mine/tiles/dark_mine/ore_silver.png",
+        "ore_gold": "assets/mine/tiles/dark_mine/ore_gold.png",
+        "ore_mithril": "assets/mine/tiles/dark_mine/ore_mithril.png"
       },
       "objects": {
         "_folder": "assets/mine/objects/dark_mine/",
@@ -117,7 +127,12 @@
         "minecart": "assets/mine/tiles/gloomy_mine/minecart.png",
         "support": "assets/mine/tiles/gloomy_mine/support.png",
         "rubble": "assets/mine/tiles/gloomy_mine/rubble.png",
-        "water": "assets/mine/tiles/gloomy_mine/water.png"
+        "water": "assets/mine/tiles/gloomy_mine/water.png",
+        "ore_copper": "assets/mine/tiles/gloomy_mine/ore_copper.png",
+        "ore_iron": "assets/mine/tiles/gloomy_mine/ore_iron.png",
+        "ore_silver": "assets/mine/tiles/gloomy_mine/ore_silver.png",
+        "ore_gold": "assets/mine/tiles/gloomy_mine/ore_gold.png",
+        "ore_mithril": "assets/mine/tiles/gloomy_mine/ore_mithril.png"
       },
       "objects": {
         "_folder": "assets/mine/objects/gloomy_mine/",
@@ -159,7 +174,12 @@
         "minecart": "assets/mine/tiles/abyss/minecart.png",
         "support": "assets/mine/tiles/abyss/support.png",
         "rubble": "assets/mine/tiles/abyss/rubble.png",
-        "water": "assets/mine/tiles/abyss/water.png"
+        "water": "assets/mine/tiles/abyss/water.png",
+        "ore_copper": "assets/mine/tiles/abyss/ore_copper.png",
+        "ore_iron": "assets/mine/tiles/abyss/ore_iron.png",
+        "ore_silver": "assets/mine/tiles/abyss/ore_silver.png",
+        "ore_gold": "assets/mine/tiles/abyss/ore_gold.png",
+        "ore_mithril": "assets/mine/tiles/abyss/ore_mithril.png"
       },
       "objects": {
         "_folder": "assets/mine/objects/abyss/",
@@ -191,7 +211,12 @@
       "minecart": "assets/mine/tiles/minecart.png",
       "support": "assets/mine/tiles/support.png",
       "rubble": "assets/mine/tiles/rubble.png",
-      "water": "assets/mine/tiles/water.png"
+      "water": "assets/mine/tiles/water.png",
+      "ore_copper": "assets/mine/tiles/ore_copper.png",
+      "ore_iron": "assets/mine/tiles/ore_iron.png",
+      "ore_silver": "assets/mine/tiles/ore_silver.png",
+      "ore_gold": "assets/mine/tiles/ore_gold.png",
+      "ore_mithril": "assets/mine/tiles/ore_mithril.png"
     },
     "objects": {
       "_folder": "assets/mine/objects/",

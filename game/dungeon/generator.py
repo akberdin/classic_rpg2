@@ -42,7 +42,8 @@ class DungeonGenerator:
     def generate(self, dungeon_type: str = "dungeon", dungeon_level: int = 1,
                  width: int = 50, height: int = 40, name: str = None,
                  current_depth: int = 1, max_depth: int = 5,
-                 floor_type: str = None, floor_size: int = None) -> DungeonMap:
+                 floor_type: str = None, floor_size: int = None,
+                 resource_type: str = None) -> DungeonMap:
         """
         Генерация подземелья
 
@@ -56,6 +57,7 @@ class DungeonGenerator:
             max_depth: Максимальная глубина подземелья
             floor_type: Тип этажа из конфига (basement, dark_basement, etc.)
             floor_size: Размер этажа (1-10), влияет на количество комнат
+            resource_type: Тип ресурса шахты (copper, iron, silver, gold, mithril)
 
         Returns:
             DungeonMap: Сгенерированная карта
@@ -96,7 +98,7 @@ class DungeonGenerator:
 
         # Создаем карту с учетом текущей глубины и типа этажа
         dungeon = DungeonMap(width, height, dungeon_type, dungeon_level, name,
-                             current_depth, floor_type)
+                             current_depth, floor_type, resource_type)
 
         # Генерируем комнаты
         num_rooms = random.randint(params["min_rooms"], params["max_rooms"])
@@ -117,6 +119,10 @@ class DungeonGenerator:
         # Добавляем декорации
         if params["decorations"]:
             self._place_decorations(dungeon, dungeon_type)
+
+        # Добавляем выходы руды (только для шахт с указанным типом ресурса)
+        if dungeon_type == "mine" and resource_type:
+            self._place_ore(dungeon, resource_type)
 
         return dungeon
 
@@ -598,10 +604,72 @@ class DungeonGenerator:
                 elif roll < 0.05:
                     dungeon.set_tile_type(x, y, DungeonTileType.RUBBLE)
 
+    def _place_ore(self, dungeon: DungeonMap, resource_type: str):
+        """
+        Разместить выходы руды в шахте
+
+        Руда размещается около стен и является непроходимой.
+        Тип руды определяется параметром resource_type.
+
+        Args:
+            dungeon: Карта подземелья
+            resource_type: Тип ресурса (copper, iron, silver, gold, mithril)
+        """
+        # Проверяем валидность типа ресурса
+        valid_resources = ["copper", "iron", "silver", "gold", "mithril"]
+        if resource_type not in valid_resources:
+            return
+
+        # Шанс появления руды около стены (5-8% на подходящую клетку)
+        ore_chance = 0.06
+
+        # Проходим по всем клеткам
+        for y in range(1, dungeon.height - 1):
+            for x in range(1, dungeon.width - 1):
+                tile = dungeon.get_tile(x, y)
+                if not tile:
+                    continue
+
+                # Руда размещается только на клетках пола и коридора
+                if tile.tile_type not in [DungeonTileType.FLOOR, DungeonTileType.CORRIDOR]:
+                    continue
+
+                # Проверяем, есть ли рядом стена (руда появляется около стен)
+                has_adjacent_wall = False
+                for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                    adj_tile = dungeon.get_tile(x + dx, y + dy)
+                    if adj_tile and adj_tile.tile_type == DungeonTileType.WALL:
+                        has_adjacent_wall = True
+                        break
+
+                if not has_adjacent_wall:
+                    continue
+
+                # Не размещаем на входе/выходе/лестницах
+                if dungeon.is_entrance_tile(x, y) or dungeon.is_exit_tile(x, y):
+                    continue
+                if dungeon.stairs_down and (x, y) == dungeon.stairs_down:
+                    continue
+                if dungeon.stairs_up and (x, y) == dungeon.stairs_up:
+                    continue
+
+                # Не размещаем на ловушках и тайниках
+                if dungeon.trap_manager.get_trap_at(x, y) is not None:
+                    continue
+                if dungeon.stash_manager.get_stash_at(x, y) is not None:
+                    continue
+
+                # Случайный шанс появления руды
+                if random.random() < ore_chance:
+                    dungeon.set_tile_type(x, y, DungeonTileType.ORE)
+                    # Сохраняем тип руды в ore_data тайла
+                    tile.ore_data = {"resource_type": resource_type}
+
     def generate_dungeon_for_location(self, location_type: str, location_name: str,
                                        location_x: int, location_y: int,
                                        current_depth: int = 1, max_depth: int = 5,
-                                       floor_type: str = None, floor_size: int = None) -> DungeonMap:
+                                       floor_type: str = None, floor_size: int = None,
+                                       resource_type: str = None) -> DungeonMap:
         """
         Генерация подземелья для конкретной локации
 
@@ -614,6 +682,7 @@ class DungeonGenerator:
             max_depth: Максимальная глубина подземелья
             floor_type: Тип этажа из конфига (basement, dark_basement, mine, etc.)
             floor_size: Размер этажа из конфига (1-10, влияет на размер карты)
+            resource_type: Тип ресурса шахты (copper, iron, silver, gold, mithril)
 
         Returns:
             DungeonMap: Сгенерированная карта
@@ -669,9 +738,10 @@ class DungeonGenerator:
 
         name = f"Подземелье под {location_name}{depth_suffix}" if dungeon_type == "dungeon" else f"Шахта {location_name}{depth_suffix}"
 
-        # Генерируем подземелье с учётом глубины, типа этажа и размера
+        # Генерируем подземелье с учётом глубины, типа этажа, размера и типа ресурса
         dungeon = self.generate(dungeon_type, dungeon_level, width, height, name,
-                                current_depth, max_depth, floor_type, floor_size)
+                                current_depth, max_depth, floor_type, floor_size,
+                                resource_type)
 
         # Сохраняем координаты возврата
         dungeon.return_x = location_x

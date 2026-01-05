@@ -61,6 +61,9 @@ class DungeonManager:
         # Отношение локации к игроку (для определения агрессии NPC)
         self.current_player_attitude: int = 0
 
+        # Тип ресурса текущей шахты (для генерации руды)
+        self.current_resource_type: Optional[str] = None
+
     def _get_floor_config(self, depth: int) -> Optional[dict]:
         """
         Получить конфигурацию этажа по глубине
@@ -156,9 +159,12 @@ class DungeonManager:
                 self.max_depth = len(self.current_floors_config)
             # Сохраняем player_attitude локации для определения агрессии NPC
             self.current_player_attitude = getattr(tile.location, 'player_attitude', 0)
+            # Сохраняем тип ресурса шахты для генерации руды
+            self.current_resource_type = getattr(tile.location, 'resource_type', None)
         else:
             self.current_floors_config = []
             self.current_player_attitude = 0
+            self.current_resource_type = None
 
         # Проверяем кэш уровней
         if self.current_dungeon_key not in self.dungeon_levels:
@@ -182,7 +188,8 @@ class DungeonManager:
             self.current_dungeon = self.generator.generate_dungeon_for_location(
                 location_type, location_name, player.x, player.y,
                 current_depth=1, max_depth=self.max_depth,
-                floor_type=floor_type, floor_size=floor_size
+                floor_type=floor_type, floor_size=floor_size,
+                resource_type=self.current_resource_type
             )
 
             # Генерируем NPC для подземелья
@@ -304,7 +311,8 @@ class DungeonManager:
             self.current_dungeon = self.generator.generate_dungeon_for_location(
                 location_type, location_name, self.saved_world_x, self.saved_world_y,
                 current_depth=self.current_depth, max_depth=self.max_depth,
-                floor_type=floor_type, floor_size=floor_size
+                floor_type=floor_type, floor_size=floor_size,
+                resource_type=self.current_resource_type
             )
 
             # Генерируем NPC для нового уровня
