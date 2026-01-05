@@ -260,6 +260,7 @@ class MapEditor:
             'shop_rank': self._editing_location.shop_rank,
             'miners_count': self._editing_location.miners_count,
             'respawn_time': self._editing_location.respawn_time,
+            'resource_type': self._editing_location.resource_type,
             'player_attitude': self._editing_location.player_attitude,
             'spawn_radius': self._editing_location.spawn_radius,
             'guards': self._editing_location.guards,
