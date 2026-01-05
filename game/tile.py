@@ -97,6 +97,7 @@ class Location:
         self.respawn_time = 0  # Время респавна для шахт в ходах (0-200)
         self.spawn_radius = 3  # Радиус спавна для шахт (по умолчанию 3)
         self.connections = []  # Связи с другими локациями [(x, y), ...]
+        self.resource_type = None  # Тип ресурса для шахт (copper, iron, silver, gold, mithril)
 
         # Параметры для точек спавна животных
         self.animal_count = 0  # Количество животных для спавна (0 = не спавнить)
