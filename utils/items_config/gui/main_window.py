@@ -50,6 +50,9 @@ class ItemsConfigApp:
         self.root.bind("<Control-s>", lambda e: self._save_all())
         self.root.bind("<Control-r>", lambda e: self._reload_data())
 
+        # Настройка стандартных клавиш для текстовых полей (Windows-style)
+        self._setup_text_bindings()
+
     def _load_data(self) -> bool:
         """Загрузить данные из файлов"""
         if not os.path.exists(self.items_data_path):
@@ -108,6 +111,32 @@ class ItemsConfigApp:
         )
         file_menu.add_separator()
         file_menu.add_command(label="Выход", command=self._on_close)
+
+        # Редактирование
+        edit_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Редактирование", menu=edit_menu)
+
+        edit_menu.add_command(
+            label="Вырезать",
+            command=self._cut,
+            accelerator="Ctrl+X"
+        )
+        edit_menu.add_command(
+            label="Копировать",
+            command=self._copy,
+            accelerator="Ctrl+C"
+        )
+        edit_menu.add_command(
+            label="Вставить",
+            command=self._paste,
+            accelerator="Ctrl+V"
+        )
+        edit_menu.add_separator()
+        edit_menu.add_command(
+            label="Выделить всё",
+            command=self._select_all,
+            accelerator="Ctrl+A"
+        )
 
         # Справка
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -195,6 +224,58 @@ class ItemsConfigApp:
         """Обновить статусную строку"""
         self.status_label.config(text=text)
 
+    def _setup_text_bindings(self):
+        """Настройка горячих клавиш для текстовых полей"""
+        # Привязка Ctrl+A для выделения всего текста
+        self.root.bind_class("Entry", "<Control-a>", self._select_all_in_widget)
+        self.root.bind_class("TEntry", "<Control-a>", self._select_all_in_widget)
+        self.root.bind_class("Text", "<Control-a>", self._select_all_in_widget)
+        self.root.bind_class("TSpinbox", "<Control-a>", self._select_all_in_widget)
+
+    def _select_all_in_widget(self, event):
+        """Выделить весь текст в виджете"""
+        widget = event.widget
+        if isinstance(widget, (tk.Entry, ttk.Entry, ttk.Spinbox)):
+            widget.select_range(0, tk.END)
+            widget.icursor(tk.END)
+        elif isinstance(widget, tk.Text):
+            widget.tag_add(tk.SEL, "1.0", tk.END)
+            widget.mark_set(tk.INSERT, tk.END)
+        return "break"
+
+    def _cut(self):
+        """Вырезать в буфер обмена"""
+        widget = self.root.focus_get()
+        if widget:
+            try:
+                widget.event_generate("<<Cut>>")
+            except tk.TclError:
+                pass
+
+    def _copy(self):
+        """Копировать в буфер обмена"""
+        widget = self.root.focus_get()
+        if widget:
+            try:
+                widget.event_generate("<<Copy>>")
+            except tk.TclError:
+                pass
+
+    def _paste(self):
+        """Вставить из буфера обмена"""
+        widget = self.root.focus_get()
+        if widget:
+            try:
+                widget.event_generate("<<Paste>>")
+            except tk.TclError:
+                pass
+
+    def _select_all(self):
+        """Выделить всё в текущем виджете"""
+        widget = self.root.focus_get()
+        if widget:
+            self._select_all_in_widget(type('Event', (), {'widget': widget})())
+
     def _navigate_to_recipe(self, recipe_id: str):
         """Перейти к рецепту по ID"""
         # Переключаемся на вкладку крафта (индекс 2)
@@ -214,6 +295,8 @@ class ItemsConfigApp:
         # Добавляем предмет
         if self.items_data_manager.add_item(category, item_id, item_data):
             self._on_data_change()
+            # Обновляем кэш рецептов в реестре предметов
+            self.items_data_tab.refresh_recipe_cache()
             messagebox.showinfo(
                 "Предмет создан",
                 f"Предмет '{item_id}' добавлен в категорию '{category}'.\n\n"
@@ -282,7 +365,7 @@ class ItemsConfigApp:
         """Показать информацию о программе"""
         messagebox.showinfo(
             "О программе",
-            "Items Config Editor v1.0.0\n\n"
+            "Items Config Editor v1.1.0\n\n"
             "Утилита для редактирования конфигурации\n"
             "системы предметов игры.\n\n"
             "Файлы:\n"
@@ -291,5 +374,9 @@ class ItemsConfigApp:
             f"- {os.path.basename(self.crafting_config_path)}\n\n"
             "Горячие клавиши:\n"
             "Ctrl+S - Сохранить всё\n"
-            "Ctrl+R - Перезагрузить"
+            "Ctrl+R - Перезагрузить\n"
+            "Ctrl+C - Копировать\n"
+            "Ctrl+X - Вырезать\n"
+            "Ctrl+V - Вставить\n"
+            "Ctrl+A - Выделить всё"
         )

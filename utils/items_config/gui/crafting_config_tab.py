@@ -586,9 +586,9 @@ class CraftingConfigTab(ttk.Frame):
         self.notebook.select(1)
 
         # Очищаем фильтры чтобы рецепт был виден
-        self.station_filter.set("Все станции")
-        self.category_filter.set("Все категории")
-        self.recipe_search_var.set("")
+        self.filter_station_var.set("все")
+        self.filter_category_var.set("все")
+        self.search_var.set("")
         self._load_recipes()
 
         # Выбираем рецепт
@@ -654,7 +654,7 @@ class CraftingConfigTab(ttk.Frame):
 
         if self.on_create_item:
             # Получаем данные из рецепта для предзаполнения
-            recipe_name = self.recipe_name.get().strip()
+            recipe_name = self.recipe_name_entry.get().strip()
             recipe_quality = self.recipe_quality_combo.get()
             category = self.recipe_category_combo.get()
 
