@@ -1,48 +1,113 @@
 {
   "_description": "Конфигурация предметов - детальные параметры по уровням качества",
   "_version": "2.0.0",
-
   "quality_levels": {
     "_comment": "Уровни качества предметов и их характеристики",
     "poor": {
-      "suffixes": ["нищего", "бродяги", "смертника"],
-      "color": [128, 128, 128]
+      "suffixes": [
+        "нищего",
+        "бродяги",
+        "смертника"
+      ],
+      "color": [
+        128,
+        128,
+        128
+      ]
     },
     "common": {
-      "suffixes": ["новичка", "подмастерья", "скупого"],
-      "color": [255, 255, 255]
+      "suffixes": [
+        "новичка",
+        "подмастерья",
+        "скупого"
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ]
     },
     "uncommon": {
-      "suffixes": ["охотника", "воина", "странника"],
-      "color": [30, 255, 0]
+      "suffixes": [
+        "охотника",
+        "воина",
+        "странника"
+      ],
+      "color": [
+        30,
+        255,
+        0
+      ]
     },
     "rare": {
-      "suffixes": ["ветерана", "мастера", "защитника"],
-      "color": [0, 112, 255]
+      "suffixes": [
+        "ветерана",
+        "мастера",
+        "защитника"
+      ],
+      "color": [
+        0,
+        112,
+        255
+      ]
     },
     "epic": {
-      "suffixes": ["героя", "чемпиона", "завоевателя"],
-      "color": [163, 53, 238]
+      "suffixes": [
+        "героя",
+        "чемпиона",
+        "завоевателя"
+      ],
+      "color": [
+        163,
+        53,
+        238
+      ]
     },
     "legendary": {
-      "suffixes": ["легенды", "титана", "бессмертного"],
-      "color": [255, 128, 0]
+      "suffixes": [
+        "легенды",
+        "титана",
+        "бессмертного"
+      ],
+      "color": [
+        255,
+        128,
+        0
+      ]
     },
     "artifact": {
-      "suffixes": ["древних", "богов", "вечности"],
-      "color": [230, 204, 128]
+      "suffixes": [
+        "древних",
+        "богов",
+        "вечности"
+      ],
+      "color": [
+        230,
+        204,
+        128
+      ]
     }
   },
-
   "item_parameters": {
     "_comment": "Детальные параметры для каждого типа предмета и уровня качества",
-
     "weapon": {
       "poor": {
-        "damage_range": [3, 7],
-        "stats_count_range": [0, 0],
-        "params_count_range": [0, 0],
-        "skills_count_range": [0, 0],
+        "damage_range": [
+          3,
+          7
+        ],
+        "stats_count_range": [
+          0,
+          0
+        ],
+        "params_count_range": [
+          0,
+          0
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
         "stat_bonus_range": null,
         "stat_bonus_list": [],
         "param_bonus_range": null,
@@ -56,12 +121,34 @@
         }
       },
       "common": {
-        "damage_range": [5, 12],
-        "stats_count_range": [0, 1],
-        "params_count_range": [0, 0],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [1, 1],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
+        "damage_range": [
+          5,
+          12
+        ],
+        "stats_count_range": [
+          0,
+          1
+        ],
+        "params_count_range": [
+          0,
+          0
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          1,
+          1
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
         "param_bonus_range": null,
         "param_bonus_list": [],
         "skill_bonus_range": null,
@@ -73,14 +160,43 @@
         }
       },
       "uncommon": {
-        "damage_range": [10, 18],
-        "stats_count_range": [1, 1],
-        "params_count_range": [0, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [2, 3],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [2, 4],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "damage_range": [
+          10,
+          18
+        ],
+        "stats_count_range": [
+          1,
+          1
+        ],
+        "params_count_range": [
+          0,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          2,
+          3
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          2,
+          4
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_damage": 1.2,
@@ -90,14 +206,43 @@
         }
       },
       "rare": {
-        "damage_range": [15, 25],
-        "stats_count_range": [1, 2],
-        "params_count_range": [1, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [3, 5],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [4, 7],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "damage_range": [
+          15,
+          25
+        ],
+        "stats_count_range": [
+          1,
+          2
+        ],
+        "params_count_range": [
+          1,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          3,
+          5
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          4,
+          7
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_damage": 1.2,
@@ -107,14 +252,43 @@
         }
       },
       "epic": {
-        "damage_range": [22, 35],
-        "stats_count_range": [2, 2],
-        "params_count_range": [1, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [5, 8],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [7, 12],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "damage_range": [
+          22,
+          35
+        ],
+        "stats_count_range": [
+          2,
+          2
+        ],
+        "params_count_range": [
+          1,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          5,
+          8
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          7,
+          12
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_damage": 1.2,
@@ -124,14 +298,43 @@
         }
       },
       "legendary": {
-        "damage_range": [32, 50],
-        "stats_count_range": [2, 3],
-        "params_count_range": [2, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [8, 12],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [12, 18],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "damage_range": [
+          32,
+          50
+        ],
+        "stats_count_range": [
+          2,
+          3
+        ],
+        "params_count_range": [
+          2,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          8,
+          12
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          12,
+          18
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_damage": 1.2,
@@ -141,14 +344,43 @@
         }
       },
       "artifact": {
-        "damage_range": [45, 70],
-        "stats_count_range": [3, 4],
-        "params_count_range": [3, 3],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [12, 18],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [20, 30],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "damage_range": [
+          45,
+          70
+        ],
+        "stats_count_range": [
+          3,
+          4
+        ],
+        "params_count_range": [
+          3,
+          3
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          12,
+          18
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          20,
+          30
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_damage": 1.2,
@@ -158,13 +390,24 @@
         }
       }
     },
-
     "light_armor": {
       "poor": {
-        "defense_range": [1, 3],
-        "stats_count_range": [0, 0],
-        "params_count_range": [0, 0],
-        "skills_count_range": [0, 0],
+        "defense_range": [
+          1,
+          3
+        ],
+        "stats_count_range": [
+          0,
+          0
+        ],
+        "params_count_range": [
+          0,
+          0
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
         "stat_bonus_range": null,
         "stat_bonus_list": [],
         "param_bonus_range": null,
@@ -178,14 +421,39 @@
         }
       },
       "common": {
-        "defense_range": [2, 5],
-        "stats_count_range": [0, 1],
-        "params_count_range": [0, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [1, 1],
-        "stat_bonus_list": ["spirit", "intelligence"],
-        "param_bonus_range": [1, 3],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          2,
+          5
+        ],
+        "stats_count_range": [
+          0,
+          1
+        ],
+        "params_count_range": [
+          0,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          1,
+          1
+        ],
+        "stat_bonus_list": [
+          "spirit",
+          "intelligence"
+        ],
+        "param_bonus_range": [
+          1,
+          3
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -195,14 +463,39 @@
         }
       },
       "uncommon": {
-        "defense_range": [4, 8],
-        "stats_count_range": [1, 1],
-        "params_count_range": [1, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [2, 3],
-        "stat_bonus_list": ["spirit", "intelligence"],
-        "param_bonus_range": [3, 6],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          4,
+          8
+        ],
+        "stats_count_range": [
+          1,
+          1
+        ],
+        "params_count_range": [
+          1,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          2,
+          3
+        ],
+        "stat_bonus_list": [
+          "spirit",
+          "intelligence"
+        ],
+        "param_bonus_range": [
+          3,
+          6
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -212,14 +505,39 @@
         }
       },
       "rare": {
-        "defense_range": [7, 12],
-        "stats_count_range": [1, 2],
-        "params_count_range": [1, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [3, 5],
-        "stat_bonus_list": ["spirit", "intelligence"],
-        "param_bonus_range": [6, 10],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          7,
+          12
+        ],
+        "stats_count_range": [
+          1,
+          2
+        ],
+        "params_count_range": [
+          1,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          3,
+          5
+        ],
+        "stat_bonus_list": [
+          "spirit",
+          "intelligence"
+        ],
+        "param_bonus_range": [
+          6,
+          10
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -229,14 +547,39 @@
         }
       },
       "epic": {
-        "defense_range": [11, 18],
-        "stats_count_range": [2, 2],
-        "params_count_range": [2, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [5, 8],
-        "stat_bonus_list": ["spirit", "intelligence"],
-        "param_bonus_range": [10, 15],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          11,
+          18
+        ],
+        "stats_count_range": [
+          2,
+          2
+        ],
+        "params_count_range": [
+          2,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          5,
+          8
+        ],
+        "stat_bonus_list": [
+          "spirit",
+          "intelligence"
+        ],
+        "param_bonus_range": [
+          10,
+          15
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -246,14 +589,39 @@
         }
       },
       "legendary": {
-        "defense_range": [17, 27],
-        "stats_count_range": [2, 3],
-        "params_count_range": [2, 3],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [8, 12],
-        "stat_bonus_list": ["spirit", "intelligence"],
-        "param_bonus_range": [15, 22],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          17,
+          27
+        ],
+        "stats_count_range": [
+          2,
+          3
+        ],
+        "params_count_range": [
+          2,
+          3
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          8,
+          12
+        ],
+        "stat_bonus_list": [
+          "spirit",
+          "intelligence"
+        ],
+        "param_bonus_range": [
+          15,
+          22
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -263,14 +631,39 @@
         }
       },
       "artifact": {
-        "defense_range": [25, 40],
-        "stats_count_range": [3, 4],
-        "params_count_range": [3, 4],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [12, 18],
-        "stat_bonus_list": ["spirit", "intelligence"],
-        "param_bonus_range": [22, 35],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          25,
+          40
+        ],
+        "stats_count_range": [
+          3,
+          4
+        ],
+        "params_count_range": [
+          3,
+          4
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          12,
+          18
+        ],
+        "stat_bonus_list": [
+          "spirit",
+          "intelligence"
+        ],
+        "param_bonus_range": [
+          22,
+          35
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -280,13 +673,24 @@
         }
       }
     },
-
     "medium_armor": {
       "poor": {
-        "defense_range": [3, 5],
-        "stats_count_range": [0, 0],
-        "params_count_range": [0, 0],
-        "skills_count_range": [0, 0],
+        "defense_range": [
+          3,
+          5
+        ],
+        "stats_count_range": [
+          0,
+          0
+        ],
+        "params_count_range": [
+          0,
+          0
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
         "stat_bonus_range": null,
         "stat_bonus_list": [],
         "param_bonus_range": null,
@@ -300,14 +704,39 @@
         }
       },
       "common": {
-        "defense_range": [4, 7],
-        "stats_count_range": [0, 1],
-        "params_count_range": [0, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [1, 1],
-        "stat_bonus_list": ["dexterity", "luck"],
-        "param_bonus_range": [1, 3],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          4,
+          7
+        ],
+        "stats_count_range": [
+          0,
+          1
+        ],
+        "params_count_range": [
+          0,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          1,
+          1
+        ],
+        "stat_bonus_list": [
+          "dexterity",
+          "luck"
+        ],
+        "param_bonus_range": [
+          1,
+          3
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -317,14 +746,39 @@
         }
       },
       "uncommon": {
-        "defense_range": [6, 11],
-        "stats_count_range": [1, 1],
-        "params_count_range": [1, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [2, 3],
-        "stat_bonus_list": ["dexterity", "luck"],
-        "param_bonus_range": [3, 6],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          6,
+          11
+        ],
+        "stats_count_range": [
+          1,
+          1
+        ],
+        "params_count_range": [
+          1,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          2,
+          3
+        ],
+        "stat_bonus_list": [
+          "dexterity",
+          "luck"
+        ],
+        "param_bonus_range": [
+          3,
+          6
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -334,14 +788,39 @@
         }
       },
       "rare": {
-        "defense_range": [10, 16],
-        "stats_count_range": [1, 2],
-        "params_count_range": [1, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [3, 5],
-        "stat_bonus_list": ["dexterity", "luck"],
-        "param_bonus_range": [6, 10],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          10,
+          16
+        ],
+        "stats_count_range": [
+          1,
+          2
+        ],
+        "params_count_range": [
+          1,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          3,
+          5
+        ],
+        "stat_bonus_list": [
+          "dexterity",
+          "luck"
+        ],
+        "param_bonus_range": [
+          6,
+          10
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -351,14 +830,39 @@
         }
       },
       "epic": {
-        "defense_range": [15, 24],
-        "stats_count_range": [2, 2],
-        "params_count_range": [2, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [5, 8],
-        "stat_bonus_list": ["dexterity", "luck"],
-        "param_bonus_range": [10, 15],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          15,
+          24
+        ],
+        "stats_count_range": [
+          2,
+          2
+        ],
+        "params_count_range": [
+          2,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          5,
+          8
+        ],
+        "stat_bonus_list": [
+          "dexterity",
+          "luck"
+        ],
+        "param_bonus_range": [
+          10,
+          15
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -368,14 +872,39 @@
         }
       },
       "legendary": {
-        "defense_range": [23, 36],
-        "stats_count_range": [2, 3],
-        "params_count_range": [2, 3],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [8, 12],
-        "stat_bonus_list": ["dexterity", "luck"],
-        "param_bonus_range": [15, 22],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          23,
+          36
+        ],
+        "stats_count_range": [
+          2,
+          3
+        ],
+        "params_count_range": [
+          2,
+          3
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          8,
+          12
+        ],
+        "stat_bonus_list": [
+          "dexterity",
+          "luck"
+        ],
+        "param_bonus_range": [
+          15,
+          22
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -385,14 +914,39 @@
         }
       },
       "artifact": {
-        "defense_range": [34, 54],
-        "stats_count_range": [3, 4],
-        "params_count_range": [3, 4],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [12, 18],
-        "stat_bonus_list": ["dexterity", "luck"],
-        "param_bonus_range": [22, 35],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          34,
+          54
+        ],
+        "stats_count_range": [
+          3,
+          4
+        ],
+        "params_count_range": [
+          3,
+          4
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          12,
+          18
+        ],
+        "stat_bonus_list": [
+          "dexterity",
+          "luck"
+        ],
+        "param_bonus_range": [
+          22,
+          35
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -402,13 +956,24 @@
         }
       }
     },
-
     "heavy_armor": {
       "poor": {
-        "defense_range": [5, 8],
-        "stats_count_range": [0, 0],
-        "params_count_range": [0, 0],
-        "skills_count_range": [0, 0],
+        "defense_range": [
+          5,
+          8
+        ],
+        "stats_count_range": [
+          0,
+          0
+        ],
+        "params_count_range": [
+          0,
+          0
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
         "stat_bonus_range": null,
         "stat_bonus_list": [],
         "param_bonus_range": null,
@@ -422,14 +987,39 @@
         }
       },
       "common": {
-        "defense_range": [6, 10],
-        "stats_count_range": [0, 1],
-        "params_count_range": [0, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [1, 1],
-        "stat_bonus_list": ["strength", "constitution"],
-        "param_bonus_range": [1, 3],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          6,
+          10
+        ],
+        "stats_count_range": [
+          0,
+          1
+        ],
+        "params_count_range": [
+          0,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          1,
+          1
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "constitution"
+        ],
+        "param_bonus_range": [
+          1,
+          3
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -439,14 +1029,39 @@
         }
       },
       "uncommon": {
-        "defense_range": [9, 15],
-        "stats_count_range": [1, 1],
-        "params_count_range": [1, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [2, 3],
-        "stat_bonus_list": ["strength", "constitution"],
-        "param_bonus_range": [3, 6],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          9,
+          15
+        ],
+        "stats_count_range": [
+          1,
+          1
+        ],
+        "params_count_range": [
+          1,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          2,
+          3
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "constitution"
+        ],
+        "param_bonus_range": [
+          3,
+          6
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -456,14 +1071,39 @@
         }
       },
       "rare": {
-        "defense_range": [13, 20],
-        "stats_count_range": [1, 2],
-        "params_count_range": [1, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [3, 5],
-        "stat_bonus_list": ["strength", "constitution"],
-        "param_bonus_range": [6, 10],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          13,
+          20
+        ],
+        "stats_count_range": [
+          1,
+          2
+        ],
+        "params_count_range": [
+          1,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          3,
+          5
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "constitution"
+        ],
+        "param_bonus_range": [
+          6,
+          10
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -473,14 +1113,39 @@
         }
       },
       "epic": {
-        "defense_range": [19, 30],
-        "stats_count_range": [2, 2],
-        "params_count_range": [2, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [5, 8],
-        "stat_bonus_list": ["strength", "constitution"],
-        "param_bonus_range": [10, 15],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          19,
+          30
+        ],
+        "stats_count_range": [
+          2,
+          2
+        ],
+        "params_count_range": [
+          2,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          5,
+          8
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "constitution"
+        ],
+        "param_bonus_range": [
+          10,
+          15
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -490,14 +1155,39 @@
         }
       },
       "legendary": {
-        "defense_range": [28, 45],
-        "stats_count_range": [2, 3],
-        "params_count_range": [2, 3],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [8, 12],
-        "stat_bonus_list": ["strength", "constitution"],
-        "param_bonus_range": [15, 22],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          28,
+          45
+        ],
+        "stats_count_range": [
+          2,
+          3
+        ],
+        "params_count_range": [
+          2,
+          3
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          8,
+          12
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "constitution"
+        ],
+        "param_bonus_range": [
+          15,
+          22
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -507,14 +1197,39 @@
         }
       },
       "artifact": {
-        "defense_range": [42, 65],
-        "stats_count_range": [3, 4],
-        "params_count_range": [3, 4],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [12, 18],
-        "stat_bonus_list": ["strength", "constitution"],
-        "param_bonus_range": [22, 35],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          42,
+          65
+        ],
+        "stats_count_range": [
+          3,
+          4
+        ],
+        "params_count_range": [
+          3,
+          4
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          12,
+          18
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "constitution"
+        ],
+        "param_bonus_range": [
+          22,
+          35
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 1.2,
@@ -524,17 +1239,45 @@
         }
       }
     },
-
     "amulet": {
       "poor": {
-        "defense_range": [0, 0],
-        "stats_count_range": [0, 1],
-        "params_count_range": [1, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [1, 1],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [1, 3],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          0,
+          1
+        ],
+        "params_count_range": [
+          1,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          1,
+          1
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          1,
+          3
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -544,14 +1287,43 @@
         }
       },
       "common": {
-        "defense_range": [0, 0],
-        "stats_count_range": [0, 1],
-        "params_count_range": [1, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [2, 3],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [3, 5],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          0,
+          1
+        ],
+        "params_count_range": [
+          1,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          2,
+          3
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          3,
+          5
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -561,14 +1333,43 @@
         }
       },
       "uncommon": {
-        "defense_range": [0, 0],
-        "stats_count_range": [1, 1],
-        "params_count_range": [1, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [3, 5],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [5, 8],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          1,
+          1
+        ],
+        "params_count_range": [
+          1,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          3,
+          5
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          5,
+          8
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -578,14 +1379,43 @@
         }
       },
       "rare": {
-        "defense_range": [0, 0],
-        "stats_count_range": [1, 2],
-        "params_count_range": [2, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [4, 7],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [8, 12],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          1,
+          2
+        ],
+        "params_count_range": [
+          2,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          4,
+          7
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          8,
+          12
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -595,14 +1425,43 @@
         }
       },
       "epic": {
-        "defense_range": [0, 0],
-        "stats_count_range": [2, 2],
-        "params_count_range": [2, 3],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [6, 10],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [12, 18],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          2,
+          2
+        ],
+        "params_count_range": [
+          2,
+          3
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          6,
+          10
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          12,
+          18
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -612,14 +1471,43 @@
         }
       },
       "legendary": {
-        "defense_range": [0, 0],
-        "stats_count_range": [2, 3],
-        "params_count_range": [3, 3],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [10, 15],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [18, 25],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          2,
+          3
+        ],
+        "params_count_range": [
+          3,
+          3
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          10,
+          15
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          18,
+          25
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -629,14 +1517,43 @@
         }
       },
       "artifact": {
-        "defense_range": [0, 0],
-        "stats_count_range": [3, 4],
-        "params_count_range": [4, 4],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [15, 22],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [25, 40],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          3,
+          4
+        ],
+        "params_count_range": [
+          4,
+          4
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          15,
+          22
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          25,
+          40
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -646,17 +1563,45 @@
         }
       }
     },
-
     "ring": {
       "poor": {
-        "defense_range": [0, 0],
-        "stats_count_range": [0, 1],
-        "params_count_range": [1, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [1, 1],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [1, 2],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          0,
+          1
+        ],
+        "params_count_range": [
+          1,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          1,
+          1
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          1,
+          2
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -666,14 +1611,43 @@
         }
       },
       "common": {
-        "defense_range": [0, 0],
-        "stats_count_range": [0, 1],
-        "params_count_range": [1, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [1, 2],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [2, 4],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          0,
+          1
+        ],
+        "params_count_range": [
+          1,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          1,
+          2
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          2,
+          4
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -683,14 +1657,43 @@
         }
       },
       "uncommon": {
-        "defense_range": [0, 0],
-        "stats_count_range": [1, 1],
-        "params_count_range": [1, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [2, 4],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [4, 6],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          1,
+          1
+        ],
+        "params_count_range": [
+          1,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          2,
+          4
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          4,
+          6
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -700,14 +1703,43 @@
         }
       },
       "rare": {
-        "defense_range": [0, 0],
-        "stats_count_range": [1, 2],
-        "params_count_range": [1, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [3, 6],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [6, 9],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          1,
+          2
+        ],
+        "params_count_range": [
+          1,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          3,
+          6
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          6,
+          9
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -717,14 +1749,43 @@
         }
       },
       "epic": {
-        "defense_range": [0, 0],
-        "stats_count_range": [2, 2],
-        "params_count_range": [2, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [5, 9],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [9, 14],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          2,
+          2
+        ],
+        "params_count_range": [
+          2,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          5,
+          9
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          9,
+          14
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -734,14 +1795,43 @@
         }
       },
       "legendary": {
-        "defense_range": [0, 0],
-        "stats_count_range": [2, 3],
-        "params_count_range": [2, 3],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [8, 13],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [14, 20],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          2,
+          3
+        ],
+        "params_count_range": [
+          2,
+          3
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          8,
+          13
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          14,
+          20
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -751,14 +1841,43 @@
         }
       },
       "artifact": {
-        "defense_range": [0, 0],
-        "stats_count_range": [3, 4],
-        "params_count_range": [3, 3],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [12, 20],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [20, 30],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          3,
+          4
+        ],
+        "params_count_range": [
+          3,
+          3
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          12,
+          20
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          20,
+          30
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -768,17 +1887,45 @@
         }
       }
     },
-
     "bracelet": {
       "poor": {
-        "defense_range": [0, 0],
-        "stats_count_range": [0, 1],
-        "params_count_range": [1, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [1, 1],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [1, 2],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          0,
+          1
+        ],
+        "params_count_range": [
+          1,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          1,
+          1
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          1,
+          2
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -788,14 +1935,43 @@
         }
       },
       "common": {
-        "defense_range": [0, 0],
-        "stats_count_range": [1, 1],
-        "params_count_range": [1, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [1, 2],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [2, 4],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          1,
+          1
+        ],
+        "params_count_range": [
+          1,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          1,
+          2
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          2,
+          4
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -805,14 +1981,43 @@
         }
       },
       "uncommon": {
-        "defense_range": [0, 0],
-        "stats_count_range": [1, 1],
-        "params_count_range": [1, 1],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [2, 4],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [4, 6],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          1,
+          1
+        ],
+        "params_count_range": [
+          1,
+          1
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          2,
+          4
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          4,
+          6
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -822,14 +2027,43 @@
         }
       },
       "rare": {
-        "defense_range": [0, 0],
-        "stats_count_range": [1, 2],
-        "params_count_range": [1, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [3, 6],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [6, 9],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          1,
+          2
+        ],
+        "params_count_range": [
+          1,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          3,
+          6
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          6,
+          9
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -839,14 +2073,43 @@
         }
       },
       "epic": {
-        "defense_range": [0, 0],
-        "stats_count_range": [2, 2],
-        "params_count_range": [2, 2],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [5, 9],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [9, 14],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          2,
+          2
+        ],
+        "params_count_range": [
+          2,
+          2
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          5,
+          9
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          9,
+          14
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -856,14 +2119,43 @@
         }
       },
       "legendary": {
-        "defense_range": [0, 0],
-        "stats_count_range": [2, 3],
-        "params_count_range": [2, 3],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [8, 13],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [14, 20],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          2,
+          3
+        ],
+        "params_count_range": [
+          2,
+          3
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          8,
+          13
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          14,
+          20
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -873,14 +2165,43 @@
         }
       },
       "artifact": {
-        "defense_range": [0, 0],
-        "stats_count_range": [3, 4],
-        "params_count_range": [3, 3],
-        "skills_count_range": [0, 0],
-        "stat_bonus_range": [12, 20],
-        "stat_bonus_list": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"],
-        "param_bonus_range": [20, 30],
-        "param_bonus_list": ["health", "mana", "stamina"],
+        "defense_range": [
+          0,
+          0
+        ],
+        "stats_count_range": [
+          3,
+          4
+        ],
+        "params_count_range": [
+          3,
+          3
+        ],
+        "skills_count_range": [
+          0,
+          0
+        ],
+        "stat_bonus_range": [
+          12,
+          20
+        ],
+        "stat_bonus_list": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "spirit",
+          "intelligence",
+          "luck"
+        ],
+        "param_bonus_range": [
+          20,
+          30
+        ],
+        "param_bonus_list": [
+          "health",
+          "mana",
+          "stamina"
+        ],
         "skill_bonus_range": null,
         "price_multipliers": {
           "per_defense": 0,
@@ -891,7 +2212,6 @@
       }
     }
   },
-
   "base_prices": {
     "_comment": "Базовые цены для разных типов предметов",
     "weapon": 50,
@@ -905,12 +2225,11 @@
     "backpack": 200,
     "talisman": 50
   },
-
   "quality_weights": {
     "_comment": "Веса для генерации качества предметов (сумма не обязательно 1.0)",
     "default": {
       "poor": 0.05,
-      "common": 0.50,
+      "common": 0.5,
       "uncommon": 0.25,
       "rare": 0.12,
       "epic": 0.06,
@@ -919,28 +2238,27 @@
     },
     "jewelry": {
       "_comment": "Украшения генерируются с более высоким качеством",
-      "uncommon": 0.50,
-      "rare": 0.30,
+      "uncommon": 0.5,
+      "rare": 0.3,
       "epic": 0.15,
       "legendary": 0.04,
       "artifact": 0.01
     }
   },
-
   "luck_modifiers": {
     "_comment": "Настройки влияния удачи на генерацию предметов",
     "bonus_per_point": 0.01,
-    "max_bonus": 0.50,
+    "max_bonus": 0.5,
     "quality_redistribution": {
       "_comment": "Как распределяется бонус от удачи между качествами",
       "poor_reduction_factor": 0.1,
       "common_reduction_factor": 0.5,
-      "common_min_weight": 0.20,
+      "common_min_weight": 0.2,
       "poor_min_weight": 0.01,
       "uncommon_share": 0.35,
-      "rare_share": 0.30,
-      "epic_share": 0.20,
-      "legendary_share": 0.10,
+      "rare_share": 0.3,
+      "epic_share": 0.2,
+      "legendary_share": 0.1,
       "artifact_share": 0.05
     },
     "extra_drop": {
@@ -949,18 +2267,37 @@
       "max_chance": 30
     }
   },
-
   "belt_slots": {
     "_comment": "Количество слотов для зелий и талисманов в поясе по качеству [зелья, талисманы]",
-    "poor": [1, 0],
-    "common": [2, 0],
-    "uncommon": [2, 1],
-    "rare": [2, 2],
-    "epic": [3, 2],
-    "legendary": [3, 3],
-    "artifact": [4, 4]
+    "poor": [
+      1,
+      0
+    ],
+    "common": [
+      2,
+      0
+    ],
+    "uncommon": [
+      2,
+      1
+    ],
+    "rare": [
+      2,
+      2
+    ],
+    "epic": [
+      3,
+      2
+    ],
+    "legendary": [
+      3,
+      3
+    ],
+    "artifact": [
+      4,
+      4
+    ]
   },
-
   "backpack_slots": {
     "_comment": "Дополнительные слоты инвентаря от рюкзака по качеству",
     "poor": 5,
@@ -971,7 +2308,6 @@
     "legendary": 30,
     "artifact": 35
   },
-
   "belt_parameters": {
     "_comment": "Параметры генерации поясов по качеству",
     "bonus_count": {
@@ -984,17 +2320,41 @@
       "artifact": 3
     },
     "bonus_range": {
-      "poor": [0, 0],
-      "common": [0, 0],
-      "uncommon": [2, 4],
-      "rare": [4, 6],
-      "epic": [6, 8],
-      "legendary": [8, 10],
-      "artifact": [10, 15]
+      "poor": [
+        0,
+        0
+      ],
+      "common": [
+        0,
+        0
+      ],
+      "uncommon": [
+        2,
+        4
+      ],
+      "rare": [
+        4,
+        6
+      ],
+      "epic": [
+        6,
+        8
+      ],
+      "legendary": [
+        8,
+        10
+      ],
+      "artifact": [
+        10,
+        15
+      ]
     },
-    "available_params": ["health", "mana", "stamina"]
+    "available_params": [
+      "health",
+      "mana",
+      "stamina"
+    ]
   },
-
   "talisman_parameters": {
     "_comment": "Параметры генерации талисманов по качеству",
     "bonus_count": {
@@ -1007,47 +2367,153 @@
       "artifact": 3
     },
     "bonus_range": {
-      "poor": [1, 2],
-      "common": [1, 2],
-      "uncommon": [2, 3],
-      "rare": [3, 5],
-      "epic": [5, 7],
-      "legendary": [7, 10],
-      "artifact": [10, 15]
+      "poor": [
+        1,
+        2
+      ],
+      "common": [
+        1,
+        2
+      ],
+      "uncommon": [
+        2,
+        3
+      ],
+      "rare": [
+        3,
+        5
+      ],
+      "epic": [
+        5,
+        7
+      ],
+      "legendary": [
+        7,
+        10
+      ],
+      "artifact": [
+        10,
+        15
+      ]
     },
-    "available_stats": ["strength", "dexterity", "constitution", "spirit", "intelligence", "luck"]
+    "available_stats": [
+      "strength",
+      "dexterity",
+      "constitution",
+      "spirit",
+      "intelligence",
+      "luck"
+    ]
   },
-
   "weapon_filters": {
     "_comment": "Фильтрация характеристик и параметров по типам оружия",
     "stat_filters": {
       "_comment": "allowed - разрешённые характеристики, excluded - запрещённые",
-      "staff": {"allowed": ["intelligence", "spirit"]},
-      "wand": {"allowed": ["intelligence", "spirit"]},
-      "sword": {"excluded": ["intelligence", "spirit", "dexterity"]},
-      "club": {"excluded": ["intelligence", "spirit", "dexterity"]},
-      "pickaxe": {"excluded": ["intelligence", "spirit", "dexterity"]},
-      "axe": {"excluded": ["intelligence", "spirit", "dexterity"]},
-      "knife": {"excluded": ["spirit", "strength", "constitution"]},
-      "bow": {"excluded": ["spirit", "strength", "constitution"]},
-      "spear": {"excluded": ["spirit", "strength", "constitution"]}
+      "staff": {
+        "allowed": [
+          "intelligence",
+          "spirit"
+        ]
+      },
+      "wand": {
+        "allowed": [
+          "intelligence",
+          "spirit"
+        ]
+      },
+      "sword": {
+        "excluded": [
+          "intelligence",
+          "spirit",
+          "dexterity"
+        ]
+      },
+      "club": {
+        "excluded": [
+          "intelligence",
+          "spirit",
+          "dexterity"
+        ]
+      },
+      "pickaxe": {
+        "excluded": [
+          "intelligence",
+          "spirit",
+          "dexterity"
+        ]
+      },
+      "axe": {
+        "excluded": [
+          "intelligence",
+          "spirit",
+          "dexterity"
+        ]
+      },
+      "knife": {
+        "excluded": [
+          "spirit",
+          "strength",
+          "constitution"
+        ]
+      },
+      "bow": {
+        "excluded": [
+          "spirit",
+          "strength",
+          "constitution"
+        ]
+      },
+      "spear": {
+        "excluded": [
+          "spirit",
+          "strength",
+          "constitution"
+        ]
+      }
     },
     "param_filters": {
-      "staff": {"allowed": ["health", "mana"]},
-      "wand": {"allowed": ["health", "mana"]}
+      "staff": {
+        "allowed": [
+          "health",
+          "mana"
+        ]
+      },
+      "wand": {
+        "allowed": [
+          "health",
+          "mana"
+        ]
+      }
     }
   },
-
   "skill_bonus_config": {
     "_comment": "Настройки бонусов к умениям от экипировки",
-    "jewelry_only_qualities": ["legendary", "artifact"],
+    "jewelry_only_qualities": [
+      "legendary",
+      "artifact"
+    ],
     "max_bonus_by_quality": {
       "legendary": 1,
       "artifact": 2
     },
     "available_skills": {
-      "magic": ["heal", "regeneration", "stamina_recovery", "mage_shield", "fireball", "ice_bolt", "lightning", "magic_missile"],
-      "combat": ["basic_attack", "power_strike", "poison_strike", "stun_strike", "battle_cry"]
+      "magic": [
+        "heal",
+        "regeneration",
+        "stamina_recovery",
+        "mage_shield",
+        "fireball",
+        "ice_bolt",
+        "lightning",
+        "magic_missile"
+      ],
+      "combat": [
+        "basic_attack",
+        "power_strike",
+        "poison_strike",
+        "stun_strike",
+        "battle_cry"
+      ]
     }
   }
 }
