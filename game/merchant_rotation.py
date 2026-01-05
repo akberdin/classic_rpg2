@@ -48,8 +48,14 @@ class MerchantRotationManager:
         Args:
             game: Объект игры с доступом к карте и NPC
         """
-        from game.npc.merchant import Merchant, MagicMerchant
+        from game.npc.merchant import Merchant, MagicMerchant, WarriorMerchant, ShadowMerchant
         from game.npc.unique import Alchemist
+        from game.npc.merchant_goods import (
+            MerchantGoodsGenerator,
+            MagicGoodsGenerator,
+            WarriorGoodsGenerator,
+            ShadowGoodsGenerator
+        )
 
         # Обновляем время последней ротации
         total_hours = self.get_total_hours(game.game_time.game_day, game.game_time.game_hour)
@@ -64,13 +70,17 @@ class MerchantRotationManager:
                 if hasattr(location, 'merchant_npc') and location.merchant_npc:
                     npc = location.merchant_npc
 
-                    # Регенерируем товары торговца
+                    # Регенерируем товары торговца используя соответствующие генераторы
                     if isinstance(npc, MagicMerchant):
-                        npc._generate_magic_goods()
+                        MagicGoodsGenerator.generate_goods(npc)
+                    elif isinstance(npc, WarriorMerchant):
+                        WarriorGoodsGenerator.generate_goods(npc)
+                    elif isinstance(npc, ShadowMerchant):
+                        ShadowGoodsGenerator.generate_goods(npc)
                     elif isinstance(npc, Alchemist):
                         npc._generate_alchemist_goods()
                     elif isinstance(npc, Merchant):
-                        npc._generate_merchant_goods()
+                        MerchantGoodsGenerator.generate_goods(npc)
                     else:
                         continue
 
