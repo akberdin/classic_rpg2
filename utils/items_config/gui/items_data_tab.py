@@ -33,9 +33,27 @@ class ItemsDataTab(ttk.Frame):
         self.current_item_id = None
         self.sort_column = None
         self.sort_reverse = False
+        self._recipe_cache = {}  # Кэш рецептов для быстрого поиска
 
+        self._build_recipe_cache()
         self._create_ui()
         self._load_categories()
+
+    def _build_recipe_cache(self):
+        """Построить кэш рецептов для быстрого поиска по result_item"""
+        self._recipe_cache = {}
+        if self.crafting_manager:
+            recipes = self.crafting_manager.get_recipes()
+            for recipe in recipes:
+                result_item = recipe.get("result_item")
+                if result_item:
+                    self._recipe_cache[result_item] = recipe
+
+    def refresh_recipe_cache(self):
+        """Обновить кэш рецептов (публичный метод)"""
+        self._build_recipe_cache()
+        if self.current_category:
+            self._load_items()
 
     def _create_ui(self):
         """Создание интерфейса"""
@@ -80,19 +98,22 @@ class ItemsDataTab(ttk.Frame):
         list_frame = ttk.Frame(items_frame)
         list_frame.pack(fill="both", expand=True)
 
-        columns = ("id", "name", "quality")
+        columns = ("id", "name", "quality", "recipe")
         self.items_tree = ttk.Treeview(list_frame, columns=columns, show="headings", selectmode="browse")
 
         # Заголовки с сортировкой
-        for col, text in [("id", "ID"), ("name", "Название"), ("quality", "Качество")]:
+        column_config = [
+            ("id", "ID", 120),
+            ("name", "Название", 140),
+            ("quality", "Качество", 70),
+            ("recipe", "Рецепт", 60)
+        ]
+        for col, text, width in column_config:
             self.items_tree.heading(
                 col, text=text,
                 command=lambda c=col: self._sort_by_column(c)
             )
-
-        self.items_tree.column("id", width=120)
-        self.items_tree.column("name", width=150)
-        self.items_tree.column("quality", width=80)
+            self.items_tree.column(col, width=width)
 
         scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=self.items_tree.yview)
         self.items_tree.configure(yscrollcommand=scrollbar.set)
@@ -325,8 +346,9 @@ class ItemsDataTab(ttk.Frame):
         items = self.manager.get_items_in_category(self.current_category)
         for item in items:
             quality = item.quality or ""
+            has_recipe = "Да" if item.item_id in self._recipe_cache else ""
             self.items_tree.insert("", tk.END, iid=item.item_id,
-                                   values=(item.item_id, item.name, quality))
+                                   values=(item.item_id, item.name, quality, has_recipe))
 
     def _sort_by_column(self, column: str):
         """Сортировка по столбцу"""
@@ -349,8 +371,9 @@ class ItemsDataTab(ttk.Frame):
             self.items_tree.move(child, "", index)
 
         # Обновляем заголовок с индикатором сортировки
-        for col in ("id", "name", "quality"):
-            text = {"id": "ID", "name": "Название", "quality": "Качество"}[col]
+        column_names = {"id": "ID", "name": "Название", "quality": "Качество", "recipe": "Рецепт"}
+        for col in column_names:
+            text = column_names[col]
             if col == column:
                 arrow = " ▼" if self.sort_reverse else " ▲"
                 text += arrow
@@ -368,8 +391,9 @@ class ItemsDataTab(ttk.Frame):
         for item in items:
             if search in item.item_id.lower() or search in item.name.lower():
                 quality = item.quality or ""
+                has_recipe = "Да" if item.item_id in self._recipe_cache else ""
                 self.items_tree.insert("", tk.END, iid=item.item_id,
-                                       values=(item.item_id, item.name, quality))
+                                       values=(item.item_id, item.name, quality, has_recipe))
 
     def _on_item_select(self, event):
         """Обработка выбора предмета"""
@@ -580,14 +604,8 @@ class ItemsDataTab(ttk.Frame):
                 self.on_change()
 
     def _find_recipe_for_item(self, item_id: str):
-        """Найти рецепт для предмета"""
-        if not self.crafting_manager:
-            return None
-        recipes = self.crafting_manager.get_recipes()
-        for recipe in recipes:
-            if recipe.get("result_item") == item_id:
-                return recipe
-        return None
+        """Найти рецепт для предмета (использует кэш)"""
+        return self._recipe_cache.get(item_id)
 
     def _update_recipe_info(self, item_id: str):
         """Обновить информацию о рецепте"""
