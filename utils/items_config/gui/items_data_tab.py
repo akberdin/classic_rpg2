@@ -27,6 +27,8 @@ class ItemsDataTab(ttk.Frame):
         self.on_change = on_change
         self.current_category = None
         self.current_item_id = None
+        self.sort_column = None
+        self.sort_reverse = False
 
         self._create_ui()
         self._load_categories()
@@ -76,9 +78,14 @@ class ItemsDataTab(ttk.Frame):
 
         columns = ("id", "name", "quality")
         self.items_tree = ttk.Treeview(list_frame, columns=columns, show="headings", selectmode="browse")
-        self.items_tree.heading("id", text="ID")
-        self.items_tree.heading("name", text="Название")
-        self.items_tree.heading("quality", text="Качество")
+
+        # Заголовки с сортировкой
+        for col, text in [("id", "ID"), ("name", "Название"), ("quality", "Качество")]:
+            self.items_tree.heading(
+                col, text=text,
+                command=lambda c=col: self._sort_by_column(c)
+            )
+
         self.items_tree.column("id", width=120)
         self.items_tree.column("name", width=150)
         self.items_tree.column("quality", width=80)
@@ -278,6 +285,34 @@ class ItemsDataTab(ttk.Frame):
             quality = item.quality or ""
             self.items_tree.insert("", tk.END, iid=item.item_id,
                                    values=(item.item_id, item.name, quality))
+
+    def _sort_by_column(self, column: str):
+        """Сортировка по столбцу"""
+        # Переключаем направление, если тот же столбец
+        if self.sort_column == column:
+            self.sort_reverse = not self.sort_reverse
+        else:
+            self.sort_column = column
+            self.sort_reverse = False
+
+        # Получаем все элементы
+        items = [(self.items_tree.set(child, column), child)
+                 for child in self.items_tree.get_children("")]
+
+        # Сортируем
+        items.sort(key=lambda x: x[0].lower(), reverse=self.sort_reverse)
+
+        # Переставляем элементы
+        for index, (_, child) in enumerate(items):
+            self.items_tree.move(child, "", index)
+
+        # Обновляем заголовок с индикатором сортировки
+        for col in ("id", "name", "quality"):
+            text = {"id": "ID", "name": "Название", "quality": "Качество"}[col]
+            if col == column:
+                arrow = " ▼" if self.sort_reverse else " ▲"
+                text += arrow
+            self.items_tree.heading(col, text=text)
 
     def _filter_items(self):
         """Фильтрация предметов по поиску"""
