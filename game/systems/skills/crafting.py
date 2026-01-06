@@ -229,14 +229,9 @@ class Mining(Skill):
         # Уменьшаем количество руды в объекте
         ore_depleted = dungeon_manager.deplete_ore(ore_tile)
 
-        # Добавляем информацию о состоянии руды
+        # Сообщаем только если руда полностью исчерпана
         if ore_depleted:
             messages.append("Жила руды исчерпана!")
-        else:
-            # Руда ещё осталась - показываем сколько
-            remaining = ore_tile.ore_data.get('remaining_amount', 0)
-            max_amount = ore_tile.ore_data.get('max_amount', remaining)
-            messages.append(f"Осталось в жиле: {remaining}/{max_amount}")
 
         result['success'] = True
         result['resources'] = resources
