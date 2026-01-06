@@ -4,6 +4,7 @@
 import pygame
 from game.ui.base import UIHelper
 from game.inventory import EquipmentSlot
+from game.config.config_loader import get_economy_config
 
 
 class TradeWindow:
@@ -51,6 +52,30 @@ class TradeWindow:
         # Хранение отфильтрованных списков для консистентности между рендером и вводом
         self.current_merchant_items = []  # Текущий отфильтрованный список товаров торговца
         self.current_player_items = []  # Текущий отфильтрованный список товаров игрока
+
+        # Коэффициенты торговли на основе отношений локации
+        self.location_attitude = 0  # Значение player_attitude текущей локации
+        self._buy_multiplier = 1.5  # Кэшированный коэффициент покупки
+        self._sell_multiplier = 0.5  # Кэшированный коэффициент продажи
+
+    def set_location_attitude(self, attitude: int):
+        """
+        Установить отношение локации к игроку и пересчитать коэффициенты торговли.
+
+        Args:
+            attitude: Значение player_attitude (-10 до 10)
+        """
+        self.location_attitude = attitude
+        economy_config = get_economy_config()
+        self._buy_multiplier, self._sell_multiplier = economy_config.get_trade_multipliers(attitude)
+
+    def get_buy_price(self, item_value: int) -> int:
+        """Получить цену покупки с учётом отношений локации"""
+        return int(item_value * self._buy_multiplier)
+
+    def get_sell_price(self, item_value: int) -> int:
+        """Получить цену продажи с учётом отношений локации"""
+        return int(item_value * self._sell_multiplier)
 
     def render(self, player, merchant, mouse_pos=None):
         """
@@ -304,8 +329,8 @@ class TradeWindow:
             )
             self.screen.blit(name_text, (x + 10, items_y + display_index * item_height + 5))
 
-            # Цена (наценка 350%)
-            buy_price = int(item.value * 4.5)
+            # Цена покупки с учётом отношений локации
+            buy_price = self.get_buy_price(item.value)
             price_text = self.info_font.render(
                 f"{buy_price}з",
                 True,
@@ -390,8 +415,8 @@ class TradeWindow:
             )
             self.screen.blit(name_text, (x + 10, items_y + display_index * item_height + 5))
 
-            # Цена продажи (70% от стоимости)
-            sell_price = int(item.value * 0.7)
+            # Цена продажи с учётом отношений локации
+            sell_price = self.get_sell_price(item.value)
             price_text = self.info_font.render(
                 f"{sell_price}з",
                 True,
@@ -653,12 +678,12 @@ class TradeWindow:
         lines.append(("", (0, 0, 0), False))
         lines.append((f"Вес: {item.weight:.1f} кг", (200, 200, 200), False))
 
-        # Показываем цену покупки/продажи
+        # Показываем цену покупки/продажи с учётом отношений локации
         if self.mode == "buy":
-            buy_price = int(item.value * 4.5)
+            buy_price = self.get_buy_price(item.value)
             lines.append((f"Цена покупки: {buy_price} золота", (255, 215, 0), False))
         else:
-            sell_price = int(item.value * 0.7)
+            sell_price = self.get_sell_price(item.value)
             lines.append((f"Цена продажи: {sell_price} золота", (255, 215, 0), False))
 
         # Максимальная ширина текста

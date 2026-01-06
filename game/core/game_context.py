@@ -549,6 +549,18 @@ class GameContext:
         """Получить тайл под игроком."""
         return self.game_map.get_tile(self.player.x, self.player.y)
 
+    def get_current_location_attitude(self) -> int:
+        """
+        Получить player_attitude текущей локации игрока.
+
+        Returns:
+            int: Значение player_attitude (-10 до 10), 0 если вне локации
+        """
+        tile = self.get_tile_at_player()
+        if tile and tile.location:
+            return getattr(tile.location, 'player_attitude', 0)
+        return 0
+
     def is_position_visible(self, x: int, y: int) -> bool:
         """
         Проверить, видна ли позиция.
