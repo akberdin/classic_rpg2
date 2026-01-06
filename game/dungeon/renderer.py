@@ -535,6 +535,66 @@ class DungeonRenderer:
         pygame.draw.line(self.screen, corner_color, (pixel_x + self.tile_size, pixel_y + self.tile_size),
                         (pixel_x + self.tile_size, pixel_y + self.tile_size - corner_len), 2)
 
+        # Прогресс бар оставшейся руды
+        self._render_ore_progress_bar(selected_ore, pixel_x, pixel_y)
+
+    def _render_ore_progress_bar(self, ore_tile, pixel_x: int, pixel_y: int):
+        """
+        Рисуем прогресс бар для отображения оставшегося количества руды
+
+        Args:
+            ore_tile: Тайл с рудой
+            pixel_x: X позиция тайла на экране
+            pixel_y: Y позиция тайла на экране
+        """
+        if not ore_tile or not ore_tile.ore_data:
+            return
+
+        remaining = ore_tile.ore_data.get('remaining_amount', 1)
+        max_amount = ore_tile.ore_data.get('max_amount', remaining)
+        if max_amount <= 0:
+            max_amount = 1
+
+        # Размеры шкалы (под тайлом)
+        bar_width = self.tile_size + 4
+        bar_height = 6
+        bar_x = pixel_x - 2
+        bar_y = pixel_y + self.tile_size + 4
+
+        # Фон шкалы (тёмный)
+        pygame.draw.rect(self.screen, (30, 30, 30),
+                        (bar_x - 1, bar_y - 1, bar_width + 2, bar_height + 2))
+
+        # Заполнение шкалы
+        fill_ratio = remaining / max_amount
+        fill_width = int(bar_width * fill_ratio)
+
+        # Цвет зависит от процента оставшейся руды
+        if fill_ratio > 0.6:
+            bar_color = (80, 180, 220)  # Голубой - много руды
+        elif fill_ratio > 0.3:
+            bar_color = (220, 180, 50)  # Жёлтый - средне
+        else:
+            bar_color = (220, 100, 50)  # Оранжевый - мало
+
+        if fill_width > 0:
+            pygame.draw.rect(self.screen, bar_color,
+                            (bar_x, bar_y, fill_width, bar_height))
+
+        # Рамка
+        pygame.draw.rect(self.screen, (100, 100, 100),
+                        (bar_x - 1, bar_y - 1, bar_width + 2, bar_height + 2), 1)
+
+        # Текст с количеством (над прогресс баром)
+        text = f"{remaining}/{max_amount}"
+        text_surface = self.small_font.render(text, True, (255, 255, 255))
+        text_x = bar_x + (bar_width - text_surface.get_width()) // 2
+        text_y = bar_y + bar_height + 2
+        # Тень текста для читаемости
+        shadow_surface = self.small_font.render(text, True, (0, 0, 0))
+        self.screen.blit(shadow_surface, (text_x + 1, text_y + 1))
+        self.screen.blit(text_surface, (text_x, text_y))
+
     def _render_npc_health_bar(self, npc, pixel_x: int, pixel_y: int):
         """Рисуем шкалу здоровья над NPC"""
         hp = getattr(npc, 'health', 0)  # Используем health вместо hp

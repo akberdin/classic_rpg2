@@ -664,7 +664,7 @@ class DungeonGenerator:
                     dungeon.set_tile_type(x, y, DungeonTileType.ORE)
                     # Сохраняем тип руды и количество в ore_data тайла
                     # remaining_amount: сколько раз можно добыть руду из этого объекта
-                    initial_amount = random.randint(3, 7)
+                    initial_amount = random.randint(15, 35)
                     tile.ore_data = {
                         "resource_type": resource_type,
                         "remaining_amount": initial_amount,
