@@ -27,6 +27,14 @@
         [
           9,
           17
+        ],
+        [
+          1,
+          8
+        ],
+        [
+          4,
+          27
         ]
       ]
     },
@@ -36,7 +44,7 @@
       "type": "mine",
       "name": "Железная жила",
       "id": "97a39aea-b225-4613-a114-f8106e7daa18",
-      "player_attitude": -9,
+      "player_attitude": 0,
       "spawn_radius": 3,
       "rank": 2,
       "miners_count": 0,
@@ -76,7 +84,7 @@
       "id": "e1f7c97b-359d-4f8b-bc0d-038bfd77a989",
       "player_attitude": 0,
       "spawn_radius": 3,
-      "rank": 1,
+      "rank": 2,
       "miners_count": 1,
       "respawn_time": 60,
       "resource_type": "copper",
@@ -106,13 +114,25 @@
         },
         {
           "floor_number": 2,
-          "floor_type": "dark_mine",
-          "size": 2,
+          "floor_type": "mine",
+          "size": 3,
           "npcs": [
             {
-              "type": "undead",
+              "type": "rat",
               "rank": 1,
-              "count": 10
+              "count": 3
+            }
+          ]
+        },
+        {
+          "floor_number": 3,
+          "floor_type": "mine",
+          "size": 4,
+          "npcs": [
+            {
+              "type": "rat",
+              "rank": 1,
+              "count": 5
             }
           ]
         }
@@ -135,6 +155,10 @@
         [
           17,
           9
+        ],
+        [
+          25,
+          1
         ]
       ]
     },
@@ -200,6 +224,70 @@
           "size": 1
         }
       ]
+    },
+    {
+      "x": 4,
+      "y": 27,
+      "type": "mine",
+      "name": "Золотые копи",
+      "id": "b6c4ee61-8602-4652-b9ad-2101e8b12b0f",
+      "player_attitude": 0,
+      "spawn_radius": 1,
+      "rank": 2,
+      "miners_count": 3,
+      "respawn_time": 100,
+      "resource_type": "gold"
+    },
+    {
+      "x": 1,
+      "y": 8,
+      "type": "mine",
+      "name": "Мифриловые жилы",
+      "id": "57d5e3f4-82fc-481f-a5b9-671e1c14dea5",
+      "player_attitude": 0,
+      "spawn_radius": 4,
+      "rank": 4,
+      "miners_count": 3,
+      "respawn_time": 100,
+      "resource_type": "ц"
+    },
+    {
+      "x": 25,
+      "y": 1,
+      "type": "mine",
+      "name": "Серебрянная штольня",
+      "id": "4327edb6-5aae-4b14-8484-701762eca22e",
+      "player_attitude": 0,
+      "spawn_radius": 3,
+      "rank": 2,
+      "miners_count": 3,
+      "respawn_time": 100,
+      "resource_type": "silver",
+      "floors": [
+        {
+          "floor_number": 1,
+          "floor_type": "mine",
+          "size": 2,
+          "npcs": [
+            {
+              "type": "miner",
+              "rank": 1,
+              "count": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "x": 39,
+      "y": 4,
+      "type": "spawn_deer",
+      "name": "Оленья поляна",
+      "id": "0b6cf9ba-55eb-4d99-b8d2-a9100e58a17b",
+      "player_attitude": 0,
+      "spawn_radius": 5,
+      "animal_count": 7,
+      "respawn_time": 50
     }
   ],
   "starting_village": {

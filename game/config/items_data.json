@@ -6,67 +6,80 @@
     "copper_ore": {
       "name": "Медная руда",
       "value": 4,
-      "weight": 1.0
+      "weight": 1.0,
+      "quality": "COMMON"
     },
     "iron_ore": {
       "name": "Железная руда",
       "value": 8,
-      "weight": 1.0
+      "weight": 1.0,
+      "quality": "COMMON"
     },
     "silver_ore": {
       "name": "Серебряная руда",
       "value": 20,
-      "weight": 1.0
+      "weight": 1.0,
+      "quality": "UNCOMMON"
     },
     "gold_ore": {
       "name": "Золотая руда",
       "value": 40,
-      "weight": 1.0
+      "weight": 1.0,
+      "quality": "RARE"
     },
     "mithril_ore": {
       "name": "Мифриловая руда",
       "value": 80,
-      "weight": 1.0
+      "weight": 1.0,
+      "quality": "EPIC"
     },
     "copper_ingot": {
       "name": "Медный слиток",
       "value": 30,
-      "weight": 0.5
+      "weight": 0.5,
+      "quality": "COMMON"
     },
     "iron_ingot": {
       "name": "Железный слиток",
       "value": 60,
-      "weight": 0.5
+      "weight": 0.5,
+      "quality": "COMMON"
     },
     "silver_ingot": {
       "name": "Серебряный слиток",
       "value": 150,
-      "weight": 0.5
+      "weight": 0.5,
+      "quality": "UNCOMMON"
     },
     "gold_ingot": {
       "name": "Золотой слиток",
       "value": 300,
-      "weight": 0.5
+      "weight": 0.5,
+      "quality": "RARE"
     },
     "mithril_ingot": {
       "name": "Мифриловый слиток",
       "value": 600,
-      "weight": 0.5
+      "weight": 0.5,
+      "quality": "EPIC"
     },
     "steel_ingot": {
       "name": "Стальной слиток",
       "value": 120,
-      "weight": 0.5
+      "weight": 0.5,
+      "quality": "UNCOMMON"
     },
     "wood": {
       "name": "Древесина",
-      "value": 5,
-      "weight": 5.0
+      "value": 10,
+      "weight": 5.0,
+      "quality": "COMMON"
     },
     "charcoal": {
       "name": "Древесный уголь",
       "value": 10,
-      "weight": 0.5
+      "weight": 0.5,
+      "quality": "COMMON"
     },
     "long_wooden_handle": {
       "name": "Длинная деревянная рукоять",
