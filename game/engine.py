@@ -751,13 +751,13 @@ class Game:
 
     def _handle_dungeon_move_click(self, mouse_pos):
         """
-        Обработка клика ЛКМ для перемещения в подземелье.
+        Обработка клика ЛКМ для перемещения в подземелье или выбора объекта руды.
 
         Args:
             mouse_pos: Позиция мыши (x, y)
 
         Returns:
-            bool: True если клик был обработан (перемещение выполнено)
+            bool: True если клик был обработан (перемещение выполнено или руда выбрана)
         """
         if not self.dungeon_manager.is_in_dungeon or not self.dungeon_manager.current_dungeon:
             return False
@@ -778,6 +778,19 @@ class Game:
 
         target_x = start_x + tile_screen_x
         target_y = start_y + tile_screen_y
+
+        # Проверяем, есть ли объект руды на кликнутой клетке
+        ore_tile = self.dungeon_manager.get_ore_at_screen_pos(
+            self.player, mouse_pos[0], mouse_pos[1], TILE_SIZE
+        )
+        if ore_tile:
+            # Выбираем объект руды
+            self.dungeon_manager.select_ore(ore_tile)
+            ore_info = self.dungeon_manager.get_selected_ore_info()
+            if ore_info:
+                distance = abs(self.player.x - ore_tile.x) + abs(self.player.y - ore_tile.y)
+                print(f"Выбрана: {ore_info['name']} (Требуется ранг {ore_info['required_rank']}). Дистанция: {distance}")
+            return True
 
         # Вычисляем смещение от игрока
         dx = target_x - self.player.x
@@ -997,10 +1010,13 @@ class Game:
             # Отрисовка подземелья
             dungeon = self.dungeon_manager.current_dungeon
             selected_target = self.dungeon_manager.selected_target
+            selected_object = self.dungeon_manager.selected_object
+            selected_object_type = self.dungeon_manager.selected_object_type
+            selected_ore = self.dungeon_manager.selected_ore
             self.dungeon_renderer.render_dungeon(
                 dungeon, self.player, 0, 0,
                 self.window_width, self.window_height,
-                selected_target
+                selected_target, selected_object, selected_object_type, selected_ore
             )
 
             # Мини-карта подземелья (позиция аналогична карте мира - правый нижний угол)

@@ -1010,7 +1010,19 @@ class InputHandler:
                     if skill_id in ['heal', 'regeneration', 'stamina_recovery']:
                         result = self.ctx.player.skill_manager.use_skill_from_slot(slot_index)
                         print(result.get('message', ''))
-                    # Ремесленные умения нельзя использовать в подземелье
+                    # Добыча руды - особый случай ремесленного умения в подземелье
+                    elif skill_id == 'mining':
+                        # Используем новую механику добычи руды из объектов
+                        result = skill.use(
+                            self.ctx.player,
+                            target=None,
+                            dungeon_manager=self.ctx.dungeon_manager
+                        )
+                        print(result.get('message', ''))
+                        if result.get('success'):
+                            # Добыча руды занимает время
+                            self.ctx.game_time.advance_time(1/3)
+                    # Остальные ремесленные умения нельзя использовать в подземелье
                     elif skill.category.value == 'crafting':
                         print(f"{skill.name} нельзя использовать в подземелье!")
                     # Все остальные боевые умения (warrior, hunter, mage, shadow, combat, general)
@@ -1046,13 +1058,10 @@ class InputHandler:
                         biome = tile.biome
                         location = tile.location if tile.has_location() else None
 
-                        # Проверяем рудокопство
+                        # Добыча руды - требуется войти в шахту и выбрать объект руды
                         if skill_id == 'mining':
-                            mining = self.ctx.player.profession_manager.get_profession('mining')
-                            can_use, msg = mining.can_use(self.ctx.player, location)
-                            if not can_use:
-                                print(msg)
-                                return
+                            print("Для добычи руды войдите в шахту (E) и выберите объект руды (ЛКМ)!")
+                            return
 
                         # Проверяем лесорубство
                         elif skill_id == 'lumberjacking':
