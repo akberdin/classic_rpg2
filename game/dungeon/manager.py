@@ -251,6 +251,12 @@ class DungeonManager:
         dungeon_name = self.current_dungeon.name
         self.is_in_dungeon = False
 
+        # Сбрасываем выделение объектов
+        self.selected_ore = None
+        self.selected_target = None
+        self.selected_object = None
+        self.selected_object_type = None
+
         return {
             "success": True,
             "message": f"Вы покинули {dungeon_name}",
@@ -336,6 +342,12 @@ class DungeonManager:
         # Обновляем видимость
         self.current_dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
 
+        # Сбрасываем выделение объектов при смене уровня
+        self.selected_ore = None
+        self.selected_target = None
+        self.selected_object = None
+        self.selected_object_type = None
+
         return {
             "success": True,
             "message": f"Вы спустились на уровень {self.current_depth}",
@@ -394,6 +406,12 @@ class DungeonManager:
 
         # Обновляем видимость
         self.current_dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
+
+        # Сбрасываем выделение объектов при смене уровня
+        self.selected_ore = None
+        self.selected_target = None
+        self.selected_object = None
+        self.selected_object_type = None
 
         return {
             "success": True,
@@ -1447,22 +1465,39 @@ class DungeonManager:
 
     def deplete_ore(self, tile):
         """
-        Истощить объект руды (после добычи)
+        Уменьшить количество руды в объекте (после добычи).
+        Если руда полностью исчерпана - удалить объект.
 
         Args:
             tile: DungeonTile с ore_data для истощения
+
+        Returns:
+            bool: True если руда полностью исчерпана
         """
         if not tile or not self.current_dungeon:
-            return
+            return False
 
-        # Меняем тип тайла на обычный пол/коридор
-        # Руда была непроходимой, теперь становится проходимой
-        tile.tile_type = DungeonTileType.FLOOR
-        tile.ore_data = None
+        if not tile.ore_data:
+            return False
 
-        # Снимаем выделение с этого объекта
-        if self.selected_ore == tile:
-            self.selected_ore = None
+        # Уменьшаем оставшееся количество
+        remaining = tile.ore_data.get('remaining_amount', 1)
+        remaining -= 1
+        tile.ore_data['remaining_amount'] = remaining
+
+        # Если руда исчерпана - удаляем объект
+        if remaining <= 0:
+            # Меняем тип тайла на обычный пол
+            tile.tile_type = DungeonTileType.FLOOR
+            tile.ore_data = None
+
+            # Снимаем выделение с этого объекта
+            if self.selected_ore == tile:
+                self.selected_ore = None
+
+            return True
+
+        return False
 
     def get_ore_at_screen_pos(self, player, screen_x: int, screen_y: int, tile_size: int):
         """
@@ -1539,12 +1574,16 @@ class DungeonManager:
         }
 
         resource_type = ore_data.get('resource_type', 'unknown')
+        remaining_amount = ore_data.get('remaining_amount', 1)
+        max_amount = ore_data.get('max_amount', remaining_amount)
 
         return {
             "type": "ore",
             "name": ore_names.get(resource_type, "Неизвестная руда"),
             "resource_type": resource_type,
             "required_rank": ore_rank_requirements.get(resource_type, 99),
+            "remaining_amount": remaining_amount,
+            "max_amount": max_amount,
             "x": tile.x,
             "y": tile.y
         }

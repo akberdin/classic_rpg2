@@ -662,8 +662,14 @@ class DungeonGenerator:
                 # Случайный шанс появления руды
                 if random.random() < ore_chance:
                     dungeon.set_tile_type(x, y, DungeonTileType.ORE)
-                    # Сохраняем тип руды в ore_data тайла
-                    tile.ore_data = {"resource_type": resource_type}
+                    # Сохраняем тип руды и количество в ore_data тайла
+                    # remaining_amount: сколько раз можно добыть руду из этого объекта
+                    initial_amount = random.randint(3, 7)
+                    tile.ore_data = {
+                        "resource_type": resource_type,
+                        "remaining_amount": initial_amount,
+                        "max_amount": initial_amount
+                    }
 
     def generate_dungeon_for_location(self, location_type: str, location_name: str,
                                        location_x: int, location_y: int,

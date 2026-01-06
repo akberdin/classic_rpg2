@@ -789,7 +789,9 @@ class Game:
             ore_info = self.dungeon_manager.get_selected_ore_info()
             if ore_info:
                 distance = abs(self.player.x - ore_tile.x) + abs(self.player.y - ore_tile.y)
-                print(f"Выбрана: {ore_info['name']} (Требуется ранг {ore_info['required_rank']}). Дистанция: {distance}")
+                remaining = ore_info.get('remaining_amount', 1)
+                max_amount = ore_info.get('max_amount', remaining)
+                print(f"Выбрана: {ore_info['name']} [{remaining}/{max_amount}] (Ранг {ore_info['required_rank']}). Дистанция: {distance}")
             return True
 
         # Вычисляем смещение от игрока
