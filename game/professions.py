@@ -58,36 +58,27 @@ class Profession:
 
 
 class Mining(Profession):
-    """Профессия Рудокоп"""
+    """
+    Профессия Рудокоп
+
+    ВАЖНО: Устаревшая механика добычи руды по шансам удалена.
+    Теперь добыча руды происходит через взаимодействие с объектами руды в шахтах.
+    Используйте умение "Рудокоп" для добычи руды из выбранных объектов.
+
+    Профессия теперь используется только для отслеживания прогресса
+    и предоставления бонусов к добыче.
+    """
 
     def __init__(self):
         super().__init__("Рудокоп", max_rank=10)
-        # Шансы добычи руды (базовые значения)
-        self.ore_chances = {
-            "copper_ore": 50,
-            "iron_ore": 45,
-            "silver_ore": 30,
-            "gold_ore": 20,
-            "mithril_ore": 10
-        }
-        # Драгоценные камни: base_chance, quality_weights (shard, raw, cut, perfect)
-        self.gem_types = {
-            "amethyst": {"base_chance": 5, "weights": [50, 35, 12, 3]},
-            "ruby": {"base_chance": 4, "weights": [50, 35, 12, 3]},
-            "sapphire": {"base_chance": 4, "weights": [50, 35, 12, 3]},
-            "emerald": {"base_chance": 3, "weights": [45, 35, 15, 5]},
-            "topaz": {"base_chance": 4.5, "weights": [50, 35, 12, 3]},
-            "diamond": {"base_chance": 1, "weights": [60, 30, 8, 2]}
-        }
-        self.gem_qualities = ["shard", "raw", "cut", "perfect"]
 
     def can_use(self, player, location):
         """
-        Проверить, можно ли использовать умение
+        Проверить, можно ли использовать умение добычи
 
         Args:
             player: Игрок
-            location: Локация
+            location: Локация (для проверки на мировой карте)
 
         Returns:
             tuple: (bool, str) - можно ли использовать и сообщение
@@ -103,119 +94,15 @@ class Mining(Profession):
 
         return True, ""
 
-    def gather(self, player, skill_rank=None):
+    def get_quantity_bonus(self):
         """
-        Добыть ресурсы
-
-        Args:
-            player: Игрок
-            skill_rank: Ранг умения "Рудокоп" (если None, используется ранг профессии)
+        Получить бонус к количеству добытой руды
 
         Returns:
-            list: Список добытых ресурсов [(item, quantity), ...]
+            int: Бонус к количеству руды (0-5 на основе ранга профессии)
         """
-        resources = []
-        success_bonus = self.get_success_bonus()
-
-        # Используем ранг умения, если передан, иначе ранг профессии
-        effective_rank = skill_rank if skill_rank is not None else self.rank
-
-        # Добавляем 1 опыт персонажу за каждое использование навыка
-        if hasattr(player, 'add_experience'):
-            player.add_experience(1)
-
-        # Определяем доступные типы руды на основе ранга УМЕНИЯ
-        available_ores = {}
-        if effective_rank >= 1:
-            available_ores["copper_ore"] = self.ore_chances["copper_ore"]
-        if effective_rank >= 2:
-            available_ores["iron_ore"] = self.ore_chances["iron_ore"]
-        if effective_rank >= 3:
-            available_ores["silver_ore"] = self.ore_chances["silver_ore"]
-        if effective_rank >= 4:
-            available_ores["gold_ore"] = self.ore_chances["gold_ore"]
-        if effective_rank >= 5:
-            available_ores["mithril_ore"] = self.ore_chances["mithril_ore"]
-
-        # Пробуем добыть каждый доступный тип руды
-        for ore_type, base_chance in available_ores.items():
-            # Шанс с учетом ранга профессии (бонус от профессии)
-            chance = min(95, base_chance + success_bonus)
-
-            if random.random() * 100 < chance:
-                # Количество зависит от ранга умения (1-3 на низких рангах, до 5 на высоких)
-                quantity = random.randint(1, min(5, 1 + effective_rank // 2))
-                resources.append((get_item(ore_type), quantity))
-
-        # Шанс найти драгоценный камень (зависит от удачи)
-        player_luck = getattr(player, 'luck', 1)
-        # Получаем удачу с учётом экипировки
-        if hasattr(player, 'get_effective_stat'):
-            player_luck = player.get_effective_stat('luck')
-        elif hasattr(player, 'inventory'):
-            player_luck = player.inventory.get_total_stats_bonus().get('luck', 0) + getattr(player, 'luck', 1)
-
-        # Пробуем найти камни каждого типа
-        for gem_name, gem_data in self.gem_types.items():
-            # Шанс с учётом удачи: базовый + (удача * 0.5)
-            gem_chance = gem_data["base_chance"] + (player_luck * 0.5)
-            gem_chance = min(gem_chance, 25)  # Максимум 25% шанс на каждый тип камня
-
-            if random.random() * 100 < gem_chance:
-                # Определяем качество камня с учётом удачи
-                weights = gem_data["weights"].copy()
-                # Удача улучшает шанс лучшего качества
-                luck_bonus = min(player_luck * 0.5, 15)  # До 15% перераспределения
-                if luck_bonus > 0:
-                    # Уменьшаем веса низкого качества
-                    weights[0] = max(20, weights[0] - luck_bonus * 0.5)
-                    weights[1] = max(15, weights[1] - luck_bonus * 0.3)
-                    # Увеличиваем веса высокого качества
-                    weights[2] += luck_bonus * 0.5
-                    weights[3] += luck_bonus * 0.3
-
-                quality_idx = random.choices(range(4), weights=weights)[0]
-                quality = self.gem_qualities[quality_idx]
-                gem_id = f"{quality}_{gem_name}"
-
-                gem_item = get_item(gem_id)
-                if gem_item:
-                    resources.append((gem_item, 1))
-                    print(f"Вы нашли {gem_item.name}!")
-
-        # Случайные события при добыче (10% шанс)
-        event_roll = random.randint(1, 100)
-        if event_roll <= 10:
-            events = [
-                ("Камень упал с потолка и ударил вас по голове!", -10, None),
-                ("Вы нашли тайник со старыми монетами!", 0, 50),
-                ("Обвал! Вы получили травмы.", -15, None),
-                ("Вы нашли дополнительную руду в расщелине!", 0, "extra_ore"),
-            ]
-            event = random.choice(events)
-            print(event[0])
-
-            # Применяем эффект события
-            if event[1] < 0:  # Урон
-                player.take_damage(abs(event[1]))
-            elif event[2] == "extra_ore":  # Дополнительная руда
-                # Дополнительная руда только из доступных на текущем ранге
-                if available_ores:
-                    bonus_ore = random.choice(list(available_ores.keys()))
-                    resources.append((get_item(bonus_ore), random.randint(1, 3)))
-            elif event[2] is not None:  # Золото
-                player.inventory.add_gold(event[2])
-
-        # Даем опыт только при успешной добыче (улучшенная формула)
-        if resources:
-            # Базовый опыт + бонус за количество + бонус за ранг профессии
-            exp_gained = 15 + len(resources) * 10 + self.rank * 2
-            leveled_up = self.add_experience(exp_gained)
-
-            if leveled_up:
-                print(f"Профессия {self.name} повышена до ранга {self.rank}!")
-
-        return resources
+        # За каждые 2 ранга профессии +1 к максимальному количеству руды
+        return self.rank // 2
 
 
 class Lumberjacking(Profession):

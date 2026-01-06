@@ -58,6 +58,9 @@ class DungeonManager:
         self.selected_object = None
         self.selected_object_type = None  # 'trap' или 'stash'
 
+        # Выбранный объект руды для добычи
+        self.selected_ore = None  # DungeonTile с ore_data
+
         # Отношение локации к игроку (для определения агрессии NPC)
         self.current_player_attitude: int = 0
 
@@ -1426,4 +1429,123 @@ class DungeonManager:
             }
 
         return None
+
+    # ===== Система взаимодействия с рудой =====
+
+    def select_ore(self, tile):
+        """
+        Выбрать объект руды
+
+        Args:
+            tile: DungeonTile с ore_data
+        """
+        self.selected_ore = tile
+
+    def deselect_ore(self):
+        """Снять выделение с объекта руды"""
+        self.selected_ore = None
+
+    def deplete_ore(self, tile):
+        """
+        Истощить объект руды (после добычи)
+
+        Args:
+            tile: DungeonTile с ore_data для истощения
+        """
+        if not tile or not self.current_dungeon:
+            return
+
+        # Меняем тип тайла на обычный пол/коридор
+        # Руда была непроходимой, теперь становится проходимой
+        tile.tile_type = DungeonTileType.FLOOR
+        tile.ore_data = None
+
+        # Снимаем выделение с этого объекта
+        if self.selected_ore == tile:
+            self.selected_ore = None
+
+    def get_ore_at_screen_pos(self, player, screen_x: int, screen_y: int, tile_size: int):
+        """
+        Получить объект руды по позиции на экране
+
+        Args:
+            player: Игрок
+            screen_x, screen_y: Позиция на экране
+            tile_size: Размер тайла
+
+        Returns:
+            DungeonTile или None: Тайл с рудой или None
+        """
+        if not self.is_in_dungeon or not self.current_dungeon:
+            return None
+
+        dungeon = self.current_dungeon
+        screen_width = self.game.window_width
+        screen_height = self.game.window_height
+
+        # Вычисляем центр экрана в тайлах (аналогично renderer.py с +2)
+        tiles_x = screen_width // tile_size + 2
+        tiles_y = screen_height // tile_size + 2
+        start_x = player.x - tiles_x // 2
+        start_y = player.y - tiles_y // 2
+
+        # Переводим экранные координаты в координаты карты
+        tile_x = start_x + screen_x // tile_size
+        tile_y = start_y + screen_y // tile_size
+
+        # Получаем тайл
+        tile = dungeon.get_tile(tile_x, tile_y)
+        if not tile:
+            return None
+
+        # Проверяем, что это объект руды и он видим
+        if tile.tile_type == DungeonTileType.ORE and tile.ore_data and tile.visible:
+            return tile
+
+        return None
+
+    def get_selected_ore_info(self) -> Optional[dict]:
+        """
+        Получить информацию о выбранном объекте руды
+
+        Returns:
+            dict или None: Информация о руде
+        """
+        if self.selected_ore is None:
+            return None
+
+        tile = self.selected_ore
+        ore_data = tile.ore_data
+
+        if not ore_data:
+            return None
+
+        # Названия типов руды
+        ore_names = {
+            "copper": "Медная руда",
+            "iron": "Железная руда",
+            "silver": "Серебряная руда",
+            "gold": "Золотая руда",
+            "mithril": "Мифриловая руда"
+        }
+
+        # Минимальный ранг для добычи
+        ore_rank_requirements = {
+            "copper": 1,
+            "iron": 2,
+            "silver": 3,
+            "gold": 4,
+            "mithril": 5
+        }
+
+        resource_type = ore_data.get('resource_type', 'unknown')
+
+        return {
+            "type": "ore",
+            "name": ore_names.get(resource_type, "Неизвестная руда"),
+            "resource_type": resource_type,
+            "required_rank": ore_rank_requirements.get(resource_type, 99),
+            "x": tile.x,
+            "y": tile.y
+        }
 

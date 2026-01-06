@@ -161,7 +161,7 @@ class DungeonRenderer:
 
     def render_dungeon(self, dungeon: DungeonMap, player, camera_x: int, camera_y: int,
                        viewport_width: int, viewport_height: int, selected_target=None,
-                       selected_object=None, selected_object_type=None):
+                       selected_object=None, selected_object_type=None, selected_ore=None):
         """
         Отрисовка подземелья
 
@@ -175,6 +175,7 @@ class DungeonRenderer:
             selected_target: Выбранная цель (NPC) для отображения выделения
             selected_object: Выбранный объект (ловушка или тайник)
             selected_object_type: Тип выбранного объекта ('trap' или 'stash')
+            selected_ore: Выбранный объект руды (DungeonTile с ore_data)
         """
         # Вычисляем количество видимых тайлов
         tiles_x = viewport_width // self.tile_size + 2
@@ -299,6 +300,10 @@ class DungeonRenderer:
         # Отрисовываем выделение объектов подземелья (ловушек и тайников)
         if selected_object and selected_object_type:
             self._render_object_selection(dungeon, selected_object, start_x, start_y)
+
+        # Отрисовываем выделение объекта руды
+        if selected_ore:
+            self._render_ore_selection(dungeon, player, selected_ore, start_x, start_y)
 
         # Отрисовываем NPC
         self._render_npcs(dungeon, player, start_x, start_y, tiles_x, tiles_y, selected_target)
@@ -448,6 +453,69 @@ class DungeonRenderer:
         # Уголки для красоты (ярко-желтые)
         corner_len = 8
         corner_color = (255, 255, 100)
+        # Верхний левый
+        pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y), (pixel_x + corner_len, pixel_y), 2)
+        pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y), (pixel_x, pixel_y + corner_len), 2)
+        # Верхний правый
+        pygame.draw.line(self.screen, corner_color, (pixel_x + self.tile_size, pixel_y),
+                        (pixel_x + self.tile_size - corner_len, pixel_y), 2)
+        pygame.draw.line(self.screen, corner_color, (pixel_x + self.tile_size, pixel_y),
+                        (pixel_x + self.tile_size, pixel_y + corner_len), 2)
+        # Нижний левый
+        pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y + self.tile_size),
+                        (pixel_x + corner_len, pixel_y + self.tile_size), 2)
+        pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y + self.tile_size),
+                        (pixel_x, pixel_y + self.tile_size - corner_len), 2)
+        # Нижний правый
+        pygame.draw.line(self.screen, corner_color, (pixel_x + self.tile_size, pixel_y + self.tile_size),
+                        (pixel_x + self.tile_size - corner_len, pixel_y + self.tile_size), 2)
+        pygame.draw.line(self.screen, corner_color, (pixel_x + self.tile_size, pixel_y + self.tile_size),
+                        (pixel_x + self.tile_size, pixel_y + self.tile_size - corner_len), 2)
+
+    def _render_ore_selection(self, dungeon: DungeonMap, player, selected_ore, start_x: int, start_y: int):
+        """
+        Отрисовка выделения для выбранного объекта руды
+
+        Args:
+            dungeon: Карта подземелья
+            player: Игрок (для расчёта дистанции)
+            selected_ore: Выбранный тайл с рудой
+            start_x: Начальная координата X видимой области
+            start_y: Начальная координата Y видимой области
+        """
+        if not selected_ore:
+            return
+
+        # Проверяем видимость объекта
+        if not selected_ore.visible:
+            return
+
+        # Вычисляем позицию на экране
+        screen_x = selected_ore.x - start_x
+        screen_y = selected_ore.y - start_y
+        pixel_x = screen_x * self.tile_size
+        pixel_y = screen_y * self.tile_size
+
+        # Вычисляем расстояние до игрока
+        distance = abs(player.x - selected_ore.x) + abs(player.y - selected_ore.y)
+
+        # Цвет выделения зависит от расстояния:
+        # - Зелёный (можно добывать, дистанция <= 1)
+        # - Оранжевый (нужно подойти ближе)
+        if distance <= 1:
+            selection_color = (100, 255, 100)  # Зелёный - можно добывать
+            corner_color = (150, 255, 150)
+        else:
+            selection_color = (255, 180, 100)  # Оранжевый - подойдите ближе
+            corner_color = (255, 200, 150)
+
+        # Рисуем рамку
+        pygame.draw.rect(self.screen, selection_color,
+                        (pixel_x - 2, pixel_y - 2,
+                         self.tile_size + 4, self.tile_size + 4), 3)
+
+        # Уголки для красоты
+        corner_len = 8
         # Верхний левый
         pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y), (pixel_x + corner_len, pixel_y), 2)
         pygame.draw.line(self.screen, corner_color, (pixel_x, pixel_y), (pixel_x, pixel_y + corner_len), 2)
