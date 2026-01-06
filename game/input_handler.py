@@ -264,7 +264,11 @@ class InputHandler:
                 self.ctx.trade_window.selected_merchant_index = 0
                 self.ctx.trade_window.selected_player_index = 0
                 # Устанавливаем коэффициенты торговли на основе отношений локации
-                attitude = self.ctx.get_current_location_attitude()
+                # Странствующие торговцы (с waypoints) используют базовые цены (attitude=0)
+                if hasattr(self.ctx.nearby_npc, 'waypoints') and self.ctx.nearby_npc.waypoints:
+                    attitude = 0  # Базовые цены для странствующих торговцев
+                else:
+                    attitude = self.ctx.get_current_location_attitude()
                 self.ctx.trade_window.set_location_attitude(attitude)
                 print(f"Торговля с {self.ctx.nearby_npc.name}")
                 self.ctx.interaction_menu_open = False
