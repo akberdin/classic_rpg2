@@ -6,6 +6,7 @@ from game.inventory import EquipmentItem, EquipmentSlot, SkillBookItem, PotionIt
 from game.save_system import SaveSystem
 from game.constants import LOCATION_CITY, LOCATION_VILLAGE, LOCATION_RUINS, LOCATION_MINE
 from game.core.game_context import GameContext
+from game.config.config_loader import get_economy_config
 
 
 class InputHandler:
@@ -262,6 +263,13 @@ class InputHandler:
                 self.ctx.trade_window.mode = "buy"
                 self.ctx.trade_window.selected_merchant_index = 0
                 self.ctx.trade_window.selected_player_index = 0
+                # Устанавливаем коэффициенты торговли на основе отношений локации
+                # Странствующие торговцы (с waypoints) используют базовые цены (attitude=0)
+                if hasattr(self.ctx.nearby_npc, 'waypoints') and self.ctx.nearby_npc.waypoints:
+                    attitude = 0  # Базовые цены для странствующих торговцев
+                else:
+                    attitude = self.ctx.get_current_location_attitude()
+                self.ctx.trade_window.set_location_attitude(attitude)
                 print(f"Торговля с {self.ctx.nearby_npc.name}")
                 self.ctx.interaction_menu_open = False
             else:
@@ -491,7 +499,10 @@ class InputHandler:
                 # Купить выбранный предмет
                 if 0 <= self.ctx.trade_window.selected_merchant_index < len(merchant_items):
                     item, quantity = merchant_items[self.ctx.trade_window.selected_merchant_index]
-                    buy_price = int(item.value * 4.5)  # Торговец продает с наценкой 350%
+                    # Получаем коэффициенты торговли на основе отношений локации
+                    attitude = self.ctx.get_current_location_attitude()
+                    buy_mult, _ = get_economy_config().get_trade_multipliers(attitude)
+                    buy_price = int(item.value * buy_mult)
 
                     if self.ctx.player.inventory.gold >= buy_price:
                         if self.ctx.nearby_npc.inventory.remove_item(item, 1):
@@ -532,7 +543,10 @@ class InputHandler:
                     # Определяем количество для продажи
                     sell_quantity = quantity if sell_all else 1
 
-                    sell_price_per_item = int(item.value * 0.7)  # Торговец покупает за 70% от стоимости
+                    # Получаем коэффициенты торговли на основе отношений локации
+                    attitude = self.ctx.get_current_location_attitude()
+                    _, sell_mult = get_economy_config().get_trade_multipliers(attitude)
+                    sell_price_per_item = int(item.value * sell_mult)
 
                     # Определяем максимальное количество, которое можно продать
                     max_affordable = self.ctx.nearby_npc.inventory.gold // sell_price_per_item
@@ -605,7 +619,10 @@ class InputHandler:
             if not hasattr(self.ctx.nearby_npc, 'inventory'):
                 return
 
-            buy_price = int(item.value * 4.5)  # Торговец продает с наценкой 350%
+            # Получаем коэффициенты торговли на основе отношений локации
+            attitude = self.ctx.get_current_location_attitude()
+            buy_mult, _ = get_economy_config().get_trade_multipliers(attitude)
+            buy_price = int(item.value * buy_mult)
 
             if self.ctx.player.inventory.gold >= buy_price:
                 if self.ctx.nearby_npc.inventory.remove_item(item, 1):
@@ -636,7 +653,10 @@ class InputHandler:
             # Определяем количество для продажи
             sell_quantity = quantity if sell_all else 1
 
-            sell_price_per_item = int(item.value * 0.7)
+            # Получаем коэффициенты торговли на основе отношений локации
+            attitude = self.ctx.get_current_location_attitude()
+            _, sell_mult = get_economy_config().get_trade_multipliers(attitude)
+            sell_price_per_item = int(item.value * sell_mult)
 
             # Определяем максимальное количество, которое можно продать
             max_affordable = self.ctx.nearby_npc.inventory.gold // sell_price_per_item
@@ -1475,6 +1495,9 @@ class InputHandler:
                 self.ctx.trade_window.mode = "buy"
                 self.ctx.trade_window.selected_merchant_index = 0
                 self.ctx.trade_window.selected_player_index = 0
+                # Устанавливаем коэффициенты торговли на основе отношений локации
+                attitude = getattr(location, 'player_attitude', 0)
+                self.ctx.trade_window.set_location_attitude(attitude)
                 self.ctx.settlement_menu_open = False
                 print(f"Вы можете торговать здесь.")
         elif key == pygame.K_2:

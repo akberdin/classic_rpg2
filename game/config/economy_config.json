@@ -1,7 +1,7 @@
 {
   "_description": "Конфигурация экономики - золото и торговля",
-  "_version": "2.0.0",
-  "_note": "Секции work и services удалены как неиспользуемые. Параметры лута определяются в loot_config.json",
+  "_version": "2.1.0",
+  "_note": "Добавлена система модификаторов торговли на основе отношений локации (player_attitude)",
 
   "loot": {
     "gold_per_enemy_level_min": 5,
@@ -9,7 +9,23 @@
   },
 
   "trade": {
-    "buy_multiplier": 4.5,
-    "sell_multiplier": 0.5
+    "_comment": "Базовые коэффициенты при нейтральном отношении (attitude = 0)",
+    "buy_multiplier": 1.5,
+    "sell_multiplier": 0.5,
+
+    "attitude_modifiers": {
+      "_description": "Система модификаторов на основе player_attitude локации",
+      "_attitude_range": "от -10 до 10, где -5 и ниже = торговля запрещена",
+
+      "min_attitude_for_trade": -5,
+
+      "best_buy_multiplier": 1.1,
+      "best_sell_multiplier": 0.9,
+      "max_attitude": 10,
+
+      "worst_buy_multiplier": 2.5,
+      "worst_sell_multiplier": 0.1,
+      "min_attitude": -5
+    }
   }
 }

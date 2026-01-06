@@ -124,6 +124,68 @@ class EconomyConfig(ConfigLoader):
         """Получить параметр торговли"""
         return self.get('trade', param_name, default=default)
 
+    def get_attitude_modifier(self, param_name: str, default=None):
+        """Получить параметр модификатора отношений"""
+        return self.get('trade', 'attitude_modifiers', param_name, default=default)
+
+    def can_trade_at_attitude(self, attitude: int) -> bool:
+        """
+        Проверить, возможна ли торговля при данном уровне отношений
+
+        Args:
+            attitude: Уровень отношений локации к игроку (player_attitude)
+
+        Returns:
+            True если торговля возможна, False если запрещена
+        """
+        min_attitude = self.get_attitude_modifier('min_attitude_for_trade', -5)
+        return attitude > min_attitude
+
+    def get_trade_multipliers(self, attitude: int) -> tuple:
+        """
+        Рассчитать коэффициенты покупки и продажи на основе отношений локации
+
+        Args:
+            attitude: Уровень отношений локации к игроку (player_attitude)
+                     -10..-6: торговля запрещена
+                     -5..0: плохие условия (наценка растёт, скидка падает)
+                     0: базовые условия
+                     1..10: хорошие условия (наценка падает до 1.1, скидка растёт до 0.9)
+
+        Returns:
+            tuple: (buy_multiplier, sell_multiplier)
+                   buy_multiplier - во сколько раз дороже базовой цены покупает игрок
+                   sell_multiplier - какую долю от базовой цены получает игрок при продаже
+        """
+        # Базовые значения (при attitude = 0)
+        base_buy = self.get_trade_param('buy_multiplier', 1.5)
+        base_sell = self.get_trade_param('sell_multiplier', 0.5)
+
+        # Параметры для положительных отношений
+        best_buy = self.get_attitude_modifier('best_buy_multiplier', 1.1)
+        best_sell = self.get_attitude_modifier('best_sell_multiplier', 0.9)
+        max_attitude = self.get_attitude_modifier('max_attitude', 10)
+
+        # Параметры для отрицательных отношений
+        worst_buy = self.get_attitude_modifier('worst_buy_multiplier', 2.5)
+        worst_sell = self.get_attitude_modifier('worst_sell_multiplier', 0.1)
+        min_attitude = self.get_attitude_modifier('min_attitude', -5)
+
+        if attitude >= 0:
+            # Положительные отношения: условия улучшаются
+            # Линейная интерполяция от базовых до лучших
+            t = min(attitude / max_attitude, 1.0)  # 0..1
+            buy_mult = base_buy - (base_buy - best_buy) * t
+            sell_mult = base_sell + (best_sell - base_sell) * t
+        else:
+            # Отрицательные отношения: условия ухудшаются
+            # Линейная интерполяция от базовых до худших
+            t = min(abs(attitude) / abs(min_attitude), 1.0)  # 0..1
+            buy_mult = base_buy + (worst_buy - base_buy) * t
+            sell_mult = base_sell - (base_sell - worst_sell) * t
+
+        return (round(buy_mult, 2), round(sell_mult, 2))
+
 
 class SkillsConfig(ConfigLoader):
     """Конфигурация навыков и способностей"""
