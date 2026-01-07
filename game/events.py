@@ -279,14 +279,6 @@ class RandomEventSystem:
         ))
 
         self.events.append(RandomEvent(
-            "hidden_cache", "Тайник",
-            "Вы обнаружили тайник под камнем!",
-            lambda p, g: self._hidden_cache(p, g),
-            chance=0.012 / 3, min_rank="Новичок",
-            event_type=EventType.POSITIVE, icon="*"
-        ))
-
-        self.events.append(RandomEvent(
             "lucky_find", "Удачная находка",
             "Вы нашли ценный предмет среди листвы!",
             lambda p, g: self._lucky_find(p, g),
@@ -328,14 +320,6 @@ class RandomEventSystem:
         ))
 
         # Отрицательные события для новичков
-        self.events.append(RandomEvent(
-            "trap", "Ловушка",
-            "Вы попали в скрытую ловушку!",
-            lambda p, g: self._trap(p, g),
-            chance=0.012 / 3, min_rank="Новичок",
-            event_type=EventType.NEGATIVE, icon="X"
-        ))
-
         self.events.append(RandomEvent(
             "pickpocket", "Карманник",
             "Ловкий вор украл часть вашего золота!",
@@ -656,14 +640,6 @@ class RandomEventSystem:
         player.mana = min(effective_max_mana, player.mana + mana)
         return [f"  Восстановлено {heal} здоровья и {mana} маны"]
 
-    def _hidden_cache(self, player, game):
-        """Найти тайник"""
-        gold = random.randint(10, 30) * player.level
-        player.inventory.add_gold(gold)
-        exp = random.randint(10, 25) * player.level
-        player.add_experience(exp)
-        return [f"  Получено {gold} золота и {exp} опыта"]
-
     def _lucky_find(self, player, game):
         """Удачная находка - получить случайный предмет"""
         from game.item_registry import get_item
@@ -695,15 +671,6 @@ class RandomEventSystem:
         player.mana = player.get_effective_max_mana()
         player.stamina = player.get_effective_max_stamina()
         return ["  Полностью восстановлены здоровье, мана и выносливость"]
-
-    def _trap(self, player, game):
-        """Ловушка"""
-        if player.godmode:
-            return ["  Ловушка не причинила вам вреда (режим бессмертия)"]
-
-        damage = random.randint(5, 15) + player.level
-        player.health = max(1, player.health - damage)
-        return [f"  Получено {damage} урона"]
 
     def _pickpocket(self, player, game):
         """Карманник"""

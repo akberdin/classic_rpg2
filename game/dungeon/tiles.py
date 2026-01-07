@@ -135,12 +135,6 @@ class DungeonTileType(Enum):
     STAIRS_DOWN = "stairs_down"  # Лестница на следующий уровень
     STAIRS_UP = "stairs_up"    # Лестница на предыдущий уровень
 
-    # Интерактивные типы
-    TRAP = "trap"              # Ловушка (проходима, наносит урон)
-    TRAP_TRIGGERED = "trap_triggered"  # Сработавшая ловушка
-    STASH = "stash"            # Тайник (проходим, содержит лут)
-    STASH_LOOTED = "stash_looted"  # Обысканный тайник
-
     # Декоративные типы
     RUBBLE = "rubble"          # Завалы (непроходимы)
     WATER = "water"            # Вода (непроходима)
@@ -171,12 +165,6 @@ DUNGEON_TILE_COLORS = {
     DungeonTileType.STAIRS_DOWN: (100, 100, 150),  # Синеватый (вниз)
     DungeonTileType.STAIRS_UP: (150, 150, 100),    # Желтоватый (вверх)
 
-    # Интерактивные
-    DungeonTileType.TRAP: (80, 80, 80),            # Как пол (скрытая)
-    DungeonTileType.TRAP_TRIGGERED: (120, 80, 80), # Красноватый оттенок
-    DungeonTileType.STASH: (100, 100, 60),         # Желтоватый
-    DungeonTileType.STASH_LOOTED: (60, 60, 50),    # Тусклый
-
     # Декоративные
     DungeonTileType.RUBBLE: (40, 40, 40),          # Очень темный
     DungeonTileType.WATER: (30, 40, 60),           # Темно-синий
@@ -202,10 +190,6 @@ PASSABLE_DUNGEON_TILES = [
     DungeonTileType.EXIT,
     DungeonTileType.STAIRS_DOWN,
     DungeonTileType.STAIRS_UP,
-    DungeonTileType.TRAP,
-    DungeonTileType.TRAP_TRIGGERED,
-    DungeonTileType.STASH,
-    DungeonTileType.STASH_LOOTED,
     DungeonTileType.BONES,
     DungeonTileType.ALTAR,
     DungeonTileType.ORE_VEIN,
@@ -233,8 +217,6 @@ class DungeonTile:
         self.visible = False   # Видима ли сейчас
 
         # Дополнительные данные для интерактивных клеток
-        self.trap_data = None   # Данные ловушки (если это ловушка)
-        self.stash_data = None  # Данные тайника (если это тайник)
         self.ore_data = None    # Данные руды (если это рудная жила)
         self.remains_data = None  # Данные останков (если это останки врага)
 
@@ -264,28 +246,6 @@ class DungeonTile:
     def is_stairs_up(self) -> bool:
         """Это лестница вверх?"""
         return self.tile_type == DungeonTileType.STAIRS_UP
-
-    def is_trap(self) -> bool:
-        """Это ловушка?"""
-        return self.tile_type == DungeonTileType.TRAP
-
-    def is_stash(self) -> bool:
-        """Это тайник?"""
-        return self.tile_type == DungeonTileType.STASH
-
-    def trigger_trap(self):
-        """Активировать ловушку"""
-        if self.tile_type == DungeonTileType.TRAP:
-            self.tile_type = DungeonTileType.TRAP_TRIGGERED
-            return True
-        return False
-
-    def loot_stash(self):
-        """Обыскать тайник"""
-        if self.tile_type == DungeonTileType.STASH:
-            self.tile_type = DungeonTileType.STASH_LOOTED
-            return True
-        return False
 
     def __repr__(self):
         return f"DungeonTile({self.x}, {self.y}, {self.tile_type.value})"
