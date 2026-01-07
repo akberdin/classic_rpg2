@@ -10,7 +10,6 @@ from game.dungeon.tiles import (
     get_dungeon_depth_type, get_mine_depth_type, get_depth_type_from_string
 )
 from game.dungeon.traps import TrapManager
-from game.dungeon.stashes import StashManager
 
 
 class DungeonMap:
@@ -66,7 +65,6 @@ class DungeonMap:
 
         # Менеджеры интерактивных объектов
         self.trap_manager = TrapManager()
-        self.stash_manager = StashManager()
 
         # Точки входа и выхода
         self.entrance: Optional[Tuple[int, int]] = None
@@ -169,7 +167,7 @@ class DungeonMap:
         Получить случайную проходимую клетку
 
         Args:
-            exclude_special: Исключить специальные клетки (вход, выход, ловушки, тайники)
+            exclude_special: Исключить специальные клетки (вход, выход, ловушки)
 
         Returns:
             Tuple[int, int] или None
@@ -183,8 +181,7 @@ class DungeonMap:
                     if exclude_special:
                         # Проверяем, не занята ли клетка
                         if self.trap_manager.get_trap_at(x, y) is None:
-                            if self.stash_manager.get_stash_at(x, y) is None:
-                                floor_tiles.append((x, y))
+                            floor_tiles.append((x, y))
                     else:
                         floor_tiles.append((x, y))
 
@@ -415,7 +412,6 @@ class DungeonMap:
             "special_tiles": special_count,
             "rooms": len(self.rooms),
             "traps": len(self.trap_manager.traps),
-            "stashes": len(self.stash_manager.stashes),
             "npcs": len(self.npcs),
             "exits": len(self.exits),
         }
@@ -534,8 +530,6 @@ class DungeonMap:
             DungeonTileType.EXIT: 'X',
             DungeonTileType.TRAP: '^',
             DungeonTileType.TRAP_TRIGGERED: 'v',
-            DungeonTileType.STASH: '$',
-            DungeonTileType.STASH_LOOTED: '_',
             DungeonTileType.RUBBLE: '%',
             DungeonTileType.WATER: '~',
             DungeonTileType.BONES: 'b',

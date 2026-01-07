@@ -1400,7 +1400,7 @@ class InputHandler:
                 self.ctx.loot_window_open = False
             return True
 
-        # Окно лута подземелий (тайники и останки)
+        # Окно лута подземелий (останки)
         if self.ctx.dungeon_loot_window_open:
             if event.type == pygame.KEYDOWN:
                 self.ctx.dungeon_loot_window_open = False

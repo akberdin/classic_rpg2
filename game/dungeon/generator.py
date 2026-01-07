@@ -7,7 +7,6 @@ from typing import List, Tuple, Optional
 from game.dungeon.dungeon_map import DungeonMap
 from game.dungeon.tiles import DungeonTileType
 from game.dungeon.traps import Trap, TrapType
-from game.dungeon.stashes import Stash, StashType
 
 
 class DungeonGenerator:
@@ -23,7 +22,6 @@ class DungeonGenerator:
             "max_room_size": 14,
             "corridor_width": 2,
             "trap_chance": 0.08,     # 8% шанс ловушки на проходимой клетке
-            "stash_chance": 0.015,   # 1.5% шанс тайника (уменьшено для баланса)
             "decorations": True,
         }
 
@@ -35,7 +33,6 @@ class DungeonGenerator:
             "max_room_size": 12,
             "corridor_width": 3,     # Шахты шире
             "trap_chance": 0.025,    # Меньше ловушек (2.5% вместо 5%)
-            "stash_chance": 0.03,    # 3% руды (уменьшено с 10% для баланса)
             "decorations": True,
         }
 
@@ -112,9 +109,6 @@ class DungeonGenerator:
 
         # Добавляем ловушки
         self._place_traps(dungeon, params["trap_chance"])
-
-        # Добавляем тайники
-        self._place_stashes(dungeon, params["stash_chance"])
 
         # Добавляем декорации
         if params["decorations"]:
@@ -531,34 +525,6 @@ class DungeonGenerator:
                 # Помечаем клетку как ловушку
                 dungeon.set_tile_type(x, y, DungeonTileType.TRAP)
 
-    def _place_stashes(self, dungeon: DungeonMap, stash_chance: float):
-        """Разместить тайники"""
-        floor_tiles = dungeon.get_all_floor_tiles()
-        is_mine = dungeon.dungeon_type == "mine"
-
-        for x, y in floor_tiles:
-            tile = dungeon.get_tile(x, y)
-            if not tile:
-                continue
-
-            # Не ставим тайники на входе/выходе/лестницах или на ловушках
-            if dungeon.is_entrance_tile(x, y) or dungeon.is_exit_tile(x, y):
-                continue
-            if tile.tile_type in (DungeonTileType.STAIRS_UP, DungeonTileType.STAIRS_DOWN):
-                continue
-            if dungeon.trap_manager.get_trap_at(x, y) is not None:
-                continue
-
-            if random.random() < stash_chance:
-                stash = dungeon.stash_manager.generate_random_stash(
-                    x, y, dungeon.dungeon_level, is_mine
-                )
-                dungeon.stash_manager.add_stash(stash)
-
-                # Помечаем клетку как тайник (если видимый)
-                if stash.is_detected:
-                    dungeon.set_tile_type(x, y, DungeonTileType.STASH)
-
     def _place_decorations(self, dungeon: DungeonMap, dungeon_type: str):
         """
         Добавить декоративные элементы в подземелье
@@ -653,10 +619,8 @@ class DungeonGenerator:
                 if dungeon.stairs_up and (x, y) == dungeon.stairs_up:
                     continue
 
-                # Не размещаем на ловушках и тайниках
+                # Не размещаем на ловушках
                 if dungeon.trap_manager.get_trap_at(x, y) is not None:
-                    continue
-                if dungeon.stash_manager.get_stash_at(x, y) is not None:
                     continue
 
                 # Случайный шанс появления руды

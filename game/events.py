@@ -279,14 +279,6 @@ class RandomEventSystem:
         ))
 
         self.events.append(RandomEvent(
-            "hidden_cache", "Тайник",
-            "Вы обнаружили тайник под камнем!",
-            lambda p, g: self._hidden_cache(p, g),
-            chance=0.012 / 3, min_rank="Новичок",
-            event_type=EventType.POSITIVE, icon="*"
-        ))
-
-        self.events.append(RandomEvent(
             "lucky_find", "Удачная находка",
             "Вы нашли ценный предмет среди листвы!",
             lambda p, g: self._lucky_find(p, g),
@@ -655,14 +647,6 @@ class RandomEventSystem:
         player.health = min(effective_max_health, player.health + heal)
         player.mana = min(effective_max_mana, player.mana + mana)
         return [f"  Восстановлено {heal} здоровья и {mana} маны"]
-
-    def _hidden_cache(self, player, game):
-        """Найти тайник"""
-        gold = random.randint(10, 30) * player.level
-        player.inventory.add_gold(gold)
-        exp = random.randint(10, 25) * player.level
-        player.add_experience(exp)
-        return [f"  Получено {gold} золота и {exp} опыта"]
 
     def _lucky_find(self, player, game):
         """Удачная находка - получить случайный предмет"""

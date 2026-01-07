@@ -138,8 +138,6 @@ class DungeonTileType(Enum):
     # Интерактивные типы
     TRAP = "trap"              # Ловушка (проходима, наносит урон)
     TRAP_TRIGGERED = "trap_triggered"  # Сработавшая ловушка
-    STASH = "stash"            # Тайник (проходим, содержит лут)
-    STASH_LOOTED = "stash_looted"  # Обысканный тайник
 
     # Декоративные типы
     RUBBLE = "rubble"          # Завалы (непроходимы)
@@ -174,8 +172,6 @@ DUNGEON_TILE_COLORS = {
     # Интерактивные
     DungeonTileType.TRAP: (80, 80, 80),            # Как пол (скрытая)
     DungeonTileType.TRAP_TRIGGERED: (120, 80, 80), # Красноватый оттенок
-    DungeonTileType.STASH: (100, 100, 60),         # Желтоватый
-    DungeonTileType.STASH_LOOTED: (60, 60, 50),    # Тусклый
 
     # Декоративные
     DungeonTileType.RUBBLE: (40, 40, 40),          # Очень темный
@@ -204,8 +200,6 @@ PASSABLE_DUNGEON_TILES = [
     DungeonTileType.STAIRS_UP,
     DungeonTileType.TRAP,
     DungeonTileType.TRAP_TRIGGERED,
-    DungeonTileType.STASH,
-    DungeonTileType.STASH_LOOTED,
     DungeonTileType.BONES,
     DungeonTileType.ALTAR,
     DungeonTileType.ORE_VEIN,
@@ -234,7 +228,6 @@ class DungeonTile:
 
         # Дополнительные данные для интерактивных клеток
         self.trap_data = None   # Данные ловушки (если это ловушка)
-        self.stash_data = None  # Данные тайника (если это тайник)
         self.ore_data = None    # Данные руды (если это рудная жила)
         self.remains_data = None  # Данные останков (если это останки врага)
 
@@ -269,21 +262,10 @@ class DungeonTile:
         """Это ловушка?"""
         return self.tile_type == DungeonTileType.TRAP
 
-    def is_stash(self) -> bool:
-        """Это тайник?"""
-        return self.tile_type == DungeonTileType.STASH
-
     def trigger_trap(self):
         """Активировать ловушку"""
         if self.tile_type == DungeonTileType.TRAP:
             self.tile_type = DungeonTileType.TRAP_TRIGGERED
-            return True
-        return False
-
-    def loot_stash(self):
-        """Обыскать тайник"""
-        if self.tile_type == DungeonTileType.STASH:
-            self.tile_type = DungeonTileType.STASH_LOOTED
             return True
         return False
 

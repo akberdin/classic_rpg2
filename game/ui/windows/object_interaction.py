@@ -1,5 +1,5 @@
 """
-Окно взаимодействия с объектами подземелий (ловушками и тайниками).
+Окно взаимодействия с объектами подземелий (ловушками).
 """
 import pygame
 from game.ui.windows.base import BaseWindow
@@ -19,7 +19,7 @@ class ObjectInteractionWindow(BaseWindow):
             ui_scaler: Объект масштабирования UI
         """
         super().__init__(screen, font, info_font, ui_scaler)
-        self.object_type = None  # 'trap' или 'stash'
+        self.object_type = None  # 'trap'
         self.object_info = None  # Информация об объекте
         self.player = None  # Ссылка на игрока
         self.actions = []  # Список доступных действий
@@ -29,8 +29,8 @@ class ObjectInteractionWindow(BaseWindow):
         Установить объект для взаимодействия
 
         Args:
-            object_type: Тип объекта ('trap' или 'stash')
-            object_info: Информация об объекте (level, has_trap, dc, и т.д.)
+            object_type: Тип объекта ('trap')
+            object_info: Информация об объекте (level, dc, и т.д.)
             player: Объект игрока
         """
         self.object_type = object_type
@@ -47,11 +47,9 @@ class ObjectInteractionWindow(BaseWindow):
 
         # Проверяем наличие навыков
         has_disarm_trap = False
-        has_lockpicking = False
 
         if hasattr(self.player, 'skill_manager') and self.player.skill_manager:
             has_disarm_trap = self.player.skill_manager.get_skill("Обезвреживание") is not None
-            has_lockpicking = self.player.skill_manager.get_skill("Взлом Замков") is not None
 
         if self.object_type == 'trap':
             # Действия для ловушки
@@ -83,44 +81,6 @@ class ObjectInteractionWindow(BaseWindow):
                     'action': 'bypass'
                 })
 
-        elif self.object_type == 'stash':
-            # Действия для тайника
-            if self.object_info.get('has_trap'):
-                # Если в тайнике есть ловушка, сначала предлагаем обезвредить
-                if has_disarm_trap:
-                    self.actions.append({
-                        'key': 'D',
-                        'label': 'Обезвредить ловушку',
-                        'details': [
-                            'В тайнике установлена ловушка!',
-                            'Рекомендуется обезвредить перед открытием'
-                        ],
-                        'action': 'disarm_stash_trap'
-                    })
-
-            if has_lockpicking:
-                quality_bonus = self.player.skill_manager.get_skill("Взлом Замков").get_quality_bonus()
-                self.actions.append({
-                    'key': 'L',
-                    'label': 'Взломать (Lockpicking)',
-                    'details': [
-                        f'Бонус качества: +{int(quality_bonus * 100)}%',
-                        'Стоимость: 15 Stamina'
-                    ],
-                    'action': 'lockpick'
-                })
-
-            # Базовое действие - обыскать
-            self.actions.append({
-                'key': 'E',
-                'label': 'Обыскать тайник',
-                'details': [
-                    f'Уровень: {self.object_info.get("level_name", "Неизвестно")}',
-                    'Может содержать лут' + (' и ловушку!' if self.object_info.get('has_trap') else '')
-                ],
-                'action': 'loot'
-            })
-
         # Всегда добавляем отмену
         self.actions.append({
             'key': 'ESC',
@@ -146,9 +106,7 @@ class ObjectInteractionWindow(BaseWindow):
 
             # Проверяем нажатие клавиш действий
             key_map = {
-                pygame.K_e: 'E',
                 pygame.K_d: 'D',
-                pygame.K_l: 'L',
                 pygame.K_w: 'W'
             }
 
@@ -245,6 +203,4 @@ class ObjectInteractionWindow(BaseWindow):
         if self.object_type == 'trap':
             trap_name = self.object_info.get('name', 'Ловушка')
             return f"Ловушка: {trap_name}"
-        elif self.object_type == 'stash':
-            return "Тайник"
         return "Интерактивный объект"

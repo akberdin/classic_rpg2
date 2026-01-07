@@ -54,9 +54,9 @@ class DungeonManager:
         self.skill_targeting_mode = False
         self.pending_skill = None  # Умение, ожидающее выбора цели
 
-        # Выбранный интерактивный объект (ловушка/тайник)
+        # Выбранный интерактивный объект (ловушка)
         self.selected_object = None
-        self.selected_object_type = None  # 'trap' или 'stash'
+        self.selected_object_type = None  # 'trap'
 
         # Выбранный объект руды для добычи
         self.selected_ore = None  # DungeonTile с ore_data
@@ -1328,7 +1328,7 @@ class DungeonManager:
     def get_nearest_interactive_object(self, player_x: int, player_y: int,
                                         max_distance: int = 5) -> Optional[Tuple]:
         """
-        Найти ближайший интерактивный объект (ловушку или тайник)
+        Найти ближайший интерактивный объект (ловушку)
 
         Args:
             player_x: Координата X игрока
@@ -1336,7 +1336,7 @@ class DungeonManager:
             max_distance: Максимальная дистанция поиска
 
         Returns:
-            Tuple[object, str] или None: (объект, тип) где тип = 'trap' или 'stash'
+            Tuple[object, str] или None: (объект, тип) где тип = 'trap'
         """
         if not self.is_in_dungeon or not self.current_dungeon:
             return None
@@ -1367,27 +1367,6 @@ class DungeonManager:
                 nearest_type = 'trap'
                 nearest_distance = distance
 
-        # Проверяем тайники
-        for stash in dungeon.stash_manager.stashes:
-            # Пропускаем обысканные тайники
-            if stash.is_looted:
-                continue
-
-            # Проверяем, обнаружен ли тайник
-            if not stash.is_detected:
-                continue
-
-            # Проверяем видимость клетки
-            tile = dungeon.get_tile(stash.x, stash.y)
-            if not tile or not tile.visible:
-                continue
-
-            distance = abs(stash.x - player_x) + abs(stash.y - player_y)
-            if distance <= max_distance and distance < nearest_distance:
-                nearest_obj = stash
-                nearest_type = 'stash'
-                nearest_distance = distance
-
         if nearest_obj:
             return (nearest_obj, nearest_type)
         return None
@@ -1397,8 +1376,8 @@ class DungeonManager:
         Выбрать интерактивный объект
 
         Args:
-            obj: Объект (Trap или Stash)
-            obj_type: Тип объекта ('trap' или 'stash')
+            obj: Объект (Trap)
+            obj_type: Тип объекта ('trap')
         """
         self.selected_object = obj
         self.selected_object_type = obj_type
@@ -1430,18 +1409,6 @@ class DungeonManager:
                 "is_detected": obj.is_detected,
                 "is_disarmed": obj.is_disarmed,
                 "is_triggered": obj.is_triggered,
-                "x": obj.x,
-                "y": obj.y
-            }
-        elif obj_type == 'stash':
-            return {
-                "type": "stash",
-                "name": obj.name,
-                "level": obj.level_name,
-                "stash_type": obj.stash_type.value,
-                "is_detected": obj.is_detected,
-                "is_looted": obj.is_looted,
-                "has_trap": obj.has_trap,
                 "x": obj.x,
                 "y": obj.y
             }

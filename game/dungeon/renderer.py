@@ -44,8 +44,6 @@ class DungeonRenderer:
             DungeonTileType.STAIRS_UP: "<",    # Лестница вверх
             DungeonTileType.TRAP: "^",
             DungeonTileType.TRAP_TRIGGERED: "v",
-            DungeonTileType.STASH: "$",
-            DungeonTileType.STASH_LOOTED: "_",
             DungeonTileType.ALTAR: "A",
             DungeonTileType.BONES: "b",
             DungeonTileType.ORE_VEIN: "o",
@@ -65,8 +63,6 @@ class DungeonRenderer:
             DungeonTileType.STAIRS_UP: "stairs_up",
             DungeonTileType.TRAP: "trap",
             DungeonTileType.TRAP_TRIGGERED: "trap_triggered",
-            DungeonTileType.STASH: "chest",
-            DungeonTileType.STASH_LOOTED: "chest_open",
             DungeonTileType.RUBBLE: "rubble",
             DungeonTileType.WATER: "water",
             DungeonTileType.BONES: "bones",
@@ -173,8 +169,8 @@ class DungeonRenderer:
             viewport_width: Ширина области отрисовки (в пикселях)
             viewport_height: Высота области отрисовки (в пикселях)
             selected_target: Выбранная цель (NPC) для отображения выделения
-            selected_object: Выбранный объект (ловушка или тайник)
-            selected_object_type: Тип выбранного объекта ('trap' или 'stash')
+            selected_object: Выбранный объект (ловушка)
+            selected_object_type: Тип выбранного объекта ('trap')
             selected_ore: Выбранный объект руды (DungeonTile с ore_data)
         """
         # Вычисляем количество видимых тайлов
@@ -216,11 +212,6 @@ class DungeonRenderer:
                 if tile.tile_type == DungeonTileType.TRAP:
                     trap = dungeon.trap_manager.get_trap_at(map_x, map_y)
                     if trap and not trap.is_detected:
-                        # Показываем как обычный пол
-                        color = DUNGEON_TILE_COLORS.get(DungeonTileType.FLOOR, (80, 80, 80))
-                elif tile.tile_type == DungeonTileType.STASH:
-                    stash = dungeon.stash_manager.get_stash_at(map_x, map_y)
-                    if stash and not stash.is_detected:
                         # Показываем как обычный пол
                         color = DUNGEON_TILE_COLORS.get(DungeonTileType.FLOOR, (80, 80, 80))
 
@@ -283,12 +274,6 @@ class DungeonRenderer:
                     elif tile.tile_type == DungeonTileType.TRAP_TRIGGERED:
                         should_draw = True
 
-                    # Тайники видны только если обнаружены
-                    elif tile.tile_type == DungeonTileType.STASH:
-                        stash = dungeon.stash_manager.get_stash_at(map_x, map_y)
-                        if stash and not stash.is_detected:
-                            should_draw = False
-
                     if should_draw:
                         symbol = self.tile_symbols[tile.tile_type]
                         symbol_color = self._get_symbol_color(tile.tile_type)
@@ -297,7 +282,7 @@ class DungeonRenderer:
                         sym_y = pixel_y + (self.tile_size - symbol_surface.get_height()) // 2
                         self.screen.blit(symbol_surface, (sym_x, sym_y))
 
-        # Отрисовываем выделение объектов подземелья (ловушек и тайников)
+        # Отрисовываем выделение объектов подземелья (ловушек)
         if selected_object and selected_object_type:
             self._render_object_selection(dungeon, selected_object, start_x, start_y)
 
@@ -320,8 +305,6 @@ class DungeonRenderer:
             DungeonTileType.STAIRS_UP: (255, 255, 150),    # Жёлтый (вверх)
             DungeonTileType.TRAP: (255, 200, 100),        # Оранжевый
             DungeonTileType.TRAP_TRIGGERED: (150, 100, 100),
-            DungeonTileType.STASH: (255, 255, 100),       # Желтый
-            DungeonTileType.STASH_LOOTED: (150, 150, 100),
             DungeonTileType.ALTAR: (200, 100, 255),       # Фиолетовый
             DungeonTileType.BONES: (220, 220, 200),
             DungeonTileType.ORE_VEIN: (200, 150, 100),
@@ -426,7 +409,7 @@ class DungeonRenderer:
 
         Args:
             dungeon: Карта подземелья
-            selected_object: Выбранный объект (ловушка или тайник)
+            selected_object: Выбранный объект (ловушка)
             start_x: Начальная координата X видимой области
             start_y: Начальная координата Y видимой области
         """
@@ -732,36 +715,6 @@ class DungeonRenderer:
                 pygame.draw.rect(self.screen, trap_color,
                                (marker_x, marker_y, marker_size, marker_size))
 
-        # Рисуем обнаруженные тайники (только на исследованных клетках)
-        for stash in dungeon.stash_manager.stashes:
-            if stash.is_detected and not stash.is_looted:
-                # Проверяем, что клетка была исследована игроком
-                tile = dungeon.get_tile(stash.x, stash.y)
-                if not tile or not tile.explored:
-                    continue
-
-                stash_px = x + stash.x * pixel_w
-                stash_py = y + stash.y * pixel_h
-
-                # Золотой цвет для тайников
-                stash_color = (255, 215, 0)
-                if stash.has_trap and stash.trap and not stash.trap.is_disarmed:
-                    # Оранжевый для тайников с ловушками
-                    stash_color = (255, 140, 0)
-
-                # Рисуем маркер тайника (ромб/звезда)
-                marker_size = max(2, min(pixel_w, pixel_h) // 2)
-                center_x = stash_px + pixel_w // 2
-                center_y = stash_py + pixel_h // 2
-
-                # Упрощенная звездочка (крест)
-                pygame.draw.line(self.screen, stash_color,
-                               (center_x - marker_size, center_y),
-                               (center_x + marker_size, center_y), 1)
-                pygame.draw.line(self.screen, stash_color,
-                               (center_x, center_y - marker_size),
-                               (center_x, center_y + marker_size), 1)
-
         # Рисуем игрока
         player_px = x + player.x * pixel_w
         player_py = y + player.y * pixel_h
@@ -781,8 +734,6 @@ class DungeonRenderer:
             ("□", (255, 215, 0), "Игрок"),
             ("■", (220, 50, 50), "Ловушка"),
             ("■", (100, 100, 100), "Обезврежена"),
-            ("✦", (255, 215, 0), "Тайник"),
-            ("✦", (255, 140, 0), "С ловушкой"),
         ]
 
         item_height = 18
@@ -1022,11 +973,9 @@ class DungeonRenderer:
         # Получаем навыки EXPLORATION
         keen_eye = player.skill_manager.get_skill("Острый Глаз")
         disarm_trap = player.skill_manager.get_skill("Обезвреживание")
-        lockpicking = player.skill_manager.get_skill("Взлом")
-        treasure_hunter = player.skill_manager.get_skill("Охотник за Сокровищами")
 
         # Если ни одного навыка нет, не показываем панель
-        if not any([keen_eye, disarm_trap, lockpicking, treasure_hunter]):
+        if not any([keen_eye, disarm_trap]):
             return
 
         # Размеры и позиция панели (слева, ниже информации о подземелье)
@@ -1062,8 +1011,6 @@ class DungeonRenderer:
         skills_data = [
             ("Ост.Глаз", keen_eye),
             ("Обезвр.", disarm_trap),
-            ("Взлом", lockpicking),
-            ("Охотник", treasure_hunter)
         ]
 
         for skill_name, skill in skills_data:
@@ -1093,12 +1040,5 @@ class DungeonRenderer:
         if disarm_trap:
             disarmed = getattr(disarm_trap, 'traps_disarmed', 0)
             stat_text = f"Обезврежено: {disarmed}"
-            stat_surface = font.render(stat_text, True, (180, 200, 180))
-            self.screen.blit(stat_surface, (padding_x, current_y))
-            current_y += 18
-
-        if lockpicking:
-            lockpicked = getattr(lockpicking, 'stashes_lockpicked', 0)
-            stat_text = f"Взломано: {lockpicked}"
             stat_surface = font.render(stat_text, True, (180, 200, 180))
             self.screen.blit(stat_surface, (padding_x, current_y))

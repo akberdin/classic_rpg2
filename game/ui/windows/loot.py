@@ -6,7 +6,7 @@ from game.ui.base import UIHelper
 
 
 class DungeonLootWindow:
-    """Универсальное окно лута для подземелий (тайники и останки)"""
+    """Окно лута для подземелий (останки)"""
 
     def __init__(self, screen, font, info_font, ui_scaler=None):
         """
@@ -27,7 +27,7 @@ class DungeonLootWindow:
         self.loot_items = []  # Список кортежей (item_name, quantity)
         self.loot_gold = 0
         self.source_name = ""
-        self.loot_type = "remains"  # "remains" или "stash"
+        self.loot_type = "remains"
 
     def set_loot_from_remains(self, result: dict, enemy_name: str):
         """
@@ -41,41 +41,11 @@ class DungeonLootWindow:
         self.source_name = enemy_name
         self.loot_gold = result.get('gold', 0)
 
-        # Преобразуем items - может быть [(item, qty), ...] или [(name, id, qty), ...]
+        # Преобразуем items - может быть [(item, qty), ...]
         self.loot_items = []
         for item_data in result.get('items', []):
             if len(item_data) == 2:
                 # Формат (item, quantity) - из loot_remains
-                item, quantity = item_data
-                if hasattr(item, 'name'):
-                    self.loot_items.append((item.name, quantity))
-                else:
-                    self.loot_items.append((str(item), quantity))
-            elif len(item_data) == 3:
-                # Формат (name, id, quantity) - из stash
-                name, item_id, quantity = item_data
-                self.loot_items.append((name, quantity))
-
-    def set_loot_from_stash(self, result: dict, stash_name: str):
-        """
-        Установить лут из тайника
-
-        Args:
-            result: Результат stash.loot()
-            stash_name: Название тайника
-        """
-        self.loot_type = "stash"
-        self.source_name = stash_name
-        self.loot_gold = result.get('gold', 0)
-
-        # Преобразуем items - формат (name, id, quantity)
-        self.loot_items = []
-        for item_data in result.get('items', []):
-            if len(item_data) == 3:
-                name, item_id, quantity = item_data
-                self.loot_items.append((name, quantity))
-            elif len(item_data) == 2:
-                # Формат (item, quantity)
                 item, quantity = item_data
                 if hasattr(item, 'name'):
                     self.loot_items.append((item.name, quantity))
@@ -111,11 +81,8 @@ class DungeonLootWindow:
             (window_x, window_y, window_width, window_height)
         )
 
-        # Рамка окна (золотая для тайника, красноватая для останков)
-        if self.loot_type == "stash":
-            border_color = (255, 215, 0)  # Золотой
-        else:
-            border_color = (180, 120, 100)  # Коричневатый для останков
+        # Рамка окна (коричневатая для останков)
+        border_color = (180, 120, 100)
 
         pygame.draw.rect(
             self.screen,
@@ -125,12 +92,8 @@ class DungeonLootWindow:
         )
 
         # Заголовок
-        if self.loot_type == "stash":
-            title = "ТАЙНИК НАЙДЕН!"
-            title_color = (255, 215, 0)
-        else:
-            title = "ОБЫСК"
-            title_color = (200, 180, 150)
+        title = "ОБЫСК"
+        title_color = (200, 180, 150)
 
         title_text = self.font.render(title, True, title_color)
         title_rect = title_text.get_rect()

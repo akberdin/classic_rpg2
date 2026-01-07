@@ -36,8 +36,6 @@ assets/dungeon/
 
 Создайте PNG-файлы в `assets/dungeon/objects/`:
 
-- **chest.png** - Закрытый сундук (тайник)
-- **chest_open.png** - Открытый сундук (обысканный тайник)
 - **trap.png** - Обнаруженная ловушка
 - **trap_triggered.png** - Сработавшая ловушка
 - **remains.png** - Останки врага
