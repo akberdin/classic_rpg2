@@ -9,7 +9,6 @@ from game.dungeon.tiles import (
     DungeonDepthType, MineDepthType,
     get_dungeon_depth_type, get_mine_depth_type, get_depth_type_from_string
 )
-from game.dungeon.traps import TrapManager
 
 
 class DungeonMap:
@@ -62,9 +61,6 @@ class DungeonMap:
             for x in range(width):
                 row.append(DungeonTile(x, y, DungeonTileType.WALL))
             self.tiles.append(row)
-
-        # Менеджеры интерактивных объектов
-        self.trap_manager = TrapManager()
 
         # Точки входа и выхода
         self.entrance: Optional[Tuple[int, int]] = None
@@ -167,7 +163,7 @@ class DungeonMap:
         Получить случайную проходимую клетку
 
         Args:
-            exclude_special: Исключить специальные клетки (вход, выход, ловушки)
+            exclude_special: Исключить специальные клетки (вход, выход)
 
         Returns:
             Tuple[int, int] или None
@@ -178,12 +174,7 @@ class DungeonMap:
             for x in range(self.width):
                 tile = self.tiles[y][x]
                 if tile.tile_type in [DungeonTileType.FLOOR, DungeonTileType.CORRIDOR]:
-                    if exclude_special:
-                        # Проверяем, не занята ли клетка
-                        if self.trap_manager.get_trap_at(x, y) is None:
-                            floor_tiles.append((x, y))
-                    else:
-                        floor_tiles.append((x, y))
+                    floor_tiles.append((x, y))
 
         if floor_tiles:
             return random.choice(floor_tiles)
@@ -411,7 +402,6 @@ class DungeonMap:
             "wall_tiles": wall_count,
             "special_tiles": special_count,
             "rooms": len(self.rooms),
-            "traps": len(self.trap_manager.traps),
             "npcs": len(self.npcs),
             "exits": len(self.exits),
         }
@@ -528,8 +518,6 @@ class DungeonMap:
             DungeonTileType.CORRIDOR: '+',
             DungeonTileType.ENTRANCE: 'E',
             DungeonTileType.EXIT: 'X',
-            DungeonTileType.TRAP: '^',
-            DungeonTileType.TRAP_TRIGGERED: 'v',
             DungeonTileType.RUBBLE: '%',
             DungeonTileType.WATER: '~',
             DungeonTileType.BONES: 'b',

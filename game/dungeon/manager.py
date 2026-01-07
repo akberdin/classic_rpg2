@@ -54,9 +54,9 @@ class DungeonManager:
         self.skill_targeting_mode = False
         self.pending_skill = None  # Умение, ожидающее выбора цели
 
-        # Выбранный интерактивный объект (ловушка)
+        # Выбранный интерактивный объект (зарезервировано для будущего использования)
         self.selected_object = None
-        self.selected_object_type = None  # 'trap'
+        self.selected_object_type = None
 
         # Выбранный объект руды для добычи
         self.selected_ore = None  # DungeonTile с ore_data
@@ -1328,7 +1328,7 @@ class DungeonManager:
     def get_nearest_interactive_object(self, player_x: int, player_y: int,
                                         max_distance: int = 5) -> Optional[Tuple]:
         """
-        Найти ближайший интерактивный объект (ловушку)
+        Найти ближайший интерактивный объект
 
         Args:
             player_x: Координата X игрока
@@ -1336,39 +1336,9 @@ class DungeonManager:
             max_distance: Максимальная дистанция поиска
 
         Returns:
-            Tuple[object, str] или None: (объект, тип) где тип = 'trap'
+            Tuple[object, str] или None: (объект, тип)
         """
-        if not self.is_in_dungeon or not self.current_dungeon:
-            return None
-
-        dungeon = self.current_dungeon
-        nearest_obj = None
-        nearest_type = None
-        nearest_distance = max_distance + 1
-
-        # Проверяем ловушки
-        for trap in dungeon.trap_manager.traps:
-            # Пропускаем сработавшие или обезвреженные ловушки
-            if trap.is_triggered or trap.is_disarmed:
-                continue
-
-            # Проверяем, обнаружена ли ловушка
-            if not trap.is_detected:
-                continue
-
-            # Проверяем видимость клетки
-            tile = dungeon.get_tile(trap.x, trap.y)
-            if not tile or not tile.visible:
-                continue
-
-            distance = abs(trap.x - player_x) + abs(trap.y - player_y)
-            if distance <= max_distance and distance < nearest_distance:
-                nearest_obj = trap
-                nearest_type = 'trap'
-                nearest_distance = distance
-
-        if nearest_obj:
-            return (nearest_obj, nearest_type)
+        # Метод зарезервирован для будущих интерактивных объектов
         return None
 
     def select_object(self, obj, obj_type: str):
@@ -1376,8 +1346,8 @@ class DungeonManager:
         Выбрать интерактивный объект
 
         Args:
-            obj: Объект (Trap)
-            obj_type: Тип объекта ('trap')
+            obj: Объект
+            obj_type: Тип объекта
         """
         self.selected_object = obj
         self.selected_object_type = obj_type
@@ -1394,25 +1364,7 @@ class DungeonManager:
         Returns:
             dict или None: Информация об объекте
         """
-        if self.selected_object is None:
-            return None
-
-        obj = self.selected_object
-        obj_type = self.selected_object_type
-
-        if obj_type == 'trap':
-            return {
-                "type": "trap",
-                "name": obj.name,
-                "level": obj.level_name,
-                "trap_type": obj.trap_type.value,
-                "is_detected": obj.is_detected,
-                "is_disarmed": obj.is_disarmed,
-                "is_triggered": obj.is_triggered,
-                "x": obj.x,
-                "y": obj.y
-            }
-
+        # Метод зарезервирован для будущих интерактивных объектов
         return None
 
     # ===== Система взаимодействия с рудой =====

@@ -861,23 +861,6 @@ class Game:
             print(f"Враг выбран: {npc.name} ({npc.health}/{npc.max_health} HP)")
             return True
 
-        # Если NPC нет, пытаемся найти ближайший интерактивный объект
-        nearest_result = self.dungeon_manager.get_nearest_interactive_object(
-            self.player.x, self.player.y, max_distance=5
-        )
-
-        if nearest_result:
-            obj, obj_type = nearest_result
-            self.dungeon_manager.select_object(obj, obj_type)
-
-            # Формируем сообщение
-            if obj_type == 'trap':
-                level_name = obj.trap_level.name
-                trap_name = obj.trap_type.value.replace('_', ' ').title()
-                print(f"Объект выбран: {trap_name} (Уровень: {level_name})")
-
-            return True
-
         # Ничего не нашли
         return False
 
@@ -887,7 +870,7 @@ class Game:
 
     def _handle_object_interaction(self, action: str):
         """
-        Обработка действия с выбранным объектом подземелья (ловушки)
+        Обработка действия с выбранным объектом подземелья
         """
         pass
 

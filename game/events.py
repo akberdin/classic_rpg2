@@ -321,14 +321,6 @@ class RandomEventSystem:
 
         # Отрицательные события для новичков
         self.events.append(RandomEvent(
-            "trap", "Ловушка",
-            "Вы попали в скрытую ловушку!",
-            lambda p, g: self._trap(p, g),
-            chance=0.012 / 3, min_rank="Новичок",
-            event_type=EventType.NEGATIVE, icon="X"
-        ))
-
-        self.events.append(RandomEvent(
             "pickpocket", "Карманник",
             "Ловкий вор украл часть вашего золота!",
             lambda p, g: self._pickpocket(p, g),
@@ -679,15 +671,6 @@ class RandomEventSystem:
         player.mana = player.get_effective_max_mana()
         player.stamina = player.get_effective_max_stamina()
         return ["  Полностью восстановлены здоровье, мана и выносливость"]
-
-    def _trap(self, player, game):
-        """Ловушка"""
-        if player.godmode:
-            return ["  Ловушка не причинила вам вреда (режим бессмертия)"]
-
-        damage = random.randint(5, 15) + player.level
-        player.health = max(1, player.health - damage)
-        return [f"  Получено {damage} урона"]
 
     def _pickpocket(self, player, game):
         """Карманник"""

@@ -42,8 +42,6 @@ class DungeonRenderer:
             DungeonTileType.EXIT: "X",
             DungeonTileType.STAIRS_DOWN: ">",  # Лестница вниз
             DungeonTileType.STAIRS_UP: "<",    # Лестница вверх
-            DungeonTileType.TRAP: "^",
-            DungeonTileType.TRAP_TRIGGERED: "v",
             DungeonTileType.ALTAR: "A",
             DungeonTileType.BONES: "b",
             DungeonTileType.ORE_VEIN: "o",
@@ -61,8 +59,6 @@ class DungeonRenderer:
             DungeonTileType.EXIT: "exit",
             DungeonTileType.STAIRS_DOWN: "stairs_down",
             DungeonTileType.STAIRS_UP: "stairs_up",
-            DungeonTileType.TRAP: "trap",
-            DungeonTileType.TRAP_TRIGGERED: "trap_triggered",
             DungeonTileType.RUBBLE: "rubble",
             DungeonTileType.WATER: "water",
             DungeonTileType.BONES: "bones",
@@ -169,8 +165,6 @@ class DungeonRenderer:
             viewport_width: Ширина области отрисовки (в пикселях)
             viewport_height: Высота области отрисовки (в пикселях)
             selected_target: Выбранная цель (NPC) для отображения выделения
-            selected_object: Выбранный объект (ловушка)
-            selected_object_type: Тип выбранного объекта ('trap')
             selected_ore: Выбранный объект руды (DungeonTile с ore_data)
         """
         # Вычисляем количество видимых тайлов
@@ -207,13 +201,6 @@ class DungeonRenderer:
 
                 # Получаем цвет клетки
                 color = tile.get_color()
-
-                # Для необнаруженных объектов показываем как обычный пол
-                if tile.tile_type == DungeonTileType.TRAP:
-                    trap = dungeon.trap_manager.get_trap_at(map_x, map_y)
-                    if trap and not trap.is_detected:
-                        # Показываем как обычный пол
-                        color = DUNGEON_TILE_COLORS.get(DungeonTileType.FLOOR, (80, 80, 80))
 
                 # Вычисляем коэффициент освещения
                 if not tile.visible:
@@ -261,30 +248,12 @@ class DungeonRenderer:
 
                 # Рисуем специальные символы
                 if tile.visible and tile.tile_type in self.tile_symbols:
-                    # Проверяем, нужно ли отрисовывать символ (для скрытых объектов)
-                    should_draw = True
-
-                    # Ловушки видны только если обнаружены
-                    if tile.tile_type == DungeonTileType.TRAP:
-                        trap = dungeon.trap_manager.get_trap_at(map_x, map_y)
-                        if trap and not trap.is_detected:
-                            should_draw = False
-
-                    # Сработавшие ловушки всегда видны
-                    elif tile.tile_type == DungeonTileType.TRAP_TRIGGERED:
-                        should_draw = True
-
-                    if should_draw:
-                        symbol = self.tile_symbols[tile.tile_type]
-                        symbol_color = self._get_symbol_color(tile.tile_type)
-                        symbol_surface = self.font.render(symbol, True, symbol_color)
-                        sym_x = pixel_x + (self.tile_size - symbol_surface.get_width()) // 2
-                        sym_y = pixel_y + (self.tile_size - symbol_surface.get_height()) // 2
-                        self.screen.blit(symbol_surface, (sym_x, sym_y))
-
-        # Отрисовываем выделение объектов подземелья (ловушек)
-        if selected_object and selected_object_type:
-            self._render_object_selection(dungeon, selected_object, start_x, start_y)
+                    symbol = self.tile_symbols[tile.tile_type]
+                    symbol_color = self._get_symbol_color(tile.tile_type)
+                    symbol_surface = self.font.render(symbol, True, symbol_color)
+                    sym_x = pixel_x + (self.tile_size - symbol_surface.get_width()) // 2
+                    sym_y = pixel_y + (self.tile_size - symbol_surface.get_height()) // 2
+                    self.screen.blit(symbol_surface, (sym_x, sym_y))
 
         # Отрисовываем выделение объекта руды
         if selected_ore:
@@ -303,8 +272,6 @@ class DungeonRenderer:
             DungeonTileType.EXIT: (255, 100, 100),        # Красный
             DungeonTileType.STAIRS_DOWN: (100, 150, 255),  # Синий (вниз)
             DungeonTileType.STAIRS_UP: (255, 255, 150),    # Жёлтый (вверх)
-            DungeonTileType.TRAP: (255, 200, 100),        # Оранжевый
-            DungeonTileType.TRAP_TRIGGERED: (150, 100, 100),
             DungeonTileType.ALTAR: (200, 100, 255),       # Фиолетовый
             DungeonTileType.BONES: (220, 220, 200),
             DungeonTileType.ORE_VEIN: (200, 150, 100),
@@ -691,30 +658,6 @@ class DungeonRenderer:
 
                 pygame.draw.rect(self.screen, color, (px, py, pixel_w, pixel_h))
 
-        # Рисуем обнаруженные ловушки (только на исследованных клетках)
-        for trap in dungeon.trap_manager.traps:
-            if trap.is_detected:
-                # Проверяем, что клетка была исследована игроком
-                tile = dungeon.get_tile(trap.x, trap.y)
-                if not tile or not tile.explored:
-                    continue
-
-                trap_px = x + trap.x * pixel_w
-                trap_py = y + trap.y * pixel_h
-
-                # Цвет зависит от состояния ловушки
-                if trap.is_disarmed:
-                    trap_color = (100, 100, 100)  # Серый для обезвреженных
-                else:
-                    trap_color = (220, 50, 50)  # Красный для активных
-
-                # Рисуем маркер ловушки (маленький квадрат)
-                marker_size = max(2, min(pixel_w, pixel_h) // 2)
-                marker_x = trap_px + (pixel_w - marker_size) // 2
-                marker_y = trap_py + (pixel_h - marker_size) // 2
-                pygame.draw.rect(self.screen, trap_color,
-                               (marker_x, marker_y, marker_size, marker_size))
-
         # Рисуем игрока
         player_px = x + player.x * pixel_w
         player_py = y + player.y * pixel_h
@@ -732,8 +675,6 @@ class DungeonRenderer:
         """
         legend_items = [
             ("□", (255, 215, 0), "Игрок"),
-            ("■", (220, 50, 50), "Ловушка"),
-            ("■", (100, 100, 100), "Обезврежена"),
         ]
 
         item_height = 18
@@ -972,10 +913,9 @@ class DungeonRenderer:
 
         # Получаем навыки EXPLORATION
         keen_eye = player.skill_manager.get_skill("Острый Глаз")
-        disarm_trap = player.skill_manager.get_skill("Обезвреживание")
 
-        # Если ни одного навыка нет, не показываем панель
-        if not any([keen_eye, disarm_trap]):
+        # Если навыка нет, не показываем панель
+        if not keen_eye:
             return
 
         # Размеры и позиция панели (слева, ниже информации о подземелье)
@@ -1010,7 +950,6 @@ class DungeonRenderer:
         # Отрисовка навыков
         skills_data = [
             ("Ост.Глаз", keen_eye),
-            ("Обезвр.", disarm_trap),
         ]
 
         for skill_name, skill in skills_data:
@@ -1029,16 +968,10 @@ class DungeonRenderer:
 
         current_y += 5
 
-        # Статистика (если есть навыки)
+        # Статистика (если есть навык)
         if keen_eye:
             detected = getattr(keen_eye, 'objects_detected', 0)
             stat_text = f"Обнаружено: {detected}"
             stat_surface = font.render(stat_text, True, (180, 200, 180))
             self.screen.blit(stat_surface, (padding_x, current_y))
             current_y += 18
-
-        if disarm_trap:
-            disarmed = getattr(disarm_trap, 'traps_disarmed', 0)
-            stat_text = f"Обезврежено: {disarmed}"
-            stat_surface = font.render(stat_text, True, (180, 200, 180))
-            self.screen.blit(stat_surface, (padding_x, current_y))

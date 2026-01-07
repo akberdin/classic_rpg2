@@ -6,7 +6,6 @@ from typing import List, Tuple, Optional
 
 from game.dungeon.dungeon_map import DungeonMap
 from game.dungeon.tiles import DungeonTileType
-from game.dungeon.traps import Trap, TrapType
 
 
 class DungeonGenerator:
@@ -21,7 +20,6 @@ class DungeonGenerator:
             "min_room_size": 5,
             "max_room_size": 14,
             "corridor_width": 2,
-            "trap_chance": 0.08,     # 8% шанс ловушки на проходимой клетке
             "decorations": True,
         }
 
@@ -32,7 +30,6 @@ class DungeonGenerator:
             "min_room_size": 4,
             "max_room_size": 12,
             "corridor_width": 3,     # Шахты шире
-            "trap_chance": 0.025,    # Меньше ловушек (2.5% вместо 5%)
             "decorations": True,
         }
 
@@ -106,9 +103,6 @@ class DungeonGenerator:
 
         # Размещаем вход и выходы/лестницы
         self._place_entrance_and_exits(dungeon, current_depth, max_depth)
-
-        # Добавляем ловушки
-        self._place_traps(dungeon, params["trap_chance"])
 
         # Добавляем декорации
         if params["decorations"]:
@@ -504,27 +498,6 @@ class DungeonGenerator:
                 if alt_exit_pos:
                     dungeon.add_exit(alt_exit_pos[0], alt_exit_pos[1])
 
-    def _place_traps(self, dungeon: DungeonMap, trap_chance: float):
-        """Разместить ловушки"""
-        floor_tiles = dungeon.get_all_floor_tiles()
-
-        for x, y in floor_tiles:
-            tile = dungeon.get_tile(x, y)
-            if not tile:
-                continue
-
-            # Не ставим ловушки на входе/выходе/лестницах
-            if dungeon.is_entrance_tile(x, y) or dungeon.is_exit_tile(x, y):
-                continue
-            if tile.tile_type in (DungeonTileType.STAIRS_UP, DungeonTileType.STAIRS_DOWN):
-                continue
-
-            if random.random() < trap_chance:
-                trap = dungeon.trap_manager.generate_random_trap(x, y, dungeon.dungeon_level)
-                dungeon.trap_manager.add_trap(trap)
-                # Помечаем клетку как ловушку
-                dungeon.set_tile_type(x, y, DungeonTileType.TRAP)
-
     def _place_decorations(self, dungeon: DungeonMap, dungeon_type: str):
         """
         Добавить декоративные элементы в подземелье
@@ -617,10 +590,6 @@ class DungeonGenerator:
                 if dungeon.stairs_down and (x, y) == dungeon.stairs_down:
                     continue
                 if dungeon.stairs_up and (x, y) == dungeon.stairs_up:
-                    continue
-
-                # Не размещаем на ловушках
-                if dungeon.trap_manager.get_trap_at(x, y) is not None:
                     continue
 
                 # Случайный шанс появления руды
