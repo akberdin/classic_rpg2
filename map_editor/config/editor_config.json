@@ -9,9 +9,9 @@
         "default_width": 200,
         "default_height": 200,
         "min_size": 50,
-        "max_size": 500,
+        "max_size": 1000,
         "tile_size": 4,
-        "min_tile_size": 2,
+        "min_tile_size": 1,
         "max_tile_size": 20
     },
     "generation": {

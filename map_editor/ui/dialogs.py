@@ -553,7 +553,7 @@ class GeneratorDialog(Dialog):
             label="Ширина карты",
             key="width",
             value=self.params.width,
-            min_val=50, max_val=500, step=10
+            min_val=50, max_val=1000, step=10
         ))
         y += spacing
 
@@ -562,7 +562,7 @@ class GeneratorDialog(Dialog):
             label="Высота карты",
             key="height",
             value=self.params.height,
-            min_val=50, max_val=500, step=10
+            min_val=50, max_val=1000, step=10
         ))
         y += spacing
 
