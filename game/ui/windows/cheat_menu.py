@@ -293,10 +293,14 @@ class CheatMenuWindow:
                             tile = game.game_map.get_tile(x, y)
                             if tile:
                                 tile.explored = True
+                    # Инвалидируем кэш миникарты для перерисовки
+                    game.fog_of_war.mark_minimap_dirty()
                     print("Карта ОТКРЫТА")
                 else:
                     # Закрываем карту (кроме видимой области)
                     game.fog_of_war.update_vision(game.player.x, game.player.y)
+                    # Инвалидируем кэш миникарты
+                    game.fog_of_war.mark_minimap_dirty()
                     print("Карта ЗАКРЫТА")
 
     def render(self):

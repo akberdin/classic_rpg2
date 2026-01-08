@@ -95,6 +95,10 @@ class FogOfWar:
         self._minimap_dirty = False
         self._newly_explored_count = 0
 
+    def mark_minimap_dirty(self):
+        """Принудительно пометить миникарту для перерисовки (для читов и т.д.)"""
+        self._minimap_dirty = True
+
     def is_explored(self, x, y):
         """
         Проверить, был ли тайл исследован
