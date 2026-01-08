@@ -1,5 +1,6 @@
 """
 Модуль для рендеринга игрового мира, карты и NPC
+Оптимизировано для больших карт (500x500+)
 """
 import pygame
 from game.constants import TILE_SIZE, COLORS
@@ -18,6 +19,15 @@ class WorldRenderer:
         """
         self.game = game
         self.ctx = GameContext(game)
+
+        # === Кэширование миникарты ===
+        self._minimap_surface = None  # Кэшированная поверхность миникарты
+        self._minimap_size = 0  # Текущий размер миникарты
+        self._minimap_scale = 0  # Текущий масштаб (pixel_per_tile)
+        self._minimap_needs_full_redraw = True  # Нужна полная перерисовка
+
+        # Шрифт для надписей (кэшируем)
+        self._label_font = None
 
     def get_time_of_day_tint(self):
         """
@@ -149,7 +159,10 @@ class WorldRenderer:
 
     def _render_location_labels(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка надписей над локациями"""
-        label_font = pygame.font.Font(None, 16)
+        # Используем кэшированный шрифт
+        if self._label_font is None:
+            self._label_font = pygame.font.Font(None, 16)
+        label_font = self._label_font
         for dy in range(tiles_y):
             for dx in range(tiles_x):
                 map_x = camera_x + dx
@@ -191,16 +204,223 @@ class WorldRenderer:
                         self.ctx.screen.blit(location_label, label_rect)
 
     def _render_all_npcs(self, tiles_x, tiles_y, camera_x, camera_y):
-        """Отрисовка всех NPC"""
-        self._render_guards(tiles_x, tiles_y, camera_x, camera_y)  # Включает warriors, mages, shadow_adepts, hunters
-        self._render_merchants(tiles_x, tiles_y, camera_x, camera_y)
-        self._render_bandits(tiles_x, tiles_y, camera_x, camera_y)
-        self._render_miners(tiles_x, tiles_y, camera_x, camera_y)
-        self._render_undead(tiles_x, tiles_y, camera_x, camera_y)
-        # _render_mages() и _render_hunters() удалены - эти NPC теперь рендерятся через _render_guards()
-        self._render_alchemists(tiles_x, tiles_y, camera_x, camera_y)
-        self._render_necromancers(tiles_x, tiles_y, camera_x, camera_y)
-        self._render_animals(tiles_x, tiles_y, camera_x, camera_y)
+        """
+        Отрисовка всех NPC.
+        Оптимизировано: использует SpatialGrid для получения только NPC в видимой области.
+        """
+        # Пробуем использовать оптимизированный метод через SpatialGrid
+        optimizer = self.ctx.performance_optimizer
+        if optimizer and optimizer.npc_grid.grid:
+            # Получаем NPC только в видимой области + небольшой запас
+            center_x = camera_x + tiles_x // 2
+            center_y = camera_y + tiles_y // 2
+            # Радиус поиска - половина диагонали видимой области
+            search_radius = max(tiles_x, tiles_y)
+
+            visible_npcs = optimizer.get_nearby_npcs(center_x, center_y, search_radius)
+
+            # Рендерим каждый NPC
+            for npc in visible_npcs:
+                # Проверяем, в зоне видимости камеры
+                if not (camera_x <= npc.x < camera_x + tiles_x and
+                        camera_y <= npc.y < camera_y + tiles_y):
+                    continue
+
+                self._render_single_npc(npc, camera_x, camera_y)
+        else:
+            # Fallback на старый метод если SpatialGrid не инициализирован
+            self._render_guards(tiles_x, tiles_y, camera_x, camera_y)
+            self._render_merchants(tiles_x, tiles_y, camera_x, camera_y)
+            self._render_bandits(tiles_x, tiles_y, camera_x, camera_y)
+            self._render_miners(tiles_x, tiles_y, camera_x, camera_y)
+            self._render_undead(tiles_x, tiles_y, camera_x, camera_y)
+            self._render_alchemists(tiles_x, tiles_y, camera_x, camera_y)
+            self._render_necromancers(tiles_x, tiles_y, camera_x, camera_y)
+            self._render_animals(tiles_x, tiles_y, camera_x, camera_y)
+
+    def _render_single_npc(self, npc, camera_x, camera_y):
+        """
+        Рендеринг одного NPC (универсальный метод).
+        Оптимизированный метод для использования с SpatialGrid.
+        """
+        if not npc.is_alive:
+            return
+
+        # Не рендерим скрытых NPC
+        if hasattr(npc, 'is_hidden') and npc.is_hidden():
+            return
+
+        # Проверяем исследованность и видимость
+        tile = self.ctx.game_map.get_tile(npc.x, npc.y)
+        is_visible = (self.ctx.cheat_menu_window.cheats['reveal_map']['enabled'] or
+                     self.ctx.fog_of_war.is_visible(npc.x, npc.y, self.ctx.player.x, self.ctx.player.y))
+
+        if not (tile.explored and is_visible):
+            return
+
+        screen_x = (npc.x - camera_x) * TILE_SIZE
+        screen_y = (npc.y - camera_y) * TILE_SIZE
+
+        # Определяем тип NPC и рендерим соответственно
+        npc_type = getattr(npc, 'npc_type', 'unknown')
+
+        # Получаем цвет и стиль отрисовки в зависимости от типа
+        color = self._get_npc_color(npc)
+
+        # Функция отрисовки по умолчанию
+        def draw_default(screen=self.ctx.screen, c=color, sx=screen_x, sy=screen_y,
+                        level=npc.level, ntype=npc_type):
+            if ntype in ('wolf', 'bear', 'deer'):
+                # Треугольник для животных
+                points = [
+                    (sx + TILE_SIZE // 2, sy + TILE_SIZE // 4),
+                    (sx + TILE_SIZE // 4, sy + 3 * TILE_SIZE // 4),
+                    (sx + 3 * TILE_SIZE // 4, sy + 3 * TILE_SIZE // 4)
+                ]
+                pygame.draw.polygon(screen, c, points)
+                if level > 20:
+                    pygame.draw.polygon(screen, (255, 215, 0), points, 2)
+            elif ntype in ('guard', 'warrior', 'mage', 'shadow_adept', 'hunter'):
+                # Круг для стражников
+                pygame.draw.circle(screen, c, (sx + TILE_SIZE // 2, sy + TILE_SIZE // 2), TILE_SIZE // 3)
+                if level > 30:
+                    pygame.draw.circle(screen, (200, 200, 50), (sx + TILE_SIZE // 2, sy + TILE_SIZE // 2),
+                                      TILE_SIZE // 3, 2)
+            else:
+                # Квадрат для остальных
+                pygame.draw.rect(screen, c, (sx + TILE_SIZE // 4, sy + TILE_SIZE // 4,
+                                            TILE_SIZE // 2, TILE_SIZE // 2))
+                if ntype == 'undead' and level > 30:
+                    pygame.draw.rect(screen, (255, 0, 255), (sx + TILE_SIZE // 4, sy + TILE_SIZE // 4,
+                                                           TILE_SIZE // 2, TILE_SIZE // 2), 2)
+                elif ntype == 'necromancer' and level > 25:
+                    pygame.draw.rect(screen, (200, 100, 200), (sx + TILE_SIZE // 4, sy + TILE_SIZE // 4,
+                                                              TILE_SIZE // 2, TILE_SIZE // 2), 2)
+
+        # Отрисовка через sprite_manager
+        self.ctx.sprite_manager.render_npc(self.ctx.screen, npc_type, screen_x, screen_y,
+                                          draw_default, npc.level)
+
+    def _get_npc_color(self, npc):
+        """Получить цвет NPC в зависимости от типа, уровня и состояния"""
+        npc_type = getattr(npc, 'npc_type', 'unknown')
+        level = npc.level
+        state = getattr(npc, 'state', 'idle')
+
+        # Guards и подобные
+        if npc_type in ('guard', 'warrior', 'mage', 'shadow_adept', 'hunter'):
+            if level <= 10:
+                base = (100, 150, 255)
+            elif level <= 20:
+                base = (50, 100, 220)
+            elif level <= 30:
+                base = (30, 70, 180)
+            else:
+                base = (80, 50, 200)
+            if state == "rest":
+                return tuple(max(0, c - 40) for c in base)
+            elif state == "combat":
+                return tuple(min(255, c + 40) for c in base)
+            return base
+
+        # Merchants
+        elif npc_type == 'merchant':
+            if state == "rest":
+                return (150, 100, 50)
+            elif state == "flee":
+                return (255, 200, 100)
+            return (200, 150, 50)
+
+        # Bandits
+        elif npc_type == 'bandit':
+            if state == "rest":
+                return (150, 0, 0)
+            elif state == "combat":
+                return (255, 50, 50)
+            return (200, 0, 0)
+
+        # Miners
+        elif npc_type == 'miner':
+            if state == "fleeing":
+                return (200, 150, 100)
+            elif state == "going_to_rest":
+                return (100, 70, 40)
+            return (150, 100, 50)
+
+        # Undead
+        elif npc_type == 'undead':
+            if level <= 10:
+                base = (80, 100, 80)
+            elif level <= 20:
+                base = (120, 80, 120)
+            elif level <= 30:
+                base = (100, 0, 100)
+            else:
+                base = (150, 0, 150)
+            if state == "rest":
+                return tuple(max(0, c - 30) for c in base)
+            elif state == "combat":
+                return tuple(min(255, c + 50) for c in base)
+            return base
+
+        # Alchemists
+        elif npc_type == 'alchemist':
+            return (50, 200, 100)
+
+        # Necromancers
+        elif npc_type == 'necromancer':
+            if state == "combat":
+                return (180, 50, 180)
+            return (100, 20, 120)
+
+        # Animals
+        elif npc_type == 'wolf':
+            if level <= 10:
+                base = (120, 120, 120)
+            elif level <= 20:
+                base = (90, 90, 90)
+            elif level <= 30:
+                base = (60, 60, 70)
+            else:
+                base = (40, 40, 50)
+            if state == "flee":
+                return tuple(min(255, c + 30) for c in base)
+            elif state == "combat":
+                return tuple(min(255, c + 50) for c in base)
+            return base
+
+        elif npc_type == 'bear':
+            if level <= 10:
+                base = (139, 90, 43)
+            elif level <= 20:
+                base = (101, 67, 33)
+            elif level <= 30:
+                base = (70, 50, 30)
+            else:
+                base = (50, 35, 20)
+            if state == "flee":
+                return tuple(min(255, c + 30) for c in base)
+            elif state == "combat":
+                return tuple(min(255, c + 50) for c in base)
+            return base
+
+        elif npc_type == 'deer':
+            if level <= 10:
+                base = (210, 180, 140)
+            elif level <= 20:
+                base = (180, 140, 100)
+            elif level <= 30:
+                base = (150, 110, 70)
+            else:
+                base = (120, 90, 60)
+            if state == "flee":
+                return tuple(min(255, c + 30) for c in base)
+            elif state == "combat":
+                return tuple(min(255, c + 50) for c in base)
+            return base
+
+        # По умолчанию
+        return (100, 100, 100)
 
     def _render_guards(self, tiles_x, tiles_y, camera_x, camera_y):
         """Отрисовка стражников"""
@@ -690,31 +910,55 @@ class WorldRenderer:
         )
 
     def render_minimap(self):
-        """Отрисовка мини-карты"""
-        # Размеры мини-карты (масштабируются под разрешение, увеличено на 40% для лучшей видимости)
-        base_size = 150 * 1.4  # 210 пикселей базовый размер (было 195)
+        """
+        Отрисовка мини-карты.
+        Оптимизировано: кэширование в отдельную Surface, обновление только при изменениях.
+        Для карт 500x500 это даёт ~100x ускорение (250000 итераций -> 1 blit).
+        """
+        # Размеры мини-карты (масштабируются под разрешение)
+        base_size = 150 * 1.4  # 210 пикселей базовый размер
         minimap_size = self.ctx.ui_scaler.scale_value(int(base_size))
         margin = self.ctx.ui_scaler.scale_value(10)
-        panel_height = self.ctx.ui_scaler.scale_value(100)  # Высота нижней панели
+        panel_height = self.ctx.ui_scaler.scale_value(100)
 
         # Позиция в правом нижнем углу над панелью
         minimap_x = self.ctx.window_width - minimap_size - margin
         minimap_y = self.ctx.window_height - minimap_size - panel_height - margin
 
-        # Статичная карта: показываем всю карту целиком, масштабируя её
-        # Вычисляем масштаб для отображения всей карты
         map_width = self.ctx.game_map.width
         map_height = self.ctx.game_map.height
         pixel_per_tile = min(minimap_size / map_width, minimap_size / map_height)
 
-        # Фон мини-карты
+        # Проверяем, нужно ли пересоздать/обновить кэш миникарты
+        need_full_redraw = (
+            self._minimap_needs_full_redraw or
+            self._minimap_surface is None or
+            self._minimap_size != minimap_size or
+            self._minimap_scale != pixel_per_tile
+        )
+
+        # Проверяем dirty flag из fog_of_war
+        fog_dirty = self.ctx.fog_of_war.is_minimap_dirty()
+
+        if need_full_redraw or fog_dirty:
+            self._rebuild_minimap_cache(minimap_size, pixel_per_tile, map_width, map_height)
+            self._minimap_size = minimap_size
+            self._minimap_scale = pixel_per_tile
+            self._minimap_needs_full_redraw = False
+            self.ctx.fog_of_war.clear_minimap_dirty()
+
+        # Рисуем фон миникарты
         pygame.draw.rect(
             self.ctx.screen,
             (20, 20, 25),
             (minimap_x, minimap_y, minimap_size, minimap_size)
         )
 
-        # Рамка мини-карты (увеличена толщина до 3 пикселей)
+        # Копируем кэшированную миникарту на экран
+        if self._minimap_surface:
+            self.ctx.screen.blit(self._minimap_surface, (minimap_x, minimap_y))
+
+        # Рамка мини-карты
         pygame.draw.rect(
             self.ctx.screen,
             COLORS['text'],
@@ -722,38 +966,7 @@ class WorldRenderer:
             3
         )
 
-        # Отображаем всю карту статично
-        for map_y in range(map_height):
-            for map_x in range(map_width):
-                if not self.ctx.game_map.is_valid_position(map_x, map_y):
-                    continue
-
-                tile = self.ctx.game_map.get_tile(map_x, map_y)
-
-                # Отображаем только исследованные тайлы
-                if tile.explored:
-                    # Позиция на мини-карте (статичная, без центрирования на игроке)
-                    minimap_px = minimap_x + int(map_x * pixel_per_tile)
-                    minimap_py = minimap_y + int(map_y * pixel_per_tile)
-
-                    # Определяем цвет (точки спавна не отображаем)
-                    if tile.has_location() and not tile.location.location_type.startswith('spawn_'):
-                        color = COLORS.get(tile.location.location_type, COLORS['background'])
-                    else:
-                        color = COLORS.get(tile.biome, COLORS['background'])
-
-                    # Затемняем цвет для мини-карты
-                    color = tuple(c // 2 for c in color)
-
-                    # Отрисовка пикселя тайла (размер +1 для устранения зазоров-сетки)
-                    tile_draw_size = max(1, int(pixel_per_tile))
-                    pygame.draw.rect(
-                        self.ctx.screen,
-                        color,
-                        (minimap_px, minimap_py, tile_draw_size, tile_draw_size)
-                    )
-
-        # Отметка игрока на мини-карте (в соответствующей позиции на статичной карте)
+        # Отметка игрока (рисуется каждый кадр, т.к. позиция меняется)
         player_minimap_x = minimap_x + int(self.ctx.player.x * pixel_per_tile)
         player_minimap_y = minimap_y + int(self.ctx.player.y * pixel_per_tile)
 
@@ -764,9 +977,54 @@ class WorldRenderer:
             3
         )
 
-        # Заголовок мини-карты (над картой)
+        # Заголовок мини-карты
         minimap_font_size = self.ctx.ui_scaler.scale_font_size(16)
         minimap_font = pygame.font.Font(None, minimap_font_size)
         minimap_title = minimap_font.render("Карта", True, COLORS['text'])
         title_offset = self.ctx.ui_scaler.scale_value(18)
         self.ctx.screen.blit(minimap_title, (minimap_x + 5, minimap_y - title_offset))
+
+    def _rebuild_minimap_cache(self, minimap_size, pixel_per_tile, map_width, map_height):
+        """
+        Перестроить кэш миникарты.
+        Вызывается только когда исследованы новые тайлы или изменился размер.
+        """
+        # Создаём новую поверхность для миникарты
+        self._minimap_surface = pygame.Surface((minimap_size, minimap_size))
+        self._minimap_surface.fill((20, 20, 25))  # Фон
+
+        tile_draw_size = max(1, int(pixel_per_tile))
+
+        # Проходим по всем тайлам карты
+        for my in range(map_height):
+            for mx in range(map_width):
+                if not self.ctx.game_map.is_valid_position(mx, my):
+                    continue
+
+                tile = self.ctx.game_map.get_tile(mx, my)
+
+                # Отображаем только исследованные тайлы
+                if tile.explored:
+                    # Позиция на мини-карте
+                    px = int(mx * pixel_per_tile)
+                    py = int(my * pixel_per_tile)
+
+                    # Определяем цвет
+                    if tile.has_location() and not tile.location.location_type.startswith('spawn_'):
+                        color = COLORS.get(tile.location.location_type, COLORS['background'])
+                    else:
+                        color = COLORS.get(tile.biome, COLORS['background'])
+
+                    # Затемняем цвет
+                    color = tuple(c // 2 for c in color)
+
+                    # Рисуем на кэшированной поверхности
+                    pygame.draw.rect(
+                        self._minimap_surface,
+                        color,
+                        (px, py, tile_draw_size, tile_draw_size)
+                    )
+
+    def invalidate_minimap(self):
+        """Принудительно инвалидировать кэш миникарты"""
+        self._minimap_needs_full_redraw = True
