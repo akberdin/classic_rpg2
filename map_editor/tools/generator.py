@@ -159,6 +159,70 @@ RESOURCE_TYPES = {
     RESOURCE_MITHRIL: "Мифрил"
 }
 
+# Quest type constants
+QUEST_GATHER_RESOURCE = "gather_resource"
+QUEST_HUNT_ANIMALS = "hunt_animals"
+QUEST_DELIVER_MESSAGE = "deliver_message"
+
+QUEST_TYPES = {
+    QUEST_GATHER_RESOURCE: "Добыть ресурс",
+    QUEST_HUNT_ANIMALS: "Охота на животных",
+    QUEST_DELIVER_MESSAGE: "Доставить послание"
+}
+
+# Quest target constants - resources
+QUEST_TARGET_WOOD = "wood"
+QUEST_TARGET_COPPER = "copper"
+QUEST_TARGET_IRON = "iron"
+QUEST_TARGET_SILVER = "silver"
+QUEST_TARGET_GOLD = "gold"
+QUEST_TARGET_MITHRIL = "mithril"
+
+QUEST_RESOURCE_TARGETS = {
+    QUEST_TARGET_WOOD: "Древесина",
+    QUEST_TARGET_COPPER: "Медная руда",
+    QUEST_TARGET_IRON: "Железная руда",
+    QUEST_TARGET_SILVER: "Серебряная руда",
+    QUEST_TARGET_GOLD: "Золотая руда",
+    QUEST_TARGET_MITHRIL: "Мифриловая руда"
+}
+
+# Quest target constants - animals
+QUEST_TARGET_WOLF = "wolf"
+QUEST_TARGET_BEAR = "bear"
+QUEST_TARGET_DEER = "deer"
+
+QUEST_ANIMAL_TARGETS = {
+    QUEST_TARGET_WOLF: "Волк",
+    QUEST_TARGET_BEAR: "Медведь",
+    QUEST_TARGET_DEER: "Олень"
+}
+
+# Combined quest targets dictionary
+QUEST_TARGETS = {
+    **QUEST_RESOURCE_TARGETS,
+    **QUEST_ANIMAL_TARGETS
+}
+
+# Difficulty levels
+QUEST_DIFFICULTIES = {
+    1: "Легкий",
+    2: "Обычный",
+    3: "Сложный",
+    4: "Очень сложный",
+    5: "Героический"
+}
+
+# Locations that can give quests
+QUEST_GIVER_LOCATIONS = [
+    LOCATION_CAPITAL,
+    LOCATION_CITY,
+    LOCATION_VILLAGE,
+    LOCATION_MAGIC_SCHOOL,
+    LOCATION_WARRIOR_ACADEMY,
+    LOCATION_SECRET_CAMP
+]
+
 # Floor type constants for mines and ruins
 FLOOR_MINE = "mine"
 FLOOR_DARK_MINE = "dark_mine"
@@ -224,6 +288,106 @@ FLOOR_NPC_RANKS = {
     3: "Ранг 3 (Опытный)",
     4: "Ранг 4 (Эксперт)"
 }
+
+
+@dataclass
+class Quest:
+    """Represents a regular quest configuration for a location."""
+    id: str = ""  # Unique identifier
+    quest_type: str = QUEST_GATHER_RESOURCE  # Type of quest
+    name: str = ""  # Quest name
+    description: str = ""  # Quest description
+    target_type: str = QUEST_TARGET_WOOD  # Target type (resource or animal)
+    target_amount: int = 10  # Amount to gather/hunt
+    time_limit: int = 0  # Time limit in turns (0 = no limit)
+    difficulty: int = 1  # Difficulty level (1-5)
+    destination_id: str = ""  # Destination location ID (for deliver_message)
+    destination_name: str = ""  # Destination location name (for display)
+    # Rewards
+    reward_gold: int = 100  # Gold reward
+    reward_exp: int = 50  # Experience reward
+    reward_reputation: int = 5  # Reputation reward
+    # Availability
+    is_repeatable: bool = True  # Whether quest can be repeated
+    cooldown: int = 100  # Cooldown in turns before quest can be taken again
+
+    def __post_init__(self):
+        """Generate ID if not provided."""
+        if not self.id:
+            self.id = str(uuid.uuid4())
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for saving."""
+        return {
+            'id': self.id,
+            'quest_type': self.quest_type,
+            'name': self.name,
+            'description': self.description,
+            'target_type': self.target_type,
+            'target_amount': self.target_amount,
+            'time_limit': self.time_limit,
+            'difficulty': self.difficulty,
+            'destination_id': self.destination_id,
+            'destination_name': self.destination_name,
+            'reward_gold': self.reward_gold,
+            'reward_exp': self.reward_exp,
+            'reward_reputation': self.reward_reputation,
+            'is_repeatable': self.is_repeatable,
+            'cooldown': self.cooldown
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Quest':
+        """Create from dictionary."""
+        return cls(
+            id=data.get('id', str(uuid.uuid4())),
+            quest_type=data.get('quest_type', QUEST_GATHER_RESOURCE),
+            name=data.get('name', ''),
+            description=data.get('description', ''),
+            target_type=data.get('target_type', QUEST_TARGET_WOOD),
+            target_amount=data.get('target_amount', 10),
+            time_limit=data.get('time_limit', 0),
+            difficulty=data.get('difficulty', 1),
+            destination_id=data.get('destination_id', ''),
+            destination_name=data.get('destination_name', ''),
+            reward_gold=data.get('reward_gold', 100),
+            reward_exp=data.get('reward_exp', 50),
+            reward_reputation=data.get('reward_reputation', 5),
+            is_repeatable=data.get('is_repeatable', True),
+            cooldown=data.get('cooldown', 100)
+        )
+
+    def is_empty(self) -> bool:
+        """Check if quest is empty/unconfigured."""
+        return not self.name
+
+    def get_type_display(self) -> str:
+        """Get display name for quest type."""
+        return QUEST_TYPES.get(self.quest_type, self.quest_type)
+
+    def get_target_display(self) -> str:
+        """Get display name for quest target."""
+        return QUEST_TARGETS.get(self.target_type, self.target_type)
+
+    def get_difficulty_display(self) -> str:
+        """Get display name for difficulty level."""
+        return QUEST_DIFFICULTIES.get(self.difficulty, f"Уровень {self.difficulty}")
+
+    def get_short_description(self) -> str:
+        """Get a short description of the quest."""
+        if self.quest_type == QUEST_GATHER_RESOURCE:
+            return f"Добыть {self.target_amount}x {self.get_target_display()}"
+        elif self.quest_type == QUEST_HUNT_ANIMALS:
+            return f"Убить {self.target_amount}x {self.get_target_display()}"
+        elif self.quest_type == QUEST_DELIVER_MESSAGE:
+            dest = self.destination_name or "???"
+            return f"Доставить послание в {dest}"
+        return self.name or "Неизвестный квест"
+
+
+def _create_empty_quests() -> List['Quest']:
+    """Create empty quest list for location."""
+    return []
 
 
 @dataclass
@@ -576,6 +740,7 @@ class MapLocation:
     guards: List[Guard] = field(default_factory=_create_empty_guards)  # Guard slots (max 5)
     connections: List[Tuple[int, int]] = field(default_factory=list)  # Connections: [(target_x, target_y), ...]
     floors: List[Floor] = field(default_factory=_create_empty_floors)  # Floor slots for mines/ruins (max 10)
+    quests: List[Quest] = field(default_factory=_create_empty_quests)  # Regular quests for quest-giving locations
 
     def get_id(self) -> str:
         """Get unique identifier for this location (based on coordinates)."""
@@ -643,6 +808,11 @@ class MapLocation:
             floors_data = [floor.to_dict() for floor in self.floors if not floor.is_empty()]
             if floors_data:
                 data['floors'] = floors_data
+        # Save quests for quest-giving locations
+        if self.location_type in QUEST_GIVER_LOCATIONS:
+            quests_data = [quest.to_dict() for quest in self.quests if not quest.is_empty()]
+            if quests_data:
+                data['quests'] = quests_data
         return data
 
     @classmethod
@@ -677,6 +847,11 @@ class MapLocation:
         # Sort floors by floor number
         floors.sort(key=lambda f: f.floor_number)
 
+        # Load quests data (for quest-giving locations)
+        quests = []
+        if 'quests' in data:
+            quests = [Quest.from_dict(quest_data) for quest_data in data['quests']]
+
         return cls(
             x=data['x'],
             y=data['y'],
@@ -693,7 +868,8 @@ class MapLocation:
             animal_count=data.get('animal_count', 1),
             guards=guards,
             connections=connections,
-            floors=floors
+            floors=floors,
+            quests=quests
         )
 
 

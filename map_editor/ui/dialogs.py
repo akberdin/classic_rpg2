@@ -15,7 +15,10 @@ from ..tools.generator import (
     RESOURCE_TYPES,
     Floor, FLOOR_TYPES, FLOOR_NONE,
     FloorNPC, FLOOR_NPC_TYPES, FLOOR_NPC_RANKS, FLOOR_NPC_NONE,
-    Merchant, MerchantWaypoint, MERCHANT_RANKS, MERCHANT_SPECIALIZATIONS
+    Merchant, MerchantWaypoint, MERCHANT_RANKS, MERCHANT_SPECIALIZATIONS,
+    Quest, QUEST_TYPES, QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_DELIVER_MESSAGE,
+    QUEST_RESOURCE_TARGETS, QUEST_ANIMAL_TARGETS, QUEST_TARGETS,
+    QUEST_DIFFICULTIES, QUEST_GIVER_LOCATIONS, QUEST_TARGET_WOOD, QUEST_TARGET_WOLF
 )
 
 
@@ -739,6 +742,9 @@ class LocationEditDialog(Dialog):
         if loc_type in [LOCATION_VILLAGE, LOCATION_CITY, LOCATION_CAPITAL,
                         LOCATION_MAGIC_SCHOOL, LOCATION_WARRIOR_ACADEMY, 'secret_camp']:
             height += 305  # Space for 5 guard slots (headers + 5*45 + spacing)
+        # Add space for quests button (for quest-giving locations)
+        if loc_type in QUEST_GIVER_LOCATIONS:
+            height += 45  # Space for "Edit quests" button
         # Include location type in dialog title
         type_display = self.location_info.get('type_display', '')
         title = f"Редактирование локации ({type_display})" if type_display else "Редактирование локации"
@@ -746,6 +752,8 @@ class LocationEditDialog(Dialog):
         # Guard headers (will be set in _setup_controls if location has guards)
         self._guard_headers_y = None
         self._guard_headers = None
+        # Callback for opening quests dialog
+        self.on_edit_quests: Optional[Callable[[List[Quest]], None]] = None
         self._setup_controls()
 
     def _setup_controls(self) -> None:
@@ -1001,6 +1009,17 @@ class LocationEditDialog(Dialog):
             ))
             self.data['connections'] = connections_str
             y += 70
+
+        # Quests button (for quest-giving locations)
+        if loc_type in QUEST_GIVER_LOCATIONS:
+            quests = self.location_info.get('quests', [])
+            quest_count = len(quests) if quests else 0
+            self.buttons.append(DialogButton(
+                rect=pygame.Rect(20, y, 250, 30),
+                text=f"Управление квестами ({quest_count})",
+                action="edit_quests"
+            ))
+            y += 45
 
         # Buttons
         btn_width = 100
@@ -2515,3 +2534,814 @@ class FloorNPCEditDialog(Dialog):
     def get_npcs(self) -> List[FloorNPC]:
         """Get the edited NPCs list (only non-empty)."""
         return [npc for npc in self.npcs_copy if not npc.is_empty()]
+
+
+class QuestEditDialog(Dialog):
+    """Dialog for editing a single quest."""
+
+    def __init__(self, quest: Quest = None, all_locations: List = None):
+        """Initialize quest edit dialog.
+
+        Args:
+            quest: Quest to edit, or None to create new
+            all_locations: List of all locations on the map (for deliver destination)
+        """
+        self.quest = Quest() if quest is None else Quest(
+            id=quest.id,
+            quest_type=quest.quest_type,
+            name=quest.name,
+            description=quest.description,
+            target_type=quest.target_type,
+            target_amount=quest.target_amount,
+            time_limit=quest.time_limit,
+            difficulty=quest.difficulty,
+            destination_id=quest.destination_id,
+            destination_name=quest.destination_name,
+            reward_gold=quest.reward_gold,
+            reward_exp=quest.reward_exp,
+            reward_reputation=quest.reward_reputation,
+            is_repeatable=quest.is_repeatable,
+            cooldown=quest.cooldown
+        )
+        self.all_locations = all_locations or []
+        self.is_new = quest is None
+
+        # Build destinations list for deliver quests
+        self.destinations = {}
+        for loc in self.all_locations:
+            if loc.location_type in QUEST_GIVER_LOCATIONS:
+                self.destinations[loc.id] = loc.name or f"Локация ({loc.x}, {loc.y})"
+
+        title = "Новый квест" if self.is_new else "Редактирование квеста"
+        super().__init__(title, width=500, height=580)
+
+        self._active_dropdown: Optional[str] = None
+        self._setup_controls()
+
+    def _setup_controls(self) -> None:
+        """Setup dialog controls."""
+        # Store initial data
+        self.data['quest_type'] = self.quest.quest_type
+        self.data['name'] = self.quest.name
+        self.data['description'] = self.quest.description
+        self.data['target_type'] = self.quest.target_type
+        self.data['target_amount'] = self.quest.target_amount
+        self.data['time_limit'] = self.quest.time_limit
+        self.data['difficulty'] = self.quest.difficulty
+        self.data['destination_id'] = self.quest.destination_id
+        self.data['reward_gold'] = self.quest.reward_gold
+        self.data['reward_exp'] = self.quest.reward_exp
+        self.data['reward_reputation'] = self.quest.reward_reputation
+        self.data['is_repeatable'] = self.quest.is_repeatable
+        self.data['cooldown'] = self.quest.cooldown
+
+        # Text inputs
+        y = 50
+        self.text_inputs.append(DialogTextInput(
+            rect=pygame.Rect(120, y, 360, 28),
+            label="Название",
+            key="name",
+            value=self.quest.name,
+            max_length=100
+        ))
+
+        y += 40
+        self.text_inputs.append(DialogTextInput(
+            rect=pygame.Rect(120, y, 360, 28),
+            label="Описание",
+            key="description",
+            value=self.quest.description,
+            max_length=200
+        ))
+
+        # Buttons at the bottom
+        btn_width = 100
+        btn_height = 30
+        btn_y = self.height - btn_height - 15
+
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(self.width - btn_width - 120, btn_y, btn_width, btn_height),
+            text="Отмена",
+            action="cancel"
+        ))
+
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(self.width - btn_width - 10, btn_y, btn_width, btn_height),
+            text="Сохранить",
+            action="ok",
+            primary=True
+        ))
+
+    def _get_target_options(self) -> Dict[str, str]:
+        """Get target options based on quest type."""
+        quest_type = self.data.get('quest_type', QUEST_GATHER_RESOURCE)
+        if quest_type == QUEST_GATHER_RESOURCE:
+            return QUEST_RESOURCE_TARGETS
+        elif quest_type == QUEST_HUNT_ANIMALS:
+            return QUEST_ANIMAL_TARGETS
+        return {}
+
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """Handle pygame event with custom quest handling."""
+        if not self.visible:
+            return False
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            local_x = event.pos[0] - self.x
+            local_y = event.pos[1] - self.y
+
+            # Handle active dropdown options click
+            if self._active_dropdown:
+                consumed = self._handle_dropdown_selection(local_x, local_y)
+                if consumed:
+                    return True
+                self._active_dropdown = None
+                return True
+
+            # Check dropdown triggers
+            if self._check_dropdown_triggers(local_x, local_y):
+                return True
+
+            # Check +/- buttons for numeric fields
+            if self._check_numeric_buttons(local_x, local_y):
+                return True
+
+            # Check checkbox
+            checkbox_rect = pygame.Rect(120, 430, 20, 20)
+            if checkbox_rect.collidepoint(local_x, local_y):
+                self.data['is_repeatable'] = not self.data.get('is_repeatable', True)
+                return True
+
+        # Handle base dialog events
+        return super().handle_event(event)
+
+    def _check_dropdown_triggers(self, local_x: int, local_y: int) -> bool:
+        """Check if any dropdown trigger was clicked."""
+        # Quest type dropdown (y=130)
+        type_rect = pygame.Rect(120, 130, 200, 28)
+        if type_rect.collidepoint(local_x, local_y):
+            self._active_dropdown = 'quest_type' if self._active_dropdown != 'quest_type' else None
+            return True
+
+        # Target type dropdown (y=170)
+        target_rect = pygame.Rect(120, 170, 200, 28)
+        if target_rect.collidepoint(local_x, local_y):
+            if self.data.get('quest_type') != QUEST_DELIVER_MESSAGE:
+                self._active_dropdown = 'target_type' if self._active_dropdown != 'target_type' else None
+                return True
+
+        # Difficulty dropdown (y=290)
+        diff_rect = pygame.Rect(120, 290, 200, 28)
+        if diff_rect.collidepoint(local_x, local_y):
+            self._active_dropdown = 'difficulty' if self._active_dropdown != 'difficulty' else None
+            return True
+
+        # Destination dropdown (y=330) - only for deliver quests
+        if self.data.get('quest_type') == QUEST_DELIVER_MESSAGE:
+            dest_rect = pygame.Rect(120, 330, 300, 28)
+            if dest_rect.collidepoint(local_x, local_y):
+                self._active_dropdown = 'destination' if self._active_dropdown != 'destination' else None
+                return True
+
+        return False
+
+    def _handle_dropdown_selection(self, local_x: int, local_y: int) -> bool:
+        """Handle selection from active dropdown."""
+        if self._active_dropdown == 'quest_type':
+            options = QUEST_TYPES
+            base_y = 130 + 28
+            for i, (key, value) in enumerate(options.items()):
+                option_rect = pygame.Rect(120, base_y + i * 28, 200, 28)
+                if option_rect.collidepoint(local_x, local_y):
+                    self.data['quest_type'] = key
+                    # Reset target type when switching quest type
+                    if key == QUEST_GATHER_RESOURCE:
+                        self.data['target_type'] = QUEST_TARGET_WOOD
+                    elif key == QUEST_HUNT_ANIMALS:
+                        self.data['target_type'] = QUEST_TARGET_WOLF
+                    self._active_dropdown = None
+                    return True
+
+        elif self._active_dropdown == 'target_type':
+            options = self._get_target_options()
+            base_y = 170 + 28
+            for i, (key, value) in enumerate(options.items()):
+                option_rect = pygame.Rect(120, base_y + i * 28, 200, 28)
+                if option_rect.collidepoint(local_x, local_y):
+                    self.data['target_type'] = key
+                    self._active_dropdown = None
+                    return True
+
+        elif self._active_dropdown == 'difficulty':
+            options = QUEST_DIFFICULTIES
+            base_y = 290 + 28
+            for i, (key, value) in enumerate(options.items()):
+                option_rect = pygame.Rect(120, base_y + i * 28, 200, 28)
+                if option_rect.collidepoint(local_x, local_y):
+                    self.data['difficulty'] = key
+                    self._active_dropdown = None
+                    return True
+
+        elif self._active_dropdown == 'destination':
+            base_y = 330 + 28
+            for i, (key, value) in enumerate(self.destinations.items()):
+                option_rect = pygame.Rect(120, base_y + i * 28, 300, 28)
+                if option_rect.collidepoint(local_x, local_y):
+                    self.data['destination_id'] = key
+                    self.data['destination_name'] = value
+                    self._active_dropdown = None
+                    return True
+
+        return False
+
+    def _check_numeric_buttons(self, local_x: int, local_y: int) -> bool:
+        """Check +/- buttons for numeric fields."""
+        # Target amount (y=210)
+        if self.data.get('quest_type') != QUEST_DELIVER_MESSAGE:
+            minus_rect = pygame.Rect(120, 212, 30, 24)
+            plus_rect = pygame.Rect(220, 212, 30, 24)
+            if minus_rect.collidepoint(local_x, local_y):
+                self.data['target_amount'] = max(1, self.data.get('target_amount', 10) - 1)
+                return True
+            if plus_rect.collidepoint(local_x, local_y):
+                self.data['target_amount'] = min(999, self.data.get('target_amount', 10) + 1)
+                return True
+
+        # Time limit (y=250)
+        minus_rect = pygame.Rect(120, 252, 30, 24)
+        plus_rect = pygame.Rect(220, 252, 30, 24)
+        if minus_rect.collidepoint(local_x, local_y):
+            self.data['time_limit'] = max(0, self.data.get('time_limit', 0) - 10)
+            return True
+        if plus_rect.collidepoint(local_x, local_y):
+            self.data['time_limit'] = min(9999, self.data.get('time_limit', 0) + 10)
+            return True
+
+        # Reward gold (y=370)
+        minus_rect = pygame.Rect(120, 372, 30, 24)
+        plus_rect = pygame.Rect(220, 372, 30, 24)
+        if minus_rect.collidepoint(local_x, local_y):
+            self.data['reward_gold'] = max(0, self.data.get('reward_gold', 100) - 10)
+            return True
+        if plus_rect.collidepoint(local_x, local_y):
+            self.data['reward_gold'] = min(99999, self.data.get('reward_gold', 100) + 10)
+            return True
+
+        # Reward exp (y=370, right side)
+        minus_rect = pygame.Rect(290, 372, 30, 24)
+        plus_rect = pygame.Rect(390, 372, 30, 24)
+        if minus_rect.collidepoint(local_x, local_y):
+            self.data['reward_exp'] = max(0, self.data.get('reward_exp', 50) - 10)
+            return True
+        if plus_rect.collidepoint(local_x, local_y):
+            self.data['reward_exp'] = min(99999, self.data.get('reward_exp', 50) + 10)
+            return True
+
+        # Reward reputation (y=400)
+        minus_rect = pygame.Rect(120, 402, 30, 24)
+        plus_rect = pygame.Rect(220, 402, 30, 24)
+        if minus_rect.collidepoint(local_x, local_y):
+            self.data['reward_reputation'] = max(-100, self.data.get('reward_reputation', 5) - 1)
+            return True
+        if plus_rect.collidepoint(local_x, local_y):
+            self.data['reward_reputation'] = min(100, self.data.get('reward_reputation', 5) + 1)
+            return True
+
+        # Cooldown (y=460)
+        minus_rect = pygame.Rect(120, 462, 30, 24)
+        plus_rect = pygame.Rect(220, 462, 30, 24)
+        if minus_rect.collidepoint(local_x, local_y):
+            self.data['cooldown'] = max(0, self.data.get('cooldown', 100) - 10)
+            return True
+        if plus_rect.collidepoint(local_x, local_y):
+            self.data['cooldown'] = min(9999, self.data.get('cooldown', 100) + 10)
+            return True
+
+        return False
+
+    def draw(self, surface: pygame.Surface) -> None:
+        """Draw the quest edit dialog."""
+        if not self.visible:
+            return
+
+        # Draw dialog base
+        dialog_rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        pygame.draw.rect(surface, self.bg_color, dialog_rect)
+        pygame.draw.rect(surface, self.border_color, dialog_rect, 1)
+
+        # Draw title bar
+        title_rect = pygame.Rect(self.x, self.y, self.width, 35)
+        pygame.draw.rect(surface, self.title_bg, title_rect)
+        title_text = self.font_title.render(self.title, True, self.text_color)
+        surface.blit(title_text, (self.x + 10, self.y + 8))
+
+        # Draw text inputs
+        for text_input in self.text_inputs:
+            self._draw_text_input(surface, text_input)
+
+        # Current Y position for drawing
+        y = 130
+
+        # Quest type dropdown
+        self._draw_label(surface, "Тип квеста", self.x + 15, self.y + y + 4)
+        quest_type = self.data.get('quest_type', QUEST_GATHER_RESOURCE)
+        quest_type_name = QUEST_TYPES.get(quest_type, quest_type)
+        self._draw_dropdown_field(surface, quest_type_name, self.x + 120, self.y + y, 200,
+                                  self._active_dropdown == 'quest_type')
+        y += 40
+
+        # Target type dropdown (only for gather/hunt)
+        is_deliver = self.data.get('quest_type') == QUEST_DELIVER_MESSAGE
+        if not is_deliver:
+            self._draw_label(surface, "Цель", self.x + 15, self.y + y + 4)
+            target_type = self.data.get('target_type', QUEST_TARGET_WOOD)
+            target_name = QUEST_TARGETS.get(target_type, target_type)
+            self._draw_dropdown_field(surface, target_name, self.x + 120, self.y + y, 200,
+                                      self._active_dropdown == 'target_type')
+        y += 40
+
+        # Target amount (only for gather/hunt)
+        if not is_deliver:
+            self._draw_label(surface, "Количество", self.x + 15, self.y + y + 4)
+            self._draw_numeric_field(surface, self.data.get('target_amount', 10),
+                                     self.x + 120, self.y + y, 130)
+        y += 40
+
+        # Time limit
+        self._draw_label(surface, "Время (ходов)", self.x + 15, self.y + y + 4)
+        time_limit = self.data.get('time_limit', 0)
+        time_text = str(time_limit) if time_limit > 0 else "Без лимита"
+        self._draw_numeric_field(surface, time_limit, self.x + 120, self.y + y, 130,
+                                 display_text=time_text)
+        y += 40
+
+        # Difficulty dropdown
+        self._draw_label(surface, "Сложность", self.x + 15, self.y + y + 4)
+        difficulty = self.data.get('difficulty', 1)
+        diff_name = QUEST_DIFFICULTIES.get(difficulty, f"Уровень {difficulty}")
+        self._draw_dropdown_field(surface, diff_name, self.x + 120, self.y + y, 200,
+                                  self._active_dropdown == 'difficulty')
+        y += 40
+
+        # Destination (only for deliver)
+        if is_deliver:
+            self._draw_label(surface, "Цель доставки", self.x + 15, self.y + y + 4)
+            dest_id = self.data.get('destination_id', '')
+            dest_name = self.destinations.get(dest_id, "Выберите локацию...")
+            self._draw_dropdown_field(surface, dest_name, self.x + 120, self.y + y, 300,
+                                      self._active_dropdown == 'destination')
+        y += 40
+
+        # Rewards header
+        self._draw_label(surface, "— Награда —", self.x + 15, self.y + y)
+        y += 30
+
+        # Reward gold and exp on same line
+        self._draw_label(surface, "Золото", self.x + 15, self.y + y + 4)
+        self._draw_numeric_field(surface, self.data.get('reward_gold', 100),
+                                 self.x + 120, self.y + y, 130)
+        self._draw_label(surface, "Опыт", self.x + 250, self.y + y + 4)
+        self._draw_numeric_field(surface, self.data.get('reward_exp', 50),
+                                 self.x + 290, self.y + y, 130)
+        y += 30
+
+        # Reward reputation
+        self._draw_label(surface, "Репутация", self.x + 15, self.y + y + 4)
+        self._draw_numeric_field(surface, self.data.get('reward_reputation', 5),
+                                 self.x + 120, self.y + y, 130)
+        y += 30
+
+        # Is repeatable checkbox
+        self._draw_label(surface, "Повторяемый", self.x + 15, self.y + y + 2)
+        is_rep = self.data.get('is_repeatable', True)
+        checkbox_rect = pygame.Rect(self.x + 120, self.y + y, 20, 20)
+        pygame.draw.rect(surface, self.slider_bg, checkbox_rect)
+        pygame.draw.rect(surface, self.border_color, checkbox_rect, 1)
+        if is_rep:
+            inner = checkbox_rect.inflate(-6, -6)
+            pygame.draw.rect(surface, self.button_primary, inner)
+        y += 30
+
+        # Cooldown
+        self._draw_label(surface, "Перезарядка", self.x + 15, self.y + y + 4)
+        self._draw_numeric_field(surface, self.data.get('cooldown', 100),
+                                 self.x + 120, self.y + y, 130)
+
+        # Draw dropdown options on top
+        if self._active_dropdown:
+            self._draw_dropdown_options(surface)
+
+        # Draw buttons
+        for i, button in enumerate(self.buttons):
+            self._draw_button(surface, button, i == self.hovered_button)
+
+    def _draw_label(self, surface: pygame.Surface, text: str, x: int, y: int) -> None:
+        """Draw a label."""
+        label_surf = self.font.render(text, True, self.text_color)
+        surface.blit(label_surf, (x, y))
+
+    def _draw_dropdown_field(self, surface: pygame.Surface, text: str, x: int, y: int,
+                             width: int, is_active: bool = False) -> None:
+        """Draw a dropdown field."""
+        rect = pygame.Rect(x, y, width, 28)
+        color = self.button_hover if is_active else self.slider_bg
+        pygame.draw.rect(surface, color, rect)
+        pygame.draw.rect(surface, self.border_color, rect, 1)
+
+        text_surf = self.font.render(text[:35], True, self.text_color)
+        surface.blit(text_surf, (x + 5, y + 6))
+
+        # Draw dropdown arrow
+        arrow_x = x + width - 15
+        arrow_y = y + 12
+        pygame.draw.polygon(surface, self.text_color, [
+            (arrow_x, arrow_y), (arrow_x + 8, arrow_y), (arrow_x + 4, arrow_y + 6)
+        ])
+
+    def _draw_numeric_field(self, surface: pygame.Surface, value: int, x: int, y: int,
+                            width: int, display_text: str = None) -> None:
+        """Draw a numeric field with +/- buttons."""
+        # Minus button
+        minus_rect = pygame.Rect(x, y + 2, 30, 24)
+        pygame.draw.rect(surface, self.button_color, minus_rect)
+        pygame.draw.rect(surface, self.border_color, minus_rect, 1)
+        minus_text = self.font.render("-", True, self.text_color)
+        surface.blit(minus_text, (x + 10, y + 6))
+
+        # Value display
+        value_rect = pygame.Rect(x + 35, y + 2, width - 70, 24)
+        pygame.draw.rect(surface, self.slider_bg, value_rect)
+        pygame.draw.rect(surface, self.border_color, value_rect, 1)
+        text = display_text if display_text else str(value)
+        val_text = self.font.render(text, True, self.text_color)
+        text_x = value_rect.x + (value_rect.width - val_text.get_width()) // 2
+        surface.blit(val_text, (text_x, y + 6))
+
+        # Plus button
+        plus_rect = pygame.Rect(x + width - 30, y + 2, 30, 24)
+        pygame.draw.rect(surface, self.button_color, plus_rect)
+        pygame.draw.rect(surface, self.border_color, plus_rect, 1)
+        plus_text = self.font.render("+", True, self.text_color)
+        surface.blit(plus_text, (x + width - 20, y + 6))
+
+    def _draw_dropdown_options(self, surface: pygame.Surface) -> None:
+        """Draw dropdown options overlay."""
+        if self._active_dropdown == 'quest_type':
+            options = QUEST_TYPES
+            base_x, base_y = self.x + 120, self.y + 130 + 28
+            width = 200
+        elif self._active_dropdown == 'target_type':
+            options = self._get_target_options()
+            base_x, base_y = self.x + 120, self.y + 170 + 28
+            width = 200
+        elif self._active_dropdown == 'difficulty':
+            options = QUEST_DIFFICULTIES
+            base_x, base_y = self.x + 120, self.y + 290 + 28
+            width = 200
+        elif self._active_dropdown == 'destination':
+            options = self.destinations
+            base_x, base_y = self.x + 120, self.y + 330 + 28
+            width = 300
+        else:
+            return
+
+        # Draw options background
+        opt_height = len(options) * 28
+        bg_rect = pygame.Rect(base_x, base_y, width, opt_height)
+        pygame.draw.rect(surface, self.bg_color, bg_rect)
+        pygame.draw.rect(surface, self.border_color, bg_rect, 1)
+
+        for i, (key, value) in enumerate(options.items()):
+            opt_rect = pygame.Rect(base_x, base_y + i * 28, width, 28)
+            # Highlight on hover
+            mouse_pos = pygame.mouse.get_pos()
+            local_x = mouse_pos[0] - self.x
+            local_y = mouse_pos[1] - self.y
+            if opt_rect.move(-self.x, -self.y).collidepoint(local_x, local_y):
+                pygame.draw.rect(surface, self.button_hover, opt_rect)
+
+            text_surf = self.font.render(str(value)[:40], True, self.text_color)
+            surface.blit(text_surf, (base_x + 5, base_y + i * 28 + 6))
+
+    def _draw_text_input(self, surface: pygame.Surface, text_input: DialogTextInput) -> None:
+        """Draw a text input field."""
+        # Draw label
+        label_surf = self.font.render(text_input.label, True, self.text_color)
+        surface.blit(label_surf, (self.x + 15, self.y + text_input.rect.y + 6))
+
+        # Draw input field
+        rect = text_input.rect.move(self.x, self.y)
+        bg_color = self.button_hover if text_input.active else self.slider_bg
+        pygame.draw.rect(surface, bg_color, rect)
+        pygame.draw.rect(surface, self.border_color, rect, 1)
+
+        # Draw text
+        text_surf = self.font.render(text_input.value[-40:], True, self.text_color)
+        surface.blit(text_surf, (rect.x + 5, rect.y + 6))
+
+        # Draw cursor if active
+        if text_input.active:
+            cursor_x = rect.x + 5 + text_surf.get_width() + 2
+            pygame.draw.line(surface, self.text_color,
+                           (cursor_x, rect.y + 5),
+                           (cursor_x, rect.y + rect.height - 5))
+
+    def _draw_button(self, surface: pygame.Surface, button: DialogButton, hovered: bool) -> None:
+        """Draw a dialog button."""
+        rect = button.rect.move(self.x, self.y)
+        if button.primary:
+            color = self.button_primary
+        elif hovered:
+            color = self.button_hover
+        else:
+            color = self.button_color
+        pygame.draw.rect(surface, color, rect)
+        pygame.draw.rect(surface, self.border_color, rect, 1)
+
+        text_surf = self.font.render(button.text, True, self.text_color)
+        text_x = rect.x + (rect.width - text_surf.get_width()) // 2
+        text_y = rect.y + (rect.height - text_surf.get_height()) // 2
+        surface.blit(text_surf, (text_x, text_y))
+
+    def get_quest(self) -> Quest:
+        """Get the edited quest."""
+        # Update name and description from text inputs
+        for ti in self.text_inputs:
+            if ti.key == 'name':
+                self.data['name'] = ti.value
+            elif ti.key == 'description':
+                self.data['description'] = ti.value
+
+        return Quest(
+            id=self.quest.id,
+            quest_type=self.data.get('quest_type', QUEST_GATHER_RESOURCE),
+            name=self.data.get('name', ''),
+            description=self.data.get('description', ''),
+            target_type=self.data.get('target_type', QUEST_TARGET_WOOD),
+            target_amount=self.data.get('target_amount', 10),
+            time_limit=self.data.get('time_limit', 0),
+            difficulty=self.data.get('difficulty', 1),
+            destination_id=self.data.get('destination_id', ''),
+            destination_name=self.data.get('destination_name', ''),
+            reward_gold=self.data.get('reward_gold', 100),
+            reward_exp=self.data.get('reward_exp', 50),
+            reward_reputation=self.data.get('reward_reputation', 5),
+            is_repeatable=self.data.get('is_repeatable', True),
+            cooldown=self.data.get('cooldown', 100)
+        )
+
+
+class QuestListDialog(Dialog):
+    """Dialog for managing quests list for a location."""
+
+    def __init__(self, quests: List[Quest] = None, all_locations: List = None):
+        """Initialize quest list dialog.
+
+        Args:
+            quests: List of quests to edit
+            all_locations: List of all locations on the map
+        """
+        self.quests_copy = []
+        for q in (quests or []):
+            self.quests_copy.append(Quest(
+                id=q.id,
+                quest_type=q.quest_type,
+                name=q.name,
+                description=q.description,
+                target_type=q.target_type,
+                target_amount=q.target_amount,
+                time_limit=q.time_limit,
+                difficulty=q.difficulty,
+                destination_id=q.destination_id,
+                destination_name=q.destination_name,
+                reward_gold=q.reward_gold,
+                reward_exp=q.reward_exp,
+                reward_reputation=q.reward_reputation,
+                is_repeatable=q.is_repeatable,
+                cooldown=q.cooldown
+            ))
+        self.all_locations = all_locations or []
+
+        super().__init__("Управление квестами", width=550, height=450)
+
+        self._scroll_offset = 0
+        self._visible_count = 8
+        self._selected_index: Optional[int] = None
+
+        # Callback for opening quest edit dialog
+        self.on_edit_quest: Optional[Callable[[Quest, int], None]] = None
+
+        self._setup_controls()
+
+    def _setup_controls(self) -> None:
+        """Setup dialog controls."""
+        btn_width = 100
+        btn_height = 30
+        btn_y = self.height - btn_height - 15
+
+        # Bottom buttons
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(10, btn_y, btn_width, btn_height),
+            text="Добавить",
+            action="add"
+        ))
+
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(120, btn_y, btn_width, btn_height),
+            text="Редактировать",
+            action="edit"
+        ))
+
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(230, btn_y, btn_width, btn_height),
+            text="Удалить",
+            action="delete"
+        ))
+
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(self.width - btn_width - 10, btn_y, btn_width, btn_height),
+            text="Закрыть",
+            action="ok",
+            primary=True
+        ))
+
+    def handle_event(self, event: pygame.event.Event) -> bool:
+        """Handle pygame event."""
+        if not self.visible:
+            return False
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            local_x = event.pos[0] - self.x
+            local_y = event.pos[1] - self.y
+
+            if event.button == 1:
+                # Check quest row click
+                list_y = 60
+                for i in range(self._visible_count):
+                    actual_idx = i + self._scroll_offset
+                    if actual_idx >= len(self.quests_copy):
+                        break
+                    row_rect = pygame.Rect(10, list_y + i * 40, self.width - 40, 38)
+                    if row_rect.collidepoint(local_x, local_y):
+                        self._selected_index = actual_idx
+                        return True
+
+            elif event.button == 4:  # Scroll up
+                if self._scroll_offset > 0:
+                    self._scroll_offset -= 1
+                return True
+
+            elif event.button == 5:  # Scroll down
+                max_offset = max(0, len(self.quests_copy) - self._visible_count)
+                if self._scroll_offset < max_offset:
+                    self._scroll_offset += 1
+                return True
+
+        # Handle button clicks
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            local_x = event.pos[0] - self.x
+            local_y = event.pos[1] - self.y
+
+            for i, button in enumerate(self.buttons):
+                if button.rect.collidepoint(local_x, local_y):
+                    if button.action == "add":
+                        self._add_quest()
+                        return True
+                    elif button.action == "edit":
+                        self._edit_selected()
+                        return True
+                    elif button.action == "delete":
+                        self._delete_selected()
+                        return True
+
+        return super().handle_event(event)
+
+    def _add_quest(self) -> None:
+        """Add a new quest."""
+        if self.on_edit_quest:
+            self.on_edit_quest(None, -1)
+
+    def _edit_selected(self) -> None:
+        """Edit selected quest."""
+        if self._selected_index is not None and 0 <= self._selected_index < len(self.quests_copy):
+            if self.on_edit_quest:
+                self.on_edit_quest(self.quests_copy[self._selected_index], self._selected_index)
+
+    def _delete_selected(self) -> None:
+        """Delete selected quest."""
+        if self._selected_index is not None and 0 <= self._selected_index < len(self.quests_copy):
+            self.quests_copy.pop(self._selected_index)
+            if self._selected_index >= len(self.quests_copy):
+                self._selected_index = len(self.quests_copy) - 1 if self.quests_copy else None
+
+    def update_quest(self, quest: Quest, index: int) -> None:
+        """Update or add a quest."""
+        if index >= 0 and index < len(self.quests_copy):
+            self.quests_copy[index] = quest
+        else:
+            self.quests_copy.append(quest)
+            self._selected_index = len(self.quests_copy) - 1
+
+    def draw(self, surface: pygame.Surface) -> None:
+        """Draw the quest list dialog."""
+        if not self.visible:
+            return
+
+        # Draw dialog base
+        dialog_rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        pygame.draw.rect(surface, self.bg_color, dialog_rect)
+        pygame.draw.rect(surface, self.border_color, dialog_rect, 1)
+
+        # Draw title bar
+        title_rect = pygame.Rect(self.x, self.y, self.width, 35)
+        pygame.draw.rect(surface, self.title_bg, title_rect)
+        title_text = self.font_title.render(self.title, True, self.text_color)
+        surface.blit(title_text, (self.x + 10, self.y + 8))
+
+        # Draw quest count
+        count_text = self.font.render(f"Квестов: {len(self.quests_copy)}", True, (180, 180, 180))
+        surface.blit(count_text, (self.x + self.width - 100, self.y + 42))
+
+        # Draw header
+        header_y = self.y + 45
+        pygame.draw.rect(surface, self.title_bg, (self.x + 10, header_y, self.width - 40, 25))
+        headers = [("Название", 10), ("Тип", 200), ("Сложн.", 350), ("Награда", 420)]
+        for text, offset in headers:
+            surf = self.font.render(text, True, (180, 180, 180))
+            surface.blit(surf, (self.x + 15 + offset, header_y + 4))
+
+        # Draw quest list
+        list_y = 60
+        for i in range(self._visible_count):
+            actual_idx = i + self._scroll_offset
+            if actual_idx >= len(self.quests_copy):
+                break
+
+            quest = self.quests_copy[actual_idx]
+            row_y = self.y + list_y + i * 40
+
+            # Row background
+            row_rect = pygame.Rect(self.x + 10, row_y, self.width - 40, 38)
+            if actual_idx == self._selected_index:
+                pygame.draw.rect(surface, self.button_primary, row_rect)
+            elif actual_idx % 2 == 0:
+                pygame.draw.rect(surface, (50, 50, 55), row_rect)
+            else:
+                pygame.draw.rect(surface, (40, 40, 45), row_rect)
+
+            # Quest name
+            name = quest.name[:25] if quest.name else "Без названия"
+            name_surf = self.font.render(name, True, self.text_color)
+            surface.blit(name_surf, (self.x + 15, row_y + 10))
+
+            # Quest type
+            type_name = quest.get_type_display()[:15]
+            type_surf = self.font.render(type_name, True, (180, 180, 180))
+            surface.blit(type_surf, (self.x + 210, row_y + 10))
+
+            # Difficulty
+            diff_name = quest.get_difficulty_display()[:10]
+            diff_surf = self.font.render(diff_name, True, (180, 180, 180))
+            surface.blit(diff_surf, (self.x + 360, row_y + 10))
+
+            # Reward (gold)
+            reward_text = f"{quest.reward_gold}g"
+            reward_surf = self.font.render(reward_text, True, (255, 215, 0))
+            surface.blit(reward_surf, (self.x + 430, row_y + 10))
+
+        # Draw scrollbar if needed
+        if len(self.quests_copy) > self._visible_count:
+            scrollbar_height = self._visible_count * 40
+            total_height = len(self.quests_copy) * 40
+            thumb_height = max(20, int(scrollbar_height * self._visible_count / len(self.quests_copy)))
+            thumb_y = int(self._scroll_offset / (len(self.quests_copy) - self._visible_count) * (scrollbar_height - thumb_height))
+
+            sb_x = self.x + self.width - 25
+            sb_y = self.y + 70
+            pygame.draw.rect(surface, self.slider_bg, (sb_x, sb_y, 10, scrollbar_height))
+            pygame.draw.rect(surface, self.button_color, (sb_x, sb_y + thumb_y, 10, thumb_height))
+
+        # Draw buttons
+        for i, button in enumerate(self.buttons):
+            self._draw_button(surface, button, i == self.hovered_button)
+
+    def _draw_button(self, surface: pygame.Surface, button: DialogButton, hovered: bool) -> None:
+        """Draw a dialog button."""
+        rect = button.rect.move(self.x, self.y)
+        if button.primary:
+            color = self.button_primary
+        elif hovered:
+            color = self.button_hover
+        else:
+            color = self.button_color
+        pygame.draw.rect(surface, color, rect)
+        pygame.draw.rect(surface, self.border_color, rect, 1)
+
+        text_surf = self.font.render(button.text, True, self.text_color)
+        text_x = rect.x + (rect.width - text_surf.get_width()) // 2
+        text_y = rect.y + (rect.height - text_surf.get_height()) // 2
+        surface.blit(text_surf, (text_x, text_y))
+
+    def get_quests(self) -> List[Quest]:
+        """Get the edited quests list."""
+        return [q for q in self.quests_copy if not q.is_empty()]

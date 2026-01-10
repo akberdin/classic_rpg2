@@ -12,7 +12,7 @@ from ..tools.generator import (
     LOCATION_BANDIT_CAMP, LOCATION_RUINS, LOCATION_MAGIC_SCHOOL,
     LOCATION_WARRIOR_ACADEMY, LOCATION_SECRET_CAMP,
     LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER,
-    MERCHANT_RANKS, Merchant
+    MERCHANT_RANKS, Merchant, QUEST_GIVER_LOCATIONS
 )
 from .toolbar import ToolType
 
@@ -610,6 +610,12 @@ class Sidebar:
             # Show spawn_radius for all locations
             info_lines.append(f"Радиус спавна: {self.location_info.get('spawn_radius', 5)}")
 
+            # Show quests count for quest-giving locations
+            if loc_type in QUEST_GIVER_LOCATIONS:
+                quests = self.location_info.get('quests', [])
+                quest_count = len(quests) if quests else 0
+                info_lines.append(f"Квестов: {quest_count}")
+
             if self.location_info.get('is_starting'):
                 info_lines.append("(Стартовая деревня)")
 
@@ -647,12 +653,19 @@ class Sidebar:
             y_offset += 10
             y_offset = self._draw_section_header(surface, "Выбранная локация", y_offset)
 
+            loc_type = self.location_info.get('type', '')
             info_lines = [
                 f"Тип: {self.location_info.get('type_display', '')}",
                 f"Имя: {self.location_info.get('name', '')}",
                 f"Координаты: ({self.location_info.get('x', 0)}, {self.location_info.get('y', 0)})",
                 f"Радиус спавна: {self.location_info.get('spawn_radius', 5)}"
             ]
+
+            # Show quests count for quest-giving locations
+            if loc_type in QUEST_GIVER_LOCATIONS:
+                quests = self.location_info.get('quests', [])
+                quest_count = len(quests) if quests else 0
+                info_lines.append(f"Квестов: {quest_count}")
 
             if self.location_info.get('is_starting'):
                 info_lines.append("(Стартовая деревня)")
