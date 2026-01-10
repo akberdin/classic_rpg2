@@ -426,17 +426,8 @@ class DungeonRenderer:
         Returns:
             pygame.Surface или None
         """
-        if not self.sprite_manager:
-            return None
-
-        # Пробуем получить путь к спрайту из спутника
-        sprite_path = None
-        if hasattr(companion, 'get_sprite_path'):
-            sprite_path = companion.get_sprite_path()
-
-        if sprite_path:
-            return self.sprite_manager.load_sprite(sprite_path)
-
+        # Спрайты спутников загружаются через render_npc,
+        # здесь возвращаем None для использования fallback
         return None
 
     def _render_companion_indicator(self, pixel_x: int, pixel_y: int):
