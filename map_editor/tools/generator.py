@@ -163,11 +163,13 @@ RESOURCE_TYPES = {
 QUEST_GATHER_RESOURCE = "gather_resource"
 QUEST_HUNT_ANIMALS = "hunt_animals"
 QUEST_DELIVER_MESSAGE = "deliver_message"
+QUEST_CLEAR_LOCATION = "clear_location"
 
 QUEST_TYPES = {
     QUEST_GATHER_RESOURCE: "Добыть ресурс",
     QUEST_HUNT_ANIMALS: "Охота на животных",
-    QUEST_DELIVER_MESSAGE: "Доставить послание"
+    QUEST_DELIVER_MESSAGE: "Доставить послание",
+    QUEST_CLEAR_LOCATION: "Зачистка локации"
 }
 
 # Quest target constants - resources
@@ -221,6 +223,12 @@ QUEST_GIVER_LOCATIONS = [
     LOCATION_MAGIC_SCHOOL,
     LOCATION_WARRIOR_ACADEMY,
     LOCATION_SECRET_CAMP
+]
+
+# Locations that can be cleared (have floors)
+QUEST_CLEARABLE_LOCATIONS = [
+    LOCATION_MINE,
+    LOCATION_RUINS
 ]
 
 # Floor type constants for mines and ruins
@@ -301,8 +309,10 @@ class Quest:
     target_amount: int = 10  # Amount to gather/hunt
     time_limit: int = 0  # Time limit in turns (0 = no limit)
     difficulty: int = 1  # Difficulty level (1-5)
-    destination_id: str = ""  # Destination location ID (for deliver_message)
-    destination_name: str = ""  # Destination location name (for display)
+    # Target location (for deliver_message and clear_location)
+    target_location_id: str = ""  # Target location ID
+    target_location_name: str = ""  # Target location name (for display)
+    target_floor: int = 0  # Target floor (0 = all floors, 1-10 = specific floor)
     # Rewards
     reward_gold: int = 100  # Gold reward
     reward_exp: int = 50  # Experience reward
@@ -327,8 +337,9 @@ class Quest:
             'target_amount': self.target_amount,
             'time_limit': self.time_limit,
             'difficulty': self.difficulty,
-            'destination_id': self.destination_id,
-            'destination_name': self.destination_name,
+            'target_location_id': self.target_location_id,
+            'target_location_name': self.target_location_name,
+            'target_floor': self.target_floor,
             'reward_gold': self.reward_gold,
             'reward_exp': self.reward_exp,
             'reward_reputation': self.reward_reputation,
@@ -339,6 +350,9 @@ class Quest:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Quest':
         """Create from dictionary."""
+        # Backward compatibility: support old field names
+        target_loc_id = data.get('target_location_id', data.get('destination_id', ''))
+        target_loc_name = data.get('target_location_name', data.get('destination_name', ''))
         return cls(
             id=data.get('id', str(uuid.uuid4())),
             quest_type=data.get('quest_type', QUEST_GATHER_RESOURCE),
@@ -348,8 +362,9 @@ class Quest:
             target_amount=data.get('target_amount', 10),
             time_limit=data.get('time_limit', 0),
             difficulty=data.get('difficulty', 1),
-            destination_id=data.get('destination_id', ''),
-            destination_name=data.get('destination_name', ''),
+            target_location_id=target_loc_id,
+            target_location_name=target_loc_name,
+            target_floor=data.get('target_floor', 0),
             reward_gold=data.get('reward_gold', 100),
             reward_exp=data.get('reward_exp', 50),
             reward_reputation=data.get('reward_reputation', 5),
@@ -380,8 +395,13 @@ class Quest:
         elif self.quest_type == QUEST_HUNT_ANIMALS:
             return f"Убить {self.target_amount}x {self.get_target_display()}"
         elif self.quest_type == QUEST_DELIVER_MESSAGE:
-            dest = self.destination_name or "???"
+            dest = self.target_location_name or "???"
             return f"Доставить послание в {dest}"
+        elif self.quest_type == QUEST_CLEAR_LOCATION:
+            loc = self.target_location_name or "???"
+            if self.target_floor > 0:
+                return f"Зачистить этаж {self.target_floor} в {loc}"
+            return f"Зачистить {loc}"
         return self.name or "Неизвестный квест"
 
 
