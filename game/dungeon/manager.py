@@ -49,6 +49,9 @@ class DungeonManager:
         # Спутники в подземелье (активные, участвующие в боях)
         self.dungeon_companions: List = []
 
+        # Индекс выбранного юнита (0 = игрок, 1+ = спутники)
+        self.selected_unit_index: int = 0
+
         # Система боя в подземелье
         self.selected_target = None  # Выбранный враг
         self.target_index = 0  # Индекс для циклического выбора
@@ -351,6 +354,9 @@ class DungeonManager:
         # Обновляем видимость
         self.current_dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
 
+        # Переразмещаем спутников рядом с игроком на новом уровне
+        self._init_dungeon_companions(player)
+
         # Сбрасываем выделение объектов при смене уровня
         self.selected_ore = None
         self.selected_target = None
@@ -415,6 +421,9 @@ class DungeonManager:
 
         # Обновляем видимость
         self.current_dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
+
+        # Переразмещаем спутников рядом с игроком на новом уровне
+        self._init_dungeon_companions(player)
 
         # Сбрасываем выделение объектов при смене уровня
         self.selected_ore = None
@@ -834,6 +843,106 @@ class DungeonManager:
                 return companion
         return None
 
+    def get_all_player_units(self, player) -> list:
+        """
+        Получить список всех юнитов игрока (игрок + живые спутники)
+
+        Args:
+            player: Игрок
+
+        Returns:
+            list: Список юнитов [player, companion1, companion2, ...]
+        """
+        units = [player]
+        for companion in self.dungeon_companions:
+            if companion.is_alive:
+                units.append(companion)
+        return units
+
+    def get_selected_unit(self, player):
+        """
+        Получить текущий выбранный юнит
+
+        Args:
+            player: Игрок
+
+        Returns:
+            Юнит (player или companion)
+        """
+        units = self.get_all_player_units(player)
+        if not units:
+            return player
+
+        # Проверяем валидность индекса
+        if self.selected_unit_index >= len(units):
+            self.selected_unit_index = 0
+
+        return units[self.selected_unit_index]
+
+    def cycle_selected_unit(self, player, direction: int = 1):
+        """
+        Переключиться на следующего/предыдущего юнита
+
+        Args:
+            player: Игрок
+            direction: 1 для следующего, -1 для предыдущего
+
+        Returns:
+            dict: Информация о новом выбранном юните
+        """
+        units = self.get_all_player_units(player)
+        if len(units) <= 1:
+            return {
+                "success": False,
+                "message": "Нет других юнитов для выбора"
+            }
+
+        # Переключаем индекс
+        self.selected_unit_index = (self.selected_unit_index + direction) % len(units)
+
+        selected = units[self.selected_unit_index]
+        is_player = (self.selected_unit_index == 0)
+
+        return {
+            "success": True,
+            "message": f"Выбран: {selected.name}" if not is_player else "Выбран: Игрок",
+            "unit": selected,
+            "is_player": is_player,
+            "index": self.selected_unit_index
+        }
+
+    def is_player_selected(self) -> bool:
+        """Проверить, выбран ли игрок (а не спутник)"""
+        return self.selected_unit_index == 0
+
+    def get_selected_unit_info(self, player) -> Optional[dict]:
+        """
+        Получить информацию о выбранном юните для HUD
+
+        Args:
+            player: Игрок
+
+        Returns:
+            dict или None: Информация о юните
+        """
+        unit = self.get_selected_unit(player)
+        if unit is None:
+            return None
+
+        is_player = (self.selected_unit_index == 0)
+
+        return {
+            "name": unit.name if hasattr(unit, 'name') else "Игрок",
+            "health": unit.health,
+            "max_health": unit.max_health,
+            "level": getattr(unit, 'level', 1),
+            "is_player": is_player,
+            "x": unit.x,
+            "y": unit.y,
+            "index": self.selected_unit_index,
+            "total_units": len(self.get_all_player_units(player))
+        }
+
     def update_dungeon(self, player):
         """
         Обновление состояния подземелья
@@ -981,6 +1090,82 @@ class DungeonManager:
             result["message"] = f"Останки {remains['enemy_name']}. Нажмите E чтобы обыскать."
 
         return result
+
+    def move_selected_unit(self, player, dx: int, dy: int) -> Optional[dict]:
+        """
+        Переместить выбранного юнита (игрока или спутника) в подземелье.
+
+        Args:
+            player: Объект игрока
+            dx: Смещение по X (-1, 0, 1)
+            dy: Смещение по Y (-1, 0, 1)
+
+        Returns:
+            dict или None: Результат перемещения
+        """
+        if not self.is_in_dungeon or not self.current_dungeon:
+            return None
+
+        # Если выбран игрок - используем стандартное движение
+        if self.is_player_selected():
+            return self.move_player(player, dx, dy)
+
+        # Иначе двигаем выбранного спутника
+        unit = self.get_selected_unit(player)
+        if unit is None or unit == player:
+            return self.move_player(player, dx, dy)
+
+        return self._move_companion_manual(unit, player, dx, dy)
+
+    def _move_companion_manual(self, companion, player, dx: int, dy: int) -> Optional[dict]:
+        """
+        Ручное перемещение спутника (управление игроком).
+
+        Args:
+            companion: Спутник для перемещения
+            player: Объект игрока
+            dx, dy: Смещение
+
+        Returns:
+            dict: Результат перемещения
+        """
+        if not companion.is_alive:
+            return {"success": False, "message": f"{companion.name} мёртв"}
+
+        dungeon = self.current_dungeon
+        new_x = companion.x + dx
+        new_y = companion.y + dy
+
+        # Проверяем проходимость
+        if not dungeon.is_valid_position(new_x, new_y) or not dungeon.is_passable(new_x, new_y):
+            return {"success": False, "message": "Нельзя пройти туда"}
+
+        # Проверяем NPC на клетке - спутник атакует его
+        npc = dungeon.get_npc_at(new_x, new_y)
+        if npc and npc.is_alive:
+            # Спутник атакует врага
+            attack_result = self._companion_attack_enemy(companion, npc, player)
+            if attack_result:
+                msg = f"{companion.name} атакует {npc.name}: {attack_result['damage']} урона"
+                if attack_result.get('killed'):
+                    msg += f". {npc.name} повержен!"
+                return {"success": True, "message": msg, "attack": attack_result}
+            return {"success": False, "message": "Не удалось атаковать"}
+
+        # Проверяем позицию игрока
+        if new_x == player.x and new_y == player.y:
+            return {"success": False, "message": "Клетка занята игроком"}
+
+        # Проверяем других спутников
+        for other in self.dungeon_companions:
+            if other != companion and other.x == new_x and other.y == new_y:
+                return {"success": False, "message": f"Клетка занята: {other.name}"}
+
+        # Перемещаем спутника
+        companion.x = new_x
+        companion.y = new_y
+
+        return {"success": True, "message": "", "moved_companion": True}
 
     def get_current_dungeon_info(self) -> Optional[dict]:
         """Получить информацию о текущем подземелье"""

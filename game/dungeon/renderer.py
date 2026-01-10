@@ -154,7 +154,7 @@ class DungeonRenderer:
     def render_dungeon(self, dungeon: DungeonMap, player, camera_x: int, camera_y: int,
                        viewport_width: int, viewport_height: int, selected_target=None,
                        selected_object=None, selected_object_type=None, selected_ore=None,
-                       companions=None):
+                       companions=None, selected_unit_index=0):
         """
         Отрисовка подземелья
 
@@ -168,7 +168,9 @@ class DungeonRenderer:
             selected_target: Выбранная цель (NPC) для отображения выделения
             selected_ore: Выбранный объект руды (DungeonTile с ore_data)
             companions: Список спутников в подземелье (опционально)
+            selected_unit_index: Индекс выбранного юнита (0=игрок, 1+=спутники)
         """
+        self._selected_unit_index = selected_unit_index
         # Вычисляем количество видимых тайлов
         tiles_x = viewport_width // self.tile_size + 2
         tiles_y = viewport_height // self.tile_size + 2
@@ -269,7 +271,8 @@ class DungeonRenderer:
             self._render_companions(dungeon, companions, start_x, start_y, tiles_x, tiles_y)
 
         # Отрисовываем игрока
-        self._render_player(player, start_x, start_y)
+        is_player_selected = (selected_unit_index == 0)
+        self._render_player(player, start_x, start_y, is_selected=is_player_selected)
 
     def _get_symbol_color(self, tile_type: DungeonTileType) -> tuple:
         """Получить цвет символа для типа клетки"""
@@ -358,7 +361,9 @@ class DungeonRenderer:
             start_x, start_y: Начальные координаты видимой области
             tiles_x, tiles_y: Размеры видимой области в тайлах
         """
-        for companion in companions:
+        selected_index = getattr(self, '_selected_unit_index', 0)
+
+        for idx, companion in enumerate(companions):
             if not companion.is_alive:
                 continue
 
@@ -378,8 +383,11 @@ class DungeonRenderer:
             pixel_x = screen_x * self.tile_size
             pixel_y = screen_y * self.tile_size
 
-            # Рисуем зеленую рамку вокруг спутника (союзник)
-            self._render_companion_indicator(pixel_x, pixel_y)
+            # Проверяем, выбран ли этот спутник (индекс спутника = selected_index - 1, т.к. 0 = игрок)
+            is_selected = (selected_index > 0 and idx == selected_index - 1)
+
+            # Рисуем рамку вокруг спутника (союзник)
+            self._render_companion_indicator(pixel_x, pixel_y, is_selected=is_selected)
 
             # Функция отрисовки по умолчанию (зеленый круг)
             def draw_companion_default():
@@ -430,17 +438,65 @@ class DungeonRenderer:
         # здесь возвращаем None для использования fallback
         return None
 
-    def _render_companion_indicator(self, pixel_x: int, pixel_y: int):
+    def _render_companion_indicator(self, pixel_x: int, pixel_y: int, is_selected: bool = False):
         """
-        Рисуем индикатор союзника вокруг спутника (зеленая рамка)
+        Рисуем индикатор союзника вокруг спутника
+
+        Args:
+            pixel_x, pixel_y: Позиция на экране
+            is_selected: Выбран ли этот спутник для управления
+        """
+        if is_selected:
+            # Белая яркая рамка для выбранного спутника
+            self._render_selected_unit_indicator(pixel_x, pixel_y)
+        else:
+            # Зеленая рамка для обычного союзника
+            pygame.draw.rect(self.screen, (100, 200, 100),
+                            (pixel_x - 1, pixel_y - 1,
+                             self.tile_size + 2, self.tile_size + 2), 2)
+
+    def _render_selected_unit_indicator(self, pixel_x: int, pixel_y: int):
+        """
+        Рисуем индикатор выбранного юнита (яркая белая/голубая рамка)
 
         Args:
             pixel_x, pixel_y: Позиция на экране
         """
-        # Зеленая рамка для союзника
-        pygame.draw.rect(self.screen, (100, 200, 100),
-                        (pixel_x - 1, pixel_y - 1,
-                         self.tile_size + 2, self.tile_size + 2), 2)
+        # Яркая белая рамка с голубым оттенком
+        pygame.draw.rect(self.screen, (200, 220, 255),
+                        (pixel_x - 3, pixel_y - 3,
+                         self.tile_size + 6, self.tile_size + 6), 3)
+
+        # Уголки для выбранного юнита (голубые)
+        corner_len = 10
+        corner_color = (100, 200, 255)
+
+        # Верхний левый
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x - 3, pixel_y - 3), (pixel_x + corner_len, pixel_y - 3), 3)
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x - 3, pixel_y - 3), (pixel_x - 3, pixel_y + corner_len), 3)
+        # Верхний правый
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x + self.tile_size + 3, pixel_y - 3),
+                        (pixel_x + self.tile_size - corner_len, pixel_y - 3), 3)
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x + self.tile_size + 3, pixel_y - 3),
+                        (pixel_x + self.tile_size + 3, pixel_y + corner_len), 3)
+        # Нижний левый
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x - 3, pixel_y + self.tile_size + 3),
+                        (pixel_x + corner_len, pixel_y + self.tile_size + 3), 3)
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x - 3, pixel_y + self.tile_size + 3),
+                        (pixel_x - 3, pixel_y + self.tile_size - corner_len), 3)
+        # Нижний правый
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x + self.tile_size + 3, pixel_y + self.tile_size + 3),
+                        (pixel_x + self.tile_size - corner_len, pixel_y + self.tile_size + 3), 3)
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x + self.tile_size + 3, pixel_y + self.tile_size + 3),
+                        (pixel_x + self.tile_size + 3, pixel_y + self.tile_size - corner_len), 3)
 
     def _render_companion_health_bar(self, companion, pixel_x: int, pixel_y: int):
         """
@@ -744,13 +800,24 @@ class DungeonRenderer:
         level_y = pixel_y + self.tile_size + 1
         self.screen.blit(level_surface, (level_x, level_y))
 
-    def _render_player(self, player, start_x: int, start_y: int):
-        """Отрисовка игрока"""
+    def _render_player(self, player, start_x: int, start_y: int, is_selected: bool = True):
+        """
+        Отрисовка игрока
+
+        Args:
+            player: Объект игрока
+            start_x, start_y: Начальные координаты видимой области
+            is_selected: Выбран ли игрок для управления
+        """
         screen_x = player.x - start_x
         screen_y = player.y - start_y
 
         pixel_x = screen_x * self.tile_size
         pixel_y = screen_y * self.tile_size
+
+        # Рисуем индикатор выбранного юнита (белая рамка)
+        if is_selected:
+            self._render_selected_unit_indicator(pixel_x, pixel_y)
 
         # Функция отрисовки по умолчанию (геометрическая фигура)
         def draw_player_default():
