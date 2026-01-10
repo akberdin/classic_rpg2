@@ -993,11 +993,12 @@ class Game:
             selected_object_type = self.dungeon_manager.selected_object_type
             selected_ore = self.dungeon_manager.selected_ore
             companions = self.dungeon_manager.dungeon_companions
+            selected_unit_index = self.dungeon_manager.selected_unit_index
             self.dungeon_renderer.render_dungeon(
                 dungeon, self.player, 0, 0,
                 self.window_width, self.window_height,
                 selected_target, selected_object, selected_object_type, selected_ore,
-                companions=companions
+                companions=companions, selected_unit_index=selected_unit_index
             )
 
             # Мини-карта подземелья (позиция аналогична карте мира - правый нижний угол)
