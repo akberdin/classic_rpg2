@@ -8,9 +8,9 @@ from typing import Dict, List, Tuple, Optional, Any
 
 from .utils.helpers import load_config
 from .tools.generator import (
-    MapGenerator, GeneratedMap, GeneratorParams, MapLocation, MapConfig, Guard,
+    MapGenerator, GeneratedMap, GeneratorParams, MapLocation, MapConfig, Guard, Quest,
     LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER,
-    Merchant, MerchantWaypoint, MERCHANT_RANKS
+    Merchant, MerchantWaypoint, MERCHANT_RANKS, QUEST_GIVER_LOCATIONS
 )
 from .tools.brush import BiomeBrush, BrushSettings, BrushMode
 from .tools.objects import ObjectPlacer, PlacementMode
@@ -18,7 +18,8 @@ from .ui.toolbar import Toolbar, ToolType
 from .ui.sidebar import Sidebar
 from .ui.dialogs import (
     Dialog, GeneratorDialog, LocationEditDialog, SaveDialog, LoadDialog, ConfirmDialog,
-    MerchantEditDialog, RouteEditDialog, FloorEditDialog, FloorNPCEditDialog
+    MerchantEditDialog, RouteEditDialog, FloorEditDialog, FloorNPCEditDialog,
+    QuestListDialog, QuestEditDialog
 )
 
 
@@ -264,7 +265,8 @@ class MapEditor:
             'player_attitude': self._editing_location.player_attitude,
             'spawn_radius': self._editing_location.spawn_radius,
             'guards': self._editing_location.guards,
-            'connections': self._editing_location.connections
+            'connections': self._editing_location.connections,
+            'quests': self._editing_location.quests
         }
 
         # Create and show the dialog
@@ -447,6 +449,20 @@ class MapEditor:
                 dialog.show(self.width, self.height)
                 return  # Don't reset _editing_location yet
 
+        elif action == "edit_quests":
+            # Open quest list dialog for quest-giving locations
+            if self._editing_location and self._editing_location.location_type in QUEST_GIVER_LOCATIONS:
+                dialog = QuestListDialog(
+                    quests=self._editing_location.quests,
+                    all_locations=self.current_map.locations
+                )
+                dialog.on_close = self._on_quest_list_dialog_close
+                dialog.on_edit_quest = self._on_open_quest_edit_dialog
+                self._quest_list_dialog = dialog
+                self.active_dialog = dialog
+                dialog.show(self.width, self.height)
+                return  # Don't reset _editing_location yet
+
         elif action == "delete":
             # Delete the location
             loc_name = self._editing_location.name
@@ -482,6 +498,7 @@ class MapEditor:
         info = self.object_placer.get_location_info(self._editing_location)
         if info:
             info['is_starting'] = (self._editing_location == self.current_map.starting_village)
+            info['quests'] = self._editing_location.quests  # Pass quests to dialog
             dialog = LocationEditDialog(info)
             dialog.on_close = self._on_location_edit_dialog_close
             self.active_dialog = dialog
@@ -523,6 +540,74 @@ class MapEditor:
         # Restore FloorEditDialog as active
         if hasattr(self, '_floor_edit_dialog') and self._floor_edit_dialog:
             self.active_dialog = self._floor_edit_dialog
+
+    def _on_quest_list_dialog_close(self, action: str, data: Dict[str, Any]) -> None:
+        """Handle quest list dialog close."""
+        if not self._editing_location:
+            self.active_dialog = None
+            return
+
+        if action == "ok":
+            # Get quests from saved dialog reference
+            if hasattr(self, '_quest_list_dialog') and self._quest_list_dialog:
+                new_quests = self._quest_list_dialog.get_quests()
+                self._editing_location.quests = new_quests
+                self.has_unsaved_changes = True
+                self._set_status(f"Квесты обновлены ({len(new_quests)} шт.)")
+
+        # Clean up quest dialog reference
+        self._quest_list_dialog = None
+        self.active_dialog = None
+
+        # Reopen location edit dialog
+        info = self.object_placer.get_location_info(self._editing_location)
+        if info:
+            info['is_starting'] = (self._editing_location == self.current_map.starting_village)
+            info['quests'] = self._editing_location.quests  # Pass quests to dialog
+            dialog = LocationEditDialog(info)
+            dialog.on_close = self._on_location_edit_dialog_close
+            self.active_dialog = dialog
+            dialog.show(self.width, self.height)
+
+    def _on_open_quest_edit_dialog(self, quest: Quest, index: int) -> None:
+        """Handle request to open quest edit dialog."""
+        if not self._quest_list_dialog:
+            return
+
+        # Store reference to editing quest index
+        self._editing_quest_index = index
+
+        # Create quest edit dialog
+        dialog = QuestEditDialog(
+            quest=quest,
+            all_locations=self.current_map.locations
+        )
+        dialog.on_close = self._on_quest_edit_dialog_close
+        self._quest_edit_dialog = dialog
+        self.active_dialog = dialog
+        dialog.show(self.width, self.height)
+
+    def _on_quest_edit_dialog_close(self, action: str, data: Dict[str, Any]) -> None:
+        """Handle quest edit dialog close."""
+        if action == "ok" and hasattr(self, '_quest_edit_dialog') and self._quest_edit_dialog:
+            # Get the edited quest
+            edited_quest = self._quest_edit_dialog.get_quest()
+
+            # Update the quest in QuestListDialog
+            if hasattr(self, '_quest_list_dialog') and self._quest_list_dialog:
+                self._quest_list_dialog.update_quest(
+                    edited_quest,
+                    self._editing_quest_index
+                )
+                self._set_status(f"Квест '{edited_quest.name}' обновлен")
+
+        # Clean up
+        self._quest_edit_dialog = None
+        self._editing_quest_index = None
+
+        # Restore QuestListDialog as active
+        if hasattr(self, '_quest_list_dialog') and self._quest_list_dialog:
+            self.active_dialog = self._quest_list_dialog
 
     def _on_generator_dialog_close(self, action: str, data: Dict[str, Any]) -> None:
         """Handle generator dialog close."""
