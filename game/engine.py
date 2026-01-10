@@ -1016,6 +1016,12 @@ class Game:
             # HUD подземелья
             self.dungeon_renderer.render_hud(dungeon, self.player, self.info_font)
 
+            # Панель юнитов (игрок + спутники) если есть спутники
+            if companions:
+                self.dungeon_renderer.render_unit_panel(
+                    self.player, companions, selected_unit_index, self.info_font
+                )
+
             # Отрисовка стандартного HUD (здоровье, мана, выносливость)
             self.hud_renderer.render()
 

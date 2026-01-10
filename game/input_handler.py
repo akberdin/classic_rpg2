@@ -895,18 +895,23 @@ class InputHandler:
         """
         # Движение игрока (стрелки или WASD)
         moved = False
+        move_dx, move_dy = 0, 0  # Направление движения
         new_x, new_y = self.ctx.player.x, self.ctx.player.y
 
         if key == pygame.K_UP or key == pygame.K_w:
+            move_dy = -1
             new_y -= 1
             moved = True
         elif key == pygame.K_DOWN or key == pygame.K_s:
+            move_dy = 1
             new_y += 1
             moved = True
         elif key == pygame.K_LEFT or key == pygame.K_a:
+            move_dx = -1
             new_x -= 1
             moved = True
         elif key == pygame.K_RIGHT or key == pygame.K_d:
+            move_dx = 1
             new_x += 1
             moved = True
         elif key == pygame.K_r:
@@ -1208,24 +1213,18 @@ class InputHandler:
                 selected_unit = self.ctx.dungeon_manager.get_selected_unit(self.ctx.player)
                 is_player = self.ctx.dungeon_manager.is_player_selected()
 
-                # Вычисляем смещение относительно выбранного юнита
+                # Используем сохраненное направление движения (move_dx, move_dy)
+                dx, dy = move_dx, move_dy
+
+                # Вычисляем целевую позицию для выбранного юнита
                 if is_player:
-                    dx = new_x - self.ctx.player.x
-                    dy = new_y - self.ctx.player.y
+                    target_x, target_y = self.ctx.player.x + dx, self.ctx.player.y + dy
                 else:
-                    # Для спутника вычисляем смещение относительно него
-                    dx = new_x - selected_unit.x
-                    dy = new_y - selected_unit.y
+                    # Для спутника - относительно его позиции
+                    target_x, target_y = selected_unit.x + dx, selected_unit.y + dy
 
                 # Проверяем, есть ли NPC на целевой клетке
                 dungeon = self.ctx.dungeon_manager.current_dungeon
-
-                if is_player:
-                    target_x, target_y = new_x, new_y
-                else:
-                    target_x = selected_unit.x + dx
-                    target_y = selected_unit.y + dy
-
                 npc_on_tile = dungeon.get_npc_at(target_x, target_y)
 
                 if npc_on_tile and npc_on_tile.is_alive:

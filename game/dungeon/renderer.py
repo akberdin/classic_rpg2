@@ -987,6 +987,158 @@ class DungeonRenderer:
                 hint_x = (self.screen.get_width() - hint_surface.get_width()) // 2
                 self.screen.blit(hint_surface, (hint_x, hint_y))
 
+    def render_unit_panel(self, player, companions, selected_unit_index: int, font):
+        """
+        Отрисовка панели юнитов (игрок + спутники) с пиктограммами
+
+        Args:
+            player: Объект игрока
+            companions: Список спутников
+            selected_unit_index: Индекс выбранного юнита (0=игрок)
+            font: Шрифт для текста
+        """
+        # Если нет спутников - не показываем панель
+        if not companions:
+            return
+
+        # Размеры панели
+        icon_size = 48
+        padding = 8
+        panel_width = icon_size + padding * 2 + 60  # Иконка + HP бар + отступы
+        unit_height = icon_size + padding
+        panel_height = (len(companions) + 1) * unit_height + padding * 2 + 30  # +1 для игрока, +30 для заголовка
+
+        # Позиция панели (левый край, под панелью подземелья)
+        panel_x = 10
+        panel_y = 145  # Под информацией о подземелье
+
+        # Фон панели
+        panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
+        panel_surface.fill((30, 40, 50, 220))
+        self.screen.blit(panel_surface, (panel_x, panel_y))
+
+        # Рамка
+        pygame.draw.rect(self.screen, (80, 120, 150),
+                        (panel_x, panel_y, panel_width, panel_height), 2)
+
+        # Заголовок
+        pygame.draw.rect(self.screen, (50, 80, 100),
+                        (panel_x, panel_y, panel_width, 25))
+        title = "ОТРЯД [Shift+Tab]"
+        title_surface = font.render(title, True, (200, 220, 255))
+        title_x = panel_x + (panel_width - title_surface.get_width()) // 2
+        self.screen.blit(title_surface, (title_x, panel_y + 4))
+
+        current_y = panel_y + 30
+
+        # Список всех юнитов (игрок + спутники)
+        units = [("Игрок", player, True)] + [(c.name, c, False) for c in companions if c.is_alive]
+
+        for idx, (name, unit, is_player) in enumerate(units):
+            is_selected = (idx == selected_unit_index)
+            self._render_unit_icon(
+                panel_x + padding, current_y,
+                icon_size, name, unit, is_player, is_selected, font
+            )
+            current_y += unit_height
+
+    def _render_unit_icon(self, x: int, y: int, size: int, name: str,
+                          unit, is_player: bool, is_selected: bool, font):
+        """
+        Отрисовка иконки юнита в панели
+
+        Args:
+            x, y: Позиция иконки
+            size: Размер иконки
+            name: Имя юнита
+            unit: Объект юнита
+            is_player: Это игрок?
+            is_selected: Выбран ли юнит?
+            font: Шрифт
+        """
+        # Фон иконки
+        if is_selected:
+            # Яркая подсветка выбранного юнита
+            bg_color = (60, 100, 140)
+            border_color = (100, 200, 255)
+            border_width = 3
+        else:
+            bg_color = (40, 50, 60)
+            border_color = (80, 100, 120)
+            border_width = 1
+
+        pygame.draw.rect(self.screen, bg_color, (x, y, size, size))
+        pygame.draw.rect(self.screen, border_color, (x, y, size, size), border_width)
+
+        # Иконка юнита (круг с цветом)
+        center_x = x + size // 2
+        center_y = y + size // 2
+        radius = size // 3
+
+        if is_player:
+            # Золотой цвет для игрока
+            icon_color = (255, 215, 0)
+            outline_color = (255, 255, 200)
+        else:
+            # Зеленый цвет для спутников
+            icon_color = (100, 180, 100)
+            outline_color = (150, 220, 150)
+
+        pygame.draw.circle(self.screen, icon_color, (center_x, center_y), radius)
+        pygame.draw.circle(self.screen, outline_color, (center_x, center_y), radius, 2)
+
+        # Буква на иконке
+        letter = "И" if is_player else name[0].upper()
+        letter_surface = font.render(letter, True, (40, 40, 40))
+        letter_x = center_x - letter_surface.get_width() // 2
+        letter_y = center_y - letter_surface.get_height() // 2
+        self.screen.blit(letter_surface, (letter_x, letter_y))
+
+        # HP бар справа от иконки
+        hp = getattr(unit, 'health', 0)
+        max_hp = getattr(unit, 'max_health', 1)
+        if max_hp <= 0:
+            max_hp = 1
+
+        bar_x = x + size + 5
+        bar_y = y + 5
+        bar_width = 50
+        bar_height = 10
+
+        # Фон HP бара
+        pygame.draw.rect(self.screen, (30, 30, 30), (bar_x, bar_y, bar_width, bar_height))
+
+        # Заполнение HP
+        hp_percent = hp / max_hp
+        fill_width = int(bar_width * hp_percent)
+        if hp_percent > 0.6:
+            hp_color = (80, 200, 80)
+        elif hp_percent > 0.3:
+            hp_color = (200, 180, 50)
+        else:
+            hp_color = (200, 80, 80)
+
+        if fill_width > 0:
+            pygame.draw.rect(self.screen, hp_color, (bar_x, bar_y, fill_width, bar_height))
+
+        pygame.draw.rect(self.screen, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height), 1)
+
+        # Текст HP
+        hp_text = f"{hp}/{max_hp}"
+        hp_surface = self.small_font.render(hp_text, True, (200, 200, 200))
+        self.screen.blit(hp_surface, (bar_x, bar_y + bar_height + 2))
+
+        # Имя юнита (укороченное)
+        display_name = name[:8] + ".." if len(name) > 10 else name
+        name_surface = self.small_font.render(display_name, True, (180, 200, 220))
+        self.screen.blit(name_surface, (bar_x, bar_y + bar_height + 14))
+
+        # Индикатор выбранного (стрелка)
+        if is_selected:
+            arrow = ">"
+            arrow_surface = font.render(arrow, True, (100, 200, 255))
+            self.screen.blit(arrow_surface, (x - 15, y + size // 2 - 8))
+
     def render_target_info_panel(self, target_info: dict, font):
         """
         Отрисовка панели информации о выбранном враге
