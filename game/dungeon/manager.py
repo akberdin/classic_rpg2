@@ -46,6 +46,12 @@ class DungeonManager:
         # NPC для подземелий
         self.dungeon_npcs: List = []
 
+        # Спутники в подземелье (активные, участвующие в боях)
+        self.dungeon_companions: List = []
+
+        # Индекс выбранного юнита (0 = игрок, 1+ = спутники)
+        self.selected_unit_index: int = 0
+
         # Система боя в подземелье
         self.selected_target = None  # Выбранный враг
         self.target_index = 0  # Индекс для циклического выбора
@@ -211,6 +217,9 @@ class DungeonManager:
 
         self.is_in_dungeon = True
 
+        # Загружаем спутников для подземелья (только активных, участвующих в боях)
+        self._init_dungeon_companions(player)
+
         # Обновляем видимость для инициализации fog of war
         self.current_dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
 
@@ -256,6 +265,9 @@ class DungeonManager:
         self.selected_target = None
         self.selected_object = None
         self.selected_object_type = None
+
+        # Очищаем спутников подземелья
+        self.dungeon_companions.clear()
 
         return {
             "success": True,
@@ -342,6 +354,9 @@ class DungeonManager:
         # Обновляем видимость
         self.current_dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
 
+        # Переразмещаем спутников рядом с игроком на новом уровне
+        self._init_dungeon_companions(player)
+
         # Сбрасываем выделение объектов при смене уровня
         self.selected_ore = None
         self.selected_target = None
@@ -406,6 +421,9 @@ class DungeonManager:
 
         # Обновляем видимость
         self.current_dungeon.update_visibility(player.x, player.y, DUNGEON_VISION_RADIUS)
+
+        # Переразмещаем спутников рядом с игроком на новом уровне
+        self._init_dungeon_companions(player)
 
         # Сбрасываем выделение объектов при смене уровня
         self.selected_ore = None
@@ -708,6 +726,223 @@ class DungeonManager:
 
         return npc
 
+    def _init_dungeon_companions(self, player):
+        """
+        Инициализировать спутников для подземелья.
+
+        Загружает активных спутников (participate_in_combat=True) из companion_manager
+        и размещает их рядом с игроком.
+
+        Args:
+            player: Объект игрока
+        """
+        self.dungeon_companions.clear()
+
+        # Проверяем наличие companion_manager у игрока
+        if not hasattr(player, 'companion_manager') or not player.companion_manager:
+            return
+
+        # Получаем всех спутников
+        all_companions = player.companion_manager.get_all_companions()
+        if not all_companions:
+            return
+
+        # Фильтруем только активных спутников (participate_in_combat=True)
+        active_companions = [c for c in all_companions if c.participate_in_combat]
+        if not active_companions:
+            return
+
+        # Позиции для размещения спутников рядом с игроком
+        # Используем 8 направлений вокруг игрока
+        companion_offsets = [
+            (-1, 0),   # Слева
+            (1, 0),    # Справа
+            (0, -1),   # Сверху
+            (0, 1),    # Снизу
+            (-1, -1),  # Сверху-слева
+            (1, -1),   # Сверху-справа
+            (-1, 1),   # Снизу-слева
+            (1, 1),    # Снизу-справа
+        ]
+
+        dungeon = self.current_dungeon
+
+        for i, companion in enumerate(active_companions):
+            if i >= len(companion_offsets):
+                break  # Максимум 8 спутников
+
+            # Вычисляем позицию спутника
+            dx, dy = companion_offsets[i]
+            spawn_x = player.x + dx
+            spawn_y = player.y + dy
+
+            # Проверяем, что позиция валидна и проходима
+            if dungeon.is_valid_position(spawn_x, spawn_y) and dungeon.is_passable(spawn_x, spawn_y):
+                # Проверяем, нет ли там NPC
+                if dungeon.get_npc_at(spawn_x, spawn_y) is None:
+                    companion.x = spawn_x
+                    companion.y = spawn_y
+                    self.dungeon_companions.append(companion)
+                    continue
+
+            # Если базовая позиция занята, ищем ближайшую свободную
+            placed = False
+            for alt_dx, alt_dy in companion_offsets:
+                alt_x = player.x + alt_dx
+                alt_y = player.y + alt_dy
+
+                if (dungeon.is_valid_position(alt_x, alt_y) and
+                    dungeon.is_passable(alt_x, alt_y) and
+                    dungeon.get_npc_at(alt_x, alt_y) is None and
+                    not self._is_companion_at(alt_x, alt_y)):
+                    companion.x = alt_x
+                    companion.y = alt_y
+                    self.dungeon_companions.append(companion)
+                    placed = True
+                    break
+
+            # Если не нашли свободную позицию, размещаем на позиции игрока
+            # (спутник будет следовать за игроком)
+            if not placed:
+                companion.x = player.x
+                companion.y = player.y
+                self.dungeon_companions.append(companion)
+
+        if self.dungeon_companions:
+            print(f"Спутники в подземелье: {', '.join([c.name for c in self.dungeon_companions])}")
+
+    def _is_companion_at(self, x: int, y: int) -> bool:
+        """
+        Проверить, есть ли спутник на указанной позиции.
+
+        Args:
+            x: Координата X
+            y: Координата Y
+
+        Returns:
+            bool: True если спутник на позиции
+        """
+        for companion in self.dungeon_companions:
+            if companion.x == x and companion.y == y:
+                return True
+        return False
+
+    def get_companion_at(self, x: int, y: int):
+        """
+        Получить спутника на указанной позиции.
+
+        Args:
+            x: Координата X
+            y: Координата Y
+
+        Returns:
+            Companion или None
+        """
+        for companion in self.dungeon_companions:
+            if companion.x == x and companion.y == y and companion.is_alive:
+                return companion
+        return None
+
+    def get_all_player_units(self, player) -> list:
+        """
+        Получить список всех юнитов игрока (игрок + живые спутники)
+
+        Args:
+            player: Игрок
+
+        Returns:
+            list: Список юнитов [player, companion1, companion2, ...]
+        """
+        units = [player]
+        for companion in self.dungeon_companions:
+            if companion.is_alive:
+                units.append(companion)
+        return units
+
+    def get_selected_unit(self, player):
+        """
+        Получить текущий выбранный юнит
+
+        Args:
+            player: Игрок
+
+        Returns:
+            Юнит (player или companion)
+        """
+        units = self.get_all_player_units(player)
+        if not units:
+            return player
+
+        # Проверяем валидность индекса
+        if self.selected_unit_index >= len(units):
+            self.selected_unit_index = 0
+
+        return units[self.selected_unit_index]
+
+    def cycle_selected_unit(self, player, direction: int = 1):
+        """
+        Переключиться на следующего/предыдущего юнита
+
+        Args:
+            player: Игрок
+            direction: 1 для следующего, -1 для предыдущего
+
+        Returns:
+            dict: Информация о новом выбранном юните
+        """
+        units = self.get_all_player_units(player)
+        if len(units) <= 1:
+            return {
+                "success": False,
+                "message": "Нет других юнитов для выбора"
+            }
+
+        # Переключаем индекс
+        self.selected_unit_index = (self.selected_unit_index + direction) % len(units)
+
+        selected = units[self.selected_unit_index]
+        is_player = (self.selected_unit_index == 0)
+
+        return {
+            "success": True,
+            "message": f"Выбран: {selected.name}" if not is_player else "Выбран: Игрок",
+            "unit": selected,
+            "is_player": is_player,
+            "index": self.selected_unit_index
+        }
+
+    def is_player_selected(self) -> bool:
+        """Проверить, выбран ли игрок (а не спутник)"""
+        return self.selected_unit_index == 0
+
+    def get_selected_unit_info(self, player) -> Optional[dict]:
+        """
+        Получить информацию о выбранном юните для HUD
+
+        Args:
+            player: Игрок
+
+        Returns:
+            dict или None: Информация о юните
+        """
+        unit = self.get_selected_unit(player)
+        if unit is None:
+            return None
+
+        is_player = (self.selected_unit_index == 0)
+
+        return {
+            "name": unit.name if hasattr(unit, 'name') else "Игрок",
+            "health": unit.health,
+            "max_health": unit.max_health,
+            "level": getattr(unit, 'level', 1),
+            "is_player": is_player,
+            "x": unit.x,
+            "y": unit.y,
+            "index": self.selected_unit_index,
+            "total_units": len(self.get_all_player_units(player))
+        }
+
     def update_dungeon(self, player):
         """
         Обновление состояния подземелья
@@ -834,6 +1069,11 @@ class DungeonManager:
         if npc and npc.is_alive:
             return {"success": False, "message": f"Клетка занята: {npc.name}"}
 
+        # Проверяем спутника на клетке
+        companion = self.get_companion_at(new_x, new_y)
+        if companion:
+            return {"success": False, "message": f"Клетка занята: {companion.name}"}
+
         # Перемещаем игрока
         player.x = new_x
         player.y = new_y
@@ -850,6 +1090,82 @@ class DungeonManager:
             result["message"] = f"Останки {remains['enemy_name']}. Нажмите E чтобы обыскать."
 
         return result
+
+    def move_selected_unit(self, player, dx: int, dy: int) -> Optional[dict]:
+        """
+        Переместить выбранного юнита (игрока или спутника) в подземелье.
+
+        Args:
+            player: Объект игрока
+            dx: Смещение по X (-1, 0, 1)
+            dy: Смещение по Y (-1, 0, 1)
+
+        Returns:
+            dict или None: Результат перемещения
+        """
+        if not self.is_in_dungeon or not self.current_dungeon:
+            return None
+
+        # Если выбран игрок - используем стандартное движение
+        if self.is_player_selected():
+            return self.move_player(player, dx, dy)
+
+        # Иначе двигаем выбранного спутника
+        unit = self.get_selected_unit(player)
+        if unit is None or unit == player:
+            return self.move_player(player, dx, dy)
+
+        return self._move_companion_manual(unit, player, dx, dy)
+
+    def _move_companion_manual(self, companion, player, dx: int, dy: int) -> Optional[dict]:
+        """
+        Ручное перемещение спутника (управление игроком).
+
+        Args:
+            companion: Спутник для перемещения
+            player: Объект игрока
+            dx, dy: Смещение
+
+        Returns:
+            dict: Результат перемещения
+        """
+        if not companion.is_alive:
+            return {"success": False, "message": f"{companion.name} мёртв"}
+
+        dungeon = self.current_dungeon
+        new_x = companion.x + dx
+        new_y = companion.y + dy
+
+        # Проверяем проходимость
+        if not dungeon.is_valid_position(new_x, new_y) or not dungeon.is_passable(new_x, new_y):
+            return {"success": False, "message": "Нельзя пройти туда"}
+
+        # Проверяем NPC на клетке - спутник атакует его
+        npc = dungeon.get_npc_at(new_x, new_y)
+        if npc and npc.is_alive:
+            # Спутник атакует врага
+            attack_result = self._companion_attack_enemy(companion, npc, player)
+            if attack_result:
+                msg = f"{companion.name} атакует {npc.name}: {attack_result['damage']} урона"
+                if attack_result.get('killed'):
+                    msg += f". {npc.name} повержен!"
+                return {"success": True, "message": msg, "attack": attack_result}
+            return {"success": False, "message": "Не удалось атаковать"}
+
+        # Проверяем позицию игрока
+        if new_x == player.x and new_y == player.y:
+            return {"success": False, "message": "Клетка занята игроком"}
+
+        # Проверяем других спутников
+        for other in self.dungeon_companions:
+            if other != companion and other.x == new_x and other.y == new_y:
+                return {"success": False, "message": f"Клетка занята: {other.name}"}
+
+        # Перемещаем спутника
+        companion.x = new_x
+        companion.y = new_y
+
+        return {"success": True, "message": "", "moved_companion": True}
 
     def get_current_dungeon_info(self) -> Optional[dict]:
         """Получить информацию о текущем подземелье"""
@@ -1142,13 +1458,14 @@ class DungeonManager:
 
     def enemy_turn(self, player) -> List[dict]:
         """
-        Ход врагов - они атакуют игрока если рядом
+        Ход врагов и спутников - враги атакуют игрока/спутников,
+        спутники атакуют врагов
 
         Args:
             player: Игрок
 
         Returns:
-            List[dict]: Список результатов атак врагов
+            List[dict]: Список результатов атак (врагов и спутников)
         """
         results = []
 
@@ -1161,6 +1478,16 @@ class DungeonManager:
         if hasattr(player, 'skill_manager'):
             player.skill_manager.tick_cooldowns()
 
+        # Уменьшаем cooldown умений спутников
+        for companion in self.dungeon_companions:
+            if companion.is_alive and hasattr(companion, 'skill_manager'):
+                companion.skill_manager.tick_cooldowns()
+
+        # === ХОДЫ СПУТНИКОВ (перед ходами врагов, чтобы защитить игрока) ===
+        companion_results = self._execute_companions_turn(player)
+        results.extend(companion_results)
+
+        # === ХОДЫ ВРАГОВ ===
         # Обрабатываем действия всех врагов
         for npc in dungeon.npcs:
             if not npc.is_alive:
@@ -1176,115 +1503,474 @@ class DungeonManager:
                 continue
 
             # Расстояние до игрока (чебышевская метрика для 8 направлений)
-            dist = max(abs(npc.x - player.x), abs(npc.y - player.y))
+            dist_to_player = max(abs(npc.x - player.x), abs(npc.y - player.y))
+
+            # Ищем ближайшего спутника
+            closest_companion = None
+            min_companion_dist = float('inf')
+            for companion in self.dungeon_companions:
+                if companion.is_alive:
+                    dist = max(abs(npc.x - companion.x), abs(npc.y - companion.y))
+                    if dist < min_companion_dist:
+                        min_companion_dist = dist
+                        closest_companion = companion
+
+            # Определяем цель: ближайший между игроком и спутником
+            target = player
+            target_dist = dist_to_player
+            target_is_companion = False
+
+            if closest_companion and min_companion_dist < dist_to_player:
+                target = closest_companion
+                target_dist = min_companion_dist
+                target_is_companion = True
 
             # NPC атакует если рядом (дистанция 1)
-            if dist == 1:
-                # Проверяем режим бессмертия игрока
-                if getattr(player, 'godmode', False):
-                    # В режиме бессмертия урон не наносится
+            if target_dist == 1:
+                if target_is_companion:
+                    # Атакуем спутника
+                    attack_result = self._enemy_attack_companion(npc, target)
+                    if attack_result:
+                        results.append(attack_result)
+                else:
+                    # Атакуем игрока
+                    # Проверяем режим бессмертия игрока
+                    if getattr(player, 'godmode', False):
+                        # В режиме бессмертия урон не наносится
+                        results.append({
+                            "attacker": npc.name,
+                            "damage": 0,
+                            "player_hp": player.health,
+                            "blocked_by_godmode": True
+                        })
+                        # Помечаем NPC как агрессивного
+                        npc._aggro_target = player
+                        continue
+
+                    # Атакуем игрока
+                    attack_damage = npc.get_total_damage()
+                    defense = player.get_total_defense()
+                    final_damage = max(1, attack_damage - defense // 2)
+
+                    player.health -= final_damage
+                    if player.health < 0:
+                        player.health = 0
+
                     results.append({
                         "attacker": npc.name,
-                        "damage": 0,
-                        "player_hp": player.health,
-                        "blocked_by_godmode": True
+                        "damage": final_damage,
+                        "player_hp": player.health
                     })
+
                     # Помечаем NPC как агрессивного
                     npc._aggro_target = player
-                    continue
-
-                # Атакуем игрока
-                attack_damage = npc.get_total_damage()
-                defense = player.get_total_defense()
-                final_damage = max(1, attack_damage - defense // 2)
-
-                player.health -= final_damage
-                if player.health < 0:
-                    player.health = 0
-
-                results.append({
-                    "attacker": npc.name,
-                    "damage": final_damage,
-                    "player_hp": player.health
-                })
-
-                # Помечаем NPC как агрессивного
-                npc._aggro_target = player
-            elif dist > 1:
+            elif target_dist > 1:
                 # Проверяем линию видимости для преследования
-                has_los = dungeon.has_line_of_sight(npc.x, npc.y, player.x, player.y)
+                has_los = dungeon.has_line_of_sight(npc.x, npc.y, target.x, target.y)
 
                 # Получаем радиус обнаружения NPC (используем detection_range_player если есть)
                 detection_range = getattr(npc, 'detection_range_player', 5)
 
-                # Если NPC агрессивен (был атакован или атаковал), преследует игрока (но только если видит)
+                # Если NPC агрессивен (был атакован или атаковал), преследует цель (но только если видит)
                 if is_provoked:
                     if has_los:
-                        self._move_enemy_towards_player(npc, player)
-                elif is_hostile and dist <= detection_range and has_los:
-                    # Враждебный NPC - движется к игроку если в радиусе обнаружения И видит игрока
-                    self._move_enemy_towards_player(npc, player)
+                        self._move_enemy_towards_target(npc, target)
+                elif is_hostile and target_dist <= detection_range and has_los:
+                    # Враждебный NPC - движется к цели если в радиусе обнаружения И видит
+                    self._move_enemy_towards_target(npc, target)
                     # Помечаем NPC как агрессивного при первом обнаружении
                     npc._aggro_target = player
 
         return results
 
-    def _move_enemy_towards_player(self, npc, player):
-        """Двигаем врага к игроку (по 8 направлениям)"""
+    def _enemy_attack_companion(self, npc, companion) -> Optional[dict]:
+        """
+        Враг атакует спутника
+
+        Args:
+            npc: Атакующий NPC
+            companion: Спутник-цель
+
+        Returns:
+            dict: Результат атаки
+        """
+        if not companion.is_alive:
+            return None
+
+        attack_damage = npc.get_total_damage()
+        defense = companion.get_total_defense()
+        final_damage = max(1, attack_damage - defense // 2)
+
+        companion.health -= final_damage
+        if companion.health < 0:
+            companion.health = 0
+
+        result = {
+            "attacker": npc.name,
+            "target": companion.name,
+            "damage": final_damage,
+            "target_hp": companion.health,
+            "target_is_companion": True,
+            "killed": not companion.is_alive
+        }
+
+        if not companion.is_alive:
+            print(f"{companion.name} погиб в бою!")
+
+        return result
+
+    def _execute_companions_turn(self, player) -> List[dict]:
+        """
+        Выполнить ходы всех спутников в подземелье.
+        Спутники атакуют ближайших врагов или следуют за игроком.
+
+        Args:
+            player: Игрок
+
+        Returns:
+            List[dict]: Результаты действий спутников
+        """
+        results = []
+
+        if not self.dungeon_companions:
+            return results
+
+        dungeon = self.current_dungeon
+
+        for companion in self.dungeon_companions:
+            if not companion.is_alive:
+                continue
+
+            # Ищем ближайшего враждебного NPC
+            closest_enemy = None
+            min_dist = float('inf')
+
+            for npc in dungeon.npcs:
+                if not npc.is_alive:
+                    continue
+
+                # Проверяем враждебность NPC
+                is_hostile = getattr(npc, 'dungeon_hostile', True)
+                if not is_hostile:
+                    continue
+
+                dist = max(abs(npc.x - companion.x), abs(npc.y - companion.y))
+                if dist < min_dist:
+                    min_dist = dist
+                    closest_enemy = npc
+
+            # Если враг рядом (дистанция 1), атакуем
+            if closest_enemy and min_dist == 1:
+                attack_result = self._companion_attack_enemy(companion, closest_enemy, player)
+                if attack_result:
+                    results.append(attack_result)
+            elif closest_enemy and min_dist <= 5:
+                # Враг близко - двигаемся к нему
+                self._move_companion_towards_target(companion, closest_enemy, player)
+            else:
+                # Врагов нет или далеко - следуем за игроком
+                self._move_companion_towards_player(companion, player)
+
+        return results
+
+    def _companion_attack_enemy(self, companion, enemy, player) -> Optional[dict]:
+        """
+        Спутник атакует врага. Пытается использовать умения, иначе базовая атака.
+
+        Args:
+            companion: Атакующий спутник
+            enemy: Враг-цель
+            player: Игрок (для выдачи опыта при убийстве)
+
+        Returns:
+            dict: Результат атаки
+        """
+        import random
+
+        skill_used = None
+        damage = 0
+        skill_name = "Атака"
+
+        # Пробуем использовать умение (30% шанс на поддерживающее умение если есть союзник рядом)
+        if hasattr(companion, 'skill_manager') and companion.skill_manager:
+            # Приоритет умений для спутников (аналогично тактическому бою)
+            available_skills = []
+
+            for skill_id, skill in companion.skill_manager.learned_skills.items():
+                if skill.current_cooldown <= 0:
+                    available_skills.append((skill_id, skill))
+
+            # Выбираем умение
+            if available_skills:
+                # Приоритет: если здоровье < 60%, пытаемся использовать лечащее умение (wolf_devour)
+                hp_percent = companion.health / companion.max_health if companion.max_health > 0 else 1.0
+
+                for skill_id, skill in available_skills:
+                    if skill_id == 'wolf_devour' and hp_percent < 0.6:
+                        # Используем Пожирание для восстановления здоровья
+                        skill_result = companion.skill_manager.use_skill(skill, enemy)
+                        if skill_result.get('success'):
+                            skill_used = skill
+                            damage = skill_result.get('damage', 0)
+                            skill_name = skill.name
+                            break
+
+                # Если не использовали лечение, пробуем атакующее умение
+                if not skill_used:
+                    for skill_id, skill in available_skills:
+                        if skill_id == 'wolf_bite':
+                            skill_result = companion.skill_manager.use_skill(skill, enemy)
+                            if skill_result.get('success'):
+                                skill_used = skill
+                                damage = skill_result.get('damage', 0)
+                                skill_name = skill.name
+                                break
+
+        # Если умение не использовано, базовая атака
+        if not skill_used:
+            attack_damage = companion.get_total_damage()
+            defense = getattr(enemy, 'defense', 0)
+            damage = max(1, attack_damage - defense // 2)
+            enemy.take_damage(damage)
+
+        result = {
+            "attacker": companion.name,
+            "target": enemy.name,
+            "damage": damage,
+            "skill": skill_name,
+            "target_hp": enemy.health,
+            "attacker_is_companion": True,
+            "killed": not enemy.is_alive
+        }
+
+        # Если враг убит, даем опыт игроку и спутнику
+        if not enemy.is_alive:
+            self._on_enemy_killed(player, enemy)
+            # Опыт спутнику (половина от опыта игрока)
+            from game.combat import calculate_combat_exp
+            exp_reward = calculate_combat_exp(companion.level, enemy.level) // 2
+            companion.add_experience(exp_reward)
+
+        return result
+
+    def _move_companion_towards_target(self, companion, target, player):
+        """
+        Двигаем спутника к цели (враг)
+
+        Args:
+            companion: Спутник
+            target: Цель для движения
+            player: Игрок (для избежания столкновений)
+        """
         if not self.current_dungeon:
             return
 
         dungeon = self.current_dungeon
 
+        # Вычисляем направление к цели
+        dx = 0
+        dy = 0
+
+        if target.x > companion.x:
+            dx = 1
+        elif target.x < companion.x:
+            dx = -1
+
+        if target.y > companion.y:
+            dy = 1
+        elif target.y < companion.y:
+            dy = -1
+
+        new_x = companion.x + dx
+        new_y = companion.y + dy
+
+        # Не двигаемся на клетку цели или игрока
+        if (new_x == target.x and new_y == target.y) or (new_x == player.x and new_y == player.y):
+            return
+
+        # Проверяем можно ли туда пойти
+        if self._can_companion_move_to(companion, new_x, new_y, player):
+            companion.x = new_x
+            companion.y = new_y
+            return
+
+        # Если диагональный путь заблокирован, пробуем по одной оси
+        if dx != 0 and dy != 0:
+            if self._can_companion_move_to(companion, companion.x + dx, companion.y, player):
+                companion.x += dx
+                return
+            if self._can_companion_move_to(companion, companion.x, companion.y + dy, player):
+                companion.y += dy
+
+    def _move_companion_towards_player(self, companion, player):
+        """
+        Двигаем спутника к игроку (следование)
+
+        Args:
+            companion: Спутник
+            player: Игрок
+        """
+        if not self.current_dungeon:
+            return
+
+        # Расстояние до игрока
+        dist = max(abs(companion.x - player.x), abs(companion.y - player.y))
+
+        # Если уже рядом (дистанция <= 2), не двигаемся
+        if dist <= 2:
+            return
+
         # Вычисляем направление к игроку
         dx = 0
         dy = 0
 
-        if player.x > npc.x:
+        if player.x > companion.x:
             dx = 1
-        elif player.x < npc.x:
+        elif player.x < companion.x:
             dx = -1
 
-        if player.y > npc.y:
+        if player.y > companion.y:
             dy = 1
-        elif player.y < npc.y:
+        elif player.y < companion.y:
+            dy = -1
+
+        new_x = companion.x + dx
+        new_y = companion.y + dy
+
+        # Не двигаемся на клетку игрока
+        if new_x == player.x and new_y == player.y:
+            return
+
+        # Проверяем можно ли туда пойти
+        if self._can_companion_move_to(companion, new_x, new_y, player):
+            companion.x = new_x
+            companion.y = new_y
+            return
+
+        # Если диагональный путь заблокирован, пробуем по одной оси
+        if dx != 0 and dy != 0:
+            if self._can_companion_move_to(companion, companion.x + dx, companion.y, player):
+                companion.x += dx
+                return
+            if self._can_companion_move_to(companion, companion.x, companion.y + dy, player):
+                companion.y += dy
+
+    def _can_companion_move_to(self, companion, x: int, y: int, player) -> bool:
+        """
+        Проверить, может ли спутник переместиться на указанную позицию
+
+        Args:
+            companion: Спутник
+            x, y: Целевые координаты
+            player: Игрок
+
+        Returns:
+            bool: True если можно переместиться
+        """
+        dungeon = self.current_dungeon
+
+        # Проверяем проходимость
+        if not dungeon.is_passable(x, y):
+            return False
+
+        # Не на позицию игрока
+        if x == player.x and y == player.y:
+            return False
+
+        # Не на позицию другого спутника
+        for other in self.dungeon_companions:
+            if other != companion and other.x == x and other.y == y:
+                return False
+
+        # Не на позицию NPC
+        npc = dungeon.get_npc_at(x, y)
+        if npc and npc.is_alive:
+            return False
+
+        return True
+
+    def _move_enemy_towards_target(self, npc, target):
+        """
+        Двигаем врага к цели (игрок или спутник)
+
+        Args:
+            npc: NPC для движения
+            target: Цель (игрок или спутник)
+        """
+        if not self.current_dungeon:
+            return
+
+        dungeon = self.current_dungeon
+
+        # Вычисляем направление к цели
+        dx = 0
+        dy = 0
+
+        if target.x > npc.x:
+            dx = 1
+        elif target.x < npc.x:
+            dx = -1
+
+        if target.y > npc.y:
+            dy = 1
+        elif target.y < npc.y:
             dy = -1
 
         new_x = npc.x + dx
         new_y = npc.y + dy
 
-        # Не двигаемся на клетку игрока (предотвращение слипания)
-        if new_x == player.x and new_y == player.y:
+        # Не двигаемся на клетку цели
+        if new_x == target.x and new_y == target.y:
             return
 
-        # Сохраняем старые координаты для проверки движения
-        old_x = npc.x
-        old_y = npc.y
-
         # Проверяем можно ли туда пойти
-        if dungeon.is_passable(new_x, new_y):
-            # Проверяем нет ли там другого NPC
-            other_npc = dungeon.get_npc_at(new_x, new_y)
-            if other_npc is None or not other_npc.is_alive:
-                npc.x = new_x
-                npc.y = new_y
-                return
+        if self._can_npc_move_to(npc, new_x, new_y):
+            npc.x = new_x
+            npc.y = new_y
+            return
 
         # Если диагональный путь заблокирован, пробуем по одной оси
         if dx != 0 and dy != 0:
-            # Пробуем только по X
-            if player.x != npc.x + dx:  # Не на клетку игрока
-                if dungeon.is_passable(npc.x + dx, npc.y):
-                    other = dungeon.get_npc_at(npc.x + dx, npc.y)
-                    if other is None or not other.is_alive:
-                        npc.x += dx
-                        return
-            # Пробуем только по Y
-            if player.y != npc.y + dy:  # Не на клетку игрока
-                if dungeon.is_passable(npc.x, npc.y + dy):
-                    other = dungeon.get_npc_at(npc.x, npc.y + dy)
-                    if other is None or not other.is_alive:
-                        npc.y += dy
+            if self._can_npc_move_to(npc, npc.x + dx, npc.y):
+                npc.x += dx
+                return
+            if self._can_npc_move_to(npc, npc.x, npc.y + dy):
+                npc.y += dy
+
+    def _can_npc_move_to(self, npc, x: int, y: int) -> bool:
+        """
+        Проверить, может ли NPC переместиться на указанную позицию
+
+        Args:
+            npc: NPC
+            x, y: Целевые координаты
+
+        Returns:
+            bool: True если можно переместиться
+        """
+        dungeon = self.current_dungeon
+
+        # Проверяем проходимость
+        if not dungeon.is_passable(x, y):
+            return False
+
+        # Не на позицию другого NPC
+        other_npc = dungeon.get_npc_at(x, y)
+        if other_npc and other_npc.is_alive:
+            return False
+
+        # Не на позицию спутника
+        if self._is_companion_at(x, y):
+            return False
+
+        return True
+
+    def _move_enemy_towards_player(self, npc, player):
+        """
+        Двигаем врага к игроку (обертка для обратной совместимости).
+        Делегирует к _move_enemy_towards_target.
+        """
+        self._move_enemy_towards_target(npc, player)
 
     def get_target_info(self) -> Optional[dict]:
         """

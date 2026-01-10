@@ -895,18 +895,23 @@ class InputHandler:
         """
         # Движение игрока (стрелки или WASD)
         moved = False
+        move_dx, move_dy = 0, 0  # Направление движения
         new_x, new_y = self.ctx.player.x, self.ctx.player.y
 
         if key == pygame.K_UP or key == pygame.K_w:
+            move_dy = -1
             new_y -= 1
             moved = True
         elif key == pygame.K_DOWN or key == pygame.K_s:
+            move_dy = 1
             new_y += 1
             moved = True
         elif key == pygame.K_LEFT or key == pygame.K_a:
+            move_dx = -1
             new_x -= 1
             moved = True
         elif key == pygame.K_RIGHT or key == pygame.K_d:
+            move_dx = 1
             new_x += 1
             moved = True
         elif key == pygame.K_r:
@@ -924,14 +929,28 @@ class InputHandler:
             # Открываем окно подтверждения выхода
             self.ctx.exit_confirmation_open = True
         elif key == pygame.K_TAB:
-            # Переключение цели в подземелье
+            # Tab в подземелье
             if self.ctx.dungeon_manager.is_in_dungeon:
-                self.ctx.dungeon_manager.cycle_target(self.ctx.player)
-                target = self.ctx.dungeon_manager.selected_target
-                if target:
-                    print(f"Цель: {target.name} (HP: {target.health}/{target.max_health})")
+                mods = pygame.key.get_mods()
+                if mods & pygame.KMOD_SHIFT:
+                    # Shift+Tab - переключение между игроком и спутниками
+                    result = self.ctx.dungeon_manager.cycle_selected_unit(self.ctx.player)
+                    if result.get('success'):
+                        unit = result.get('unit')
+                        if result.get('is_player'):
+                            print(f"Управление: Игрок")
+                        else:
+                            print(f"Управление: {unit.name} (HP: {unit.health}/{unit.max_health})")
+                    else:
+                        print(result.get('message', 'Нет спутников'))
                 else:
-                    print("Нет видимых целей")
+                    # Tab - переключение цели (враги)
+                    self.ctx.dungeon_manager.cycle_target(self.ctx.player)
+                    target = self.ctx.dungeon_manager.selected_target
+                    if target:
+                        print(f"Цель: {target.name} (HP: {target.health}/{target.max_health})")
+                    else:
+                        print("Нет видимых целей")
                 return
         elif key == pygame.K_SPACE:
             # Пробел не используется для атаки в подземелье
@@ -1190,24 +1209,48 @@ class InputHandler:
 
             # Проверяем, находимся ли в подземелье
             if self.ctx.dungeon_manager.is_in_dungeon:
-                # Вычисляем смещение для move_player
-                dx = new_x - self.ctx.player.x
-                dy = new_y - self.ctx.player.y
+                # Получаем текущий выбранный юнит
+                selected_unit = self.ctx.dungeon_manager.get_selected_unit(self.ctx.player)
+                is_player = self.ctx.dungeon_manager.is_player_selected()
+
+                # Используем сохраненное направление движения (move_dx, move_dy)
+                dx, dy = move_dx, move_dy
+
+                # Вычисляем целевую позицию для выбранного юнита
+                if is_player:
+                    target_x, target_y = self.ctx.player.x + dx, self.ctx.player.y + dy
+                else:
+                    # Для спутника - относительно его позиции
+                    target_x, target_y = selected_unit.x + dx, selected_unit.y + dy
 
                 # Проверяем, есть ли NPC на целевой клетке
                 dungeon = self.ctx.dungeon_manager.current_dungeon
-                npc_on_tile = dungeon.get_npc_at(new_x, new_y)
+                npc_on_tile = dungeon.get_npc_at(target_x, target_y)
 
                 if npc_on_tile and npc_on_tile.is_alive:
-                    # Автоматически выбираем цель вместо открытия меню боя
-                    self.ctx.dungeon_manager.select_target(npc_on_tile)
-                    print(f"Цель выбрана: {npc_on_tile.name}")
-                    return
+                    if is_player:
+                        # Автоматически выбираем цель вместо открытия меню боя
+                        self.ctx.dungeon_manager.select_target(npc_on_tile)
+                        print(f"Цель выбрана: {npc_on_tile.name}")
+                        return
+                    # Если управляем спутником - он атакует (обрабатывается в move_selected_unit)
 
-                # Движение в подземелье через move_player (автоматически обновляет видимость)
-                move_result = self.ctx.dungeon_manager.move_player(self.ctx.player, dx, dy)
+                # Движение в подземелье через move_selected_unit
+                move_result = self.ctx.dungeon_manager.move_selected_unit(self.ctx.player, dx, dy)
 
                 if move_result and move_result.get("success"):
+                    # Выводим сообщение об атаке спутника если была
+                    if move_result.get("attack"):
+                        print(move_result.get("message", ""))
+
+                    # Если ходил спутник - не вызываем ход врагов
+                    moved_companion = move_result.get("moved_companion", False)
+                    attacked_with_companion = move_result.get("attack") is not None
+
+                    if moved_companion or attacked_with_companion:
+                        # Спутник ходил - враги не ходят
+                        return
+
                     # Обновляем состояние подземелья
                     dungeon_result = self.ctx.dungeon_manager.update_dungeon(self.ctx.player)
 
@@ -1223,7 +1266,16 @@ class InputHandler:
                     # Ход врагов после хода игрока
                     enemy_results = self.ctx.dungeon_manager.enemy_turn(self.ctx.player)
                     for result in enemy_results:
-                        print(f"{result['attacker']} атакует вас на {result['damage']} урона!")
+                        # Проверяем, атакован ли игрок или спутник
+                        if result.get('target_is_companion'):
+                            target_name = result.get('target', 'Спутник')
+                            print(f"{result['attacker']} атакует {target_name} на {result['damage']} урона!")
+                        elif result.get('attacker_is_companion'):
+                            # Атака спутника - уже обработано
+                            target_name = result.get('target', 'Враг')
+                            print(f"{result['attacker']} атакует {target_name}: {result['damage']} урона")
+                        else:
+                            print(f"{result['attacker']} атакует вас на {result['damage']} урона!")
                         # Проверяем смерть от атаки врага
                         if self.ctx.player.health <= 0:
                             print("Вы погибли в подземелье!")

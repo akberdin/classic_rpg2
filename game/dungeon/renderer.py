@@ -153,7 +153,8 @@ class DungeonRenderer:
 
     def render_dungeon(self, dungeon: DungeonMap, player, camera_x: int, camera_y: int,
                        viewport_width: int, viewport_height: int, selected_target=None,
-                       selected_object=None, selected_object_type=None, selected_ore=None):
+                       selected_object=None, selected_object_type=None, selected_ore=None,
+                       companions=None, selected_unit_index=0):
         """
         Отрисовка подземелья
 
@@ -166,7 +167,10 @@ class DungeonRenderer:
             viewport_height: Высота области отрисовки (в пикселях)
             selected_target: Выбранная цель (NPC) для отображения выделения
             selected_ore: Выбранный объект руды (DungeonTile с ore_data)
+            companions: Список спутников в подземелье (опционально)
+            selected_unit_index: Индекс выбранного юнита (0=игрок, 1+=спутники)
         """
+        self._selected_unit_index = selected_unit_index
         # Вычисляем количество видимых тайлов
         tiles_x = viewport_width // self.tile_size + 2
         tiles_y = viewport_height // self.tile_size + 2
@@ -262,8 +266,13 @@ class DungeonRenderer:
         # Отрисовываем NPC
         self._render_npcs(dungeon, player, start_x, start_y, tiles_x, tiles_y, selected_target)
 
+        # Отрисовываем спутников
+        if companions:
+            self._render_companions(dungeon, companions, start_x, start_y, tiles_x, tiles_y)
+
         # Отрисовываем игрока
-        self._render_player(player, start_x, start_y)
+        is_player_selected = (selected_unit_index == 0)
+        self._render_player(player, start_x, start_y, is_selected=is_player_selected)
 
     def _get_symbol_color(self, tile_type: DungeonTileType) -> tuple:
         """Получить цвет символа для типа клетки"""
@@ -340,6 +349,207 @@ class DungeonRenderer:
 
             # Рисуем шкалу здоровья над NPC
             self._render_npc_health_bar(npc, pixel_x, pixel_y)
+
+    def _render_companions(self, dungeon: DungeonMap, companions, start_x: int, start_y: int,
+                           tiles_x: int, tiles_y: int):
+        """
+        Отрисовка спутников в подземелье
+
+        Args:
+            dungeon: Карта подземелья
+            companions: Список спутников
+            start_x, start_y: Начальные координаты видимой области
+            tiles_x, tiles_y: Размеры видимой области в тайлах
+        """
+        selected_index = getattr(self, '_selected_unit_index', 0)
+
+        for idx, companion in enumerate(companions):
+            if not companion.is_alive:
+                continue
+
+            # Проверяем, в пределах ли экрана
+            screen_x = companion.x - start_x
+            screen_y = companion.y - start_y
+
+            if not (0 <= screen_x < tiles_x and 0 <= screen_y < tiles_y):
+                continue
+
+            # Проверяем видимость клетки
+            tile = dungeon.get_tile(companion.x, companion.y)
+            if tile is None or not tile.visible:
+                continue
+
+            # Позиция на экране
+            pixel_x = screen_x * self.tile_size
+            pixel_y = screen_y * self.tile_size
+
+            # Проверяем, выбран ли этот спутник (индекс спутника = selected_index - 1, т.к. 0 = игрок)
+            is_selected = (selected_index > 0 and idx == selected_index - 1)
+
+            # Рисуем рамку вокруг спутника (союзник)
+            self._render_companion_indicator(pixel_x, pixel_y, is_selected=is_selected)
+
+            # Функция отрисовки по умолчанию (зеленый круг)
+            def draw_companion_default():
+                center_x = pixel_x + self.tile_size // 2
+                center_y = pixel_y + self.tile_size // 2
+                radius = self.tile_size // 3
+
+                # Зеленый цвет для спутника (союзник)
+                companion_color = (100, 180, 100)
+                pygame.draw.circle(self.screen, companion_color, (center_x, center_y), radius)
+                pygame.draw.circle(self.screen, (150, 220, 150), (center_x, center_y), radius, 2)
+
+            # Используем спрайт если доступен
+            companion_type = getattr(companion, 'companion_type', 'wolf')
+            companion_level = getattr(companion, 'level', 1)
+
+            if self.sprite_manager:
+                # Пробуем получить спрайт спутника по типу и рангу
+                sprite = self._get_companion_sprite(companion)
+                if sprite:
+                    # Масштабируем спрайт
+                    if sprite.get_width() != self.tile_size or sprite.get_height() != self.tile_size:
+                        sprite = pygame.transform.scale(sprite, (self.tile_size, self.tile_size))
+                    self.screen.blit(sprite, (pixel_x, pixel_y))
+                else:
+                    # Fallback на стандартный render_npc для волка
+                    self.sprite_manager.render_npc(
+                        self.screen, 'wolf', pixel_x, pixel_y,
+                        draw_companion_default, companion_level
+                    )
+            else:
+                draw_companion_default()
+
+            # Рисуем шкалу здоровья над спутником
+            self._render_companion_health_bar(companion, pixel_x, pixel_y)
+
+    def _get_companion_sprite(self, companion):
+        """
+        Получить спрайт для спутника
+
+        Args:
+            companion: Объект спутника
+
+        Returns:
+            pygame.Surface или None
+        """
+        # Спрайты спутников загружаются через render_npc,
+        # здесь возвращаем None для использования fallback
+        return None
+
+    def _render_companion_indicator(self, pixel_x: int, pixel_y: int, is_selected: bool = False):
+        """
+        Рисуем индикатор союзника вокруг спутника
+
+        Args:
+            pixel_x, pixel_y: Позиция на экране
+            is_selected: Выбран ли этот спутник для управления
+        """
+        if is_selected:
+            # Белая яркая рамка для выбранного спутника
+            self._render_selected_unit_indicator(pixel_x, pixel_y)
+        else:
+            # Зеленая рамка для обычного союзника
+            pygame.draw.rect(self.screen, (100, 200, 100),
+                            (pixel_x - 1, pixel_y - 1,
+                             self.tile_size + 2, self.tile_size + 2), 2)
+
+    def _render_selected_unit_indicator(self, pixel_x: int, pixel_y: int):
+        """
+        Рисуем индикатор выбранного юнита (яркая белая/голубая рамка)
+
+        Args:
+            pixel_x, pixel_y: Позиция на экране
+        """
+        # Яркая белая рамка с голубым оттенком
+        pygame.draw.rect(self.screen, (200, 220, 255),
+                        (pixel_x - 3, pixel_y - 3,
+                         self.tile_size + 6, self.tile_size + 6), 3)
+
+        # Уголки для выбранного юнита (голубые)
+        corner_len = 10
+        corner_color = (100, 200, 255)
+
+        # Верхний левый
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x - 3, pixel_y - 3), (pixel_x + corner_len, pixel_y - 3), 3)
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x - 3, pixel_y - 3), (pixel_x - 3, pixel_y + corner_len), 3)
+        # Верхний правый
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x + self.tile_size + 3, pixel_y - 3),
+                        (pixel_x + self.tile_size - corner_len, pixel_y - 3), 3)
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x + self.tile_size + 3, pixel_y - 3),
+                        (pixel_x + self.tile_size + 3, pixel_y + corner_len), 3)
+        # Нижний левый
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x - 3, pixel_y + self.tile_size + 3),
+                        (pixel_x + corner_len, pixel_y + self.tile_size + 3), 3)
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x - 3, pixel_y + self.tile_size + 3),
+                        (pixel_x - 3, pixel_y + self.tile_size - corner_len), 3)
+        # Нижний правый
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x + self.tile_size + 3, pixel_y + self.tile_size + 3),
+                        (pixel_x + self.tile_size - corner_len, pixel_y + self.tile_size + 3), 3)
+        pygame.draw.line(self.screen, corner_color,
+                        (pixel_x + self.tile_size + 3, pixel_y + self.tile_size + 3),
+                        (pixel_x + self.tile_size + 3, pixel_y + self.tile_size - corner_len), 3)
+
+    def _render_companion_health_bar(self, companion, pixel_x: int, pixel_y: int):
+        """
+        Рисуем шкалу здоровья над спутником (зеленая)
+
+        Args:
+            companion: Спутник
+            pixel_x, pixel_y: Позиция на экране
+        """
+        hp = getattr(companion, 'health', 0)
+        max_hp = getattr(companion, 'max_health', 1)
+        if max_hp <= 0:
+            max_hp = 1
+
+        # Размеры шкалы
+        bar_width = self.tile_size - 4
+        bar_height = 5
+        bar_x = pixel_x + 2
+        bar_y = pixel_y - bar_height - 3
+
+        # Фон шкалы
+        pygame.draw.rect(self.screen, (40, 40, 40),
+                        (bar_x - 1, bar_y - 1, bar_width + 2, bar_height + 2))
+
+        # Заполнение шкалы
+        fill_width = int(bar_width * (hp / max_hp))
+
+        # Цвет зависит от процента HP (зеленая гамма для союзника)
+        hp_percent = hp / max_hp
+        if hp_percent > 0.6:
+            bar_color = (80, 200, 80)  # Ярко-зеленый
+        elif hp_percent > 0.3:
+            bar_color = (150, 200, 50)  # Желто-зеленый
+        else:
+            bar_color = (200, 150, 50)  # Оранжевый (низкое здоровье)
+
+        if fill_width > 0:
+            pygame.draw.rect(self.screen, bar_color,
+                            (bar_x, bar_y, fill_width, bar_height))
+
+        # Рамка
+        pygame.draw.rect(self.screen, (100, 150, 100),
+                        (bar_x - 1, bar_y - 1, bar_width + 2, bar_height + 2), 1)
+
+        # Имя спутника под шкалой HP
+        name = getattr(companion, 'name', 'Спутник')
+        # Укорачиваем имя если слишком длинное
+        if len(name) > 10:
+            name = name[:8] + ".."
+        name_surface = self.small_font.render(name, True, (150, 220, 150))
+        name_x = pixel_x + (self.tile_size - name_surface.get_width()) // 2
+        name_y = pixel_y + self.tile_size + 1
+        self.screen.blit(name_surface, (name_x, name_y))
 
     def _render_selection_indicator(self, pixel_x: int, pixel_y: int):
         """Рисуем индикатор выделения вокруг клетки"""
@@ -590,13 +800,24 @@ class DungeonRenderer:
         level_y = pixel_y + self.tile_size + 1
         self.screen.blit(level_surface, (level_x, level_y))
 
-    def _render_player(self, player, start_x: int, start_y: int):
-        """Отрисовка игрока"""
+    def _render_player(self, player, start_x: int, start_y: int, is_selected: bool = True):
+        """
+        Отрисовка игрока
+
+        Args:
+            player: Объект игрока
+            start_x, start_y: Начальные координаты видимой области
+            is_selected: Выбран ли игрок для управления
+        """
         screen_x = player.x - start_x
         screen_y = player.y - start_y
 
         pixel_x = screen_x * self.tile_size
         pixel_y = screen_y * self.tile_size
+
+        # Рисуем индикатор выбранного юнита (белая рамка)
+        if is_selected:
+            self._render_selected_unit_indicator(pixel_x, pixel_y)
 
         # Функция отрисовки по умолчанию (геометрическая фигура)
         def draw_player_default():
@@ -765,6 +986,158 @@ class DungeonRenderer:
                 hint_surface = font.render(hint_text, True, (255, 255, 150))
                 hint_x = (self.screen.get_width() - hint_surface.get_width()) // 2
                 self.screen.blit(hint_surface, (hint_x, hint_y))
+
+    def render_unit_panel(self, player, companions, selected_unit_index: int, font):
+        """
+        Отрисовка панели юнитов (игрок + спутники) с пиктограммами
+
+        Args:
+            player: Объект игрока
+            companions: Список спутников
+            selected_unit_index: Индекс выбранного юнита (0=игрок)
+            font: Шрифт для текста
+        """
+        # Если нет спутников - не показываем панель
+        if not companions:
+            return
+
+        # Размеры панели
+        icon_size = 48
+        padding = 8
+        panel_width = icon_size + padding * 2 + 60  # Иконка + HP бар + отступы
+        unit_height = icon_size + padding
+        panel_height = (len(companions) + 1) * unit_height + padding * 2 + 30  # +1 для игрока, +30 для заголовка
+
+        # Позиция панели (левый край, под панелью подземелья)
+        panel_x = 10
+        panel_y = 145  # Под информацией о подземелье
+
+        # Фон панели
+        panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
+        panel_surface.fill((30, 40, 50, 220))
+        self.screen.blit(panel_surface, (panel_x, panel_y))
+
+        # Рамка
+        pygame.draw.rect(self.screen, (80, 120, 150),
+                        (panel_x, panel_y, panel_width, panel_height), 2)
+
+        # Заголовок
+        pygame.draw.rect(self.screen, (50, 80, 100),
+                        (panel_x, panel_y, panel_width, 25))
+        title = "ОТРЯД [Shift+Tab]"
+        title_surface = font.render(title, True, (200, 220, 255))
+        title_x = panel_x + (panel_width - title_surface.get_width()) // 2
+        self.screen.blit(title_surface, (title_x, panel_y + 4))
+
+        current_y = panel_y + 30
+
+        # Список всех юнитов (игрок + спутники)
+        units = [("Игрок", player, True)] + [(c.name, c, False) for c in companions if c.is_alive]
+
+        for idx, (name, unit, is_player) in enumerate(units):
+            is_selected = (idx == selected_unit_index)
+            self._render_unit_icon(
+                panel_x + padding, current_y,
+                icon_size, name, unit, is_player, is_selected, font
+            )
+            current_y += unit_height
+
+    def _render_unit_icon(self, x: int, y: int, size: int, name: str,
+                          unit, is_player: bool, is_selected: bool, font):
+        """
+        Отрисовка иконки юнита в панели
+
+        Args:
+            x, y: Позиция иконки
+            size: Размер иконки
+            name: Имя юнита
+            unit: Объект юнита
+            is_player: Это игрок?
+            is_selected: Выбран ли юнит?
+            font: Шрифт
+        """
+        # Фон иконки
+        if is_selected:
+            # Яркая подсветка выбранного юнита
+            bg_color = (60, 100, 140)
+            border_color = (100, 200, 255)
+            border_width = 3
+        else:
+            bg_color = (40, 50, 60)
+            border_color = (80, 100, 120)
+            border_width = 1
+
+        pygame.draw.rect(self.screen, bg_color, (x, y, size, size))
+        pygame.draw.rect(self.screen, border_color, (x, y, size, size), border_width)
+
+        # Иконка юнита (круг с цветом)
+        center_x = x + size // 2
+        center_y = y + size // 2
+        radius = size // 3
+
+        if is_player:
+            # Золотой цвет для игрока
+            icon_color = (255, 215, 0)
+            outline_color = (255, 255, 200)
+        else:
+            # Зеленый цвет для спутников
+            icon_color = (100, 180, 100)
+            outline_color = (150, 220, 150)
+
+        pygame.draw.circle(self.screen, icon_color, (center_x, center_y), radius)
+        pygame.draw.circle(self.screen, outline_color, (center_x, center_y), radius, 2)
+
+        # Буква на иконке
+        letter = "И" if is_player else name[0].upper()
+        letter_surface = font.render(letter, True, (40, 40, 40))
+        letter_x = center_x - letter_surface.get_width() // 2
+        letter_y = center_y - letter_surface.get_height() // 2
+        self.screen.blit(letter_surface, (letter_x, letter_y))
+
+        # HP бар справа от иконки
+        hp = getattr(unit, 'health', 0)
+        max_hp = getattr(unit, 'max_health', 1)
+        if max_hp <= 0:
+            max_hp = 1
+
+        bar_x = x + size + 5
+        bar_y = y + 5
+        bar_width = 50
+        bar_height = 10
+
+        # Фон HP бара
+        pygame.draw.rect(self.screen, (30, 30, 30), (bar_x, bar_y, bar_width, bar_height))
+
+        # Заполнение HP
+        hp_percent = hp / max_hp
+        fill_width = int(bar_width * hp_percent)
+        if hp_percent > 0.6:
+            hp_color = (80, 200, 80)
+        elif hp_percent > 0.3:
+            hp_color = (200, 180, 50)
+        else:
+            hp_color = (200, 80, 80)
+
+        if fill_width > 0:
+            pygame.draw.rect(self.screen, hp_color, (bar_x, bar_y, fill_width, bar_height))
+
+        pygame.draw.rect(self.screen, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height), 1)
+
+        # Текст HP
+        hp_text = f"{hp}/{max_hp}"
+        hp_surface = self.small_font.render(hp_text, True, (200, 200, 200))
+        self.screen.blit(hp_surface, (bar_x, bar_y + bar_height + 2))
+
+        # Имя юнита (укороченное)
+        display_name = name[:8] + ".." if len(name) > 10 else name
+        name_surface = self.small_font.render(display_name, True, (180, 200, 220))
+        self.screen.blit(name_surface, (bar_x, bar_y + bar_height + 14))
+
+        # Индикатор выбранного (стрелка)
+        if is_selected:
+            arrow = ">"
+            arrow_surface = font.render(arrow, True, (100, 200, 255))
+            self.screen.blit(arrow_surface, (x - 15, y + size // 2 - 8))
 
     def render_target_info_panel(self, target_info: dict, font):
         """
