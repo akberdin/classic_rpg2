@@ -10,7 +10,8 @@ from .utils.helpers import load_config
 from .tools.generator import (
     MapGenerator, GeneratedMap, GeneratorParams, MapLocation, MapConfig, Guard, Quest,
     LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER,
-    Merchant, MerchantWaypoint, MERCHANT_RANKS, QUEST_GIVER_LOCATIONS
+    Merchant, MerchantWaypoint, MERCHANT_RANKS, QUEST_GIVER_LOCATIONS,
+    QUEST_DELIVER_MESSAGE, QUEST_CLEARABLE_LOCATIONS
 )
 from .tools.brush import BiomeBrush, BrushSettings, BrushMode
 from .tools.objects import ObjectPlacer, PlacementMode
@@ -141,6 +142,13 @@ class MapEditor:
         self.merchant_edit_dialog: Optional[MerchantEditDialog] = None
         self.route_edit_dialog: Optional[RouteEditDialog] = None
         self.merchant_adding_waypoint: bool = False  # True when adding waypoints by clicking on map
+
+        # Quest location selection state
+        self._selecting_quest_location: bool = False  # True when selecting location on map
+        self._selecting_quest_location_type: Optional[str] = None  # Quest type for filtering
+        self._quest_list_dialog: Optional[QuestListDialog] = None
+        self._quest_edit_dialog: Optional[QuestEditDialog] = None
+        self._editing_quest_index: Optional[int] = None
 
     def _setup_callbacks(self) -> None:
         """Setup UI callbacks."""
@@ -583,9 +591,63 @@ class MapEditor:
             all_locations=self.current_map.locations
         )
         dialog.on_close = self._on_quest_edit_dialog_close
+        dialog.on_select_location = self._on_quest_select_location_start
         self._quest_edit_dialog = dialog
         self.active_dialog = dialog
         dialog.show(self.width, self.height)
+
+    def _on_quest_select_location_start(self, quest_type: str) -> None:
+        """Start location selection mode for quest target."""
+        if not self._quest_edit_dialog:
+            return
+
+        # Store current quest type for filtering
+        self._selecting_quest_location_type = quest_type
+
+        # Hide dialogs temporarily
+        if self._quest_edit_dialog:
+            self._quest_edit_dialog.visible = False
+        if self._quest_list_dialog:
+            self._quest_list_dialog.visible = False
+
+        # Enable location selection mode
+        self._selecting_quest_location = True
+        self._set_status("Выберите локацию на карте (ЛКМ - выбрать, ПКМ - отмена)")
+
+    def _on_quest_location_selected(self, location) -> None:
+        """Handle location selected for quest target."""
+        if not self._quest_edit_dialog:
+            return
+
+        # Set the selected location
+        loc_name = location.name or f"Локация ({location.x}, {location.y})"
+        self._quest_edit_dialog.set_target_location(location.id, loc_name)
+
+        # Restore dialogs
+        self._selecting_quest_location = False
+        self._selecting_quest_location_type = None
+
+        if self._quest_list_dialog:
+            self._quest_list_dialog.visible = True
+        if self._quest_edit_dialog:
+            self._quest_edit_dialog.visible = True
+            self.active_dialog = self._quest_edit_dialog
+
+        self._set_status(f"Выбрана локация: {loc_name}")
+
+    def _cancel_quest_location_selection(self) -> None:
+        """Cancel location selection mode."""
+        self._selecting_quest_location = False
+        self._selecting_quest_location_type = None
+
+        # Restore dialogs
+        if self._quest_list_dialog:
+            self._quest_list_dialog.visible = True
+        if self._quest_edit_dialog:
+            self._quest_edit_dialog.visible = True
+            self.active_dialog = self._quest_edit_dialog
+
+        self._set_status("Выбор локации отменен")
 
     def _on_quest_edit_dialog_close(self, action: str, data: Dict[str, Any]) -> None:
         """Handle quest edit dialog close."""
@@ -1164,6 +1226,30 @@ class MapEditor:
                 0 <= tile_y < self.current_map.height):
             return
 
+        # Handle quest location selection mode
+        if self._selecting_quest_location:
+            # Find location at click position
+            location = self.object_placer.select_location(self.current_map, tile_x, tile_y)
+            if location:
+                # Validate location type based on quest type
+                quest_type = self._selecting_quest_location_type
+
+                if quest_type == QUEST_DELIVER_MESSAGE:
+                    # For deliver quests - any quest giver location
+                    if location.location_type in QUEST_GIVER_LOCATIONS:
+                        self._on_quest_location_selected(location)
+                    else:
+                        self._set_status("Выберите город, деревню, академию или лагерь")
+                else:
+                    # For clear quests - clearable locations (mines, ruins)
+                    if location.location_type in QUEST_CLEARABLE_LOCATIONS:
+                        self._on_quest_location_selected(location)
+                    else:
+                        self._set_status("Выберите шахту или руины")
+            else:
+                self._set_status("В этой точке нет локации. Выберите локацию")
+            return
+
         # Handle waypoint adding mode
         if self.merchant_adding_waypoint:
             # Determine which dialog to add waypoints to
@@ -1280,6 +1366,11 @@ class MapEditor:
     def _handle_right_click(self, pos: Tuple[int, int]) -> None:
         """Handle right mouse click."""
         if not self.current_map:
+            return
+
+        # Handle quest location selection mode - cancel and return to dialog
+        if self._selecting_quest_location:
+            self._cancel_quest_location_selection()
             return
 
         # Handle waypoint adding mode - finish and return to dialog
