@@ -153,7 +153,8 @@ class DungeonRenderer:
 
     def render_dungeon(self, dungeon: DungeonMap, player, camera_x: int, camera_y: int,
                        viewport_width: int, viewport_height: int, selected_target=None,
-                       selected_object=None, selected_object_type=None, selected_ore=None):
+                       selected_object=None, selected_object_type=None, selected_ore=None,
+                       companions=None):
         """
         Отрисовка подземелья
 
@@ -166,6 +167,7 @@ class DungeonRenderer:
             viewport_height: Высота области отрисовки (в пикселях)
             selected_target: Выбранная цель (NPC) для отображения выделения
             selected_ore: Выбранный объект руды (DungeonTile с ore_data)
+            companions: Список спутников в подземелье (опционально)
         """
         # Вычисляем количество видимых тайлов
         tiles_x = viewport_width // self.tile_size + 2
@@ -262,6 +264,10 @@ class DungeonRenderer:
         # Отрисовываем NPC
         self._render_npcs(dungeon, player, start_x, start_y, tiles_x, tiles_y, selected_target)
 
+        # Отрисовываем спутников
+        if companions:
+            self._render_companions(dungeon, companions, start_x, start_y, tiles_x, tiles_y)
+
         # Отрисовываем игрока
         self._render_player(player, start_x, start_y)
 
@@ -340,6 +346,163 @@ class DungeonRenderer:
 
             # Рисуем шкалу здоровья над NPC
             self._render_npc_health_bar(npc, pixel_x, pixel_y)
+
+    def _render_companions(self, dungeon: DungeonMap, companions, start_x: int, start_y: int,
+                           tiles_x: int, tiles_y: int):
+        """
+        Отрисовка спутников в подземелье
+
+        Args:
+            dungeon: Карта подземелья
+            companions: Список спутников
+            start_x, start_y: Начальные координаты видимой области
+            tiles_x, tiles_y: Размеры видимой области в тайлах
+        """
+        for companion in companions:
+            if not companion.is_alive:
+                continue
+
+            # Проверяем, в пределах ли экрана
+            screen_x = companion.x - start_x
+            screen_y = companion.y - start_y
+
+            if not (0 <= screen_x < tiles_x and 0 <= screen_y < tiles_y):
+                continue
+
+            # Проверяем видимость клетки
+            tile = dungeon.get_tile(companion.x, companion.y)
+            if tile is None or not tile.visible:
+                continue
+
+            # Позиция на экране
+            pixel_x = screen_x * self.tile_size
+            pixel_y = screen_y * self.tile_size
+
+            # Рисуем зеленую рамку вокруг спутника (союзник)
+            self._render_companion_indicator(pixel_x, pixel_y)
+
+            # Функция отрисовки по умолчанию (зеленый круг)
+            def draw_companion_default():
+                center_x = pixel_x + self.tile_size // 2
+                center_y = pixel_y + self.tile_size // 2
+                radius = self.tile_size // 3
+
+                # Зеленый цвет для спутника (союзник)
+                companion_color = (100, 180, 100)
+                pygame.draw.circle(self.screen, companion_color, (center_x, center_y), radius)
+                pygame.draw.circle(self.screen, (150, 220, 150), (center_x, center_y), radius, 2)
+
+            # Используем спрайт если доступен
+            companion_type = getattr(companion, 'companion_type', 'wolf')
+            companion_level = getattr(companion, 'level', 1)
+
+            if self.sprite_manager:
+                # Пробуем получить спрайт спутника по типу и рангу
+                sprite = self._get_companion_sprite(companion)
+                if sprite:
+                    # Масштабируем спрайт
+                    if sprite.get_width() != self.tile_size or sprite.get_height() != self.tile_size:
+                        sprite = pygame.transform.scale(sprite, (self.tile_size, self.tile_size))
+                    self.screen.blit(sprite, (pixel_x, pixel_y))
+                else:
+                    # Fallback на стандартный render_npc для волка
+                    self.sprite_manager.render_npc(
+                        self.screen, 'wolf', pixel_x, pixel_y,
+                        draw_companion_default, companion_level
+                    )
+            else:
+                draw_companion_default()
+
+            # Рисуем шкалу здоровья над спутником
+            self._render_companion_health_bar(companion, pixel_x, pixel_y)
+
+    def _get_companion_sprite(self, companion):
+        """
+        Получить спрайт для спутника
+
+        Args:
+            companion: Объект спутника
+
+        Returns:
+            pygame.Surface или None
+        """
+        if not self.sprite_manager:
+            return None
+
+        # Пробуем получить путь к спрайту из спутника
+        sprite_path = None
+        if hasattr(companion, 'get_sprite_path'):
+            sprite_path = companion.get_sprite_path()
+
+        if sprite_path:
+            return self.sprite_manager.load_sprite(sprite_path)
+
+        return None
+
+    def _render_companion_indicator(self, pixel_x: int, pixel_y: int):
+        """
+        Рисуем индикатор союзника вокруг спутника (зеленая рамка)
+
+        Args:
+            pixel_x, pixel_y: Позиция на экране
+        """
+        # Зеленая рамка для союзника
+        pygame.draw.rect(self.screen, (100, 200, 100),
+                        (pixel_x - 1, pixel_y - 1,
+                         self.tile_size + 2, self.tile_size + 2), 2)
+
+    def _render_companion_health_bar(self, companion, pixel_x: int, pixel_y: int):
+        """
+        Рисуем шкалу здоровья над спутником (зеленая)
+
+        Args:
+            companion: Спутник
+            pixel_x, pixel_y: Позиция на экране
+        """
+        hp = getattr(companion, 'health', 0)
+        max_hp = getattr(companion, 'max_health', 1)
+        if max_hp <= 0:
+            max_hp = 1
+
+        # Размеры шкалы
+        bar_width = self.tile_size - 4
+        bar_height = 5
+        bar_x = pixel_x + 2
+        bar_y = pixel_y - bar_height - 3
+
+        # Фон шкалы
+        pygame.draw.rect(self.screen, (40, 40, 40),
+                        (bar_x - 1, bar_y - 1, bar_width + 2, bar_height + 2))
+
+        # Заполнение шкалы
+        fill_width = int(bar_width * (hp / max_hp))
+
+        # Цвет зависит от процента HP (зеленая гамма для союзника)
+        hp_percent = hp / max_hp
+        if hp_percent > 0.6:
+            bar_color = (80, 200, 80)  # Ярко-зеленый
+        elif hp_percent > 0.3:
+            bar_color = (150, 200, 50)  # Желто-зеленый
+        else:
+            bar_color = (200, 150, 50)  # Оранжевый (низкое здоровье)
+
+        if fill_width > 0:
+            pygame.draw.rect(self.screen, bar_color,
+                            (bar_x, bar_y, fill_width, bar_height))
+
+        # Рамка
+        pygame.draw.rect(self.screen, (100, 150, 100),
+                        (bar_x - 1, bar_y - 1, bar_width + 2, bar_height + 2), 1)
+
+        # Имя спутника под шкалой HP
+        name = getattr(companion, 'name', 'Спутник')
+        # Укорачиваем имя если слишком длинное
+        if len(name) > 10:
+            name = name[:8] + ".."
+        name_surface = self.small_font.render(name, True, (150, 220, 150))
+        name_x = pixel_x + (self.tile_size - name_surface.get_width()) // 2
+        name_y = pixel_y + self.tile_size + 1
+        self.screen.blit(name_surface, (name_x, name_y))
 
     def _render_selection_indicator(self, pixel_x: int, pixel_y: int):
         """Рисуем индикатор выделения вокруг клетки"""
