@@ -2706,14 +2706,13 @@ class QuestEditDialog(Dialog):
                 return True
 
             # Check checkbox is_repeatable
-            # After adding min_player_attitude and completion_event_id:
             # For gather/hunt/collect: y=600 (reward_base=480 + 120)
-            # For deliver/clear: y=520 (reward_base=400 + 120)
+            # For deliver/clear: y=560 (reward_base=440 + 120)
             quest_type = self.data.get('quest_type', QUEST_GATHER_RESOURCE)
             if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
                 checkbox_y = 600
             else:
-                checkbox_y = 520
+                checkbox_y = 560
             checkbox_rect = pygame.Rect(120, checkbox_y, 20, 20)
             if checkbox_rect.collidepoint(local_x, local_y):
                 self.data['is_repeatable'] = not self.data.get('is_repeatable', True)
@@ -2749,11 +2748,11 @@ class QuestEditDialog(Dialog):
 
         # Difficulty dropdown - position depends on quest type
         # For gather/hunt/collect: y=290 (after target_type/item + target_amount + time_limit)
-        # For deliver/clear: y=210 (after time_limit, no target_type/item/amount rows)
+        # For deliver/clear: y=250 (after time_limit at y=210)
         if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
             diff_y = 290
         else:
-            diff_y = 210
+            diff_y = 250
         diff_rect = pygame.Rect(120, diff_y, 200, 28)
         if diff_rect.collidepoint(local_x, local_y):
             self._active_dropdown = 'difficulty' if self._active_dropdown != 'difficulty' else None
@@ -2765,12 +2764,12 @@ class QuestEditDialog(Dialog):
         """Check if 'Select on map' button was clicked."""
         if self._needs_target_location():
             quest_type = self.data.get('quest_type', QUEST_GATHER_RESOURCE)
-            # For deliver/clear: y=290 (after difficulty at y=250)
+            # For deliver/clear: y=330 (after min_player_attitude at y=290)
             # For gather/hunt/collect this button is not shown
             if quest_type in (QUEST_DELIVER_MESSAGE, QUEST_CLEAR_LOCATION):
-                btn_y = 290
+                btn_y = 330
             else:
-                btn_y = 330  # fallback, should not reach here
+                btn_y = 370  # fallback, should not reach here
             btn_rect = pygame.Rect(340, btn_y, 140, 28)
             if btn_rect.collidepoint(local_x, local_y):
                 if self.on_select_location:
@@ -2824,7 +2823,7 @@ class QuestEditDialog(Dialog):
             if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
                 base_y = 290 + 28
             else:
-                base_y = 210 + 28
+                base_y = 250 + 28
             for i, (key, value) in enumerate(options.items()):
                 option_rect = pygame.Rect(120, base_y + i * 28, 200, 28)
                 if option_rect.collidepoint(local_x, local_y):
@@ -2851,11 +2850,11 @@ class QuestEditDialog(Dialog):
 
         # Time limit - position depends on quest type
         # For gather/hunt/collect: y=250 (after target_type/item + target_amount)
-        # For deliver/clear: y=170 (no target_type/item/amount rows)
+        # For deliver/clear: y=210 (y+=40 still happens after empty target_amount position)
         if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
             time_y = 252
         else:
-            time_y = 172
+            time_y = 212
         minus_rect = pygame.Rect(120, time_y, 30, 24)
         plus_rect = pygame.Rect(220, time_y, 30, 24)
         if minus_rect.collidepoint(local_x, local_y):
@@ -2867,15 +2866,15 @@ class QuestEditDialog(Dialog):
 
         # Difficulty position (for click detection is handled in dropdown)
         # For gather/hunt/collect: y=290
-        # For deliver/clear: y=210
+        # For deliver/clear: y=250
 
         # min_player_attitude - after difficulty
         # For gather/hunt/collect: y=330
-        # For deliver/clear: y=250
+        # For deliver/clear: y=290
         if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
             attitude_y = 332
         else:
-            attitude_y = 252
+            attitude_y = 292
         minus_rect = pygame.Rect(120, attitude_y, 30, 24)
         plus_rect = pygame.Rect(220, attitude_y, 30, 24)
         if minus_rect.collidepoint(local_x, local_y):
@@ -2886,10 +2885,10 @@ class QuestEditDialog(Dialog):
             return True
 
         # Target floor - only for clear_location
-        # For clear_location: y=330 (after min_player_attitude at y=250, target_location at y=290)
+        # For clear_location: y=370 (after target_location at y=330)
         if quest_type == QUEST_CLEAR_LOCATION:
-            minus_rect = pygame.Rect(120, 332, 30, 24)
-            plus_rect = pygame.Rect(220, 332, 30, 24)
+            minus_rect = pygame.Rect(120, 372, 30, 24)
+            plus_rect = pygame.Rect(220, 372, 30, 24)
             if minus_rect.collidepoint(local_x, local_y):
                 self.data['target_floor'] = max(0, self.data.get('target_floor', 0) - 1)
                 return True
@@ -2898,13 +2897,12 @@ class QuestEditDialog(Dialog):
                 return True
 
         # Calculate base Y for rewards section based on quest type
-        # After adding min_player_attitude (+40px):
         # For gather/hunt/collect: rewards start at y=480 (header at y=450)
-        # For deliver/clear: rewards start at y=400 (header at y=370)
+        # For deliver/clear: rewards start at y=440 (header at y=410)
         if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
             reward_base_y = 480
         else:
-            reward_base_y = 400
+            reward_base_y = 440
 
         # Reward gold
         minus_rect = pygame.Rect(120, reward_base_y + 2, 30, 24)
@@ -3003,13 +3001,12 @@ class QuestEditDialog(Dialog):
             y += 40  # target type dropdown
 
         # Calculate reward_item_id position based on quest type
-        # After adding min_player_attitude (+40px):
         # For gather/hunt/collect: y=540 (reward_base=480 + 60)
-        # For deliver/clear: y=460 (reward_base=400 + 60)
+        # For deliver/clear: y=500 (reward_base=440 + 60)
         if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
             reward_item_y = 540
         else:
-            reward_item_y = 460
+            reward_item_y = 500
 
         # Reward item ID field
         reward_item_rect = pygame.Rect(120, reward_item_y + 2, 140, 24)
@@ -3369,7 +3366,7 @@ class QuestEditDialog(Dialog):
             if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
                 diff_y = 290
             else:
-                diff_y = 210
+                diff_y = 250
             base_x, base_y = self.x + 120, self.y + diff_y + 28
             width = 200
         else:
