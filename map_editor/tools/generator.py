@@ -320,6 +320,8 @@ class Quest:
     # Availability
     is_repeatable: bool = True  # Whether quest can be repeated
     cooldown: int = 100  # Cooldown in turns before quest can be taken again
+    # Scaling
+    scaling_factor: float = 1.1  # Coefficient for scaling rewards/targets by player level
 
     def __post_init__(self):
         """Generate ID if not provided."""
@@ -344,7 +346,8 @@ class Quest:
             'reward_exp': self.reward_exp,
             'reward_reputation': self.reward_reputation,
             'is_repeatable': self.is_repeatable,
-            'cooldown': self.cooldown
+            'cooldown': self.cooldown,
+            'scaling_factor': self.scaling_factor
         }
 
     @classmethod
@@ -369,7 +372,8 @@ class Quest:
             reward_exp=data.get('reward_exp', 50),
             reward_reputation=data.get('reward_reputation', 5),
             is_repeatable=data.get('is_repeatable', True),
-            cooldown=data.get('cooldown', 100)
+            cooldown=data.get('cooldown', 100),
+            scaling_factor=data.get('scaling_factor', 1.1)
         )
 
     def is_empty(self) -> bool:
