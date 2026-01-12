@@ -44,7 +44,7 @@ class QuestWindow:
         self.button_rects = {}
         self.window_rect = None
 
-    def set_data(self, location_name, location, available_quests, active_quests, turn_in_quests):
+    def set_data(self, location_name, location, available_quests, active_quests, turn_in_quests, player=None):
         """
         Установить данные для отображения
 
@@ -54,12 +54,14 @@ class QuestWindow:
             available_quests: Доступные квесты в локации (list of dict)
             active_quests: Активные квесты игрока (list of QuestInstance)
             turn_in_quests: Квесты готовые к сдаче (list of QuestInstance)
+            player: Объект игрока (для проверки инвентаря)
         """
         self.location_name = location_name
         self.location = location
         self.available_quests = available_quests or []
         self.active_quests = active_quests or []
         self.turn_in_quests = turn_in_quests or []
+        self.player = player
         self.selected_index = 0
         self.scroll_offset = 0
 
@@ -366,9 +368,9 @@ class QuestWindow:
                 # Прогресс для активных квестов
                 if self.mode in ("active", "turn_in") and hasattr(quest, 'get_progress_text'):
                     progress_text = self.info_font.render(
-                        quest.get_progress_text(),
+                        quest.get_progress_text(self.player),
                         True,
-                        (100, 255, 100) if quest.is_complete() else (200, 200, 200)
+                        (100, 255, 100) if quest.is_complete(self.player) else (200, 200, 200)
                     )
                     self.screen.blit(progress_text, (quest_x + list_width - 150, quest_y + 25))
 
@@ -607,8 +609,8 @@ class QuestWindow:
             self.screen.blit(progress_label, (x + padding, line_y))
             line_y += 22
 
-            progress_color = (100, 255, 100) if quest.is_complete() else (200, 200, 100)
-            progress_text = self.info_font.render(quest.get_progress_text(), True, progress_color)
+            progress_color = (100, 255, 100) if quest.is_complete(self.player) else (200, 200, 100)
+            progress_text = self.info_font.render(quest.get_progress_text(self.player), True, progress_color)
             self.screen.blit(progress_text, (x + padding, line_y))
             line_y += 25
 

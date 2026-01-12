@@ -96,7 +96,8 @@ class QuestManager:
         location_name = getattr(location, 'name', '') or ''
 
         for quest in self.active_quests:
-            if not quest.is_complete():
+            # Передаём player для проверки inventory-based квестов
+            if not quest.is_complete(self._player):
                 continue
 
             # Для квестов доставки - сдача в точке назначения
@@ -149,6 +150,14 @@ class QuestManager:
         """
         if not self._player:
             return {}
+
+        # Для квестов на сбор ресурсов/предметов - забираем предметы из инвентаря
+        if quest.is_inventory_based():
+            item_id = quest.get_inventory_item_id()
+            if item_id:
+                removed = self._player.inventory.remove_item_by_id(item_id, quest.target_amount)
+                if removed < quest.target_amount:
+                    print(f"Предупреждение: удалено только {removed}/{quest.target_amount} предметов")
 
         rewards = {
             'gold': quest.reward_gold,
@@ -236,10 +245,10 @@ class QuestManager:
             if quest.update_progress(event_type, event_data):
                 updated.append(quest)
                 # Выводим сообщение о прогрессе
-                if quest.is_complete():
+                if quest.is_complete(self._player):
                     print(f"Квест выполнен! Вернитесь для получения награды: {quest.name}")
                 else:
-                    print(f"Прогресс квеста '{quest.name}': {quest.get_progress_text()}")
+                    print(f"Прогресс квеста '{quest.name}': {quest.get_progress_text(self._player)}")
         return updated
 
     def tick(self) -> List[QuestInstance]:

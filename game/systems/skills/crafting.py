@@ -185,15 +185,6 @@ class Mining(Skill):
                 if hasattr(user, 'resources_collected'):
                     user.resources_collected += quantity
 
-                # Уведомляем систему квестов о сборе ресурса
-                if hasattr(user, 'quest_manager') and user.quest_manager:
-                    item_id = getattr(ore_item, 'item_id', None)
-                    if item_id:
-                        user.quest_manager.update_quest_progress(
-                            'resource_gathered',
-                            {'resource_type': item_id, 'amount': quantity}
-                        )
-
         # Шанс найти драгоценный камень
         player_luck = getattr(user, 'luck', 1)
         if hasattr(user, 'get_effective_stat'):
@@ -298,14 +289,6 @@ class Lumberjacking(Skill):
                 messages.append(f"Срублено: {item.name} x{quantity}")
                 if hasattr(user, 'resources_collected'):
                     user.resources_collected += 1
-                # Уведомляем систему квестов о сборе ресурса
-                if hasattr(user, 'quest_manager') and user.quest_manager:
-                    item_id = getattr(item, 'item_id', None)
-                    if item_id:
-                        user.quest_manager.update_quest_progress(
-                            'resource_gathered',
-                            {'resource_type': item_id, 'amount': quantity}
-                        )
             result['message'] = "\n".join(messages) if messages else f"{user.name} срубил деревья!"
         else:
             result['success'] = False

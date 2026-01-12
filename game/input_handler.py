@@ -1393,7 +1393,8 @@ class InputHandler:
             location,
             available,
             active,
-            turn_in
+            turn_in,
+            self.ctx.player
         )
 
     def route_menu_event(self, event, quest_action_handler=None):
