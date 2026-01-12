@@ -2795,6 +2795,10 @@ class QuestEditDialog(Dialog):
                         self.data['target_item_id'] = ''
                     elif key == QUEST_COLLECT_ITEMS:
                         self.data['target_type'] = ''
+                    elif key in (QUEST_DELIVER_MESSAGE, QUEST_CLEAR_LOCATION):
+                        # These quest types don't use target_type/target_amount
+                        self.data['target_type'] = ''
+                        self.data['target_amount'] = 0
                     # Reset target location/floor when switching to non-location quests
                     if key not in (QUEST_DELIVER_MESSAGE, QUEST_CLEAR_LOCATION):
                         self.data['target_location_id'] = ''
