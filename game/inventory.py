@@ -963,6 +963,51 @@ class Inventory:
         _, current_quantity = self.items[item_name]
         return current_quantity
 
+    def get_item_count_by_id(self, item_id):
+        """
+        Получить количество предмета по его ID (item_id из items_data.json).
+
+        Args:
+            item_id: ID предмета (например, 'wood', 'iron_ore')
+
+        Returns:
+            int: Суммарное количество предметов с данным ID
+        """
+        total = 0
+        for item_name, (item, quantity) in self.items.items():
+            if getattr(item, 'item_id', None) == item_id:
+                total += quantity
+        return total
+
+    def remove_item_by_id(self, item_id, quantity=1):
+        """
+        Удалить предмет по его ID.
+
+        Args:
+            item_id: ID предмета (например, 'wood', 'iron_ore')
+            quantity: Количество для удаления
+
+        Returns:
+            int: Фактически удалённое количество
+        """
+        removed = 0
+        to_remove_from = []
+
+        # Находим предметы с данным item_id
+        for item_name, (item, item_qty) in self.items.items():
+            if getattr(item, 'item_id', None) == item_id:
+                to_remove_from.append((item_name, item_qty))
+
+        # Удаляем нужное количество
+        for item_name, item_qty in to_remove_from:
+            if removed >= quantity:
+                break
+            can_remove = min(quantity - removed, item_qty)
+            self.remove_item(item_name, can_remove)
+            removed += can_remove
+
+        return removed
+
     def add_gold(self, amount):
         """Добавить золото"""
         self.gold += amount

@@ -660,7 +660,8 @@ class Game:
             location,
             available_quests,
             active_quests,
-            turn_in_quests
+            turn_in_quests,
+            self.player
         )
         self.quest_window_open = True
 
@@ -676,7 +677,8 @@ class Game:
             None,
             [],  # available_quests - нельзя взять квесты не в локации
             active_quests,
-            []   # turn_in_quests - нельзя сдать квесты не в локации
+            [],  # turn_in_quests - нельзя сдать квесты не в локации
+            self.player
         )
         self.quest_window.mode = "active"
         self.quest_window_open = True

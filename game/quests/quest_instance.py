@@ -107,39 +107,26 @@ class QuestInstance:
 
         Args:
             event_type: Тип события:
-                - 'resource_gathered': Собран ресурс
                 - 'animal_killed': Убито животное
-                - 'item_collected': Собран предмет
                 - 'location_visited': Посещена локация
                 - 'floor_cleared': Зачищен этаж
 
             event_data: Данные события:
-                - resource_type: Тип ресурса
                 - animal_type: Тип животного
-                - item_id: ID предмета
                 - location_id: ID локации
                 - floor: Номер этажа
                 - amount: Количество
 
         Returns:
             True если прогресс обновлен
-        """
-        if self.quest_type == QuestType.GATHER_RESOURCE and event_type == 'resource_gathered':
-            resource_type = event_data.get('resource_type')
-            print(f"[DEBUG Quest] Checking gather_resource: received={resource_type}, target={self.target_type}, match={resource_type == self.target_type}")
-            if resource_type == self.target_type:
-                self.current_amount += event_data.get('amount', 1)
-                print(f"[DEBUG Quest] Progress updated: {self.current_amount}/{self.target_amount}")
-                return True
 
-        elif self.quest_type == QuestType.HUNT_ANIMALS and event_type == 'animal_killed':
+        Note:
+            Квесты gather_resource и collect_items проверяются по инвентарю,
+            а не по событиям. См. методы check_inventory_progress() и is_complete_with_inventory().
+        """
+        if self.quest_type == QuestType.HUNT_ANIMALS and event_type == 'animal_killed':
             if event_data.get('animal_type') == self.target_type:
                 self.current_amount += 1
-                return True
-
-        elif self.quest_type == QuestType.COLLECT_ITEMS and event_type == 'item_collected':
-            if event_data.get('item_id') == self.target_item_id:
-                self.current_amount += event_data.get('amount', 1)
                 return True
 
         elif self.quest_type == QuestType.DELIVER_MESSAGE and event_type == 'location_visited':
@@ -179,9 +166,55 @@ class QuestInstance:
 
         return False
 
-    def is_complete(self) -> bool:
-        """Проверить, выполнен ли квест."""
-        if self.quest_type in (QuestType.GATHER_RESOURCE, QuestType.HUNT_ANIMALS, QuestType.COLLECT_ITEMS):
+    def get_inventory_item_id(self) -> Optional[str]:
+        """
+        Получить item_id для проверки инвентаря.
+
+        Returns:
+            item_id для gather_resource/collect_items квестов, иначе None
+        """
+        if self.quest_type == QuestType.GATHER_RESOURCE:
+            return self.target_type
+        elif self.quest_type == QuestType.COLLECT_ITEMS:
+            return self.target_item_id
+        return None
+
+    def check_inventory_progress(self, player) -> int:
+        """
+        Проверить прогресс квеста по инвентарю игрока.
+
+        Args:
+            player: Объект игрока
+
+        Returns:
+            Количество предметов в инвентаре для данного квеста
+        """
+        item_id = self.get_inventory_item_id()
+        if not item_id:
+            return 0
+
+        if hasattr(player, 'inventory') and hasattr(player.inventory, 'get_item_count_by_id'):
+            return player.inventory.get_item_count_by_id(item_id)
+        return 0
+
+    def is_inventory_based(self) -> bool:
+        """Проверить, основан ли квест на проверке инвентаря."""
+        return self.quest_type in (QuestType.GATHER_RESOURCE, QuestType.COLLECT_ITEMS)
+
+    def is_complete(self, player=None) -> bool:
+        """
+        Проверить, выполнен ли квест.
+
+        Args:
+            player: Объект игрока (обязателен для inventory-based квестов)
+        """
+        if self.quest_type in (QuestType.GATHER_RESOURCE, QuestType.COLLECT_ITEMS):
+            # Для квестов на сбор - проверяем инвентарь
+            if player:
+                inventory_count = self.check_inventory_progress(player)
+                return inventory_count >= self.target_amount
+            return False
+        elif self.quest_type == QuestType.HUNT_ANIMALS:
             return self.current_amount >= self.target_amount
         elif self.quest_type in (QuestType.DELIVER_MESSAGE, QuestType.CLEAR_LOCATION):
             return self.current_amount >= 1
@@ -198,9 +231,20 @@ class QuestInstance:
         if self.time_limit > 0 and self.time_remaining > 0:
             self.time_remaining -= 1
 
-    def get_progress_text(self) -> str:
-        """Получить текст прогресса."""
-        if self.quest_type in (QuestType.GATHER_RESOURCE, QuestType.HUNT_ANIMALS, QuestType.COLLECT_ITEMS):
+    def get_progress_text(self, player=None) -> str:
+        """
+        Получить текст прогресса.
+
+        Args:
+            player: Объект игрока (для inventory-based квестов)
+        """
+        if self.quest_type in (QuestType.GATHER_RESOURCE, QuestType.COLLECT_ITEMS):
+            # Для квестов на сбор - показываем количество в инвентаре
+            if player:
+                inventory_count = self.check_inventory_progress(player)
+                return f"{inventory_count}/{self.target_amount}"
+            return f"?/{self.target_amount}"
+        elif self.quest_type == QuestType.HUNT_ANIMALS:
             return f"{self.current_amount}/{self.target_amount}"
         elif self.quest_type == QuestType.DELIVER_MESSAGE:
             if self.current_amount >= 1:
