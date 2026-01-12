@@ -325,6 +325,12 @@ class Quest:
     # Availability
     is_repeatable: bool = True  # Whether quest can be repeated
     cooldown: int = 100  # Cooldown in turns before quest can be taken again
+    # Requirements
+    min_player_attitude: int = 0  # Minimum player_attitude required to get this quest (-10 to 10)
+    # Penalties
+    fail_attitude_penalty: int = 0  # Penalty to player_attitude when quest is failed (0-20)
+    # Events
+    completion_event_id: str = ""  # Event ID to trigger on quest completion (in addition to rewards)
     # Scaling
     scaling_factor: float = 1.1  # Coefficient for scaling rewards/targets by player level
 
@@ -355,6 +361,9 @@ class Quest:
             'reward_reputation': self.reward_reputation,
             'is_repeatable': self.is_repeatable,
             'cooldown': self.cooldown,
+            'min_player_attitude': self.min_player_attitude,
+            'fail_attitude_penalty': self.fail_attitude_penalty,
+            'completion_event_id': self.completion_event_id,
             'scaling_factor': self.scaling_factor
         }
 
@@ -384,6 +393,9 @@ class Quest:
             reward_reputation=data.get('reward_reputation', 5),
             is_repeatable=data.get('is_repeatable', True),
             cooldown=data.get('cooldown', 100),
+            min_player_attitude=data.get('min_player_attitude', 0),
+            fail_attitude_penalty=data.get('fail_attitude_penalty', 0),
+            completion_event_id=data.get('completion_event_id', ''),
             scaling_factor=data.get('scaling_factor', 1.1)
         )
 

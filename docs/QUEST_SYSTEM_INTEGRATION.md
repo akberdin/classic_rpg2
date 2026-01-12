@@ -41,6 +41,7 @@
   "target_amount": 10,
   "time_limit": 100,
   "difficulty": 2,
+  "min_player_attitude": 0,
   "target_location_id": "",
   "target_location_name": "",
   "target_floor": 0,
@@ -49,8 +50,10 @@
   "reward_item_amount": 1,
   "reward_exp": 75,
   "reward_reputation": 10,
+  "completion_event_id": "",
   "is_repeatable": true,
   "cooldown": 50,
+  "fail_attitude_penalty": 0,
   "scaling_factor": 1.1
 }
 ```
@@ -244,13 +247,16 @@
 | `target_item_id` | string | ID предмета для сбора (только для collect_items) | "" |
 | `time_limit` | int | Лимит времени в ходах (0 = без лимита) | 0 |
 | `difficulty` | int | Сложность (1-5) | 1 |
+| `min_player_attitude` | int | Минимальное отношение игрока для получения квеста (-10 до 10) | 0 |
 | `reward_gold` | int | Награда золотом | 100 |
 | `reward_item_id` | string | ID предмета в качестве награды | "" |
 | `reward_item_amount` | int | Количество предметов награды | 1 |
 | `reward_exp` | int | Награда опытом | 50 |
 | `reward_reputation` | int | Награда репутацией | 5 |
+| `completion_event_id` | string | ID события для запуска после завершения квеста | "" |
 | `is_repeatable` | bool | Повторяемый квест | true |
 | `cooldown` | int | Перезарядка в ходах | 100 |
+| `fail_attitude_penalty` | int | Штраф к отношению при провале квеста (0-20) | 0 |
 | `scaling_factor` | float | Коэффициент масштабирования (1.0-2.0) | 1.1 |
 
 ## Уровни сложности
@@ -272,6 +278,106 @@
 - `warrior_academy` - академия воинов
 - `magic_school` - школа магии
 - `secret_camp` - тайный лагерь
+
+---
+
+## Требования и штрафы
+
+### Минимальное отношение (min_player_attitude)
+
+Поле `min_player_attitude` определяет минимальное значение `player_attitude` локации к игроку, необходимое для получения квеста.
+
+| Параметр | Тип | Диапазон | По умолчанию |
+|----------|-----|----------|--------------|
+| `min_player_attitude` | int | -10 до 10 | 0 |
+
+**Пример использования:**
+```json
+{
+  "quest_type": "clear_location",
+  "name": "Зачистка древних руин",
+  "min_player_attitude": 3,
+  "difficulty": 4
+}
+```
+Этот квест будет доступен только если `player_attitude` локации к игроку >= 3.
+
+### Штраф за провал (fail_attitude_penalty)
+
+Поле `fail_attitude_penalty` определяет штраф к `player_attitude` при провале квеста (истечение времени или отказ).
+
+| Параметр | Тип | Диапазон | По умолчанию |
+|----------|-----|----------|--------------|
+| `fail_attitude_penalty` | int | 0 до 20 | 0 |
+
+**Пример:**
+```json
+{
+  "quest_type": "deliver_message",
+  "name": "Срочное донесение",
+  "time_limit": 50,
+  "fail_attitude_penalty": 5
+}
+```
+Если игрок не успеет доставить послание вовремя, `player_attitude` локации уменьшится на 5.
+
+---
+
+## Событие завершения (completion_event_id)
+
+Поле `completion_event_id` позволяет указать ID события, которое будет запущено после успешного завершения квеста. Это дополнение к стандартным наградам, а не замена.
+
+| Параметр | Тип | По умолчанию |
+|----------|-----|--------------|
+| `completion_event_id` | string | "" |
+
+**Примеры использования:**
+
+```json
+{
+  "quest_type": "clear_location",
+  "name": "Очистить заброшенную шахту",
+  "completion_event_id": "unlock_mine_001",
+  "reward_gold": 500
+}
+```
+После завершения квеста игрок получит 500 золота И будет запущено событие `unlock_mine_001`.
+
+```json
+{
+  "quest_type": "deliver_message",
+  "name": "Тайное послание",
+  "completion_event_id": "start_secret_storyline",
+  "reward_reputation": 10
+}
+```
+После доставки послания будет запущено событие начала секретной сюжетной линии.
+
+### Интеграция в игре
+
+```python
+def complete_quest(self, quest: QuestInstance) -> dict:
+    """Завершить квест и выдать награды."""
+    rewards = {
+        'gold': quest.reward_gold,
+        'exp': quest.reward_exp,
+        'reputation': quest.reward_reputation
+    }
+
+    # Выдать стандартные награды
+    self.player.gold += rewards['gold']
+    self.player.add_exp(rewards['exp'])
+
+    # Выдать предмет если указан
+    if quest.reward_item_id:
+        self.player.inventory.add_item(quest.reward_item_id, quest.reward_item_amount)
+
+    # Запустить событие завершения если указано
+    if quest.completion_event_id:
+        self.event_manager.trigger_event(quest.completion_event_id)
+
+    return rewards
+```
 
 ---
 
@@ -583,14 +689,17 @@ class QuestManager:
       "target_amount": 15,
       "time_limit": 0,
       "difficulty": 1,
+      "min_player_attitude": 0,
       "target_location_id": "",
       "target_location_name": "",
       "target_floor": 0,
       "reward_gold": 100,
       "reward_exp": 50,
       "reward_reputation": 5,
+      "completion_event_id": "",
       "is_repeatable": true,
       "cooldown": 100,
+      "fail_attitude_penalty": 0,
       "scaling_factor": 1.1
     },
     {
@@ -641,6 +750,7 @@ class QuestManager:
       "target_amount": 10,
       "time_limit": 0,
       "difficulty": 4,
+      "min_player_attitude": 5,
       "target_location_id": "loc_mine_nearby",
       "target_location_name": "Старая шахта",
       "target_floor": 0,
@@ -649,8 +759,10 @@ class QuestManager:
       "reward_item_amount": 1,
       "reward_exp": 250,
       "reward_reputation": 25,
+      "completion_event_id": "unlock_mine_resources",
       "is_repeatable": true,
       "cooldown": 500,
+      "fail_attitude_penalty": 10,
       "scaling_factor": 1.2
     },
     {
@@ -721,6 +833,9 @@ class QuestManager:
 - При отсутствии `target_item_id` используется пустая строка
 - При отсутствии `reward_item_id` используется пустая строка
 - При отсутствии `reward_item_amount` используется значение 1
+- При отсутствии `min_player_attitude` используется значение 0
+- При отсутствии `fail_attitude_penalty` используется значение 0
+- При отсутствии `completion_event_id` используется пустая строка
 
 ---
 
