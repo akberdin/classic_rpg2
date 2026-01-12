@@ -2,11 +2,44 @@
   "version": "1.0",
   "locations": [
     {
-      "x": 17,
-      "y": 15,
+      "x": 115,
+      "y": 176,
+      "type": "capital",
+      "name": "Рекхайм",
+      "id": "dab085a2-5a28-4aa1-949f-1015766df0dd",
+      "player_attitude": -6,
+      "spawn_radius": 5,
+      "shop_rank": 4,
+      "guards": [
+        {
+          "type": "warrior",
+          "rank": 4,
+          "count": 5,
+          "patrol_radius": 10,
+          "respawn_time": 50
+        },
+        {
+          "type": "mage",
+          "rank": 4,
+          "count": 5,
+          "patrol_radius": 10,
+          "respawn_time": 100
+        },
+        {
+          "type": "warrior",
+          "rank": 3,
+          "count": 5,
+          "patrol_radius": 15,
+          "respawn_time": 50
+        }
+      ]
+    },
+    {
+      "x": 140,
+      "y": 36,
       "type": "village",
       "name": "Тихая",
-      "id": "53d1fc68-0a51-4d9e-8cc3-6a3741176673",
+      "id": "2235ca37-c81f-45d2-a20e-5cf229d2e327",
       "player_attitude": 0,
       "spawn_radius": 5,
       "shop_rank": 1,
@@ -14,331 +47,75 @@
         {
           "type": "hunter",
           "rank": 2,
+          "count": 1,
+          "patrol_radius": 10,
+          "respawn_time": 50
+        },
+        {
+          "type": "hunter",
+          "rank": 1,
           "count": 2,
-          "patrol_radius": 8,
-          "respawn_time": 20
+          "patrol_radius": 15,
+          "respawn_time": 50
         }
       ],
-      "connections": [
-        [
-          29,
-          22
-        ],
-        [
-          9,
-          17
-        ],
-        [
-          1,
-          8
-        ],
-        [
-          4,
-          27
-        ]
-      ]
-    },
-    {
-      "x": 17,
-      "y": 9,
-      "type": "mine",
-      "name": "Железная жила",
-      "id": "97a39aea-b225-4613-a114-f8106e7daa18",
-      "player_attitude": 0,
-      "spawn_radius": 3,
-      "rank": 2,
-      "miners_count": 0,
-      "respawn_time": 35,
-      "resource_type": "iron",
-      "connections": [
-        [
-          29,
-          11
-        ]
-      ],
-      "floors": [
+      "quests": [
         {
-          "floor_number": 1,
-          "floor_type": "mine",
-          "size": 2,
-          "npcs": [
-            {
-              "type": "miner",
-              "rank": 1,
-              "count": 5
-            },
-            {
-              "type": "warrior",
-              "rank": 4,
-              "count": 5
-            }
-          ]
+          "id": "3fb39b6a-e12b-4060-aca9-c3841ac011ad",
+          "quest_type": "gather_resource",
+          "name": "Дерево для лесопилки",
+          "description": "Доставить дерево для лесопилки",
+          "target_type": "wood",
+          "target_amount": 5,
+          "time_limit": 0,
+          "difficulty": 1,
+          "target_location_id": "",
+          "target_location_name": "",
+          "target_floor": 0,
+          "reward_gold": 10,
+          "reward_exp": 20,
+          "reward_reputation": 0,
+          "is_repeatable": true,
+          "cooldown": 100
         }
       ]
     },
     {
-      "x": 9,
-      "y": 17,
-      "type": "mine",
-      "name": "Медный рудник",
-      "id": "e1f7c97b-359d-4f8b-bc0d-038bfd77a989",
-      "player_attitude": 0,
-      "spawn_radius": 3,
-      "rank": 2,
-      "miners_count": 1,
-      "respawn_time": 60,
-      "resource_type": "copper",
-      "connections": [
-        [
-          17,
-          15
-        ]
-      ],
-      "floors": [
-        {
-          "floor_number": 1,
-          "floor_type": "mine",
-          "size": 2,
-          "npcs": [
-            {
-              "type": "miner",
-              "rank": 2,
-              "count": 4
-            },
-            {
-              "type": "warrior",
-              "rank": 2,
-              "count": 2
-            }
-          ]
-        },
-        {
-          "floor_number": 2,
-          "floor_type": "mine",
-          "size": 3,
-          "npcs": [
-            {
-              "type": "rat",
-              "rank": 1,
-              "count": 3
-            }
-          ]
-        },
-        {
-          "floor_number": 3,
-          "floor_type": "mine",
-          "size": 4,
-          "npcs": [
-            {
-              "type": "rat",
-              "rank": 1,
-              "count": 5
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "x": 29,
-      "y": 11,
-      "type": "village",
-      "name": "Дубравка",
-      "id": "d91738da-0057-413a-95f8-2031b277191e",
-      "player_attitude": 0,
-      "spawn_radius": 5,
-      "shop_rank": 1,
-      "connections": [
-        [
-          29,
-          22
-        ],
-        [
-          17,
-          9
-        ],
-        [
-          25,
-          1
-        ]
-      ]
-    },
-    {
-      "x": 29,
-      "y": 22,
-      "type": "city",
-      "name": "Кристальград",
-      "id": "84334b75-22d1-419f-be11-4b1329b0fa9f",
-      "player_attitude": 0,
-      "spawn_radius": 5,
-      "shop_rank": 1,
-      "connections": [
-        [
-          29,
-          11
-        ],
-        [
-          17,
-          15
-        ]
-      ]
-    },
-    {
-      "x": 11,
-      "y": 11,
-      "type": "spawn_wolf",
-      "name": "Волчье логово",
-      "id": "373df51e-3e7a-4d6b-9403-753552966dc5",
-      "player_attitude": 0,
-      "spawn_radius": 10,
-      "animal_count": 5,
-      "respawn_time": 20
-    },
-    {
-      "x": 6,
-      "y": 45,
-      "type": "ruins",
-      "name": "Забытый храм",
-      "id": "b9f3e62d-21e2-451e-9667-daa2c53de032",
-      "player_attitude": 0,
-      "spawn_radius": 5,
-      "rank": 2,
-      "floors": [
-        {
-          "floor_number": 1,
-          "floor_type": "basement",
-          "size": 1
-        },
-        {
-          "floor_number": 2,
-          "floor_type": "dark_basement",
-          "size": 2
-        },
-        {
-          "floor_number": 3,
-          "floor_type": "gloomy_basement",
-          "size": 3
-        },
-        {
-          "floor_number": 4,
-          "floor_type": "abyss",
-          "size": 1
-        }
-      ]
-    },
-    {
-      "x": 4,
-      "y": 27,
-      "type": "mine",
-      "name": "Золотые копи",
-      "id": "b6c4ee61-8602-4652-b9ad-2101e8b12b0f",
-      "player_attitude": 0,
-      "spawn_radius": 1,
-      "rank": 2,
-      "miners_count": 3,
-      "respawn_time": 100,
-      "resource_type": "gold"
-    },
-    {
-      "x": 1,
-      "y": 8,
-      "type": "mine",
-      "name": "Мифриловые жилы",
-      "id": "57d5e3f4-82fc-481f-a5b9-671e1c14dea5",
-      "player_attitude": 0,
-      "spawn_radius": 4,
-      "rank": 4,
-      "miners_count": 3,
-      "respawn_time": 100,
-      "resource_type": "ц"
-    },
-    {
-      "x": 25,
-      "y": 1,
-      "type": "mine",
-      "name": "Серебрянная штольня",
-      "id": "4327edb6-5aae-4b14-8484-701762eca22e",
-      "player_attitude": 0,
-      "spawn_radius": 3,
-      "rank": 2,
-      "miners_count": 3,
-      "respawn_time": 100,
-      "resource_type": "silver",
-      "floors": [
-        {
-          "floor_number": 1,
-          "floor_type": "mine",
-          "size": 2,
-          "npcs": [
-            {
-              "type": "miner",
-              "rank": 1,
-              "count": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "x": 39,
-      "y": 4,
+      "x": 130,
+      "y": 29,
       "type": "spawn_deer",
       "name": "Оленья поляна",
-      "id": "0b6cf9ba-55eb-4d99-b8d2-a9100e58a17b",
+      "id": "10188534-30db-417c-8c40-15dc0010ed12",
       "player_attitude": 0,
+      "spawn_radius": 6,
+      "animal_count": 4,
+      "respawn_time": 110
+    },
+    {
+      "x": 109,
+      "y": 27,
+      "type": "spawn_deer",
+      "name": "Оленья тропа",
+      "id": "63d875c7-bc06-47d2-a4f6-b0059875f791",
+      "player_attitude": 0,
+      "spawn_radius": 6,
+      "animal_count": 3,
+      "respawn_time": 135
+    },
+    {
+      "x": 129,
+      "y": 8,
+      "type": "spawn_bear",
+      "name": "Медвежья берлога",
+      "id": "268196be-1b34-4d22-8188-1ad49962ac4b",
+      "player_attitude": -7,
       "spawn_radius": 5,
-      "animal_count": 7,
+      "animal_count": 3,
       "respawn_time": 50
     }
   ],
   "starting_village": {
-    "x": 17,
-    "y": 15
-  },
-  "merchants": [
-    {
-      "id": "412cdcf6-062e-4767-be50-abc5a2a991f1",
-      "name": "Хитрый Хан",
-      "rank": 3,
-      "waypoints": [
-        {
-          "x": 30,
-          "y": 22,
-          "duration": 2
-        },
-        {
-          "x": 30,
-          "y": 11,
-          "duration": 2
-        },
-        {
-          "x": 18,
-          "y": 15,
-          "duration": 2
-        },
-        {
-          "x": 19,
-          "y": 25,
-          "duration": 10
-        }
-      ],
-      "color": [
-        255,
-        165,
-        0
-      ],
-      "is_loop": true,
-      "specializations": {
-        "jewelry": 0,
-        "books": 0,
-        "resources": 1,
-        "armor": 1,
-        "weapons": 1,
-        "potions": 1,
-        "recipes": 1
-      },
-      "respawn_time": 20,
-      "assortment_update": 100,
-      "wealth": 3500
-    }
-  ]
+    "x": 140,
+    "y": 36
+  }
 }
