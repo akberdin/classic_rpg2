@@ -67,6 +67,11 @@ class Player(Character):
         from game.companion_manager import CompanionManager
         self.companion_manager = CompanionManager()
 
+        # Менеджер квестов
+        from game.quests import QuestManager
+        self.quest_manager = QuestManager()
+        self.quest_manager.set_player(self)
+
         # Чит-мод (бессмертие)
         self.godmode = False
 

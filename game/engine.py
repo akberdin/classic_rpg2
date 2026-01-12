@@ -639,33 +639,86 @@ class Game:
         print(f"Рядом находится {len(nearby_npcs)} NPC. Выберите с кем взаимодействовать.")
 
     def open_quest_window(self, location):
-        """Открыть окно квестов (система квестов на переработке)."""
-        # Система квестов на переработке - окно показывает заглушку
+        """Открыть окно квестов для локации."""
+        if not location:
+            self.open_quest_window_anywhere()
+            return
+
+        quest_manager = self.player.quest_manager
+
+        # Получаем доступные квесты в локации
+        available_quests = quest_manager.get_available_quests(location)
+
+        # Получаем активные квесты
+        active_quests = quest_manager.get_active_quests()
+
+        # Получаем квесты, готовые к сдаче в этой локации
+        turn_in_quests = quest_manager.get_quests_to_turn_in(location)
+
         self.quest_window.set_data(
-            location.name if location else "Журнал квестов",
-            None,
-            [],  # available_quests
-            [],  # active_quests
-            []   # turn_in_quests
+            location.name,
+            location,
+            available_quests,
+            active_quests,
+            turn_in_quests
         )
         self.quest_window_open = True
 
     def open_quest_window_anywhere(self):
-        """Открыть окно квестов из любого места (система квестов на переработке)."""
+        """Открыть окно квестов из любого места (журнал квестов)."""
+        quest_manager = self.player.quest_manager
+
+        # Получаем активные квесты
+        active_quests = quest_manager.get_active_quests()
+
         self.quest_window.set_data(
             "Журнал квестов",
             None,
-            [],  # available_quests
-            [],  # active_quests
-            []   # turn_in_quests
+            [],  # available_quests - нельзя взять квесты не в локации
+            active_quests,
+            []   # turn_in_quests - нельзя сдать квесты не в локации
         )
         self.quest_window.mode = "active"
         self.quest_window_open = True
 
     def _handle_quest_action(self, action):
-        """Обработка действий квестов (система квестов на переработке)."""
-        # Система квестов на переработке - действия не выполняются
-        pass
+        """Обработка действий квестов."""
+        quest_manager = self.player.quest_manager
+        location = self.quest_window.location
+
+        if action == 'accept':
+            # Принять выбранный квест
+            selected_quest = self.quest_window.get_selected_quest()
+            if selected_quest and self.quest_window.mode == "available":
+                location_id = getattr(location, 'id', '') if location else ''
+                quest = quest_manager.accept_quest(selected_quest, location_id)
+                if quest:
+                    # Обновляем данные окна
+                    if location:
+                        self.open_quest_window(location)
+
+        elif action == 'abandon':
+            # Отказаться от квеста
+            selected_quest = self.quest_window.get_selected_quest()
+            if selected_quest and self.quest_window.mode == "active":
+                quest_manager.abandon_quest(selected_quest, location)
+                # Обновляем данные окна
+                if location:
+                    self.open_quest_window(location)
+                else:
+                    self.open_quest_window_anywhere()
+
+        elif action == 'turn_in':
+            # Сдать выполненный квест
+            selected_quest = self.quest_window.get_selected_quest()
+            if selected_quest and self.quest_window.mode == "turn_in":
+                quest_manager.complete_quest(selected_quest)
+                # Обновляем данные окна
+                if location:
+                    self.open_quest_window(location)
+
+        elif action == 'close':
+            self.quest_window_open = False
 
     def _handle_potion_slot_click(self, mouse_pos):
         """
@@ -738,16 +791,7 @@ class Game:
 
     def _open_quest_journal(self):
         """Открытие журнала квестов."""
-        # Система квестов на переработке
-        self.quest_window.set_data(
-            "Журнал квестов",
-            None,
-            [],  # available_quests
-            [],  # active_quests
-            []   # turn_in_quests
-        )
-        self.quest_window.mode = "active"
-        self.quest_window_open = True
+        self.open_quest_window_anywhere()
 
     def _handle_dungeon_move_click(self, mouse_pos):
         """
