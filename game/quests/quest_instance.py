@@ -26,7 +26,15 @@ class QuestInstance:
         self.id = quest_config.get('id', '')
         self.name = quest_config.get('name', 'Неизвестный квест')
         self.description = quest_config.get('description', '')
-        self.quest_type = quest_config.get('quest_type', QuestType.GATHER_RESOURCE)
+
+        # Конвертируем quest_type в enum для корректных сравнений
+        quest_type_value = quest_config.get('quest_type', 'gather_resource')
+        try:
+            self.quest_type = QuestType(quest_type_value)
+        except ValueError:
+            print(f"[QuestInstance] Неизвестный тип квеста: {quest_type_value}, используем gather_resource")
+            self.quest_type = QuestType.GATHER_RESOURCE
+
         self.difficulty = quest_config.get('difficulty', 1)
 
         # Параметры масштабирования
