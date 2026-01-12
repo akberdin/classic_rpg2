@@ -730,8 +730,8 @@ class LocationEditDialog(Dialog):
         # Calculate dialog height based on location type
         loc_type = self.location_info.get('type', '')
         height = 450  # Base height increased for spawn_radius slider
+        height += 50  # Space for rank slider (for all location types)
         if loc_type in [LOCATION_MINE, LOCATION_RUINS]:
-            height += 50  # Space for rank slider
             height += 45  # Space for "Edit floors" button
         if loc_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
             height += 50  # Space for shop_rank slider
@@ -774,19 +774,19 @@ class LocationEditDialog(Dialog):
         self.data['name'] = self.location_info.get('name', '')
         y += 70
 
-        # Rank slider for mines and ruins
-        if loc_type in [LOCATION_MINE, LOCATION_RUINS]:
-            self.sliders.append(DialogSlider(
-                rect=pygame.Rect(20, y + 20, self.width - 40, 16),
-                label="Ранг (сложность)",
-                key="rank",
-                value=self.location_info.get('rank', 1),
-                min_val=1, max_val=4, step=1
-            ))
-            self.data['rank'] = self.location_info.get('rank', 1)
-            y += 50
+        # Rank slider for all location types
+        self.sliders.append(DialogSlider(
+            rect=pygame.Rect(20, y + 20, self.width - 40, 16),
+            label="Ранг локации (1-4)",
+            key="rank",
+            value=self.location_info.get('rank', 1),
+            min_val=1, max_val=4, step=1
+        ))
+        self.data['rank'] = self.location_info.get('rank', 1)
+        y += 50
 
-            # Button to edit floors
+        # Button to edit floors (only for mines and ruins)
+        if loc_type in [LOCATION_MINE, LOCATION_RUINS]:
             self.buttons.append(DialogButton(
                 rect=pygame.Rect(20, y, 200, 30),
                 text="Редактировать этажи",
@@ -2569,6 +2569,7 @@ class QuestEditDialog(Dialog):
             is_repeatable=quest.is_repeatable,
             cooldown=quest.cooldown,
             min_player_attitude=quest.min_player_attitude,
+            min_player_rank=quest.min_player_rank,
             fail_attitude_penalty=quest.fail_attitude_penalty,
             completion_event_id=quest.completion_event_id,
             scaling_factor=quest.scaling_factor
@@ -2580,7 +2581,7 @@ class QuestEditDialog(Dialog):
         self.on_select_location: Optional[Callable[[str], None]] = None  # 'deliver' or 'clear'
 
         title = "Новый квест" if self.is_new else "Редактирование квеста"
-        super().__init__(title, width=500, height=810)
+        super().__init__(title, width=500, height=850)  # Increased height for min_player_rank field
 
         self._active_dropdown: Optional[str] = None
         self._active_text_field: Optional[str] = None  # 'target_item_id' or 'reward_item_id'
@@ -2608,6 +2609,7 @@ class QuestEditDialog(Dialog):
         self.data['is_repeatable'] = self.quest.is_repeatable
         self.data['cooldown'] = self.quest.cooldown
         self.data['min_player_attitude'] = self.quest.min_player_attitude
+        self.data['min_player_rank'] = self.quest.min_player_rank
         self.data['fail_attitude_penalty'] = self.quest.fail_attitude_penalty
         self.data['completion_event_id'] = self.quest.completion_event_id
         self.data['scaling_factor'] = self.quest.scaling_factor
@@ -2706,13 +2708,13 @@ class QuestEditDialog(Dialog):
                 return True
 
             # Check checkbox is_repeatable
-            # For gather/hunt/collect: y=600 (reward_base=480 + 120)
-            # For deliver/clear: y=560 (reward_base=440 + 120)
+            # For gather/hunt/collect: y=640 (reward_base=520 + 120)
+            # For deliver/clear: y=600 (reward_base=480 + 120)
             quest_type = self.data.get('quest_type', QUEST_GATHER_RESOURCE)
             if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
-                checkbox_y = 600
+                checkbox_y = 640
             else:
-                checkbox_y = 560
+                checkbox_y = 600
             checkbox_rect = pygame.Rect(120, checkbox_y, 20, 20)
             if checkbox_rect.collidepoint(local_x, local_y):
                 self.data['is_repeatable'] = not self.data.get('is_repeatable', True)
@@ -2764,12 +2766,12 @@ class QuestEditDialog(Dialog):
         """Check if 'Select on map' button was clicked."""
         if self._needs_target_location():
             quest_type = self.data.get('quest_type', QUEST_GATHER_RESOURCE)
-            # For deliver/clear: y=330 (after min_player_attitude at y=290)
+            # For deliver/clear: y=370 (after min_player_rank at y=330)
             # For gather/hunt/collect this button is not shown
             if quest_type in (QUEST_DELIVER_MESSAGE, QUEST_CLEAR_LOCATION):
-                btn_y = 330
+                btn_y = 370
             else:
-                btn_y = 370  # fallback, should not reach here
+                btn_y = 410  # fallback, should not reach here
             btn_rect = pygame.Rect(340, btn_y, 140, 28)
             if btn_rect.collidepoint(local_x, local_y):
                 if self.on_select_location:
@@ -2888,11 +2890,27 @@ class QuestEditDialog(Dialog):
             self.data['min_player_attitude'] = min(10, self.data.get('min_player_attitude', 0) + 1)
             return True
 
+        # min_player_rank - after min_player_attitude
+        # For gather/hunt/collect: y=372 (330 + 40 + 2)
+        # For deliver/clear: y=332 (290 + 40 + 2)
+        if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
+            rank_y = 372
+        else:
+            rank_y = 332
+        minus_rect = pygame.Rect(120, rank_y, 30, 24)
+        plus_rect = pygame.Rect(220, rank_y, 30, 24)
+        if minus_rect.collidepoint(local_x, local_y):
+            self.data['min_player_rank'] = max(0, self.data.get('min_player_rank', 0) - 1)
+            return True
+        if plus_rect.collidepoint(local_x, local_y):
+            self.data['min_player_rank'] = min(4, self.data.get('min_player_rank', 0) + 1)
+            return True
+
         # Target floor - only for clear_location
-        # For clear_location: y=370 (after target_location at y=330)
+        # For clear_location: y=412 (after target_location at y=372)
         if quest_type == QUEST_CLEAR_LOCATION:
-            minus_rect = pygame.Rect(120, 372, 30, 24)
-            plus_rect = pygame.Rect(220, 372, 30, 24)
+            minus_rect = pygame.Rect(120, 412, 30, 24)
+            plus_rect = pygame.Rect(220, 412, 30, 24)
             if minus_rect.collidepoint(local_x, local_y):
                 self.data['target_floor'] = max(0, self.data.get('target_floor', 0) - 1)
                 return True
@@ -2901,12 +2919,12 @@ class QuestEditDialog(Dialog):
                 return True
 
         # Calculate base Y for rewards section based on quest type
-        # For gather/hunt/collect: rewards start at y=480 (header at y=450)
-        # For deliver/clear: rewards start at y=440 (header at y=410)
+        # For gather/hunt/collect: rewards start at y=520 (header at y=490)
+        # For deliver/clear: rewards start at y=480 (header at y=450)
         if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
-            reward_base_y = 480
+            reward_base_y = 520
         else:
-            reward_base_y = 440
+            reward_base_y = 480
 
         # Reward gold
         minus_rect = pygame.Rect(120, reward_base_y + 2, 30, 24)
@@ -3005,12 +3023,12 @@ class QuestEditDialog(Dialog):
             y += 40  # target type dropdown
 
         # Calculate reward_item_id position based on quest type
-        # For gather/hunt/collect: y=540 (reward_base=480 + 60)
-        # For deliver/clear: y=500 (reward_base=440 + 60)
+        # For gather/hunt/collect: y=580 (reward_base=520 + 60)
+        # For deliver/clear: y=540 (reward_base=480 + 60)
         if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
-            reward_item_y = 540
+            reward_item_y = 580
         else:
-            reward_item_y = 500
+            reward_item_y = 540
 
         # Reward item ID field
         reward_item_rect = pygame.Rect(120, reward_item_y + 2, 140, 24)
@@ -3145,6 +3163,14 @@ class QuestEditDialog(Dialog):
         attitude_text = str(min_attitude)
         self._draw_numeric_field(surface, min_attitude, self.x + 120, self.y + y, 130,
                                  display_text=attitude_text)
+        y += 40
+
+        # Minimum player rank (requirement to get quest)
+        self._draw_label(surface, "Мин. ранг игрока", self.x + 15, self.y + y + 4)
+        min_rank = self.data.get('min_player_rank', 0)
+        rank_text = "Без ограничения" if min_rank == 0 else f"Ранг {min_rank}"
+        self._draw_numeric_field(surface, min_rank, self.x + 120, self.y + y, 130,
+                                 display_text=rank_text)
         y += 40
 
         # Target location (for deliver_message and clear_location)
@@ -3464,6 +3490,7 @@ class QuestEditDialog(Dialog):
             is_repeatable=self.data.get('is_repeatable', True),
             cooldown=self.data.get('cooldown', 100),
             min_player_attitude=self.data.get('min_player_attitude', 0),
+            min_player_rank=self.data.get('min_player_rank', 0),
             fail_attitude_penalty=self.data.get('fail_attitude_penalty', 0),
             completion_event_id=self.data.get('completion_event_id', ''),
             scaling_factor=self.data.get('scaling_factor', 1.1)
@@ -3502,6 +3529,10 @@ class QuestListDialog(Dialog):
                 reward_reputation=q.reward_reputation,
                 is_repeatable=q.is_repeatable,
                 cooldown=q.cooldown,
+                min_player_attitude=q.min_player_attitude,
+                min_player_rank=q.min_player_rank,
+                fail_attitude_penalty=q.fail_attitude_penalty,
+                completion_event_id=q.completion_event_id,
                 scaling_factor=q.scaling_factor
             ))
         self.all_locations = all_locations or []
