@@ -89,15 +89,24 @@ class QuestManager:
         Returns:
             Список квестов для сдачи
         """
+        from game.quests.quest_types import QuestType
+
         turn_in = []
-        location_id = getattr(location, 'id', '')
+        location_id = getattr(location, 'id', '') or ''
+        location_name = getattr(location, 'name', '') or ''
 
         for quest in self.active_quests:
             if not quest.is_complete():
                 continue
 
-            # Квест можно сдать в локации, которая его выдала
-            if quest.source_location_id == location_id:
+            # Для квестов доставки - сдача в точке назначения
+            if quest.quest_type == QuestType.DELIVER_MESSAGE:
+                id_match = quest.target_location_id and location_id == quest.target_location_id
+                name_match = quest.target_location_name and location_name == quest.target_location_name
+                if id_match or name_match:
+                    turn_in.append(quest)
+            # Для остальных квестов - сдача в локации-источнике
+            elif quest.source_location_id == location_id:
                 turn_in.append(quest)
 
         return turn_in

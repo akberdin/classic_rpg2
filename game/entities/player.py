@@ -428,7 +428,12 @@ class Player(Character):
 
         # Получаем item_id (ключ из items_data.json)
         item_id = getattr(item, 'item_id', None)
+
+        # Отладка: показываем что передаётся
+        print(f"[DEBUG] Resource gathered: name={item.name}, item_id={item_id}, qty={quantity}")
+
         if not item_id:
+            print(f"[DEBUG] WARNING: item_id is None for {item.name}!")
             return
 
         # Список типов ресурсов для квестов добычи
@@ -438,6 +443,7 @@ class Player(Character):
         }
 
         if item_id in resource_types:
+            print(f"[DEBUG] Sending resource_gathered event: type={item_id}, amount={quantity}")
             self.quest_manager.update_quest_progress(
                 'resource_gathered',
                 {'resource_type': item_id, 'amount': quantity}
