@@ -2564,7 +2564,8 @@ class QuestEditDialog(Dialog):
             reward_exp=quest.reward_exp,
             reward_reputation=quest.reward_reputation,
             is_repeatable=quest.is_repeatable,
-            cooldown=quest.cooldown
+            cooldown=quest.cooldown,
+            scaling_factor=quest.scaling_factor
         )
         self.all_locations = all_locations or []
         self.is_new = quest is None
@@ -2573,7 +2574,7 @@ class QuestEditDialog(Dialog):
         self.on_select_location: Optional[Callable[[str], None]] = None  # 'deliver' or 'clear'
 
         title = "Новый квест" if self.is_new else "Редактирование квеста"
-        super().__init__(title, width=500, height=620)
+        super().__init__(title, width=500, height=650)
 
         self._active_dropdown: Optional[str] = None
         self._setup_controls()
@@ -2596,6 +2597,7 @@ class QuestEditDialog(Dialog):
         self.data['reward_reputation'] = self.quest.reward_reputation
         self.data['is_repeatable'] = self.quest.is_repeatable
         self.data['cooldown'] = self.quest.cooldown
+        self.data['scaling_factor'] = self.quest.scaling_factor
 
         # Text inputs
         y = 50
@@ -2850,6 +2852,18 @@ class QuestEditDialog(Dialog):
             self.data['cooldown'] = min(9999, self.data.get('cooldown', 100) + 10)
             return True
 
+        # Scaling factor (y=530)
+        minus_rect = pygame.Rect(120, 532, 30, 24)
+        plus_rect = pygame.Rect(220, 532, 30, 24)
+        if minus_rect.collidepoint(local_x, local_y):
+            current = self.data.get('scaling_factor', 1.1)
+            self.data['scaling_factor'] = round(max(1.0, current - 0.05), 2)
+            return True
+        if plus_rect.collidepoint(local_x, local_y):
+            current = self.data.get('scaling_factor', 1.1)
+            self.data['scaling_factor'] = round(min(2.0, current + 0.05), 2)
+            return True
+
         return False
 
     def draw(self, surface: pygame.Surface) -> None:
@@ -2987,6 +3001,14 @@ class QuestEditDialog(Dialog):
         self._draw_label(surface, "Перезарядка", self.x + 15, self.y + y + 4)
         self._draw_numeric_field(surface, self.data.get('cooldown', 100),
                                  self.x + 120, self.y + y, 130)
+        y += 30
+
+        # Scaling factor
+        self._draw_label(surface, "Коэффициент", self.x + 15, self.y + y + 4)
+        scaling = self.data.get('scaling_factor', 1.1)
+        scaling_text = f"{scaling:.2f}"
+        self._draw_float_field(surface, scaling, self.x + 120, self.y + y, 130,
+                               display_text=scaling_text)
 
         # Draw dropdown options on top
         if self._active_dropdown:
@@ -3034,6 +3056,32 @@ class QuestEditDialog(Dialog):
         pygame.draw.rect(surface, self.slider_bg, value_rect)
         pygame.draw.rect(surface, self.border_color, value_rect, 1)
         text = display_text if display_text else str(value)
+        val_text = self.font.render(text, True, self.text_color)
+        text_x = value_rect.x + (value_rect.width - val_text.get_width()) // 2
+        surface.blit(val_text, (text_x, y + 6))
+
+        # Plus button
+        plus_rect = pygame.Rect(x + width - 30, y + 2, 30, 24)
+        pygame.draw.rect(surface, self.button_color, plus_rect)
+        pygame.draw.rect(surface, self.border_color, plus_rect, 1)
+        plus_text = self.font.render("+", True, self.text_color)
+        surface.blit(plus_text, (x + width - 20, y + 6))
+
+    def _draw_float_field(self, surface: pygame.Surface, value: float, x: int, y: int,
+                          width: int, display_text: str = None) -> None:
+        """Draw a float field with +/- buttons."""
+        # Minus button
+        minus_rect = pygame.Rect(x, y + 2, 30, 24)
+        pygame.draw.rect(surface, self.button_color, minus_rect)
+        pygame.draw.rect(surface, self.border_color, minus_rect, 1)
+        minus_text = self.font.render("-", True, self.text_color)
+        surface.blit(minus_text, (x + 10, y + 6))
+
+        # Value display
+        value_rect = pygame.Rect(x + 35, y + 2, width - 70, 24)
+        pygame.draw.rect(surface, self.slider_bg, value_rect)
+        pygame.draw.rect(surface, self.border_color, value_rect, 1)
+        text = display_text if display_text else f"{value:.2f}"
         val_text = self.font.render(text, True, self.text_color)
         text_x = value_rect.x + (value_rect.width - val_text.get_width()) // 2
         surface.blit(val_text, (text_x, y + 6))
@@ -3145,7 +3193,8 @@ class QuestEditDialog(Dialog):
             reward_exp=self.data.get('reward_exp', 50),
             reward_reputation=self.data.get('reward_reputation', 5),
             is_repeatable=self.data.get('is_repeatable', True),
-            cooldown=self.data.get('cooldown', 100)
+            cooldown=self.data.get('cooldown', 100),
+            scaling_factor=self.data.get('scaling_factor', 1.1)
         )
 
 
@@ -3177,7 +3226,8 @@ class QuestListDialog(Dialog):
                 reward_exp=q.reward_exp,
                 reward_reputation=q.reward_reputation,
                 is_repeatable=q.is_repeatable,
-                cooldown=q.cooldown
+                cooldown=q.cooldown,
+                scaling_factor=q.scaling_factor
             ))
         self.all_locations = all_locations or []
 
