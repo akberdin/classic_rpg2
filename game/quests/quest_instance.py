@@ -140,12 +140,26 @@ class QuestInstance:
                 return True
 
         elif self.quest_type == QuestType.DELIVER_MESSAGE and event_type == 'location_visited':
-            if event_data.get('location_id') == self.target_location_id:
+            # Проверяем по ID локации или по имени (если ID не задан)
+            location_id = event_data.get('location_id', '')
+            location_name = event_data.get('location_name', '')
+
+            id_match = self.target_location_id and location_id == self.target_location_id
+            name_match = self.target_location_name and location_name == self.target_location_name
+
+            if id_match or name_match:
                 self.current_amount = 1
                 return True
 
         elif self.quest_type == QuestType.CLEAR_LOCATION and event_type == 'floor_cleared':
-            if event_data.get('location_id') == self.target_location_id:
+            # Проверяем по ID локации или по имени (если ID не задан)
+            location_id = event_data.get('location_id', '')
+            location_name = event_data.get('location_name', '')
+
+            id_match = self.target_location_id and location_id == self.target_location_id
+            name_match = self.target_location_name and location_name == self.target_location_name
+
+            if id_match or name_match:
                 floor = event_data.get('floor', 0)
                 if self.target_floor == 0:
                     # Все этажи - добавляем зачищенный этаж
