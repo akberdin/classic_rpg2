@@ -164,12 +164,14 @@ QUEST_GATHER_RESOURCE = "gather_resource"
 QUEST_HUNT_ANIMALS = "hunt_animals"
 QUEST_DELIVER_MESSAGE = "deliver_message"
 QUEST_CLEAR_LOCATION = "clear_location"
+QUEST_COLLECT_ITEMS = "collect_items"
 
 QUEST_TYPES = {
     QUEST_GATHER_RESOURCE: "Добыть ресурс",
     QUEST_HUNT_ANIMALS: "Охота на животных",
     QUEST_DELIVER_MESSAGE: "Доставить послание",
-    QUEST_CLEAR_LOCATION: "Зачистка локации"
+    QUEST_CLEAR_LOCATION: "Зачистка локации",
+    QUEST_COLLECT_ITEMS: "Собрать предметы"
 }
 
 # Quest target constants - resources
@@ -306,7 +308,8 @@ class Quest:
     name: str = ""  # Quest name
     description: str = ""  # Quest description
     target_type: str = QUEST_TARGET_WOOD  # Target type (resource or animal)
-    target_amount: int = 10  # Amount to gather/hunt
+    target_item_id: str = ""  # Target item ID (for collect_items quest type)
+    target_amount: int = 10  # Amount to gather/hunt/collect
     time_limit: int = 0  # Time limit in turns (0 = no limit)
     difficulty: int = 1  # Difficulty level (1-5)
     # Target location (for deliver_message and clear_location)
@@ -315,6 +318,8 @@ class Quest:
     target_floor: int = 0  # Target floor (0 = all floors, 1-10 = specific floor)
     # Rewards
     reward_gold: int = 100  # Gold reward
+    reward_item_id: str = ""  # Item ID reward (alternative to gold)
+    reward_item_amount: int = 1  # Amount of reward items
     reward_exp: int = 50  # Experience reward
     reward_reputation: int = 5  # Reputation reward
     # Availability
@@ -336,6 +341,7 @@ class Quest:
             'name': self.name,
             'description': self.description,
             'target_type': self.target_type,
+            'target_item_id': self.target_item_id,
             'target_amount': self.target_amount,
             'time_limit': self.time_limit,
             'difficulty': self.difficulty,
@@ -343,6 +349,8 @@ class Quest:
             'target_location_name': self.target_location_name,
             'target_floor': self.target_floor,
             'reward_gold': self.reward_gold,
+            'reward_item_id': self.reward_item_id,
+            'reward_item_amount': self.reward_item_amount,
             'reward_exp': self.reward_exp,
             'reward_reputation': self.reward_reputation,
             'is_repeatable': self.is_repeatable,
@@ -362,6 +370,7 @@ class Quest:
             name=data.get('name', ''),
             description=data.get('description', ''),
             target_type=data.get('target_type', QUEST_TARGET_WOOD),
+            target_item_id=data.get('target_item_id', ''),
             target_amount=data.get('target_amount', 10),
             time_limit=data.get('time_limit', 0),
             difficulty=data.get('difficulty', 1),
@@ -369,6 +378,8 @@ class Quest:
             target_location_name=target_loc_name,
             target_floor=data.get('target_floor', 0),
             reward_gold=data.get('reward_gold', 100),
+            reward_item_id=data.get('reward_item_id', ''),
+            reward_item_amount=data.get('reward_item_amount', 1),
             reward_exp=data.get('reward_exp', 50),
             reward_reputation=data.get('reward_reputation', 5),
             is_repeatable=data.get('is_repeatable', True),
@@ -406,6 +417,9 @@ class Quest:
             if self.target_floor > 0:
                 return f"Зачистить этаж {self.target_floor} в {loc}"
             return f"Зачистить {loc}"
+        elif self.quest_type == QUEST_COLLECT_ITEMS:
+            item = self.target_item_id or "???"
+            return f"Собрать {self.target_amount}x [{item}]"
         return self.name or "Неизвестный квест"
 
 

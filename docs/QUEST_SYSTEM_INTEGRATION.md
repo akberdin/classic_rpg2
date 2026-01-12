@@ -37,6 +37,7 @@
   "name": "Добыча древесины",
   "description": "Принесите древесину для строительства",
   "target_type": "wood",
+  "target_item_id": "",
   "target_amount": 10,
   "time_limit": 100,
   "difficulty": 2,
@@ -44,6 +45,8 @@
   "target_location_name": "",
   "target_floor": 0,
   "reward_gold": 150,
+  "reward_item_id": "",
+  "reward_item_amount": 1,
   "reward_exp": 75,
   "reward_reputation": 10,
   "is_repeatable": true,
@@ -193,6 +196,44 @@
 
 ---
 
+### 5. `collect_items` - Сбор предметов
+
+Игрок должен собрать определенное количество предметов по ID.
+
+**Используемые поля:**
+- `target_item_id` - ID предмета из базы игры
+- `target_amount` - количество предметов
+
+**Пример:**
+```json
+{
+  "quest_type": "collect_items",
+  "target_item_id": "herb_healing",
+  "target_amount": 10,
+  "name": "Сбор лечебных трав",
+  "description": "Целитель просит собрать лечебные травы",
+  "reward_gold": 120,
+  "reward_exp": 60
+}
+```
+
+**Пример с наградой предметом:**
+```json
+{
+  "quest_type": "collect_items",
+  "target_item_id": "crystal_magic",
+  "target_amount": 5,
+  "name": "Магические кристаллы",
+  "description": "Принесите магические кристаллы для исследований",
+  "reward_gold": 0,
+  "reward_item_id": "potion_mana_large",
+  "reward_item_amount": 3,
+  "reward_exp": 100
+}
+```
+
+---
+
 ## Общие поля для всех типов квестов
 
 | Поле | Тип | Описание | Значение по умолчанию |
@@ -200,9 +241,12 @@
 | `id` | string | Уникальный идентификатор (UUID) | автогенерация |
 | `name` | string | Название квеста | "" |
 | `description` | string | Описание квеста | "" |
+| `target_item_id` | string | ID предмета для сбора (только для collect_items) | "" |
 | `time_limit` | int | Лимит времени в ходах (0 = без лимита) | 0 |
 | `difficulty` | int | Сложность (1-5) | 1 |
 | `reward_gold` | int | Награда золотом | 100 |
+| `reward_item_id` | string | ID предмета в качестве награды | "" |
+| `reward_item_amount` | int | Количество предметов награды | 1 |
 | `reward_exp` | int | Награда опытом | 50 |
 | `reward_reputation` | int | Награда репутацией | 5 |
 | `is_repeatable` | bool | Повторяемый квест | true |
@@ -297,7 +341,7 @@ def calculate_scaled_value(base_value: int, scaling_factor: float,
 
 | Поле | Описание |
 |------|----------|
-| `target_amount` | Количество ресурсов/животных |
+| `target_amount` | Количество ресурсов/животных/предметов |
 | `reward_gold` | Награда золотом |
 | `reward_exp` | Награда опытом |
 
@@ -306,9 +350,12 @@ def calculate_scaled_value(base_value: int, scaling_factor: float,
 | Поле | Причина |
 |------|---------|
 | `reward_reputation` | Репутация - фиксированная награда |
+| `reward_item_id` | ID предмета - фиксированное значение |
+| `reward_item_amount` | Количество предметов - фиксированное значение |
 | `time_limit` | Время на выполнение не зависит от уровня |
 | `cooldown` | Перезарядка фиксирована |
 | `target_floor` | Этаж - фиксированное значение |
+| `target_item_id` | ID предмета - фиксированное значение |
 
 ---
 
@@ -329,10 +376,13 @@ class QuestInstance:
         scaling = quest_config.get('scaling_factor', 1.1)
         difficulty = quest_config.get('difficulty', 1)
 
-        # Масштабируем цели (для gather/hunt)
+        # Масштабируем цели (для gather/hunt/collect)
         base_amount = quest_config.get('target_amount', 10)
         self.target_amount = self._scale(base_amount, scaling, difficulty)
         self.current_amount = 0
+
+        # Для collect_items - ID предмета
+        self.target_item_id = quest_config.get('target_item_id', '')
 
         # Для deliver/clear - целевая локация
         self.target_location_id = quest_config.get('target_location_id', '')
@@ -347,6 +397,10 @@ class QuestInstance:
         )
         # Репутация НЕ масштабируется
         self.reward_reputation = quest_config.get('reward_reputation', 5)
+
+        # Награда предметом (НЕ масштабируется)
+        self.reward_item_id = quest_config.get('reward_item_id', '')
+        self.reward_item_amount = quest_config.get('reward_item_amount', 1)
 
         # Время и перезарядка
         self.time_limit = quest_config.get('time_limit', 0)
@@ -365,7 +419,7 @@ class QuestInstance:
 
         Args:
             event_type: Тип события ('resource_gathered', 'animal_killed',
-                        'location_visited', 'floor_cleared')
+                        'item_collected', 'location_visited', 'floor_cleared')
             event_data: Данные события
 
         Returns:
@@ -379,6 +433,11 @@ class QuestInstance:
         elif self.quest_type == 'hunt_animals' and event_type == 'animal_killed':
             if event_data.get('animal_type') == self.config.get('target_type'):
                 self.current_amount += 1
+                return True
+
+        elif self.quest_type == 'collect_items' and event_type == 'item_collected':
+            if event_data.get('item_id') == self.target_item_id:
+                self.current_amount += event_data.get('amount', 1)
                 return True
 
         elif self.quest_type == 'deliver_message' and event_type == 'location_visited':
@@ -399,7 +458,7 @@ class QuestInstance:
 
     def is_complete(self) -> bool:
         """Проверить выполнение квеста."""
-        if self.quest_type in ('gather_resource', 'hunt_animals'):
+        if self.quest_type in ('gather_resource', 'hunt_animals', 'collect_items'):
             return self.current_amount >= self.target_amount
         elif self.quest_type in ('deliver_message', 'clear_location'):
             return self.current_amount >= 1
@@ -463,13 +522,19 @@ class QuestManager:
         rewards = {
             'gold': quest.reward_gold,
             'exp': quest.reward_exp,
-            'reputation': quest.reward_reputation
+            'reputation': quest.reward_reputation,
+            'item_id': quest.reward_item_id,
+            'item_amount': quest.reward_item_amount
         }
 
         # Выдаем награды
         self.player.gold += rewards['gold']
         self.player.add_exp(rewards['exp'])
         self.player.add_reputation(rewards['reputation'])
+
+        # Выдаем предмет если указан
+        if rewards['item_id']:
+            self.player.inventory.add_item(rewards['item_id'], rewards['item_amount'])
 
         # Обрабатываем повторяемость
         quest_id = quest.config.get('id')
@@ -572,6 +637,7 @@ class QuestManager:
       "name": "Зачистка старой шахты",
       "description": "Монстры захватили шахту, верните её",
       "target_type": "wood",
+      "target_item_id": "",
       "target_amount": 10,
       "time_limit": 0,
       "difficulty": 4,
@@ -579,11 +645,35 @@ class QuestManager:
       "target_location_name": "Старая шахта",
       "target_floor": 0,
       "reward_gold": 500,
+      "reward_item_id": "",
+      "reward_item_amount": 1,
       "reward_exp": 250,
       "reward_reputation": 25,
       "is_repeatable": true,
       "cooldown": 500,
       "scaling_factor": 1.2
+    },
+    {
+      "id": "q5",
+      "quest_type": "collect_items",
+      "name": "Сбор редких трав",
+      "description": "Целитель просит собрать редкие травы",
+      "target_type": "",
+      "target_item_id": "herb_healing",
+      "target_amount": 10,
+      "time_limit": 0,
+      "difficulty": 2,
+      "target_location_id": "",
+      "target_location_name": "",
+      "target_floor": 0,
+      "reward_gold": 50,
+      "reward_item_id": "potion_health",
+      "reward_item_amount": 3,
+      "reward_exp": 80,
+      "reward_reputation": 8,
+      "is_repeatable": true,
+      "cooldown": 200,
+      "scaling_factor": 1.1
     }
   ]
 }
@@ -609,14 +699,16 @@ class QuestManager:
 
 ### 4. Отслеживание прогресса
 
-- `gather_resource`: отслеживать сбор ресурсов указанного типа
-- `hunt_animals`: отслеживать убийства животных указанного типа
+- `gather_resource`: отслеживать сбор ресурсов указанного типа (`target_type`)
+- `hunt_animals`: отслеживать убийства животных указанного типа (`target_type`)
+- `collect_items`: отслеживать сбор предметов по ID (`target_item_id`)
 - `deliver_message`: проверять посещение целевой локации
 - `clear_location`: отслеживать зачистку этажей/всей локации
 
 ### 5. Завершение квеста
 
 - Выдать масштабированные награды (gold, exp) и фиксированную репутацию
+- Если указан `reward_item_id` - выдать предмет в количестве `reward_item_amount`
 - Если `is_repeatable` = true, запустить cooldown
 - Если `is_repeatable` = false, пометить квест как выполненный навсегда
 
@@ -626,6 +718,9 @@ class QuestManager:
 - Поля `destination_id`/`destination_name` читаются как `target_location_id`/`target_location_name`
 - При отсутствии `scaling_factor` используется значение 1.1
 - При отсутствии `target_floor` используется значение 0
+- При отсутствии `target_item_id` используется пустая строка
+- При отсутствии `reward_item_id` используется пустая строка
+- При отсутствии `reward_item_amount` используется значение 1
 
 ---
 

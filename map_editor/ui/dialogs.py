@@ -17,7 +17,7 @@ from ..tools.generator import (
     FloorNPC, FLOOR_NPC_TYPES, FLOOR_NPC_RANKS, FLOOR_NPC_NONE,
     Merchant, MerchantWaypoint, MERCHANT_RANKS, MERCHANT_SPECIALIZATIONS,
     Quest, QUEST_TYPES, QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS,
-    QUEST_DELIVER_MESSAGE, QUEST_CLEAR_LOCATION,
+    QUEST_DELIVER_MESSAGE, QUEST_CLEAR_LOCATION, QUEST_COLLECT_ITEMS,
     QUEST_RESOURCE_TARGETS, QUEST_ANIMAL_TARGETS, QUEST_TARGETS,
     QUEST_DIFFICULTIES, QUEST_GIVER_LOCATIONS, QUEST_CLEARABLE_LOCATIONS,
     QUEST_TARGET_WOOD, QUEST_TARGET_WOLF
@@ -2554,6 +2554,7 @@ class QuestEditDialog(Dialog):
             name=quest.name,
             description=quest.description,
             target_type=quest.target_type,
+            target_item_id=quest.target_item_id,
             target_amount=quest.target_amount,
             time_limit=quest.time_limit,
             difficulty=quest.difficulty,
@@ -2561,6 +2562,8 @@ class QuestEditDialog(Dialog):
             target_location_name=quest.target_location_name,
             target_floor=quest.target_floor,
             reward_gold=quest.reward_gold,
+            reward_item_id=quest.reward_item_id,
+            reward_item_amount=quest.reward_item_amount,
             reward_exp=quest.reward_exp,
             reward_reputation=quest.reward_reputation,
             is_repeatable=quest.is_repeatable,
@@ -2574,9 +2577,10 @@ class QuestEditDialog(Dialog):
         self.on_select_location: Optional[Callable[[str], None]] = None  # 'deliver' or 'clear'
 
         title = "Новый квест" if self.is_new else "Редактирование квеста"
-        super().__init__(title, width=500, height=650)
+        super().__init__(title, width=500, height=720)
 
         self._active_dropdown: Optional[str] = None
+        self._active_text_field: Optional[str] = None  # 'target_item_id' or 'reward_item_id'
         self._setup_controls()
 
     def _setup_controls(self) -> None:
@@ -2586,6 +2590,7 @@ class QuestEditDialog(Dialog):
         self.data['name'] = self.quest.name
         self.data['description'] = self.quest.description
         self.data['target_type'] = self.quest.target_type
+        self.data['target_item_id'] = self.quest.target_item_id
         self.data['target_amount'] = self.quest.target_amount
         self.data['time_limit'] = self.quest.time_limit
         self.data['difficulty'] = self.quest.difficulty
@@ -2593,6 +2598,8 @@ class QuestEditDialog(Dialog):
         self.data['target_location_name'] = self.quest.target_location_name
         self.data['target_floor'] = self.quest.target_floor
         self.data['reward_gold'] = self.quest.reward_gold
+        self.data['reward_item_id'] = self.quest.reward_item_id
+        self.data['reward_item_amount'] = self.quest.reward_item_amount
         self.data['reward_exp'] = self.quest.reward_exp
         self.data['reward_reputation'] = self.quest.reward_reputation
         self.data['is_repeatable'] = self.quest.is_repeatable
@@ -2684,6 +2691,10 @@ class QuestEditDialog(Dialog):
             if self._check_numeric_buttons(local_x, local_y):
                 return True
 
+            # Check text field clicks
+            if self._check_text_field_clicks(local_x, local_y):
+                return True
+
             # Check "Select on map" button
             if self._check_select_location_button(local_x, local_y):
                 return True
@@ -2692,6 +2703,14 @@ class QuestEditDialog(Dialog):
             checkbox_rect = pygame.Rect(120, 470, 20, 20)
             if checkbox_rect.collidepoint(local_x, local_y):
                 self.data['is_repeatable'] = not self.data.get('is_repeatable', True)
+                return True
+
+            # Deselect text fields if clicked elsewhere
+            self._active_text_field = None
+
+        # Handle keyboard input for text fields
+        if event.type == pygame.KEYDOWN and self._active_text_field:
+            if self._handle_text_field_input(event):
                 return True
 
         # Handle base dialog events
@@ -2744,13 +2763,20 @@ class QuestEditDialog(Dialog):
                     # Reset target type when switching quest type
                     if key == QUEST_GATHER_RESOURCE:
                         self.data['target_type'] = QUEST_TARGET_WOOD
+                        self.data['target_item_id'] = ''
                     elif key == QUEST_HUNT_ANIMALS:
                         self.data['target_type'] = QUEST_TARGET_WOLF
+                        self.data['target_item_id'] = ''
+                    elif key == QUEST_COLLECT_ITEMS:
+                        self.data['target_type'] = ''
                     # Reset target location/floor when switching to non-location quests
                     if key not in (QUEST_DELIVER_MESSAGE, QUEST_CLEAR_LOCATION):
                         self.data['target_location_id'] = ''
                         self.data['target_location_name'] = ''
                         self.data['target_floor'] = 0
+                    # Reset target_item_id for non-collect quests
+                    if key != QUEST_COLLECT_ITEMS:
+                        self.data['target_item_id'] = ''
                     self._active_dropdown = None
                     return True
 
@@ -2780,8 +2806,8 @@ class QuestEditDialog(Dialog):
         """Check +/- buttons for numeric fields."""
         quest_type = self.data.get('quest_type', QUEST_GATHER_RESOURCE)
 
-        # Target amount (y=210) - only for gather/hunt
-        if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS):
+        # Target amount (y=210) - for gather/hunt/collect
+        if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
             minus_rect = pygame.Rect(120, 212, 30, 24)
             plus_rect = pygame.Rect(220, 212, 30, 24)
             if minus_rect.collidepoint(local_x, local_y):
@@ -2842,6 +2868,16 @@ class QuestEditDialog(Dialog):
             self.data['reward_reputation'] = min(100, self.data.get('reward_reputation', 5) + 1)
             return True
 
+        # Reward item amount (y=470)
+        minus_rect = pygame.Rect(320, 472, 30, 24)
+        plus_rect = pygame.Rect(390, 472, 30, 24)
+        if minus_rect.collidepoint(local_x, local_y):
+            self.data['reward_item_amount'] = max(1, self.data.get('reward_item_amount', 1) - 1)
+            return True
+        if plus_rect.collidepoint(local_x, local_y):
+            self.data['reward_item_amount'] = min(99, self.data.get('reward_item_amount', 1) + 1)
+            return True
+
         # Cooldown (y=500)
         minus_rect = pygame.Rect(120, 502, 30, 24)
         plus_rect = pygame.Rect(220, 502, 30, 24)
@@ -2862,6 +2898,80 @@ class QuestEditDialog(Dialog):
         if plus_rect.collidepoint(local_x, local_y):
             current = self.data.get('scaling_factor', 1.1)
             self.data['scaling_factor'] = round(min(2.0, current + 0.05), 2)
+            return True
+
+        return False
+
+    def _check_text_field_clicks(self, local_x: int, local_y: int) -> bool:
+        """Check if text fields were clicked."""
+        quest_type = self.data.get('quest_type', QUEST_GATHER_RESOURCE)
+
+        # Calculate base Y position for text fields
+        y = 130 + 40  # After quest type dropdown
+
+        # Target item ID field (only for collect_items)
+        if quest_type == QUEST_COLLECT_ITEMS:
+            target_item_rect = pygame.Rect(120, y + 2, 200, 24)
+            if target_item_rect.collidepoint(local_x, local_y):
+                self._active_text_field = 'target_item_id'
+                return True
+            y += 40
+        elif quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS):
+            y += 40  # target type dropdown
+
+        # Skip to reward section - calculate y position
+        # target_amount (if applicable), time_limit, difficulty, target_location, target_floor
+        if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
+            y += 40  # target_amount
+        y += 40  # time_limit
+        y += 40  # difficulty
+        if quest_type in (QUEST_DELIVER_MESSAGE, QUEST_CLEAR_LOCATION):
+            y += 40  # target_location
+        y += 40  # target_floor row (may be empty)
+        y += 30  # rewards header
+        y += 30  # gold/exp row
+        y += 30  # reputation row
+
+        # Reward item ID field
+        reward_item_rect = pygame.Rect(120, y + 2, 140, 24)
+        if reward_item_rect.collidepoint(local_x, local_y):
+            self._active_text_field = 'reward_item_id'
+            return True
+
+        return False
+
+    def _handle_text_field_input(self, event: pygame.event.Event) -> bool:
+        """Handle keyboard input for active text field."""
+        if not self._active_text_field:
+            return False
+
+        field_key = self._active_text_field
+        current_value = self.data.get(field_key, '')
+
+        if event.key == pygame.K_BACKSPACE:
+            if current_value:
+                self.data[field_key] = current_value[:-1]
+            return True
+        elif event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
+            self._active_text_field = None
+            return True
+        elif event.key == pygame.K_TAB:
+            # Switch between text fields
+            if self._active_text_field == 'target_item_id':
+                self._active_text_field = 'reward_item_id'
+            elif self._active_text_field == 'reward_item_id':
+                quest_type = self.data.get('quest_type', QUEST_GATHER_RESOURCE)
+                if quest_type == QUEST_COLLECT_ITEMS:
+                    self._active_text_field = 'target_item_id'
+                else:
+                    self._active_text_field = None
+            return True
+        elif event.unicode and event.unicode.isprintable():
+            # Allow alphanumeric, underscore, and dash
+            char = event.unicode
+            if char.isalnum() or char in '_-':
+                if len(current_value) < 50:  # Max length
+                    self.data[field_key] = current_value + char
             return True
 
         return False
@@ -2892,6 +3002,7 @@ class QuestEditDialog(Dialog):
         needs_target_location = quest_type in (QUEST_DELIVER_MESSAGE, QUEST_CLEAR_LOCATION)
         needs_target_floor = quest_type == QUEST_CLEAR_LOCATION
         needs_target_type = quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS)
+        needs_target_item = quest_type == QUEST_COLLECT_ITEMS
 
         # Quest type dropdown
         self._draw_label(surface, "Тип квеста", self.x + 15, self.y + y + 4)
@@ -2907,10 +3018,17 @@ class QuestEditDialog(Dialog):
             target_name = QUEST_TARGETS.get(target_type, target_type)
             self._draw_dropdown_field(surface, target_name, self.x + 120, self.y + y, 200,
                                       self._active_dropdown == 'target_type')
-        y += 40
+            y += 40
 
-        # Target amount (only for gather/hunt)
-        if needs_target_type:
+        # Target item ID (only for collect_items)
+        if needs_target_item:
+            self._draw_label(surface, "ID предмета", self.x + 15, self.y + y + 4)
+            item_id = self.data.get('target_item_id', '')
+            self._draw_text_field(surface, item_id, self.x + 120, self.y + y, 200, 'target_item_id')
+            y += 40
+
+        # Target amount (for gather/hunt/collect)
+        if needs_target_type or needs_target_item:
             self._draw_label(surface, "Количество", self.x + 15, self.y + y + 4)
             self._draw_numeric_field(surface, self.data.get('target_amount', 10),
                                      self.x + 120, self.y + y, 130)
@@ -2984,6 +3102,15 @@ class QuestEditDialog(Dialog):
         self._draw_label(surface, "Репутация", self.x + 15, self.y + y + 4)
         self._draw_numeric_field(surface, self.data.get('reward_reputation', 5),
                                  self.x + 120, self.y + y, 130)
+        y += 30
+
+        # Reward item ID and amount
+        self._draw_label(surface, "ID предмета", self.x + 15, self.y + y + 4)
+        reward_item = self.data.get('reward_item_id', '')
+        self._draw_text_field(surface, reward_item, self.x + 120, self.y + y, 140, 'reward_item_id')
+        self._draw_label(surface, "Кол-во", self.x + 270, self.y + y + 4)
+        self._draw_numeric_field(surface, self.data.get('reward_item_amount', 1),
+                                 self.x + 320, self.y + y, 100)
         y += 30
 
         # Is repeatable checkbox
@@ -3093,6 +3220,27 @@ class QuestEditDialog(Dialog):
         plus_text = self.font.render("+", True, self.text_color)
         surface.blit(plus_text, (x + width - 20, y + 6))
 
+    def _draw_text_field(self, surface: pygame.Surface, value: str, x: int, y: int,
+                         width: int, field_key: str) -> None:
+        """Draw an editable text field."""
+        is_active = self._active_text_field == field_key
+        rect = pygame.Rect(x, y + 2, width, 24)
+        bg_color = self.button_hover if is_active else self.slider_bg
+        pygame.draw.rect(surface, bg_color, rect)
+        pygame.draw.rect(surface, self.border_color, rect, 1)
+
+        # Draw text
+        display_text = value[-25:] if value else ""
+        text_surf = self.font.render(display_text, True, self.text_color)
+        surface.blit(text_surf, (rect.x + 5, rect.y + 4))
+
+        # Draw cursor if active
+        if is_active:
+            cursor_x = rect.x + 5 + text_surf.get_width() + 2
+            pygame.draw.line(surface, self.text_color,
+                           (cursor_x, rect.y + 3),
+                           (cursor_x, rect.y + rect.height - 3))
+
     def _draw_dropdown_options(self, surface: pygame.Surface) -> None:
         """Draw dropdown options overlay."""
         if self._active_dropdown == 'quest_type':
@@ -3183,6 +3331,7 @@ class QuestEditDialog(Dialog):
             name=self.data.get('name', ''),
             description=self.data.get('description', ''),
             target_type=self.data.get('target_type', QUEST_TARGET_WOOD),
+            target_item_id=self.data.get('target_item_id', ''),
             target_amount=self.data.get('target_amount', 10),
             time_limit=self.data.get('time_limit', 0),
             difficulty=self.data.get('difficulty', 1),
@@ -3190,6 +3339,8 @@ class QuestEditDialog(Dialog):
             target_location_name=self.data.get('target_location_name', ''),
             target_floor=self.data.get('target_floor', 0),
             reward_gold=self.data.get('reward_gold', 100),
+            reward_item_id=self.data.get('reward_item_id', ''),
+            reward_item_amount=self.data.get('reward_item_amount', 1),
             reward_exp=self.data.get('reward_exp', 50),
             reward_reputation=self.data.get('reward_reputation', 5),
             is_repeatable=self.data.get('is_repeatable', True),
@@ -3216,6 +3367,7 @@ class QuestListDialog(Dialog):
                 name=q.name,
                 description=q.description,
                 target_type=q.target_type,
+                target_item_id=q.target_item_id,
                 target_amount=q.target_amount,
                 time_limit=q.time_limit,
                 difficulty=q.difficulty,
@@ -3223,6 +3375,8 @@ class QuestListDialog(Dialog):
                 target_location_name=q.target_location_name,
                 target_floor=q.target_floor,
                 reward_gold=q.reward_gold,
+                reward_item_id=q.reward_item_id,
+                reward_item_amount=q.reward_item_amount,
                 reward_exp=q.reward_exp,
                 reward_reputation=q.reward_reputation,
                 is_repeatable=q.is_repeatable,
