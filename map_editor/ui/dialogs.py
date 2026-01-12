@@ -2568,6 +2568,9 @@ class QuestEditDialog(Dialog):
             reward_reputation=quest.reward_reputation,
             is_repeatable=quest.is_repeatable,
             cooldown=quest.cooldown,
+            min_player_attitude=quest.min_player_attitude,
+            fail_attitude_penalty=quest.fail_attitude_penalty,
+            completion_event_id=quest.completion_event_id,
             scaling_factor=quest.scaling_factor
         )
         self.all_locations = all_locations or []
@@ -2577,7 +2580,7 @@ class QuestEditDialog(Dialog):
         self.on_select_location: Optional[Callable[[str], None]] = None  # 'deliver' or 'clear'
 
         title = "Новый квест" if self.is_new else "Редактирование квеста"
-        super().__init__(title, width=500, height=720)
+        super().__init__(title, width=500, height=810)
 
         self._active_dropdown: Optional[str] = None
         self._active_text_field: Optional[str] = None  # 'target_item_id' or 'reward_item_id'
@@ -2604,6 +2607,9 @@ class QuestEditDialog(Dialog):
         self.data['reward_reputation'] = self.quest.reward_reputation
         self.data['is_repeatable'] = self.quest.is_repeatable
         self.data['cooldown'] = self.quest.cooldown
+        self.data['min_player_attitude'] = self.quest.min_player_attitude
+        self.data['fail_attitude_penalty'] = self.quest.fail_attitude_penalty
+        self.data['completion_event_id'] = self.quest.completion_event_id
         self.data['scaling_factor'] = self.quest.scaling_factor
 
         # Text inputs
@@ -2700,13 +2706,14 @@ class QuestEditDialog(Dialog):
                 return True
 
             # Check checkbox is_repeatable
-            # For gather/hunt/collect: y=530 (reward_base=440 + 90)
-            # For deliver/clear: y=490 (reward_base=400 + 90)
+            # After adding min_player_attitude and completion_event_id:
+            # For gather/hunt/collect: y=600 (reward_base=480 + 120)
+            # For deliver/clear: y=520 (reward_base=400 + 120)
             quest_type = self.data.get('quest_type', QUEST_GATHER_RESOURCE)
             if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
-                checkbox_y = 530
+                checkbox_y = 600
             else:
-                checkbox_y = 490
+                checkbox_y = 520
             checkbox_rect = pygame.Rect(120, checkbox_y, 20, 20)
             if checkbox_rect.collidepoint(local_x, local_y):
                 self.data['is_repeatable'] = not self.data.get('is_repeatable', True)
@@ -2742,11 +2749,11 @@ class QuestEditDialog(Dialog):
 
         # Difficulty dropdown - position depends on quest type
         # For gather/hunt/collect: y=290 (after target_type/item + target_amount + time_limit)
-        # For deliver/clear: y=250 (no target_type/item/amount rows)
+        # For deliver/clear: y=210 (after time_limit, no target_type/item/amount rows)
         if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
             diff_y = 290
         else:
-            diff_y = 250
+            diff_y = 210
         diff_rect = pygame.Rect(120, diff_y, 200, 28)
         if diff_rect.collidepoint(local_x, local_y):
             self._active_dropdown = 'difficulty' if self._active_dropdown != 'difficulty' else None
@@ -2817,7 +2824,7 @@ class QuestEditDialog(Dialog):
             if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
                 base_y = 290 + 28
             else:
-                base_y = 250 + 28
+                base_y = 210 + 28
             for i, (key, value) in enumerate(options.items()):
                 option_rect = pygame.Rect(120, base_y + i * 28, 200, 28)
                 if option_rect.collidepoint(local_x, local_y):
@@ -2844,11 +2851,11 @@ class QuestEditDialog(Dialog):
 
         # Time limit - position depends on quest type
         # For gather/hunt/collect: y=250 (after target_type/item + target_amount)
-        # For deliver/clear: y=210 (no target_type/item/amount rows)
+        # For deliver/clear: y=170 (no target_type/item/amount rows)
         if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
             time_y = 252
         else:
-            time_y = 212
+            time_y = 172
         minus_rect = pygame.Rect(120, time_y, 30, 24)
         plus_rect = pygame.Rect(220, time_y, 30, 24)
         if minus_rect.collidepoint(local_x, local_y):
@@ -2858,8 +2865,28 @@ class QuestEditDialog(Dialog):
             self.data['time_limit'] = min(9999, self.data.get('time_limit', 0) + 10)
             return True
 
+        # Difficulty position (for click detection is handled in dropdown)
+        # For gather/hunt/collect: y=290
+        # For deliver/clear: y=210
+
+        # min_player_attitude - after difficulty
+        # For gather/hunt/collect: y=330
+        # For deliver/clear: y=250
+        if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
+            attitude_y = 332
+        else:
+            attitude_y = 252
+        minus_rect = pygame.Rect(120, attitude_y, 30, 24)
+        plus_rect = pygame.Rect(220, attitude_y, 30, 24)
+        if minus_rect.collidepoint(local_x, local_y):
+            self.data['min_player_attitude'] = max(-10, self.data.get('min_player_attitude', 0) - 1)
+            return True
+        if plus_rect.collidepoint(local_x, local_y):
+            self.data['min_player_attitude'] = min(10, self.data.get('min_player_attitude', 0) + 1)
+            return True
+
         # Target floor - only for clear_location
-        # For clear_location: y=330 (after target_location at y=290)
+        # For clear_location: y=330 (after min_player_attitude at y=250, target_location at y=290)
         if quest_type == QUEST_CLEAR_LOCATION:
             minus_rect = pygame.Rect(120, 332, 30, 24)
             plus_rect = pygame.Rect(220, 332, 30, 24)
@@ -2871,10 +2898,11 @@ class QuestEditDialog(Dialog):
                 return True
 
         # Calculate base Y for rewards section based on quest type
-        # For gather/hunt/collect: rewards start at y=440 (after y=410 header)
-        # For deliver/clear: rewards start at y=400 (after y=370 header)
+        # After adding min_player_attitude (+40px):
+        # For gather/hunt/collect: rewards start at y=480 (header at y=450)
+        # For deliver/clear: rewards start at y=400 (header at y=370)
         if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
-            reward_base_y = 440
+            reward_base_y = 480
         else:
             reward_base_y = 400
 
@@ -2920,8 +2948,19 @@ class QuestEditDialog(Dialog):
             self.data['reward_item_amount'] = min(99, self.data.get('reward_item_amount', 1) + 1)
             return True
 
-        # Cooldown (y = reward_base_y + 120)
-        cooldown_y = reward_base_y + 120
+        # fail_attitude_penalty (y = reward_base_y + 150, after completion_event_id and is_repeatable)
+        fail_penalty_y = reward_base_y + 150
+        minus_rect = pygame.Rect(120, fail_penalty_y + 2, 30, 24)
+        plus_rect = pygame.Rect(220, fail_penalty_y + 2, 30, 24)
+        if minus_rect.collidepoint(local_x, local_y):
+            self.data['fail_attitude_penalty'] = max(0, self.data.get('fail_attitude_penalty', 0) - 1)
+            return True
+        if plus_rect.collidepoint(local_x, local_y):
+            self.data['fail_attitude_penalty'] = min(20, self.data.get('fail_attitude_penalty', 0) + 1)
+            return True
+
+        # Cooldown (y = reward_base_y + 180)
+        cooldown_y = reward_base_y + 180
         minus_rect = pygame.Rect(120, cooldown_y + 2, 30, 24)
         plus_rect = pygame.Rect(220, cooldown_y + 2, 30, 24)
         if minus_rect.collidepoint(local_x, local_y):
@@ -2931,8 +2970,8 @@ class QuestEditDialog(Dialog):
             self.data['cooldown'] = min(9999, self.data.get('cooldown', 100) + 10)
             return True
 
-        # Scaling factor (y = reward_base_y + 150)
-        scaling_y = reward_base_y + 150
+        # Scaling factor (y = reward_base_y + 210)
+        scaling_y = reward_base_y + 210
         minus_rect = pygame.Rect(120, scaling_y + 2, 30, 24)
         plus_rect = pygame.Rect(220, scaling_y + 2, 30, 24)
         if minus_rect.collidepoint(local_x, local_y):
@@ -2964,10 +3003,11 @@ class QuestEditDialog(Dialog):
             y += 40  # target type dropdown
 
         # Calculate reward_item_id position based on quest type
-        # For gather/hunt/collect: y=500 (reward_base=440 + 60)
+        # After adding min_player_attitude (+40px):
+        # For gather/hunt/collect: y=540 (reward_base=480 + 60)
         # For deliver/clear: y=460 (reward_base=400 + 60)
         if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
-            reward_item_y = 500
+            reward_item_y = 540
         else:
             reward_item_y = 460
 
@@ -2975,6 +3015,13 @@ class QuestEditDialog(Dialog):
         reward_item_rect = pygame.Rect(120, reward_item_y + 2, 140, 24)
         if reward_item_rect.collidepoint(local_x, local_y):
             self._active_text_field = 'reward_item_id'
+            return True
+
+        # completion_event_id position (y = reward_item_y + 30)
+        event_id_y = reward_item_y + 30
+        event_id_rect = pygame.Rect(120, event_id_y + 2, 200, 24)
+        if event_id_rect.collidepoint(local_x, local_y):
+            self._active_text_field = 'completion_event_id'
             return True
 
         return False
@@ -2999,11 +3046,13 @@ class QuestEditDialog(Dialog):
             if self._active_text_field == 'target_item_id':
                 self._active_text_field = 'reward_item_id'
             elif self._active_text_field == 'reward_item_id':
+                self._active_text_field = 'completion_event_id'
+            elif self._active_text_field == 'completion_event_id':
                 quest_type = self.data.get('quest_type', QUEST_GATHER_RESOURCE)
                 if quest_type == QUEST_COLLECT_ITEMS:
                     self._active_text_field = 'target_item_id'
                 else:
-                    self._active_text_field = None
+                    self._active_text_field = 'reward_item_id'
             return True
         elif event.unicode and event.unicode.isprintable():
             # Allow alphanumeric, underscore, and dash
@@ -3089,6 +3138,14 @@ class QuestEditDialog(Dialog):
                                   self._active_dropdown == 'difficulty')
         y += 40
 
+        # Minimum player attitude (requirement to get quest)
+        self._draw_label(surface, "Мин. отношение", self.x + 15, self.y + y + 4)
+        min_attitude = self.data.get('min_player_attitude', 0)
+        attitude_text = str(min_attitude)
+        self._draw_numeric_field(surface, min_attitude, self.x + 120, self.y + y, 130,
+                                 display_text=attitude_text)
+        y += 40
+
         # Target location (for deliver_message and clear_location)
         if needs_target_location:
             if quest_type == QUEST_DELIVER_MESSAGE:
@@ -3152,6 +3209,12 @@ class QuestEditDialog(Dialog):
                                  self.x + 320, self.y + y, 100)
         y += 30
 
+        # Completion event ID (event to trigger on completion)
+        self._draw_label(surface, "ID события", self.x + 15, self.y + y + 4)
+        event_id = self.data.get('completion_event_id', '')
+        self._draw_text_field(surface, event_id, self.x + 120, self.y + y, 200, 'completion_event_id')
+        y += 30
+
         # Is repeatable checkbox
         self._draw_label(surface, "Повторяемый", self.x + 15, self.y + y + 2)
         is_rep = self.data.get('is_repeatable', True)
@@ -3161,6 +3224,14 @@ class QuestEditDialog(Dialog):
         if is_rep:
             inner = checkbox_rect.inflate(-6, -6)
             pygame.draw.rect(surface, self.button_primary, inner)
+        y += 30
+
+        # Fail attitude penalty (penalty to player attitude on quest failure)
+        self._draw_label(surface, "Штраф отнош.", self.x + 15, self.y + y + 4)
+        fail_penalty = self.data.get('fail_attitude_penalty', 0)
+        penalty_text = str(fail_penalty)
+        self._draw_numeric_field(surface, fail_penalty, self.x + 120, self.y + y, 130,
+                                 display_text=penalty_text)
         y += 30
 
         # Cooldown
@@ -3298,7 +3369,7 @@ class QuestEditDialog(Dialog):
             if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
                 diff_y = 290
             else:
-                diff_y = 250
+                diff_y = 210
             base_x, base_y = self.x + 120, self.y + diff_y + 28
             width = 200
         else:
@@ -3391,6 +3462,9 @@ class QuestEditDialog(Dialog):
             reward_reputation=self.data.get('reward_reputation', 5),
             is_repeatable=self.data.get('is_repeatable', True),
             cooldown=self.data.get('cooldown', 100),
+            min_player_attitude=self.data.get('min_player_attitude', 0),
+            fail_attitude_penalty=self.data.get('fail_attitude_penalty', 0),
+            completion_event_id=self.data.get('completion_event_id', ''),
             scaling_factor=self.data.get('scaling_factor', 1.1)
         )
 
