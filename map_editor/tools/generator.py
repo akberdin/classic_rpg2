@@ -341,19 +341,13 @@ class Quest:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for saving."""
-        return {
+        data = {
             'id': self.id,
             'quest_type': self.quest_type,
             'name': self.name,
             'description': self.description,
-            'target_type': self.target_type,
-            'target_item_id': self.target_item_id,
-            'target_amount': self.target_amount,
             'time_limit': self.time_limit,
             'difficulty': self.difficulty,
-            'target_location_id': self.target_location_id,
-            'target_location_name': self.target_location_name,
-            'target_floor': self.target_floor,
             'reward_gold': self.reward_gold,
             'reward_item_id': self.reward_item_id,
             'reward_item_amount': self.reward_item_amount,
@@ -366,6 +360,20 @@ class Quest:
             'completion_event_id': self.completion_event_id,
             'scaling_factor': self.scaling_factor
         }
+        # Only include target_type and target_amount for quests that use them
+        if self.quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS):
+            data['target_type'] = self.target_type
+            data['target_amount'] = self.target_amount
+        elif self.quest_type == QUEST_COLLECT_ITEMS:
+            data['target_item_id'] = self.target_item_id
+            data['target_amount'] = self.target_amount
+        # Only include location fields for quests that use them
+        if self.quest_type in (QUEST_DELIVER_MESSAGE, QUEST_CLEAR_LOCATION):
+            data['target_location_id'] = self.target_location_id
+            data['target_location_name'] = self.target_location_name
+            if self.quest_type == QUEST_CLEAR_LOCATION:
+                data['target_floor'] = self.target_floor
+        return data
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Quest':
