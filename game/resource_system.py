@@ -110,6 +110,9 @@ class ResourceSystem:
         # Добавляем лут в инвентарь и собираем информацию
         collected_items, collected_gold = self._add_loot_to_inventory(loot)
 
+        # Уведомляем систему квестов о собранных ресурсах
+        self._notify_quest_progress(collected_items)
+
         # Помечаем локацию как обыскованную
         location.loot_collected = True
 
@@ -239,6 +242,47 @@ class ResourceSystem:
             return "combat_started", None
 
         return "nothing", None
+
+    def _notify_quest_progress(self, collected_items):
+        """
+        Уведомить систему квестов о собранных ресурсах.
+
+        Args:
+            collected_items: Список собранных предметов [(item, quantity), ...]
+        """
+        if not hasattr(self.player, 'quest_manager'):
+            return
+
+        quest_manager = self.player.quest_manager
+
+        # Ресурсы для квестов добычи (gather_resource)
+        resource_types = {
+            'wood', 'iron_ore', 'copper_ore', 'gold_ore',
+            'silver_ore', 'mithril_ore', 'charcoal'
+        }
+
+        for item, quantity in collected_items:
+            # Получаем item_id напрямую (если есть) или через маппинг по имени
+            item_id = getattr(item, 'item_id', None)
+            if not item_id:
+                item_name = getattr(item, 'name', str(item))
+                item_id = self.get_item_key(item_name)
+
+            if not item_id:
+                continue
+
+            if item_id in resource_types:
+                # Квесты добычи ресурсов
+                quest_manager.update_quest_progress(
+                    'resource_gathered',
+                    {'resource_type': item_id, 'amount': quantity}
+                )
+            else:
+                # Квесты сбора предметов
+                quest_manager.update_quest_progress(
+                    'item_collected',
+                    {'item_id': item_id, 'amount': quantity}
+                )
 
     @staticmethod
     def get_item_key(item_name):

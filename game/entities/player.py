@@ -67,6 +67,11 @@ class Player(Character):
         from game.companion_manager import CompanionManager
         self.companion_manager = CompanionManager()
 
+        # Менеджер квестов
+        from game.quests import QuestManager
+        self.quest_manager = QuestManager()
+        self.quest_manager.set_player(self)
+
         # Чит-мод (бессмертие)
         self.godmode = False
 
@@ -380,6 +385,8 @@ class Player(Character):
                     self.inventory.add_item(item, quantity)
                     print(f"Добыто: {item.name} x{quantity}")
                     self.resources_collected += 1
+                    # Уведомляем систему квестов
+                    self._notify_quest_resource_gathered(item, quantity)
                 resources_gathered = True
             else:
                 print("Вам не удалось ничего добыть в этот раз.")
@@ -395,6 +402,8 @@ class Player(Character):
                     self.inventory.add_item(item, quantity)
                     print(f"Срублено: {item.name} x{quantity}")
                     self.resources_collected += 1
+                    # Уведомляем систему квестов
+                    self._notify_quest_resource_gathered(item, quantity)
                 resources_gathered = True
             else:
                 print("Вам не удалось ничего добыть в этот раз.")
@@ -405,6 +414,34 @@ class Player(Character):
             gold_gained = 5 + self.level
             self.inventory.add_gold(gold_gained)
             print(f"Вы поработали и получили {gold_gained} золота")
+
+    def _notify_quest_resource_gathered(self, item, quantity):
+        """
+        Уведомить систему квестов о собранном ресурсе.
+
+        Args:
+            item: Объект предмета
+            quantity: Количество
+        """
+        if not hasattr(self, 'quest_manager'):
+            return
+
+        # Получаем item_id (ключ из items_data.json)
+        item_id = getattr(item, 'item_id', None)
+        if not item_id:
+            return
+
+        # Список типов ресурсов для квестов добычи
+        resource_types = {
+            'wood', 'iron_ore', 'copper_ore', 'gold_ore',
+            'silver_ore', 'mithril_ore', 'charcoal'
+        }
+
+        if item_id in resource_types:
+            self.quest_manager.update_quest_progress(
+                'resource_gathered',
+                {'resource_type': item_id, 'amount': quantity}
+            )
 
     def use_item(self, item_name):
         """

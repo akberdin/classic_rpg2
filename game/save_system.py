@@ -287,6 +287,10 @@ class SaveSystem:
         if hasattr(player, 'visited_location_types'):
             data['visited_location_types'] = list(player.visited_location_types)
 
+        # Сохраняем квесты
+        if hasattr(player, 'quest_manager'):
+            data['quest_manager'] = player.quest_manager.to_dict()
+
         return data
 
     @staticmethod

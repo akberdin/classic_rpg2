@@ -262,6 +262,14 @@ class LootSystem:
                 setattr(self.player, stat_name, 0)
             setattr(self.player, stat_name, getattr(self.player, stat_name) + 1)
 
+        # Уведомляем систему квестов об убийстве животного
+        if enemy_type in ('wolf', 'bear', 'deer'):
+            if hasattr(self.player, 'quest_manager'):
+                self.player.quest_manager.update_quest_progress(
+                    'animal_killed',
+                    {'animal_type': enemy_type}
+                )
+
     def _get_item_key_by_name(self, item_name):
         """
         Получить ключ предмета по его имени для квестов.

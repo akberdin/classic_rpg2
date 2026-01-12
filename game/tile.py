@@ -107,6 +107,10 @@ class Location:
         # Формат: [{"floor_number": 1, "floor_type": "basement", "size": 2, "npc": ""}, ...]
         self.floors = []
 
+        # Квесты, доступные в этой локации
+        # Формат: [{"id": "...", "quest_type": "...", ...}, ...]
+        self.quests = []
+
     def _generate_default_name(self):
         """Генерация названия по умолчанию"""
         names = {
