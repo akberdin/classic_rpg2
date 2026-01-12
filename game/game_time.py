@@ -54,7 +54,12 @@ class GameTime:
         self.game_hour += hours
         self.game_turn += 1  # Увеличиваем счетчик ходов
 
-        # Система квестов на переработке - ротация квестов отключена
+        # Обновляем таймеры квестов
+        if hasattr(self.ctx.player, 'quest_manager'):
+            expired_quests = self.ctx.player.quest_manager.tick()
+            for quest in expired_quests:
+                print(f"Время на квест '{quest.name}' истекло!")
+                # Можно добавить штраф за провал здесь
 
         # Если прошло 24 часа, начинается новый день
         while self.game_hour >= 24:

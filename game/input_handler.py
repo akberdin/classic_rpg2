@@ -1318,13 +1318,22 @@ class InputHandler:
                 # Проверяем, есть ли локация на новой позиции
                 tile = self.ctx.game_map.get_tile(self.ctx.player.x, self.ctx.player.y)
                 if tile.has_location():
-                    print(f"Вы прибыли в: {tile.location.name}")
-                    print(f"  {tile.location.get_description()}")
+                    location = tile.location
+                    print(f"Вы прибыли в: {location.name}")
+                    print(f"  {location.get_description()}")
                     print(f"Время: {self.ctx.game_time.get_time_string()}")
+
+                    # Уведомляем систему квестов о посещении локации
+                    if hasattr(self.ctx.player, 'quest_manager'):
+                        location_id = getattr(location, 'id', '')
+                        self.ctx.player.quest_manager.update_quest_progress(
+                            'location_visited',
+                            {'location_id': location_id}
+                        )
 
     def handle_quest_input(self, key):
         """
-        Обработка ввода в окне квестов (система квестов на переработке)
+        Обработка ввода в окне квестов
 
         Args:
             key: Нажатая клавиша
@@ -1342,17 +1351,45 @@ class InputHandler:
             self.ctx.quest_window.scroll_offset = 0
             return
 
-        # Система квестов на переработке - действия недоступны
+        # Навигация по списку
+        quests = self.ctx.quest_window.get_current_list()
+        if key == pygame.K_UP:
+            if self.ctx.quest_window.selected_index > 0:
+                self.ctx.quest_window.selected_index -= 1
+            return
+        elif key == pygame.K_DOWN:
+            if self.ctx.quest_window.selected_index < len(quests) - 1:
+                self.ctx.quest_window.selected_index += 1
+            return
+
+        # Действие на Enter
+        if key == pygame.K_RETURN:
+            if self.ctx.quest_window.mode == "available":
+                self.game._handle_quest_action('accept')
+            elif self.ctx.quest_window.mode == "turn_in":
+                self.game._handle_quest_action('turn_in')
+            return
 
     def _refresh_quest_window(self):
-        """Обновить данные в окне квестов (система квестов на переработке)"""
-        # Система квестов на переработке - окно показывает пустые списки
+        """Обновить данные в окне квестов"""
+        location = self.ctx.quest_window.location
+        quest_manager = self.ctx.player.quest_manager
+
+        if location:
+            available = quest_manager.get_available_quests(location)
+            turn_in = quest_manager.get_quests_to_turn_in(location)
+        else:
+            available = []
+            turn_in = []
+
+        active = quest_manager.get_active_quests()
+
         self.ctx.quest_window.set_data(
             self.ctx.quest_window.location_name,
-            self.ctx.quest_window.location_id,
-            [],
-            [],
-            []
+            location,
+            available,
+            active,
+            turn_in
         )
 
     def route_menu_event(self, event, quest_action_handler=None):
