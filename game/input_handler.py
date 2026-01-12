@@ -1325,10 +1325,14 @@ class InputHandler:
 
                     # Уведомляем систему квестов о посещении локации
                     if hasattr(self.ctx.player, 'quest_manager'):
-                        location_id = getattr(location, 'id', '')
+                        location_id = getattr(location, 'id', '') or ''
+                        location_name = getattr(location, 'name', '') or ''
                         self.ctx.player.quest_manager.update_quest_progress(
                             'location_visited',
-                            {'location_id': location_id}
+                            {
+                                'location_id': location_id,
+                                'location_name': location_name
+                            }
                         )
 
     def handle_quest_input(self, key):
