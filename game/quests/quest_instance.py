@@ -125,8 +125,11 @@ class QuestInstance:
             True если прогресс обновлен
         """
         if self.quest_type == QuestType.GATHER_RESOURCE and event_type == 'resource_gathered':
-            if event_data.get('resource_type') == self.target_type:
+            resource_type = event_data.get('resource_type')
+            print(f"[DEBUG Quest] Checking gather_resource: received={resource_type}, target={self.target_type}, match={resource_type == self.target_type}")
+            if resource_type == self.target_type:
                 self.current_amount += event_data.get('amount', 1)
+                print(f"[DEBUG Quest] Progress updated: {self.current_amount}/{self.target_amount}")
                 return True
 
         elif self.quest_type == QuestType.HUNT_ANIMALS and event_type == 'animal_killed':
