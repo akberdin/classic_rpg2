@@ -278,6 +278,9 @@ class Game:
         self.dungeon_manager = DungeonManager(self)
         self.dungeon_renderer = DungeonRenderer(self.screen, TILE_SIZE, self.ui_scaler, self.sprite_manager)
 
+        # Устанавливаем ссылку на игру для quest_manager (для проверки зачистки локаций)
+        self.player.quest_manager.set_game(self)
+
         # Инициализация системы ресурсов
         self.resource_system = ResourceSystem(
             self.player, self.game_map,
