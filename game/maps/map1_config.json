@@ -44,7 +44,16 @@
       "player_attitude": 0,
       "spawn_radius": 5,
       "rank": 1,
-      "shop_rank": 1
+      "shop_rank": 1,
+      "guards": [
+        {
+          "type": "hunter",
+          "rank": 1,
+          "count": 2,
+          "patrol_radius": 15,
+          "respawn_time": 100
+        }
+      ]
     },
     {
       "x": 130,
