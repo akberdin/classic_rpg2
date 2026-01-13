@@ -1,3 +1,4 @@
+Добавим в игру систему регулярных и разовых обычных квестов, которые определяются параметрами конфига карты (game/maps/map1_config.json):
 # Интеграция системы регулярных квестов
 
 ## Обзор системы
@@ -823,26 +824,3 @@ class QuestManager:
 - Если указан `reward_item_id` - выдать предмет в количестве `reward_item_amount`
 - Если `is_repeatable` = true, запустить cooldown
 - Если `is_repeatable` = false, пометить квест как выполненный навсегда
-
-### 6. Обратная совместимость
-
-Для старых конфигов:
-- Поля `destination_id`/`destination_name` читаются как `target_location_id`/`target_location_name`
-- При отсутствии `scaling_factor` используется значение 1.1
-- При отсутствии `target_floor` используется значение 0
-- При отсутствии `target_item_id` используется пустая строка
-- При отсутствии `reward_item_id` используется пустая строка
-- При отсутствии `reward_item_amount` используется значение 1
-- При отсутствии `min_player_attitude` используется значение 0
-- При отсутствии `fail_attitude_penalty` используется значение 0
-- При отсутствии `completion_event_id` используется пустая строка
-
----
-
-## Изменения в редакторе карт
-
-Файлы с реализацией системы квестов:
-- `map_editor/tools/generator.py` - модель данных Quest и константы
-- `map_editor/ui/dialogs.py` - QuestEditDialog, QuestListDialog
-- `map_editor/editor.py` - интеграция диалогов и выбор локации на карте
-- `map_editor/ui/sidebar.py` - отображение количества квестов
