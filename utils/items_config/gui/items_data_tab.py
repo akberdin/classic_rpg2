@@ -131,6 +131,14 @@ class ItemsDataTab(ttk.Frame):
         ttk.Button(btn_frame, text="Добавить", command=self._add_item).pack(side="left", padx=2)
         ttk.Button(btn_frame, text="Дублировать", command=self._duplicate_item).pack(side="left", padx=2)
         ttk.Button(btn_frame, text="Удалить", command=self._delete_item).pack(side="left", padx=2)
+        ttk.Button(
+            btn_frame, text="Сопоставить названия",
+            command=self._sync_names_from_recipes
+        ).pack(side="right", padx=2)
+        ttk.Button(
+            btn_frame, text="Обновить цены",
+            command=self._update_prices_from_recipes
+        ).pack(side="right", padx=2)
 
     def _create_editor_panel(self):
         """Панель редактора предмета"""
@@ -727,3 +735,97 @@ class ItemsDataTab(ttk.Frame):
         """Перейти к рецепту"""
         if self.current_recipe and self.on_navigate_to_recipe:
             self.on_navigate_to_recipe(self.current_recipe.get('id'))
+
+    def _update_prices_from_recipes(self):
+        """Обновить цены предметов из рецептов крафта"""
+        if not self.crafting_manager:
+            messagebox.showerror("Ошибка", "Нет доступа к данным рецептов")
+            return
+
+        # Обновляем кэш рецептов перед использованием
+        self._build_recipe_cache()
+
+        if not self._recipe_cache:
+            messagebox.showinfo("Информация", "Нет рецептов для обновления цен")
+            return
+
+        updated_count = 0
+        categories = ["resources", "weapons", "armor", "jewelry", "potions"]
+
+        for item_id, recipe in self._recipe_cache.items():
+            base_price = recipe.get("base_price", 0)
+            if base_price <= 0:
+                continue
+
+            # Ищем предмет во всех категориях и обновляем напрямую
+            for cat_id in categories:
+                if cat_id in self.manager.data and item_id in self.manager.data[cat_id]:
+                    # Обновляем цену напрямую в данных
+                    self.manager.data[cat_id][item_id]["value"] = base_price
+                    updated_count += 1
+                    break
+
+        # Обновляем список предметов
+        if self.current_category:
+            self._load_items()
+
+        # Если текущий предмет выбран - перезагружаем его в редактор
+        if self.current_item_id:
+            self._load_item_to_editor(self.current_item_id)
+
+        # Сохраняем изменения
+        if self.on_change:
+            self.on_change()
+
+        messagebox.showinfo(
+            "Обновление завершено",
+            f"Обновлено предметов: {updated_count}\n"
+            f"Всего рецептов: {len(self._recipe_cache)}"
+        )
+
+    def _sync_names_from_recipes(self):
+        """Сопоставить названия предметов с названиями рецептов"""
+        if not self.crafting_manager:
+            messagebox.showerror("Ошибка", "Нет доступа к данным рецептов")
+            return
+
+        # Обновляем кэш рецептов перед использованием
+        self._build_recipe_cache()
+
+        if not self._recipe_cache:
+            messagebox.showinfo("Информация", "Нет рецептов для сопоставления")
+            return
+
+        updated_count = 0
+        categories = ["resources", "weapons", "armor", "jewelry", "potions"]
+
+        for item_id, recipe in self._recipe_cache.items():
+            recipe_name = recipe.get("name", "")
+            if not recipe_name:
+                continue
+
+            # Ищем предмет во всех категориях и обновляем напрямую
+            for cat_id in categories:
+                if cat_id in self.manager.data and item_id in self.manager.data[cat_id]:
+                    # Обновляем название напрямую в данных
+                    self.manager.data[cat_id][item_id]["name"] = recipe_name
+                    updated_count += 1
+                    break
+
+        # Обновляем список предметов
+        if self.current_category:
+            self._load_items()
+
+        # Если текущий предмет выбран - перезагружаем его в редактор
+        if self.current_item_id:
+            self._load_item_to_editor(self.current_item_id)
+
+        # Сохраняем изменения
+        if self.on_change:
+            self.on_change()
+
+        messagebox.showinfo(
+            "Сопоставление завершено",
+            f"Обновлено названий: {updated_count}\n"
+            f"Всего рецептов: {len(self._recipe_cache)}"
+        )

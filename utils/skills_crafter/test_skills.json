@@ -3,7 +3,7 @@
     "skill_id": "test_lightning",
     "name": "Молния",
     "description": "Удар молнией, оглушающий цель",
-    "category": "magic",
+    "category": "crafting",
     "skill_type": "active",
     "costs": {
       "mana_cost": 15,
@@ -417,19 +417,19 @@
       "sprite_rotation_offset": 0.0,
       "timing": {
         "damage_apply_at": "on_hit",
-        "damage_delay_ms": 0,
-        "multi_hit_delay_ms": 200,
+        "damage_delay_ms": 5000,
+        "multi_hit_delay_ms": 2000,
         "sound_delay_ms": 0
       },
       "projectile": {
-        "speed": 500.0,
-        "trajectory": "straight",
-        "arc_height": 50.0,
+        "speed": 1000.0,
+        "trajectory": "arc",
+        "arc_height": 30.0,
         "auto_rotate": true,
         "rotation_offset": 0.0,
         "impact_animation": "",
         "impact_scale": 1.0,
-        "trail_enabled": false,
+        "trail_enabled": true,
         "trail_color": "#FFFFFF",
         "trail_length": 5
       }

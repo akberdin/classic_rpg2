@@ -25,10 +25,16 @@ class QuestManager:
         self._player: Optional['Player'] = None
         # Callback для событий (устанавливается игрой)
         self._event_callback = None
+        # Ссылка на игру (для доступа к dungeon_manager)
+        self._game = None
 
     def set_player(self, player: 'Player') -> None:
         """Установить ссылку на игрока."""
         self._player = player
+
+    def set_game(self, game) -> None:
+        """Установить ссылку на игру (для доступа к dungeon_manager)."""
+        self._game = game
 
     def set_event_callback(self, callback) -> None:
         """Установить callback для событий завершения квестов."""
@@ -123,6 +129,8 @@ class QuestManager:
         Returns:
             Созданный экземпляр квеста или None
         """
+        from game.quests.quest_types import QuestType
+
         if not self._player:
             return None
 
@@ -133,10 +141,59 @@ class QuestManager:
 
         # Создаем экземпляр квеста
         quest = QuestInstance(quest_config, self._player.level, source_location_id)
+
+        # Для квестов зачистки локации проверяем текущее состояние
+        if quest.quest_type == QuestType.CLEAR_LOCATION:
+            self._check_clear_location_initial_state(quest)
+
         self.active_quests.append(quest)
 
         print(f"Квест принят: {quest.name}")
+        if quest.is_complete(self._player):
+            print(f"Квест '{quest.name}' уже выполнен! Вернитесь для получения награды.")
+
         return quest
+
+    def _check_clear_location_initial_state(self, quest: QuestInstance) -> None:
+        """
+        Проверить начальное состояние зачистки для квеста clear_location.
+
+        Если целевой этаж (или вся локация) уже зачищена, устанавливаем
+        current_amount = 1 и добавляем этажи в cleared_floors.
+
+        Args:
+            quest: Экземпляр квеста clear_location
+        """
+        if not self._game or not hasattr(self._game, 'dungeon_manager'):
+            return
+
+        dungeon_manager = self._game.dungeon_manager
+
+        # Получаем статус зачистки целевой локации
+        status = dungeon_manager.get_location_clear_status(
+            location_id=quest.target_location_id,
+            location_name=quest.target_location_name
+        )
+
+        if not status['total_floors']:
+            return  # Локация не посещалась
+
+        target_floor = quest.target_floor
+
+        if target_floor == 0:
+            # Нужно зачистить все этажи
+            for floor_num, is_cleared in status['floors_cleared'].items():
+                if is_cleared:
+                    quest.cleared_floors.add(floor_num)
+
+            # Если все этажи зачищены - квест выполнен
+            if status['is_cleared']:
+                quest.current_amount = 1
+        else:
+            # Нужно зачистить конкретный этаж
+            if status['floors_cleared'].get(target_floor, False):
+                quest.cleared_floors.add(target_floor)
+                quest.current_amount = 1
 
     def complete_quest(self, quest: QuestInstance) -> Dict[str, Any]:
         """

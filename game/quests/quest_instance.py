@@ -153,14 +153,16 @@ class QuestInstance:
                 floor = event_data.get('floor', 0)
                 if self.target_floor == 0:
                     # Все этажи - добавляем зачищенный этаж
-                    self.cleared_floors.add(floor)
-                    # Проверяем все ли этажи зачищены
-                    total_floors = event_data.get('total_floors', 1)
-                    if len(self.cleared_floors) >= total_floors:
-                        self.current_amount = 1
-                        return True
+                    if floor not in self.cleared_floors:
+                        self.cleared_floors.add(floor)
+                        # Проверяем все ли этажи зачищены
+                        total_floors = event_data.get('total_floors', 1)
+                        if len(self.cleared_floors) >= total_floors:
+                            self.current_amount = 1
+                        return True  # Прогресс обновлен в любом случае
                 elif floor == self.target_floor:
                     # Конкретный этаж
+                    self.cleared_floors.add(floor)
                     self.current_amount = 1
                     return True
 

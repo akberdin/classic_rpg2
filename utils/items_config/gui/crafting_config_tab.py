@@ -180,6 +180,10 @@ class CraftingConfigTab(ttk.Frame):
         ttk.Button(btn_frame, text="Добавить", command=self._add_recipe).pack(side="left", padx=2)
         ttk.Button(btn_frame, text="Дублировать", command=self._duplicate_recipe).pack(side="left", padx=2)
         ttk.Button(btn_frame, text="Удалить", command=self._delete_recipe).pack(side="left", padx=2)
+        ttk.Button(
+            btn_frame, text="Пересчитать все цены",
+            command=self._recalculate_all_recipes
+        ).pack(side="right", padx=2)
 
         # Правая часть - редактор рецепта
         right_frame = ttk.LabelFrame(paned, text="Редактор рецепта", padding=5)
@@ -311,6 +315,27 @@ class CraftingConfigTab(ttk.Frame):
         self.ingredients_tree.column("quantity", width=60)
         self.ingredients_tree.pack(fill="x")
 
+        # Привязки для редактирования и копирования
+        self.ingredients_tree.bind("<Double-1>", self._edit_ingredient)
+        self.ingredients_tree.bind("<Control-c>", self._copy_ingredient)
+        self.ingredients_tree.bind("<Control-v>", self._paste_ingredient)
+        self.ingredients_tree.bind("<Control-x>", self._cut_ingredient)
+        self.ingredients_tree.bind("<Delete>", lambda e: self._remove_ingredient())
+
+        # Контекстное меню для ингредиентов
+        self.ingredients_context_menu = tk.Menu(self.ingredients_tree, tearoff=0)
+        self.ingredients_context_menu.add_command(label="Изменить", command=self._edit_ingredient)
+        self.ingredients_context_menu.add_separator()
+        self.ingredients_context_menu.add_command(label="Копировать (Ctrl+C)", command=self._copy_ingredient)
+        self.ingredients_context_menu.add_command(label="Вырезать (Ctrl+X)", command=self._cut_ingredient)
+        self.ingredients_context_menu.add_command(label="Вставить (Ctrl+V)", command=self._paste_ingredient)
+        self.ingredients_context_menu.add_separator()
+        self.ingredients_context_menu.add_command(label="Удалить", command=self._remove_ingredient)
+        self.ingredients_tree.bind("<Button-3>", self._show_ingredients_context_menu)
+
+        # Буфер обмена для ингредиентов
+        self._ingredient_clipboard = None
+
         # Добавление ингредиента
         ing_add_frame = ttk.Frame(self.editor_frame)
         ing_add_frame.pack(fill="x", pady=2)
@@ -322,15 +347,39 @@ class CraftingConfigTab(ttk.Frame):
         ttk.Spinbox(ing_add_frame, from_=1, to=100, textvariable=self.ing_qty_var, width=5).pack(side="left", padx=2)
 
         ttk.Button(ing_add_frame, text="+", width=3, command=self._add_ingredient).pack(side="left", padx=2)
+        ttk.Button(ing_add_frame, text="Изм.", width=4, command=self._edit_ingredient).pack(side="left", padx=2)
         ttk.Button(ing_add_frame, text="-", width=3, command=self._remove_ingredient).pack(side="left", padx=2)
 
         ttk.Separator(self.editor_frame).pack(fill="x", pady=10)
 
+        # Цена
+        ttk.Label(self.editor_frame, text="Цена:", font=("TkDefaultFont", 9, "bold")).pack(anchor="w")
+
         # Базовая цена
         self.recipe_price = LabeledSpinbox(
-            self.editor_frame, "Базовая цена:", from_=0, to=10000, increment=10, value=0
+            self.editor_frame, "Базовая цена:", from_=0, to=100000, increment=10, value=0
         )
         self.recipe_price.pack(fill="x", pady=2)
+
+        # Фрейм для расчёта цены
+        price_calc_frame = ttk.Frame(self.editor_frame)
+        price_calc_frame.pack(fill="x", pady=2)
+
+        ttk.Label(price_calc_frame, text="Наценка (%):").pack(side="left")
+        self.price_markup_var = tk.IntVar(value=10)
+        self.price_markup_spinbox = ttk.Spinbox(
+            price_calc_frame, from_=0, to=500, textvariable=self.price_markup_var, width=5
+        )
+        self.price_markup_spinbox.pack(side="left", padx=(5, 10))
+
+        ttk.Button(
+            price_calc_frame, text="Рассчитать из ингредиентов",
+            command=self._calculate_price_from_ingredients
+        ).pack(side="left")
+
+        # Метка для отображения расчёта
+        self.price_calc_label = ttk.Label(self.editor_frame, text="", foreground="gray")
+        self.price_calc_label.pack(anchor="w", pady=(2, 0))
 
         # Кнопка сохранения
         ttk.Button(
@@ -425,6 +474,9 @@ class CraftingConfigTab(ttk.Frame):
         # Проверяем существование предмета-результата
         self._check_result_item()
 
+        # Сбрасываем метку расчёта цены
+        self.price_calc_label.config(text="", foreground="gray")
+
     def _clear_editor(self):
         """Очистить редактор"""
         self.current_recipe_id = None
@@ -445,6 +497,8 @@ class CraftingConfigTab(ttk.Frame):
         # Сбрасываем статус предмета
         self.item_status_label.config(text="", foreground="gray")
         self.create_item_btn.config(state="disabled")
+        # Сбрасываем метку расчёта цены
+        self.price_calc_label.config(text="", foreground="gray")
 
     def _add_ingredient(self):
         """Добавить ингредиент"""
@@ -460,6 +514,109 @@ class CraftingConfigTab(ttk.Frame):
         selection = self.ingredients_tree.selection()
         if selection:
             self.ingredients_tree.delete(selection[0])
+
+    def _edit_ingredient(self, event=None):
+        """Редактировать выбранный ингредиент"""
+        selection = self.ingredients_tree.selection()
+        if not selection:
+            return "break"
+
+        item_id = selection[0]
+        values = self.ingredients_tree.item(item_id)["values"]
+        current_item = str(values[0])
+        current_qty = int(values[1])
+
+        # Создаём диалог редактирования
+        dialog = tk.Toplevel(self)
+        dialog.title("Редактирование ингредиента")
+        dialog.geometry("300x120")
+        dialog.resizable(False, False)
+        dialog.transient(self)
+        dialog.grab_set()
+
+        # Центрируем диалог
+        dialog.update_idletasks()
+        x = self.winfo_rootx() + (self.winfo_width() - dialog.winfo_width()) // 2
+        y = self.winfo_rooty() + (self.winfo_height() - dialog.winfo_height()) // 2
+        dialog.geometry(f"+{x}+{y}")
+
+        # Поля ввода
+        frame = ttk.Frame(dialog, padding=10)
+        frame.pack(fill="both", expand=True)
+
+        ttk.Label(frame, text="ID предмета:").grid(row=0, column=0, sticky="w", pady=2)
+        item_var = tk.StringVar(value=current_item)
+        item_entry = ttk.Entry(frame, textvariable=item_var, width=25)
+        item_entry.grid(row=0, column=1, sticky="ew", pady=2, padx=(5, 0))
+        item_entry.select_range(0, tk.END)
+        item_entry.focus_set()
+
+        ttk.Label(frame, text="Количество:").grid(row=1, column=0, sticky="w", pady=2)
+        qty_var = tk.IntVar(value=current_qty)
+        qty_spinbox = ttk.Spinbox(frame, from_=1, to=100, textvariable=qty_var, width=10)
+        qty_spinbox.grid(row=1, column=1, sticky="w", pady=2, padx=(5, 0))
+
+        def save_changes():
+            new_item = item_var.get().strip()
+            new_qty = qty_var.get()
+            if new_item:
+                self.ingredients_tree.item(item_id, values=(new_item, new_qty))
+            dialog.destroy()
+
+        def on_enter(event):
+            save_changes()
+
+        item_entry.bind("<Return>", on_enter)
+        qty_spinbox.bind("<Return>", on_enter)
+
+        # Кнопки
+        btn_frame = ttk.Frame(frame)
+        btn_frame.grid(row=2, column=0, columnspan=2, pady=(10, 0))
+
+        ttk.Button(btn_frame, text="Сохранить", command=save_changes).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Отмена", command=dialog.destroy).pack(side="left", padx=5)
+
+        return "break"
+
+    def _show_ingredients_context_menu(self, event):
+        """Показать контекстное меню для ингредиентов"""
+        # Выбираем элемент под курсором
+        item = self.ingredients_tree.identify_row(event.y)
+        if item:
+            self.ingredients_tree.selection_set(item)
+        self.ingredients_context_menu.post(event.x_root, event.y_root)
+
+    def _copy_ingredient(self, event=None):
+        """Копировать выбранный ингредиент в буфер"""
+        selection = self.ingredients_tree.selection()
+        if selection:
+            values = self.ingredients_tree.item(selection[0])["values"]
+            self._ingredient_clipboard = {
+                "item": str(values[0]),
+                "quantity": int(values[1])
+            }
+        return "break"
+
+    def _cut_ingredient(self, event=None):
+        """Вырезать выбранный ингредиент"""
+        self._copy_ingredient()
+        self._remove_ingredient()
+        return "break"
+
+    def _paste_ingredient(self, event=None):
+        """Вставить ингредиент из буфера"""
+        if self._ingredient_clipboard:
+            # Вставляем после выбранного элемента или в конец
+            selection = self.ingredients_tree.selection()
+            if selection:
+                index = self.ingredients_tree.index(selection[0]) + 1
+            else:
+                index = tk.END
+            self.ingredients_tree.insert(
+                "", index,
+                values=(self._ingredient_clipboard["item"], self._ingredient_clipboard["quantity"])
+            )
+        return "break"
 
     def _get_ingredients_from_editor(self) -> List[Dict[str, Any]]:
         """Получить ингредиенты из редактора"""
@@ -680,3 +837,139 @@ class CraftingConfigTab(ttk.Frame):
 
             # Перепроверяем статус после создания
             self.after(100, self._check_result_item)
+
+    def _calculate_price_from_ingredients(self):
+        """Рассчитать базовую цену на основе стоимости ингредиентов"""
+        if not self.items_data_manager:
+            self.price_calc_label.config(
+                text="Нет доступа к данным предметов",
+                foreground="red"
+            )
+            return
+
+        ingredients = self._get_ingredients_from_editor()
+        if not ingredients:
+            self.price_calc_label.config(
+                text="Нет ингредиентов для расчёта",
+                foreground="orange"
+            )
+            return
+
+        total_cost = 0
+        details = []
+        missing_items = []
+
+        for ing in ingredients:
+            item_id = ing.get("item", "")
+            quantity = ing.get("quantity", 1)
+
+            # Ищем предмет во всех категориях
+            item_data = None
+            for cat_id in ["resources", "weapons", "armor", "jewelry", "potions"]:
+                item_data = self.items_data_manager.get_item(cat_id, item_id)
+                if item_data:
+                    break
+
+            if item_data:
+                item_value = item_data.value
+                item_cost = item_value * quantity
+                total_cost += item_cost
+                details.append(f"{item_id}: {item_value} x {quantity} = {item_cost}")
+            else:
+                missing_items.append(item_id)
+
+        # Применяем наценку
+        markup_percent = self.price_markup_var.get()
+        final_price = int(total_cost * (1 + markup_percent / 100))
+
+        # Устанавливаем рассчитанную цену
+        self.recipe_price.set(final_price)
+
+        # Формируем текст с деталями
+        if missing_items:
+            missing_text = f" (не найдены: {', '.join(missing_items)})"
+        else:
+            missing_text = ""
+
+        calc_text = f"Сумма: {total_cost} + {markup_percent}% = {final_price}{missing_text}"
+        self.price_calc_label.config(
+            text=calc_text,
+            foreground="green" if not missing_items else "orange"
+        )
+
+    def _recalculate_all_recipes(self):
+        """Пересчитать базовую цену для всех рецептов"""
+        if not self.items_data_manager:
+            messagebox.showerror("Ошибка", "Нет доступа к данным предметов")
+            return
+
+        markup_percent = self.price_markup_var.get()
+        recipes = self.manager.get_recipes()
+
+        if not recipes:
+            messagebox.showinfo("Информация", "Нет рецептов для пересчёта")
+            return
+
+        updated_count = 0
+        skipped_count = 0
+        total_missing = []
+
+        for recipe in recipes:
+            recipe_id = recipe.get("id")
+            ingredients = recipe.get("ingredients", [])
+
+            if not ingredients:
+                skipped_count += 1
+                continue
+
+            total_cost = 0
+            missing_items = []
+
+            for ing in ingredients:
+                item_id = ing.get("item", "")
+                quantity = ing.get("quantity", 1)
+
+                # Ищем предмет во всех категориях
+                item_data = None
+                for cat_id in ["resources", "weapons", "armor", "jewelry", "potions"]:
+                    item_data = self.items_data_manager.get_item(cat_id, item_id)
+                    if item_data:
+                        break
+
+                if item_data:
+                    total_cost += item_data.value * quantity
+                else:
+                    missing_items.append(item_id)
+
+            if missing_items:
+                total_missing.extend(missing_items)
+
+            # Рассчитываем финальную цену с наценкой
+            final_price = int(total_cost * (1 + markup_percent / 100))
+
+            # Обновляем рецепт напрямую (recipe - ссылка на объект в data)
+            recipe["base_price"] = final_price
+            updated_count += 1
+
+        # Сохраняем изменения
+        if self.on_change:
+            self.on_change()
+
+        # Обновляем список рецептов
+        self._load_recipes()
+
+        # Если текущий рецепт выбран - перезагружаем его в редактор
+        if self.current_recipe_id:
+            self._load_recipe_to_editor(self.current_recipe_id)
+
+        # Формируем сообщение
+        msg = f"Пересчитано рецептов: {updated_count}\nНаценка: {markup_percent}%"
+        if skipped_count:
+            msg += f"\nПропущено (нет ингредиентов): {skipped_count}"
+        if total_missing:
+            unique_missing = list(set(total_missing))[:10]
+            msg += f"\nНе найдены предметы: {', '.join(unique_missing)}"
+            if len(set(total_missing)) > 10:
+                msg += f" и ещё {len(set(total_missing)) - 10}..."
+
+        messagebox.showinfo("Пересчёт завершён", msg)
