@@ -9,6 +9,7 @@
       "id": "dab085a2-5a28-4aa1-949f-1015766df0dd",
       "player_attitude": -6,
       "spawn_radius": 5,
+      "rank": 1,
       "shop_rank": 4,
       "guards": [
         {
@@ -42,43 +43,8 @@
       "id": "2235ca37-c81f-45d2-a20e-5cf229d2e327",
       "player_attitude": 0,
       "spawn_radius": 5,
-      "shop_rank": 1,
-      "guards": [
-        {
-          "type": "hunter",
-          "rank": 2,
-          "count": 1,
-          "patrol_radius": 10,
-          "respawn_time": 50
-        },
-        {
-          "type": "hunter",
-          "rank": 1,
-          "count": 2,
-          "patrol_radius": 15,
-          "respawn_time": 50
-        }
-      ],
-      "quests": [
-        {
-          "id": "3fb39b6a-e12b-4060-aca9-c3841ac011ad",
-          "quest_type": "gather_resource",
-          "name": "Дерево для лесопилки",
-          "description": "Доставить дерево для лесопилки",
-          "target_type": "wood",
-          "target_amount": 5,
-          "time_limit": 0,
-          "difficulty": 1,
-          "target_location_id": "",
-          "target_location_name": "",
-          "target_floor": 0,
-          "reward_gold": 10,
-          "reward_exp": 20,
-          "reward_reputation": 0,
-          "is_repeatable": true,
-          "cooldown": 100
-        }
-      ]
+      "rank": 1,
+      "shop_rank": 1
     },
     {
       "x": 130,
@@ -88,7 +54,8 @@
       "id": "10188534-30db-417c-8c40-15dc0010ed12",
       "player_attitude": 0,
       "spawn_radius": 6,
-      "animal_count": 4,
+      "rank": 1,
+      "animal_count": 3,
       "respawn_time": 110
     },
     {
@@ -99,6 +66,7 @@
       "id": "63d875c7-bc06-47d2-a4f6-b0059875f791",
       "player_attitude": 0,
       "spawn_radius": 6,
+      "rank": 1,
       "animal_count": 3,
       "respawn_time": 135
     },
@@ -110,6 +78,7 @@
       "id": "268196be-1b34-4d22-8188-1ad49962ac4b",
       "player_attitude": -7,
       "spawn_radius": 5,
+      "rank": 1,
       "animal_count": 3,
       "respawn_time": 50
     }
