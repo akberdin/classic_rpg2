@@ -180,6 +180,10 @@ class CraftingConfigTab(ttk.Frame):
         ttk.Button(btn_frame, text="Добавить", command=self._add_recipe).pack(side="left", padx=2)
         ttk.Button(btn_frame, text="Дублировать", command=self._duplicate_recipe).pack(side="left", padx=2)
         ttk.Button(btn_frame, text="Удалить", command=self._delete_recipe).pack(side="left", padx=2)
+        ttk.Button(
+            btn_frame, text="Пересчитать все цены",
+            command=self._recalculate_all_recipes
+        ).pack(side="right", padx=2)
 
         # Правая часть - редактор рецепта
         right_frame = ttk.LabelFrame(paned, text="Редактор рецепта", padding=5)
@@ -892,3 +896,80 @@ class CraftingConfigTab(ttk.Frame):
             text=calc_text,
             foreground="green" if not missing_items else "orange"
         )
+
+    def _recalculate_all_recipes(self):
+        """Пересчитать базовую цену для всех рецептов"""
+        if not self.items_data_manager:
+            messagebox.showerror("Ошибка", "Нет доступа к данным предметов")
+            return
+
+        markup_percent = self.price_markup_var.get()
+        recipes = self.manager.get_recipes()
+
+        if not recipes:
+            messagebox.showinfo("Информация", "Нет рецептов для пересчёта")
+            return
+
+        updated_count = 0
+        skipped_count = 0
+        total_missing = []
+
+        for recipe in recipes:
+            recipe_id = recipe.get("id")
+            ingredients = recipe.get("ingredients", [])
+
+            if not ingredients:
+                skipped_count += 1
+                continue
+
+            total_cost = 0
+            missing_items = []
+
+            for ing in ingredients:
+                item_id = ing.get("item", "")
+                quantity = ing.get("quantity", 1)
+
+                # Ищем предмет во всех категориях
+                item_data = None
+                for cat_id in ["resources", "weapons", "armor", "jewelry", "potions"]:
+                    item_data = self.items_data_manager.get_item(cat_id, item_id)
+                    if item_data:
+                        break
+
+                if item_data:
+                    total_cost += item_data.value * quantity
+                else:
+                    missing_items.append(item_id)
+
+            if missing_items:
+                total_missing.extend(missing_items)
+
+            # Рассчитываем финальную цену с наценкой
+            final_price = int(total_cost * (1 + markup_percent / 100))
+
+            # Обновляем рецепт
+            self.manager.update_recipe(recipe_id, {"base_price": final_price})
+            updated_count += 1
+
+        # Сохраняем изменения
+        if self.on_change:
+            self.on_change()
+
+        # Обновляем список рецептов
+        self._load_recipes()
+
+        # Если текущий рецепт выбран - перезагружаем его в редактор
+        if self.current_recipe_id:
+            self._load_recipe_to_editor(self.current_recipe_id)
+
+        # Формируем сообщение
+        msg = f"Пересчитано рецептов: {updated_count}\nНаценка: {markup_percent}%"
+        if skipped_count:
+            msg += f"\nПропущено (нет ингредиентов): {skipped_count}"
+        if total_missing:
+            unique_missing = list(set(total_missing))[:10]
+            msg += f"\nНе найдены предметы: {', '.join(unique_missing)}"
+            if len(set(total_missing)) > 10:
+                msg += f" и ещё {len(set(total_missing)) - 10}..."
+
+        messagebox.showinfo("Пересчёт завершён", msg)
