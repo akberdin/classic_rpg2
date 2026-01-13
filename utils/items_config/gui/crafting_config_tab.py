@@ -947,8 +947,8 @@ class CraftingConfigTab(ttk.Frame):
             # Рассчитываем финальную цену с наценкой
             final_price = int(total_cost * (1 + markup_percent / 100))
 
-            # Обновляем рецепт
-            self.manager.update_recipe(recipe_id, {"base_price": final_price})
+            # Обновляем рецепт напрямую (recipe - ссылка на объект в data)
+            recipe["base_price"] = final_price
             updated_count += 1
 
         # Сохраняем изменения
