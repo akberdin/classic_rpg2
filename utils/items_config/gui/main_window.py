@@ -147,11 +147,11 @@ class ItemsConfigApp:
     def _create_ui(self):
         """Создание интерфейса"""
         # Основной контейнер
-        main_frame = ttk.Frame(self.root)
-        main_frame.pack(fill="both", expand=True)
+        self.main_frame = ttk.Frame(self.root)
+        self.main_frame.pack(fill="both", expand=True)
 
         # Notebook с вкладками
-        self.notebook = ttk.Notebook(main_frame)
+        self.notebook = ttk.Notebook(self.main_frame)
         self.notebook.pack(fill="both", expand=True, padx=5, pady=5)
 
         # Вкладка реестра предметов
@@ -183,7 +183,7 @@ class ItemsConfigApp:
         self.notebook.add(self.crafting_config_tab, text="Крафт (crafting_config)")
 
         # Статусная строка
-        self.status_frame = ttk.Frame(main_frame)
+        self.status_frame = ttk.Frame(self.main_frame)
         self.status_frame.pack(fill="x", side="bottom")
 
         self.status_label = ttk.Label(
@@ -339,9 +339,8 @@ class ItemsConfigApp:
                 return
 
         if self._load_data():
-            # Пересоздаём интерфейс полностью (notebook и status_frame)
-            self.notebook.destroy()
-            self.status_frame.destroy()
+            # Пересоздаём интерфейс полностью
+            self.main_frame.destroy()
             self._create_ui()
             self.has_unsaved_changes = False
             self._update_title()
