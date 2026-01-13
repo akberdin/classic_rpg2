@@ -348,11 +348,34 @@ class CraftingConfigTab(ttk.Frame):
 
         ttk.Separator(self.editor_frame).pack(fill="x", pady=10)
 
+        # Цена
+        ttk.Label(self.editor_frame, text="Цена:", font=("TkDefaultFont", 9, "bold")).pack(anchor="w")
+
         # Базовая цена
         self.recipe_price = LabeledSpinbox(
-            self.editor_frame, "Базовая цена:", from_=0, to=10000, increment=10, value=0
+            self.editor_frame, "Базовая цена:", from_=0, to=100000, increment=10, value=0
         )
         self.recipe_price.pack(fill="x", pady=2)
+
+        # Фрейм для расчёта цены
+        price_calc_frame = ttk.Frame(self.editor_frame)
+        price_calc_frame.pack(fill="x", pady=2)
+
+        ttk.Label(price_calc_frame, text="Наценка (%):").pack(side="left")
+        self.price_markup_var = tk.IntVar(value=10)
+        self.price_markup_spinbox = ttk.Spinbox(
+            price_calc_frame, from_=0, to=500, textvariable=self.price_markup_var, width=5
+        )
+        self.price_markup_spinbox.pack(side="left", padx=(5, 10))
+
+        ttk.Button(
+            price_calc_frame, text="Рассчитать из ингредиентов",
+            command=self._calculate_price_from_ingredients
+        ).pack(side="left")
+
+        # Метка для отображения расчёта
+        self.price_calc_label = ttk.Label(self.editor_frame, text="", foreground="gray")
+        self.price_calc_label.pack(anchor="w", pady=(2, 0))
 
         # Кнопка сохранения
         ttk.Button(
@@ -447,6 +470,9 @@ class CraftingConfigTab(ttk.Frame):
         # Проверяем существование предмета-результата
         self._check_result_item()
 
+        # Сбрасываем метку расчёта цены
+        self.price_calc_label.config(text="", foreground="gray")
+
     def _clear_editor(self):
         """Очистить редактор"""
         self.current_recipe_id = None
@@ -467,6 +493,8 @@ class CraftingConfigTab(ttk.Frame):
         # Сбрасываем статус предмета
         self.item_status_label.config(text="", foreground="gray")
         self.create_item_btn.config(state="disabled")
+        # Сбрасываем метку расчёта цены
+        self.price_calc_label.config(text="", foreground="gray")
 
     def _add_ingredient(self):
         """Добавить ингредиент"""
@@ -805,3 +833,62 @@ class CraftingConfigTab(ttk.Frame):
 
             # Перепроверяем статус после создания
             self.after(100, self._check_result_item)
+
+    def _calculate_price_from_ingredients(self):
+        """Рассчитать базовую цену на основе стоимости ингредиентов"""
+        if not self.items_data_manager:
+            self.price_calc_label.config(
+                text="Нет доступа к данным предметов",
+                foreground="red"
+            )
+            return
+
+        ingredients = self._get_ingredients_from_editor()
+        if not ingredients:
+            self.price_calc_label.config(
+                text="Нет ингредиентов для расчёта",
+                foreground="orange"
+            )
+            return
+
+        total_cost = 0
+        details = []
+        missing_items = []
+
+        for ing in ingredients:
+            item_id = ing.get("item", "")
+            quantity = ing.get("quantity", 1)
+
+            # Ищем предмет во всех категориях
+            item_data = None
+            for cat_id in ["resources", "weapons", "armor", "jewelry", "potions"]:
+                item_data = self.items_data_manager.get_item(cat_id, item_id)
+                if item_data:
+                    break
+
+            if item_data:
+                item_value = item_data.value
+                item_cost = item_value * quantity
+                total_cost += item_cost
+                details.append(f"{item_id}: {item_value} x {quantity} = {item_cost}")
+            else:
+                missing_items.append(item_id)
+
+        # Применяем наценку
+        markup_percent = self.price_markup_var.get()
+        final_price = int(total_cost * (1 + markup_percent / 100))
+
+        # Устанавливаем рассчитанную цену
+        self.recipe_price.set(final_price)
+
+        # Формируем текст с деталями
+        if missing_items:
+            missing_text = f" (не найдены: {', '.join(missing_items)})"
+        else:
+            missing_text = ""
+
+        calc_text = f"Сумма: {total_cost} + {markup_percent}% = {final_price}{missing_text}"
+        self.price_calc_label.config(
+            text=calc_text,
+            foreground="green" if not missing_items else "orange"
+        )
