@@ -311,6 +311,27 @@ class CraftingConfigTab(ttk.Frame):
         self.ingredients_tree.column("quantity", width=60)
         self.ingredients_tree.pack(fill="x")
 
+        # Привязки для редактирования и копирования
+        self.ingredients_tree.bind("<Double-1>", self._edit_ingredient)
+        self.ingredients_tree.bind("<Control-c>", self._copy_ingredient)
+        self.ingredients_tree.bind("<Control-v>", self._paste_ingredient)
+        self.ingredients_tree.bind("<Control-x>", self._cut_ingredient)
+        self.ingredients_tree.bind("<Delete>", lambda e: self._remove_ingredient())
+
+        # Контекстное меню для ингредиентов
+        self.ingredients_context_menu = tk.Menu(self.ingredients_tree, tearoff=0)
+        self.ingredients_context_menu.add_command(label="Изменить", command=self._edit_ingredient)
+        self.ingredients_context_menu.add_separator()
+        self.ingredients_context_menu.add_command(label="Копировать (Ctrl+C)", command=self._copy_ingredient)
+        self.ingredients_context_menu.add_command(label="Вырезать (Ctrl+X)", command=self._cut_ingredient)
+        self.ingredients_context_menu.add_command(label="Вставить (Ctrl+V)", command=self._paste_ingredient)
+        self.ingredients_context_menu.add_separator()
+        self.ingredients_context_menu.add_command(label="Удалить", command=self._remove_ingredient)
+        self.ingredients_tree.bind("<Button-3>", self._show_ingredients_context_menu)
+
+        # Буфер обмена для ингредиентов
+        self._ingredient_clipboard = None
+
         # Добавление ингредиента
         ing_add_frame = ttk.Frame(self.editor_frame)
         ing_add_frame.pack(fill="x", pady=2)
@@ -322,6 +343,7 @@ class CraftingConfigTab(ttk.Frame):
         ttk.Spinbox(ing_add_frame, from_=1, to=100, textvariable=self.ing_qty_var, width=5).pack(side="left", padx=2)
 
         ttk.Button(ing_add_frame, text="+", width=3, command=self._add_ingredient).pack(side="left", padx=2)
+        ttk.Button(ing_add_frame, text="Изм.", width=4, command=self._edit_ingredient).pack(side="left", padx=2)
         ttk.Button(ing_add_frame, text="-", width=3, command=self._remove_ingredient).pack(side="left", padx=2)
 
         ttk.Separator(self.editor_frame).pack(fill="x", pady=10)
@@ -460,6 +482,109 @@ class CraftingConfigTab(ttk.Frame):
         selection = self.ingredients_tree.selection()
         if selection:
             self.ingredients_tree.delete(selection[0])
+
+    def _edit_ingredient(self, event=None):
+        """Редактировать выбранный ингредиент"""
+        selection = self.ingredients_tree.selection()
+        if not selection:
+            return "break"
+
+        item_id = selection[0]
+        values = self.ingredients_tree.item(item_id)["values"]
+        current_item = str(values[0])
+        current_qty = int(values[1])
+
+        # Создаём диалог редактирования
+        dialog = tk.Toplevel(self)
+        dialog.title("Редактирование ингредиента")
+        dialog.geometry("300x120")
+        dialog.resizable(False, False)
+        dialog.transient(self)
+        dialog.grab_set()
+
+        # Центрируем диалог
+        dialog.update_idletasks()
+        x = self.winfo_rootx() + (self.winfo_width() - dialog.winfo_width()) // 2
+        y = self.winfo_rooty() + (self.winfo_height() - dialog.winfo_height()) // 2
+        dialog.geometry(f"+{x}+{y}")
+
+        # Поля ввода
+        frame = ttk.Frame(dialog, padding=10)
+        frame.pack(fill="both", expand=True)
+
+        ttk.Label(frame, text="ID предмета:").grid(row=0, column=0, sticky="w", pady=2)
+        item_var = tk.StringVar(value=current_item)
+        item_entry = ttk.Entry(frame, textvariable=item_var, width=25)
+        item_entry.grid(row=0, column=1, sticky="ew", pady=2, padx=(5, 0))
+        item_entry.select_range(0, tk.END)
+        item_entry.focus_set()
+
+        ttk.Label(frame, text="Количество:").grid(row=1, column=0, sticky="w", pady=2)
+        qty_var = tk.IntVar(value=current_qty)
+        qty_spinbox = ttk.Spinbox(frame, from_=1, to=100, textvariable=qty_var, width=10)
+        qty_spinbox.grid(row=1, column=1, sticky="w", pady=2, padx=(5, 0))
+
+        def save_changes():
+            new_item = item_var.get().strip()
+            new_qty = qty_var.get()
+            if new_item:
+                self.ingredients_tree.item(item_id, values=(new_item, new_qty))
+            dialog.destroy()
+
+        def on_enter(event):
+            save_changes()
+
+        item_entry.bind("<Return>", on_enter)
+        qty_spinbox.bind("<Return>", on_enter)
+
+        # Кнопки
+        btn_frame = ttk.Frame(frame)
+        btn_frame.grid(row=2, column=0, columnspan=2, pady=(10, 0))
+
+        ttk.Button(btn_frame, text="Сохранить", command=save_changes).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Отмена", command=dialog.destroy).pack(side="left", padx=5)
+
+        return "break"
+
+    def _show_ingredients_context_menu(self, event):
+        """Показать контекстное меню для ингредиентов"""
+        # Выбираем элемент под курсором
+        item = self.ingredients_tree.identify_row(event.y)
+        if item:
+            self.ingredients_tree.selection_set(item)
+        self.ingredients_context_menu.post(event.x_root, event.y_root)
+
+    def _copy_ingredient(self, event=None):
+        """Копировать выбранный ингредиент в буфер"""
+        selection = self.ingredients_tree.selection()
+        if selection:
+            values = self.ingredients_tree.item(selection[0])["values"]
+            self._ingredient_clipboard = {
+                "item": str(values[0]),
+                "quantity": int(values[1])
+            }
+        return "break"
+
+    def _cut_ingredient(self, event=None):
+        """Вырезать выбранный ингредиент"""
+        self._copy_ingredient()
+        self._remove_ingredient()
+        return "break"
+
+    def _paste_ingredient(self, event=None):
+        """Вставить ингредиент из буфера"""
+        if self._ingredient_clipboard:
+            # Вставляем после выбранного элемента или в конец
+            selection = self.ingredients_tree.selection()
+            if selection:
+                index = self.ingredients_tree.index(selection[0]) + 1
+            else:
+                index = tk.END
+            self.ingredients_tree.insert(
+                "", index,
+                values=(self._ingredient_clipboard["item"], self._ingredient_clipboard["quantity"])
+            )
+        return "break"
 
     def _get_ingredients_from_editor(self) -> List[Dict[str, Any]]:
         """Получить ингредиенты из редактора"""

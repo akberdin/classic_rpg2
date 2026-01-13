@@ -339,8 +339,9 @@ class ItemsConfigApp:
                 return
 
         if self._load_data():
-            # Пересоздаём вкладки
+            # Пересоздаём интерфейс полностью (notebook и status_frame)
             self.notebook.destroy()
+            self.status_frame.destroy()
             self._create_ui()
             self.has_unsaved_changes = False
             self._update_title()
