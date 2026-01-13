@@ -9,16 +9,8 @@
       "id": "53d1fc68-0a51-4d9e-8cc3-6a3741176673",
       "player_attitude": 0,
       "spawn_radius": 5,
+      "rank": 1,
       "shop_rank": 1,
-      "guards": [
-        {
-          "type": "hunter",
-          "rank": 2,
-          "count": 2,
-          "patrol_radius": 8,
-          "respawn_time": 20
-        }
-      ],
       "connections": [
         [
           29,
@@ -36,6 +28,75 @@
           4,
           27
         ]
+      ],
+      "quests": [
+        {
+          "id": "ec94e9a8-c0d3-41e6-835d-8b72583471df",
+          "quest_type": "deliver_message",
+          "name": "Доставочка",
+          "description": "Доставить послание в город",
+          "time_limit": 0,
+          "difficulty": 1,
+          "reward_gold": 50,
+          "reward_item_id": "",
+          "reward_item_amount": 1,
+          "reward_exp": 30,
+          "reward_reputation": 0,
+          "is_repeatable": true,
+          "cooldown": 100,
+          "min_player_attitude": -1,
+          "min_player_rank": 0,
+          "fail_attitude_penalty": 0,
+          "completion_event_id": "",
+          "scaling_factor": 1.1,
+          "target_location_id": "84334b75-22d1-419f-be11-4b1329b0fa9f",
+          "target_location_name": "Кристальград"
+        },
+        {
+          "id": "5ca48bf4-7c14-48f2-9050-128d861e6f2c",
+          "quest_type": "gather_resource",
+          "name": "Добыть дерево",
+          "description": "Добыть и доставить древесину на лесопилку",
+          "time_limit": 0,
+          "difficulty": 1,
+          "reward_gold": 20,
+          "reward_item_id": "poor_pickaxe",
+          "reward_item_amount": 1,
+          "reward_exp": 10,
+          "reward_reputation": 0,
+          "is_repeatable": true,
+          "cooldown": 100,
+          "min_player_attitude": -2,
+          "min_player_rank": 0,
+          "fail_attitude_penalty": 0,
+          "completion_event_id": "",
+          "scaling_factor": 1.1,
+          "target_type": "wood",
+          "target_amount": 5
+        },
+        {
+          "id": "f5a49a4e-72ed-4a58-8881-65998e36c9f3",
+          "quest_type": "clear_location",
+          "name": "Очистить шахту от крыс",
+          "description": "Зайди и очисти 3 этаж Медного рудника от крыс",
+          "time_limit": 100,
+          "difficulty": 2,
+          "reward_gold": 100,
+          "reward_item_id": "",
+          "reward_item_amount": 1,
+          "reward_exp": 100,
+          "reward_reputation": 0,
+          "is_repeatable": false,
+          "cooldown": 100,
+          "min_player_attitude": 0,
+          "min_player_rank": 0,
+          "fail_attitude_penalty": 1,
+          "completion_event_id": "",
+          "scaling_factor": 1.1,
+          "target_location_id": "e1f7c97b-359d-4f8b-bc0d-038bfd77a989",
+          "target_location_name": "Медный рудник",
+          "target_floor": 0
+        }
       ]
     },
     {
@@ -146,6 +207,7 @@
       "id": "d91738da-0057-413a-95f8-2031b277191e",
       "player_attitude": 0,
       "spawn_radius": 5,
+      "rank": 1,
       "shop_rank": 1,
       "connections": [
         [
@@ -170,7 +232,17 @@
       "id": "84334b75-22d1-419f-be11-4b1329b0fa9f",
       "player_attitude": 0,
       "spawn_radius": 5,
+      "rank": 1,
       "shop_rank": 1,
+      "guards": [
+        {
+          "type": "warrior",
+          "rank": 3,
+          "count": 3,
+          "patrol_radius": 10,
+          "respawn_time": 100
+        }
+      ],
       "connections": [
         [
           29,
@@ -190,6 +262,7 @@
       "id": "373df51e-3e7a-4d6b-9403-753552966dc5",
       "player_attitude": 0,
       "spawn_radius": 10,
+      "rank": 1,
       "animal_count": 5,
       "respawn_time": 20
     },
@@ -286,6 +359,7 @@
       "id": "0b6cf9ba-55eb-4d99-b8d2-a9100e58a17b",
       "player_attitude": 0,
       "spawn_radius": 5,
+      "rank": 1,
       "animal_count": 7,
       "respawn_time": 50
     }
