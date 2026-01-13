@@ -73,6 +73,13 @@ class DungeonManager:
         # Тип ресурса текущей шахты (для генерации руды)
         self.current_resource_type: Optional[str] = None
 
+        # Текущая локация (для квестов зачистки)
+        self.current_location_id: Optional[str] = None
+        self.current_location_name: Optional[str] = None
+
+        # Состояние зачистки этажей: {dungeon_key: {floor: bool}}
+        self.cleared_floors_state: dict = {}
+
     def _get_floor_config(self, depth: int) -> Optional[dict]:
         """
         Получить конфигурацию этажа по глубине
@@ -170,10 +177,15 @@ class DungeonManager:
             self.current_player_attitude = getattr(tile.location, 'player_attitude', 0)
             # Сохраняем тип ресурса шахты для генерации руды
             self.current_resource_type = getattr(tile.location, 'resource_type', None)
+            # Сохраняем ID и имя локации для квестов зачистки
+            self.current_location_id = getattr(tile.location, 'id', None)
+            self.current_location_name = getattr(tile.location, 'name', None)
         else:
             self.current_floors_config = []
             self.current_player_attitude = 0
             self.current_resource_type = None
+            self.current_location_id = None
+            self.current_location_name = None
 
         # Проверяем кэш уровней
         if self.current_dungeon_key not in self.dungeon_levels:
@@ -185,6 +197,8 @@ class DungeonManager:
             # Используем сохраненный первый уровень
             self.current_dungeon = cache[1]
             self.dungeon_npcs = self.current_dungeon.npcs.copy()
+            # Проверяем зачистку для квестов (если этаж уже был зачищен)
+            self.check_and_notify_floor_cleared(player)
         else:
             # Генерируем новое подземелье (первый уровень)
             location_type = "mine" if dungeon_type == "mine" else "ruins"
@@ -318,6 +332,8 @@ class DungeonManager:
             # Загружаем сохранённый уровень
             self.current_dungeon = cache[self.current_depth]
             self.dungeon_npcs = self.current_dungeon.npcs.copy()
+            # Проверяем зачистку для квестов (если этаж уже был зачищен)
+            self.check_and_notify_floor_cleared(player)
         else:
             # Генерируем новый уровень
             tile = self.game.game_map.get_tile(self.saved_world_x, self.saved_world_y)
@@ -412,6 +428,9 @@ class DungeonManager:
         cache = self.dungeon_levels[self.current_dungeon_key]
         self.current_dungeon = cache[self.current_depth]
         self.dungeon_npcs = self.current_dungeon.npcs.copy()
+
+        # Проверяем зачистку для квестов (если этаж уже был зачищен)
+        self.check_and_notify_floor_cleared(player)
 
         # Перемещаем игрока на лестницу вниз
         if self.current_dungeon.stairs_down:
@@ -1178,6 +1197,249 @@ class DungeonManager:
         """Очистить кэш подземелий"""
         self._dungeon_cache.clear()
 
+    def get_cleared_state_for_save(self) -> dict:
+        """
+        Получить состояние зачистки для сохранения.
+
+        Returns:
+            dict: Состояние зачистки {dungeon_key: {floor: bool}}
+        """
+        # Преобразуем ключи этажей в строки для JSON-совместимости
+        result = {}
+        for dungeon_key, floors_state in self.cleared_floors_state.items():
+            result[dungeon_key] = {str(floor): cleared for floor, cleared in floors_state.items()}
+        return result
+
+    def load_cleared_state(self, data: dict) -> None:
+        """
+        Загрузить состояние зачистки из сохранения.
+
+        Args:
+            data: Данные состояния {dungeon_key: {floor: bool}}
+        """
+        self.cleared_floors_state = {}
+        if not data:
+            return
+
+        for dungeon_key, floors_state in data.items():
+            self.cleared_floors_state[dungeon_key] = {
+                int(floor): cleared for floor, cleared in floors_state.items()
+            }
+
+    # ===== Система зачистки локации (для квестов) =====
+
+    def get_alive_npc_count(self, floor: int = None) -> int:
+        """
+        Получить количество живых NPC на этаже или во всем подземелье.
+
+        Args:
+            floor: Номер этажа (если None - текущий этаж)
+
+        Returns:
+            int: Количество живых NPC
+        """
+        if not self.is_in_dungeon or not self.current_dungeon:
+            return 0
+
+        # Если не указан этаж, используем текущий
+        if floor is None:
+            floor = self.current_depth
+
+        # Если запрашивается текущий этаж, считаем по dungeon_npcs
+        if floor == self.current_depth:
+            return sum(1 for npc in self.dungeon_npcs if npc.is_alive)
+
+        # Для другого этажа - загружаем из кэша
+        if self.current_dungeon_key in self.dungeon_levels:
+            cache = self.dungeon_levels[self.current_dungeon_key]
+            if floor in cache:
+                dungeon_map = cache[floor]
+                return sum(1 for npc in dungeon_map.npcs if npc.is_alive)
+
+        return 0
+
+    def get_total_npc_count_from_config(self, floor: int = None) -> int:
+        """
+        Получить ожидаемое количество NPC из конфигурации этажа.
+
+        Args:
+            floor: Номер этажа (если None - текущий этаж)
+
+        Returns:
+            int: Общее количество NPC по конфигу
+        """
+        if floor is None:
+            floor = self.current_depth
+
+        floor_config = self._get_floor_config(floor)
+        if not floor_config:
+            return 0
+
+        npcs_config = floor_config.get('npcs', [])
+        total = 0
+        for npc_entry in npcs_config:
+            total += npc_entry.get('count', 0)
+        return total
+
+    def is_floor_cleared(self, floor: int = None) -> bool:
+        """
+        Проверить, зачищен ли этаж (все NPC убиты).
+
+        Args:
+            floor: Номер этажа (если None - текущий этаж)
+
+        Returns:
+            bool: True если этаж зачищен
+        """
+        if floor is None:
+            floor = self.current_depth
+
+        # Проверяем состояние в кэше зачистки
+        if self.current_dungeon_key in self.cleared_floors_state:
+            if floor in self.cleared_floors_state[self.current_dungeon_key]:
+                return self.cleared_floors_state[self.current_dungeon_key][floor]
+
+        # Если этаж не посещался, проверяем по живым NPC
+        return self.get_alive_npc_count(floor) == 0
+
+    def is_location_cleared(self) -> bool:
+        """
+        Проверить, зачищена ли вся локация (все этажи).
+
+        Returns:
+            bool: True если все этажи зачищены
+        """
+        if not self.current_floors_config:
+            return False
+
+        for floor_config in self.current_floors_config:
+            floor_num = floor_config.get('floor_number', 1)
+            if not self.is_floor_cleared(floor_num):
+                return False
+
+        return True
+
+    def _mark_floor_cleared(self, floor: int) -> None:
+        """
+        Пометить этаж как зачищенный.
+
+        Args:
+            floor: Номер этажа
+        """
+        if self.current_dungeon_key not in self.cleared_floors_state:
+            self.cleared_floors_state[self.current_dungeon_key] = {}
+
+        self.cleared_floors_state[self.current_dungeon_key][floor] = True
+
+    def check_and_notify_floor_cleared(self, player) -> bool:
+        """
+        Проверить, зачищен ли текущий этаж, и отправить событие квестов.
+
+        Args:
+            player: Объект игрока
+
+        Returns:
+            bool: True если этаж только что был зачищен
+        """
+        if not self.is_in_dungeon or not self.current_dungeon:
+            return False
+
+        floor = self.current_depth
+        alive_count = self.get_alive_npc_count(floor)
+
+        # Если еще есть живые NPC - этаж не зачищен
+        if alive_count > 0:
+            return False
+
+        # Проверяем, не был ли этаж уже помечен как зачищенный
+        if self.current_dungeon_key in self.cleared_floors_state:
+            if self.cleared_floors_state[self.current_dungeon_key].get(floor, False):
+                return False  # Уже зачищен ранее
+
+        # Помечаем этаж как зачищенный
+        self._mark_floor_cleared(floor)
+
+        # Отправляем событие квестам
+        if hasattr(player, 'quest_manager') and player.quest_manager:
+            event_data = {
+                'location_id': self.current_location_id or '',
+                'location_name': self.current_location_name or '',
+                'floor': floor,
+                'total_floors': len(self.current_floors_config) if self.current_floors_config else self.max_depth
+            }
+            updated_quests = player.quest_manager.update_quest_progress('floor_cleared', event_data)
+            if updated_quests:
+                print(f"Этаж {floor} зачищен! Квесты обновлены.")
+
+        return True
+
+    def get_location_clear_status(self, location_id: str = None, location_name: str = None) -> dict:
+        """
+        Получить статус зачистки локации (для проверки квестов).
+
+        Args:
+            location_id: ID локации
+            location_name: Имя локации (используется если ID не указан)
+
+        Returns:
+            dict: {
+                'is_cleared': bool,  # Зачищена ли вся локация
+                'floors_cleared': dict,  # {floor: bool}
+                'total_floors': int,
+                'cleared_count': int
+            }
+        """
+        result = {
+            'is_cleared': False,
+            'floors_cleared': {},
+            'total_floors': 0,
+            'cleared_count': 0
+        }
+
+        # Если мы в этой локации - используем текущие данные
+        if self.is_in_dungeon and self.current_dungeon_key:
+            current_id = self.current_location_id
+            current_name = self.current_location_name
+
+            if (location_id and location_id == current_id) or \
+               (location_name and location_name == current_name):
+                # Собираем статус для всех этажей
+                total_floors = len(self.current_floors_config) if self.current_floors_config else self.max_depth
+                result['total_floors'] = total_floors
+
+                for floor_num in range(1, total_floors + 1):
+                    is_cleared = self.is_floor_cleared(floor_num)
+                    result['floors_cleared'][floor_num] = is_cleared
+                    if is_cleared:
+                        result['cleared_count'] += 1
+
+                result['is_cleared'] = result['cleared_count'] == total_floors
+                return result
+
+        # Проверяем кэш зачистки для всех подземелий
+        for dungeon_key, floors_state in self.cleared_floors_state.items():
+            # Получаем данные о локации из кэша уровней
+            if dungeon_key in self.dungeon_levels:
+                cache = self.dungeon_levels[dungeon_key]
+                for floor_num, dungeon_map in cache.items():
+                    # Проверяем совпадение локации
+                    dungeon_name = getattr(dungeon_map, 'name', '')
+                    if location_name and location_name in dungeon_name:
+                        # Это наша локация
+                        total_floors = len(cache)
+                        result['total_floors'] = max(result['total_floors'], total_floors)
+
+                        for fn in cache.keys():
+                            is_cleared = floors_state.get(fn, False)
+                            result['floors_cleared'][fn] = is_cleared
+                            if is_cleared:
+                                result['cleared_count'] += 1
+
+                        result['is_cleared'] = result['cleared_count'] >= result['total_floors']
+                        break
+
+        return result
+
     # ===== Система боя в подземелье =====
 
     def get_visible_enemies(self, player) -> List:
@@ -1455,6 +1717,9 @@ class DungeonManager:
 
         # Помечаем NPC как агрессивного к игроку (для других NPC)
         enemy._aggro_target = player
+
+        # Проверяем, зачищен ли этаж после убийства врага
+        self.check_and_notify_floor_cleared(player)
 
     def enemy_turn(self, player) -> List[dict]:
         """

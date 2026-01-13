@@ -230,6 +230,10 @@ class SaveSystem:
             if hasattr(game.player, 'companion_manager'):
                 save_data['companions'] = game.player.companion_manager.serialize()
 
+            # Добавляем состояние зачистки подземелий
+            if hasattr(game, 'dungeon_manager') and game.dungeon_manager:
+                save_data['dungeon_cleared_state'] = SaveSystem._serialize_dungeon_cleared_state(game.dungeon_manager)
+
             save_path = os.path.join(
                 SaveSystem.SAVE_DIR,
                 save_name + SaveSystem.SAVE_EXTENSION
@@ -447,6 +451,19 @@ class SaveSystem:
         """Сериализовать менеджер достижений"""
         unlocked = [a.achievement_id for a in achievement_manager.achievements if a.unlocked]
         return {'unlocked': unlocked}
+
+    @staticmethod
+    def _serialize_dungeon_cleared_state(dungeon_manager):
+        """
+        Сериализовать состояние зачистки подземелий.
+
+        Args:
+            dungeon_manager: Менеджер подземелий
+
+        Returns:
+            dict: Состояние зачистки {dungeon_key: {floor: bool}}
+        """
+        return dungeon_manager.get_cleared_state_for_save()
 
     @staticmethod
     def load_game(save_name="autosave"):
