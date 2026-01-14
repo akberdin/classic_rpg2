@@ -81,6 +81,11 @@ class QuestManager:
             if player_attitude < min_attitude:
                 continue
 
+            # Проверяем минимальный уровень игрока
+            min_level = quest_config.get('min_player_level', 0)
+            if min_level > 0 and self._player and self._player.level < min_level:
+                continue
+
             available.append(quest_config)
 
         return available
