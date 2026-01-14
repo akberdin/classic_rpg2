@@ -45,6 +45,15 @@
       "spawn_radius": 5,
       "rank": 1,
       "shop_rank": 1,
+      "guards": [
+        {
+          "type": "hunter",
+          "rank": 1,
+          "count": 3,
+          "patrol_radius": 10,
+          "respawn_time": 100
+        }
+      ],
       "quests": [
         {
           "id": "705fcd0e-abfe-4d8b-adec-5e2426953420",
@@ -62,10 +71,34 @@
           "cooldown": 100,
           "min_player_attitude": 0,
           "min_player_rank": 0,
+          "min_player_level": 3,
           "fail_attitude_penalty": 1,
           "completion_event_id": "1001",
-          "scaling_factor": 1.1,
+          "scaling_factor": 1.0,
           "target_type": "wolf",
+          "target_amount": 3
+        },
+        {
+          "id": "b7a88a47-4668-48a1-a723-8c079f051a26",
+          "quest_type": "gather_resource",
+          "name": "Древесина для лесопилки",
+          "description": "Дсрубить и доставить на деревенскую лесопилку древесину",
+          "time_limit": 0,
+          "difficulty": 1,
+          "reward_gold": 20,
+          "reward_item_id": "",
+          "reward_item_amount": 1,
+          "reward_exp": 20,
+          "reward_reputation": 0,
+          "is_repeatable": true,
+          "cooldown": 20,
+          "min_player_attitude": 0,
+          "min_player_rank": 0,
+          "min_player_level": 0,
+          "fail_attitude_penalty": 0,
+          "completion_event_id": "",
+          "scaling_factor": 1.1,
+          "target_type": "wood",
           "target_amount": 5
         }
       ]
@@ -105,6 +138,18 @@
       "rank": 1,
       "animal_count": 3,
       "respawn_time": 50
+    },
+    {
+      "x": 119,
+      "y": 32,
+      "type": "spawn_wolf",
+      "name": "Волчье логово",
+      "id": "cbd1ba79-74d1-404d-9d94-87f21e6c7cd7",
+      "player_attitude": -10,
+      "spawn_radius": 5,
+      "rank": 1,
+      "animal_count": 5,
+      "respawn_time": 0
     }
   ],
   "starting_village": {
