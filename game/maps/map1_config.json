@@ -45,13 +45,28 @@
       "spawn_radius": 5,
       "rank": 1,
       "shop_rank": 1,
-      "guards": [
+      "quests": [
         {
-          "type": "hunter",
-          "rank": 1,
-          "count": 2,
-          "patrol_radius": 15,
-          "respawn_time": 100
+          "id": "705fcd0e-abfe-4d8b-adec-5e2426953420",
+          "quest_type": "hunt_animals",
+          "name": "Убить стаю волков",
+          "description": "Убить стаю волков, нападающих на деревню",
+          "time_limit": 0,
+          "difficulty": 2,
+          "reward_gold": 50,
+          "reward_item_id": "",
+          "reward_item_amount": 1,
+          "reward_exp": 50,
+          "reward_reputation": 0,
+          "is_repeatable": false,
+          "cooldown": 100,
+          "min_player_attitude": 0,
+          "min_player_rank": 0,
+          "fail_attitude_penalty": 1,
+          "completion_event_id": "1001",
+          "scaling_factor": 1.1,
+          "target_type": "wolf",
+          "target_amount": 5
         }
       ]
     },

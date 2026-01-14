@@ -43,7 +43,7 @@
         }
       ],
       "category": "smelting",
-      "base_price": 5,
+      "base_price": 46,
       "sprite": null
     },
     {
@@ -69,7 +69,7 @@
         }
       ],
       "category": "smelting",
-      "base_price": 15,
+      "base_price": 68,
       "sprite": null
     },
     {
@@ -95,7 +95,7 @@
         }
       ],
       "category": "smelting",
-      "base_price": 250,
+      "base_price": 146,
       "sprite": null
     },
     {
@@ -121,7 +121,7 @@
         }
       ],
       "category": "smelting",
-      "base_price": 500,
+      "base_price": 256,
       "sprite": null
     },
     {
@@ -147,7 +147,7 @@
         }
       ],
       "category": "smelting",
-      "base_price": 1000,
+      "base_price": 488,
       "sprite": null
     },
     {
@@ -169,7 +169,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 3,
+      "base_price": 22,
       "sprite": null
     },
     {
@@ -191,7 +191,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 2,
+      "base_price": 11,
       "sprite": null
     },
     {
@@ -213,7 +213,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 3,
+      "base_price": 33,
       "sprite": null
     },
     {
@@ -235,7 +235,7 @@
         }
       ],
       "category": "smelting",
-      "base_price": 0,
+      "base_price": 11,
       "sprite": null
     },
     {
@@ -261,7 +261,7 @@
         }
       ],
       "category": "smelting",
-      "base_price": 150,
+      "base_price": 350,
       "sprite": null
     },
     {
@@ -287,7 +287,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 50,
+      "base_price": 72,
       "sprite": null
     },
     {
@@ -313,7 +313,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 80,
+      "base_price": 96,
       "sprite": null
     },
     {
@@ -339,7 +339,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 150,
+      "base_price": 375,
       "sprite": null
     },
     {
@@ -365,7 +365,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 200,
+      "base_price": 181,
       "sprite": null
     },
     {
@@ -391,7 +391,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 400,
+      "base_price": 302,
       "sprite": null
     },
     {
@@ -417,7 +417,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 800,
+      "base_price": 556,
       "sprite": null
     },
     {
@@ -443,7 +443,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 5,
+      "base_price": 133,
       "sprite": null
     },
     {
@@ -469,7 +469,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 10,
+      "base_price": 133,
       "sprite": null
     },
     {
@@ -491,7 +491,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 0,
+      "base_price": 38,
       "sprite": null
     },
     {
@@ -513,7 +513,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 0,
+      "base_price": 66,
       "sprite": null
     },
     {
@@ -535,7 +535,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 0,
+      "base_price": 49,
       "sprite": null
     },
     {
@@ -557,7 +557,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 50,
+      "base_price": 53,
       "sprite": null
     },
     {
@@ -583,7 +583,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 5,
+      "base_price": 72,
       "sprite": null
     },
     {
@@ -613,7 +613,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 5,
+      "base_price": 242,
       "sprite": null
     },
     {
@@ -639,7 +639,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 5,
+      "base_price": 121,
       "sprite": null
     },
     {
@@ -665,7 +665,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 60,
+      "base_price": 169,
       "sprite": null
     },
     {
@@ -691,7 +691,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 105,
+      "base_price": 726,
       "sprite": null
     },
     {
@@ -717,7 +717,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 25,
+      "base_price": 60,
       "sprite": null
     },
     {
@@ -743,7 +743,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 45,
+      "base_price": 84,
       "sprite": null
     },
     {
@@ -769,7 +769,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 80,
+      "base_price": 363,
       "sprite": null
     },
     {
@@ -795,7 +795,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 120,
+      "base_price": 169,
       "sprite": null
     },
     {
@@ -821,7 +821,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 32,
+      "base_price": 72,
       "sprite": null
     },
     {
@@ -847,7 +847,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 58,
+      "base_price": 96,
       "sprite": null
     },
     {
@@ -873,7 +873,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 100,
+      "base_price": 375,
       "sprite": null
     },
     {
@@ -899,7 +899,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 48,
+      "base_price": 133,
       "sprite": null
     },
     {
@@ -925,7 +925,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 85,
+      "base_price": 181,
       "sprite": null
     },
     {
@@ -951,7 +951,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 150,
+      "base_price": 738,
       "sprite": null
     },
     {
@@ -977,7 +977,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 70,
+      "base_price": 96,
       "sprite": null
     },
     {
@@ -1003,7 +1003,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 120,
+      "base_price": 375,
       "sprite": null
     },
     {
@@ -1029,7 +1029,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 72,
+      "base_price": 181,
       "sprite": null
     },
     {
@@ -1055,7 +1055,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 125,
+      "base_price": 738,
       "sprite": null
     },
     {
@@ -1081,7 +1081,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 10,
+      "base_price": 121,
       "sprite": null
     },
     {
@@ -1107,7 +1107,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 95,
+      "base_price": 193,
       "sprite": null
     },
     {
@@ -1133,7 +1133,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 160,
+      "base_price": 338,
       "sprite": null
     },
     {
@@ -1155,7 +1155,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 8,
+      "base_price": 33,
       "sprite": null
     },
     {
@@ -1177,7 +1177,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 60,
+      "base_price": 66,
       "sprite": null
     },
     {
@@ -1203,7 +1203,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 105,
+      "base_price": 211,
       "sprite": null
     },
     {
@@ -1225,7 +1225,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 8,
+      "base_price": 49,
       "sprite": null
     },
     {
@@ -1247,7 +1247,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 75,
+      "base_price": 53,
       "sprite": null
     },
     {
@@ -1273,7 +1273,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 130,
+      "base_price": 247,
       "sprite": null
     },
     {
@@ -1295,7 +1295,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 5,
+      "base_price": 49,
       "sprite": null
     },
     {
@@ -1321,7 +1321,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 70,
+      "base_price": 243,
       "sprite": null
     },
     {
@@ -1351,7 +1351,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 125,
+      "base_price": 486,
       "sprite": null
     },
     {
@@ -1381,7 +1381,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 210,
+      "base_price": 543,
       "sprite": null
     },
     {
@@ -1403,7 +1403,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 40,
+      "base_price": 33,
       "sprite": null
     },
     {
@@ -1425,7 +1425,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 70,
+      "base_price": 66,
       "sprite": null
     },
     {
@@ -1451,7 +1451,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 120,
+      "base_price": 259,
       "sprite": null
     },
     {
@@ -1473,7 +1473,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 5,
+      "base_price": 16,
       "sprite": null
     },
     {
@@ -1499,7 +1499,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 55,
+      "base_price": 161,
       "sprite": null
     },
     {
@@ -1529,7 +1529,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 100,
+      "base_price": 323,
       "sprite": null
     },
     {
@@ -1563,7 +1563,7 @@
         }
       ],
       "category": "armor",
-      "base_price": 180,
+      "base_price": 828,
       "sprite": null
     },
     {
@@ -1585,7 +1585,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 5,
+      "base_price": 66,
       "sprite": null
     },
     {
@@ -1607,7 +1607,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 75,
+      "base_price": 55,
       "sprite": null
     },
     {
@@ -1633,7 +1633,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 8,
+      "base_price": 72,
       "sprite": null
     },
     {
@@ -1663,7 +1663,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 75,
+      "base_price": 205,
       "sprite": null
     },
     {
@@ -1693,7 +1693,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 130,
+      "base_price": 350,
       "sprite": null
     },
     {
@@ -1723,7 +1723,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 220,
+      "base_price": 617,
       "sprite": null
     },
     {
@@ -1749,7 +1749,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 10,
+      "base_price": 121,
       "sprite": null
     },
     {
@@ -1779,7 +1779,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 110,
+      "base_price": 338,
       "sprite": null
     },
     {
@@ -1809,7 +1809,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 185,
+      "base_price": 592,
       "sprite": null
     },
     {
@@ -1839,7 +1839,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 320,
+      "base_price": 968,
       "sprite": null
     },
     {
@@ -1861,7 +1861,7 @@
         }
       ],
       "category": "alchemy",
-      "base_price": 5,
+      "base_price": 17,
       "sprite": null
     },
     {
@@ -1887,7 +1887,7 @@
         }
       ],
       "category": "alchemy",
-      "base_price": 60,
+      "base_price": 42,
       "sprite": null
     },
     {
@@ -1909,7 +1909,7 @@
         }
       ],
       "category": "alchemy",
-      "base_price": 8,
+      "base_price": 66,
       "sprite": null
     },
     {
@@ -1935,7 +1935,7 @@
         }
       ],
       "category": "alchemy",
-      "base_price": 90,
+      "base_price": 165,
       "sprite": null
     },
     {
@@ -1957,7 +1957,7 @@
         }
       ],
       "category": "alchemy",
-      "base_price": 5,
+      "base_price": 33,
       "sprite": null
     },
     {
@@ -1983,7 +1983,7 @@
         }
       ],
       "category": "alchemy",
-      "base_price": 85,
+      "base_price": 115,
       "sprite": null
     },
     {
@@ -2013,7 +2013,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 100,
+      "base_price": 302,
       "sprite": null
     },
     {
@@ -2043,7 +2043,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 180,
+      "base_price": 605,
       "sprite": null
     },
     {
@@ -2073,7 +2073,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 115,
+      "base_price": 326,
       "sprite": null
     },
     {
@@ -2103,7 +2103,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 200,
+      "base_price": 459,
       "sprite": null
     },
     {
@@ -2125,7 +2125,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 5,
+      "base_price": 33,
       "sprite": null
     },
     {
@@ -2155,7 +2155,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 80,
+      "base_price": 177,
       "sprite": null
     },
     {
@@ -2185,7 +2185,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 140,
+      "base_price": 235,
       "sprite": null
     },
     {
@@ -2211,7 +2211,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 10,
+      "base_price": 108,
       "sprite": null
     },
     {
@@ -2241,7 +2241,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 95,
+      "base_price": 283,
       "sprite": null
     },
     {
@@ -2271,7 +2271,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 170,
+      "base_price": 435,
       "sprite": null
     },
     {
@@ -2293,7 +2293,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 5,
+      "base_price": 44,
       "sprite": null
     },
     {
@@ -2319,7 +2319,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 60,
+      "base_price": 193,
       "sprite": null
     },
     {
@@ -2345,7 +2345,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 110,
+      "base_price": 876,
       "sprite": null
     },
     {
@@ -2371,7 +2371,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 45,
+      "base_price": 70,
       "sprite": null
     },
     {
@@ -2397,7 +2397,7 @@
         }
       ],
       "category": "tool",
-      "base_price": 120,
+      "base_price": 225,
       "sprite": null
     },
     {
@@ -2419,7 +2419,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 10,
+      "base_price": 48,
       "sprite": null
     },
     {
@@ -2445,7 +2445,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 85,
+      "base_price": 235,
       "sprite": null
     },
     {
@@ -2471,7 +2471,7 @@
         }
       ],
       "category": "weapon",
-      "base_price": 160,
+      "base_price": 580,
       "sprite": null
     },
     {
@@ -2501,7 +2501,7 @@
         }
       ],
       "category": "alchemy",
-      "base_price": 140,
+      "base_price": 134,
       "sprite": null
     },
     {
@@ -2527,7 +2527,7 @@
         }
       ],
       "category": "alchemy",
-      "base_price": 120,
+      "base_price": 264,
       "sprite": null
     },
     {
@@ -2553,7 +2553,7 @@
         }
       ],
       "category": "alchemy",
-      "base_price": 100,
+      "base_price": 198,
       "sprite": null
     },
     {
@@ -2575,7 +2575,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 30,
+      "base_price": 60,
       "sprite": null
     },
     {
@@ -2592,12 +2592,12 @@
       "required_skill_rank": 2,
       "ingredients": [
         {
-          "item": "silver_ingot",
-          "quantity": 2
+          "item": "silver_wire",
+          "quantity": 1
         }
       ],
       "category": "jewelry",
-      "base_price": 120,
+      "base_price": 205,
       "sprite": null
     },
     {
@@ -2614,12 +2614,12 @@
       "required_skill_rank": 3,
       "ingredients": [
         {
-          "item": "gold_ingot",
-          "quantity": 2
+          "item": "gold_wire",
+          "quantity": 1
         }
       ],
       "category": "jewelry",
-      "base_price": 300,
+      "base_price": 387,
       "sprite": null
     },
     {
@@ -2636,7 +2636,7 @@
       "required_skill_rank": 1,
       "ingredients": [
         {
-          "item": "copper_ingot",
+          "item": "copper_wire",
           "quantity": 2
         },
         {
@@ -2645,7 +2645,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 70,
+      "base_price": 231,
       "sprite": null
     },
     {
@@ -2662,7 +2662,7 @@
       "required_skill_rank": 1,
       "ingredients": [
         {
-          "item": "copper_ingot",
+          "item": "copper_wire",
           "quantity": 2
         },
         {
@@ -2671,7 +2671,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 80,
+      "base_price": 253,
       "sprite": null
     },
     {
@@ -2688,7 +2688,7 @@
       "required_skill_rank": 1,
       "ingredients": [
         {
-          "item": "copper_ingot",
+          "item": "copper_wire",
           "quantity": 2
         },
         {
@@ -2697,7 +2697,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 80,
+      "base_price": 253,
       "sprite": null
     },
     {
@@ -2714,7 +2714,7 @@
       "required_skill_rank": 1,
       "ingredients": [
         {
-          "item": "copper_ingot",
+          "item": "copper_wire",
           "quantity": 2
         },
         {
@@ -2723,7 +2723,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 100,
+      "base_price": 286,
       "sprite": null
     },
     {
@@ -2740,7 +2740,7 @@
       "required_skill_rank": 1,
       "ingredients": [
         {
-          "item": "copper_ingot",
+          "item": "copper_wire",
           "quantity": 2
         },
         {
@@ -2749,7 +2749,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 75,
+      "base_price": 242,
       "sprite": null
     },
     {
@@ -2766,7 +2766,7 @@
       "required_skill_rank": 2,
       "ingredients": [
         {
-          "item": "copper_ingot",
+          "item": "copper_wire",
           "quantity": 2
         },
         {
@@ -2775,7 +2775,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 200,
+      "base_price": 561,
       "sprite": null
     },
     {
@@ -2792,7 +2792,7 @@
       "required_skill_rank": 2,
       "ingredients": [
         {
-          "item": "silver_ingot",
+          "item": "silver_wire",
           "quantity": 2
         },
         {
@@ -2801,7 +2801,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 200,
+      "base_price": 686,
       "sprite": null
     },
     {
@@ -2818,7 +2818,7 @@
       "required_skill_rank": 2,
       "ingredients": [
         {
-          "item": "silver_ingot",
+          "item": "silver_wire",
           "quantity": 2
         },
         {
@@ -2827,7 +2827,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 220,
+      "base_price": 741,
       "sprite": null
     },
     {
@@ -2844,7 +2844,7 @@
       "required_skill_rank": 2,
       "ingredients": [
         {
-          "item": "silver_ingot",
+          "item": "silver_wire",
           "quantity": 2
         },
         {
@@ -2853,7 +2853,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 220,
+      "base_price": 741,
       "sprite": null
     },
     {
@@ -2870,7 +2870,7 @@
       "required_skill_rank": 2,
       "ingredients": [
         {
-          "item": "silver_ingot",
+          "item": "silver_wire",
           "quantity": 2
         },
         {
@@ -2879,7 +2879,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 250,
+      "base_price": 796,
       "sprite": null
     },
     {
@@ -2896,7 +2896,7 @@
       "required_skill_rank": 2,
       "ingredients": [
         {
-          "item": "silver_ingot",
+          "item": "silver_wire",
           "quantity": 2
         },
         {
@@ -2905,7 +2905,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 210,
+      "base_price": 719,
       "sprite": null
     },
     {
@@ -2922,7 +2922,7 @@
       "required_skill_rank": 3,
       "ingredients": [
         {
-          "item": "silver_ingot",
+          "item": "silver_wire",
           "quantity": 2
         },
         {
@@ -2931,7 +2931,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 450,
+      "base_price": 1511,
       "sprite": null
     },
     {
@@ -2948,7 +2948,7 @@
       "required_skill_rank": 3,
       "ingredients": [
         {
-          "item": "gold_ingot",
+          "item": "gold_wire",
           "quantity": 2
         },
         {
@@ -2957,7 +2957,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 400,
+      "base_price": 1049,
       "sprite": null
     },
     {
@@ -2974,7 +2974,7 @@
       "required_skill_rank": 3,
       "ingredients": [
         {
-          "item": "gold_ingot",
+          "item": "gold_wire",
           "quantity": 2
         },
         {
@@ -2983,7 +2983,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 420,
+      "base_price": 1104,
       "sprite": null
     },
     {
@@ -3000,7 +3000,7 @@
       "required_skill_rank": 3,
       "ingredients": [
         {
-          "item": "gold_ingot",
+          "item": "gold_wire",
           "quantity": 2
         },
         {
@@ -3009,7 +3009,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 420,
+      "base_price": 1104,
       "sprite": null
     },
     {
@@ -3026,7 +3026,7 @@
       "required_skill_rank": 3,
       "ingredients": [
         {
-          "item": "gold_ingot",
+          "item": "gold_wire",
           "quantity": 2
         },
         {
@@ -3035,7 +3035,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 450,
+      "base_price": 1159,
       "sprite": null
     },
     {
@@ -3052,7 +3052,7 @@
       "required_skill_rank": 3,
       "ingredients": [
         {
-          "item": "gold_ingot",
+          "item": "gold_wire",
           "quantity": 2
         },
         {
@@ -3061,7 +3061,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 410,
+      "base_price": 1082,
       "sprite": null
     },
     {
@@ -3078,7 +3078,7 @@
       "required_skill_rank": 4,
       "ingredients": [
         {
-          "item": "gold_ingot",
+          "item": "gold_wire",
           "quantity": 2
         },
         {
@@ -3087,7 +3087,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 800,
+      "base_price": 1874,
       "sprite": null
     },
     {
@@ -3113,7 +3113,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 50,
+      "base_price": 193,
       "sprite": null
     },
     {
@@ -3139,7 +3139,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 180,
+      "base_price": 520,
       "sprite": null
     },
     {
@@ -3165,7 +3165,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 400,
+      "base_price": 883,
       "sprite": null
     },
     {
@@ -3195,7 +3195,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 100,
+      "base_price": 303,
       "sprite": null
     },
     {
@@ -3225,7 +3225,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 110,
+      "base_price": 325,
       "sprite": null
     },
     {
@@ -3255,7 +3255,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 110,
+      "base_price": 325,
       "sprite": null
     },
     {
@@ -3285,7 +3285,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 130,
+      "base_price": 358,
       "sprite": null
     },
     {
@@ -3315,7 +3315,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 105,
+      "base_price": 314,
       "sprite": null
     },
     {
@@ -3345,7 +3345,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 250,
+      "base_price": 633,
       "sprite": null
     },
     {
@@ -3375,7 +3375,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 280,
+      "base_price": 795,
       "sprite": null
     },
     {
@@ -3405,7 +3405,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 300,
+      "base_price": 850,
       "sprite": null
     },
     {
@@ -3435,7 +3435,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 300,
+      "base_price": 850,
       "sprite": null
     },
     {
@@ -3465,7 +3465,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 330,
+      "base_price": 905,
       "sprite": null
     },
     {
@@ -3495,7 +3495,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 290,
+      "base_price": 828,
       "sprite": null
     },
     {
@@ -3525,7 +3525,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 550,
+      "base_price": 1620,
       "sprite": null
     },
     {
@@ -3555,7 +3555,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 530,
+      "base_price": 1158,
       "sprite": null
     },
     {
@@ -3585,7 +3585,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 550,
+      "base_price": 1213,
       "sprite": null
     },
     {
@@ -3615,7 +3615,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 550,
+      "base_price": 1213,
       "sprite": null
     },
     {
@@ -3645,7 +3645,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 580,
+      "base_price": 1268,
       "sprite": null
     },
     {
@@ -3675,7 +3675,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 540,
+      "base_price": 1191,
       "sprite": null
     },
     {
@@ -3705,7 +3705,7 @@
         }
       ],
       "category": "jewelry",
-      "base_price": 950,
+      "base_price": 1983,
       "sprite": null
     }
   ],
