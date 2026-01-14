@@ -239,18 +239,23 @@ class Character:
         """Получить эффективную удачу с учетом бонусов от экипировки"""
         return self._get_effective_stat('luck')
 
-    def consume_stamina(self, amount=STAMINA_COST_PER_MOVE):
+    def consume_stamina(self, amount=STAMINA_COST_PER_MOVE, movement_cost_multiplier=1.0):
         """
         Потратить выносливость
 
         Args:
-            amount: Количество выносливости
+            amount: Базовое количество выносливости
+            movement_cost_multiplier: Множитель стоимости перемещения (из биома)
 
         Returns:
             bool: True если удалось потратить
         """
-        if self.stamina >= amount:
-            self.stamina -= amount
+        # Применяем множитель биома к базовой стоимости
+        actual_cost = int(amount * movement_cost_multiplier)
+        actual_cost = max(1, actual_cost)  # Минимум 1 единица выносливости
+
+        if self.stamina >= actual_cost:
+            self.stamina -= actual_cost
 
             # Если выносливость закончилась, начинаем отдых
             if self.stamina <= 0:

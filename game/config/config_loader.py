@@ -362,6 +362,32 @@ class WorldConfig(ConfigLoader):
             return self.get('biomes', biome_name, param_name, default=default)
         return self.get('biomes', biome_name, default=default)
 
+    def get_movement_cost(self, biome_name: str, default=1.0) -> float:
+        """
+        Получить стоимость перемещения по биому
+
+        Args:
+            biome_name: Название биома
+            default: Значение по умолчанию
+
+        Returns:
+            float: Множитель стоимости перемещения
+        """
+        return self.get('biomes', biome_name, 'movement_cost', default=default)
+
+    def get_vision_bonus(self, biome_name: str, default=0) -> int:
+        """
+        Получить бонус/штраф к радиусу обзора в биоме
+
+        Args:
+            biome_name: Название биома
+            default: Значение по умолчанию
+
+        Returns:
+            int: Бонус к радиусу обзора (может быть отрицательным)
+        """
+        return self.get('biomes', biome_name, 'vision_bonus', default=default)
+
     def get_location_names(self, location_type: str, default=None):
         """Получить имена локаций"""
         return self.get('location_names', location_type, default=default or [])

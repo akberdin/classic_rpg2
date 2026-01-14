@@ -6,7 +6,7 @@ from game.inventory import EquipmentItem, EquipmentSlot, SkillBookItem, PotionIt
 from game.save_system import SaveSystem
 from game.constants import LOCATION_CITY, LOCATION_VILLAGE, LOCATION_RUINS, LOCATION_MINE
 from game.core.game_context import GameContext
-from game.config.config_loader import get_economy_config
+from game.config.config_loader import get_economy_config, get_world_config
 
 
 class InputHandler:
@@ -1203,7 +1203,14 @@ class InputHandler:
                 print("Вы слишком устали и должны отдохнуть!")
                 return
 
-            if not self.ctx.player.consume_stamina():
+            # Получаем стоимость перемещения на основе биома целевой клетки
+            movement_cost = 1.0
+            target_tile = self.ctx.game_map.get_tile(new_x, new_y)
+            if target_tile:
+                world_config = get_world_config()
+                movement_cost = world_config.get_movement_cost(target_tile.biome, default=1.0)
+
+            if not self.ctx.player.consume_stamina(movement_cost_multiplier=movement_cost):
                 print("У вас недостаточно выносливости! Нажмите R для отдыха.")
                 return
 
