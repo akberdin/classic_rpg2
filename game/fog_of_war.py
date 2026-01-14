@@ -3,6 +3,7 @@
 Оптимизировано для больших карт (500x500+)
 """
 from game.constants import VISION_RADIUS
+from game.config.config_loader import get_world_config
 
 
 class FogOfWar:
@@ -22,10 +23,37 @@ class FogOfWar:
         # Кэш текущей видимости (позиция игрока -> set видимых тайлов)
         self._visible_cache = set()
         self._cache_player_pos = None
+        # Кэш эффективного радиуса для текущего биома
+        self._cache_effective_radius = VISION_RADIUS
         # Флаг для инвалидации кэша миникарты
         self._minimap_dirty = True
         # Счётчик новых исследованных тайлов
         self._newly_explored_count = 0
+
+    def get_effective_vision_radius(self, player_x, player_y):
+        """
+        Получить эффективный радиус обзора с учётом биома
+
+        Args:
+            player_x: Позиция игрока X
+            player_y: Позиция игрока Y
+
+        Returns:
+            int: Эффективный радиус обзора (минимум 1)
+        """
+        if not self.game_map.is_valid_position(player_x, player_y):
+            return self.vision_radius
+
+        tile = self.game_map.get_tile(player_x, player_y)
+        if not tile:
+            return self.vision_radius
+
+        world_config = get_world_config()
+        vision_bonus = world_config.get_vision_bonus(tile.biome, default=0)
+
+        # Применяем бонус к базовому радиусу, минимум 1
+        effective_radius = max(1, self.vision_radius + vision_bonus)
+        return effective_radius
 
     def update_vision(self, player_x, player_y):
         """
@@ -35,20 +63,24 @@ class FogOfWar:
             player_x: Позиция игрока X
             player_y: Позиция игрока Y
         """
-        # Обновляем кэш видимости
+        # Получаем эффективный радиус обзора с учётом биома
+        effective_radius = self.get_effective_vision_radius(player_x, player_y)
+        effective_radius_sq = effective_radius * effective_radius
+
+        # Обновляем кэш видимости (включаем радиус в проверку для инвалидации)
         new_pos = (player_x, player_y)
-        if self._cache_player_pos != new_pos:
+        if self._cache_player_pos != new_pos or self._cache_effective_radius != effective_radius:
             self._visible_cache.clear()
             self._cache_player_pos = new_pos
+            self._cache_effective_radius = effective_radius
 
             # Проходим по всем тайлам в радиусе видимости
             # Используем квадрат расстояния для оптимизации (без sqrt)
-            radius_sq = self._vision_radius_sq
-            for dy in range(-self.vision_radius, self.vision_radius + 1):
-                for dx in range(-self.vision_radius, self.vision_radius + 1):
+            for dy in range(-effective_radius, effective_radius + 1):
+                for dx in range(-effective_radius, effective_radius + 1):
                     # Проверяем квадрат расстояния (без sqrt)
                     dist_sq = dx * dx + dy * dy
-                    if dist_sq <= radius_sq:
+                    if dist_sq <= effective_radius_sq:
                         tile_x = player_x + dx
                         tile_y = player_y + dy
 
@@ -77,14 +109,18 @@ class FogOfWar:
         Returns:
             bool: True если тайл виден
         """
+        # Получаем эффективный радиус обзора с учётом биома
+        effective_radius = self.get_effective_vision_radius(player_x, player_y)
+
         # Если кэш актуален, используем его
-        if self._cache_player_pos == (player_x, player_y):
+        if self._cache_player_pos == (player_x, player_y) and self._cache_effective_radius == effective_radius:
             return (x, y) in self._visible_cache
 
         # Иначе вычисляем напрямую (без sqrt)
         dx = x - player_x
         dy = y - player_y
-        return (dx * dx + dy * dy) <= self._vision_radius_sq
+        effective_radius_sq = effective_radius * effective_radius
+        return (dx * dx + dy * dy) <= effective_radius_sq
 
     def is_minimap_dirty(self):
         """Проверить, нужно ли перерисовать миникарту"""
