@@ -9,6 +9,11 @@ from game.config.config_loader import get_world_config
 class FogOfWar:
     """Класс управления туманом войны"""
 
+    # Биомы с возвышенностью (хороший обзор в лес)
+    ELEVATED_BIOMES = {'hills', 'mountain'}
+    # Биом леса
+    FOREST_BIOME = 'forest'
+
     def __init__(self, game_map):
         """
         Инициализация системы тумана войны
@@ -25,6 +30,8 @@ class FogOfWar:
         self._cache_player_pos = None
         # Кэш эффективного радиуса для текущего биома
         self._cache_effective_radius = VISION_RADIUS
+        # Кэш биома игрока для проверки видимости в лес
+        self._cache_player_biome = None
         # Флаг для инвалидации кэша миникарты
         self._minimap_dirty = True
         # Счётчик новых исследованных тайлов
@@ -55,6 +62,53 @@ class FogOfWar:
         effective_radius = max(1, self.vision_radius + vision_bonus)
         return effective_radius
 
+    def _is_tile_visible_with_forest_check(self, tile_x, tile_y, player_x, player_y,
+                                            player_biome, effective_radius_sq):
+        """
+        Проверить видимость клетки с учётом ограничения видимости в лес
+
+        Args:
+            tile_x, tile_y: Координаты проверяемой клетки
+            player_x, player_y: Координаты игрока
+            player_biome: Биом клетки игрока
+            effective_radius_sq: Квадрат эффективного радиуса обзора
+
+        Returns:
+            bool: True если клетка видна
+        """
+        dx = tile_x - player_x
+        dy = tile_y - player_y
+        dist_sq = dx * dx + dy * dy
+
+        # Сначала проверяем базовый радиус
+        if dist_sq > effective_radius_sq:
+            return False
+
+        # Получаем биом целевой клетки
+        target_tile = self.game_map.get_tile(tile_x, tile_y)
+        if not target_tile:
+            return False
+
+        target_biome = target_tile.biome
+
+        # Если целевая клетка - лес
+        if target_biome == self.FOREST_BIOME:
+            # Если игрок в лесу - используем обычный радиус (1 клетка)
+            if player_biome == self.FOREST_BIOME:
+                return True  # Уже прошли проверку радиуса выше
+
+            # Если игрок на возвышенности - видит лес нормально
+            if player_biome in self.ELEVATED_BIOMES:
+                return True
+
+            # Иначе - видимость в лес ограничена 1 клеткой
+            # Используем расстояние Чебышёва (max из dx, dy) для "глубины"
+            forest_depth = max(abs(dx), abs(dy))
+            return forest_depth <= 1
+
+        # Для не-лесных клеток - стандартная проверка
+        return True
+
     def update_vision(self, player_x, player_y):
         """
         Обновить видимость тайлов вокруг игрока
@@ -63,27 +117,36 @@ class FogOfWar:
             player_x: Позиция игрока X
             player_y: Позиция игрока Y
         """
+        # Получаем биом позиции игрока
+        player_tile = self.game_map.get_tile(player_x, player_y)
+        player_biome = player_tile.biome if player_tile else 'plains'
+
         # Получаем эффективный радиус обзора с учётом биома
         effective_radius = self.get_effective_vision_radius(player_x, player_y)
         effective_radius_sq = effective_radius * effective_radius
 
-        # Обновляем кэш видимости (включаем радиус в проверку для инвалидации)
+        # Обновляем кэш видимости (включаем радиус и биом в проверку для инвалидации)
         new_pos = (player_x, player_y)
-        if self._cache_player_pos != new_pos or self._cache_effective_radius != effective_radius:
+        if (self._cache_player_pos != new_pos or
+            self._cache_effective_radius != effective_radius or
+            self._cache_player_biome != player_biome):
+
             self._visible_cache.clear()
             self._cache_player_pos = new_pos
             self._cache_effective_radius = effective_radius
+            self._cache_player_biome = player_biome
 
             # Проходим по всем тайлам в радиусе видимости
-            # Используем квадрат расстояния для оптимизации (без sqrt)
             for dy in range(-effective_radius, effective_radius + 1):
                 for dx in range(-effective_radius, effective_radius + 1):
-                    # Проверяем квадрат расстояния (без sqrt)
-                    dist_sq = dx * dx + dy * dy
-                    if dist_sq <= effective_radius_sq:
-                        tile_x = player_x + dx
-                        tile_y = player_y + dy
+                    tile_x = player_x + dx
+                    tile_y = player_y + dy
 
+                    # Проверяем видимость с учётом леса
+                    if self._is_tile_visible_with_forest_check(
+                        tile_x, tile_y, player_x, player_y,
+                        player_biome, effective_radius_sq
+                    ):
                         # Добавляем в кэш видимости
                         self._visible_cache.add((tile_x, tile_y))
 
@@ -98,7 +161,6 @@ class FogOfWar:
     def is_visible(self, x, y, player_x, player_y):
         """
         Проверить, виден ли тайл игроку в данный момент
-        Оптимизировано: использует квадрат расстояния вместо sqrt
 
         Args:
             x: Координата тайла X
@@ -109,18 +171,22 @@ class FogOfWar:
         Returns:
             bool: True если тайл виден
         """
-        # Получаем эффективный радиус обзора с учётом биома
+        # Получаем данные для проверки
+        player_tile = self.game_map.get_tile(player_x, player_y)
+        player_biome = player_tile.biome if player_tile else 'plains'
         effective_radius = self.get_effective_vision_radius(player_x, player_y)
 
         # Если кэш актуален, используем его
-        if self._cache_player_pos == (player_x, player_y) and self._cache_effective_radius == effective_radius:
+        if (self._cache_player_pos == (player_x, player_y) and
+            self._cache_effective_radius == effective_radius and
+            self._cache_player_biome == player_biome):
             return (x, y) in self._visible_cache
 
-        # Иначе вычисляем напрямую (без sqrt)
-        dx = x - player_x
-        dy = y - player_y
+        # Иначе вычисляем напрямую
         effective_radius_sq = effective_radius * effective_radius
-        return (dx * dx + dy * dy) <= effective_radius_sq
+        return self._is_tile_visible_with_forest_check(
+            x, y, player_x, player_y, player_biome, effective_radius_sq
+        )
 
     def is_minimap_dirty(self):
         """Проверить, нужно ли перерисовать миникарту"""
