@@ -12,6 +12,7 @@ from game.fog_of_war import FogOfWar
 from game.combat import CombatSystem
 from game.inventory import get_random_loot_from_location, get_item_by_id
 from game.ui import HelpWindow, InventoryWindow, TradeWindow, UIHelper, CharacterWindow, UIScaler, QuestWindow, RandomEventWindow, CheatMenuWindow
+from game.ui.windows import QuestEventWindow
 from game.ui.windows import (
     InteractionWindow,
     ExitConfirmationWindow,
@@ -159,6 +160,10 @@ class Game:
         self.random_event_window = RandomEventWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.event_window_open = False
 
+        # Окно событий завершения квестов
+        self.quest_event_window = QuestEventWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.quest_event_window_open = False
+
         # Окно крафта
         self.crafting_window = CraftingWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.crafting_window_open = False
@@ -286,7 +291,7 @@ class Game:
         self.player.quest_manager.set_game(self)
 
         # Инициализация обработчика событий квестов
-        self.quest_event_handler = QuestEventHandler(self.player)
+        self.quest_event_handler = QuestEventHandler(self.player, self._show_quest_event_window)
         self.player.quest_manager.set_event_callback(self.quest_event_handler.handle_event)
 
         # Инициализация системы ресурсов
@@ -384,6 +389,13 @@ class Game:
                     self.running = False
                 elif result == 'no':
                     self.exit_confirmation_open = False
+                continue
+
+            # Если открыто окно события завершения квеста, обрабатываем его
+            if self.quest_event_window_open:
+                if self.quest_event_window.handle_input(event):
+                    self.quest_event_window_open = False
+                    self.quest_event_window.clear()
                 continue
 
             # Если открыто окно входа в подземелье, обрабатываем его
@@ -1026,6 +1038,17 @@ class Game:
         )
         self.resource_collection_window_open = True
 
+    def _show_quest_event_window(self, event_name: str, event_description: str):
+        """
+        Показать окно события завершения квеста.
+
+        Args:
+            event_name: Название события
+            event_description: Описание события
+        """
+        self.quest_event_window.set_event(event_name, event_description)
+        self.quest_event_window_open = True
+
     def _update(self):
         """Обновление состояния игры"""
         # AI стражников обновляется в методе advance_time
@@ -1185,6 +1208,10 @@ class Game:
             event_result = self.random_event_system.get_last_event()
             if event_result:
                 self.random_event_window.render(event_result)
+
+        # Если открыто окно события завершения квеста, отрисовываем его
+        if self.quest_event_window_open:
+            self.quest_event_window.render()
 
         # Если открыто чит меню, отрисовываем его
         if self.cheat_menu_open:

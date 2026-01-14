@@ -16,15 +16,26 @@ if TYPE_CHECKING:
 class QuestEventHandler:
     """Обработчик событий завершения квестов."""
 
-    def __init__(self, player: 'Player'):
+    def __init__(self, player: 'Player', show_window_callback=None):
         """
         Инициализировать обработчик событий.
 
         Args:
             player: Ссылка на игрока
+            show_window_callback: Callback для показа окна события (name, description)
         """
         self._player = player
         self._events_config = self._load_events_config()
+        self._show_window_callback = show_window_callback
+
+    def set_show_window_callback(self, callback):
+        """
+        Установить callback для показа окна события.
+
+        Args:
+            callback: Функция (event_name, event_description) -> None
+        """
+        self._show_window_callback = callback
 
     def _load_events_config(self) -> Dict[str, Any]:
         """
@@ -67,6 +78,7 @@ class QuestEventHandler:
 
         event_type = event_config.get("type")
         event_name = event_config.get("name", f"Событие {event_id}")
+        event_description = event_config.get("description", "")
         params = event_config.get("params", {})
 
         print(f"Событие: {event_name}")
@@ -82,7 +94,11 @@ class QuestEventHandler:
 
         handler = handlers.get(event_type)
         if handler:
-            return handler(params, event_config)
+            result = handler(params, event_config)
+            # Показываем окно события если обработка успешна
+            if result and self._show_window_callback:
+                self._show_window_callback(event_name, event_description)
+            return result
         else:
             print(f"Предупреждение: Неизвестный тип события: {event_type}")
             return False
