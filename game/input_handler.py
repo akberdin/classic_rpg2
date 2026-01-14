@@ -1317,7 +1317,8 @@ class InputHandler:
                         # Открываем окно события
                         self.ctx.event_window_open = True
 
-                # Обновляем туман войны
+                # Обновляем туман войны (передаём текущий час для расчёта ночного режима)
+                self.ctx.fog_of_war.set_current_hour(self.ctx.game_time.game_hour)
                 self.ctx.fog_of_war.update_vision(self.ctx.player.x, self.ctx.player.y)
                 # Обновляем камеру
                 self.ctx.camera.update()
