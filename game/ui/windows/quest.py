@@ -46,7 +46,7 @@ class QuestWindow:
 
     def _scale_quest_value(self, base: int, scaling: float, difficulty: int, player_level: int) -> int:
         """
-        Применить масштабирование к значению квеста.
+        Применить масштабирование к значению квеста (для наград).
 
         Использует ту же формулу, что и QuestInstance._scale().
 
@@ -62,6 +62,21 @@ class QuestWindow:
         diff_mult = 1.0 + (difficulty - 1) * 0.2
         level_mult = scaling ** (player_level - 1)
         return max(1, round(base * level_mult * diff_mult))
+
+    def _scale_target_amount(self, base: int, scaling: float, player_level: int) -> int:
+        """
+        Применить масштабирование к количеству целей (БЕЗ множителя сложности).
+
+        Args:
+            base: Базовое значение
+            scaling: Коэффициент масштабирования (1.0 - 2.0)
+            player_level: Уровень игрока
+
+        Returns:
+            Масштабированное значение (минимум 1)
+        """
+        level_mult = scaling ** (player_level - 1)
+        return max(1, round(base * level_mult))
 
     def set_data(self, location_name, location, available_quests, active_quests, turn_in_quests, player=None):
         """
@@ -511,9 +526,9 @@ class QuestWindow:
             scaling = quest.get('scaling_factor', 1.1)
             player_level = self.player.level if self.player else 1
             target_type = quest.get('target_type', '')
-            # Масштабируем количество целей
-            target_amount = self._scale_quest_value(
-                quest.get('target_amount', 0), scaling, difficulty, player_level
+            # Масштабируем количество целей (только от уровня, без сложности)
+            target_amount = self._scale_target_amount(
+                quest.get('target_amount', 0), scaling, player_level
             )
             target_item_id = quest.get('target_item_id', '')
             target_location_name = quest.get('target_location_name', '')
