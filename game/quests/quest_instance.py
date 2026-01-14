@@ -47,9 +47,9 @@ class QuestInstance:
         self.target_location_name = quest_config.get('target_location_name', '')
         self.target_floor = quest_config.get('target_floor', 0)
 
-        # Масштабируемое количество целей
+        # Масштабируемое количество целей (только от уровня, без сложности)
         base_amount = quest_config.get('target_amount', 10)
-        self.target_amount = self._scale(base_amount, scaling, self.difficulty)
+        self.target_amount = self._scale_target(base_amount, scaling)
         self.current_amount = 0
 
         # Для clear_location - отслеживание зачищенных этажей
@@ -85,7 +85,7 @@ class QuestInstance:
 
     def _scale(self, base: int, scaling: float, difficulty: int) -> int:
         """
-        Применить масштабирование к значению.
+        Применить масштабирование к значению (для наград).
 
         Args:
             base: Базовое значение
@@ -100,6 +100,23 @@ class QuestInstance:
         # Множитель уровня (экспоненциальный рост)
         level_mult = scaling ** (self.player_level - 1)
         return max(1, round(base * level_mult * diff_mult))
+
+    def _scale_target(self, base: int, scaling: float) -> int:
+        """
+        Применить масштабирование к количеству целей (БЕЗ множителя сложности).
+
+        Сложность влияет только на награды, но не на количество целей.
+
+        Args:
+            base: Базовое значение
+            scaling: Коэффициент масштабирования (1.0 - 2.0)
+
+        Returns:
+            Масштабированное значение (минимум 1)
+        """
+        # Только множитель уровня, без сложности
+        level_mult = scaling ** (self.player_level - 1)
+        return max(1, round(base * level_mult))
 
     def update_progress(self, event_type: str, event_data: Dict[str, Any]) -> bool:
         """
