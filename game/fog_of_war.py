@@ -79,8 +79,18 @@ class FogOfWar:
         dx = tile_x - player_x
         dy = tile_y - player_y
         dist_sq = dx * dx + dy * dy
+        # Расстояние Чебышёва для проверки "квадратного" радиуса (включает диагонали)
+        chebyshev_dist = max(abs(dx), abs(dy))
 
-        # Сначала проверяем базовый радиус
+        # Специальная обработка для игрока в лесу - используем расстояние Чебышёва
+        # чтобы видеть все 8 соседних клеток, а не только 4 (крест)
+        if player_biome == self.FOREST_BIOME:
+            # В лесу радиус 1 означает все 8 соседних клеток
+            if chebyshev_dist > 1:
+                return False
+            return True
+
+        # Для остальных биомов - стандартная проверка Евклидова расстояния
         if dist_sq > effective_radius_sq:
             return False
 
@@ -93,18 +103,12 @@ class FogOfWar:
 
         # Если целевая клетка - лес
         if target_biome == self.FOREST_BIOME:
-            # Если игрок в лесу - используем обычный радиус (1 клетка)
-            if player_biome == self.FOREST_BIOME:
-                return True  # Уже прошли проверку радиуса выше
-
             # Если игрок на возвышенности - видит лес нормально
             if player_biome in self.ELEVATED_BIOMES:
                 return True
 
             # Иначе - видимость в лес ограничена 1 клеткой
-            # Используем расстояние Чебышёва (max из dx, dy) для "глубины"
-            forest_depth = max(abs(dx), abs(dy))
-            return forest_depth <= 1
+            return chebyshev_dist <= 1
 
         # Для не-лесных клеток - стандартная проверка
         return True
