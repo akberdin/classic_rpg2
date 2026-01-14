@@ -14,6 +14,7 @@ from game.ui.windows.loot import LootWindow, DungeonLootWindow
 from game.ui.windows.resource_collection import ResourceCollectionWindow
 from game.ui.windows.quest import QuestWindow
 from game.ui.windows.random_event import RandomEventWindow
+from game.ui.windows.quest_event import QuestEventWindow
 from game.ui.windows.cheat_menu import CheatMenuWindow
 from game.ui.windows.interaction import InteractionWindow
 from game.ui.windows.exit_confirmation import ExitConfirmationWindow
@@ -39,6 +40,7 @@ __all__ = [
     'ResourceCollectionWindow',
     'QuestWindow',
     'RandomEventWindow',
+    'QuestEventWindow',
     'CheatMenuWindow',
     'InteractionWindow',
     'ExitConfirmationWindow',
