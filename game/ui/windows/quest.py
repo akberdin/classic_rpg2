@@ -44,6 +44,25 @@ class QuestWindow:
         self.button_rects = {}
         self.window_rect = None
 
+    def _scale_quest_value(self, base: int, scaling: float, difficulty: int, player_level: int) -> int:
+        """
+        Применить масштабирование к значению квеста.
+
+        Использует ту же формулу, что и QuestInstance._scale().
+
+        Args:
+            base: Базовое значение
+            scaling: Коэффициент масштабирования (1.0 - 2.0)
+            difficulty: Сложность квеста (1-5)
+            player_level: Уровень игрока
+
+        Returns:
+            Масштабированное значение (минимум 1)
+        """
+        diff_mult = 1.0 + (difficulty - 1) * 0.2
+        level_mult = scaling ** (player_level - 1)
+        return max(1, round(base * level_mult * diff_mult))
+
     def set_data(self, location_name, location, available_quests, active_quests, turn_in_quests, player=None):
         """
         Установить данные для отображения
@@ -300,12 +319,19 @@ class QuestWindow:
 
                 # Определяем данные квеста (разные для конфига и экземпляра)
                 if self.mode == "available":
-                    # Это dict конфига
+                    # Это dict конфига - применяем масштабирование для отображения
                     name = quest.get('name', 'Неизвестный квест')
                     quest_type = quest.get('quest_type', '')
                     difficulty = quest.get('difficulty', 1)
-                    reward_gold = quest.get('reward_gold', 0)
-                    reward_exp = quest.get('reward_exp', 0)
+                    scaling = quest.get('scaling_factor', 1.1)
+                    player_level = self.player.level if self.player else 1
+                    # Масштабируем награды для корректного отображения
+                    reward_gold = self._scale_quest_value(
+                        quest.get('reward_gold', 0), scaling, difficulty, player_level
+                    )
+                    reward_exp = self._scale_quest_value(
+                        quest.get('reward_exp', 0), scaling, difficulty, player_level
+                    )
                     time_limit = quest.get('time_limit', 0)
                 else:
                     # Это QuestInstance
@@ -477,18 +503,28 @@ class QuestWindow:
 
         # Определяем данные квеста
         if self.mode == "available":
-            # Это dict конфига
+            # Это dict конфига - применяем масштабирование для корректного отображения
             name = quest.get('name', 'Неизвестный квест')
             description = quest.get('description', 'Нет описания')
             quest_type = quest.get('quest_type', '')
             difficulty = quest.get('difficulty', 1)
+            scaling = quest.get('scaling_factor', 1.1)
+            player_level = self.player.level if self.player else 1
             target_type = quest.get('target_type', '')
-            target_amount = quest.get('target_amount', 0)
+            # Масштабируем количество целей
+            target_amount = self._scale_quest_value(
+                quest.get('target_amount', 0), scaling, difficulty, player_level
+            )
             target_item_id = quest.get('target_item_id', '')
             target_location_name = quest.get('target_location_name', '')
             target_floor = quest.get('target_floor', 0)
-            reward_gold = quest.get('reward_gold', 0)
-            reward_exp = quest.get('reward_exp', 0)
+            # Масштабируем награды
+            reward_gold = self._scale_quest_value(
+                quest.get('reward_gold', 0), scaling, difficulty, player_level
+            )
+            reward_exp = self._scale_quest_value(
+                quest.get('reward_exp', 0), scaling, difficulty, player_level
+            )
             reward_reputation = quest.get('reward_reputation', 0)
             reward_item_id = quest.get('reward_item_id', '')
             reward_item_amount = quest.get('reward_item_amount', 0)

@@ -295,6 +295,11 @@ class QuestInstance:
             'current_amount': self.current_amount,
             'time_remaining': self.time_remaining,
             'cleared_floors': list(self.cleared_floors),
+            # Сохраняем масштабированные значения, чтобы они не пересчитывались
+            # при загрузке (фиксация условий квеста на момент принятия)
+            'target_amount': self.target_amount,
+            'reward_gold': self.reward_gold,
+            'reward_exp': self.reward_exp,
         }
 
     @classmethod
@@ -308,4 +313,15 @@ class QuestInstance:
         quest.current_amount = data.get('current_amount', 0)
         quest.time_remaining = data.get('time_remaining', quest.time_limit)
         quest.cleared_floors = set(data.get('cleared_floors', []))
+
+        # Восстанавливаем сохранённые масштабированные значения,
+        # чтобы условия квеста оставались фиксированными на момент принятия
+        # (обратная совместимость: если ключи отсутствуют, используем пересчитанные)
+        if 'target_amount' in data:
+            quest.target_amount = data['target_amount']
+        if 'reward_gold' in data:
+            quest.reward_gold = data['reward_gold']
+        if 'reward_exp' in data:
+            quest.reward_exp = data['reward_exp']
+
         return quest
