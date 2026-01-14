@@ -431,7 +431,9 @@ class ObjectPlacer:
             'player_attitude': location.player_attitude,
             'spawn_radius': location.spawn_radius,
             'animal_count': location.animal_count,
-            'connections': location.connections
+            'connections': location.connections,
+            'guards': location.guards,
+            'floors': location.floors
         }
         return info
 
