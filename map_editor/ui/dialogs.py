@@ -2570,6 +2570,7 @@ class QuestEditDialog(Dialog):
             cooldown=quest.cooldown,
             min_player_attitude=quest.min_player_attitude,
             min_player_rank=quest.min_player_rank,
+            min_player_level=quest.min_player_level,
             fail_attitude_penalty=quest.fail_attitude_penalty,
             completion_event_id=quest.completion_event_id,
             scaling_factor=quest.scaling_factor
@@ -2581,7 +2582,7 @@ class QuestEditDialog(Dialog):
         self.on_select_location: Optional[Callable[[str], None]] = None  # 'deliver' or 'clear'
 
         title = "Новый квест" if self.is_new else "Редактирование квеста"
-        super().__init__(title, width=500, height=850)  # Increased height for min_player_rank field
+        super().__init__(title, width=500, height=890)  # Increased height for min_player_level field
 
         self._active_dropdown: Optional[str] = None
         self._active_text_field: Optional[str] = None  # 'target_item_id' or 'reward_item_id'
@@ -2610,6 +2611,7 @@ class QuestEditDialog(Dialog):
         self.data['cooldown'] = self.quest.cooldown
         self.data['min_player_attitude'] = self.quest.min_player_attitude
         self.data['min_player_rank'] = self.quest.min_player_rank
+        self.data['min_player_level'] = self.quest.min_player_level
         self.data['fail_attitude_penalty'] = self.quest.fail_attitude_penalty
         self.data['completion_event_id'] = self.quest.completion_event_id
         self.data['scaling_factor'] = self.quest.scaling_factor
@@ -2708,13 +2710,13 @@ class QuestEditDialog(Dialog):
                 return True
 
             # Check checkbox is_repeatable
-            # For gather/hunt/collect: y=640 (reward_base=520 + 120)
-            # For deliver/clear: y=600 (reward_base=480 + 120)
+            # For gather/hunt/collect: y=680 (reward_base=560 + 120)
+            # For deliver/clear: y=640 (reward_base=520 + 120)
             quest_type = self.data.get('quest_type', QUEST_GATHER_RESOURCE)
             if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
-                checkbox_y = 640
+                checkbox_y = 680
             else:
-                checkbox_y = 600
+                checkbox_y = 640
             checkbox_rect = pygame.Rect(120, checkbox_y, 20, 20)
             if checkbox_rect.collidepoint(local_x, local_y):
                 self.data['is_repeatable'] = not self.data.get('is_repeatable', True)
@@ -2766,12 +2768,12 @@ class QuestEditDialog(Dialog):
         """Check if 'Select on map' button was clicked."""
         if self._needs_target_location():
             quest_type = self.data.get('quest_type', QUEST_GATHER_RESOURCE)
-            # For deliver/clear: y=370 (after min_player_rank at y=330)
+            # For deliver/clear: y=410 (after min_player_level at y=370)
             # For gather/hunt/collect this button is not shown
             if quest_type in (QUEST_DELIVER_MESSAGE, QUEST_CLEAR_LOCATION):
-                btn_y = 370
+                btn_y = 410
             else:
-                btn_y = 410  # fallback, should not reach here
+                btn_y = 450  # fallback, should not reach here
             btn_rect = pygame.Rect(340, btn_y, 140, 28)
             if btn_rect.collidepoint(local_x, local_y):
                 if self.on_select_location:
@@ -2906,11 +2908,27 @@ class QuestEditDialog(Dialog):
             self.data['min_player_rank'] = min(4, self.data.get('min_player_rank', 0) + 1)
             return True
 
+        # min_player_level - after min_player_rank
+        # For gather/hunt/collect: y=412 (372 + 40)
+        # For deliver/clear: y=372 (332 + 40)
+        if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
+            level_y = 412
+        else:
+            level_y = 372
+        minus_rect = pygame.Rect(120, level_y, 30, 24)
+        plus_rect = pygame.Rect(220, level_y, 30, 24)
+        if minus_rect.collidepoint(local_x, local_y):
+            self.data['min_player_level'] = max(0, self.data.get('min_player_level', 0) - 1)
+            return True
+        if plus_rect.collidepoint(local_x, local_y):
+            self.data['min_player_level'] = min(100, self.data.get('min_player_level', 0) + 1)
+            return True
+
         # Target floor - only for clear_location
-        # For clear_location: y=412 (after target_location at y=372)
+        # For clear_location: y=452 (after target_location at y=412)
         if quest_type == QUEST_CLEAR_LOCATION:
-            minus_rect = pygame.Rect(120, 412, 30, 24)
-            plus_rect = pygame.Rect(220, 412, 30, 24)
+            minus_rect = pygame.Rect(120, 452, 30, 24)
+            plus_rect = pygame.Rect(220, 452, 30, 24)
             if minus_rect.collidepoint(local_x, local_y):
                 self.data['target_floor'] = max(0, self.data.get('target_floor', 0) - 1)
                 return True
@@ -2919,12 +2937,12 @@ class QuestEditDialog(Dialog):
                 return True
 
         # Calculate base Y for rewards section based on quest type
-        # For gather/hunt/collect: rewards start at y=520 (header at y=490)
-        # For deliver/clear: rewards start at y=480 (header at y=450)
+        # For gather/hunt/collect: rewards start at y=560 (header at y=530)
+        # For deliver/clear: rewards start at y=520 (header at y=490)
         if quest_type in (QUEST_GATHER_RESOURCE, QUEST_HUNT_ANIMALS, QUEST_COLLECT_ITEMS):
-            reward_base_y = 520
+            reward_base_y = 560
         else:
-            reward_base_y = 480
+            reward_base_y = 520
 
         # Reward gold
         minus_rect = pygame.Rect(120, reward_base_y + 2, 30, 24)
@@ -3171,6 +3189,14 @@ class QuestEditDialog(Dialog):
         rank_text = "Без ограничения" if min_rank == 0 else f"Ранг {min_rank}"
         self._draw_numeric_field(surface, min_rank, self.x + 120, self.y + y, 130,
                                  display_text=rank_text)
+        y += 40
+
+        # Minimum player level (requirement to get quest)
+        self._draw_label(surface, "Мин. уровень", self.x + 15, self.y + y + 4)
+        min_level = self.data.get('min_player_level', 0)
+        level_text = "Без ограничения" if min_level == 0 else f"Уровень {min_level}"
+        self._draw_numeric_field(surface, min_level, self.x + 120, self.y + y, 130,
+                                 display_text=level_text)
         y += 40
 
         # Target location (for deliver_message and clear_location)
@@ -3491,6 +3517,7 @@ class QuestEditDialog(Dialog):
             cooldown=self.data.get('cooldown', 100),
             min_player_attitude=self.data.get('min_player_attitude', 0),
             min_player_rank=self.data.get('min_player_rank', 0),
+            min_player_level=self.data.get('min_player_level', 0),
             fail_attitude_penalty=self.data.get('fail_attitude_penalty', 0),
             completion_event_id=self.data.get('completion_event_id', ''),
             scaling_factor=self.data.get('scaling_factor', 1.1)
@@ -3531,6 +3558,7 @@ class QuestListDialog(Dialog):
                 cooldown=q.cooldown,
                 min_player_attitude=q.min_player_attitude,
                 min_player_rank=q.min_player_rank,
+                min_player_level=q.min_player_level,
                 fail_attitude_penalty=q.fail_attitude_penalty,
                 completion_event_id=q.completion_event_id,
                 scaling_factor=q.scaling_factor

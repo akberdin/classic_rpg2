@@ -328,6 +328,7 @@ class Quest:
     # Requirements
     min_player_attitude: int = 0  # Minimum player_attitude required to get this quest (-10 to 10)
     min_player_rank: int = 0  # Minimum player rank required (0 = no requirement, 1-4 = specific rank)
+    min_player_level: int = 0  # Minimum player level required (0 = no requirement, 1-100 = specific level)
     # Penalties
     fail_attitude_penalty: int = 0  # Penalty to player_attitude when quest is failed (0-20)
     # Events
@@ -358,6 +359,7 @@ class Quest:
             'cooldown': self.cooldown,
             'min_player_attitude': self.min_player_attitude,
             'min_player_rank': self.min_player_rank,
+            'min_player_level': self.min_player_level,
             'fail_attitude_penalty': self.fail_attitude_penalty,
             'completion_event_id': self.completion_event_id,
             'scaling_factor': self.scaling_factor
@@ -405,6 +407,7 @@ class Quest:
             cooldown=data.get('cooldown', 100),
             min_player_attitude=data.get('min_player_attitude', 0),
             min_player_rank=data.get('min_player_rank', 0),
+            min_player_level=data.get('min_player_level', 0),
             fail_attitude_penalty=data.get('fail_attitude_penalty', 0),
             completion_event_id=data.get('completion_event_id', ''),
             scaling_factor=data.get('scaling_factor', 1.1)
