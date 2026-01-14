@@ -13,6 +13,9 @@ class FogOfWar:
     ELEVATED_BIOMES = {'hills', 'mountain'}
     # Биом леса
     FOREST_BIOME = 'forest'
+    # Часы ночи (с 21:00 до 6:00)
+    NIGHT_START_HOUR = 21
+    NIGHT_END_HOUR = 6
 
     def __init__(self, game_map):
         """
@@ -32,14 +35,36 @@ class FogOfWar:
         self._cache_effective_radius = VISION_RADIUS
         # Кэш биома игрока для проверки видимости в лес
         self._cache_player_biome = None
+        # Кэш времени суток для инвалидации
+        self._cache_is_night = False
+        # Текущий час для расчёта ночи
+        self._current_hour = 6
         # Флаг для инвалидации кэша миникарты
         self._minimap_dirty = True
         # Счётчик новых исследованных тайлов
         self._newly_explored_count = 0
 
+    def set_current_hour(self, hour):
+        """
+        Установить текущий час для расчёта ночного режима
+
+        Args:
+            hour: Текущий час (0-23, может быть float)
+        """
+        self._current_hour = int(hour) % 24
+
+    def is_night(self):
+        """
+        Проверить, ночь ли сейчас
+
+        Returns:
+            bool: True если ночь (21:00 - 6:00)
+        """
+        return self._current_hour >= self.NIGHT_START_HOUR or self._current_hour < self.NIGHT_END_HOUR
+
     def get_effective_vision_radius(self, player_x, player_y):
         """
-        Получить эффективный радиус обзора с учётом биома
+        Получить эффективный радиус обзора с учётом биома и времени суток
 
         Args:
             player_x: Позиция игрока X
@@ -49,18 +74,22 @@ class FogOfWar:
             int: Эффективный радиус обзора (минимум 1)
         """
         if not self.game_map.is_valid_position(player_x, player_y):
-            return self.vision_radius
+            base_radius = self.vision_radius
+        else:
+            tile = self.game_map.get_tile(player_x, player_y)
+            if not tile:
+                base_radius = self.vision_radius
+            else:
+                world_config = get_world_config()
+                vision_bonus = world_config.get_vision_bonus(tile.biome, default=0)
+                base_radius = self.vision_radius + vision_bonus
 
-        tile = self.game_map.get_tile(player_x, player_y)
-        if not tile:
-            return self.vision_radius
+        # Ночью радиус уменьшается в 2 раза
+        if self.is_night():
+            base_radius = base_radius // 2
 
-        world_config = get_world_config()
-        vision_bonus = world_config.get_vision_bonus(tile.biome, default=0)
-
-        # Применяем бонус к базовому радиусу, минимум 1
-        effective_radius = max(1, self.vision_radius + vision_bonus)
-        return effective_radius
+        # Минимум 1 клетка
+        return max(1, base_radius)
 
     def _is_tile_visible_with_forest_check(self, tile_x, tile_y, player_x, player_y,
                                             player_biome, effective_radius_sq):
@@ -125,20 +154,23 @@ class FogOfWar:
         player_tile = self.game_map.get_tile(player_x, player_y)
         player_biome = player_tile.biome if player_tile else 'plains'
 
-        # Получаем эффективный радиус обзора с учётом биома
+        # Получаем эффективный радиус обзора с учётом биома и времени суток
         effective_radius = self.get_effective_vision_radius(player_x, player_y)
         effective_radius_sq = effective_radius * effective_radius
+        current_is_night = self.is_night()
 
-        # Обновляем кэш видимости (включаем радиус и биом в проверку для инвалидации)
+        # Обновляем кэш видимости (включаем радиус, биом и ночь в проверку для инвалидации)
         new_pos = (player_x, player_y)
         if (self._cache_player_pos != new_pos or
             self._cache_effective_radius != effective_radius or
-            self._cache_player_biome != player_biome):
+            self._cache_player_biome != player_biome or
+            self._cache_is_night != current_is_night):
 
             self._visible_cache.clear()
             self._cache_player_pos = new_pos
             self._cache_effective_radius = effective_radius
             self._cache_player_biome = player_biome
+            self._cache_is_night = current_is_night
 
             # Проходим по всем тайлам в радиусе видимости
             for dy in range(-effective_radius, effective_radius + 1):
@@ -179,11 +211,13 @@ class FogOfWar:
         player_tile = self.game_map.get_tile(player_x, player_y)
         player_biome = player_tile.biome if player_tile else 'plains'
         effective_radius = self.get_effective_vision_radius(player_x, player_y)
+        current_is_night = self.is_night()
 
         # Если кэш актуален, используем его
         if (self._cache_player_pos == (player_x, player_y) and
             self._cache_effective_radius == effective_radius and
-            self._cache_player_biome == player_biome):
+            self._cache_player_biome == player_biome and
+            self._cache_is_night == current_is_night):
             return (x, y) in self._visible_cache
 
         # Иначе вычисляем напрямую

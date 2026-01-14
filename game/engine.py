@@ -93,10 +93,13 @@ class Game:
 
         # Система тумана войны
         self.fog_of_war = FogOfWar(self.game_map)
-        self.fog_of_war.update_vision(self.player.x, self.player.y)
 
         # Инициализация игрового времени
         self.game_time = GameTime(self)
+
+        # Обновляем туман войны с учётом времени суток
+        self.fog_of_war.set_current_hour(self.game_time.game_hour)
+        self.fog_of_war.update_vision(self.player.x, self.player.y)
 
         # Инициализация камеры
         self.camera = Camera(self)
@@ -401,6 +404,7 @@ class Game:
                     if exit_result["success"]:
                         print(exit_result["message"])
                         # Обновляем туман войны на основной карте
+                        self.fog_of_war.set_current_hour(self.game_time.game_hour)
                         self.fog_of_war.update_vision(self.player.x, self.player.y)
                     self.dungeon_exit_open = False
                 elif result == "stay":
