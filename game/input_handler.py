@@ -242,7 +242,7 @@ class InputHandler:
         npc_type = self.ctx.nearby_npc.npc_type if self.ctx.nearby_npc else None
 
         if key == pygame.K_1:
-            # Торговля / Магия / Зелья / Агрессия (для животных/бандитов/нежити/некромантов/шахтёров)
+            # Торговля / Зелья / Агрессия (для животных/бандитов/нежити/некромантов/шахтёров/магов/стражников)
             if npc_type in ["wolf", "bear", "deer"]:
                 # Для животных кнопка 1 - это Агрессия
                 # Помечаем животное как провоцированное
@@ -252,13 +252,13 @@ class InputHandler:
                 self.game.is_npc_aggression = False  # Это инициатива игрока
                 self.ctx.combat_mode_menu_open = True
                 self.ctx.interaction_menu_open = False
-            elif npc_type in ["bandit", "undead", "necromancer", "miner"]:
-                # Для бандитов, нежити, некромантов и шахтёров кнопка 1 - это Агрессия
+            elif npc_type in ["bandit", "undead", "necromancer", "miner", "mage", "guard"]:
+                # Для бандитов, нежити, некромантов, шахтёров, магов и стражников кнопка 1 - это Агрессия
                 # Открываем меню выбора режима боя
                 self.game.is_npc_aggression = False  # Это инициатива игрока
                 self.ctx.combat_mode_menu_open = True
                 self.ctx.interaction_menu_open = False
-            elif npc_type in ["merchant", "mage", "alchemist", "hunter"]:
+            elif npc_type in ["merchant", "alchemist", "hunter"]:
                 self.ctx.trade_menu_open = True
                 self.ctx.trade_window.mode = "buy"
                 self.ctx.trade_window.selected_merchant_index = 0
@@ -277,13 +277,11 @@ class InputHandler:
                 self.ctx.interaction_menu_open = False
 
         elif key == pygame.K_2:
-            # Действие 2: Обучение / Купить Алхимию / Квест / Уйти (для животных)
-            if npc_type in ["wolf", "bear", "deer"]:
-                # Для животных кнопка 2 - это Уйти
+            # Действие 2: Купить Алхимию / Квест / Уйти (для животных/магов/стражников)
+            if npc_type in ["wolf", "bear", "deer", "mage", "guard"]:
+                # Для животных, магов и стражников кнопка 2 - это Уйти
                 print("Вы ушли.")
                 self.ctx.nearby_npc = None
-            elif npc_type == "mage":
-                self.handle_magic_training()
             elif npc_type == "alchemist":
                 # Купить умение Алхимия
                 self.handle_learn_skill("alchemy", 5000)
@@ -296,32 +294,25 @@ class InputHandler:
             self.ctx.interaction_menu_open = False
 
         elif key == pygame.K_3:
-            # Действие 3: Агрессия / Купить Травник / Сдать квест / Уйти
-            if npc_type == "mage":
-                # Открываем меню выбора режима боя
-                self.game.is_npc_aggression = False  # Это инициатива игрока
-                self.ctx.combat_mode_menu_open = True
-            elif npc_type == "alchemist":
+            # Действие 3: Купить Травник / Сдать квест / Уйти
+            if npc_type == "alchemist":
                 # Купить умение Травник
                 self.handle_learn_skill("herbalism", 500)
             elif npc_type == "hunter":
                 self.handle_turn_in_quest()
-            elif npc_type not in ["wolf", "bear", "deer"]:
+            elif npc_type not in ["wolf", "bear", "deer", "mage", "guard"]:
                 print("Вы ушли от разговора.")
                 self.ctx.nearby_npc = None
             self.ctx.interaction_menu_open = False
 
         elif key == pygame.K_4:
             # Действие 4: Уйти / Взять квест
-            if npc_type == "mage":
-                print("Вы ушли от разговора.")
-                self.ctx.nearby_npc = None
-            elif npc_type == "alchemist":
+            if npc_type == "alchemist":
                 self.handle_unique_npc_quest()
             elif npc_type == "hunter":
                 print("Вы ушли от разговора.")
                 self.ctx.nearby_npc = None
-            else:
+            elif npc_type not in ["wolf", "bear", "deer", "mage", "guard"]:
                 print("Вы ушли от разговора.")
                 self.ctx.nearby_npc = None
             self.ctx.interaction_menu_open = False
@@ -382,43 +373,6 @@ class InputHandler:
         if not self.ctx.nearby_npc:
             return
         print("Система квестов на переработке. Сдача квестов недоступна.")
-
-    def handle_magic_training(self):
-        """Обработка магического обучения от мага"""
-        if not self.ctx.nearby_npc:
-            return
-
-        training_cost = 50 * self.ctx.nearby_npc.level
-
-        if self.ctx.player.inventory.gold < training_cost:
-            print(f"Недостаточно золота! Нужно {training_cost} золота для обучения.")
-            return
-
-        # Забираем золото
-        self.ctx.player.inventory.remove_gold(training_cost)
-
-        # Даем опыт магическим навыкам
-        exp_bonus = 20 * self.ctx.nearby_npc.level
-
-        # Находим магические навыки и даем им опыт
-        magic_skills_trained = []
-        for skill_id, skill in self.ctx.player.skill_manager.learned_skills.items():
-            if skill.category.value == 'magic':
-                old_rank = skill.rank
-                if skill.add_experience(exp_bonus):
-                    magic_skills_trained.append(f"{skill.name} повышен до ранга {skill.rank}")
-                else:
-                    magic_skills_trained.append(f"{skill.name} +{exp_bonus} опыта")
-
-        if magic_skills_trained:
-            print(f"Обучение завершено за {training_cost} золота!")
-            for msg in magic_skills_trained:
-                print(f"  - {msg}")
-        else:
-            # Если нет магических навыков, повышаем дух
-            self.ctx.player.spirit += 1
-            self.ctx.player.update_derived_stats()
-            print(f"Обучение завершено за {training_cost} золота! Ваш Дух повышен на 1.")
 
     def handle_learn_skill(self, skill_id, cost):
         """

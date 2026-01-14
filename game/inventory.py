@@ -803,12 +803,15 @@ class Inventory:
 
     @property
     def current_weight(self):
-        """Текущий вес инвентаря (только предметы в рюкзаке, не экипированные)"""
+        """Текущий вес инвентаря (предметы в рюкзаке + экипированные)"""
         total = 0.0
         # Вес предметов в инвентаре
         for item, quantity in self.items.values():
             total += item.weight * quantity
-        # Экипированные предметы НЕ учитываются в весе инвентаря
+        # Вес экипированных предметов
+        for item in self.equipment.values():
+            if item:
+                total += item.weight
         return round(total, 2)
 
     def is_overweight(self):

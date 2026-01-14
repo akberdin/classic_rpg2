@@ -14,10 +14,8 @@ class InteractionWindow(BaseWindow):
     # Действия для разных типов NPC
     NPC_ACTIONS = {
         'mage': [
-            "[1] Купить заклинания",
-            "[2] Обучение ({training_cost} зол.)",
-            "[3] Агрессия",
-            "[4] Уйти"
+            "[1] Агрессия",
+            "[2] Уйти"
         ],
         'alchemist': [
             "[1] Торговля зельями",
@@ -37,6 +35,10 @@ class InteractionWindow(BaseWindow):
             "[1] Торговля",
             "[2] Агрессия",
             "[3] Уйти"
+        ],
+        'guard': [
+            "[1] Агрессия",
+            "[2] Уйти"
         ],
         'animal': [
             "[1] Агрессия",
@@ -145,13 +147,6 @@ class InteractionWindow(BaseWindow):
         # Животные
         if npc_type in ['wolf', 'bear', 'deer']:
             return self.NPC_ACTIONS['animal']
-
-        # Маги - с расчётом стоимости обучения
-        if npc_type == 'mage':
-            training_cost = 50 * npc.level
-            actions = self.NPC_ACTIONS['mage'].copy()
-            actions[1] = actions[1].format(training_cost=training_cost)
-            return actions
 
         # Другие типы NPC
         if npc_type in self.NPC_ACTIONS:
