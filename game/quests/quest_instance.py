@@ -82,6 +82,8 @@ class QuestInstance:
 
         # Минимальное отношение (сохраняем для справки)
         self.min_player_attitude = quest_config.get('min_player_attitude', 0)
+        # Минимальный уровень игрока (сохраняем для справки)
+        self.min_player_level = quest_config.get('min_player_level', 0)
 
     def _scale(self, base: int, scaling: float, difficulty: int) -> int:
         """
