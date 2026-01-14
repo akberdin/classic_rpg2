@@ -1,0 +1,54 @@
+{
+  "description": "Конфигурация событий завершения квестов",
+
+  "events": {
+    "1001": {
+      "id": "1001",
+      "name": "Волк-спутник",
+      "description": "Один из волков оказался прирученным и решил стать вашим спутником",
+      "type": "add_companion",
+      "params": {
+        "companion_type": "wolf",
+        "level": 1
+      }
+    }
+  },
+
+  "event_types": {
+    "add_companion": {
+      "description": "Добавляет спутника игроку",
+      "required_params": ["companion_type"],
+      "optional_params": ["level"]
+    },
+    "add_item": {
+      "description": "Добавляет предмет в инвентарь игрока",
+      "required_params": ["item_id"],
+      "optional_params": ["amount"]
+    },
+    "add_gold": {
+      "description": "Добавляет золото игроку",
+      "required_params": ["amount"]
+    },
+    "add_experience": {
+      "description": "Добавляет опыт игроку",
+      "required_params": ["amount"]
+    },
+    "change_reputation": {
+      "description": "Изменяет репутацию в локации",
+      "required_params": ["location_id", "amount"]
+    },
+    "unlock_location": {
+      "description": "Открывает доступ к локации",
+      "required_params": ["location_id"]
+    },
+    "spawn_npc": {
+      "description": "Создаёт NPC в указанной точке",
+      "required_params": ["npc_type", "x", "y"]
+    }
+  },
+
+  "notes": {
+    "usage": "События привязываются к квестам через поле completion_event_id",
+    "multiple_effects": "В будущем можно добавить массив эффектов для одного события"
+  }
+}

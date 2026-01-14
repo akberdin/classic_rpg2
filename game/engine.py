@@ -48,6 +48,7 @@ from game.hud_renderer import HUDRenderer
 from game.resource_system import ResourceSystem
 from game.crafting_system import CraftingSystem
 from game.item_registry import get_item
+from game.quest_event_handler import QuestEventHandler
 
 
 class Game:
@@ -283,6 +284,10 @@ class Game:
 
         # Устанавливаем ссылку на игру для quest_manager (для проверки зачистки локаций)
         self.player.quest_manager.set_game(self)
+
+        # Инициализация обработчика событий квестов
+        self.quest_event_handler = QuestEventHandler(self.player)
+        self.player.quest_manager.set_event_callback(self.quest_event_handler.handle_event)
 
         # Инициализация системы ресурсов
         self.resource_system = ResourceSystem(
