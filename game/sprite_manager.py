@@ -146,9 +146,23 @@ class SpriteManager:
                 # Старая плоская структура: строка с путем
                 self.load_sprite(npc_type, sprite_data, 'npc')
 
-        # Загружаем спрайты локаций
-        for location_type, sprite_path in self.config.get('locations', {}).items():
-            self.load_sprite(location_type, sprite_path, 'location')
+        # Загружаем спрайты локаций (с поддержкой рангов)
+        for location_type, sprite_data in self.config.get('locations', {}).items():
+            if location_type.startswith('_'):
+                continue  # Пропускаем комментарии
+
+            if isinstance(sprite_data, dict):
+                # Новая структура с рангами: {default: ..., 1: ..., 2: ..., 3: ..., 4: ...}
+                for rank_key, sprite_path in sprite_data.items():
+                    if rank_key == 'default':
+                        # default - базовый спрайт локации
+                        self.load_sprite(location_type, sprite_path, 'location')
+                    else:
+                        # Спрайт для конкретного ранга
+                        self.load_sprite(f"{location_type}_rank{rank_key}", sprite_path, 'location')
+            else:
+                # Старый формат: строка с путем (обратная совместимость)
+                self.load_sprite(location_type, sprite_data, 'location')
 
         # Загружаем спрайты биомов
         for biome_type, sprite_path in self.config.get('biomes', {}).items():
@@ -639,7 +653,27 @@ class SpriteManager:
             # Используем геометрическую фигуру
             default_renderer()
 
-    def render_location(self, screen, location_type, x, y, default_renderer, darken=False):
+    def get_location_sprite_with_rank(self, location_type, rank=1):
+        """
+        Получить спрайт локации с учетом ранга
+
+        Args:
+            location_type: Тип локации (city, village, mine, etc.)
+            rank: Ранг локации (1-4)
+
+        Returns:
+            pygame.Surface или None если спрайт не найден
+        """
+        # Сначала пробуем получить спрайт с конкретным рангом
+        ranked_key = f"location_{location_type}_rank{rank}"
+        if ranked_key in self.sprites:
+            return self.sprites[ranked_key]
+
+        # Если не найден, используем базовый спрайт
+        base_key = f"location_{location_type}"
+        return self.sprites.get(base_key)
+
+    def render_location(self, screen, location_type, x, y, default_renderer, darken=False, rank=1):
         """
         Отрисовка локации (спрайт или цвет)
 
@@ -650,8 +684,10 @@ class SpriteManager:
             y: Y координата на экране
             default_renderer: Функция для отрисовки по умолчанию
             darken: Затемнить спрайт (для тумана войны)
+            rank: Ранг локации (1-4) для выбора соответствующего спрайта
         """
-        sprite = self.get_sprite(location_type, 'location')
+        # Получаем спрайт с учетом ранга
+        sprite = self.get_location_sprite_with_rank(location_type, rank)
         if sprite:
             if darken:
                 # Создаем затемненную версию спрайта
