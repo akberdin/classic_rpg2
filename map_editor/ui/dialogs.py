@@ -3559,6 +3559,9 @@ class InfrastructureEditDialog(Dialog):
             INFRA_ENCHANTING, INFRA_SHOP, INFRA_TAVERN, INFRA_TOWN_HALL
         ]
 
+        # Convert INFRASTRUCTURE_RANKS to string keys for dropdown
+        rank_options = {str(k): v for k, v in INFRASTRUCTURE_RANKS.items()}
+
         for building_type in building_order:
             building_name = INFRASTRUCTURE_TYPES.get(building_type, building_type)
             current_rank = self.infrastructure_copy.get(building_type, 0)
@@ -3568,7 +3571,7 @@ class InfrastructureEditDialog(Dialog):
                 rect=pygame.Rect(20, y + 20, self.width - 40, 28),
                 label=f"{building_name}:",
                 key=f"infra_{building_type}",
-                options=INFRASTRUCTURE_RANKS,
+                options=rank_options,
                 selected=str(current_rank)
             ))
             self.data[f"infra_{building_type}"] = str(current_rank)
