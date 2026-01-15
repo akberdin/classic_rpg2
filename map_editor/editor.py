@@ -102,6 +102,11 @@ class MapEditor:
         self.show_grid = False
         self.show_locations = True
 
+        # Layer visibility settings (editor-only, not saved to config)
+        self.show_merchant_routes = True  # Маршруты торговцев
+        self.show_connections = True  # Связи между локациями
+        self.show_animal_spawns = True  # Точки спавна животных
+
         # Current tool
         self.current_tool = ToolType.SELECT
 
@@ -223,6 +228,15 @@ class MapEditor:
         elif action == "toggle_grid":
             self.show_grid = not self.show_grid
             self.toolbar.set_grid_active(self.show_grid)
+        elif action == "toggle_merchant_routes":
+            self.show_merchant_routes = not self.show_merchant_routes
+            self.toolbar.set_merchant_routes_active(self.show_merchant_routes)
+        elif action == "toggle_connections":
+            self.show_connections = not self.show_connections
+            self.toolbar.set_connections_active(self.show_connections)
+        elif action == "toggle_animal_spawns":
+            self.show_animal_spawns = not self.show_animal_spawns
+            self.toolbar.set_animal_spawns_active(self.show_animal_spawns)
         elif action == "exit":
             self.running = False
 
@@ -1514,7 +1528,14 @@ class MapEditor:
         if not self.current_map:
             return
 
+        # Animal spawn location types
+        animal_spawn_types = (LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER)
+
         for location in self.current_map.locations:
+            # Skip animal spawns if hidden
+            if not self.show_animal_spawns and location.location_type in animal_spawn_types:
+                continue
+
             screen_x, screen_y = self._tile_to_screen(location.x, location.y)
 
             # Check if visible
@@ -1552,6 +1573,10 @@ class MapEditor:
     def _render_connections(self) -> None:
         """Render arrows between connected locations (master -> subordinate)."""
         if not self.current_map:
+            return
+
+        # Check visibility setting
+        if not self.show_connections:
             return
 
         # Draw all connections
@@ -1643,6 +1668,10 @@ class MapEditor:
     def _render_merchants(self) -> None:
         """Render merchants and their routes."""
         if not self.current_map:
+            return
+
+        # Check visibility setting
+        if not self.show_merchant_routes:
             return
 
         # Render existing merchants
