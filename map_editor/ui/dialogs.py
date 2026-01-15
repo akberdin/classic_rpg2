@@ -20,7 +20,10 @@ from ..tools.generator import (
     QUEST_DELIVER_MESSAGE, QUEST_CLEAR_LOCATION, QUEST_COLLECT_ITEMS,
     QUEST_RESOURCE_TARGETS, QUEST_ANIMAL_TARGETS, QUEST_TARGETS,
     QUEST_DIFFICULTIES, QUEST_GIVER_LOCATIONS, QUEST_CLEARABLE_LOCATIONS,
-    QUEST_TARGET_WOOD, QUEST_TARGET_WOLF
+    QUEST_TARGET_WOOD, QUEST_TARGET_WOLF,
+    INFRASTRUCTURE_TYPES, INFRASTRUCTURE_RANKS, INFRASTRUCTURE_LOCATIONS,
+    INFRA_FORGE, INFRA_WORKSHOP, INFRA_JEWELRY, INFRA_ALCHEMY,
+    INFRA_ENCHANTING, INFRA_SHOP, INFRA_TAVERN, INFRA_TOWN_HALL
 )
 
 
@@ -733,8 +736,8 @@ class LocationEditDialog(Dialog):
         height += 50  # Space for rank slider (for all location types)
         if loc_type in [LOCATION_MINE, LOCATION_RUINS]:
             height += 45  # Space for "Edit floors" button
-        if loc_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
-            height += 50  # Space for shop_rank slider
+        if loc_type in INFRASTRUCTURE_LOCATIONS:
+            height += 45  # Space for "Infrastructure" button
         if loc_type == LOCATION_MINE:
             height += 170  # Space for miners_count, respawn_time sliders and resource_type dropdown
         # Add space for animal spawn points
@@ -794,17 +797,17 @@ class LocationEditDialog(Dialog):
             ))
             y += 45
 
-        # Shop rank slider for settlements
-        if loc_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
-            self.sliders.append(DialogSlider(
-                rect=pygame.Rect(20, y + 20, self.width - 40, 16),
-                label="Ранг магазина",
-                key="shop_rank",
-                value=self.location_info.get('shop_rank', 1),
-                min_val=1, max_val=4, step=1
+        # Infrastructure button for settlements and academies
+        if loc_type in INFRASTRUCTURE_LOCATIONS:
+            # Calculate how many buildings are active
+            infrastructure = self.location_info.get('infrastructure', {})
+            active_count = sum(1 for v in infrastructure.values() if v > 0)
+            self.buttons.append(DialogButton(
+                rect=pygame.Rect(20, y, 250, 30),
+                text=f"Инфраструктура ({active_count})",
+                action="edit_infrastructure"
             ))
-            self.data['shop_rank'] = self.location_info.get('shop_rank', 1)
-            y += 50
+            y += 45
 
         # Checkbox for starting village (only for villages)
         if loc_type == LOCATION_VILLAGE:
@@ -3522,6 +3525,90 @@ class QuestEditDialog(Dialog):
             completion_event_id=self.data.get('completion_event_id', ''),
             scaling_factor=self.data.get('scaling_factor', 1.1)
         )
+
+
+class InfrastructureEditDialog(Dialog):
+    """Dialog for editing infrastructure buildings for a location."""
+
+    def __init__(self, infrastructure: Dict[str, int] = None, location_name: str = ""):
+        """Initialize infrastructure edit dialog.
+
+        Args:
+            infrastructure: Dictionary mapping building type to rank (0-4)
+            location_name: Name of the location being edited
+        """
+        # Create a copy of infrastructure to edit
+        self.infrastructure_copy = {}
+        for key in INFRASTRUCTURE_TYPES.keys():
+            self.infrastructure_copy[key] = (infrastructure or {}).get(key, 0)
+
+        self.location_name = location_name
+        title = f"Инфраструктура: {location_name}" if location_name else "Инфраструктура"
+        # Height: title(30) + 8 buildings * 50 + buttons(50) + padding
+        super().__init__(title, 500, 520)
+        self._setup_controls()
+
+    def _setup_controls(self) -> None:
+        """Setup dialog controls for infrastructure editing."""
+        y = 50
+
+        # Create dropdown for each infrastructure building type
+        # Order: Кузница, Мастерская, Ювелирная, Алхимическая, Зачарования, Магазин, Таверна, Ратуша
+        building_order = [
+            INFRA_FORGE, INFRA_WORKSHOP, INFRA_JEWELRY, INFRA_ALCHEMY,
+            INFRA_ENCHANTING, INFRA_SHOP, INFRA_TAVERN, INFRA_TOWN_HALL
+        ]
+
+        for building_type in building_order:
+            building_name = INFRASTRUCTURE_TYPES.get(building_type, building_type)
+            current_rank = self.infrastructure_copy.get(building_type, 0)
+
+            # Create dropdown for rank selection
+            self.dropdowns.append(DialogDropdown(
+                rect=pygame.Rect(20, y + 20, self.width - 40, 28),
+                label=f"{building_name}:",
+                key=f"infra_{building_type}",
+                options=INFRASTRUCTURE_RANKS,
+                selected=str(current_rank)
+            ))
+            self.data[f"infra_{building_type}"] = str(current_rank)
+            y += 50
+
+        # Buttons
+        btn_width = 100
+        btn_height = 30
+        btn_y = self.height - btn_height - 15
+
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(self.width - btn_width - 120, btn_y, btn_width, btn_height),
+            text="Отмена",
+            action="cancel"
+        ))
+
+        self.buttons.append(DialogButton(
+            rect=pygame.Rect(self.width - btn_width - 10, btn_y, btn_width, btn_height),
+            text="Сохранить",
+            action="ok",
+            primary=True
+        ))
+
+    def get_infrastructure(self) -> Dict[str, int]:
+        """Get the edited infrastructure dictionary."""
+        result = {}
+        for building_type in INFRASTRUCTURE_TYPES.keys():
+            key = f"infra_{building_type}"
+            rank_str = self.data.get(key, "0")
+            try:
+                rank = int(rank_str)
+            except ValueError:
+                rank = 0
+            result[building_type] = rank
+        return result
+
+    def get_active_buildings_count(self) -> int:
+        """Get count of buildings with rank > 0."""
+        infra = self.get_infrastructure()
+        return sum(1 for rank in infra.values() if rank > 0)
 
 
 class QuestListDialog(Dialog):
