@@ -151,6 +151,26 @@ class Toolbar:
             )
             x += btn_width + padding
 
+        # Separator
+        x += 8
+
+        # Layer visibility buttons group
+        layer_buttons = [
+            ("Маршруты", "Показать/скрыть маршруты торговцев (1)", "toggle_merchant_routes", 65, True),
+            ("Связи", "Показать/скрыть связи локаций (2)", "toggle_connections", 50, True),
+            ("Спавны", "Показать/скрыть точки спавна животных (3)", "toggle_animal_spawns", 55, True),
+        ]
+
+        for text, tooltip, action, btn_width, active in layer_buttons:
+            self.buttons[action] = ToolbarButton(
+                rect=pygame.Rect(x, y, btn_width, button_height),
+                text=text,
+                tooltip=tooltip,
+                action=action,
+                active=active
+            )
+            x += btn_width + padding
+
         # Exit button in the top-right corner
         exit_btn_width = 60
         exit_x = self.width - exit_btn_width - padding
@@ -272,6 +292,21 @@ class Toolbar:
                 self.on_action("fit_view")
             return True
 
+        # Layer visibility hotkeys (without Ctrl)
+        if not ctrl:
+            if event.key == pygame.K_1:
+                if self.on_action:
+                    self.on_action("toggle_merchant_routes")
+                return True
+            elif event.key == pygame.K_2:
+                if self.on_action:
+                    self.on_action("toggle_connections")
+                return True
+            elif event.key == pygame.K_3:
+                if self.on_action:
+                    self.on_action("toggle_animal_spawns")
+                return True
+
         # Exit hotkey
         if event.key == pygame.K_ESCAPE:
             if self.on_action:
@@ -336,6 +371,10 @@ class Toolbar:
         # After generation buttons (after "regenerate")
         if "regenerate" in self.buttons:
             sep_positions.append(self.buttons["regenerate"].rect.right + 6)
+
+        # After view buttons (after "toggle_grid")
+        if "toggle_grid" in self.buttons:
+            sep_positions.append(self.buttons["toggle_grid"].rect.right + 6)
 
         # Draw separators
         for x in sep_positions:
@@ -403,6 +442,21 @@ class Toolbar:
         """Set the grid button active state."""
         if "toggle_grid" in self.buttons:
             self.buttons["toggle_grid"].active = active
+
+    def set_merchant_routes_active(self, active: bool) -> None:
+        """Set the merchant routes button active state."""
+        if "toggle_merchant_routes" in self.buttons:
+            self.buttons["toggle_merchant_routes"].active = active
+
+    def set_connections_active(self, active: bool) -> None:
+        """Set the connections button active state."""
+        if "toggle_connections" in self.buttons:
+            self.buttons["toggle_connections"].active = active
+
+    def set_animal_spawns_active(self, active: bool) -> None:
+        """Set the animal spawns button active state."""
+        if "toggle_animal_spawns" in self.buttons:
+            self.buttons["toggle_animal_spawns"].active = active
 
     def resize(self, width: int) -> None:
         """Handle window resize."""

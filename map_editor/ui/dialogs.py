@@ -1337,7 +1337,7 @@ class MerchantEditDialog(Dialog):
         self.waypoints_copy = [MerchantWaypoint(wp.x, wp.y, wp.duration) for wp in self.merchant.waypoints]
 
         # Dialog size (includes all sliders)
-        height = 630
+        height = 580
         width = 700
 
         title = "Создать торговца" if is_new else "Редактировать торговца"
@@ -1410,8 +1410,8 @@ class MerchantEditDialog(Dialog):
             ))
 
         # === SLIDERS SECTION ===
-        # Calculate position after specializations (4 rows * 50)
-        slider_y = spec_y + 4 * 50 + 10
+        # Calculate position after specializations (3 rows * 50)
+        slider_y = spec_y + 3 * 50 + 10
 
         # Respawn time slider
         self.sliders.append(DialogSlider(

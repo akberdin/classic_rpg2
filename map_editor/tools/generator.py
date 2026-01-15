@@ -633,21 +633,17 @@ MERCHANT_RANKS = {
 
 # Merchant specialization constants
 SPEC_JEWELRY = "jewelry"        # Украшения
-SPEC_BOOKS = "books"            # Книги
 SPEC_RESOURCES = "resources"    # Ресурсы и материалы
 SPEC_ARMOR = "armor"            # Броня
 SPEC_WEAPONS = "weapons"        # Оружие
 SPEC_POTIONS = "potions"        # Зелья
-SPEC_RECIPES = "recipes"        # Рецепты
 
 MERCHANT_SPECIALIZATIONS = {
     SPEC_JEWELRY: "Украшения",
-    SPEC_BOOKS: "Книги",
     SPEC_RESOURCES: "Ресурсы и материалы",
     SPEC_ARMOR: "Броня",
     SPEC_WEAPONS: "Оружие",
-    SPEC_POTIONS: "Зелья",
-    SPEC_RECIPES: "Рецепты"
+    SPEC_POTIONS: "Зелья"
 }
 
 
