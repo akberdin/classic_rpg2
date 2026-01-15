@@ -11,7 +11,7 @@ from .tools.generator import (
     MapGenerator, GeneratedMap, GeneratorParams, MapLocation, MapConfig, Guard, Quest,
     LOCATION_SPAWN_WOLF, LOCATION_SPAWN_BEAR, LOCATION_SPAWN_DEER,
     Merchant, MerchantWaypoint, MERCHANT_RANKS, QUEST_GIVER_LOCATIONS,
-    QUEST_DELIVER_MESSAGE, QUEST_CLEARABLE_LOCATIONS
+    QUEST_DELIVER_MESSAGE, QUEST_CLEARABLE_LOCATIONS, INFRASTRUCTURE_LOCATIONS
 )
 from .tools.brush import BiomeBrush, BrushSettings, BrushMode
 from .tools.objects import ObjectPlacer, PlacementMode
@@ -20,7 +20,7 @@ from .ui.sidebar import Sidebar
 from .ui.dialogs import (
     Dialog, GeneratorDialog, LocationEditDialog, SaveDialog, LoadDialog, ConfirmDialog,
     MerchantEditDialog, RouteEditDialog, FloorEditDialog, FloorNPCEditDialog,
-    QuestListDialog, QuestEditDialog
+    QuestListDialog, QuestEditDialog, InfrastructureEditDialog
 )
 
 
@@ -288,7 +288,8 @@ class MapEditor:
             'spawn_radius': self._editing_location.spawn_radius,
             'guards': self._editing_location.guards,
             'connections': self._editing_location.connections,
-            'quests': self._editing_location.quests
+            'quests': self._editing_location.quests,
+            'infrastructure': self._editing_location.infrastructure
         }
 
         # Create and show the dialog
@@ -317,13 +318,6 @@ class MapEditor:
                 new_rank = int(data.get('rank', 1))
                 if new_rank != self._editing_location.rank:
                     self._editing_location.rank = new_rank
-                    self.has_unsaved_changes = True
-
-            # Update shop_rank for settlements
-            if 'shop_rank' in data:
-                new_shop_rank = int(data.get('shop_rank', 1))
-                if new_shop_rank != self._editing_location.shop_rank:
-                    self._editing_location.shop_rank = new_shop_rank
                     self.has_unsaved_changes = True
 
             # Update starting village status (only for villages)
@@ -485,6 +479,20 @@ class MapEditor:
                 dialog.show(self.width, self.height)
                 return  # Don't reset _editing_location yet
 
+        elif action == "edit_infrastructure":
+            # Open infrastructure edit dialog for settlements and academies
+            if self._editing_location and self._editing_location.location_type in INFRASTRUCTURE_LOCATIONS:
+                loc_name = self._editing_location.name or f"({self._editing_location.x}, {self._editing_location.y})"
+                dialog = InfrastructureEditDialog(
+                    infrastructure=self._editing_location.infrastructure,
+                    location_name=loc_name
+                )
+                dialog.on_close = self._on_infrastructure_dialog_close
+                self._infrastructure_dialog = dialog
+                self.active_dialog = dialog
+                dialog.show(self.width, self.height)
+                return  # Don't reset _editing_location yet
+
         elif action == "delete":
             # Delete the location
             loc_name = self._editing_location.name
@@ -521,6 +529,39 @@ class MapEditor:
         if info:
             info['is_starting'] = (self._editing_location == self.current_map.starting_village)
             info['quests'] = self._editing_location.quests  # Pass quests to dialog
+            info['infrastructure'] = self._editing_location.infrastructure  # Pass infrastructure
+            dialog = LocationEditDialog(info)
+            dialog.on_close = self._on_location_edit_dialog_close
+            self.active_dialog = dialog
+            dialog.show(self.width, self.height)
+
+    def _on_infrastructure_dialog_close(self, action: str, data: Dict[str, Any]) -> None:
+        """Handle infrastructure edit dialog close."""
+        if not self._editing_location:
+            self.active_dialog = None
+            return
+
+        if action == "ok":
+            # Get infrastructure from saved dialog reference
+            if hasattr(self, '_infrastructure_dialog') and self._infrastructure_dialog:
+                new_infrastructure = self._infrastructure_dialog.get_infrastructure()
+                # Check if infrastructure changed
+                if new_infrastructure != self._editing_location.infrastructure:
+                    self._editing_location.infrastructure = new_infrastructure
+                    self.has_unsaved_changes = True
+                    active_count = sum(1 for v in new_infrastructure.values() if v > 0)
+                    self._set_status(f"Инфраструктура обновлена ({active_count} зданий)")
+
+        # Clean up dialog reference
+        self._infrastructure_dialog = None
+        self.active_dialog = None
+
+        # Reopen location edit dialog
+        info = self.object_placer.get_location_info(self._editing_location)
+        if info:
+            info['is_starting'] = (self._editing_location == self.current_map.starting_village)
+            info['quests'] = self._editing_location.quests
+            info['infrastructure'] = self._editing_location.infrastructure
             dialog = LocationEditDialog(info)
             dialog.on_close = self._on_location_edit_dialog_close
             self.active_dialog = dialog
@@ -586,6 +627,7 @@ class MapEditor:
         if info:
             info['is_starting'] = (self._editing_location == self.current_map.starting_village)
             info['quests'] = self._editing_location.quests  # Pass quests to dialog
+            info['infrastructure'] = self._editing_location.infrastructure  # Pass infrastructure
             dialog = LocationEditDialog(info)
             dialog.on_close = self._on_location_edit_dialog_close
             self.active_dialog = dialog

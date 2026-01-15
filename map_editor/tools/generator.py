@@ -299,6 +299,83 @@ FLOOR_NPC_RANKS = {
     4: "Ранг 4 (Эксперт)"
 }
 
+# Infrastructure building type constants
+INFRA_FORGE = "forge"
+INFRA_WORKSHOP = "workshop"
+INFRA_JEWELRY = "jewelry_workshop"
+INFRA_ALCHEMY = "alchemy_lab"
+INFRA_ENCHANTING = "enchanting_workshop"
+INFRA_SHOP = "shop"
+INFRA_TAVERN = "tavern"
+INFRA_TOWN_HALL = "town_hall"
+
+INFRASTRUCTURE_TYPES = {
+    INFRA_FORGE: "Кузница",
+    INFRA_WORKSHOP: "Мастерская",
+    INFRA_JEWELRY: "Ювелирная мастерская",
+    INFRA_ALCHEMY: "Алхимическая лаборатория",
+    INFRA_ENCHANTING: "Мастерская зачарования",
+    INFRA_SHOP: "Магазин",
+    INFRA_TAVERN: "Таверна",
+    INFRA_TOWN_HALL: "Ратуша"
+}
+
+# Infrastructure rank constants (1-4)
+INFRASTRUCTURE_RANKS = {
+    0: "Нет",
+    1: "Ранг 1",
+    2: "Ранг 2",
+    3: "Ранг 3",
+    4: "Ранг 4"
+}
+
+# Locations that can have infrastructure
+INFRASTRUCTURE_LOCATIONS = [
+    LOCATION_CAPITAL,
+    LOCATION_CITY,
+    LOCATION_VILLAGE,
+    LOCATION_MAGIC_SCHOOL,
+    LOCATION_WARRIOR_ACADEMY
+]
+
+
+@dataclass
+class InfrastructureBuilding:
+    """Represents an infrastructure building in a location."""
+    building_type: str = ""  # Type of building
+    rank: int = 0  # Building rank (0 = not present, 1-4 = rank)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for saving."""
+        return {
+            'type': self.building_type,
+            'rank': self.rank
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'InfrastructureBuilding':
+        """Create from dictionary."""
+        return cls(
+            building_type=data.get('type', ''),
+            rank=data.get('rank', 0)
+        )
+
+    def is_present(self) -> bool:
+        """Check if building is present (rank > 0)."""
+        return self.rank > 0
+
+    def get_display_name(self) -> str:
+        """Get display name for this building."""
+        if not self.is_present():
+            return ""
+        name = INFRASTRUCTURE_TYPES.get(self.building_type, self.building_type)
+        return f"{name} (Ранг {self.rank})"
+
+
+def _create_empty_infrastructure() -> Dict[str, int]:
+    """Create empty infrastructure dictionary (all ranks = 0)."""
+    return {key: 0 for key in INFRASTRUCTURE_TYPES.keys()}
+
 
 @dataclass
 class Quest:
@@ -790,7 +867,7 @@ class MapLocation:
     name: str = ""
     id: str = ""  # Unique identifier for the location
     rank: int = 1  # Rank for mines, ruins (1-4)
-    shop_rank: int = 1  # Shop rank for cities, villages (1-4)
+    shop_rank: int = 1  # Shop rank for cities, villages (1-4) - DEPRECATED, use infrastructure
     miners_count: int = 0  # Number of miners for mines (0-10)
     respawn_time: int = 0  # Respawn time for mines and animal spawns (0-999)
     resource_type: str = "copper"  # Resource type for mines: copper, iron, silver, gold, mithril
@@ -801,6 +878,7 @@ class MapLocation:
     connections: List[Tuple[int, int]] = field(default_factory=list)  # Connections: [(target_x, target_y), ...]
     floors: List[Floor] = field(default_factory=_create_empty_floors)  # Floor slots for mines/ruins (max 10)
     quests: List[Quest] = field(default_factory=_create_empty_quests)  # Regular quests for quest-giving locations
+    infrastructure: Dict[str, int] = field(default_factory=_create_empty_infrastructure)  # Infrastructure buildings: type -> rank (0-4)
 
     def get_id(self) -> str:
         """Get unique identifier for this location (based on coordinates)."""
@@ -838,9 +916,16 @@ class MapLocation:
             'spawn_radius': self.spawn_radius,  # Save spawn radius for all locations
             'rank': self.rank  # Save rank for all locations (1-4)
         }
-        # Only save shop_rank for settlements
-        if self.location_type in [LOCATION_CITY, LOCATION_CAPITAL, LOCATION_VILLAGE]:
-            data['shop_rank'] = self.shop_rank
+        # Save infrastructure for locations that can have it
+        if self.location_type in INFRASTRUCTURE_LOCATIONS:
+            # Only save non-zero infrastructure
+            infra_data = {k: v for k, v in self.infrastructure.items() if v > 0}
+            if infra_data:
+                data['infrastructure'] = infra_data
+            # Also save shop_rank for backward compatibility (from infrastructure)
+            shop_rank = self.infrastructure.get(INFRA_SHOP, 0)
+            if shop_rank > 0:
+                data['shop_rank'] = shop_rank
         # Only save miners_count, respawn_time and resource_type for mines
         if self.location_type == LOCATION_MINE:
             data['miners_count'] = self.miners_count
@@ -910,6 +995,17 @@ class MapLocation:
         if 'quests' in data:
             quests = [Quest.from_dict(quest_data) for quest_data in data['quests']]
 
+        # Load infrastructure data with backward compatibility
+        infrastructure = _create_empty_infrastructure()
+        if 'infrastructure' in data:
+            # New format: load infrastructure directly
+            for key, value in data['infrastructure'].items():
+                if key in infrastructure:
+                    infrastructure[key] = value
+        elif 'shop_rank' in data:
+            # Old format: convert shop_rank to infrastructure
+            infrastructure[INFRA_SHOP] = data.get('shop_rank', 0)
+
         return cls(
             x=data['x'],
             y=data['y'],
@@ -927,7 +1023,8 @@ class MapLocation:
             guards=guards,
             connections=connections,
             floors=floors,
-            quests=quests
+            quests=quests,
+            infrastructure=infrastructure
         )
 
 
