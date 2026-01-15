@@ -122,14 +122,70 @@
   },
 
   "locations": {
-    "city": "assets/objects/citys/city.png",
-    "village": "assets/objects/villages/village.png",
-    "mine": "assets/objects/mines/mine.png",
-    "bandit_camp": "assets/objects/camps/bandit.png",
-    "ruins": "assets/objects/ruins/ruins.png",
-    "magic_school": "assets/objects/magic_school/magic_school.png",
-    "warrior_academy": "assets/objects/warrior_academy/warrior_academy.png",
-    "secret_camp": "assets/objects/secret_camp/secret_camp.png"
+    "_description": "Спрайты локаций по рангам (1-4). Если указан default - используется при отсутствии спрайта для ранга",
+    "city": {
+      "default": "assets/objects/citys/city.png",
+      "1": "assets/objects/citys/city_rank1.png",
+      "2": "assets/objects/citys/city_rank2.png",
+      "3": "assets/objects/citys/city_rank3.png",
+      "4": "assets/objects/citys/city_rank4.png"
+    },
+    "capital": {
+      "default": "assets/objects/citys/city.png",
+      "1": "assets/objects/citys/capital_rank1.png",
+      "2": "assets/objects/citys/capital_rank2.png",
+      "3": "assets/objects/citys/capital_rank3.png",
+      "4": "assets/objects/citys/capital_rank4.png"
+    },
+    "village": {
+      "default": "assets/objects/villages/village.png",
+      "1": "assets/objects/villages/village_rank1.png",
+      "2": "assets/objects/villages/village_rank2.png",
+      "3": "assets/objects/villages/village_rank3.png",
+      "4": "assets/objects/villages/village_rank4.png"
+    },
+    "mine": {
+      "default": "assets/objects/mines/mine.png",
+      "1": "assets/objects/mines/mine_rank1.png",
+      "2": "assets/objects/mines/mine_rank2.png",
+      "3": "assets/objects/mines/mine_rank3.png",
+      "4": "assets/objects/mines/mine_rank4.png"
+    },
+    "bandit_camp": {
+      "default": "assets/objects/camps/bandit.png",
+      "1": "assets/objects/camps/bandit_rank1.png",
+      "2": "assets/objects/camps/bandit_rank2.png",
+      "3": "assets/objects/camps/bandit_rank3.png",
+      "4": "assets/objects/camps/bandit_rank4.png"
+    },
+    "ruins": {
+      "default": "assets/objects/ruins/ruins.png",
+      "1": "assets/objects/ruins/ruins_rank1.png",
+      "2": "assets/objects/ruins/ruins_rank2.png",
+      "3": "assets/objects/ruins/ruins_rank3.png",
+      "4": "assets/objects/ruins/ruins_rank4.png"
+    },
+    "magic_school": {
+      "default": "assets/objects/magic_school/magic_school.png",
+      "1": "assets/objects/magic_school/magic_school_rank1.png",
+      "2": "assets/objects/magic_school/magic_school_rank2.png",
+      "3": "assets/objects/magic_school/magic_school_rank3.png",
+      "4": "assets/objects/magic_school/magic_school_rank4.png"
+    },
+    "warrior_academy": {
+      "default": "assets/objects/warrior_academy/warrior_academy.png",
+      "1": "assets/objects/warrior_academy/warrior_academy_rank1.png",
+      "2": "assets/objects/warrior_academy/warrior_academy_rank2.png",
+      "3": "assets/objects/warrior_academy/warrior_academy_rank3.png",
+      "4": "assets/objects/warrior_academy/warrior_academy_rank4.png"
+    },
+    "secret_camp": {
+      "default": "assets/objects/secret_camp/secret_camp.png",
+      "1": "assets/objects/secret_camp/secret_camp_rank1.png",
+      "2": "assets/objects/secret_camp/secret_camp_rank2.png",
+      "3": "assets/objects/secret_camp/secret_camp_rank3.png",
+      "4": "assets/objects/secret_camp/secret_camp_rank4.png"
+    }
   },
 
   "biomes": {

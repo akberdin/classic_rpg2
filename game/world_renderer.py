@@ -132,13 +132,16 @@ class WorldRenderer:
                     if tile.has_location() and not tile.location.location_type.startswith('spawn_'):
                         # Отрисовываем спрайт локации поверх базового цвета
                         # Спрайт отображается даже в тумане войны (но затемненный)
+                        # Передаем ранг локации для выбора соответствующего спрайта
+                        location_rank = getattr(tile.location, 'rank', 1)
                         self.ctx.sprite_manager.render_location(
                             self.ctx.screen,
                             tile.location.location_type,
                             screen_x,
                             screen_y,
                             lambda: None,  # Пустая функция, так как базовый цвет уже нарисован
-                            darken=not is_visible  # Затемняем спрайт в тумане войны
+                            darken=not is_visible,  # Затемняем спрайт в тумане войны
+                            rank=location_rank  # Ранг локации для выбора спрайта
                         )
                 else:
                     # Неисследованная область - туман войны
