@@ -24,7 +24,7 @@ from game.ui.windows.settlement_menu import (
     InquiryResponseWindow
 )
 from game.ui.windows.combat_mode_selection import CombatModeSelectionWindow
-from game.ui.windows.crafting import CraftingWindow
+from game.ui.windows.production_crafting import ProductionCraftingWindow
 from game.ui.windows.npc_selection import NPCSelectionWindow
 from game.ui.windows.dungeon_entry import DungeonEntryWindow, DungeonExitWindow, StairsMenuWindow
 
@@ -48,7 +48,7 @@ __all__ = [
     'InquiryMenuWindow',
     'InquiryResponseWindow',
     'CombatModeSelectionWindow',
-    'CraftingWindow',
+    'ProductionCraftingWindow',
     'NPCSelectionWindow',
     'DungeonEntryWindow',
     'DungeonExitWindow',

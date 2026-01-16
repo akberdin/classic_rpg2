@@ -22,7 +22,7 @@ from game.ui.windows import (
     LootWindow,
     SkillBookWindow,
     CombatModeSelectionWindow,
-    CraftingWindow,
+    ProductionCraftingWindow,
     NPCSelectionWindow,
     DungeonEntryWindow,
     DungeonExitWindow,
@@ -165,9 +165,9 @@ class Game:
         self.quest_event_window = QuestEventWindow(self.screen, self.font, self.info_font, self.ui_scaler)
         self.quest_event_window_open = False
 
-        # Окно крафта
-        self.crafting_window = CraftingWindow(self.screen, self.font, self.info_font, self.ui_scaler)
-        self.crafting_window_open = False
+        # Окно крафта через производственные объекты
+        self.production_crafting_window = None  # Будет инициализировано после crafting_system
+        self.production_crafting_open = False
 
         # Окно чит меню
         self.cheat_menu_window = CheatMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler)
@@ -259,6 +259,11 @@ class Game:
 
         # Инициализация системы крафта
         self.crafting_system = CraftingSystem()
+
+        # Инициализация окна крафта через производственные объекты
+        self.production_crafting_window = ProductionCraftingWindow(
+            self.screen, self.font, self.info_font, self.ui_scaler, self.crafting_system
+        )
 
         # Даем игроку стартовые умения
         self.player.skill_manager.learn_skill('basic_attack')  # Базовая атака
@@ -811,8 +816,6 @@ class Game:
             self.inventory_menu_open = True
         elif action == 'skills':
             self.skill_book_menu_open = True
-        elif action == 'crafting':
-            self.crafting_window_open = True
         elif action == 'quests':
             self._open_quest_journal()
         elif action == 'companions':
@@ -1193,10 +1196,9 @@ class Game:
         if self.companion_window_open:
             self.companion_window.render(self.player.companion_manager, self.player)
 
-        # Если открыто окно крафта, отрисовываем его
-        if self.crafting_window_open:
-            mouse_pos = pygame.mouse.get_pos()
-            self.crafting_window.render(self.crafting_system, self.player, mouse_pos)
+        # Если открыто окно крафта через производство, отрисовываем его
+        if self.production_crafting_open:
+            self.production_crafting_window.render(self.player)
 
         # Если открыто окно лута, отрисовываем его
         if self.loot_window_open:
