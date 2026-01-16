@@ -173,7 +173,7 @@ class ProductionCraftingWindow(BaseWindow):
             bool: True если может оплатить
         """
         rental_cost = self.get_rental_cost(recipe)
-        return player.gold >= rental_cost
+        return player.inventory.gold >= rental_cost
 
     def can_craft_recipe(self, recipe, player):
         """
@@ -198,7 +198,7 @@ class ProductionCraftingWindow(BaseWindow):
 
         # Проверяем деньги на аренду
         rental_cost = self.get_rental_cost(recipe)
-        if player.gold < rental_cost:
+        if player.inventory.gold < rental_cost:
             return False, f"Недостаточно золота на аренду ({rental_cost})"
 
         return True, None
@@ -220,7 +220,7 @@ class ProductionCraftingWindow(BaseWindow):
 
         # Списываем аренду
         rental_cost = self.get_rental_cost(recipe)
-        player.gold -= rental_cost
+        player.inventory.remove_gold(rental_cost)
 
         # Выполняем крафт через систему крафта (без проверки навыков)
         # Удаляем ресурсы
@@ -240,7 +240,7 @@ class ProductionCraftingWindow(BaseWindow):
             return True, f"Создано: {recipe.name}{qty_text} (аренда: {rental_cost} зол.)"
         else:
             # Возвращаем ресурсы и деньги
-            player.gold += rental_cost
+            player.inventory.add_gold(rental_cost)
             for ingredient in recipe.ingredients:
                 item_id = ingredient['item']
                 quantity = ingredient['quantity']
@@ -279,7 +279,7 @@ class ProductionCraftingWindow(BaseWindow):
         content_y = win['content_y']
 
         # Информация о золоте игрока
-        gold_text = self.info_font.render(f"Золото: {player.gold}", True, self.GOLD_COLOR)
+        gold_text = self.info_font.render(f"Золото: {player.inventory.gold}", True, self.GOLD_COLOR)
         gold_rect = gold_text.get_rect()
         gold_rect.right = window_x + window_width - int(20 * scale_w)
         gold_rect.y = window_y + int(15 * scale_h)
@@ -479,7 +479,7 @@ class ProductionCraftingWindow(BaseWindow):
 
         # Стоимость аренды
         rental_cost = self.get_rental_cost(recipe)
-        can_afford = player.gold >= rental_cost
+        can_afford = player.inventory.gold >= rental_cost
         rental_color = self.GOLD_COLOR if can_afford else self.ERROR_COLOR
 
         rental_text = self.info_font.render(f"Стоимость аренды: {rental_cost} золота", True, rental_color)
