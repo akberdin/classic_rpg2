@@ -131,7 +131,7 @@
       "4": "assets/objects/citys/city_rank4.png"
     },
     "capital": {
-      "default": "assets/objects/citys/city.png",
+      "default": "assets/objects/citys/city_rank4.png",
       "1": "assets/objects/citys/capital_rank1.png",
       "2": "assets/objects/citys/capital_rank2.png",
       "3": "assets/objects/citys/capital_rank3.png",
