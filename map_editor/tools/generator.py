@@ -312,6 +312,12 @@ INFRA_WARRIOR_GUILD = "warrior_guild"
 INFRA_HUNTER_GUILD = "hunter_guild"
 INFRA_SHADOW_GUILD = "shadow_guild"
 INFRA_MAGE_GUILD = "mage_guild"
+INFRA_SAWMILL = "sawmill"
+INFRA_SMELTERY = "smeltery"
+INFRA_CHARCOAL = "charcoal_burners"
+INFRA_TANNERY = "tannery"
+INFRA_HOUSE = "house"
+INFRA_PALACE = "palace"
 
 INFRASTRUCTURE_TYPES = {
     INFRA_FORGE: "Кузница",
@@ -325,7 +331,13 @@ INFRASTRUCTURE_TYPES = {
     INFRA_WARRIOR_GUILD: "Гильдия воинов",
     INFRA_HUNTER_GUILD: "Гильдия охотников",
     INFRA_SHADOW_GUILD: "Гильдия теней",
-    INFRA_MAGE_GUILD: "Гильдия магов"
+    INFRA_MAGE_GUILD: "Гильдия магов",
+    INFRA_SAWMILL: "Лесопилка",
+    INFRA_SMELTERY: "Плавильня",
+    INFRA_CHARCOAL: "Углежоги",
+    INFRA_TANNERY: "Кожевенная мастерская",
+    INFRA_HOUSE: "Дом",
+    INFRA_PALACE: "Дворец"
 }
 
 # Infrastructure rank constants (1-4)
