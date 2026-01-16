@@ -9,7 +9,7 @@ from typing import Callable, Dict, Any, List, Optional
 
 from utils.items_config.models import (
     CraftingConfigManager, Recipe,
-    CRAFTING_STATIONS, RECIPE_CATEGORIES, CRAFTING_SKILLS, QUALITY_LEVELS
+    RECIPE_CATEGORIES, CRAFTING_SKILLS, QUALITY_LEVELS
 )
 from utils.items_config.gui.widgets import (
     ScrollableFrame, LabeledEntry, LabeledSpinbox, LabeledCombobox
@@ -31,6 +31,11 @@ class CraftingConfigTab(ttk.Frame):
         self.sort_reverse = False
 
         self._create_ui()
+
+    def _get_station_list(self) -> list:
+        """Получить список станций из конфига (динамическая загрузка)"""
+        stations = self.manager.get_stations()
+        return [s for s in stations.keys() if not s.startswith("_")]
 
     def _create_ui(self):
         """Создание интерфейса"""
@@ -62,8 +67,10 @@ class CraftingConfigTab(ttk.Frame):
         self.station_entries = {}
         stations = self.manager.get_stations()
 
-        for station_id in CRAFTING_STATIONS:
-            station_data = stations.get(station_id, {"name": station_id, "description": ""})
+        # Итерируем по станциям из конфига (динамическая загрузка)
+        for station_id, station_data in stations.items():
+            if station_id.startswith("_"):
+                continue  # Пропускаем служебные поля
 
             station_frame = ttk.LabelFrame(self.stations_frame, text=station_id, padding=10)
             station_frame.pack(fill="x", pady=5)
@@ -122,9 +129,10 @@ class CraftingConfigTab(ttk.Frame):
 
         ttk.Label(filter_frame, text="Станция:").pack(side="left")
         self.filter_station_var = tk.StringVar(value="все")
+        station_list = self._get_station_list()
         self.filter_station_combo = ttk.Combobox(
             filter_frame, textvariable=self.filter_station_var,
-            values=["все"] + CRAFTING_STATIONS, state="readonly", width=15
+            values=["все"] + station_list, state="readonly", width=15
         )
         self.filter_station_combo.pack(side="left", padx=5)
         self.filter_station_combo.bind("<<ComboboxSelected>>", lambda e: self._load_recipes())
@@ -222,7 +230,7 @@ class CraftingConfigTab(ttk.Frame):
         # Станция
         self.recipe_station_combo = LabeledCombobox(
             self.editor_frame, "Станция:",
-            values=CRAFTING_STATIONS
+            values=self._get_station_list()
         )
         self.recipe_station_combo.pack(fill="x", pady=2)
 
@@ -484,7 +492,7 @@ class CraftingConfigTab(ttk.Frame):
         self.recipe_name_entry.set("")
         self.recipe_display_entry.set("")
         self.recipe_desc_text.delete("1.0", tk.END)
-        self.recipe_station_combo.set("workbench")
+        self.recipe_station_combo.set("workshop")
         self.recipe_category_combo.set("tool")
         self.recipe_quality_combo.set("common")
         self.recipe_result_item.set("")

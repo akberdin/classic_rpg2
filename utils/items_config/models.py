@@ -405,8 +405,17 @@ class ItemsConfigManager:
         return True
 
 
-# Станции крафта
-CRAFTING_STATIONS = ["workbench", "forge", "alchemy_table", "enchanting_table"]
+# Станции крафта (актуальный список из crafting_config.json)
+CRAFTING_STATIONS = [
+    "charcoal_kiln",      # Углежоги
+    "tannery",            # Кожевенная мастерская
+    "jewelry_workshop",   # Ювелирная мастерская
+    "alchemy_lab",        # Алхимическая лаборатория
+    "enchanting_workshop", # Мастерская зачарования
+    "forge",              # Кузница
+    "sawmill",            # Лесопилка
+    "workshop"            # Мастерская (сборка)
+]
 
 # Категории рецептов
 RECIPE_CATEGORIES = [
@@ -425,7 +434,7 @@ class Recipe:
     display_name: str = ""
     quality: str = "common"
     description: str = ""
-    station: str = "workbench"
+    station: str = "workshop"
     result_item: str = ""
     result_quantity: int = 1
     required_level: int = 1
@@ -465,7 +474,7 @@ class Recipe:
             display_name=data.get("display_name", ""),
             quality=data.get("quality", "common"),
             description=data.get("description", ""),
-            station=data.get("station", "workbench"),
+            station=data.get("station", "workshop"),
             result_item=data.get("result_item", ""),
             result_quantity=data.get("result_quantity", 1),
             required_level=data.get("required_level", 1),
