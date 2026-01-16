@@ -688,10 +688,14 @@ class ItemsDataTab(ttk.Frame):
             )
             station = self.current_recipe.get('station', 'N/A')
             station_name = {
-                'workbench': 'Мастерская',
+                'charcoal_kiln': 'Углежоги',
+                'tannery': 'Кожевенная мастерская',
+                'jewelry_workshop': 'Ювелирная мастерская',
+                'alchemy_lab': 'Алхимическая лаборатория',
+                'enchanting_workshop': 'Мастерская зачарования',
                 'forge': 'Кузница',
-                'alchemy_table': 'Алхимический стол',
-                'enchanting_table': 'Стол зачарования'
+                'sawmill': 'Лесопилка',
+                'workshop': 'Мастерская'
             }.get(station, station)
             self.recipe_station_label.config(text=f"Станция: {station_name}")
 
