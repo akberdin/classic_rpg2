@@ -802,7 +802,7 @@
       "display_name": "Рецепт: Серебряные полоски",
       "quality": "uncommon",
       "description": "Изготовление серебряных полосок. Требуется 1 серебряный слиток и 1 уголь. Получаем 5 полосок",
-      "station": "forge",
+      "station": "jewelry_workshop",
       "result_item": "silver_strips",
       "result_quantity": 5,
       "required_level": 12,
@@ -2578,6 +2578,402 @@
       ],
       "category": "alchemy",
       "base_price": 198,
+      "sprite": null
+    },
+    {
+      "id": "raw_amethyst_from_shards",
+      "name": "Необработанный аметист",
+      "display_name": "Рецепт: Необработанный аметист",
+      "quality": "common",
+      "description": "Сборка осколков аметиста в необработанный камень. Требуется 3 осколка аметиста",
+      "station": "jewelry_workshop",
+      "result_item": "raw_amethyst",
+      "result_quantity": 1,
+      "required_level": 5,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {
+          "item": "amethyst_shard",
+          "quantity": 3
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 40,
+      "sprite": null
+    },
+    {
+      "id": "cut_amethyst",
+      "name": "Огранённый аметист",
+      "display_name": "Рецепт: Огранённый аметист",
+      "quality": "uncommon",
+      "description": "Огранка необработанного аметиста. Требуется 1 необработанный аметист",
+      "station": "jewelry_workshop",
+      "result_item": "cut_amethyst",
+      "result_quantity": 1,
+      "required_level": 7,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {
+          "item": "raw_amethyst",
+          "quantity": 1
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 100,
+      "sprite": null
+    },
+    {
+      "id": "perfect_amethyst",
+      "name": "Совершенный аметист",
+      "display_name": "Рецепт: Совершенный аметист",
+      "quality": "rare",
+      "description": "Создание совершенного аметиста из огранённых камней. Требуется 2 огранённых аметиста",
+      "station": "jewelry_workshop",
+      "result_item": "perfect_amethyst",
+      "result_quantity": 1,
+      "required_level": 10,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {
+          "item": "cut_amethyst",
+          "quantity": 2
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 250,
+      "sprite": null
+    },
+    {
+      "id": "raw_ruby_from_shards",
+      "name": "Необработанный рубин",
+      "display_name": "Рецепт: Необработанный рубин",
+      "quality": "common",
+      "description": "Сборка осколков рубина в необработанный камень. Требуется 3 осколка рубина",
+      "station": "jewelry_workshop",
+      "result_item": "raw_ruby",
+      "result_quantity": 1,
+      "required_level": 7,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {
+          "item": "ruby_shard",
+          "quantity": 3
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 50,
+      "sprite": null
+    },
+    {
+      "id": "cut_ruby",
+      "name": "Огранённый рубин",
+      "display_name": "Рецепт: Огранённый рубин",
+      "quality": "uncommon",
+      "description": "Огранка необработанного рубина. Требуется 1 необработанный рубин",
+      "station": "jewelry_workshop",
+      "result_item": "cut_ruby",
+      "result_quantity": 1,
+      "required_level": 9,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {
+          "item": "raw_ruby",
+          "quantity": 1
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 120,
+      "sprite": null
+    },
+    {
+      "id": "perfect_ruby",
+      "name": "Совершенный рубин",
+      "display_name": "Рецепт: Совершенный рубин",
+      "quality": "rare",
+      "description": "Создание совершенного рубина из огранённых камней. Требуется 2 огранённых рубина",
+      "station": "jewelry_workshop",
+      "result_item": "perfect_ruby",
+      "result_quantity": 1,
+      "required_level": 12,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {
+          "item": "cut_ruby",
+          "quantity": 2
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 300,
+      "sprite": null
+    },
+    {
+      "id": "raw_sapphire_from_shards",
+      "name": "Необработанный сапфир",
+      "display_name": "Рецепт: Необработанный сапфир",
+      "quality": "common",
+      "description": "Сборка осколков сапфира в необработанный камень. Требуется 3 осколка сапфира",
+      "station": "jewelry_workshop",
+      "result_item": "raw_sapphire",
+      "result_quantity": 1,
+      "required_level": 7,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {
+          "item": "sapphire_shard",
+          "quantity": 3
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 50,
+      "sprite": null
+    },
+    {
+      "id": "cut_sapphire",
+      "name": "Огранённый сапфир",
+      "display_name": "Рецепт: Огранённый сапфир",
+      "quality": "uncommon",
+      "description": "Огранка необработанного сапфира. Требуется 1 необработанный сапфир",
+      "station": "jewelry_workshop",
+      "result_item": "cut_sapphire",
+      "result_quantity": 1,
+      "required_level": 9,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {
+          "item": "raw_sapphire",
+          "quantity": 1
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 120,
+      "sprite": null
+    },
+    {
+      "id": "perfect_sapphire",
+      "name": "Совершенный сапфир",
+      "display_name": "Рецепт: Совершенный сапфир",
+      "quality": "rare",
+      "description": "Создание совершенного сапфира из огранённых камней. Требуется 2 огранённых сапфира",
+      "station": "jewelry_workshop",
+      "result_item": "perfect_sapphire",
+      "result_quantity": 1,
+      "required_level": 12,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {
+          "item": "cut_sapphire",
+          "quantity": 2
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 300,
+      "sprite": null
+    },
+    {
+      "id": "raw_emerald_from_shards",
+      "name": "Необработанный изумруд",
+      "display_name": "Рецепт: Необработанный изумруд",
+      "quality": "common",
+      "description": "Сборка осколков изумруда в необработанный камень. Требуется 3 осколка изумруда",
+      "station": "jewelry_workshop",
+      "result_item": "raw_emerald",
+      "result_quantity": 1,
+      "required_level": 9,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {
+          "item": "emerald_shard",
+          "quantity": 3
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 60,
+      "sprite": null
+    },
+    {
+      "id": "cut_emerald",
+      "name": "Огранённый изумруд",
+      "display_name": "Рецепт: Огранённый изумруд",
+      "quality": "uncommon",
+      "description": "Огранка необработанного изумруда. Требуется 1 необработанный изумруд",
+      "station": "jewelry_workshop",
+      "result_item": "cut_emerald",
+      "result_quantity": 1,
+      "required_level": 11,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {
+          "item": "raw_emerald",
+          "quantity": 1
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 150,
+      "sprite": null
+    },
+    {
+      "id": "perfect_emerald",
+      "name": "Совершенный изумруд",
+      "display_name": "Рецепт: Совершенный изумруд",
+      "quality": "rare",
+      "description": "Создание совершенного изумруда из огранённых камней. Требуется 2 огранённых изумруда",
+      "station": "jewelry_workshop",
+      "result_item": "perfect_emerald",
+      "result_quantity": 1,
+      "required_level": 14,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 4,
+      "ingredients": [
+        {
+          "item": "cut_emerald",
+          "quantity": 2
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 350,
+      "sprite": null
+    },
+    {
+      "id": "raw_topaz_from_shards",
+      "name": "Необработанный топаз",
+      "display_name": "Рецепт: Необработанный топаз",
+      "quality": "common",
+      "description": "Сборка осколков топаза в необработанный камень. Требуется 3 осколка топаза",
+      "station": "jewelry_workshop",
+      "result_item": "raw_topaz",
+      "result_quantity": 1,
+      "required_level": 6,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 1,
+      "ingredients": [
+        {
+          "item": "topaz_shard",
+          "quantity": 3
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 45,
+      "sprite": null
+    },
+    {
+      "id": "cut_topaz",
+      "name": "Огранённый топаз",
+      "display_name": "Рецепт: Огранённый топаз",
+      "quality": "uncommon",
+      "description": "Огранка необработанного топаза. Требуется 1 необработанный топаз",
+      "station": "jewelry_workshop",
+      "result_item": "cut_topaz",
+      "result_quantity": 1,
+      "required_level": 8,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 2,
+      "ingredients": [
+        {
+          "item": "raw_topaz",
+          "quantity": 1
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 110,
+      "sprite": null
+    },
+    {
+      "id": "perfect_topaz",
+      "name": "Совершенный топаз",
+      "display_name": "Рецепт: Совершенный топаз",
+      "quality": "rare",
+      "description": "Создание совершенного топаза из огранённых камней. Требуется 2 огранённых топаза",
+      "station": "jewelry_workshop",
+      "result_item": "perfect_topaz",
+      "result_quantity": 1,
+      "required_level": 11,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {
+          "item": "cut_topaz",
+          "quantity": 2
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 280,
+      "sprite": null
+    },
+    {
+      "id": "raw_diamond_from_shards",
+      "name": "Необработанный алмаз",
+      "display_name": "Рецепт: Необработанный алмаз",
+      "quality": "common",
+      "description": "Сборка осколков алмаза в необработанный камень. Требуется 3 осколка алмаза",
+      "station": "jewelry_workshop",
+      "result_item": "raw_diamond",
+      "result_quantity": 1,
+      "required_level": 15,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 3,
+      "ingredients": [
+        {
+          "item": "diamond_shard",
+          "quantity": 3
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 150,
+      "sprite": null
+    },
+    {
+      "id": "cut_diamond",
+      "name": "Огранённый алмаз",
+      "display_name": "Рецепт: Огранённый алмаз",
+      "quality": "uncommon",
+      "description": "Огранка необработанного алмаза. Требуется 1 необработанный алмаз",
+      "station": "jewelry_workshop",
+      "result_item": "cut_diamond",
+      "result_quantity": 1,
+      "required_level": 17,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 4,
+      "ingredients": [
+        {
+          "item": "raw_diamond",
+          "quantity": 1
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 400,
+      "sprite": null
+    },
+    {
+      "id": "perfect_diamond",
+      "name": "Совершенный алмаз",
+      "display_name": "Рецепт: Совершенный алмаз",
+      "quality": "rare",
+      "description": "Создание совершенного алмаза из огранённых камней. Требуется 2 огранённых алмаза",
+      "station": "jewelry_workshop",
+      "result_item": "perfect_diamond",
+      "result_quantity": 1,
+      "required_level": 20,
+      "required_skill": "craftsmanship",
+      "required_skill_rank": 4,
+      "ingredients": [
+        {
+          "item": "cut_diamond",
+          "quantity": 2
+        }
+      ],
+      "category": "jewelry",
+      "base_price": 1000,
       "sprite": null
     },
     {
