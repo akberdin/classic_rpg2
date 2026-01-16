@@ -308,6 +308,10 @@ INFRA_ENCHANTING = "enchanting_workshop"
 INFRA_SHOP = "shop"
 INFRA_TAVERN = "tavern"
 INFRA_TOWN_HALL = "town_hall"
+INFRA_WARRIOR_GUILD = "warrior_guild"
+INFRA_HUNTER_GUILD = "hunter_guild"
+INFRA_SHADOW_GUILD = "shadow_guild"
+INFRA_MAGE_GUILD = "mage_guild"
 
 INFRASTRUCTURE_TYPES = {
     INFRA_FORGE: "Кузница",
@@ -317,7 +321,11 @@ INFRASTRUCTURE_TYPES = {
     INFRA_ENCHANTING: "Мастерская зачарования",
     INFRA_SHOP: "Магазин",
     INFRA_TAVERN: "Таверна",
-    INFRA_TOWN_HALL: "Ратуша"
+    INFRA_TOWN_HALL: "Ратуша",
+    INFRA_WARRIOR_GUILD: "Гильдия воинов",
+    INFRA_HUNTER_GUILD: "Гильдия охотников",
+    INFRA_SHADOW_GUILD: "Гильдия теней",
+    INFRA_MAGE_GUILD: "Гильдия магов"
 }
 
 # Infrastructure rank constants (1-4)
