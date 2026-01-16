@@ -748,6 +748,14 @@ class Game:
 
         elif action == 'close':
             self.quest_window_open = False
+            # Возвращаемся в меню инфраструктуры если квесты были открыты оттуда
+            if getattr(self.quest_window, 'return_to_infrastructure', False):
+                infra_location = getattr(self.quest_window, 'infrastructure_location', None)
+                if infra_location:
+                    self.infrastructure_menu_window.set_location(infra_location)
+                    self.infrastructure_menu_open = True
+                self.quest_window.return_to_infrastructure = False
+                self.quest_window.infrastructure_location = None
 
     def _handle_potion_slot_click(self, mouse_pos):
         """
