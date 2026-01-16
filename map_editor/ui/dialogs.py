@@ -24,7 +24,9 @@ from ..tools.generator import (
     INFRASTRUCTURE_TYPES, INFRASTRUCTURE_RANKS, INFRASTRUCTURE_LOCATIONS,
     INFRA_FORGE, INFRA_WORKSHOP, INFRA_JEWELRY, INFRA_ALCHEMY,
     INFRA_ENCHANTING, INFRA_SHOP, INFRA_TAVERN, INFRA_TOWN_HALL,
-    INFRA_WARRIOR_GUILD, INFRA_HUNTER_GUILD, INFRA_SHADOW_GUILD, INFRA_MAGE_GUILD
+    INFRA_WARRIOR_GUILD, INFRA_HUNTER_GUILD, INFRA_SHADOW_GUILD, INFRA_MAGE_GUILD,
+    INFRA_SAWMILL, INFRA_SMELTERY, INFRA_CHARCOAL, INFRA_TANNERY,
+    INFRA_HOUSE, INFRA_PALACE
 )
 
 
@@ -3545,19 +3547,21 @@ class InfrastructureEditDialog(Dialog):
 
         self.location_name = location_name
         title = f"Инфраструктура: {location_name}" if location_name else "Инфраструктура"
-        # Height: title(30) + 12 buildings * 50 + buttons(50) + padding
-        super().__init__(title, 500, 720)
+        # Height: title(30) + 18 buildings * 45 + buttons(50) + padding
+        super().__init__(title, 500, 900)
         self._setup_controls()
 
     def _setup_controls(self) -> None:
         """Setup dialog controls for infrastructure editing."""
-        y = 50
+        y = 45
 
         # Create dropdown for each infrastructure building type
         building_order = [
             INFRA_FORGE, INFRA_WORKSHOP, INFRA_JEWELRY, INFRA_ALCHEMY,
             INFRA_ENCHANTING, INFRA_SHOP, INFRA_TAVERN, INFRA_TOWN_HALL,
-            INFRA_WARRIOR_GUILD, INFRA_HUNTER_GUILD, INFRA_SHADOW_GUILD, INFRA_MAGE_GUILD
+            INFRA_WARRIOR_GUILD, INFRA_HUNTER_GUILD, INFRA_SHADOW_GUILD, INFRA_MAGE_GUILD,
+            INFRA_SAWMILL, INFRA_SMELTERY, INFRA_CHARCOAL, INFRA_TANNERY,
+            INFRA_HOUSE, INFRA_PALACE
         ]
 
         # Convert INFRASTRUCTURE_RANKS to string keys for dropdown
@@ -3569,14 +3573,14 @@ class InfrastructureEditDialog(Dialog):
 
             # Create dropdown for rank selection
             self.dropdowns.append(DialogDropdown(
-                rect=pygame.Rect(20, y + 20, self.width - 40, 28),
+                rect=pygame.Rect(20, y + 18, self.width - 40, 26),
                 label=f"{building_name}:",
                 key=f"infra_{building_type}",
                 options=rank_options,
                 selected=str(current_rank)
             ))
             self.data[f"infra_{building_type}"] = str(current_rank)
-            y += 50
+            y += 45
 
         # Buttons
         btn_width = 100
