@@ -126,6 +126,8 @@ class GameMap:
                 location.resource_type = loc_data["resource_type"]
             if "quests" in loc_data:
                 location.quests = loc_data["quests"]
+            if "infrastructure" in loc_data:
+                location.infrastructure = loc_data["infrastructure"]
 
             self.locations.append(location)
             self.tiles[loc_data["y"]][loc_data["x"]].set_location(location)
