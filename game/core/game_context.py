@@ -291,6 +291,14 @@ class GameContext:
         self._game.settlement_menu_open = value
 
     @property
+    def infrastructure_menu_open(self) -> bool:
+        return getattr(self._game, 'infrastructure_menu_open', False)
+
+    @infrastructure_menu_open.setter
+    def infrastructure_menu_open(self, value: bool):
+        self._game.infrastructure_menu_open = value
+
+    @property
     def inquiry_menu_open(self) -> bool:
         return getattr(self._game, 'inquiry_menu_open', False)
 
@@ -391,6 +399,11 @@ class GameContext:
     def settlement_menu_window(self):
         """Получить окно меню города/деревни."""
         return getattr(self._game, 'settlement_menu_window', None)
+
+    @property
+    def infrastructure_menu_window(self):
+        """Получить окно меню инфраструктуры поселения."""
+        return getattr(self._game, 'infrastructure_menu_window', None)
 
     @property
     def inquiry_menu_window(self):
