@@ -105,7 +105,7 @@ class InfrastructureMenuWindow(BaseWindow):
     """Окно меню инфраструктуры поселения"""
 
     BASE_WIDTH = 700
-    BASE_HEIGHT = 550
+    BASE_HEIGHT = 700
 
     # Цвета кнопок
     BUTTON_COLOR = (50, 50, 60)
