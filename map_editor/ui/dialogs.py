@@ -23,7 +23,8 @@ from ..tools.generator import (
     QUEST_TARGET_WOOD, QUEST_TARGET_WOLF,
     INFRASTRUCTURE_TYPES, INFRASTRUCTURE_RANKS, INFRASTRUCTURE_LOCATIONS,
     INFRA_FORGE, INFRA_WORKSHOP, INFRA_JEWELRY, INFRA_ALCHEMY,
-    INFRA_ENCHANTING, INFRA_SHOP, INFRA_TAVERN, INFRA_TOWN_HALL
+    INFRA_ENCHANTING, INFRA_SHOP, INFRA_TAVERN, INFRA_TOWN_HALL,
+    INFRA_WARRIOR_GUILD, INFRA_HUNTER_GUILD, INFRA_SHADOW_GUILD, INFRA_MAGE_GUILD
 )
 
 
@@ -3544,8 +3545,8 @@ class InfrastructureEditDialog(Dialog):
 
         self.location_name = location_name
         title = f"Инфраструктура: {location_name}" if location_name else "Инфраструктура"
-        # Height: title(30) + 8 buildings * 50 + buttons(50) + padding
-        super().__init__(title, 500, 520)
+        # Height: title(30) + 12 buildings * 50 + buttons(50) + padding
+        super().__init__(title, 500, 720)
         self._setup_controls()
 
     def _setup_controls(self) -> None:
@@ -3553,10 +3554,10 @@ class InfrastructureEditDialog(Dialog):
         y = 50
 
         # Create dropdown for each infrastructure building type
-        # Order: Кузница, Мастерская, Ювелирная, Алхимическая, Зачарования, Магазин, Таверна, Ратуша
         building_order = [
             INFRA_FORGE, INFRA_WORKSHOP, INFRA_JEWELRY, INFRA_ALCHEMY,
-            INFRA_ENCHANTING, INFRA_SHOP, INFRA_TAVERN, INFRA_TOWN_HALL
+            INFRA_ENCHANTING, INFRA_SHOP, INFRA_TAVERN, INFRA_TOWN_HALL,
+            INFRA_WARRIOR_GUILD, INFRA_HUNTER_GUILD, INFRA_SHADOW_GUILD, INFRA_MAGE_GUILD
         ]
 
         # Convert INFRASTRUCTURE_RANKS to string keys for dropdown
