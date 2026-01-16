@@ -10,6 +10,9 @@
       "player_attitude": -6,
       "spawn_radius": 5,
       "rank": 1,
+      "infrastructure": {
+        "shop": 4
+      },
       "shop_rank": 4,
       "guards": [
         {
@@ -44,6 +47,11 @@
       "player_attitude": 0,
       "spawn_radius": 5,
       "rank": 1,
+      "infrastructure": {
+        "forge": 1,
+        "workshop": 1,
+        "shop": 1
+      },
       "shop_rank": 1,
       "guards": [
         {
@@ -53,6 +61,12 @@
           "patrol_radius": 10,
           "respawn_time": 100
         }
+      ],
+      "connections": [
+        [
+          145,
+          25
+        ]
       ],
       "quests": [
         {
@@ -150,10 +164,299 @@
       "rank": 1,
       "animal_count": 5,
       "respawn_time": 0
+    },
+    {
+      "x": 132,
+      "y": 19,
+      "type": "village",
+      "name": "Дубравка",
+      "id": "f1bd8d40-7bf7-4c5a-ae72-16fe6dc75915",
+      "player_attitude": 0,
+      "spawn_radius": 5,
+      "rank": 2,
+      "infrastructure": {
+        "shop": 1
+      },
+      "shop_rank": 1,
+      "guards": [
+        {
+          "type": "hunter",
+          "rank": 1,
+          "count": 3,
+          "patrol_radius": 10,
+          "respawn_time": 100
+        }
+      ],
+      "connections": [
+        [
+          145,
+          25
+        ]
+      ]
+    },
+    {
+      "x": 158,
+      "y": 47,
+      "type": "village",
+      "name": "Речная",
+      "id": "b2d41cd4-2abd-4d21-9e5f-56a35b7a0e29",
+      "player_attitude": 0,
+      "spawn_radius": 5,
+      "rank": 1,
+      "infrastructure": {
+        "shop": 1
+      },
+      "shop_rank": 1,
+      "connections": [
+        [
+          145,
+          25
+        ]
+      ]
+    },
+    {
+      "x": 96,
+      "y": 52,
+      "type": "village",
+      "name": "Лесная",
+      "id": "af6e6a4a-693d-4437-883b-0660649cca9d",
+      "player_attitude": 0,
+      "spawn_radius": 5,
+      "rank": 1,
+      "infrastructure": {
+        "shop": 1
+      },
+      "shop_rank": 1
+    },
+    {
+      "x": 157,
+      "y": 24,
+      "type": "village",
+      "name": "Малая Медянка",
+      "id": "64d82838-5c2c-43d1-96e8-fb409f1c66de",
+      "player_attitude": 0,
+      "spawn_radius": 5,
+      "rank": 2,
+      "infrastructure": {
+        "shop": 1
+      },
+      "shop_rank": 1,
+      "guards": [
+        {
+          "type": "warrior",
+          "rank": 1,
+          "count": 2,
+          "patrol_radius": 5,
+          "respawn_time": 100
+        }
+      ],
+      "connections": [
+        [
+          145,
+          25
+        ]
+      ]
+    },
+    {
+      "x": 159,
+      "y": 18,
+      "type": "mine",
+      "name": "Медная шахта",
+      "id": "0b42d014-9507-4941-9a1c-477e2d8305eb",
+      "player_attitude": 0,
+      "spawn_radius": 3,
+      "rank": 1,
+      "miners_count": 3,
+      "respawn_time": 100,
+      "resource_type": "copper",
+      "connections": [
+        [
+          157,
+          24
+        ]
+      ],
+      "floors": [
+        {
+          "floor_number": 1,
+          "floor_type": "mine",
+          "size": 3,
+          "npcs": [
+            {
+              "type": "miner",
+              "rank": 1,
+              "count": 4
+            }
+          ]
+        },
+        {
+          "floor_number": 2,
+          "floor_type": "mine",
+          "size": 2,
+          "npcs": [
+            {
+              "type": "rat",
+              "rank": 1,
+              "count": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "x": 163,
+      "y": 28,
+      "type": "mine",
+      "name": "Заброшенный рудник",
+      "id": "7236c5d5-dadd-4f36-8243-9850279cc098",
+      "player_attitude": 0,
+      "spawn_radius": 3,
+      "rank": 2,
+      "miners_count": 0,
+      "respawn_time": 100,
+      "resource_type": "copper",
+      "connections": [
+        [
+          157,
+          24
+        ]
+      ],
+      "floors": [
+        {
+          "floor_number": 1,
+          "floor_type": "mine",
+          "size": 3,
+          "npcs": [
+            {
+              "type": "bandit",
+              "rank": 1,
+              "count": 5
+            }
+          ]
+        },
+        {
+          "floor_number": 2,
+          "floor_type": "mine",
+          "size": 1,
+          "npcs": [
+            {
+              "type": "bandit",
+              "rank": 1,
+              "count": 2
+            }
+          ]
+        },
+        {
+          "floor_number": 3,
+          "floor_type": "mine",
+          "size": 2,
+          "npcs": [
+            {
+              "type": "rat",
+              "rank": 1,
+              "count": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "x": 145,
+      "y": 25,
+      "type": "city",
+      "name": "Пригорный",
+      "id": "7e72efcf-0e1c-44f7-b235-867ec7150784",
+      "player_attitude": -1,
+      "spawn_radius": 5,
+      "rank": 1,
+      "infrastructure": {
+        "forge": 1,
+        "workshop": 1,
+        "jewelry_workshop": 1,
+        "alchemy_lab": 1,
+        "enchanting_workshop": 1,
+        "shop": 1,
+        "tavern": 1,
+        "town_hall": 1
+      },
+      "shop_rank": 1,
+      "guards": [
+        {
+          "type": "warrior",
+          "rank": 2,
+          "count": 3,
+          "patrol_radius": 10,
+          "respawn_time": 100
+        }
+      ]
     }
   ],
   "starting_village": {
     "x": 140,
     "y": 36
-  }
+  },
+  "merchants": [
+    {
+      "id": "b341ba92-7dd3-42af-9dd0-9e36066b0c23",
+      "name": "Выверт",
+      "rank": 1,
+      "waypoints": [
+        {
+          "x": 144,
+          "y": 25,
+          "duration": 10
+        },
+        {
+          "x": 133,
+          "y": 19,
+          "duration": 10
+        },
+        {
+          "x": 156,
+          "y": 23,
+          "duration": 10
+        },
+        {
+          "x": 158,
+          "y": 46,
+          "duration": 10
+        },
+        {
+          "x": 156,
+          "y": 43,
+          "duration": 1
+        },
+        {
+          "x": 141,
+          "y": 36,
+          "duration": 10
+        },
+        {
+          "x": 144,
+          "y": 32,
+          "duration": 1
+        },
+        {
+          "x": 144,
+          "y": 25,
+          "duration": 10
+        }
+      ],
+      "color": [
+        50,
+        205,
+        50
+      ],
+      "is_loop": true,
+      "specializations": {
+        "jewelry": 0,
+        "resources": 1,
+        "armor": 1,
+        "weapons": 1,
+        "potions": 1
+      },
+      "respawn_time": 200,
+      "assortment_update": 200,
+      "wealth": 2500
+    }
+  ]
 }
