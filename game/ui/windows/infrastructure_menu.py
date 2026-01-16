@@ -68,6 +68,12 @@ INFRASTRUCTURE_ORDER = [
     "house", "palace"
 ]
 
+# Производственные объекты (для крафта)
+PRODUCTION_INFRASTRUCTURE = {
+    "forge", "workshop", "jewelry_workshop", "alchemy_lab", "enchanting_workshop",
+    "sawmill", "smeltery", "charcoal_burners", "tannery"
+}
+
 
 class InfrastructureButton:
     """Класс для представления кликабельной кнопки инфраструктуры"""
@@ -148,28 +154,35 @@ class InfrastructureMenuWindow(BaseWindow):
 
     def get_available_infrastructure(self):
         """
-        Получить список доступной инфраструктуры в локации.
+        Получить списки доступной инфраструктуры в локации.
 
         Returns:
-            list: Список кортежей (id, name, rank, description)
+            tuple: (services_list, production_list) - два списка кортежей (id, name, rank, description)
         """
         if not self.location:
-            return []
+            return [], []
 
         infrastructure = getattr(self.location, 'infrastructure', {})
         if not infrastructure:
-            return []
+            return [], []
 
-        available = []
+        services = []
+        production = []
+
         for infra_id in INFRASTRUCTURE_ORDER:
             if infra_id in infrastructure:
                 rank = infrastructure[infra_id]
                 if rank > 0:
                     name = INFRASTRUCTURE_NAMES.get(infra_id, infra_id)
                     description = INFRASTRUCTURE_DESCRIPTIONS.get(infra_id, "")
-                    available.append((infra_id, name, rank, description))
+                    item = (infra_id, name, rank, description)
 
-        return available
+                    if infra_id in PRODUCTION_INFRASTRUCTURE:
+                        production.append(item)
+                    else:
+                        services.append(item)
+
+        return services, production
 
     def render(self):
         """Отрисовка окна инфраструктуры."""
@@ -193,7 +206,7 @@ class InfrastructureMenuWindow(BaseWindow):
         self.buttons = []
 
         # Приветственный текст
-        welcome_y = window_y + int(60 * scale_h)
+        welcome_y = window_y + int(50 * scale_h)
         welcome_text = self.font.render(
             f"Добро пожаловать в {self.location.name}!",
             True, (200, 200, 200)
@@ -204,7 +217,7 @@ class InfrastructureMenuWindow(BaseWindow):
         self.screen.blit(welcome_text, welcome_rect)
 
         # Описание локации
-        desc_y = welcome_y + int(30 * scale_h)
+        desc_y = welcome_y + int(25 * scale_h)
         desc_text = self.info_font.render(
             self.location.get_description(),
             True, (150, 150, 150)
@@ -215,7 +228,7 @@ class InfrastructureMenuWindow(BaseWindow):
         self.screen.blit(desc_text, desc_rect)
 
         # Разделительная линия
-        line_y = desc_y + int(40 * scale_h)
+        line_y = desc_y + int(30 * scale_h)
         pygame.draw.line(
             self.screen,
             self.FRAME_COLOR,
@@ -224,72 +237,87 @@ class InfrastructureMenuWindow(BaseWindow):
             2
         )
 
-        # Заголовок "Доступные услуги"
-        services_title_y = line_y + int(15 * scale_h)
-        services_title = self.font.render("Доступные услуги:", True, (200, 200, 200))
-        services_title_rect = services_title.get_rect()
-        services_title_rect.centerx = window_x + window_width // 2
-        services_title_rect.y = services_title_y
-        self.screen.blit(services_title, services_title_rect)
-
-        # Получаем доступную инфраструктуру
-        infrastructure = self.get_available_infrastructure()
-
-        # Область для кнопок
-        buttons_start_y = services_title_y + int(40 * scale_h)
-        buttons_area_height = window_height - (buttons_start_y - window_y) - int(80 * scale_h)
+        # Получаем доступную инфраструктуру (услуги и производство)
+        services, production = self.get_available_infrastructure()
 
         # Параметры кнопок
         button_width = int(300 * scale_w)
-        button_height = int(35 * scale_h)
-        button_margin = int(8 * scale_h)
+        button_height = int(32 * scale_h)
+        button_margin = int(6 * scale_h)
         columns = 2
         column_width = (window_width - int(60 * scale_w)) // columns
 
-        # Отрисовка кнопок инфраструктуры
-        for i, (infra_id, name, rank, description) in enumerate(infrastructure):
-            col = i % columns
-            row = i // columns
+        current_y = line_y + int(10 * scale_h)
+        mouse_pos = pygame.mouse.get_pos()
 
-            btn_x = window_x + int(30 * scale_w) + col * column_width + (column_width - button_width) // 2
-            btn_y = buttons_start_y + row * (button_height + button_margin)
+        # === СЕКЦИЯ УСЛУГ ===
+        if services:
+            # Заголовок "Услуги и гильдии"
+            services_title = self.info_font.render("Услуги и гильдии", True, (180, 180, 200))
+            services_title_rect = services_title.get_rect()
+            services_title_rect.x = window_x + int(30 * scale_w)
+            services_title_rect.y = current_y
+            self.screen.blit(services_title, services_title_rect)
+            current_y += int(25 * scale_h)
 
-            # Проверяем, не выходит ли кнопка за область
-            if btn_y + button_height > window_y + window_height - int(70 * scale_h):
-                continue
+            # Отрисовка кнопок услуг
+            for i, (infra_id, name, rank, description) in enumerate(services):
+                col = i % columns
+                row = i // columns
 
-            # Создаем rect для кнопки
-            btn_rect = pygame.Rect(btn_x, btn_y, button_width, button_height)
+                btn_x = window_x + int(30 * scale_w) + col * column_width + (column_width - button_width) // 2
+                btn_y = current_y + row * (button_height + button_margin)
 
-            # Проверяем наведение мыши
-            mouse_pos = pygame.mouse.get_pos()
-            is_hovered = btn_rect.collidepoint(mouse_pos)
+                # Проверяем, не выходит ли кнопка за область
+                if btn_y + button_height > window_y + window_height - int(70 * scale_h):
+                    continue
 
-            # Выбираем цвет в зависимости от состояния
-            if infra_id == "shop":
-                bg_color = self.SPECIAL_BUTTON_HOVER_COLOR if is_hovered else self.SPECIAL_BUTTON_COLOR
-            else:
-                bg_color = self.BUTTON_HOVER_COLOR if is_hovered else self.BUTTON_COLOR
+                self._render_infrastructure_button(
+                    infra_id, name, rank, description, btn_x, btn_y,
+                    button_width, button_height, scale_w, mouse_pos
+                )
 
-            # Отрисовка кнопки
-            pygame.draw.rect(self.screen, bg_color, btn_rect, border_radius=5)
-            pygame.draw.rect(self.screen, self.BUTTON_BORDER_COLOR, btn_rect, 2, border_radius=5)
+            # Обновляем current_y после услуг
+            services_rows = (len(services) + columns - 1) // columns
+            current_y += services_rows * (button_height + button_margin) + int(15 * scale_h)
 
-            # Текст кнопки
-            display_name = f"{name}"
-            if rank > 1:
-                display_name += f" (ур. {rank})"
+        # === СЕКЦИЯ ПРОИЗВОДСТВА ===
+        if production:
+            # Разделительная линия перед производством
+            pygame.draw.line(
+                self.screen,
+                (80, 80, 100),
+                (window_x + int(30 * scale_w), current_y),
+                (window_x + window_width - int(30 * scale_w), current_y),
+                1
+            )
+            current_y += int(10 * scale_h)
 
-            btn_text = self.info_font.render(display_name, True, self.BUTTON_TEXT_COLOR)
-            btn_text_rect = btn_text.get_rect()
-            btn_text_rect.centery = btn_y + button_height // 2
-            btn_text_rect.x = btn_x + int(15 * scale_w)
-            self.screen.blit(btn_text, btn_text_rect)
+            # Заголовок "Производство"
+            prod_title = self.info_font.render("Производство (крафт)", True, (200, 180, 100))
+            prod_title_rect = prod_title.get_rect()
+            prod_title_rect.x = window_x + int(30 * scale_w)
+            prod_title_rect.y = current_y
+            self.screen.blit(prod_title, prod_title_rect)
+            current_y += int(25 * scale_h)
 
-            # Создаем объект кнопки
-            button = InfrastructureButton(infra_id, name, rank, btn_rect, description)
-            button.hovered = is_hovered
-            self.buttons.append(button)
+            # Отрисовка кнопок производства
+            for i, (infra_id, name, rank, description) in enumerate(production):
+                col = i % columns
+                row = i // columns
+
+                btn_x = window_x + int(30 * scale_w) + col * column_width + (column_width - button_width) // 2
+                btn_y = current_y + row * (button_height + button_margin)
+
+                # Проверяем, не выходит ли кнопка за область
+                if btn_y + button_height > window_y + window_height - int(70 * scale_h):
+                    continue
+
+                self._render_infrastructure_button(
+                    infra_id, name, rank, description, btn_x, btn_y,
+                    button_width, button_height, scale_w, mouse_pos,
+                    is_production=True
+                )
 
         # Нижняя панель с кнопками "Расспросить" и "Уйти"
         bottom_panel_y = window_y + window_height - int(60 * scale_h)
@@ -340,6 +368,58 @@ class InfrastructureMenuWindow(BaseWindow):
             if button.hovered and button.description:
                 self._draw_tooltip(button.description, mouse_pos[0], mouse_pos[1])
                 break
+
+    def _render_infrastructure_button(self, infra_id, name, rank, description,
+                                       btn_x, btn_y, button_width, button_height,
+                                       scale_w, mouse_pos, is_production=False):
+        """
+        Отрисовка одной кнопки инфраструктуры.
+
+        Args:
+            infra_id: ID инфраструктуры
+            name: Название
+            rank: Ранг
+            description: Описание
+            btn_x, btn_y: Позиция кнопки
+            button_width, button_height: Размеры кнопки
+            scale_w: Масштаб по ширине
+            mouse_pos: Позиция мыши
+            is_production: True если это производственный объект
+        """
+        # Создаем rect для кнопки
+        btn_rect = pygame.Rect(btn_x, btn_y, button_width, button_height)
+
+        # Проверяем наведение мыши
+        is_hovered = btn_rect.collidepoint(mouse_pos)
+
+        # Выбираем цвет в зависимости от типа и состояния
+        if infra_id == "shop":
+            bg_color = self.SPECIAL_BUTTON_HOVER_COLOR if is_hovered else self.SPECIAL_BUTTON_COLOR
+        elif is_production:
+            # Производственные объекты - золотистый оттенок
+            bg_color = (70, 65, 45) if is_hovered else (55, 50, 35)
+        else:
+            bg_color = self.BUTTON_HOVER_COLOR if is_hovered else self.BUTTON_COLOR
+
+        # Отрисовка кнопки
+        pygame.draw.rect(self.screen, bg_color, btn_rect, border_radius=5)
+        pygame.draw.rect(self.screen, self.BUTTON_BORDER_COLOR, btn_rect, 2, border_radius=5)
+
+        # Текст кнопки
+        display_name = f"{name}"
+        if rank > 1:
+            display_name += f" (ур. {rank})"
+
+        btn_text = self.info_font.render(display_name, True, self.BUTTON_TEXT_COLOR)
+        btn_text_rect = btn_text.get_rect()
+        btn_text_rect.centery = btn_y + button_height // 2
+        btn_text_rect.x = btn_x + int(15 * scale_w)
+        self.screen.blit(btn_text, btn_text_rect)
+
+        # Создаем объект кнопки
+        button = InfrastructureButton(infra_id, name, rank, btn_rect, description)
+        button.hovered = is_hovered
+        self.buttons.append(button)
 
     def _draw_tooltip(self, text, x, y):
         """Отрисовка подсказки"""

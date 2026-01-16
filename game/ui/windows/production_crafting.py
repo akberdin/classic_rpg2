@@ -36,8 +36,8 @@ RANK_MULTIPLIERS = {
 class ProductionCraftingWindow(BaseWindow):
     """Окно крафта через производственный объект"""
 
-    BASE_WIDTH = 900
-    BASE_HEIGHT = 650
+    BASE_WIDTH = 1000
+    BASE_HEIGHT = 750
 
     # Цвета
     BUTTON_COLOR = (50, 50, 60)
@@ -53,6 +53,24 @@ class ProductionCraftingWindow(BaseWindow):
     GOLD_COLOR = (255, 215, 0)
     SUCCESS_COLOR = (100, 200, 100)
     ERROR_COLOR = (200, 100, 100)
+
+    # Качества предметов
+    QUALITY_OPTIONS = [
+        ("all", "Все"),
+        ("common", "Обычное"),
+        ("uncommon", "Необычное"),
+        ("rare", "Редкое"),
+        ("epic", "Эпическое"),
+        ("legendary", "Легендарное"),
+    ]
+
+    QUALITY_COLORS = {
+        "common": (180, 180, 180),
+        "uncommon": (30, 200, 30),
+        "rare": (50, 100, 255),
+        "epic": (160, 50, 200),
+        "legendary": (255, 165, 0),
+    }
 
     def __init__(self, screen, font, info_font, ui_scaler, crafting_system):
         """
@@ -82,10 +100,12 @@ class ProductionCraftingWindow(BaseWindow):
         self.selected_recipe_index = 0
         self.scroll_offset = 0
         self.current_category = "all"
+        self.current_quality = "all"
 
         # Области для кликов
         self.recipe_rects = []
         self.category_rects = []
+        self.quality_rects = []
         self.craft_button_rect = None
         self.back_button_rect = None
 
@@ -116,6 +136,7 @@ class ProductionCraftingWindow(BaseWindow):
         self.selected_recipe_index = 0
         self.scroll_offset = 0
         self.current_category = "all"
+        self.current_quality = "all"
         self.result_message = None
 
     def _load_recipes(self):
@@ -129,12 +150,19 @@ class ProductionCraftingWindow(BaseWindow):
 
         self._apply_category_filter()
 
-    def _apply_category_filter(self):
-        """Применить фильтр по категории."""
+    def _apply_filters(self):
+        """Применить фильтры по категории и качеству."""
+        # Фильтр по категории
         if self.current_category == "all":
-            self.filtered_recipes = list(self.recipes)
+            filtered = list(self.recipes)
         else:
-            self.filtered_recipes = [r for r in self.recipes if r.category == self.current_category]
+            filtered = [r for r in self.recipes if r.category == self.current_category]
+
+        # Фильтр по качеству
+        if self.current_quality != "all":
+            filtered = [r for r in filtered if r.quality == self.current_quality]
+
+        self.filtered_recipes = filtered
 
         # Сортировка по имени
         self.filtered_recipes.sort(key=lambda r: r.name)
@@ -142,6 +170,13 @@ class ProductionCraftingWindow(BaseWindow):
         # Корректируем выбранный индекс
         if self.selected_recipe_index >= len(self.filtered_recipes):
             self.selected_recipe_index = max(0, len(self.filtered_recipes) - 1)
+
+        # Сбрасываем прокрутку
+        self.scroll_offset = 0
+
+    def _apply_category_filter(self):
+        """Применить фильтр (обратная совместимость)."""
+        self._apply_filters()
 
     def get_rental_cost(self, recipe):
         """
@@ -264,6 +299,7 @@ class ProductionCraftingWindow(BaseWindow):
         # Очищаем области кликов
         self.recipe_rects = []
         self.category_rects = []
+        self.quality_rects = []
 
         win = self.begin_render(
             self.BASE_WIDTH, self.BASE_HEIGHT,
@@ -297,8 +333,11 @@ class ProductionCraftingWindow(BaseWindow):
         # Категории (вкладки)
         self._render_categories(window_x, line_y + int(10 * scale_h), window_width, scale_w, scale_h)
 
+        # Фильтр по качеству
+        self._render_quality_filter(window_x, line_y + int(45 * scale_h), window_width, scale_w, scale_h)
+
         # Список рецептов (левая часть)
-        recipes_y = line_y + int(50 * scale_h)
+        recipes_y = line_y + int(80 * scale_h)
         recipes_width = int(350 * scale_w)
         self._render_recipes(
             player, window_x + int(20 * scale_w), recipes_y,
@@ -364,6 +403,53 @@ class ProductionCraftingWindow(BaseWindow):
             self.screen.blit(text, text_rect)
 
             self.category_rects.append((tab_rect, category_id))
+
+    def _render_quality_filter(self, window_x, y, window_width, scale_w, scale_h):
+        """Отрисовка фильтра по качеству."""
+        # Фильтруем качества, которые есть в рецептах станции
+        available_qualities = {"all"}
+        for recipe in self.recipes:
+            available_qualities.add(recipe.quality)
+
+        quality_options = [(q_id, q_name) for q_id, q_name in self.QUALITY_OPTIONS
+                           if q_id in available_qualities]
+
+        # Если только "all" доступен, не показываем фильтр
+        if len(quality_options) <= 1:
+            return
+
+        # Заголовок
+        label = self.info_font.render("Качество:", True, (150, 150, 170))
+        self.screen.blit(label, (window_x + int(20 * scale_w), y + int(2 * scale_h)))
+
+        tab_width = int(95 * scale_w)
+        tab_height = int(24 * scale_h)
+        tab_spacing = int(4 * scale_w)
+        start_x = window_x + int(100 * scale_w)
+
+        for i, (quality_id, quality_name) in enumerate(quality_options):
+            tab_x = start_x + i * (tab_width + tab_spacing)
+
+            is_selected = quality_id == self.current_quality
+            if is_selected:
+                bg_color = self.BUTTON_HOVER_COLOR
+            else:
+                bg_color = self.BUTTON_COLOR
+
+            tab_rect = pygame.Rect(tab_x, y, tab_width, tab_height)
+            pygame.draw.rect(self.screen, bg_color, tab_rect, border_radius=3)
+
+            # Рамка с цветом качества
+            border_color = self.QUALITY_COLORS.get(quality_id, self.BUTTON_BORDER_COLOR)
+            pygame.draw.rect(self.screen, border_color, tab_rect, 1, border_radius=3)
+
+            # Текст с цветом качества
+            text_color = self.QUALITY_COLORS.get(quality_id, self.BUTTON_TEXT_COLOR)
+            text = self.info_font.render(quality_name, True, text_color)
+            text_rect = text.get_rect(center=tab_rect.center)
+            self.screen.blit(text, text_rect)
+
+            self.quality_rects.append((tab_rect, quality_id))
 
     def _render_recipes(self, player, x, y, width, height, scale_w, scale_h):
         """Отрисовка списка рецептов."""
@@ -589,7 +675,14 @@ class ProductionCraftingWindow(BaseWindow):
         for rect, category_id in self.category_rects:
             if rect.collidepoint(x, y):
                 self.current_category = category_id
-                self._apply_category_filter()
+                self._apply_filters()
+                return None
+
+        # Клик по фильтру качества
+        for rect, quality_id in self.quality_rects:
+            if rect.collidepoint(x, y):
+                self.current_quality = quality_id
+                self._apply_filters()
                 return None
 
         # Клик по рецептам
