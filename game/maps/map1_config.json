@@ -376,7 +376,17 @@
         "enchanting_workshop": 1,
         "shop": 1,
         "tavern": 1,
-        "town_hall": 1
+        "town_hall": 1,
+        "warrior_guild": 1,
+        "hunter_guild": 1,
+        "shadow_guild": 1,
+        "mage_guild": 1,
+        "sawmill": 1,
+        "smeltery": 1,
+        "charcoal_burners": 1,
+        "tannery": 1,
+        "house": 1,
+        "palace": 1
       },
       "shop_rank": 1,
       "guards": [
