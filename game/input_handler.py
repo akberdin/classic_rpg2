@@ -829,24 +829,29 @@ class InputHandler:
                                 status = "будет участвовать" if companion.participate_in_combat else "не будет участвовать"
                                 print(f"{companion.name} теперь {status} в боях")
 
-    def handle_crafting_input(self, event):
+    def handle_production_crafting_input(self, event):
         """
-        Обработка ввода в окне крафта
+        Обработка ввода в окне производственного крафта.
 
         Args:
             event: Событие Pygame
         """
-        continue_open, message = self.ctx.crafting_window.handle_input(
-            event,
-            self.ctx.crafting_system,
-            self.ctx.player
-        )
+        if event.type == pygame.KEYDOWN:
+            result = self.ctx.production_crafting_window.handle_key(event.key, self.ctx.player)
+            if result == "back":
+                self.ctx.production_crafting_open = False
+                self.ctx.infrastructure_menu_open = True
 
-        if message:
-            print(message)
-
-        if not continue_open:
-            self.ctx.crafting_window_open = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # ЛКМ
+                result = self.ctx.production_crafting_window.handle_click(event.pos, self.ctx.player)
+                if result == "back":
+                    self.ctx.production_crafting_open = False
+                    self.ctx.infrastructure_menu_open = True
+            elif event.button == 4:  # Колесо вверх
+                self.ctx.production_crafting_window.handle_scroll(True)
+            elif event.button == 5:  # Колесо вниз
+                self.ctx.production_crafting_window.handle_scroll(False)
 
     def handle_key_press(self, key):
         """
@@ -1106,23 +1111,6 @@ class InputHandler:
         elif key == pygame.K_p:
             # Открыть/закрыть окно спутников
             self.ctx.companion_window_open = not self.ctx.companion_window_open
-            return
-        elif key == pygame.K_k:
-            # Открыть/закрыть окно крафта (только в городах и деревнях)
-            if not self.ctx.crafting_window_open:
-                # Проверяем, находится ли игрок в городе или деревне
-                tile = self.ctx.game_map.get_tile(self.ctx.player.x, self.ctx.player.y)
-                if tile.has_location():
-                    location = tile.location
-                    if location.location_type in [LOCATION_CITY, LOCATION_VILLAGE]:
-                        self.ctx.crafting_window_open = True
-                        self.ctx.crafting_window.reset_selection()
-                    else:
-                        print("Крафт доступен только в городах и деревнях!")
-                else:
-                    print("Крафт доступен только в городах и деревнях!")
-            else:
-                self.ctx.crafting_window_open = False
             return
         elif key == pygame.K_q:
             # Открыть/закрыть окно квестов
@@ -1461,9 +1449,9 @@ class InputHandler:
                 self.ctx.skill_book_window.handle_mouse_event(event, self.ctx.player)
             return True
 
-        # Окно крафта
-        if self.ctx.crafting_window_open:
-            self.handle_crafting_input(event)
+        # Окно производственного крафта
+        if self.ctx.production_crafting_open:
+            self.handle_production_crafting_input(event)
             return True
 
         # Окно лута
@@ -1677,25 +1665,10 @@ class InputHandler:
                 self.ctx.infrastructure_menu_open = False
             print(f"Вы вошли в ратушу.")
 
-        elif action == "forge":
-            # Кузница - пока заглушка
-            print(f"Вы вошли в кузницу. Функционал в разработке.")
-
-        elif action == "workshop":
-            # Мастерская - пока заглушка
-            print(f"Вы вошли в мастерскую. Функционал в разработке.")
-
-        elif action == "jewelry_workshop":
-            # Ювелирная мастерская - пока заглушка
-            print(f"Вы вошли в ювелирную мастерскую. Функционал в разработке.")
-
-        elif action == "alchemy_lab":
-            # Алхимическая лаборатория - пока заглушка
-            print(f"Вы вошли в алхимическую лабораторию. Функционал в разработке.")
-
-        elif action == "enchanting_workshop":
-            # Мастерская зачарования - пока заглушка
-            print(f"Вы вошли в мастерскую зачарования. Функционал в разработке.")
+        elif action in ["forge", "workshop", "jewelry_workshop", "alchemy_lab",
+                         "enchanting_workshop", "sawmill", "smeltery", "charcoal_burners", "tannery"]:
+            # Производственные станции - открываем окно крафта
+            self._open_production_crafting(action, location)
 
         elif action == "warrior_guild":
             # Гильдия воинов - пока заглушка
@@ -1713,22 +1686,6 @@ class InputHandler:
             # Гильдия магов - пока заглушка
             print(f"Вы вошли в гильдию магов. Функционал в разработке.")
 
-        elif action == "sawmill":
-            # Лесопилка - пока заглушка
-            print(f"Вы подошли к лесопилке. Функционал в разработке.")
-
-        elif action == "smeltery":
-            # Плавильня - пока заглушка
-            print(f"Вы подошли к плавильне. Функционал в разработке.")
-
-        elif action == "charcoal_burners":
-            # Углежоги - пока заглушка
-            print(f"Вы подошли к углежогам. Функционал в разработке.")
-
-        elif action == "tannery":
-            # Кожевенная мастерская - пока заглушка
-            print(f"Вы вошли в кожевенную мастерскую. Функционал в разработке.")
-
         elif action == "house":
             # Дом - пока заглушка
             print(f"Вы вошли в дом. Функционал в разработке.")
@@ -1740,6 +1697,35 @@ class InputHandler:
         else:
             # Неизвестное действие
             print(f"Действие '{action}' пока не реализовано.")
+
+    def _open_production_crafting(self, infrastructure_id, location):
+        """
+        Открыть окно производственного крафта для станции.
+
+        Args:
+            infrastructure_id: ID инфраструктуры (forge, workshop и т.д.)
+            location: Локация (город/деревня)
+        """
+        from game.ui.windows.infrastructure_menu import INFRASTRUCTURE_NAMES
+
+        # Получаем название и ранг станции
+        station_name = INFRASTRUCTURE_NAMES.get(infrastructure_id, infrastructure_id)
+        infrastructure = getattr(location, 'infrastructure', {})
+        station_rank = infrastructure.get(infrastructure_id, 1)
+
+        # Настраиваем окно крафта
+        self.ctx.production_crafting_window.set_station(
+            infrastructure_id, station_name, station_rank, location
+        )
+
+        # Сохраняем локацию для возврата
+        self.ctx.production_crafting_window.return_location = location
+
+        # Открываем окно крафта
+        self.ctx.infrastructure_menu_open = False
+        self.ctx.production_crafting_open = True
+
+        print(f"Вы начали работу в {station_name} (ур. {station_rank})")
 
     def handle_inquiry_menu_input(self, key):
         """

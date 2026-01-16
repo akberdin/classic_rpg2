@@ -323,12 +323,12 @@ class GameContext:
         self._game.combat_mode_menu_open = value
 
     @property
-    def crafting_window_open(self) -> bool:
-        return getattr(self._game, 'crafting_window_open', False)
+    def production_crafting_open(self) -> bool:
+        return getattr(self._game, 'production_crafting_open', False)
 
-    @crafting_window_open.setter
-    def crafting_window_open(self, value: bool):
-        self._game.crafting_window_open = value
+    @production_crafting_open.setter
+    def production_crafting_open(self, value: bool):
+        self._game.production_crafting_open = value
 
     @property
     def companion_window_open(self) -> bool:
@@ -416,9 +416,9 @@ class GameContext:
         return getattr(self._game, 'inquiry_response_window', None)
 
     @property
-    def crafting_window(self):
-        """Получить окно крафта."""
-        return getattr(self._game, 'crafting_window', None)
+    def production_crafting_window(self):
+        """Получить окно производственного крафта."""
+        return getattr(self._game, 'production_crafting_window', None)
 
     @property
     def companion_window(self):
