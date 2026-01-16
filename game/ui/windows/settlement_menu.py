@@ -123,6 +123,14 @@ class InquiryMenuWindow(BaseWindow):
     BASE_WIDTH = 600
     BASE_HEIGHT = 400
 
+    # Цвета кнопок
+    BUTTON_COLOR = (50, 50, 60)
+    BUTTON_HOVER_COLOR = (70, 70, 85)
+    BUTTON_BORDER_COLOR = (100, 100, 120)
+    BUTTON_TEXT_COLOR = (220, 220, 220)
+    BACK_BUTTON_COLOR = (80, 50, 50)
+    BACK_BUTTON_HOVER_COLOR = (100, 60, 60)
+
     def __init__(self, screen, font, info_font, ui_scaler, game_map):
         """
         Инициализация окна расспроса жителей.
@@ -137,6 +145,8 @@ class InquiryMenuWindow(BaseWindow):
         super().__init__(screen, font, info_font, ui_scaler)
         self.game_map = game_map
         self.location = None
+        self.buttons = []  # Список кнопок (rect, action)
+        self.back_button = None  # Кнопка "Назад"
 
     def set_location(self, location):
         """
@@ -146,6 +156,7 @@ class InquiryMenuWindow(BaseWindow):
             location: Объект локации
         """
         self.location = location
+        self.buttons = []
 
     def render(self):
         """Отрисовка окна расспроса жителей."""
@@ -161,7 +172,12 @@ class InquiryMenuWindow(BaseWindow):
         window_x = win['x']
         window_y = win['y']
         window_width = win['width']
+        window_height = win['height']
         scale_h = win['scale_h']
+        scale_w = win['scale_w']
+
+        # Очищаем список кнопок перед отрисовкой
+        self.buttons = []
 
         # Заголовок
         header_y = window_y + int(70 * scale_h)
@@ -178,25 +194,86 @@ class InquiryMenuWindow(BaseWindow):
         pygame.draw.line(
             self.screen,
             self.FRAME_COLOR,
-            (window_x + int(20 * scale_h), window_y + int(120 * scale_h)),
-            (window_x + window_width - int(20 * scale_h), window_y + int(120 * scale_h)),
+            (window_x + int(20 * scale_w), window_y + int(120 * scale_h)),
+            (window_x + window_width - int(20 * scale_w), window_y + int(120 * scale_h)),
             2
         )
 
-        # Вопросы
-        questions_y = window_y + int(140 * scale_h)
+        # Параметры кнопок
+        button_width = int(400 * scale_w)
+        button_height = int(40 * scale_h)
+        button_margin = int(15 * scale_h)
+        buttons_start_y = window_y + int(150 * scale_h)
+
+        mouse_pos = pygame.mouse.get_pos()
+
+        # Кнопки вопросов
         questions = [
-            "[1] Где находится магическая академия?",
-            "[2] Где находится военная академия?",
-            "[ESC] Назад"
+            ("magic_academy", "Где находится магическая академия?"),
+            ("warrior_academy", "Где находится военная академия?"),
         ]
 
-        for i, question in enumerate(questions):
-            question_text = self.info_font.render(question, True, (150, 255, 150))
-            question_rect = question_text.get_rect()
-            question_rect.centerx = window_x + window_width // 2
-            question_rect.y = questions_y + i * int(40 * scale_h)
-            self.screen.blit(question_text, question_rect)
+        for i, (action, text) in enumerate(questions):
+            btn_x = window_x + (window_width - button_width) // 2
+            btn_y = buttons_start_y + i * (button_height + button_margin)
+
+            btn_rect = pygame.Rect(btn_x, btn_y, button_width, button_height)
+            is_hovered = btn_rect.collidepoint(mouse_pos)
+
+            bg_color = self.BUTTON_HOVER_COLOR if is_hovered else self.BUTTON_COLOR
+
+            pygame.draw.rect(self.screen, bg_color, btn_rect, border_radius=5)
+            pygame.draw.rect(self.screen, self.BUTTON_BORDER_COLOR, btn_rect, 2, border_radius=5)
+
+            btn_text = self.info_font.render(text, True, self.BUTTON_TEXT_COLOR)
+            btn_text_rect = btn_text.get_rect()
+            btn_text_rect.center = btn_rect.center
+            self.screen.blit(btn_text, btn_text_rect)
+
+            self.buttons.append((btn_rect, action))
+
+        # Кнопка "Назад"
+        back_btn_width = int(120 * scale_w)
+        back_btn_height = int(40 * scale_h)
+        back_btn_x = window_x + (window_width - back_btn_width) // 2
+        back_btn_y = window_y + window_height - int(60 * scale_h)
+
+        back_btn_rect = pygame.Rect(back_btn_x, back_btn_y, back_btn_width, back_btn_height)
+        back_hovered = back_btn_rect.collidepoint(mouse_pos)
+
+        back_bg_color = self.BACK_BUTTON_HOVER_COLOR if back_hovered else self.BACK_BUTTON_COLOR
+        pygame.draw.rect(self.screen, back_bg_color, back_btn_rect, border_radius=5)
+        pygame.draw.rect(self.screen, self.BUTTON_BORDER_COLOR, back_btn_rect, 2, border_radius=5)
+
+        back_text = self.info_font.render("Назад", True, self.BUTTON_TEXT_COLOR)
+        back_text_rect = back_text.get_rect()
+        back_text_rect.center = back_btn_rect.center
+        self.screen.blit(back_text, back_text_rect)
+
+        self.back_button = back_btn_rect
+
+    def handle_click(self, mouse_pos):
+        """
+        Обработка клика мыши.
+
+        Args:
+            mouse_pos: Позиция мыши (x, y)
+
+        Returns:
+            str or None: ID выбранного действия или None
+        """
+        x, y = mouse_pos
+
+        # Проверяем кнопку "Назад"
+        if self.back_button and self.back_button.collidepoint(x, y):
+            return "back"
+
+        # Проверяем кнопки вопросов
+        for btn_rect, action in self.buttons:
+            if btn_rect.collidepoint(x, y):
+                return action
+
+        return None
 
     def get_direction_to_academy(self, from_location):
         """
@@ -301,6 +378,12 @@ class InquiryResponseWindow(BaseWindow):
     BASE_WIDTH = 650
     BASE_HEIGHT = 350
 
+    # Цвета кнопки
+    BUTTON_COLOR = (50, 70, 50)
+    BUTTON_HOVER_COLOR = (60, 90, 60)
+    BUTTON_BORDER_COLOR = (100, 100, 120)
+    BUTTON_TEXT_COLOR = (220, 220, 220)
+
     def __init__(self, screen, font, info_font, ui_scaler):
         """
         Инициализация окна ответа.
@@ -313,6 +396,7 @@ class InquiryResponseWindow(BaseWindow):
         """
         super().__init__(screen, font, info_font, ui_scaler)
         self.response_text = ""
+        self.continue_button = None  # Кнопка "Продолжить"
 
     def set_response(self, text):
         """
@@ -334,7 +418,9 @@ class InquiryResponseWindow(BaseWindow):
         window_x = win['x']
         window_y = win['y']
         window_width = win['width']
+        window_height = win['height']
         scale_h = win['scale_h']
+        scale_w = win['scale_w']
 
         # Иконка жителя (опционально)
         npc_y = window_y + int(70 * scale_h)
@@ -355,7 +441,7 @@ class InquiryResponseWindow(BaseWindow):
         for word in words:
             test_line = ' '.join(current_line + [word])
             test_surface = self.info_font.render(test_line, True, (200, 200, 200))
-            if test_surface.get_width() < window_width - int(40 * scale_h):
+            if test_surface.get_width() < window_width - int(40 * scale_w):
                 current_line.append(word)
             else:
                 if current_line:
@@ -373,13 +459,37 @@ class InquiryResponseWindow(BaseWindow):
             line_rect.y = response_y + i * int(30 * scale_h)
             self.screen.blit(line_text, line_rect)
 
-        # Подсказка внизу
-        hint_y = window_y + int(280 * scale_h)
-        hint_text = self.info_font.render(
-            "Нажмите любую клавишу для продолжения...",
-            True, (100, 100, 100)
-        )
-        hint_rect = hint_text.get_rect()
-        hint_rect.centerx = window_x + window_width // 2
-        hint_rect.y = hint_y
-        self.screen.blit(hint_text, hint_rect)
+        # Кнопка "Продолжить" внизу
+        btn_width = int(150 * scale_w)
+        btn_height = int(40 * scale_h)
+        btn_x = window_x + (window_width - btn_width) // 2
+        btn_y = window_y + window_height - int(60 * scale_h)
+
+        btn_rect = pygame.Rect(btn_x, btn_y, btn_width, btn_height)
+        mouse_pos = pygame.mouse.get_pos()
+        is_hovered = btn_rect.collidepoint(mouse_pos)
+
+        bg_color = self.BUTTON_HOVER_COLOR if is_hovered else self.BUTTON_COLOR
+        pygame.draw.rect(self.screen, bg_color, btn_rect, border_radius=5)
+        pygame.draw.rect(self.screen, self.BUTTON_BORDER_COLOR, btn_rect, 2, border_radius=5)
+
+        btn_text = self.info_font.render("Продолжить", True, self.BUTTON_TEXT_COLOR)
+        btn_text_rect = btn_text.get_rect()
+        btn_text_rect.center = btn_rect.center
+        self.screen.blit(btn_text, btn_text_rect)
+
+        self.continue_button = btn_rect
+
+    def handle_click(self, mouse_pos):
+        """
+        Обработка клика мыши.
+
+        Args:
+            mouse_pos: Позиция мыши (x, y)
+
+        Returns:
+            bool: True если клик был по кнопке "Продолжить"
+        """
+        if self.continue_button and self.continue_button.collidepoint(mouse_pos):
+            return True
+        return False

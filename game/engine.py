@@ -28,6 +28,7 @@ from game.ui.windows import (
     DungeonExitWindow,
     StairsMenuWindow,
 )
+from game.ui.windows.infrastructure_menu import InfrastructureMenuWindow
 from game.ui.windows.object_interaction import ObjectInteractionWindow
 from game.ui.windows.companion import CompanionWindow
 from game.optimization import PerformanceOptimizer, RenderCache
@@ -196,7 +197,9 @@ class Game:
         self.settlement_menu_window = SettlementMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler, self.game_map)
         self.inquiry_menu_window = InquiryMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler, self.game_map)
         self.inquiry_response_window = InquiryResponseWindow(self.screen, self.font, self.info_font, self.ui_scaler)
+        self.infrastructure_menu_window = InfrastructureMenuWindow(self.screen, self.font, self.info_font, self.ui_scaler, self.game_map)
         self.settlement_menu_open = False
+        self.infrastructure_menu_open = False
         self.inquiry_menu_open = False
         self.inquiry_response_open = False
 
@@ -622,9 +625,9 @@ class Game:
                         merchant_level = 5  # Ранг 1: деревни
                     location.merchant_npc = Merchant(f"Торговец {location.name}", self.player.x, self.player.y, merchant_level)
 
-                # Открываем окно меню локации
-                self.settlement_menu_window.set_location(location)
-                self.settlement_menu_open = True
+                # Открываем окно меню инфраструктуры локации
+                self.infrastructure_menu_window.set_location(location)
+                self.infrastructure_menu_open = True
                 print(f"Добро пожаловать в {location.name}!")
                 return
 
@@ -1224,6 +1227,10 @@ class Game:
         # Если открыто меню города/деревни, отрисовываем его
         if self.settlement_menu_open:
             self.settlement_menu_window.render()
+
+        # Если открыто меню инфраструктуры, отрисовываем его
+        if self.infrastructure_menu_open:
+            self.infrastructure_menu_window.render()
 
         # Если открыто меню расспроса, отрисовываем его
         if self.inquiry_menu_open:

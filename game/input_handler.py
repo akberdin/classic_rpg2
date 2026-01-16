@@ -1491,22 +1491,41 @@ class InputHandler:
                 self.ctx.cheat_menu_open = False
             return True
 
-        # Меню города/деревни
+        # Меню города/деревни (старое)
         if self.ctx.settlement_menu_open:
             if event.type == pygame.KEYDOWN:
                 self.handle_settlement_menu_input(event.key)
+            return True
+
+        # Меню инфраструктуры поселения (новое)
+        if self.ctx.infrastructure_menu_open:
+            if event.type == pygame.KEYDOWN:
+                self.handle_infrastructure_menu_input(event.key)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # ЛКМ
+                    self.handle_infrastructure_menu_click(event.pos)
             return True
 
         # Меню расспроса
         if self.ctx.inquiry_menu_open:
             if event.type == pygame.KEYDOWN:
                 self.handle_inquiry_menu_input(event.key)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # ЛКМ
+                    self.handle_inquiry_menu_click(event.pos)
             return True
 
         # Окно ответа на вопрос
         if self.ctx.inquiry_response_open:
             if event.type == pygame.KEYDOWN:
                 self.ctx.inquiry_response_open = False
+                self.ctx.infrastructure_menu_open = True
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # ЛКМ
+                    # Проверяем клик по кнопке "Продолжить"
+                    if self.ctx.inquiry_response_window.handle_click(event.pos):
+                        self.ctx.inquiry_response_open = False
+                        self.ctx.infrastructure_menu_open = True
             return True
 
         return False
@@ -1574,6 +1593,130 @@ class InputHandler:
                 # В обычном городе/деревне - купить Изготовление
                 self.handle_learn_skill("craftsmanship", 500)
 
+    def handle_infrastructure_menu_input(self, key):
+        """
+        Обработка клавиатурного ввода в меню инфраструктуры.
+
+        Args:
+            key: Нажатая клавиша
+        """
+        if key == pygame.K_ESCAPE:
+            self.ctx.infrastructure_menu_open = False
+            return
+
+    def handle_infrastructure_menu_click(self, mouse_pos):
+        """
+        Обработка клика мыши в меню инфраструктуры.
+
+        Args:
+            mouse_pos: Позиция мыши (x, y)
+        """
+        action = self.ctx.infrastructure_menu_window.handle_click(mouse_pos)
+
+        if action is None:
+            return
+
+        location = self.ctx.infrastructure_menu_window.location
+
+        if action == "leave":
+            # Закрыть меню
+            self.ctx.infrastructure_menu_open = False
+
+        elif action == "ask_locals":
+            # Открыть меню расспроса жителей
+            self.ctx.inquiry_menu_window.set_location(location)
+            self.ctx.infrastructure_menu_open = False
+            self.ctx.inquiry_menu_open = True
+
+        elif action == "shop":
+            # Открыть магазин (торговлю)
+            if hasattr(location, 'merchant_npc'):
+                self.ctx.nearby_npc = location.merchant_npc
+                self.ctx.trade_menu_open = True
+                self.ctx.trade_window.mode = "buy"
+                self.ctx.trade_window.selected_merchant_index = 0
+                self.ctx.trade_window.selected_player_index = 0
+                # Устанавливаем коэффициенты торговли на основе отношений локации
+                attitude = getattr(location, 'player_attitude', 0)
+                self.ctx.trade_window.set_location_attitude(attitude)
+                self.ctx.infrastructure_menu_open = False
+                print(f"Вы вошли в магазин.")
+
+        elif action == "tavern":
+            # Таверна - пока заглушка
+            print(f"Вы вошли в таверну. Функционал в разработке.")
+
+        elif action == "town_hall":
+            # Ратуша - открыть окно квестов
+            if location:
+                self.game.open_quest_window(location)
+                self.ctx.infrastructure_menu_open = False
+            print(f"Вы вошли в ратушу.")
+
+        elif action == "forge":
+            # Кузница - пока заглушка
+            print(f"Вы вошли в кузницу. Функционал в разработке.")
+
+        elif action == "workshop":
+            # Мастерская - пока заглушка
+            print(f"Вы вошли в мастерскую. Функционал в разработке.")
+
+        elif action == "jewelry_workshop":
+            # Ювелирная мастерская - пока заглушка
+            print(f"Вы вошли в ювелирную мастерскую. Функционал в разработке.")
+
+        elif action == "alchemy_lab":
+            # Алхимическая лаборатория - пока заглушка
+            print(f"Вы вошли в алхимическую лабораторию. Функционал в разработке.")
+
+        elif action == "enchanting_workshop":
+            # Мастерская зачарования - пока заглушка
+            print(f"Вы вошли в мастерскую зачарования. Функционал в разработке.")
+
+        elif action == "warrior_guild":
+            # Гильдия воинов - пока заглушка
+            print(f"Вы вошли в гильдию воинов. Функционал в разработке.")
+
+        elif action == "hunter_guild":
+            # Гильдия охотников - пока заглушка
+            print(f"Вы вошли в гильдию охотников. Функционал в разработке.")
+
+        elif action == "shadow_guild":
+            # Гильдия теней - пока заглушка
+            print(f"Вы вошли в гильдию теней. Функционал в разработке.")
+
+        elif action == "mage_guild":
+            # Гильдия магов - пока заглушка
+            print(f"Вы вошли в гильдию магов. Функционал в разработке.")
+
+        elif action == "sawmill":
+            # Лесопилка - пока заглушка
+            print(f"Вы подошли к лесопилке. Функционал в разработке.")
+
+        elif action == "smeltery":
+            # Плавильня - пока заглушка
+            print(f"Вы подошли к плавильне. Функционал в разработке.")
+
+        elif action == "charcoal_burners":
+            # Углежоги - пока заглушка
+            print(f"Вы подошли к углежогам. Функционал в разработке.")
+
+        elif action == "tannery":
+            # Кожевенная мастерская - пока заглушка
+            print(f"Вы вошли в кожевенную мастерскую. Функционал в разработке.")
+
+        elif action == "house":
+            # Дом - пока заглушка
+            print(f"Вы вошли в дом. Функционал в разработке.")
+
+        elif action == "palace":
+            # Дворец - пока заглушка
+            print(f"Вы вошли во дворец. Функционал в разработке.")
+
+        else:
+            # Неизвестное действие
+            print(f"Действие '{action}' пока не реализовано.")
+
     def handle_inquiry_menu_input(self, key):
         """
         Обработка ввода в меню расспроса жителей.
@@ -1582,9 +1725,9 @@ class InputHandler:
             key: Нажатая клавиша
         """
         if key == pygame.K_ESCAPE:
-            # Вернуться в меню города
+            # Вернуться в меню инфраструктуры
             self.ctx.inquiry_menu_open = False
-            self.ctx.settlement_menu_open = True
+            self.ctx.infrastructure_menu_open = True
             return
 
         if key == pygame.K_1:
@@ -1609,3 +1752,37 @@ class InputHandler:
             self.ctx.inquiry_menu_open = False
             self.ctx.inquiry_response_open = True
 
+    def handle_inquiry_menu_click(self, mouse_pos):
+        """
+        Обработка клика мыши в меню расспроса жителей.
+
+        Args:
+            mouse_pos: Позиция мыши (x, y)
+        """
+        action = self.ctx.inquiry_menu_window.handle_click(mouse_pos)
+
+        if action is None:
+            return
+
+        location = self.ctx.inquiry_menu_window.location
+
+        if action == "back":
+            # Вернуться в меню инфраструктуры
+            self.ctx.inquiry_menu_open = False
+            self.ctx.infrastructure_menu_open = True
+
+        elif action == "magic_academy":
+            # Вопрос про магическую академию
+            direction = self.ctx.inquiry_menu_window.get_direction_to_academy(location)
+            response_text = f"Магическая академия? Иди на {direction}, путник. Там тебя ждут великие знания!"
+            self.ctx.inquiry_response_window.set_response(response_text)
+            self.ctx.inquiry_menu_open = False
+            self.ctx.inquiry_response_open = True
+
+        elif action == "warrior_academy":
+            # Вопрос про военную академию
+            direction = self.ctx.inquiry_menu_window.get_direction_to_warrior_academy(location)
+            response_text = f"Военная академия? Иди на {direction}, путник. Там тебя обучат воинскому мастерству!"
+            self.ctx.inquiry_response_window.set_response(response_text)
+            self.ctx.inquiry_menu_open = False
+            self.ctx.inquiry_response_open = True
