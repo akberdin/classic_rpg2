@@ -430,6 +430,14 @@ class InputHandler:
         if key == pygame.K_ESCAPE:
             self.ctx.trade_menu_open = False
             self.ctx.nearby_npc = None
+            # Возвращаемся в меню инфраструктуры если торговля была открыта оттуда
+            if getattr(self.ctx.trade_window, 'return_to_infrastructure', False):
+                location = getattr(self.ctx.trade_window, 'infrastructure_location', None)
+                if location:
+                    self.ctx.infrastructure_menu_window.set_location(location)
+                    self.ctx.infrastructure_menu_open = True
+                self.ctx.trade_window.return_to_infrastructure = False
+                self.ctx.trade_window.infrastructure_location = None
             return
         elif key == pygame.K_TAB:
             # Переключение между покупкой и продажей
@@ -1306,6 +1314,14 @@ class InputHandler:
         """
         if key == pygame.K_ESCAPE or key == pygame.K_q:
             self.ctx.quest_window_open = False
+            # Возвращаемся в меню инфраструктуры если квесты были открыты оттуда
+            if getattr(self.ctx.quest_window, 'return_to_infrastructure', False):
+                location = getattr(self.ctx.quest_window, 'infrastructure_location', None)
+                if location:
+                    self.ctx.infrastructure_menu_window.set_location(location)
+                    self.ctx.infrastructure_menu_open = True
+                self.ctx.quest_window.return_to_infrastructure = False
+                self.ctx.quest_window.infrastructure_location = None
             return
 
         # Переключение вкладок
@@ -1630,7 +1646,7 @@ class InputHandler:
 
         elif action == "shop":
             # Открыть магазин (торговлю)
-            if hasattr(location, 'merchant_npc'):
+            if hasattr(location, 'merchant_npc') and location.merchant_npc:
                 self.ctx.nearby_npc = location.merchant_npc
                 self.ctx.trade_menu_open = True
                 self.ctx.trade_window.mode = "buy"
@@ -1639,8 +1655,13 @@ class InputHandler:
                 # Устанавливаем коэффициенты торговли на основе отношений локации
                 attitude = getattr(location, 'player_attitude', 0)
                 self.ctx.trade_window.set_location_attitude(attitude)
+                # Сохраняем локацию для возврата после закрытия торговли
+                self.ctx.trade_window.return_to_infrastructure = True
+                self.ctx.trade_window.infrastructure_location = location
                 self.ctx.infrastructure_menu_open = False
                 print(f"Вы вошли в магазин.")
+            else:
+                print(f"Магазин в {location.name} сейчас закрыт.")
 
         elif action == "tavern":
             # Таверна - пока заглушка
@@ -1650,6 +1671,9 @@ class InputHandler:
             # Ратуша - открыть окно квестов
             if location:
                 self.game.open_quest_window(location)
+                # Сохраняем локацию для возврата после закрытия квестов
+                self.ctx.quest_window.return_to_infrastructure = True
+                self.ctx.quest_window.infrastructure_location = location
                 self.ctx.infrastructure_menu_open = False
             print(f"Вы вошли в ратушу.")
 
