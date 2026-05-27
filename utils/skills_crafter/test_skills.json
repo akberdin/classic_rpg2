@@ -522,7 +522,7 @@
       ]
     },
     "visuals": {
-      "icon_path": "skills\\whirlwind_strike.png",
+      "icon_path": "skills/whirlwind_strike.png",
       "animation_type": "default",
       "particle_effect": "",
       "sound_use": "",
@@ -531,19 +531,19 @@
       "color_secondary": "#888888",
       "animation_frames": [
         {
-          "sprite_path": "skills\\anim\\anim_skill_slash\\slash_01.png",
+          "sprite_path": "skills/anim/anim_skill_slash/slash_01.png",
           "duration_ms": 100
         },
         {
-          "sprite_path": "skills\\anim\\anim_skill_slash\\slash_02.png",
+          "sprite_path": "skills/anim/anim_skill_slash/slash_02.png",
           "duration_ms": 100
         },
         {
-          "sprite_path": "skills\\anim\\anim_skill_slash\\slash_03.png",
+          "sprite_path": "skills/anim/anim_skill_slash/slash_03.png",
           "duration_ms": 100
         },
         {
-          "sprite_path": "skills\\anim\\anim_skill_slash\\slash_04.png",
+          "sprite_path": "skills/anim/anim_skill_slash/slash_04.png",
           "duration_ms": 100
         }
       ],
@@ -554,7 +554,7 @@
       "random_frame_order": false,
       "display_type": "on_caster",
       "anchor_point": "weapon",
-      "face_target": true,
+      "face_target": false,
       "sprite_rotation_offset": 0.0,
       "timing": {
         "damage_apply_at": "on_hit",

@@ -35,3 +35,6 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Maps
+./game/maps/map1.json
